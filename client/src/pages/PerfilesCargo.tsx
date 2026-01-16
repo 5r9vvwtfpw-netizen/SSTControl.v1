@@ -460,7 +460,7 @@ export default function PerfilesCargo() {
 
   // Handle bulk profile creation
   const handleBulkCreate = () => {
-    const companyId = isAdmin ? bulkCompanyId : (user?.companyId || "");
+    const companyId = hasGlobalCompanyAccess ? bulkCompanyId : (user?.companyId || "");
     
     if (!companyId) {
       toast({
@@ -535,8 +535,8 @@ export default function PerfilesCargo() {
     }
     setShowNameError(false);
     
-    // Validate companyId for admin users
-    if (isAdmin && !formData.companyId) {
+    // Validate companyId for users with global access
+    if (hasGlobalCompanyAccess && !formData.companyId) {
       toast({
         title: "Error",
         description: "Debe seleccionar una empresa",
@@ -673,7 +673,7 @@ export default function PerfilesCargo() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
-                {isAdmin && (
+                {hasGlobalCompanyAccess && (
                   <div className="space-y-2 col-span-2">
                     <Label htmlFor="company">Empresa *</Label>
                     <Select
@@ -782,9 +782,9 @@ export default function PerfilesCargo() {
                       // Filtrar trabajadores por empresa seleccionada
                       const filteredWorkers = formData.companyId 
                         ? workers.filter(w => w.companyId === formData.companyId)
-                        : isAdmin ? [] : workers;
+                        : hasGlobalCompanyAccess ? [] : workers;
                       
-                      if (isAdmin && !formData.companyId) {
+                      if (hasGlobalCompanyAccess && !formData.companyId) {
                         return (
                           <p className="text-sm text-muted-foreground text-center py-2">
                             Seleccione primero una empresa para ver los trabajadores disponibles
@@ -1371,7 +1371,7 @@ export default function PerfilesCargo() {
                 onClick={() => {
                   setSelectedPositions([]);
                   setBulkDefaultRiskClass("I");
-                  if (!isAdmin && user?.companyId) {
+                  if (!hasGlobalCompanyAccess && user?.companyId) {
                     setBulkCompanyId(user.companyId);
                   }
                 }}
@@ -1388,7 +1388,7 @@ export default function PerfilesCargo() {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
-                {isAdmin && (
+                {hasGlobalCompanyAccess && (
                   <div className="space-y-2">
                     <Label htmlFor="bulk-company">Empresa *</Label>
                     <Select
@@ -1442,7 +1442,7 @@ export default function PerfilesCargo() {
                   </p>
                   <div className="border rounded-md p-3">
                     {(() => {
-                      const companyId = isAdmin ? bulkCompanyId : (user?.companyId || "");
+                      const companyId = hasGlobalCompanyAccess ? bulkCompanyId : (user?.companyId || "");
                       
                       if (!companyId) {
                         return (
@@ -1568,7 +1568,7 @@ export default function PerfilesCargo() {
                   </Button>
                   <Button 
                     onClick={handleBulkCreate}
-                    disabled={(isAdmin && !bulkCompanyId) || selectedPositions.length === 0 || batchCreateProfilesMutation.isPending}
+                    disabled={(hasGlobalCompanyAccess && !bulkCompanyId) || selectedPositions.length === 0 || batchCreateProfilesMutation.isPending}
                     data-testid="button-submit-bulk-profiles"
                   >
                     {batchCreateProfilesMutation.isPending ? "Creando..." : `Crear ${selectedPositions.length} Perfil(es)`}
@@ -1581,7 +1581,7 @@ export default function PerfilesCargo() {
           <Button 
             variant="outline"
             onClick={() => {
-              const companyId = isAdmin ? selectedCompanyId : (user?.companyId || "");
+              const companyId = hasGlobalCompanyAccess ? selectedCompanyId : (user?.companyId || "");
               if (!companyId) {
                 toast({
                   title: "Error",
@@ -1592,7 +1592,7 @@ export default function PerfilesCargo() {
               }
               syncWorkersMutation.mutate(companyId);
             }}
-            disabled={syncWorkersMutation.isPending || (isAdmin && !selectedCompanyId)}
+            disabled={syncWorkersMutation.isPending || (hasGlobalCompanyAccess && !selectedCompanyId)}
             data-testid="button-sync-workers"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${syncWorkersMutation.isPending ? 'animate-spin' : ''}`} />

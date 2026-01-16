@@ -71,7 +71,7 @@ import {
   BookOpen,
   Send
 } from "lucide-react";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { 
   INSTRUCTORES_PREDEFINIDOS, 
   LUGARES_PREDEFINIDOS, 
@@ -140,6 +140,7 @@ export default function ProgramaCapacitacion() {
   const { user } = useAuth();
   const { toast } = useToast();
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   
   const [isEventoDialogOpen, setIsEventoDialogOpen] = useState(false);
   const [editingEventoId, setEditingEventoId] = useState<string | null>(null);
@@ -162,14 +163,14 @@ export default function ProgramaCapacitacion() {
       instructor: "",
       observaciones: "",
       companyId: "",
-      requireCompanyId: isAdmin,
+      requireCompanyId: isSuperadmin,
     },
   });
 
-  // Update requireCompanyId when isAdmin changes
+  // Update requireCompanyId when user role changes
   useEffect(() => {
-    form.setValue("requireCompanyId", isAdmin);
-  }, [isAdmin, form]);
+    form.setValue("requireCompanyId", isSuperadmin);
+  }, [user?.role, form]);
 
   // Fetch catalog
   const { data: catalogo = [], isLoading: loadingCatalogo } = useQuery<CapacitacionCatalogo[]>({
@@ -186,10 +187,10 @@ export default function ProgramaCapacitacion() {
     queryKey: ["/api/workers"],
   });
 
-  // Fetch companies (for admin)
+  // Fetch companies (for superadmin only)
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
-    enabled: isAdmin,
+    enabled: isSuperadmin,
   });
 
   // When catalog selection changes, update the selectedCatalogo and auto-fill fields
@@ -449,22 +450,22 @@ Atentamente,
       instructor: "",
       observaciones: "",
       companyId: "",
-      requireCompanyId: isAdmin,
+      requireCompanyId: isSuperadmin,
     });
   };
 
   // Watch companyId for filtering workers
   const watchCompanyId = form.watch("companyId");
   
-  // Filter workers by selected company (admin) or user's company (non-admin)
+  // Filter workers by selected company (superadmin) or user's company (non-superadmin)
   const filteredWorkers = useMemo(() => {
-    if (isAdmin && watchCompanyId) {
+    if (isSuperadmin && watchCompanyId) {
       return workers.filter(w => w.companyId === watchCompanyId);
-    } else if (!isAdmin && user?.companyId) {
+    } else if (!isSuperadmin && user?.companyId) {
       return workers.filter(w => w.companyId === user.companyId);
     }
     return [];
-  }, [workers, isAdmin, watchCompanyId, user?.companyId]);
+  }, [workers, user?.role, watchCompanyId, user?.companyId]);
   
   // Toggle worker selection
   const toggleWorkerSelection = (workerId: string) => {
@@ -496,7 +497,7 @@ Atentamente,
       instructor: evento.instructor || "",
       observaciones: evento.observaciones || "",
       companyId: evento.companyId,
-      requireCompanyId: isAdmin,
+      requireCompanyId: isSuperadmin,
     });
     setIsEventoDialogOpen(true);
   };
@@ -905,8 +906,8 @@ Atentamente,
                 </Card>
               )}
 
-              {/* Admin: Selector de empresa */}
-              {isAdmin && !editingEventoId && (
+              {/* Superadmin: Selector de empresa */}
+              {isSuperadmin && !editingEventoId && (
                 <FormField
                   control={form.control}
                   name="companyId"
@@ -1148,7 +1149,7 @@ Atentamente,
                           Invitar Trabajadores
                         </h4>
                         <p className="text-sm text-muted-foreground">
-                          {(isAdmin && !watchCompanyId) 
+                          {(isSuperadmin && !watchCompanyId) 
                             ? "Seleccione primero una empresa para ver sus trabajadores"
                             : `${selectedWorkerIds.length} de ${filteredWorkers.length} trabajador(es) seleccionado(s)`}
                         </p>
@@ -1221,7 +1222,7 @@ Atentamente,
                       </div>
                     )}
                     
-                    {(isAdmin && !watchCompanyId) ? (
+                    {(isSuperadmin && !watchCompanyId) ? (
                       <div className="text-center py-4 text-muted-foreground text-sm border rounded-md bg-muted/30">
                         <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
                         Seleccione una empresa para ver los trabajadores disponibles

@@ -23,7 +23,7 @@ import { useLocation } from "wouter";
 import { z } from "zod";
 import { AutomationAssistant, PlantillaInfo } from "@/components/AutomationAssistant";
 import { getEstandarByCodigo } from "@/data/planear-normativa";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasGlobalAccess } from "@shared/permissions";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 const formSchema = insertPlanTrabajoAnualSchema.omit({
@@ -51,7 +51,7 @@ export default function PlanesTrabajoAnual() {
   const [showOtroCargoAprobador, setShowOtroCargoAprobador] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<PlanTrabajoAnual | null>(null);
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const hasGlobalAccessFlag = user?.role ? hasGlobalAccess(user.role) : false;
 
   // Lista de cargos SST comunes según Resolución 0312/2019
   const cargosSstComunes = [
@@ -114,7 +114,7 @@ export default function PlanesTrabajoAnual() {
 
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
-    enabled: isAdmin,
+    enabled: hasGlobalAccessFlag,
   });
 
   const { data: workers = [] } = useQuery<Worker[]>({
@@ -128,13 +128,13 @@ export default function PlanesTrabajoAnual() {
   const selectedCompanyId = form.watch("companyId");
 
   // Filtrar trabajadores por empresa seleccionada (para dropdowns de personas)
-  const currentCompanyId = isAdmin ? selectedCompanyId : contextCompany?.id;
+  const currentCompanyId = hasGlobalAccessFlag ? selectedCompanyId : contextCompany?.id;
   const filteredWorkers = workers.filter(w => 
     w.companyId === currentCompanyId && w.status === 'activo'
   );
 
   // Obtener empresa actual para dropdown de representante legal
-  const currentCompany = isAdmin 
+  const currentCompany = hasGlobalAccessFlag 
     ? companies.find(c => c.id === selectedCompanyId)
     : contextCompany;
 
@@ -201,18 +201,18 @@ export default function PlanesTrabajoAnual() {
   
   // Auto-seleccionar empresa si solo hay una disponible
   useEffect(() => {
-    if (dialogOpen && isAdmin && companies.length === 1 && !form.getValues("companyId")) {
+    if (dialogOpen && hasGlobalAccessFlag && companies.length === 1 && !form.getValues("companyId")) {
       form.setValue("companyId", companies[0].id);
       autoFillFromCompany(companies[0]);
     }
-  }, [dialogOpen, isAdmin, companies]);
+  }, [dialogOpen, hasGlobalAccessFlag, companies]);
 
   // Auto-llenar para usuarios no-admin cuando abren el diálogo
   useEffect(() => {
-    if (dialogOpen && !isAdmin && contextCompany && lastAutoFilledCompanyId !== contextCompany.id) {
+    if (dialogOpen && !hasGlobalAccessFlag && contextCompany && lastAutoFilledCompanyId !== contextCompany.id) {
       autoFillFromCompany(contextCompany);
     }
-  }, [dialogOpen, isAdmin, contextCompany, lastAutoFilledCompanyId]);
+  }, [dialogOpen, hasGlobalAccessFlag, contextCompany, lastAutoFilledCompanyId]);
   
   // Resetear estado de auto-llenado cuando se cierra el diálogo
   useEffect(() => {
@@ -229,7 +229,7 @@ export default function PlanesTrabajoAnual() {
         elaboradoPorId: data.elaboradoPorId || null,
         autorizadoPorId: data.autorizadoPorId || null,
         aprobadoPorId: data.aprobadoPorId || null,
-        companyId: isAdmin && data.companyId ? data.companyId : undefined,
+        companyId: hasGlobalAccessFlag && data.companyId ? data.companyId : undefined,
       };
       const res = await apiRequest("POST", "/api/planes-trabajo-anual", payload);
       return res.json();
@@ -391,7 +391,7 @@ export default function PlanesTrabajoAnual() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {isAdmin && (
+                {hasGlobalAccessFlag && (
                   <FormField
                     control={form.control}
                     name="companyId"

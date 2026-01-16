@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSubscriptionFeatures } from "@/hooks/use-subscription-features";
 import UpgradeAlert from "@/components/UpgradeAlert";
 import { z } from "zod";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasGlobalAccess } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 
 const normativaAuditorias = [
@@ -71,7 +71,7 @@ export default function AuditoriasInternas() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const hasGlobalAccessUser = user?.role ? hasGlobalAccess(user.role) : false;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -102,7 +102,7 @@ export default function AuditoriasInternas() {
 
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
-    enabled: isAdmin,
+    enabled: hasGlobalAccessUser,
   });
 
   const { data: workers } = useQuery<Worker[]>({
@@ -117,7 +117,7 @@ export default function AuditoriasInternas() {
 
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
-      const payload = isAdmin && data.companyId 
+      const payload = hasGlobalAccessUser && data.companyId 
         ? { ...data, companyId: data.companyId }
         : data;
       const res = await apiRequest("POST", "/api/auditorias-internas", payload);
@@ -242,7 +242,7 @@ export default function AuditoriasInternas() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {isAdmin && (
+                {hasGlobalAccessUser && (
                   <FormField
                     control={form.control}
                     name="companyId"

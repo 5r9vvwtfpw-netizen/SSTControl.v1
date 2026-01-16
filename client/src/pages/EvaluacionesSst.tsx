@@ -170,6 +170,13 @@ export default function EvaluacionesSst() {
     }
   }, [targetCompany, calculatedTipoEmpresa, form]);
 
+  // Para usuarios no-superadmin, establecer automáticamente su companyId
+  useEffect(() => {
+    if (!isSuperAdmin && user?.companyId && dialogOpen) {
+      form.setValue("companyId", user.companyId);
+    }
+  }, [isSuperAdmin, user?.companyId, dialogOpen, form]);
+
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
       // SECURITY: Solo superadmin tiene acceso global para crear evaluaciones en otras empresas
@@ -462,7 +469,7 @@ export default function EvaluacionesSst() {
                   </div>
                 )}
                 
-                {(user?.role as string) === 'admin' || (user?.role as string) === 'super_admin' ? (
+                {isSuperAdmin ? (
                   <FormField
                     control={form.control}
                     name="companyId"

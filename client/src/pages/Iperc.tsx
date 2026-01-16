@@ -21,7 +21,7 @@ import { z } from "zod";
 import { RiskHeatmap } from "@/components/RiskHeatmap";
 import { peligrosGTC45Predefinidos, getPeligroByCodigo, clasificacionPeligroLabels } from "@/data/peligros-gtc45-predefinidos";
 import { PeligroDialog } from "@/components/PeligroDialog";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { useSearch } from "wouter";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Edit2, Trash2 } from "lucide-react";
@@ -96,7 +96,7 @@ export default function Iperc() {
   } | null>(null);
   const [substanceProcessed, setSubstanceProcessed] = useState(false);
   const [peligroPrefillValues, setPeligroPrefillValues] = useState<Record<string, any> | null>(null);
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? hasGlobalAccess(user.role) : false;
 
   // Leer parámetros de URL si viene desde Sustancias Químicas
   useEffect(() => {
