@@ -62,6 +62,7 @@ const CHAPTER_1_MODULES = [
   "/mensajes-internos",
   
   // Suscripciones y facturación (siempre disponible)
+  "/mi-suscripcion",
   "/planes-suscripcion",
   "/checkout",
   "/pricing",
