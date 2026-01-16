@@ -1,15 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Clock, XCircle, CreditCard } from "lucide-react";
+import { AlertTriangle, Clock, XCircle, CreditCard, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { getTrialDaysRemaining, getTrialStatusMessage } from "@shared/utils";
 
 type SubscriptionResponse = {
   id: string;
   status: string;
-  trialEnd: string | null;
+  trialEnd?: string | null;
+  trial_end?: string | null;
   plan: {
     name: string;
     displayName: string;
@@ -17,8 +20,9 @@ type SubscriptionResponse = {
 };
 
 export function TrialAlert() {
-  const [, navigate] = useLocation();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [isActivating, setIsActivating] = useState(false);
 
   const { data: subscription } = useQuery<SubscriptionResponse>({
     queryKey: ['/api/billing/subscription'],
@@ -28,9 +32,54 @@ export function TrialAlert() {
 
   if (!subscription) return null;
 
-  const { status, trialEnd } = subscription;
+  const { id: subscriptionId, status } = subscription;
+  const trialEnd = subscription.trialEnd || subscription.trial_end;
 
   if (status === 'active') return null;
+
+  const handleActivateSubscription = async () => {
+    if (!subscriptionId) {
+      toast({
+        title: "Error",
+        description: "No se encontró ID de suscripción",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsActivating(true);
+    try {
+      const response = await apiRequest(
+        `/api/billing/subscription/${subscriptionId}/activate`,
+        "POST"
+      ) as { paymentUrl?: string };
+      
+      if (response.paymentUrl) {
+        toast({
+          title: "Redirigiendo a pasarela de pago",
+          description: "Serás redirigido a Stripe para completar el pago...",
+        });
+        
+        setTimeout(() => {
+          window.location.href = response.paymentUrl!;
+        }, 1000);
+      } else {
+        toast({
+          title: "Error",
+          description: "No se pudo generar el enlace de pago",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error al activar suscripción",
+        description: error.message || "No se pudo procesar la solicitud",
+        variant: "destructive",
+      });
+    } finally {
+      setIsActivating(false);
+    }
+  };
 
   if (status === 'trial' && trialEnd) {
     const daysRemaining = getTrialDaysRemaining(trialEnd);
@@ -56,11 +105,16 @@ export function TrialAlert() {
           <Button 
             size="sm" 
             className={isUrgent ? '' : 'bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-md'}
-            onClick={() => navigate('/mi-suscripcion')}
+            onClick={handleActivateSubscription}
+            disabled={isActivating}
             data-testid="button-activate-subscription"
           >
-            <CreditCard className="h-4 w-4 mr-2" />
-            Activar suscripción
+            {isActivating ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <CreditCard className="h-4 w-4 mr-2" />
+            )}
+            {isActivating ? 'Procesando...' : 'Activar suscripción'}
           </Button>
         </AlertDescription>
       </Alert>
@@ -77,11 +131,16 @@ export function TrialAlert() {
           </span>
           <Button 
             size="sm" 
-            onClick={() => navigate('/mi-suscripcion')}
+            onClick={handleActivateSubscription}
+            disabled={isActivating}
             data-testid="button-pay-now"
           >
-            <CreditCard className="h-4 w-4 mr-2" />
-            Pagar ahora
+            {isActivating ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <CreditCard className="h-4 w-4 mr-2" />
+            )}
+            {isActivating ? 'Procesando...' : 'Pagar ahora'}
           </Button>
         </AlertDescription>
       </Alert>
@@ -98,11 +157,16 @@ export function TrialAlert() {
           </span>
           <Button 
             size="sm" 
-            onClick={() => navigate('/mi-suscripcion')}
+            onClick={handleActivateSubscription}
+            disabled={isActivating}
             data-testid="button-reactivate"
           >
-            <CreditCard className="h-4 w-4 mr-2" />
-            Reactivar cuenta
+            {isActivating ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <CreditCard className="h-4 w-4 mr-2" />
+            )}
+            {isActivating ? 'Procesando...' : 'Reactivar cuenta'}
           </Button>
         </AlertDescription>
       </Alert>
