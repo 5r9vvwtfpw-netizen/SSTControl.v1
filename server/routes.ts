@@ -23213,8 +23213,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.fontSize(7).font('Helvetica').fillColor('#999999')
         .text('Este documento es válido para efectos de cumplimiento ante el Ministerio del Trabajo y la ARL.', margin, currentY, { align: 'center', width: contentWidth });
 
-      // Add signature footer (no LSO required for management reports)
-      addSignatureFooter(doc, signers, false);
+      // REMOVED: Duplicate footer - ministry report has custom signatures above
+      //       // Add signature footer (no LSO required for management reports)
+      // REMOVED: Duplicate footer - ministry report has custom signatures above
+      //       addSignatureFooter(doc, signers, false);
 
       doc.end();
     } catch (error: any) {
