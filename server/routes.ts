@@ -6010,17 +6010,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
       
       
-      // Standard Header with logo, version control, and signatures
-      let currentY = setupPdfHeadersFooters({
+      // Preload company logo and get signers
+      const logoBuffer = await loadCompanyLogo(company?.logoUrl || null);
+      const signers = await getSignersForCompany(companyId);
+
+      // Standard Header with logo, version control
+      let currentY = await addStandardHeader({
         doc,
-        company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
+        company: company || { id: companyId, name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
         documentTitle: 'INFORME DE EVALUACIÓN SST',
-        documentCode: `SST-EVAL-${new Date(evaluation.evaluationDate).getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+        documentCode: `SST-EVAL-${evaluation.id.substring(0, 8).toUpperCase()}`,
         version: '1.0',
         date: new Date(evaluation.evaluationDate),
-        elaboro: elaboroName,
-        autorizo: autorizoName,
-        aprobo: aproboName
+        logoBuffer,
       });
 
       doc.y = currentY;
@@ -6148,22 +6150,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.moveDown(0.5);
       }
       
-      // Footer with signature section
-      doc.addPage();
-      doc.moveDown(10);
-      doc.fontSize(9).font('Helvetica-Bold').text('FIRMAS Y APROBACIONES', { align: 'center' });
-      doc.moveDown(2);
-      
-      // Signature lines
-      const signatureY = doc.y;
-      doc.fontSize(7).font('Helvetica').text('_________________________', 100, signatureY);
-      doc.text('_________________________', 350, signatureY);
-      doc.moveDown(0.5);
-      doc.text('Responsable de Evaluación', 100, doc.y);
-      doc.text('Coordinador SST', 350, doc.y);
-      doc.moveDown(2);
-      
-      doc.fontSize(9).font('Helvetica-Oblique').text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`, { align: 'center' });
+      // Agregar footer con firmantes ISO 45001:2018
+      await addSignatureFooter(doc, signers, false);
       
       // Finalize PDF
       doc.end();
@@ -9280,9 +9268,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Worker photo not needed for muestreo PDF
 
       // Standard Header
-      let currentY = setupPdfHeadersFooters({
+      let currentY = await addStandardHeader({
         doc,
         company: {
+          id: companyId,
           name: company.name,
           nit: company.nit,
           address: company.address,
@@ -9292,10 +9281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         documentCode: `SST-PRES-${new Date().getFullYear()}`,
         version: '1.0',
         date: new Date(),
-        elaboro: 'Responsable SST',
-        autorizo: company.legalRepName || 'Representante Legal',
-        aprobo: company.legalRepName || 'Gerencia General',
-        logoBuffer,
+        logoBuffer: logo,
       });
 
       currentY += 15;
@@ -9412,6 +9398,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text('• Decreto 1072 de 2015, Artículo 2.2.4.6.8, Numeral 4', margin + 10, currentY, { lineBreak: false });
       currentY += 12;
       doc.text('• Resolución 0312 de 2019 - Estándares Mínimos del SG-SST', margin + 10, currentY, { lineBreak: false });
+
+      // Agregar footer con firmantes ISO 45001:2018
+      await addSignatureFooter(doc, signers, false);
 
       doc.end();
 
@@ -9541,22 +9530,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Worker photo not needed for muestreo PDF
 
       // Standard Header with logo, company info, and version table
-      let currentY = setupPdfHeadersFooters({
+      let currentY = await addStandardHeader({
         doc,
         company: {
+          id: companyId,
           name: company.name,
           nit: company.nit,
           address: company.address,
           logoUrl: company.logoUrl,
         },
         documentTitle: 'ACTA DE ASIGNACIÓN DE RECURSOS SG-SST',
-        documentCode: `SST-REC-${new Date(allocation.date).getFullYear()}`,
+        documentCode: `SST-REC-${allocation.id.substring(0, 8).toUpperCase()}`,
         version: '1.0',
         date: new Date(allocation.date),
-        elaboro: elaboroName,
-        autorizo: autorizoName,
-        aprobo: aproboName,
-        logoBuffer,
+        logoBuffer: logo,
       });
 
       currentY += 10;
@@ -9677,7 +9664,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY = doc.y + 5;
       doc.text('• Resolución 0312 de 2019 - Estándares Mínimos del SG-SST', margin + 10, currentY);
 
-      // Footer is handled by setupPdfHeadersFooters automatically
+      // Agregar footer con firmantes ISO 45001:2018
+      await addSignatureFooter(doc, signers, false);
+
       doc.end();
 
     } catch (error: any) {
@@ -14896,9 +14885,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Setup standard headers and footers
       const fechaVerificacion = new Date(verificacion.fecha);
-      const startY = setupPdfHeadersFooters({
+      const startY = await addStandardHeader({
         doc,
         company: {
+          id: companyId,
           name: company.name,
           nit: company.nit || 'No registrado',
           address: company.address,
@@ -14908,12 +14898,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         documentCode: 'SST-VER-001',
         version: '1.0',
         date: fechaVerificacion,
-        elaboro: verificadoPorWorker?.name || 'Responsable SST',
-        autorizo: 'Representante Legal',
-        aprobo: 'Gerencia',
-        logoBuffer,
+        logoBuffer: logo,
       });
-      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       let currentY = startY;
       
       // Title with green bar
@@ -15127,6 +15132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`Documento generado automáticamente el: ${generationDate}`, margin, currentY, { width: contentWidth, align: 'center' });
       
       // Finalize PDF
+      await addSignatureFooter(doc, signers, false);
       doc.end();
       
     } catch (error: any) {
@@ -15684,17 +15690,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Worker photo not needed for muestreo PDF
       
       // Standard Header with logo, version control, and signatures at footer
-      let currentY = setupPdfHeadersFooters({
+      let currentY = await addStandardHeader({
         doc,
-        company,
+        company: {
+          id: companyId,
+          name: company.name,
+          nit: company.nit,
+          address: company.address,
+          logoUrl: company.logoUrl,
+        },
         documentTitle: 'INFORME DE TRABAJADORES FILTRADOS',
-        logoBuffer,
         documentCode: `SST-TF-${new Date().getFullYear()}`,
         version: '1.0',
         date: new Date(),
-        elaboro: 'Recursos Humanos',
-        autorizo: req.user?.username || 'Sistema',
-        aprobo: 'Coordinador SST'
+        logoBuffer: logo,
       });
 
       doc.y = currentY;
@@ -15806,6 +15815,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           { align: 'center' }
         );
 
+      await addSignatureFooter(doc, signers, false);
       doc.end();
 
     } catch (error: any) {
@@ -16519,19 +16529,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.pipe(res);
 
         // Load company logo for PDF header
-        const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
+        const logoBuffer = await loadCompanyLogo(company?.logoUrl);
+        const signers = await getSignersForCompany(companyId);
         
         // Standard Header with logo, version control, and signatures
-        let currentY = setupPdfHeadersFooters({
+        let currentY = await addStandardHeader({
           doc,
-          company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
+          company: company ? {
+            id: companyId,
+            name: company.name,
+            nit: company.nit || 'N/A',
+            address: company.address,
+            logoUrl: company.logoUrl,
+          } : { id: companyId, name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
           documentTitle: 'INFORME DE CONTRATOS Y DESIGNACIONES SST',
           documentCode: `SST-CD-${new Date().getFullYear()}`,
           version: '1.0',
           date: new Date(),
-          elaboro: 'Recursos Humanos',
-          autorizo: req.user?.username || 'Sistema',
-          aprobo: 'Gerencia',
           logoBuffer,
         });
 
@@ -16693,7 +16707,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // Finalize PDF (footer already drawn by generateStandardPdfHeader)
+        // Finalize PDF with signature footer
+        await addSignatureFooter(doc, signers, false);
         doc.end();
 
       } else if (reportType === "accidentes") {
@@ -16753,17 +16768,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Load company logo for standard header
         const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
 
+        // Get signers for standard footer
+        const signers = await getSignersForCompany(companyId, false);
+
         // Standard Header with logo, version control, and signatures
-        setupPdfHeadersFooters({
+        await addStandardHeader({
           doc,
           company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
           documentTitle: 'INFORME DE INDICADORES DE ACCIDENTALIDAD',
           documentCode: `SST-IA-${new Date().getFullYear()}`,
           version: '1.0',
           date: new Date(),
-          elaboro: 'Responsable SST',
-          autorizo: company?.legalRepName || 'Representante Legal',
-          aprobo: company?.legalRepName || 'Gerencia General',
           logoBuffer,
         });
 
@@ -16930,7 +16945,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           doc.y = rowY + 10;
         }
 
-        // Finalize PDF (footer already drawn by generateStandardPdfHeader)
+        // Add signature footer
+        addSignatureFooter(doc, signers, false);
+
+        // Finalize PDF
         doc.end();
 
       } else if (reportType === "capacitaciones") {
@@ -17219,17 +17237,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Load company logo for standard header
         const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
 
+        // Get signers for standard footer
+        const signers = await getSignersForCompany(companyId, false);
+
         // Standard Header with logo, version control, and signatures
-        setupPdfHeadersFooters({
+        await addStandardHeader({
           doc,
           company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
           documentTitle: 'INFORME DE INSPECCIONES DE SEGURIDAD',
           documentCode: `SST-INS-${new Date().getFullYear()}`,
           version: '1.0',
           date: new Date(),
-          elaboro: 'Responsable SST',
-          autorizo: company?.legalRepName || 'Representante Legal',
-          aprobo: company?.legalRepName || 'Gerencia General',
           logoBuffer,
         });
 
@@ -17405,7 +17423,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           doc.y = rowY + 10;
         }
 
-        // Finalize PDF (footer already drawn by generateStandardPdfHeader)
+        // Add signature footer
+        addSignatureFooter(doc, signers, false);
+
+        // Finalize PDF
         doc.end();
 
       } else if (reportType === "cumplimiento") {
@@ -17439,18 +17460,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Load company logo
         const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
 
+        // Get signers for standard footer
+        const signers = await getSignersForCompany(companyId, false);
+
         // Standard Header
-        let currentY = setupPdfHeadersFooters({
+        let currentY = await addStandardHeader({
           doc,
           company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
           documentTitle: 'INFORME DE CUMPLIMIENTO RESOLUCIÓN 0312/2019',
           documentCode: `SST-CUM-${new Date().getFullYear()}`,
           version: '1.0',
           date: new Date(),
-          elaboro: 'Seguridad y Salud en el Trabajo',
-          autorizo: req.user?.username || 'Sistema',
-          aprobo: 'Gerencia',
-          logoBuffer
+          logoBuffer,
         });
         doc.y = currentY;
 
@@ -17586,7 +17607,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Finalize PDF (footer already drawn by generateStandardPdfHeader)
+        // Add signature footer
+        addSignatureFooter(doc, signers, false);
+
+        // Finalize PDF
         doc.end();
 
       } else if (reportType === "mensual") {
@@ -17633,21 +17657,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.setHeader('Content-Disposition', `attachment; filename="Informe-Mensual-${monthNames[currentMonth]}-${currentYear}.pdf"`);
         doc.pipe(res);
 
-        // Load company logo
+        // Load company logo and signers
         const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
+        const signers = await getSignersForCompany(companyId);
         
         // Standard Header
-        let currentY = setupPdfHeadersFooters({
+        let currentY = await addStandardHeader({
           doc,
-          company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
+          company: company || { id: companyId, name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
           documentTitle: `INFORME EJECUTIVO MENSUAL SST - ${monthNames[currentMonth].toUpperCase()} ${currentYear}`,
           documentCode: `SST-MEN-${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`,
           version: '1.0',
           date: new Date(),
-          elaboro: 'Seguridad y Salud en el Trabajo',
-          autorizo: req.user?.username || 'Sistema',
-          aprobo: 'Gerencia',
-          logoBuffer
+          logoBuffer,
         });
         doc.y = currentY;
 
@@ -17788,7 +17810,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Finalize PDF (footer already drawn by generateStandardPdfHeader)
+        // Add signature footer
+        await addSignatureFooter(doc, signers, false);
+        
         doc.end();
 
       } else {
@@ -18859,20 +18883,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.pipe(res);
 
-      // Preload company logo and worker photo from Object Storage
+      // Preload company logo and signers
       const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
+      const signers = await getSignersForCompany(user.companyId);
 
       // Standard Header with logo, version control, and signatures
-      let currentY = setupPdfHeadersFooters({
+      let currentY = await addStandardHeader({
         doc,
-        company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
+        company: company || { id: user.companyId, name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
         documentTitle: 'INVENTARIO DE SUSTANCIAS QUÍMICAS PELIGROSAS',
         documentCode: `SST-SQP-${new Date().getFullYear()}-001`,
         version: '1.0',
         date: new Date(),
-        elaboro: 'Responsable Químicos',
-        autorizo: req.user?.username || 'Sistema',
-        aprobo: 'Coordinador SST'
+        logoBuffer,
       });
 
       // Summary section
@@ -19086,22 +19109,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.pipe(res);
 
-      // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      // Preload company logo and signers
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
       const signers = await getSignersForCompany(companyId);
-      // Worker photo not needed for muestreo PDF
 
       // Standard Header with logo, version control, and signatures
-      let currentY = setupPdfHeadersFooters({
+      let currentY = await addStandardHeader({
         doc,
         company,
         documentTitle: 'INFORME DE MEDICIÓN AMBIENTAL OCUPACIONAL',
         documentCode: `SST-MA-${new Date(measurement.measurementDate).getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
         version: '1.0',
         date: new Date(measurement.measurementDate),
-        elaboro: measurement.measuredBy || 'Técnico Ambiental',
-        autorizo: req.user?.username || 'Sistema',
-        aprobo: 'Coordinador SST'
+        logoBuffer,
       });
 
       doc.y = currentY;
@@ -19181,6 +19201,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       doc.moveDown(0.3);
       doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}`, { align: 'center' });
+
+      // Add signature footer
+      await addSignatureFooter(doc, signers, false);
 
       doc.end();
     } catch (error: any) {
