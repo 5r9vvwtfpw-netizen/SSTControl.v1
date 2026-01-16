@@ -12488,8 +12488,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           const workerName = hrw.worker ? hrw.worker.name : 'N/A';
           const actividadLabel = actividadesAltoRiesgo[hrw.actividadRiesgo || ''] || hrw.actividadRiesgo || 'N/A';
-          const porcentaje = hrw.porcentajeCotizacion ? `${hrw.porcentajeCotizacion}%` : 'N/A';
-          const ultimoMes = hrw.ultimoMesPago || 'Sin registro';
+          const porcentaje = hrw.porcentajeCotizacionEspecial ? `${hrw.porcentajeCotizacionEspecial}%` : 'N/A';
+          const ultimoMes = hrw.ultimoMesPagado || 'Sin registro';
           const estado = hrw.cumpleCotizacion ? 'Cumple' : 'No Cumple';
           const observaciones = hrw.observaciones || '';
           
