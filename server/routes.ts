@@ -25196,7 +25196,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ==================== PÁGINA 2: CRONOGRAMA ====================
       if (actividades.length > 0) {
         doc.addPage();
-        currentY = 50;
+        
+        // Agregar encabezado en página 2
+        currentY = await addStandardHeader({
+          doc,
+          company: {
+            id: companyId,
+            name: company.name,
+            nit: company.nit || 'N/A',
+            address: company.address,
+            logoUrl: company.logoUrl
+          },
+          documentTitle: 'PLAN DE TRABAJO ANUAL SG-SST',
+          documentCode: `SST-PTA-${plan.anio}`,
+          version: '1.0',
+          date: new Date(),
+          logoBuffer: logo,
+        });
+        currentY += 10;
 
         doc.fontSize(12).font('Helvetica-Bold').fillColor('#1e7e34')
           .text('CRONOGRAMA DE ACTIVIDADES', margin, currentY, { width: contentWidth, align: 'center' });
@@ -25227,7 +25244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const bgColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
           doc.rect(margin, currentY, contentWidth, rowHeight).fill(bgColor).stroke('#e0e0e0');
           
-          let nombreActividad = actividad.nombre || '';
+          let nombreActividad = actividad.actividad || actividad.nombre || actividad.descripcion || 'Sin nombre';
           if (nombreActividad.length > 60) {
             nombreActividad = nombreActividad.substring(0, 57) + '...';
           }
