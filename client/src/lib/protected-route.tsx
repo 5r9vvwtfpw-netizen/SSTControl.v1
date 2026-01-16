@@ -1,0 +1,84 @@
+import { useAuth } from "@/hooks/use-auth";
+import { Loader2 } from "lucide-react";
+import { Redirect, Route } from "wouter";
+import { canAccessRoute } from "@shared/route-permissions";
+import { getRolePermissions } from "@shared/permissions";
+import { useMemo } from "react";
+
+export function ProtectedRoute({
+  path,
+  component: Component,
+}: {
+  path: string;
+  component: () => React.JSX.Element;
+}) {
+  const { user, isLoading } = useAuth();
+  
+  const userPermissions = useMemo(() => {
+    if (!user?.role) return [];
+    return getRolePermissions(user.role);
+  }, [user?.role]);
+
+  const hasAccess = useMemo(() => {
+    if (!user) return false;
+    return canAccessRoute(userPermissions, path);
+  }, [userPermissions, path, user]);
+
+  if (isLoading) {
+    return (
+      <Route path={path}>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin text-border" />
+        </div>
+      </Route>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Route path={path}>
+        <Redirect to="/auth" />
+      </Route>
+    );
+  }
+
+  // SUPERUSUARIO sin empresa: Redirigir a crear empresa (onboarding)
+  // Excepto si ya están en la página de crear empresa
+  if (user.role === "superusuario" && !user.companyId && path !== "/crear-empresa") {
+    return (
+      <Route path={path}>
+        <Redirect to="/crear-empresa" />
+      </Route>
+    );
+  }
+
+  // TRABAJADORES: Solo pueden acceder al Portal de Empleados y rutas de capacitación COPASST
+  const trabajadorAllowedPaths = ["/portal-empleados", "/capacitacion-copasst"];
+  if (user.role === "trabajador" && !trabajadorAllowedPaths.includes(path)) {
+    return (
+      <Route path={path}>
+        <Redirect to="/portal-empleados" />
+      </Route>
+    );
+  }
+
+  // LSO (Licenciados): Pueden acceder a su portal y a rutas SST, pero redirigir desde "/" a su portal
+  if (user.role === "lso" && path === "/") {
+    return (
+      <Route path={path}>
+        <Redirect to="/portal-licenciado" />
+      </Route>
+    );
+  }
+
+  // Si no tiene acceso a la ruta, redirigir a la página principal
+  if (!hasAccess) {
+    return (
+      <Route path={path}>
+        <Redirect to="/" />
+      </Route>
+    );
+  }
+
+  return <Route path={path} component={Component} />;
+}

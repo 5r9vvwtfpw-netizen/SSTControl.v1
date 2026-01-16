@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Ayuda - SG-SST Colombia</title>
+    <meta name="description" content="Manual de usuario y centro de ayuda del Sistema de Gestión de Seguridad y Salud en el Trabajo para Colombia">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: hsl(145, 63%, 25%);
+            --primary-light: hsl(145, 63%, 35%);
+            --primary-dark: hsl(145, 63%, 15%);
+            --success: hsl(142, 71%, 45%);
+            --warning: hsl(38, 92%, 50%);
+            --danger: hsl(0, 84%, 60%);
+            --neutral: hsl(220, 14%, 96%);
+            --text: hsl(220, 9%, 16%);
+            --border: hsl(220, 14%, 90%);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background: linear-gradient(135deg, var(--neutral) 0%, hsl(145, 20%, 98%) 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 3rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .search-box {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 3rem;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .search-box input:focus {
+            border-color: var(--primary);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid var(--border);
+        }
+        
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+        
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary-dark);
+        }
+        
+        .card p {
+            margin-bottom: 1.5rem;
+            color: hsl(220, 9%, 40%);
+        }
+        
+        .card ul {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        
+        .card li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: bold;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: background 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .quick-links {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .quick-links h3 {
+            color: var(--primary-dark);
+            margin-bottom: 1rem;
+        }
+        
+        .quick-links ul {
+            list-style: none;
+        }
+        
+        .quick-links li {
+            margin-bottom: 0.75rem;
+        }
+        
+        .quick-links a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        
+        .quick-links a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: hsl(220, 9%, 40%);
+            margin-top: 4rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>
+                <span class="icon">📚</span>
+                Centro de Ayuda SG-SST
+            </h1>
+            <p>Sistema de Gestión de Seguridad y Salud en el Trabajo - Colombia</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="search-box">
+            <input 
+                type="text" 
+                placeholder="Buscar en la documentación... (ej: cómo crear un trabajador)" 
+                id="searchInput"
+                aria-label="Buscar ayuda"
+            >
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <div class="card-icon">📖</div>
+                <h3>Manual de Usuario</h3>
+                <p>Guía completa del sistema con instrucciones paso a paso para cada módulo.</p>
+                <ul>
+                    <li>Configuración inicial</li>
+                    <li>Gestión de empresas y usuarios</li>
+                    <li>Todos los módulos SST</li>
+                    <li>Roles y permisos</li>
+                </ul>
+                <a href="/docs/manual/manual-usuario-completo.pdf" class="btn" download>Descargar Manual PDF</a>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">🎥</div>
+                <h3>Tutoriales</h3>
+                <p>Aprende rápidamente con nuestras guías paso a paso por módulo.</p>
+                <ul>
+                    <li>Primeros pasos</li>
+                    <li>Gestión de trabajadores</li>
+                    <li>Registro de accidentes</li>
+                    <li>Evaluaciones SST</li>
+                </ul>
+                <a href="/docs/tutoriales/" class="btn">Ver Tutoriales</a>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">❓</div>
+                <h3>Preguntas Frecuentes</h3>
+                <p>Respuestas rápidas a las dudas más comunes sobre el sistema.</p>
+                <ul>
+                    <li>¿Cómo crear una empresa?</li>
+                    <li>¿Cómo subir el logo?</li>
+                    <li>¿Qué son los 7 estándares?</li>
+                    <li>Problemas comunes</li>
+                </ul>
+                <a href="/docs/faq/preguntas-frecuentes.html" class="btn">Ver FAQ</a>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">📋</div>
+                <h3>Guías Rápidas</h3>
+                <p>PDFs cortos con instrucciones específicas para tareas comunes.</p>
+                <ul>
+                    <li>Crear un trabajador</li>
+                    <li>Registrar un contrato</li>
+                    <li>Reportar un accidente</li>
+                    <li>Generar informes</li>
+                </ul>
+                <a href="/docs/tutoriales/" class="btn">Ver Guías</a>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">⚖️</div>
+                <h3>Marco Legal</h3>
+                <p>Información sobre normatividad colombiana aplicable.</p>
+                <ul>
+                    <li>Resolución 0312/2019</li>
+                    <li>Decreto 1072/2015</li>
+                    <li>ISO 45001:2018</li>
+                    <li>Ciclo PHVA</li>
+                </ul>
+                <a href="/docs/manual/marco-legal.pdf" class="btn-outline btn" download>Descargar PDF</a>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">📞</div>
+                <h3>Soporte Técnico</h3>
+                <p>¿Necesitas ayuda adicional? Contáctanos directamente.</p>
+                <ul>
+                    <li>Email: soporte@sst.com.co</li>
+                    <li>WhatsApp: +57 300 123 4567</li>
+                    <li>Horario: Lun-Vie 8am-6pm</li>
+                    <li>Tiempo respuesta: 24h</li>
+                </ul>
+                <a href="mailto:soporte@sst.com.co" class="btn">Contactar Soporte</a>
+            </div>
+        </div>
+        
+        <div class="quick-links">
+            <h3>Enlaces Rápidos</h3>
+            <ul>
+                <li><a href="/">← Volver al Sistema</a></li>
+                <li><a href="/docs/manual/guia-rapida.pdf" download>Guía Rápida de Inicio (PDF)</a></li>
+                <li><a href="/docs/tutoriales/01-configuracion-inicial.html">Tutorial: Configuración Inicial</a></li>
+                <li><a href="/docs/tutoriales/02-gestion-trabajadores.html">Tutorial: Gestión de Trabajadores</a></li>
+                <li><a href="/docs/faq/preguntas-frecuentes.html">Preguntas Frecuentes</a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 SG-SST Colombia - Sistema de Gestión de Seguridad y Salud en el Trabajo</p>
+        <p>Versión 1.0 - Conforme a Resolución 0312/2019 y Decreto 1072/2015</p>
+    </footer>
+    
+    <script>
+        // Simple search functionality
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            // This is a placeholder - in a real implementation, 
+            // you would filter the content or redirect to a search page
+            console.log('Buscando:', searchTerm);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagrama Entidad-Relación - SST Colombia</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #1a5f2a; border-bottom: 3px solid #1a5f2a; padding-bottom: 10px; }
+        h2 { color: #2d7a3e; margin-top: 40px; border-left: 4px solid #2d7a3e; padding-left: 15px; }
+        h3 { color: #444; }
+        .header-info {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .diagram-box {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th { background: #1a5f2a; color: white; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        tr:hover { background: #e8f5e9; }
+        .module-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-primary { background: #1a5f2a; color: white; }
+        .badge-secondary { background: #6c757d; color: white; }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            color: #666;
+        }
+        @media print {
+            body { background: white; }
+            .diagram-box { background: #f5f5f5; color: #333; }
+        }
+    </style>
+</head>
+<body>
+    <h1>DIAGRAMA ENTIDAD-RELACIÓN - SST COLOMBIA</h1>
+    <div class="header-info">
+        <strong>Sistema de Gestión de Seguridad y Salud en el Trabajo</strong><br>
+        <strong>Fecha de generación:</strong> 30 de diciembre de 2025<br>
+        <strong>Total de tablas:</strong> <span class="badge badge-primary">144</span>
+    </div>
+
+    <h2>1. NÚCLEO DEL SISTEMA</h2>
+    <div class="module-card">
+        <div class="diagram-box">┌─────────────────────────────────────────────────────────────────────────────┐
+│                              COMPANIES                                       │
+│  (Empresas - Tabla central)                                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  id (PK), name, nit, legal_rep, industry, address, phone, email             │
+│  risk_level, worker_count, subscription_plan, logo_url, created_at          │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ├────────────────────────────────────────────────────────────────────┐
+         │                                                                    │
+         ▼                                                                    ▼
+┌─────────────────────────┐                              ┌─────────────────────────┐
+│        USERS            │                              │       WORKERS           │
+├─────────────────────────┤                              ├─────────────────────────┤
+│ id (PK)                 │                              │ id (PK)                 │
+│ company_id (FK)         │                              │ company_id (FK)         │
+│ username, password      │                              │ first_name, last_name   │
+│ email, full_name        │                              │ document_type, document │
+│ role (11 niveles RBAC)  │                              │ position, department    │
+│ permissions (JSON)      │                              │ hire_date, contract_type│
+│ created_at              │                              │ email, phone, user_id   │
+└─────────────────────────┘                              └─────────────────────────┘</div>
+
+        <h3>Roles del Sistema (11 niveles RBAC)</h3>
+        <table>
+            <tr><th>#</th><th>Rol</th><th>Descripción</th></tr>
+            <tr><td>1</td><td>superadmin</td><td>Proveedor SaaS</td></tr>
+            <tr><td>2</td><td>admin</td><td>Administrador de empresa</td></tr>
+            <tr><td>3</td><td>responsable_sst</td><td>Responsable SST</td></tr>
+            <tr><td>4</td><td>coordinador</td><td>Coordinador</td></tr>
+            <tr><td>5</td><td>supervisor</td><td>Supervisor</td></tr>
+            <tr><td>6</td><td>medico</td><td>Médico ocupacional</td></tr>
+            <tr><td>7</td><td>auditor</td><td>Auditor interno</td></tr>
+            <tr><td>8</td><td>empleado</td><td>Empleado</td></tr>
+            <tr><td>9</td><td>contratista</td><td>Contratista</td></tr>
+            <tr><td>10</td><td>visitante</td><td>Visitante</td></tr>
+            <tr><td>11</td><td>soporte</td><td>Soporte técnico</td></tr>
+        </table>
+    </div>
+
+    <h2>2. MÓDULO EVALUACIÓN INICIAL SST (Resolución 0312/2019)</h2>
+    <div class="module-card">
+        <div class="diagram-box">┌─────────────────────────┐
+│   COMPONENTES_SST       │ ◄── Datos Seed (7 componentes PHVA)
+│   id, numero, nombre    │
+│   descripcion           │
+│   peso_total, orden     │
+└───────────┬─────────────┘
+            │ 1:N
+            ▼
+┌─────────────────────────┐
+│    ESTANDARES_SST       │ ◄── Datos Seed (60 estándares mínimos)
+│   id, componente_id(FK) │
+│   numero_estandar       │
+│   nombre, descripcion   │
+│   puntaje_tipo1-4       │
+│   marco_legal           │
+└───────────┬─────────────┘
+            │ N:1
+            ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         EVALUACIONES_SST                                     │
+│  id (PK), company_id (FK)                                                    │
+│  anio, mes, tipo_empresa, estado                                             │
+│  puntaje_total, puntaje_maximo, porcentaje_cumplimiento, nivel_cumplimiento │
+│  responsable_nombre, responsable_cargo, fecha_evaluacion                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │                                            │
+         │ 1:N                                        │ 1:N
+         ▼                                            ▼
+┌────────────────────────────────────────┐  ┌────────────────────────────────────┐
+│      RESPUESTAS_ESTANDARES             │  │        ACCIONES_MEJORA             │
+│  id (PK)                               │  │  id (PK)                           │
+│  evaluacion_id (FK)                    │  │  evaluacion_id (FK)                │
+│  estandar_id (FK)                      │  │  respuesta_estandar_id (FK)        │
+│  cumple (0/1)                          │  │  descripcion_accion                │
+│  no_aplica (0/1)                       │  │  tipo_accion, prioridad            │
+│  puntaje_obtenido, puntaje_maximo      │  │  responsable, estado               │
+│  evidencias, hallazgo                  │  │  fecha_compromiso                  │
+└────────────────────────────────────────┘  │  porcentaje_avance (0-100)         │
+                                            └────────────────────────────────────┘</div>
+
+        <h3>Tipos de Empresa según Resolución 0312/2019</h3>
+        <table>
+            <tr><th>Tipo</th><th>Descripción</th><th>Estándares</th></tr>
+            <tr><td>tipo1</td><td>Capítulo I - ≤10 trabajadores, riesgo I-III</td><td>7 estándares</td></tr>
+            <tr><td>tipo2</td><td>Capítulo II - 11-50 riesgo I-III ó ≤10 riesgo IV-V</td><td>21 estándares</td></tr>
+            <tr><td>tipo3</td><td>Capítulo III - >50 trabajadores, riesgo I-III</td><td>60 estándares</td></tr>
+            <tr><td>tipo4</td><td>Capítulo III - >50 trabajadores ó 11-50 riesgo IV-V</td><td>60 estándares</td></tr>
+        </table>
+    </div>
+
+    <h2>3. MÓDULO GESTIÓN DE TRABAJADORES</h2>
+    <div class="module-card">
+        <div class="diagram-box">┌─────────────────────────┐
+│       WORKERS           │
+│  id, company_id (FK)    │
+│  first_name, last_name  │
+│  document_type, document│
+│  position, department   │
+│  hire_date, contract    │
+│  email, phone           │
+│  user_id (FK → users)   │
+│  status                 │
+└───────────┬─────────────┘
+            │
+    ┌───────┼───────┬───────────────┬───────────────┬───────────────┐
+    ▼       ▼       ▼               ▼               ▼               ▼
+┌─────────┐┌─────────┐┌─────────────┐┌─────────────┐┌─────────────┐┌─────────────┐
+│JOB_     ││CONTRACTS││MEDICAL_     ││HIGH_RISK_   ││TRABAJADORES_││AFILIACIONES_│
+│PROFILES ││         ││EXAMS        ││WORKERS      ││ALTO_RIESGO  ││SSSS         │
+│         ││         ││             ││             ││             ││             │
+│Perfiles ││Contratos││Exámenes     ││Alto riesgo  ││Asignación   ││Afiliaciones │
+│de cargo ││laborales││ocupacionales││             ││de riesgo    ││Seg. Social  │
+└─────────┘└─────────┘└─────────────┘└─────────────┘└─────────────┘└─────────────┘</div>
+    </div>
+
+    <h2>4. MÓDULO CAPACITACIONES</h2>
+    <div class="module-card">
+        <div class="diagram-box">┌─────────────────────────────────────┐
+│       PROGRAMAS_CAPACITACION        │ ◄── Programa anual de capacitación
+│  id, company_id, anio               │
+│  nombre, descripcion, estado        │
+└───────────────┬─────────────────────┘
+                │ 1:N
+                ▼
+┌─────────────────────────────────────┐
+│       CAPACITACION_EVENTOS          │ ◄── Eventos de capacitación
+│  id, programa_id (FK)               │
+│  titulo, descripcion                │
+│  fecha_evento, instructor           │
+│  modalidad, estado                  │
+└───────────────┬─────────────────────┘
+                │ 1:N
+                ▼
+┌─────────────────────────────────────┐
+│     CAPACITACION_ASISTENTES         │
+│  id, evento_id (FK)                 │
+│  trabajador_id (FK)                 │
+│  estado (invitado, confirmado,      │
+│          asistio, no_asistio)       │
+│  confirmado_at, asistio_at          │
+└─────────────────────────────────────┘</div>
+    </div>
+
+    <h2>5. MÓDULO COPASST (Comité Paritario de SST)</h2>
+    <div class="module-card">
+        <div class="diagram-box">┌─────────────────────────────────────┐
+│       COPASST_PERIODOS              │ ◄── Períodos del comité (2 años)
+│  id, company_id                     │
+│  fecha_inicio, fecha_fin            │
+│  estado (activo, finalizado)        │
+└───────────────┬─────────────────────┘
+                │
+    ┌───────────┼───────────┬───────────────┐
+    ▼           ▼           ▼               ▼
+┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────────┐
+│COPASST_ │ │COPASST_ │ │COPASST_ │ │COPASST_     │
+│MIEMBROS │ │ELECCIONES│ │ACTAS   │ │CANDIDATOS   │
+│         │ │          │ │        │ │             │
+│Miembros │ │Proceso   │ │Actas   │ │Candidatos   │
+│titulares│ │electoral │ │reunión │ │inscritos    │
+└─────────┘ └────┬─────┘ └────────┘ └─────────────┘
+                 │
+         ┌───────┼───────┐
+         ▼       ▼       ▼
+    ┌─────────┐┌─────────┐┌─────────────────┐
+    │COPASST_ ││COPASST_ ││COPASST_REGISTRO_│
+    │VOTOS    ││REGISTRO_││VOTACION         │
+    │         ││VOTACION ││                 │
+    │Votos    ││Control  ││                 │
+    │emitidos ││votación ││                 │
+    └─────────┘└─────────┘└─────────────────┘</div>
+    </div>
+
+    <h2>6. MÓDULO FORMACIÓN VIRTUAL (Gamificación)</h2>
+    <div class="module-card">
+        <div class="diagram-box">┌─────────────────────────────────────┐
+│    COPASST_CURSO_CATEGORIAS         │ ◄── Categorías de cursos
+└───────────────┬─────────────────────┘
+                │ 1:N
+                ▼
+┌─────────────────────────────────────┐
+│        COPASST_CURSOS               │ ◄── CMS de cursos virtuales
+│  id, categoria_id (FK)              │
+│  titulo, descripcion                │
+│  duracion_estimada, nivel           │
+│  puntos_completar, target_roles     │
+└───────────────┬─────────────────────┘
+                │ 1:N
+                ▼
+┌─────────────────────────────────────┐
+│       COPASST_LECCIONES             │ ◄── Lecciones del curso
+│  id, curso_id (FK)                  │
+│  titulo, contenido (HTML/MD)        │
+│  tipo (texto, video, quiz)          │
+└───────────────┬─────────────────────┘
+                │
+        ┌───────┴───────┐
+        ▼               ▼
+┌─────────────────┐ ┌─────────────────────────┐
+│COPASST_PROGRESO │ │COPASST_QUIZ_PREGUNTAS   │
+│                 │ │                         │
+│Avance usuario   │ │Preguntas de evaluación  │
+└─────────────────┘ └─────────────────────────┘
+
+GAMIFICACIÓN:
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│COPASST_INSIGNIAS│  │COPASST_RACHAS_  │  │COPASST_PUNTOS_  │
+│(Badges)         │  │USUARIO (Streaks)│  │MENSUALES        │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
+                              ▼
+                     ┌─────────────────┐
+                     │COPASST_         │
+                     │CERTIFICADOS     │
+                     └─────────────────┘</div>
+    </div>
+
+    <h2>7. MÓDULO ACCIDENTES E INCIDENTES</h2>
+    <div class="module-card">
+        <div class="diagram-box">┌─────────────────────────────────────┐
+│          ACCIDENTS                  │ ◄── Registro de accidentes
+│  id, company_id (FK)                │
+│  worker_id (FK)                     │
+│  date, type, severity               │
+│  description, causes                │
+│  corrective_actions, days_lost      │
+└───────────────┬─────────────────────┘
+                │
+        ┌───────┴───────┐
+        ▼               ▼
+┌─────────────────┐ ┌─────────────────────────┐
+│ACCIDENT_        │ │OCCUPATIONAL_DISEASES    │
+│STATISTICS       │ │                         │
+│                 │ │Enfermedades laborales   │
+│Estadísticas AT  │ │                         │
+└─────────────────┘ └─────────────────────────┘</div>
+    </div>
+
+    <h2>8. MÓDULO IPERC</h2>
+    <div class="module-card">
+        <div class="diagram-box">┌─────────────────────────────────────┐
+│        MATRICES_IPERC               │ ◄── Matrices de peligros
+│  id, company_id (FK)                │
+│  nombre, proceso, area              │
+│  fecha_elaboracion                  │
+└───────────────┬─────────────────────┘
+                │ 1:N
+                ▼
+┌─────────────────────────────────────┐
+│       PELIGROS_IPERC                │ ◄── Peligros identificados
+│  id, matriz_id (FK)                 │
+│  actividad, peligro                 │
+│  nivel_probabilidad                 │
+│  nivel_consecuencia                 │
+│  nivel_riesgo                       │
+│  medidas_intervencion               │
+└─────────────────────────────────────┘</div>
+    </div>
+
+    <h2>9. MÓDULO EMERGENCIAS</h2>
+    <div class="module-card">
+        <div class="diagram-box">┌─────────────────────────────────────┐
+│       PLANES_EMERGENCIA             │ ◄── Plan de emergencias
+│  id, company_id (FK)                │
+│  nombre, version                    │
+│  objetivo, alcance                  │
+└───────────────┬─────────────────────┘
+                │
+    ┌───────────┼───────────┬───────────────┬───────────────┐
+    ▼           ▼           ▼               ▼               ▼
+┌─────────┐ ┌─────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+│AMENAZAS_│ │ANALISIS_│ │BRIGADAS_    │ │RECURSOS_    │ │RUTAS_       │
+│IDENTIF. │ │VULNERAB.│ │EMERGENCIA   │ │EMERGENCIA   │ │EVACUACION   │
+└─────────┘ └─────────┘ └──────┬──────┘ └─────────────┘ └─────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────┐
+│         SIMULACROS                  │
+│  → PARTICIPANTES_SIMULACRO          │
+└─────────────────────────────────────┘</div>
+    </div>
+
+    <h2>10. MÓDULO FACTURACIÓN</h2>
+    <div class="module-card">
+        <div class="diagram-box">┌─────────────────────────────────────┐
+│      SUBSCRIPTION_PLANS             │ ◄── Planes (micro, pequeña, mediana, grande)
+│  id, name, price_monthly            │
+│  worker_limit, features             │
+│  stripe_price_id                    │
+└───────────────┬─────────────────────┘
+                │ 1:N
+                ▼
+┌─────────────────────────────────────┐
+│        SUBSCRIPTIONS                │ ◄── Suscripciones activas
+│  id, company_id (FK)                │
+│  plan_id (FK)                       │
+│  status, trial_ends_at              │
+│  stripe_subscription_id             │
+└───────────────┬─────────────────────┘
+                │ 1:N
+                ▼
+┌─────────────────────────────────────┐
+│          INVOICES                   │ ◄── Facturas generadas
+│  id, subscription_id (FK)           │
+│  invoice_number, amount             │
+│  status, stripe_invoice_id          │
+└─────────────────────────────────────┘</div>
+    </div>
+
+    <h2>RESUMEN POR MÓDULOS</h2>
+    <div class="module-card">
+        <table>
+            <tr><th>#</th><th>Módulo</th><th>Tablas</th><th>Descripción</th></tr>
+            <tr><td>1</td><td>Núcleo</td><td>3</td><td>Companies, Users, Workers</td></tr>
+            <tr><td>2</td><td>Evaluación SST</td><td>5</td><td>Estándares mínimos Res. 0312/2019</td></tr>
+            <tr><td>3</td><td>Trabajadores</td><td>6</td><td>Perfiles, contratos, exámenes</td></tr>
+            <tr><td>4</td><td>Capacitaciones</td><td>8</td><td>Programas, eventos, asistencia</td></tr>
+            <tr><td>5</td><td>COPASST</td><td>14</td><td>Períodos, elecciones, actas</td></tr>
+            <tr><td>6</td><td>Convivencia</td><td>10</td><td>Comité de convivencia laboral</td></tr>
+            <tr><td>7</td><td>Formación Virtual</td><td>18</td><td>CMS, gamificación, certificados</td></tr>
+            <tr><td>8</td><td>Evaluación 360°</td><td>5</td><td>Evaluación de competencias</td></tr>
+            <tr><td>9</td><td>Accidentes</td><td>4</td><td>AT, EL, estadísticas</td></tr>
+            <tr><td>10</td><td>IPERC</td><td>3</td><td>Matrices de peligros</td></tr>
+            <tr><td>11</td><td>Emergencias</td><td>12</td><td>Planes, brigadas, simulacros</td></tr>
+            <tr><td>12</td><td>Auditorías</td><td>4</td><td>Auditorías internas</td></tr>
+            <tr><td>13</td><td>Revisión Dirección</td><td>4</td><td>Reuniones de revisión</td></tr>
+            <tr><td>14</td><td>Indicadores</td><td>3</td><td>KPIs del SG-SST</td></tr>
+            <tr><td>15</td><td>Documentos</td><td>5</td><td>Gestión documental</td></tr>
+            <tr><td>16</td><td>Facturación</td><td>8</td><td>Suscripciones Stripe</td></tr>
+            <tr><td>17</td><td>EVS</td><td>6</td><td>Estilos vida saludable</td></tr>
+            <tr><td>18</td><td>PESV</td><td>8</td><td>Seguridad vial</td></tr>
+            <tr><td>19</td><td>Soporte</td><td>5</td><td>Tickets y accesos</td></tr>
+            <tr><td>20</td><td>Comunicaciones</td><td>5</td><td>Mensajería y notificaciones</td></tr>
+            <tr><td>21</td><td>Otros</td><td>18</td><td>Módulos adicionales</td></tr>
+            <tr style="background:#e8f5e9; font-weight:bold;"><td></td><td>TOTAL</td><td>144</td><td></td></tr>
+        </table>
+    </div>
+
+    <h2>NOTAS TÉCNICAS</h2>
+    <div class="module-card">
+        <h3>Almacenamiento de Archivos</h3>
+        <ul>
+            <li><strong>Amazon S3:</strong> Bucket <code>sst-colombia-archivos-2026</code></li>
+            <li><strong>Retención:</strong> 20 años (Decreto 1072 de 2015)</li>
+        </ul>
+
+        <h3>Base de Datos</h3>
+        <ul>
+            <li><strong>Motor:</strong> PostgreSQL (Neon)</li>
+            <li><strong>ORM:</strong> Drizzle ORM</li>
+        </ul>
+
+        <h3>Autenticación</h3>
+        <ul>
+            <li><strong>Método:</strong> Passport.js con sesiones</li>
+            <li><strong>Hash:</strong> Scrypt</li>
+            <li><strong>RBAC:</strong> 11 niveles de roles</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        <p><strong>SST Colombia v1.0</strong><br>
+        Documento generado automáticamente - 30 de diciembre de 2025</p>
+    </div>
+</body>
+</html>

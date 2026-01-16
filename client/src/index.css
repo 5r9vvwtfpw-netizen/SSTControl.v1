@@ -1,0 +1,665 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* LIGHT MODE */
+:root {
+  --button-outline: rgba(0,0,0, .10);
+  --badge-outline: rgba(0,0,0, .05);
+
+  /* Automatic computation of border around primary / danger buttons */
+  --opaque-button-border-intensity: -8; /* In terms of percentages */
+
+  /* Backgrounds applied on top of other backgrounds when hovered/active */
+  --elevate-1: rgba(0,0,0, .03);
+  --elevate-2: rgba(0,0,0, .08);
+
+  --background: 220 14% 96%;
+
+  --foreground: 220 9% 16%;
+
+  --border: 220 13% 91%;
+
+  --card: 220 14% 94%;
+
+  --card-foreground: 220 9% 16%;
+
+  --card-border: 220 13% 88%;
+
+  --sidebar: 220 14% 92%;
+
+  --sidebar-foreground: 220 9% 16%;
+
+  --sidebar-border: 220 13% 86%;
+
+  --sidebar-primary: 145 63% 28%;
+
+  --sidebar-primary-foreground: 145 63% 98%;
+
+  --sidebar-accent: 220 12% 88%;
+
+  --sidebar-accent-foreground: 220 9% 16%;
+
+  --sidebar-ring: 145 63% 28%;
+
+  --popover: 220 14% 90%;
+
+  --popover-foreground: 220 9% 16%;
+
+  --popover-border: 220 13% 84%;
+
+  --primary: 145 63% 28%;
+
+  --primary-foreground: 145 63% 98%;
+
+  --secondary: 220 12% 85%;
+
+  --secondary-foreground: 220 9% 16%;
+
+  --muted: 220 14% 88%;
+
+  --muted-foreground: 220 9% 46%;
+
+  --accent: 220 16% 86%;
+
+  --accent-foreground: 220 9% 16%;
+
+  --destructive: 0 84% 60%;
+
+  --destructive-foreground: 0 84% 98%;
+
+  --warning: 38 92% 50%;
+
+  --warning-foreground: 38 92% 8%;
+
+  --input: 220 13% 76%;
+  --ring: 145 63% 28%;
+  --chart-1: 145 63% 36%;
+  --chart-2: 142 71% 35%;
+  --chart-3: 38 92% 40%;
+  --chart-4: 0 84% 50%;
+  --chart-5: 270 60% 45%;
+
+  --font-sans: Inter, Open Sans, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: 'JetBrains Mono', Menlo, monospace;
+  --radius: .5rem; /* 8px */
+  --shadow-2xs: 0px 1px 2px 0px hsl(220 13% 9% / 0.05);
+  --shadow-xs: 0px 1px 3px 0px hsl(220 13% 9% / 0.08);
+  --shadow-sm: 0px 2px 4px -1px hsl(220 13% 9% / 0.06), 0px 1px 2px -1px hsl(220 13% 9% / 0.08);
+  --shadow: 0px 4px 6px -1px hsl(220 13% 9% / 0.08), 0px 2px 4px -1px hsl(220 13% 9% / 0.06);
+  --shadow-md: 0px 6px 12px -2px hsl(220 13% 9% / 0.10), 0px 3px 6px -2px hsl(220 13% 9% / 0.08);
+  --shadow-lg: 0px 10px 20px -3px hsl(220 13% 9% / 0.12), 0px 4px 8px -2px hsl(220 13% 9% / 0.08);
+  --shadow-xl: 0px 20px 30px -5px hsl(220 13% 9% / 0.14), 0px 8px 12px -3px hsl(220 13% 9% / 0.10);
+  --shadow-2xl: 0px 30px 50px -8px hsl(220 13% 9% / 0.18);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
+
+  /* Fallback for older browsers */
+  --sidebar-primary-border: hsl(var(--sidebar-primary));
+  --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --sidebar-accent-border: hsl(var(--sidebar-accent));
+  --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --primary-border: hsl(var(--primary));
+  --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --secondary-border: hsl(var(--secondary));
+  --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --muted-border: hsl(var(--muted));
+  --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --accent-border: hsl(var(--accent));
+  --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --destructive-border: hsl(var(--destructive));
+  --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --warning-border: hsl(var(--warning));
+  --warning-border: hsl(from hsl(var(--warning)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+}
+
+.dark {
+  --button-outline: rgba(255,255,255, .10);
+  --badge-outline: rgba(255,255,255, .05);
+
+  --opaque-button-border-intensity: 9;  /* In terms of percentages */
+
+  /* Backgrounds applied on top of other backgrounds when hovered/active */
+  --elevate-1: rgba(255,255,255, .04);
+  --elevate-2: rgba(255,255,255, .09);
+
+  --background: 220 18% 12%;
+
+  --foreground: 220 9% 96%;
+
+  --border: 220 16% 20%;
+
+  --card: 220 16% 16%;
+
+  --card-foreground: 220 9% 96%;
+
+  --card-border: 220 16% 22%;
+
+  --sidebar: 220 16% 20%;
+
+  --sidebar-foreground: 220 9% 96%;
+
+  --sidebar-border: 220 16% 26%;
+
+  --sidebar-primary: 145 63% 48%;
+
+  --sidebar-primary-foreground: 145 63% 98%;
+
+  --sidebar-accent: 220 14% 24%;
+
+  --sidebar-accent-foreground: 220 9% 96%;
+
+  --sidebar-ring: 145 63% 48%;
+
+  --popover: 220 16% 24%;
+
+  --popover-foreground: 220 9% 96%;
+
+  --popover-border: 220 16% 30%;
+
+  --primary: 145 63% 48%;
+
+  --primary-foreground: 145 63% 98%;
+
+  --secondary: 220 14% 28%;
+
+  --secondary-foreground: 220 9% 96%;
+
+  --muted: 220 16% 26%;
+
+  --muted-foreground: 220 9% 66%;
+
+  --accent: 220 16% 28%;
+
+  --accent-foreground: 220 9% 96%;
+
+  --destructive: 0 84% 60%;
+
+  --destructive-foreground: 0 84% 98%;
+
+  --warning: 38 92% 60%;
+
+  --warning-foreground: 38 92% 8%;
+
+  --input: 220 16% 36%;
+  --ring: 145 63% 48%;
+  --chart-1: 145 63% 56%;
+  --chart-2: 142 71% 55%;
+  --chart-3: 38 92% 60%;
+  --chart-4: 0 84% 70%;
+  --chart-5: 270 60% 65%;
+
+  --shadow-2xs: 0px 1px 2px 0px hsl(220 18% 6% / 0.20);
+  --shadow-xs: 0px 1px 3px 0px hsl(220 18% 6% / 0.30);
+  --shadow-sm: 0px 2px 4px -1px hsl(220 18% 6% / 0.25), 0px 1px 2px -1px hsl(220 18% 6% / 0.30);
+  --shadow: 0px 4px 6px -1px hsl(220 18% 6% / 0.30), 0px 2px 4px -1px hsl(220 18% 6% / 0.25);
+  --shadow-md: 0px 6px 12px -2px hsl(220 18% 6% / 0.35), 0px 3px 6px -2px hsl(220 18% 6% / 0.30);
+  --shadow-lg: 0px 10px 20px -3px hsl(220 18% 6% / 0.40), 0px 4px 8px -2px hsl(220 18% 6% / 0.30);
+  --shadow-xl: 0px 20px 30px -5px hsl(220 18% 6% / 0.45), 0px 8px 12px -3px hsl(220 18% 6% / 0.35);
+  --shadow-2xl: 0px 30px 50px -8px hsl(220 18% 6% / 0.50);
+
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    cursor: default;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+
+  /* Cursor fixes for specific elements */
+  input,
+  textarea,
+  [contenteditable="true"] {
+    cursor: text;
+  }
+
+  /* Button and clickable elements */
+  button,
+  [role="button"],
+  [role="menuitem"],
+  [role="tab"],
+  a,
+  select {
+    cursor: pointer;
+  }
+
+  /* Disabled elements */
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  input:disabled,
+  textarea:disabled,
+  select:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Resizable elements */
+  [data-resize-handle],
+  .resize-handle {
+    cursor: col-resize;
+  }
+}
+
+/**
+ * Using the elevate system.
+ * Automatic contrast adjustment.
+ *
+ * <element className="hover-elevate" />
+ * <element className="active-elevate-2" />
+ *
+ * // Using the tailwind utility when a data attribute is "on"
+ * <element className="toggle-elevate data-[state=on]:toggle-elevated" />
+ * // Or manually controlling the toggle state
+ * <element className="toggle-elevate toggle-elevated" />
+ *
+ * Elevation systems have to handle many states.
+ * - not-hovered, vs. hovered vs. active  (three mutually exclusive states)
+ * - toggled or not
+ * - focused or not (this is not handled with these utilities)
+ *
+ * Even without handling focused or not, this is six possible combinations that
+ * need to be distinguished from eachother visually.
+ */
+@layer utilities {
+
+  /* Hide ugly search cancel button in Chrome until we can style it properly */
+  input[type="search"]::-webkit-search-cancel-button {
+    @apply hidden;
+  }
+
+  /* Placeholder styling for contentEditable div */
+  [contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+  }
+
+  /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
+   * buttons/badges can remove the automatic brightness adjustment on interactions
+   * and program their own. */
+  .no-default-hover-elevate {}
+
+  .no-default-active-elevate {}
+
+
+  /**
+   * Toggleable backgrounds go behind the content. Hoverable/active goes on top.
+   * This way they can stack/compound. Both will overlap the parent's borders!
+   * So borders will be automatically adjusted both on toggle, and hover/active,
+   * and they will be compounded.
+   */
+  .toggle-elevate::before,
+  .toggle-elevate-2::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: -1;
+    /* sits behind content but above backdrop */
+  }
+
+  .toggle-elevate.toggle-elevated::before {
+    background-color: var(--elevate-2);
+  }
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.toggle-elevate::before {
+    inset: -1px;
+  }
+
+  /* Does not work on elements with overflow:hidden! */
+  .hover-elevate:not(.no-default-hover-elevate),
+  .active-elevate:not(.no-default-active-elevate),
+  .hover-elevate-2:not(.no-default-hover-elevate),
+  .active-elevate-2:not(.no-default-active-elevate) {
+    position: relative;
+    z-index: 0;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate)::after,
+  .active-elevate:not(.no-default-active-elevate)::after,
+  .hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:not(.no-default-active-elevate)::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: 999;
+    /* sits in front of content */
+  }
+
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-1);
+  }
+
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-2);
+  }
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
+    inset: -1px;
+  }
+}
+
+/* ============================= */
+/* Dashboard Print Layout Styles */
+/* ============================= */
+
+/* Hide print layout elements on screen */
+.print-header,
+.print-footer {
+  display: none;
+}
+
+/* Print Styles - Formato profesional como los PDFs */
+@media print {
+  /* Configuración de página */
+  @page {
+    margin: 1.5cm 1.3cm;
+    size: landscape;
+  }
+
+  /* Ocultar elementos no necesarios en impresión */
+  [data-print-hide="true"],
+  nav,
+  header:not(.print-header),
+  .phva-navigation-header,
+  .sidebar,
+  button,
+  input[type="search"],
+  input[type="text"],
+  select,
+  textarea,
+  .print:hidden,
+  [role="tablist"],
+  [data-radix-tabs-list],
+  .tabs-list,
+  [data-radix-dropdown-menu-trigger] {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 10pt;
+    font-family: Helvetica, Arial, sans-serif;
+  }
+
+  /* ===== HEADER PROFESIONAL ===== */
+  .print-header {
+    display: block !important;
+    margin-bottom: 0.8cm;
+    page-break-after: avoid;
+  }
+
+  .print-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5cm;
+    padding-bottom: 0.3cm;
+  }
+
+  .print-header-left {
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+    flex: 1;
+  }
+
+  .print-logo {
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+  }
+
+  .print-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .print-logo-placeholder {
+    width: 50px;
+    height: 50px;
+    border: 1px solid #cccccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8pt;
+    color: #666;
+  }
+
+  .print-company-info {
+    flex: 1;
+  }
+
+  .print-company-name {
+    font-size: 16pt;
+    font-weight: bold;
+    margin-bottom: 2px;
+    color: #000;
+  }
+
+  .print-company-nit {
+    font-size: 10pt;
+    margin-bottom: 2px;
+    color: #000;
+  }
+
+  .print-company-address {
+    font-size: 10pt;
+    color: #000;
+  }
+
+  /* Tabla de información del documento (arriba derecha) */
+  .print-doc-info-table {
+    width: 260px;
+    border: 1px solid #1e7e34;
+    flex-shrink: 0;
+  }
+
+  .print-doc-info-row {
+    display: flex;
+    height: 18px;
+    border-bottom: 1px solid #1e7e34;
+  }
+
+  .print-doc-info-row:last-child {
+    border-bottom: none;
+  }
+
+  .print-doc-info-label {
+    width: 55px;
+    padding: 3px;
+    font-size: 8pt;
+    font-weight: bold;
+    border-right: 1px solid #1e7e34;
+    display: flex;
+    align-items: center;
+  }
+
+  .print-doc-info-value {
+    flex: 1;
+    padding: 3px;
+    font-size: 8pt;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Título del documento */
+  .print-document-title {
+    font-size: 14pt;
+    font-weight: bold;
+    text-align: center;
+    color: #1e7e34;
+    margin-top: 0.5cm;
+    margin-bottom: 0.5cm;
+  }
+
+  /* ===== FOOTER PROFESIONAL (Firmas) ===== */
+  .print-footer {
+    display: block !important;
+    position: fixed;
+    bottom: 0.5cm;
+    left: 1.3cm;
+    right: 1.3cm;
+    page-break-before: avoid;
+  }
+
+  .print-signatures-table {
+    display: flex;
+    border: 1px solid #1e7e34;
+    height: 44px;
+  }
+
+  .print-signature-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #1e7e34;
+  }
+
+  .print-signature-col:last-child {
+    border-right: none;
+  }
+
+  .print-signature-header {
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10pt;
+    font-weight: bold;
+    border-bottom: 1px solid #1e7e34;
+    padding: 3px;
+  }
+
+  .print-signature-name {
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9pt;
+    padding: 3px;
+  }
+
+  /* ===== CONTENIDO DEL DASHBOARD ===== */
+  .print-content {
+    margin-bottom: 2cm; /* Espacio para el footer */
+  }
+
+  /* Cards en impresión */
+  .card,
+  [data-radix-card] {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+    margin-bottom: 0.4cm;
+  }
+
+  /* Grids en impresión */
+  .grid {
+    display: grid !important;
+  }
+
+  /* Tablas en impresión */
+  table {
+    page-break-inside: avoid;
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  th, td {
+    border: 1px solid #ddd;
+    padding: 6px;
+    text-align: left;
+    font-size: 9pt;
+  }
+
+  /* Mantener colores importantes */
+  .bg-green-600,
+  .bg-red-600,
+  .bg-yellow-600,
+  .bg-blue-600,
+  .text-green-600,
+  .text-red-600,
+  .text-yellow-600,
+  .text-blue-600 {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Ajustes de tipografía */
+  h1 {
+    font-size: 18pt;
+    margin-bottom: 0.3cm;
+  }
+
+  h2 {
+    font-size: 14pt;
+    margin-top: 0.3cm;
+    margin-bottom: 0.2cm;
+  }
+
+  h3 {
+    font-size: 12pt;
+    margin-bottom: 0.2cm;
+  }
+
+  /* Evitar saltos de página */
+  .space-y-6,
+  .space-y-4,
+  .stat-card,
+  .card-header,
+  .card-content {
+    page-break-inside: avoid;
+  }
+
+  /* Gráficos */
+  svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Badges */
+  .badge {
+    border: 1px solid #333;
+    padding: 2px 6px;
+    font-size: 8pt;
+  }
+}

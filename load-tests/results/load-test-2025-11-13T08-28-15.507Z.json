@@ -1,0 +1,170 @@
+{
+  "timestamp": "2025-11-13T08:28:15.507Z",
+  "environment": {
+    "baseUrl": "http://localhost:5000",
+    "nodeVersion": "v20.19.3"
+  },
+  "apiEndpoints": {
+    "allPass": false,
+    "results": [
+      {
+        "pass": false,
+        "report": {
+          "endpoint": "/api/workers",
+          "totalRequests": 1239,
+          "successfulRequests": 1239,
+          "failedRequests": 0,
+          "successRate": 100,
+          "duration": {
+            "min": 189.9277320000001,
+            "max": 1155.96475,
+            "mean": 515.4869560629544,
+            "median": 491.5274239999999,
+            "p95": 804.9837160000002,
+            "p99": 1098.07189
+          },
+          "throughput": 39.87256227070863,
+          "errors": {},
+          "timestamp": "2025-11-13T08:24:23.890Z"
+        }
+      },
+      {
+        "pass": true,
+        "report": {
+          "endpoint": "/api/incidents",
+          "totalRequests": 1205,
+          "successfulRequests": 1205,
+          "failedRequests": 0,
+          "successRate": 100,
+          "duration": {
+            "min": 116.98439099999814,
+            "max": 533.0276440000016,
+            "mean": 139.50906828796718,
+            "median": 126.38698100000329,
+            "p95": 212.5500419999953,
+            "p99": 435.77326300000277
+          },
+          "throughput": 39.29561389205935,
+          "errors": {},
+          "timestamp": "2025-11-13T08:24:59.564Z"
+        }
+      },
+      {
+        "pass": true,
+        "report": {
+          "endpoint": "/api/trainings",
+          "totalRequests": 927,
+          "successfulRequests": 927,
+          "failedRequests": 0,
+          "successRate": 100,
+          "duration": {
+            "min": 171.6172210000077,
+            "max": 495.4088130000018,
+            "mean": 202.5860245134844,
+            "median": 182.18663099998957,
+            "p95": 354.2435719999921,
+            "p99": 438.4947830000019
+          },
+          "throughput": 30.094471317728793,
+          "errors": {},
+          "timestamp": "2025-11-13T08:25:35.375Z"
+        }
+      },
+      {
+        "pass": true,
+        "report": {
+          "endpoint": "/api/inspections",
+          "totalRequests": 750,
+          "successfulRequests": 750,
+          "failedRequests": 0,
+          "successRate": 100,
+          "duration": {
+            "min": 170.16839099999925,
+            "max": 391.11707199999364,
+            "mean": 195.1786737840002,
+            "median": 179.68030100000033,
+            "p95": 295.82557200000156,
+            "p99": 375.4002920000057
+          },
+          "throughput": 24.332478992959803,
+          "errors": {},
+          "timestamp": "2025-11-13T08:26:11.202Z"
+        }
+      }
+    ]
+  },
+  "dashboards": {
+    "allPass": true,
+    "results": [
+      {
+        "pass": true,
+        "report": {
+          "endpoint": "/api/dashboard/hacer",
+          "totalRequests": 821,
+          "successfulRequests": 821,
+          "failedRequests": 0,
+          "successRate": 100,
+          "duration": {
+            "min": 117.53871100000106,
+            "max": 858.032263000001,
+            "mean": 158.76771926309343,
+            "median": 125.01039999999921,
+            "p95": 290.04664100002265,
+            "p99": 798.6757030000153
+          },
+          "throughput": 26.198225796158017,
+          "errors": {},
+          "timestamp": "2025-11-13T08:26:57.559Z"
+        }
+      },
+      {
+        "pass": true,
+        "report": {
+          "endpoint": "/api/dashboard/verificar",
+          "totalRequests": 839,
+          "successfulRequests": 839,
+          "failedRequests": 0,
+          "successRate": 100,
+          "duration": {
+            "min": 117.30653999999049,
+            "max": 584.044212000008,
+            "mean": 146.73154529797435,
+            "median": 126.48631999999634,
+            "p95": 243.42136100001517,
+            "p99": 520.9527020000096
+          },
+          "throughput": 26.54895259793684,
+          "errors": {},
+          "timestamp": "2025-11-13T08:27:34.167Z"
+        }
+      },
+      {
+        "pass": true,
+        "report": {
+          "endpoint": "/api/dashboard/actuar",
+          "totalRequests": 831,
+          "successfulRequests": 831,
+          "failedRequests": 0,
+          "successRate": 100,
+          "duration": {
+            "min": 117.19449100000202,
+            "max": 672.5823910000036,
+            "mean": 151.08768567388702,
+            "median": 124.9818399999931,
+            "p95": 260.0853800000041,
+            "p99": 650.89107100002
+          },
+          "throughput": 26.529178904354488,
+          "errors": {},
+          "timestamp": "2025-11-13T08:28:10.501Z"
+        }
+      }
+    ]
+  },
+  "summary": {
+    "totalScenarios": 7,
+    "passedScenarios": 6,
+    "failedScenarios": 1,
+    "overallPass": false
+  }
+}

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preguntas Frecuentes - SG-SST Colombia</title>
+    <meta name="description" content="Respuestas a las preguntas más frecuentes sobre el Sistema de Gestión SST">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: hsl(145, 63%, 25%);
+            --primary-light: hsl(145, 63%, 35%);
+            --primary-dark: hsl(145, 63%, 15%);
+            --success: hsl(142, 71%, 45%);
+            --warning: hsl(38, 92%, 50%);
+            --neutral: hsl(220, 14%, 96%);
+            --text: hsl(220, 9%, 16%);
+            --border: hsl(220, 14%, 90%);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background: linear-gradient(135deg, var(--neutral) 0%, hsl(145, 20%, 98%) 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 3rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .back-link {
+            display: inline-block;
+            color: white;
+            text-decoration: none;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+            transition: opacity 0.2s;
+        }
+        
+        .back-link:hover {
+            opacity: 1;
+        }
+        
+        .category {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .category h2 {
+            color: var(--primary-dark);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .faq-item {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .faq-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        
+        .question {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: start;
+            gap: 0.5rem;
+        }
+        
+        .question:before {
+            content: "Q:";
+            font-weight: bold;
+            color: var(--success);
+            flex-shrink: 0;
+        }
+        
+        .answer {
+            padding-left: 2rem;
+            color: hsl(220, 9%, 30%);
+        }
+        
+        .answer strong {
+            color: var(--primary-dark);
+        }
+        
+        code {
+            background: var(--neutral);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .tip {
+            background: hsl(145, 63%, 95%);
+            border-left: 4px solid var(--success);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        .warning {
+            background: hsl(38, 92%, 95%);
+            border-left: 4px solid var(--warning);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        ul {
+            margin: 0.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        li {
+            margin: 0.3rem 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/docs/index.html" class="back-link">← Volver al Centro de Ayuda</a>
+            <h1>❓ Preguntas Frecuentes</h1>
+            <p>Respuestas rápidas a las dudas más comunes del sistema</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="category">
+            <h2>🏢 Configuración Inicial</h2>
+            
+            <div class="faq-item">
+                <div class="question">¿Cómo crear mi primera empresa en el sistema?</div>
+                <div class="answer">
+                    Para crear una empresa:
+                    <ol>
+                        <li>Inicia sesión con tu usuario administrador</li>
+                        <li>Ve a <strong>Configuración → Empresas</strong></li>
+                        <li>Haz clic en el botón <strong>"+ Nueva Empresa"</strong></li>
+                        <li>Completa los campos obligatorios: NIT, razón social, número de empleados</li>
+                        <li>El sistema calculará automáticamente el capítulo normativo según el número de empleados</li>
+                        <li>Haz clic en <strong>"Guardar"</strong></li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="question">¿Cómo subir el logo de mi empresa?</div>
+                <div class="answer">
+                    <ol>
+                        <li>Ve a <strong>Configuración → Empresas</strong></li>
+                        <li>Haz clic en el ícono de editar (lápiz) de tu empresa</li>
+                        <li>En el formulario, busca la sección <strong>"Logo"</strong></li>
+                        <li>Haz clic en <strong>"Seleccionar archivo"</strong> o arrastra la imagen</li>
+                        <li>Formatos aceptados: PNG, JPG, JPEG, GIF (máximo 5MB)</li>
+                        <li>Guarda los cambios</li>
+                    </ol>
+                    <div class="tip">
+                        <strong>💡 Consejo:</strong> Se recomienda usar imágenes PNG con fondo transparente de tamaño 200x200px para mejor visualización.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="question">¿Qué roles de usuario existen y qué pueden hacer?</div>
+                <div class="answer">
+                    El sistema cuenta con 6 roles con diferentes niveles de permisos:
+                    <ul>
+                        <li><strong>Administrador:</strong> Acceso total al sistema, gestión de empresas y usuarios</li>
+                        <li><strong>Coordinador SST:</strong> Gestión completa de módulos SST de su empresa</li>
+                        <li><strong>Responsable SST:</strong> Gestión y supervisión de actividades SST</li>
+                        <li><strong>Analista SST:</strong> Registro y seguimiento de actividades específicas</li>
+                        <li><strong>Consultor:</strong> Solo lectura de información del sistema</li>
+                        <li><strong>Trabajador:</strong> Acceso exclusivo al Portal de Empleados</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="category">
+            <h2>👥 Gestión de Trabajadores</h2>
+            
+            <div class="faq-item">
+                <div class="question">¿Cuál es la diferencia entre crear un trabajador y crear un usuario?</div>
+                <div class="answer">
+                    <strong>Trabajadores:</strong> Son las personas que trabajan en la empresa y sobre quienes se lleva el registro SST (exámenes médicos, capacitaciones, accidentes, etc.).
+                    <br><br>
+                    <strong>Usuarios:</strong> Son las personas que pueden iniciar sesión en el sistema para gestionarlo. Un trabajador NO necesita ser usuario a menos que requiera acceder al sistema.
+                    <div class="tip">
+                        <strong>💡 Flujo recomendado:</strong>
+                        <ol>
+                            <li>Primero crea el trabajador en <strong>Planear → Trabajadores</strong></li>
+                            <li>Si ese trabajador necesita acceder al sistema, créale un usuario en <strong>Configuración → Usuarios</strong> y vincúlalo al trabajador</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="question">¿Cómo elimino un trabajador?</div>
+                <div class="answer">
+                    <div class="warning">
+                        <strong>⚠️ Importante:</strong> No se pueden eliminar trabajadores que tienen registros asociados (contratos, exámenes, capacitaciones, etc.) para mantener la trazabilidad.
+                    </div>
+                    Si necesitas "eliminar" un trabajador:
+                    <ol>
+                        <li>Cambia su estado a <strong>"Inactivo"</strong> en lugar de eliminarlo</li>
+                        <li>Esto preserva todos los registros históricos pero lo marca como no activo</li>
+                        <li>Los trabajadores inactivos no aparecerán en las listas activas pero conservarán todo su historial</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        
+        <div class="category">
+            <h2>📋 Contratos y Perfiles de Cargo</h2>
+            
+            <div class="faq-item">
+                <div class="question">¿Por qué algunos campos se llenan automáticamente al crear un contrato?</div>
+                <div class="answer">
+                    El sistema utiliza <strong>auto-completado inteligente</strong> basado en el perfil de cargo seleccionado:
+                    <ul>
+                        <li><strong>Salario:</strong> Se sugiere el salario definido en el perfil de cargo</li>
+                        <li><strong>Clase de riesgo:</strong> Se copia del perfil de cargo</li>
+                        <li><strong>Descripción:</strong> Se incluye la descripción completa del cargo</li>
+                        <li><strong>Exigencias:</strong> Demandas físicas y mentales del perfil</li>
+                        <li><strong>EPP:</strong> Elementos de protección personal requeridos</li>
+                    </ul>
+                    <div class="tip">
+                        <strong>💡 Tip:</strong> Puedes modificar cualquier campo después de que se auto-complete. Son solo sugerencias basadas en el perfil.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="question">¿Qué pasa si no aparecen sugerencias al crear un contrato?</div>
+                <div class="answer">
+                    Esto ocurre porque <strong>no hay perfiles de cargo creados</strong> para esa empresa. Para solucionarlo:
+                    <ol>
+                        <li>Ve a <strong>Planear → Perfiles de Cargo</strong></li>
+                        <li>Crea al menos un perfil de cargo (ej: "Operario", "Administrador", etc.)</li>
+                        <li>Completa toda la información del perfil</li>
+                        <li>Ahora al crear contratos, verás ese perfil disponible y sus campos se auto-completarán</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        
+        <div class="category">
+            <h2>📊 Estándares SST y Evaluaciones</h2>
+            
+            <div class="faq-item">
+                <div class="question">¿Qué son los 7 Estándares Mínimos SST?</div>
+                <div class="answer">
+                    Son los requisitos mínimos establecidos por la <strong>Resolución 0312 de 2019</strong> para el Sistema de Gestión de Seguridad y Salud en el Trabajo en Colombia:
+                    <ol>
+                        <li><strong>Recursos:</strong> Financieros, técnicos y humanos</li>
+                        <li><strong>Gestión Integral:</strong> Política, objetivos, planificación</li>
+                        <li><strong>Gestión de la Salud:</strong> Evaluaciones médicas y profesiogramas</li>
+                        <li><strong>Gestión de Peligros y Riesgos:</strong> Identificación y valoración</li>
+                        <li><strong>Gestión de Amenazas:</strong> Plan de emergencias</li>
+                        <li><strong>Verificación del SG-SST:</strong> Auditorías y revisiones</li>
+                        <li><strong>Mejoramiento:</strong> Acciones correctivas y preventivas</li>
+                    </ol>
+                    Cada estándar tiene un porcentaje de calificación que suma el 100% total del cumplimiento.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="question">¿Cómo se calcula el porcentaje de cumplimiento de un estándar?</div>
+                <div class="answer">
+                    El sistema calcula automáticamente:
+                    <ul>
+                        <li><strong>Items cumplidos:</strong> Número de items marcados como "Cumple totalmente"</li>
+                        <li><strong>Total de items:</strong> Todos los items del estándar</li>
+                        <li><strong>Porcentaje:</strong> (Items cumplidos / Total items) × Peso del estándar</li>
+                    </ul>
+                    <div class="tip">
+                        <strong>💡 Ejemplo:</strong> Si el Estándar 1 tiene 10 items, cumples 8, y su peso es 15%:<br>
+                        Calificación = (8/10) × 15% = 12% de 15% posibles
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="category">
+            <h2>🚗 PESV - Plan Estratégico de Seguridad Vial</h2>
+            
+            <div class="faq-item">
+                <div class="question">¿Mi empresa necesita implementar PESV?</div>
+                <div class="answer">
+                    El PESV es obligatorio si tu empresa cumple <strong>al menos UNA</strong> de estas condiciones:
+                    <ul>
+                        <li>Tiene <strong>1 o más vehículos propios</strong></li>
+                        <li>Tiene <strong>1 o más vehículos arrendados, leasing o renting</strong></li>
+                        <li>Tiene <strong>1 o más vehículos en intermediación</strong></li>
+                        <li>Tiene empleados con <strong>misión de conducir</strong> (aunque usen vehículos propios)</li>
+                    </ul>
+                    <div class="warning">
+                        <strong>⚠️ Nota:</strong> El sistema calcula automáticamente si PESV es requerido según la información que ingreses en la empresa.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="question">¿Dónde activo o desactivo el módulo PESV?</div>
+                <div class="answer">
+                    El módulo PESV se activa automáticamente cuando:
+                    <ol>
+                        <li>Editas la empresa en <strong>Configuración → Empresas</strong></li>
+                        <li>Ingresas un número mayor a 0 en cualquiera de los campos de vehículos</li>
+                        <li>Guardas los cambios</li>
+                    </ol>
+                    Una vez activado, aparecerá la sección <strong>"PESV - Seguridad Vial"</strong> en el menú <strong>Hacer</strong>.
+                </div>
+            </div>
+        </div>
+        
+        <div class="category">
+            <h2>🔐 Portal de Empleados</h2>
+            
+            <div class="faq-item">
+                <div class="question">¿Cómo accede un trabajador al Portal de Empleados?</div>
+                <div class="answer">
+                    Para que un trabajador acceda al portal:
+                    <ol>
+                        <li>Primero debe existir como <strong>Trabajador</strong> en el sistema</li>
+                        <li>Luego créale un <strong>Usuario</strong> con rol "Trabajador" en <strong>Configuración → Usuarios</strong></li>
+                        <li>Vincúlalo al trabajador en el campo <strong>"Trabajador Vinculado"</strong></li>
+                        <li>El trabajador podrá iniciar sesión y será redirigido automáticamente a <code>/portal-empleados</code></li>
+                        <li>Allí verá su contrato, perfil de cargo, comunicaciones y podrá hacer reportes</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        
+        <div class="category">
+            <h2>🛠️ Problemas Comunes</h2>
+            
+            <div class="faq-item">
+                <div class="question">Error: "No se pudo subir el archivo"</div>
+                <div class="answer">
+                    Posibles causas y soluciones:
+                    <ul>
+                        <li><strong>Archivo muy grande:</strong> Verifica que sea menor a 5MB</li>
+                        <li><strong>Formato incorrecto:</strong> Solo se aceptan PNG, JPG, JPEG, GIF para imágenes y PDF para documentos</li>
+                        <li><strong>Nombre con caracteres especiales:</strong> Renombra el archivo con solo letras y números</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="question">No puedo ver ciertas opciones del menú</div>
+                <div class="answer">
+                    Esto es normal. El sistema tiene <strong>control de acceso basado en roles</strong>:
+                    <ul>
+                        <li>Cada rol tiene permisos específicos</li>
+                        <li>Solo verás las opciones para las que tienes permiso</li>
+                        <li>Si necesitas más acceso, contacta al administrador para que cambie tu rol</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="question">¿Cómo elimino una empresa?</div>
+                <div class="answer">
+                    Para eliminar una empresa:
+                    <ol>
+                        <li>Ve a <strong>Configuración → Empresas</strong></li>
+                        <li>Haz clic en el ícono de basura 🗑️ al lado de la empresa</li>
+                        <li>Confirma la eliminación</li>
+                        <li>El sistema automáticamente desvinculará a todos los usuarios de esa empresa</li>
+                    </ol>
+                    <div class="warning">
+                        <strong>⚠️ Advertencia:</strong> Esta acción eliminará TODOS los datos asociados (trabajadores, contratos, accidentes, etc.). No se puede deshacer.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: white; border-radius: 12px;">
+            <h3 style="color: var(--primary-dark); margin-bottom: 1rem;">¿No encuentras lo que buscas?</h3>
+            <p style="margin-bottom: 1.5rem;">Consulta el manual completo o contacta a soporte técnico</p>
+            <a href="/docs/index.html" style="display: inline-block; padding: 0.75rem 1.5rem; background: var(--primary); color: white; text-decoration: none; border-radius: 8px; margin-right: 1rem;">Ver Manual Completo</a>
+            <a href="mailto:soporte@sst.com.co" style="display: inline-block; padding: 0.75rem 1.5rem; background: transparent; border: 2px solid var(--primary); color: var(--primary); text-decoration: none; border-radius: 8px;">Contactar Soporte</a>
+        </div>
+    </div>
+</body>
+</html>

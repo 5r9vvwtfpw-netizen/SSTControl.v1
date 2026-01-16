@@ -1,0 +1,135 @@
+🏛️ Marco Legal Vigente (2025)
+Normativa Principal:
+
+Decreto 1072 de 2015 - Decreto Único Reglamentario del Sector Trabajo (Arts. 2.2.4.6.11 y 2.2.4.6.8)
+Resolución 0312 de 2019 - Estándares Mínimos del SG-SST
+Ley 1562 de 2012 - Sistema de Gestión de SST
+Resolución 1890 de 2025 - Lineamientos generales SG-SST (NUEVA)
+Resolución 0728 de 2025 - Salud mental laboral (NUEVA)
+📚 Estructura del Programa de Capacitación
+1. IDENTIFICACIÓN DE LA EMPRESA
+Razón social, NIT
+Actividad económica
+Nivel de riesgo (I-V)
+Número de trabajadores
+2. OBJETIVOS
+General: Prevenir accidentes y enfermedades laborales mediante formación continua
+Específicos:
+Capacitar en identificación de peligros
+Promover cultura de autocuidado
+Cumplir normatividad vigente
+Reducir índices de accidentalidad
+3. ALCANCE
+Todos los trabajadores (directos, contratistas, temporales)
+COPASST y Comité de Convivencia
+Brigadas de emergencia
+Personal administrativo y operativo
+4. RESPONSABLES
+Alta dirección: Asignación de recursos
+Responsable SG-SST: Diseño y coordinación
+ARL: Asesoría técnica y capacitaciones gratuitas
+Jefes de área: Seguimiento y liberación de personal
+5. TEMAS OBLIGATORIOS (Mínimo 4 capacitaciones anuales)
+A. Inducción y Reinducción en SST
+Política y objetivos de SST
+Peligros y riesgos del cargo específico
+Derechos y deberes en SST
+Procedimientos de reporte de incidentes
+Uso correcto de EPP
+B. Identificación y Control de Riesgos
+Matriz de identificación de peligros
+Evaluación y valoración de riesgos
+Medidas de control (jerarquía de controles)
+Reconocimiento de peligros en el puesto de trabajo
+C. Prevención de Accidentes y Enfermedades
+Reporte de condiciones peligrosas
+Investigación de incidentes
+Primeros auxilios
+Autocuidado y promoción de salud
+D. Plan de Emergencias
+Respuesta ante emergencias
+Evacuación y punto de encuentro
+Brigada de emergencias
+Simulacros periódicos
+E. Uso y Mantenimiento de EPP
+Selección adecuada según riesgo
+Uso correcto y ajuste
+Mantenimiento y almacenamiento
+Inspección previa y reemplazo
+F. COPASST y Comité de Convivencia
+Conformación y funciones (Resolución 2013/1986 para COPASST)
+Derechos y obligaciones
+Prevención de acoso laboral (Resolución 3461/2025)
+Resolución de conflictos
+G. Riesgos Específicos (según matriz de riesgos)
+Riesgo locativo: Orden, aseo, señalización
+Riesgo mecánico: Trabajo seguro con máquinas
+Riesgo eléctrico: Trabajo en alturas
+Riesgo químico: SGA (Sistema Globalmente Armonizado)
+Riesgo biológico: Bioseguridad
+Riesgo ergonómico: Pausas activas, higiene postural
+Riesgo psicosocial: Manejo del estrés, salud mental (NUEVO 2025)
+Riesgo vial: PESV (Resolución 40595/2022)
+H. Vigilancia Epidemiológica
+Programas SVE específicos
+Mediciones ambientales
+Exámenes médicos ocupacionales
+6. CRONOGRAMA ANUAL
+Mes	Tema	Responsable	Duración	Población	Modalidad
+Enero	Inducción nuevos trabajadores	Coord. SST	2 horas	Nuevos	Presencial
+Febrero	Plan de emergencias	Brigada	3 horas	Todos	Mixta
+Marzo	Riesgo psicosocial	Psicólogo	2 horas	Todos	Virtual
+Abril	Uso de EPP	ARL	1 hora	Operativos	Presencial
+...	...	...	...	...	...
+7. METODOLOGÍA
+Talleres prácticos
+Charlas educativas
+Simulacros
+E-learning (plataformas virtuales)
+Evaluaciones de comprensión (pre/post test)
+8. RECURSOS
+Humanos: Profesional SST con licencia, instructores certificados
+Técnicos: Salones, equipos audiovisuales, plataforma LMS
+Financieros: Presupuesto anual asignado
+9. INDICADORES DE GESTIÓN
+Indicador	Fórmula	Meta
+Cobertura	(Trabajadores capacitados / Total trabajadores) × 100	≥90%
+Cumplimiento	(Capacitaciones realizadas / Programadas) × 100	100%
+Efectividad	(Evaluaciones aprobadas / Total evaluaciones) × 100	≥85%
+Reducción accidentes	[(Accidentes año anterior - Actual) / Anterior] × 100	Variable
+10. DOCUMENTACIÓN OBLIGATORIA
+✅ Programa anual de capacitación aprobado
+✅ Listas de asistencia (nombre, cédula, firma, cargo)
+✅ Contenidos y material didáctico entregado
+✅ Evaluaciones de comprensión aplicadas
+✅ Certificados de capacitación emitidos
+✅ Registro fotográfico
+✅ Informes trimestrales de cumplimiento
+✅ Acta de revisión con COPASST
+
+Conservación: Mínimo 20 años desde el cese de actividades del trabajador
+
+📊 Capacitaciones Específicas según Resolución 0312/2019
+Capacitación	Frecuencia	Dirigido a	Horas
+Inducción SST	Al ingreso	Nuevos trabajadores	2-4
+Reinducción SST	Anual	Todos	2
+COPASST	Inicial + anual	Miembros comité	50 inicial
+Brigada emergencias	Semestral	Brigadistas	8-16
+Primeros auxilios	Anual	Brigada y clave	16
+Curso 50 horas SG-SST	Inicial	Responsable SST	50
+Riesgos específicos	Según matriz	Por área/cargo	1-4
+⚠️ Requisitos Legales Clave
+Frecuencia mínima: 4 capacitaciones anuales (trimestral)
+Horario: Dentro de la jornada laboral
+Instructores: Personal idóneo y certificado
+Evaluación: Obligatoria con registro
+Revisión COPASST: Anual del programa
+Actualización: Según cambios normativos
+🎯 Recomendaciones de Implementación
+Planificar en diciembre el programa del año siguiente
+Aprovechar recursos ARL (capacitaciones gratuitas)
+Priorizar según matriz de riesgos de la empresa
+Digitalizar todos los registros para auditorías
+Evaluar efectividad mediante indicadores
+Integrar al Plan de Trabajo Anual del SG-SST
+Incluir nuevas resoluciones 2025 (salud mental, evaluaciones médicas)

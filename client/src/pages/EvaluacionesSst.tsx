@@ -1,0 +1,955 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Plus, Search, FileText, AlertTriangle, CheckCircle2, FileCheck, Download, Lock, Trash2, AlertCircle, Wrench, RefreshCw } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useState, useEffect, useMemo } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { EvaluacionSst, insertEvaluacionSstSchema, Worker } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
+import { z } from "zod";
+import { AutomationAssistant, PlantillaInfo } from "@/components/AutomationAssistant";
+import { getEstandarByCodigo } from "@/data/planear-normativa";
+import { TrialVerificationBannerAuto } from "@/components/TrialGate";
+
+// Función para calcular tipo de empresa según Resolución 0312/2019
+// IMPORTANTE: Se basa EXCLUSIVAMENTE en numberOfWorkers y riskLevel de la empresa
+// NO en el plan de suscripción (el plan solo afecta facturación)
+// 
+// Artículo 9: ≤10 trabajadores AND riesgo I/II/III → Capítulo I (7 estándares)
+// Artículo 10: 11-50 trabajadores AND riesgo I/II/III → Capítulo II (21 estándares)
+// Artículo 11: >50 trabajadores OR riesgo IV/V → Capítulo III (62 estándares)
+function calculateTipoEmpresa(numberOfWorkers: number, riskLevel: string): "tipo1" | "tipo2" | "tipo3" {
+  const isHighRisk = riskLevel === "IV" || riskLevel === "V";
+  
+  // Capítulo III: >50 trabajadores OR cualquier cantidad con riesgo IV/V
+  if (numberOfWorkers > 50 || isHighRisk) {
+    return "tipo3";
+  }
+  
+  // Capítulo II: 11-50 trabajadores con riesgo I/II/III
+  if (numberOfWorkers >= 11 && numberOfWorkers <= 50) {
+    return "tipo2";
+  }
+  
+  // Capítulo I: ≤10 trabajadores con riesgo I/II/III
+  return "tipo1";
+}
+
+// Etiquetas de tipo de empresa según Resolución 0312/2019
+const tipoEmpresaLabels: Record<string, string> = {
+  tipo1: "7 estándares (≤10 trabajadores, riesgo I-III)",
+  tipo2: "21 estándares (11-50 trabajadores, riesgo I-III)",
+  tipo3: "61 estándares (>50 trabajadores ó riesgo IV-V)",
+};
+
+// Form schema - companyId is determined by logged-in user or selected by admin
+// For admin users, companyId is required; for non-admin, it's automatically set
+const createFormSchema = (isAdmin: boolean) => {
+  const baseSchema = insertEvaluacionSstSchema.omit({ 
+    puntajeTotal: true,
+    porcentajeCumplimiento: true,
+    nivelCumplimiento: true,
+    puntajesPorComponente: true
+  }).extend({
+    elaboradoPorId: z.string().optional(),
+    autorizadoPorId: z.string().optional(),
+    aprobadoPorId: z.string().optional(),
+  });
+  
+  if (isAdmin) {
+    return baseSchema.extend({
+      companyId: z.string().min(1, "Debe seleccionar una empresa"),
+    });
+  } else {
+    return baseSchema.extend({
+      companyId: z.string().optional(),
+    });
+  }
+};
+
+export default function EvaluacionesSst() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [evaluacionToDelete, setEvaluacionToDelete] = useState<EvaluacionSst | null>(null);
+  const [importarAnterior, setImportarAnterior] = useState(true);
+
+  const isSuperAdmin = user?.role === "superadmin";
+  
+  // Estado para panel de diagnóstico de estándares (solo superadmin)
+  const [diagnosticoOpen, setDiagnosticoOpen] = useState(false);
+  const [diagnosticoData, setDiagnosticoData] = useState<any>(null);
+  const [corrigiendo, setCorrigiendo] = useState(false);
+  // SECURITY: Solo superadmin tiene acceso global para seleccionar empresas
+  // admin es rol de empresa, no global
+  const isAdmin = isSuperAdmin;
+  const formSchema = createFormSchema(isAdmin);
+  
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      anio: new Date().getFullYear(),
+      mes: new Date().getMonth() + 1,
+      tipoEmpresa: "tipo1",
+      fechaEvaluacion: new Date(),
+      responsableNombre: user?.fullName || user?.username || "",
+      responsableCargo: "Responsable SG-SST",
+      observaciones: "",
+      estado: "en-progreso",
+      elaboradoPorId: "",
+      autorizadoPorId: "",
+      aprobadoPorId: "",
+    },
+  });
+
+  const { data: evaluaciones = [], isLoading } = useQuery<EvaluacionSst[]>({
+    queryKey: ["/api/evaluaciones-sst"],
+  });
+
+  const { data: companies = [], isLoading: companiesLoading, error: companiesError } = useQuery<any[]>({
+    queryKey: ["/api/companies"],
+    enabled: !!user,
+  });
+
+  const { data: workers = [] } = useQuery<Worker[]>({
+    queryKey: ["/api/workers"],
+  });
+
+  // Obtener la empresa para calcular tipo de empresa automáticamente
+  // Para admin: empresa seleccionada en el formulario
+  // Para no-admin: empresa del usuario actual
+  const selectedCompanyId = form.watch("companyId");
+  
+  const targetCompany = useMemo(() => {
+    if (!companies.length) return null;
+    
+    // Para admin, usar la empresa seleccionada en el formulario
+    if (isAdmin && selectedCompanyId) {
+      return companies.find((c: any) => c.id === selectedCompanyId);
+    }
+    
+    // Para no-admin, usar la empresa del usuario
+    if (!isAdmin && user?.companyId) {
+      return companies.find((c: any) => c.id === user.companyId);
+    }
+    
+    return null;
+  }, [companies, isAdmin, selectedCompanyId, user?.companyId]);
+
+  // Calcular el tipo de empresa basado EXCLUSIVAMENTE en numberOfWorkers y riskLevel
+  // IMPORTANTE: El plan de suscripción NO afecta el capítulo - solo afecta facturación
+  // Según Resolución 0312/2019, el capítulo se determina por cantidad de trabajadores y nivel de riesgo
+  const calculatedTipoEmpresa = useMemo(() => {
+    if (!targetCompany) return "tipo1";
+    
+    return calculateTipoEmpresa(
+      targetCompany.numberOfWorkers || 1,
+      targetCompany.riskLevel || "I"
+    );
+  }, [targetCompany]);
+
+  // Actualizar el campo tipoEmpresa automáticamente cuando la empresa o suscripción cambien
+  useEffect(() => {
+    if (targetCompany) {
+      form.setValue("tipoEmpresa", calculatedTipoEmpresa);
+    }
+  }, [targetCompany, calculatedTipoEmpresa, form]);
+
+  const createMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof formSchema>) => {
+      // SECURITY: Solo superadmin tiene acceso global para crear evaluaciones en otras empresas
+      const isSuperadmin = user?.role === 'superadmin';
+      const payload = isSuperadmin && data.companyId 
+        ? { ...data, companyId: data.companyId }
+        : data;
+      const res = await apiRequest("POST", "/api/evaluaciones-sst", payload);
+      return res.json();
+    },
+    onSuccess: async (newEvaluacion) => {
+      // Intentar importar datos del año anterior si está habilitado
+      if (importarAnterior && newEvaluacion.id) {
+        try {
+          await apiRequest("POST", `/api/evaluaciones-sst/${newEvaluacion.id}/importar-anterior`);
+          toast({
+            title: "Datos importados",
+            description: "Se importaron los estándares persistentes del año anterior para su revisión",
+            className: "bg-yellow-50 border-yellow-200",
+          });
+        } catch (err) {
+          console.error("Error importing previous data:", err);
+          // No bloquear - la evaluación ya se creó
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-sst"] });
+      setDialogOpen(false);
+      form.reset();
+      setImportarAnterior(true);
+      toast({
+        title: "Evaluación creada",
+        description: "La evaluación inicial del SG-SST se ha creado exitosamente",
+        className: "bg-yellow-50 border-yellow-200",
+      });
+      setLocation(`/evaluaciones-sst/${newEvaluacion.id}`);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    createMutation.mutate(values);
+  };
+
+  // Mutation para eliminar evaluaciones (solo superadmin)
+  const deleteMutation = useMutation({
+    mutationFn: async (evaluacionId: string) => {
+      const res = await apiRequest("DELETE", `/api/evaluaciones-sst/${evaluacionId}`);
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-sst"] });
+      setDeleteDialogOpen(false);
+      setEvaluacionToDelete(null);
+      toast({
+        title: "Evaluación eliminada",
+        description: "La evaluación se ha eliminado exitosamente",
+        className: "bg-yellow-50 border-yellow-200",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error al eliminar",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteClick = (e: React.MouseEvent, evaluacion: EvaluacionSst) => {
+    e.stopPropagation();
+    setEvaluacionToDelete(evaluacion);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (evaluacionToDelete) {
+      deleteMutation.mutate(evaluacionToDelete.id);
+    }
+  };
+
+  const filteredEvaluaciones = evaluaciones.filter((evaluacion) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      evaluacion.anio.toString().includes(searchLower) ||
+      evaluacion.responsableNombre.toLowerCase().includes(searchLower) ||
+      (evaluacion.observaciones?.toLowerCase().includes(searchLower) ?? false)
+    );
+  });
+
+  const getEstadoBadge = (estado: string) => {
+    const config = {
+      "en-progreso": { label: "En Proceso", className: "bg-blue-500/10 text-blue-700 dark:text-blue-400", icon: FileText },
+      "completada": { label: "Completada", className: "bg-green-500/10 text-green-700 dark:text-green-400", icon: CheckCircle2 },
+      "enviada": { label: "Enviada", className: "bg-purple-500/10 text-purple-700 dark:text-purple-400", icon: FileCheck },
+    };
+    const item = config[estado as keyof typeof config] || config["en-progreso"];
+    const Icon = item.icon;
+    return (
+      <Badge className={item.className}>
+        <Icon className="h-3 w-3 mr-1" />
+        {item.label}
+      </Badge>
+    );
+  };
+
+  const getNivelBadge = (nivel: string | null, porcentaje: number | null) => {
+    if (!nivel || porcentaje === null) {
+      return <Badge className="bg-gray-500/10 text-gray-700 dark:text-gray-400">Pendiente</Badge>;
+    }
+
+    const config = {
+      "critico": { label: "Crítico", className: "bg-red-500/10 text-red-700 dark:text-red-400", icon: AlertTriangle },
+      "moderadamente-aceptable": { label: "Moderado", className: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400", icon: AlertTriangle },
+      "aceptable": { label: "Aceptable", className: "bg-green-500/10 text-green-700 dark:text-green-400", icon: CheckCircle2 },
+    };
+    const item = config[nivel as keyof typeof config] || config["critico"];
+    const Icon = item.icon;
+    return (
+      <Badge className={item.className}>
+        <Icon className="h-3 w-3 mr-1" />
+        {item.label} ({porcentaje}%)
+      </Badge>
+    );
+  };
+
+  const handleDownloadPDF = async (evaluacionId: string, anio: number) => {
+    try {
+      const response = await fetch(`/api/evaluaciones-sst/${evaluacionId}/pdf`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) throw new Error('Error al descargar PDF');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `evaluacion-sst-${anio}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "PDF descargado",
+        description: "El reporte de evaluación se ha descargado exitosamente",
+        className: "bg-yellow-50 border-yellow-200",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSelectPlantilla = (plantilla: PlantillaInfo) => {
+    const aspectosEvaluacion = Object.entries(plantilla.campos)
+      .map(([key, value]) => `• ${key}: ${value}`)
+      .join('\n');
+    
+    const observacionesTexto = `Plantilla aplicada: ${plantilla.nombre}\n\nAspectos a evaluar según ${plantilla.normativaBase}:\n${aspectosEvaluacion}\n\nDescripción: ${plantilla.descripcion}`;
+    
+    form.setValue('observaciones', observacionesTexto);
+    setDialogOpen(true);
+    
+    toast({
+      title: "Plantilla aplicada",
+      description: `Se ha aplicado la plantilla "${plantilla.nombre}" al formulario`,
+      className: "bg-yellow-50 border-yellow-200",
+    });
+  };
+
+  const estandarEvaluacionInicial = getEstandarByCodigo('2.3.1');
+
+  return (
+    <div className="space-y-6">
+      <TrialVerificationBannerAuto />
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold" data-testid="text-page-title">Evaluación Inicial del SG-SST</h1>
+          <p className="text-muted-foreground">Resolución 0312 de 2019 - Estándares Mínimos</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {isSuperAdmin && (
+            <Button 
+              variant="outline" 
+              onClick={async () => {
+                setDiagnosticoOpen(true);
+                try {
+                  const res = await fetch('/api/diagnostico/estandares', { credentials: 'include' });
+                  const data = await res.json();
+                  setDiagnosticoData(data);
+                } catch (err) {
+                  console.error('Error fetching diagnostico:', err);
+                }
+              }}
+              data-testid="button-diagnostico"
+            >
+              <Wrench className="h-4 w-4 mr-2" />
+              Diagnóstico
+            </Button>
+          )}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-create-evaluation">
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Evaluación
+              </Button>
+            </DialogTrigger>
+          <DialogContent className="w-[95vw] max-w-[550px] max-h-[90vh] overflow-y-auto mx-auto">
+            <DialogHeader>
+              <DialogTitle>Nueva Evaluación Inicial SG-SST</DialogTitle>
+              <DialogDescription>
+                Cree una nueva evaluación anual de estándares mínimos según Resolución 0312/2019
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 overflow-x-auto">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="anio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Año</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            data-testid="input-anio"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="mes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mes</FormLabel>
+                        <Select
+                          value={field.value?.toString() || ""}
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-mes">
+                              <SelectValue placeholder="Seleccionar mes" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                              <SelectItem key={month} value={month.toString()}>
+                                {new Date(2024, month - 1).toLocaleDateString('es-CO', { month: 'long' })}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Switch para importar datos del año anterior */}
+                {form.watch("anio") > new Date().getFullYear() - 5 && (
+                  <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border">
+                    <div className="space-y-0.5">
+                      <Label>Importar datos del año anterior</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Copia automáticamente las respuestas de estándares persistentes (designación de responsable, políticas, etc.) para su revisión
+                      </p>
+                    </div>
+                    <Switch
+                      checked={importarAnterior}
+                      onCheckedChange={setImportarAnterior}
+                      data-testid="switch-importar-anterior"
+                    />
+                  </div>
+                )}
+                
+                {(user?.role as string) === 'admin' || (user?.role as string) === 'super_admin' ? (
+                  <FormField
+                    control={form.control}
+                    name="companyId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Empresa *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-company">
+                              <SelectValue placeholder="Seleccione empresa" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {companies?.map((company) => (
+                              <SelectItem key={company.id} value={company.id}>
+                                {company.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Seleccione la empresa para la cual se creará la evaluación
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <div className="rounded-md border px-3 py-2 bg-muted/50">
+                    <p className="text-sm text-muted-foreground mb-1">Empresa</p>
+                    <p className="font-medium">
+                      {companies.find(c => c.id === user?.companyId)?.name || "No asignada"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Las evaluaciones se crean automáticamente para su empresa
+                    </p>
+                  </div>
+                )}
+
+                {/* Tipo de Empresa - Determinado según Resolución 0312/2019 */}
+                <div className="rounded-md border px-3 py-2 bg-muted/50">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm text-muted-foreground">Tipo de Empresa</p>
+                    <Lock className="h-3 w-3 text-muted-foreground" />
+                  </div>
+                  <p className="font-medium" data-testid="text-tipo-empresa">
+                    {!targetCompany 
+                      ? (isAdmin ? "Seleccione una empresa primero" : "Cargando datos de empresa...")
+                      : tipoEmpresaLabels[calculatedTipoEmpresa] || calculatedTipoEmpresa
+                    }
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Determinado automáticamente según el número de trabajadores y nivel de riesgo (Res. 0312/2019)
+                  </p>
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="responsableNombre"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Responsable de la Evaluación</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-responsable" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="responsableCargo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cargo</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-cargo" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Firmas de Aprobación */}
+                <div className="space-y-3 border-t pt-3">
+                  <h3 className="font-semibold text-sm">Firmas de Aprobación (Opcional)</h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="elaboradoPorId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Elaborado por</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-elaborado-por">
+                                <SelectValue placeholder="Seleccione trabajador" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {workers.map((worker) => (
+                                <SelectItem key={`elaborado-${worker.id}`} value={worker.id}>
+                                  {worker.name} - {worker.position}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="autorizadoPorId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Autorizado por</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-autorizado-por">
+                                <SelectValue placeholder="Seleccione trabajador" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {workers.map((worker) => (
+                                <SelectItem key={`autorizado-${worker.id}`} value={worker.id}>
+                                  {worker.name} - {worker.position}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="aprobadoPorId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Aprobado por</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-aprobado-por">
+                                <SelectValue placeholder="Seleccione trabajador" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {workers.map((worker) => (
+                                <SelectItem key={`aprobado-${worker.id}`} value={worker.id}>
+                                  {worker.name} - {worker.position}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    type="submit"
+                    disabled={createMutation.isPending}
+                    data-testid="button-submit-evaluation"
+                  >
+                    {createMutation.isPending ? "Creando..." : "Crear Evaluación"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+        </div>
+      </div>
+
+      {estandarEvaluacionInicial && (
+        <AutomationAssistant
+          titulo="Evaluación Inicial del SG-SST"
+          estandar="2.3.1"
+          descripcion="Herramienta de asistencia para la evaluación inicial del Sistema de Gestión de Seguridad y Salud en el Trabajo según el Decreto 1072/2015, Artículo 2.2.4.6.16"
+          normativaAplicable={estandarEvaluacionInicial.normativaAplicable}
+          compact={true}
+        />
+      )}
+
+      <div className="flex items-center gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Buscar por año, responsable..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+            data-testid="input-search"
+          />
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">Cargando evaluaciones...</p>
+        </div>
+      ) : filteredEvaluaciones.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-lg font-semibold mb-2">No hay evaluaciones registradas</p>
+            <p className="text-muted-foreground text-center mb-4">
+              Cree su primera evaluación inicial del SG-SST según Resolución 0312/2019
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {filteredEvaluaciones.map((evaluacion) => (
+            <Card
+              key={evaluacion.id}
+              className="hover-elevate active-elevate-2 cursor-pointer"
+              onClick={() => setLocation(`/evaluaciones-sst/${evaluacion.id}`)}
+              data-testid={`card-evaluation-${evaluacion.id}`}
+            >
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-xl mb-2">
+                      Evaluación {evaluacion.anio} - {new Date(2024, evaluacion.mes - 1).toLocaleDateString('es-CO', { month: 'long' })}
+                    </CardTitle>
+                    <CardDescription>
+                      <div className="space-y-1">
+                        <p className="font-medium">Responsable: {evaluacion.responsableNombre}</p>
+                        <p>Cargo: {evaluacion.responsableCargo}</p>
+                        <p>Fecha evaluación: {new Date(evaluacion.fechaEvaluacion).toLocaleDateString('es-CO')}</p>
+                      </div>
+                    </CardDescription>
+                  </div>
+                  <div className="flex flex-col gap-2 items-end">
+                    {getEstadoBadge(evaluacion.estado)}
+                    {getNivelBadge(evaluacion.nivelCumplimiento, evaluacion.porcentajeCumplimiento)}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Tipo de Empresa</p>
+                    <p className="font-semibold">Tipo {evaluacion.tipoEmpresa.slice(-1)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Puntaje</p>
+                    <p className="font-semibold">
+                      {evaluacion.puntajeTotal ?? 0} / {evaluacion.puntajeMaximo ?? 100}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Cumplimiento</p>
+                    <p className="font-semibold">{evaluacion.porcentajeCumplimiento ?? 0}%</p>
+                  </div>
+                  {evaluacion.fechaEnvio && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Fecha Envío</p>
+                      <p className="font-semibold">{new Date(evaluacion.fechaEnvio).toLocaleDateString('es-CO')}</p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-2 flex-wrap">
+                  {evaluacion.estado === 'completada' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadPDF(evaluacion.id, evaluacion.anio);
+                      }}
+                      data-testid={`button-download-pdf-${evaluacion.id}`}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Descargar Reporte PDF
+                    </Button>
+                  )}
+                  {isSuperAdmin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                      onClick={(e) => handleDeleteClick(e, evaluacion)}
+                      data-testid={`button-delete-evaluation-${evaluacion.id}`}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Eliminar
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Dialog de Diagnóstico de Estándares (solo superadmin) */}
+      {isSuperAdmin && (
+        <Dialog open={diagnosticoOpen} onOpenChange={setDiagnosticoOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Wrench className="h-5 w-5" />
+                Diagnóstico de Estándares SST
+              </DialogTitle>
+              <DialogDescription>
+                Verificar y corregir la configuración de estándares según Resolución 0312/2019
+              </DialogDescription>
+            </DialogHeader>
+            
+            {diagnosticoData ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Tipo 1 (Microempresa)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <span>Estándares:</span>
+                        <Badge variant={diagnosticoData.tipo1 === 7 ? "default" : "destructive"}>
+                          {diagnosticoData.tipo1} / 7
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span>Puntaje máx:</span>
+                        <Badge variant={diagnosticoData.puntajeMaximoTipo1 === 95 ? "default" : "destructive"}>
+                          {diagnosticoData.puntajeMaximoTipo1} / 95
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Tipo 2 (Pequeña)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <span>Estándares:</span>
+                        <Badge variant={diagnosticoData.tipo2 === 21 ? "default" : "destructive"}>
+                          {diagnosticoData.tipo2} / 21
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Tipo 3/4 (Mediana/Grande)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <span>Estándares:</span>
+                        <Badge variant={diagnosticoData.tipo3 === 61 ? "default" : "destructive"}>
+                          {diagnosticoData.tipo3} / 61
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                {diagnosticoData.tipo1 !== 7 && (
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+                      <div>
+                        <p className="font-medium text-destructive">Configuración incorrecta detectada</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Tipo 1 debería tener 7 estándares pero tiene {diagnosticoData.tipo1}. 
+                          Haga clic en "Corregir Estándares" para arreglar esto.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {diagnosticoData.estandaresTipo1 && (
+                  <div>
+                    <h4 className="font-medium mb-2">Estándares configurados para Tipo 1:</h4>
+                    <div className="text-sm space-y-1 max-h-40 overflow-y-auto">
+                      {diagnosticoData.estandaresTipo1.map((e: any, i: number) => (
+                        <div key={i} className="flex justify-between py-1 border-b">
+                          <span>{e.numero} - {e.nombre?.substring(0, 40)}...</span>
+                          <Badge variant="outline">{e.puntaje} pts</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                Cargando diagnóstico...
+              </div>
+            )}
+            
+            <DialogFooter className="flex gap-2">
+              <Button variant="outline" onClick={() => setDiagnosticoOpen(false)}>
+                Cerrar
+              </Button>
+              <Button 
+                variant="destructive"
+                disabled={corrigiendo || !diagnosticoData || diagnosticoData.tipo1 === 7}
+                onClick={async () => {
+                  setCorrigiendo(true);
+                  try {
+                    const res = await fetch('/api/diagnostico/corregir-estandares', { 
+                      method: 'POST',
+                      credentials: 'include' 
+                    });
+                    const data = await res.json();
+                    toast({
+                      title: "Corrección completada",
+                      description: data.mensaje || "Estándares corregidos exitosamente",
+                    });
+                    const diagRes = await fetch('/api/diagnostico/estandares', { credentials: 'include' });
+                    const diagData = await diagRes.json();
+                    setDiagnosticoData(diagData);
+                  } catch (err: any) {
+                    toast({
+                      title: "Error",
+                      description: err.message || "No se pudo corregir los estándares",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setCorrigiendo(false);
+                  }
+                }}
+              >
+                {corrigiendo ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                    Corrigiendo...
+                  </>
+                ) : (
+                  <>
+                    <Wrench className="h-4 w-4 mr-2" />
+                    Corregir Estándares
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Diálogo de confirmación de eliminación */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+        setDeleteDialogOpen(open);
+        if (!open) setEvaluacionToDelete(null);
+      }}>
+        <AlertDialogContent data-testid="dialog-confirm-delete">
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar evaluación?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará permanentemente la evaluación{" "}
+              <strong>
+                {evaluacionToDelete?.anio} - {evaluacionToDelete ? new Date(2024, evaluacionToDelete.mes - 1).toLocaleDateString('es-CO', { month: 'long' }) : ""}
+              </strong>
+              , incluyendo todas sus respuestas y acciones de mejora asociadas. 
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

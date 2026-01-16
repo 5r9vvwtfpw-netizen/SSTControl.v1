@@ -1,0 +1,446 @@
+import type { Express } from "express";
+import { requireAuth, requirePermission } from "../auth";
+import { db } from "../db";
+import * as schema from "@shared/schema";
+import { eq, and, sql, desc } from "drizzle-orm";
+import { hasPermission } from "@shared/permissions";
+
+export function registerLicensedProfessionalsRoutes(app: Express) {
+
+  // GET /api/licensed-professionals - List all licensed professionals (users with role='lso')
+  app.get("/api/licensed-professionals", requirePermission("licensed_professionals:view"), async (req, res) => {
+    try {
+      const { companyId } = req.query;
+      
+      let professionals = await db.select().from(schema.users).where(eq(schema.users.role, 'lso'));
+      
+      if (companyId && typeof companyId === 'string') {
+        const assignments = await db.select()
+          .from(schema.licensedProfessionalAssignments)
+          .where(and(
+            eq(schema.licensedProfessionalAssignments.companyId, companyId),
+            eq(schema.licensedProfessionalAssignments.isActive, true)
+          ));
+        
+        const assignedUserIds = new Set(assignments.map(a => a.userId));
+        professionals = professionals.filter(p => assignedUserIds.has(p.id));
+      }
+      
+      const professionalsWithAssignments = await Promise.all(
+        professionals.map(async (prof) => {
+          const assignments = await db.select({
+            id: schema.licensedProfessionalAssignments.id,
+            companyId: schema.licensedProfessionalAssignments.companyId,
+            companyName: schema.companies.name,
+            companyNit: schema.companies.nit,
+            assignedAt: schema.licensedProfessionalAssignments.assignedAt,
+            isActive: schema.licensedProfessionalAssignments.isActive,
+          })
+          .from(schema.licensedProfessionalAssignments)
+          .innerJoin(schema.companies, eq(schema.licensedProfessionalAssignments.companyId, schema.companies.id))
+          .where(eq(schema.licensedProfessionalAssignments.userId, prof.id));
+          
+          const { password, ...profWithoutPassword } = prof;
+          return {
+            ...profWithoutPassword,
+            assignments
+          };
+        })
+      );
+      
+      res.json(professionalsWithAssignments);
+    } catch (error: any) {
+      console.error('[GET /api/licensed-professionals] Error:', error.message);
+      res.status(500).json({ message: "Error fetching licensed professionals", error: error.message });
+    }
+  });
+
+  // GET /api/licensed-professionals/:id - Get single licensed professional details
+  app.get("/api/licensed-professionals/:id", requirePermission("licensed_professionals:view"), async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const [professional] = await db.select()
+        .from(schema.users)
+        .where(and(
+          eq(schema.users.id, id),
+          eq(schema.users.role, 'lso')
+        ));
+      
+      if (!professional) {
+        return res.status(404).json({ message: "Licensed professional not found" });
+      }
+      
+      const assignments = await db.select({
+        id: schema.licensedProfessionalAssignments.id,
+        companyId: schema.licensedProfessionalAssignments.companyId,
+        companyName: schema.companies.name,
+        companyNit: schema.companies.nit,
+        assignedAt: schema.licensedProfessionalAssignments.assignedAt,
+        assignedBy: schema.licensedProfessionalAssignments.assignedBy,
+        isActive: schema.licensedProfessionalAssignments.isActive,
+      })
+      .from(schema.licensedProfessionalAssignments)
+      .innerJoin(schema.companies, eq(schema.licensedProfessionalAssignments.companyId, schema.companies.id))
+      .where(eq(schema.licensedProfessionalAssignments.userId, id));
+      
+      const { password, ...profWithoutPassword } = professional;
+      
+      res.json({
+        ...profWithoutPassword,
+        assignments
+      });
+    } catch (error: any) {
+      console.error('[GET /api/licensed-professionals/:id] Error:', error.message);
+      res.status(500).json({ message: "Error fetching licensed professional", error: error.message });
+    }
+  });
+
+  // PATCH /api/licensed-professionals/:id - Update licensed professional's SST data
+  app.patch("/api/licensed-professionals/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user!;
+      
+      const canEdit = hasPermission(user.role, "licensed_professionals:edit");
+      const canEditSelf = hasPermission(user.role, "licensed_professionals:edit_self") && user.id === id;
+      
+      if (!canEdit && !canEditSelf) {
+        return res.status(403).json({ message: "You don't have permission to edit this professional" });
+      }
+      
+      const [professional] = await db.select()
+        .from(schema.users)
+        .where(and(
+          eq(schema.users.id, id),
+          eq(schema.users.role, 'lso')
+        ));
+      
+      if (!professional) {
+        return res.status(404).json({ message: "Licensed professional not found" });
+      }
+      
+      const allowedFields = [
+        'sstProfessionType', 'sstLicenseNumber', 'sstLicenseIssuer', 
+        'sstLicenseIssuedAt', 'sstLicenseExpiresAt', 'sstLicenseStatus',
+        'sstSignatureUrl', 'sstPhone', 'fullName', 'email'
+      ];
+      
+      const updateData: Record<string, any> = {};
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updateData[field] = req.body[field];
+        }
+      }
+      
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+      
+      const [updatedProfessional] = await db.update(schema.users)
+        .set(updateData)
+        .where(eq(schema.users.id, id))
+        .returning();
+      
+      const { password, ...profWithoutPassword } = updatedProfessional;
+      
+      res.json(profWithoutPassword);
+    } catch (error: any) {
+      console.error('[PATCH /api/licensed-professionals/:id] Error:', error.message);
+      res.status(500).json({ message: "Error updating licensed professional", error: error.message });
+    }
+  });
+
+  // POST /api/licensed-professionals/:id/assignments - Assign licensed professional to a company
+  app.post("/api/licensed-professionals/:id/assignments", requirePermission("licensed_professionals:assign"), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { companyId } = req.body;
+      const user = req.user!;
+      
+      if (!companyId) {
+        return res.status(400).json({ message: "companyId is required" });
+      }
+      
+      const [professional] = await db.select()
+        .from(schema.users)
+        .where(and(
+          eq(schema.users.id, id),
+          eq(schema.users.role, 'lso')
+        ));
+      
+      if (!professional) {
+        return res.status(404).json({ message: "Licensed professional not found" });
+      }
+      
+      const [company] = await db.select()
+        .from(schema.companies)
+        .where(eq(schema.companies.id, companyId));
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const [existingAssignment] = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, id),
+          eq(schema.licensedProfessionalAssignments.companyId, companyId)
+        ));
+      
+      if (existingAssignment) {
+        if (!existingAssignment.isActive) {
+          const [reactivated] = await db.update(schema.licensedProfessionalAssignments)
+            .set({ isActive: true, assignedAt: new Date(), assignedBy: user.id })
+            .where(eq(schema.licensedProfessionalAssignments.id, existingAssignment.id))
+            .returning();
+          return res.json(reactivated);
+        }
+        return res.status(400).json({ message: "Professional is already assigned to this company" });
+      }
+      
+      const [assignment] = await db.insert(schema.licensedProfessionalAssignments)
+        .values({
+          userId: id,
+          companyId,
+          assignedBy: user.id,
+        })
+        .returning();
+      
+      res.status(201).json(assignment);
+    } catch (error: any) {
+      console.error('[POST /api/licensed-professionals/:id/assignments] Error:', error.message);
+      res.status(500).json({ message: "Error creating assignment", error: error.message });
+    }
+  });
+
+  // DELETE /api/licensed-professionals/:id/assignments/:companyId - Remove assignment
+  app.delete("/api/licensed-professionals/:id/assignments/:companyId", requirePermission("licensed_professionals:assign"), async (req, res) => {
+    try {
+      const { id, companyId } = req.params;
+      
+      const [assignment] = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, id),
+          eq(schema.licensedProfessionalAssignments.companyId, companyId)
+        ));
+      
+      if (!assignment) {
+        return res.status(404).json({ message: "Assignment not found" });
+      }
+      
+      await db.update(schema.licensedProfessionalAssignments)
+        .set({ isActive: false })
+        .where(eq(schema.licensedProfessionalAssignments.id, assignment.id));
+      
+      res.json({ success: true, message: "Assignment removed successfully" });
+    } catch (error: any) {
+      console.error('[DELETE /api/licensed-professionals/:id/assignments/:companyId] Error:', error.message);
+      res.status(500).json({ message: "Error removing assignment", error: error.message });
+    }
+  });
+
+  // ==================== PORTAL LICENCIADO ROUTES ====================
+
+  // GET /api/portal-licenciado/dashboard - Dashboard stats for the LSO
+  app.get("/api/portal-licenciado/dashboard", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      
+      // Get all active assignments for this LSO
+      const assignments = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+      
+      const companyIds = assignments.map(a => a.companyId);
+      
+      let pendingDocuments = 0;
+      let signedDocuments = 0;
+      
+      if (companyIds.length > 0) {
+        // Get pending investigations count (need signature)
+        const pendingResult = await db.select({ count: sql<number>`count(*)` })
+          .from(schema.accidentInvestigations)
+          .where(and(
+            sql`${schema.accidentInvestigations.companyId} IN ${companyIds}`,
+            eq(schema.accidentInvestigations.requiresLicensedProfessional, 1),
+            sql`${schema.accidentInvestigations.status} IN ('pendiente', 'en_proceso')`,
+            sql`(${schema.accidentInvestigations.licensedProfessionalName} IS NULL OR ${schema.accidentInvestigations.licensedProfessionalName} = '')`
+          ));
+        
+        pendingDocuments = Number(pendingResult[0]?.count || 0);
+        
+        // Get signed investigations count
+        const signedResult = await db.select({ count: sql<number>`count(*)` })
+          .from(schema.accidentInvestigations)
+          .where(and(
+            sql`${schema.accidentInvestigations.companyId} IN ${companyIds}`,
+            eq(schema.accidentInvestigations.requiresLicensedProfessional, 1),
+            sql`${schema.accidentInvestigations.licensedProfessionalName} IS NOT NULL`,
+            sql`${schema.accidentInvestigations.licensedProfessionalName} != ''`
+          ));
+        
+        signedDocuments = Number(signedResult[0]?.count || 0);
+      }
+      
+      // Calculate license status
+      let licenseStatus = 'sin_licencia';
+      let daysUntilExpiry: number | null = null;
+      
+      if (user.sstLicenseExpiresAt) {
+        const expiryDate = new Date(user.sstLicenseExpiresAt);
+        const today = new Date();
+        daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysUntilExpiry <= 0) {
+          licenseStatus = 'vencida';
+        } else if (daysUntilExpiry <= 30) {
+          licenseStatus = 'por_vencer';
+        } else {
+          licenseStatus = 'vigente';
+        }
+      }
+      
+      res.json({
+        totalAssignedCompanies: companyIds.length,
+        pendingDocuments,
+        signedDocuments,
+        licenseStatus,
+        daysUntilExpiry,
+        licenseExpiresAt: user.sstLicenseExpiresAt,
+      });
+    } catch (error: any) {
+      console.error('[GET /api/portal-licenciado/dashboard] Error:', error.message);
+      res.status(500).json({ message: "Error fetching dashboard stats", error: error.message });
+    }
+  });
+
+  // GET /api/portal-licenciado/empresas - Companies assigned to the LSO
+  app.get("/api/portal-licenciado/empresas", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      
+      const empresas = await db.select({
+        id: schema.companies.id,
+        name: schema.companies.name,
+        nit: schema.companies.nit,
+        city: schema.companies.city,
+        riskLevel: schema.companies.riskLevel,
+        numberOfWorkers: schema.companies.numberOfWorkers,
+        assignmentId: schema.licensedProfessionalAssignments.id,
+        assignedAt: schema.licensedProfessionalAssignments.assignedAt,
+      })
+      .from(schema.licensedProfessionalAssignments)
+      .innerJoin(schema.companies, eq(schema.licensedProfessionalAssignments.companyId, schema.companies.id))
+      .where(and(
+        eq(schema.licensedProfessionalAssignments.userId, user.id),
+        eq(schema.licensedProfessionalAssignments.isActive, true)
+      ));
+      
+      res.json(empresas);
+    } catch (error: any) {
+      console.error('[GET /api/portal-licenciado/empresas] Error:', error.message);
+      res.status(500).json({ message: "Error fetching assigned companies", error: error.message });
+    }
+  });
+
+  // GET /api/portal-licenciado/documentos-pendientes - Pending documents needing signature
+  app.get("/api/portal-licenciado/documentos-pendientes", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      
+      // Get all active assignments for this LSO
+      const assignments = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+      
+      const companyIds = assignments.map(a => a.companyId);
+      
+      if (companyIds.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get pending investigations
+      const pendingInvestigations = await db.select({
+        id: schema.accidentInvestigations.id,
+        companyId: schema.accidentInvestigations.companyId,
+        companyName: schema.companies.name,
+        companyNit: schema.companies.nit,
+        accidentId: schema.accidentInvestigations.accidentId,
+        eventType: schema.accidentInvestigations.eventType,
+        eventDate: schema.accidentInvestigations.eventDate,
+        eventDescription: schema.accidentInvestigations.eventDescription,
+        dueDate: schema.accidentInvestigations.dueDate,
+        slaStatus: schema.accidentInvestigations.slaStatus,
+        daysRemaining: schema.accidentInvestigations.daysRemaining,
+        isSevere: schema.accidentInvestigations.isSevere,
+        isFatal: schema.accidentInvestigations.isFatal,
+        status: schema.accidentInvestigations.status,
+        createdAt: schema.accidentInvestigations.createdAt,
+      })
+      .from(schema.accidentInvestigations)
+      .innerJoin(schema.companies, eq(schema.accidentInvestigations.companyId, schema.companies.id))
+      .where(and(
+        sql`${schema.accidentInvestigations.companyId} IN ${companyIds}`,
+        eq(schema.accidentInvestigations.requiresLicensedProfessional, 1),
+        sql`${schema.accidentInvestigations.status} IN ('pendiente', 'en_proceso')`,
+        sql`(${schema.accidentInvestigations.licensedProfessionalName} IS NULL OR ${schema.accidentInvestigations.licensedProfessionalName} = '')`
+      ))
+      .orderBy(desc(schema.accidentInvestigations.eventDate));
+      
+      res.json(pendingInvestigations);
+    } catch (error: any) {
+      console.error('[GET /api/portal-licenciado/documentos-pendientes] Error:', error.message);
+      res.status(500).json({ message: "Error fetching pending documents", error: error.message });
+    }
+  });
+
+  // GET /api/companies/:companyId/licensed-professionals - Get licensed professionals assigned to a company
+  app.get("/api/companies/:companyId/licensed-professionals", requireAuth, async (req, res) => {
+    try {
+      const { companyId } = req.params;
+      const user = req.user!;
+      
+      if (user.role !== 'superadmin' && user.companyId !== companyId) {
+        return res.status(403).json({ message: "You can only view licensed professionals for your own company" });
+      }
+      
+      const professionals = await db.select({
+        id: schema.users.id,
+        username: schema.users.username,
+        fullName: schema.users.fullName,
+        email: schema.users.email,
+        sstProfessionType: schema.users.sstProfessionType,
+        sstLicenseNumber: schema.users.sstLicenseNumber,
+        sstLicenseIssuer: schema.users.sstLicenseIssuer,
+        sstLicenseIssuedAt: schema.users.sstLicenseIssuedAt,
+        sstLicenseExpiresAt: schema.users.sstLicenseExpiresAt,
+        sstLicenseStatus: schema.users.sstLicenseStatus,
+        sstSignatureUrl: schema.users.sstSignatureUrl,
+        sstPhone: schema.users.sstPhone,
+        assignmentId: schema.licensedProfessionalAssignments.id,
+        assignedAt: schema.licensedProfessionalAssignments.assignedAt,
+      })
+      .from(schema.licensedProfessionalAssignments)
+      .innerJoin(schema.users, eq(schema.licensedProfessionalAssignments.userId, schema.users.id))
+      .where(and(
+        eq(schema.licensedProfessionalAssignments.companyId, companyId),
+        eq(schema.licensedProfessionalAssignments.isActive, true),
+        eq(schema.users.role, 'lso'),
+        eq(schema.users.sstLicenseStatus, 'vigente')
+      ));
+      
+      res.json(professionals);
+    } catch (error: any) {
+      console.error('[GET /api/companies/:companyId/licensed-professionals] Error:', error.message);
+      res.status(500).json({ message: "Error fetching company licensed professionals", error: error.message });
+    }
+  });
+}

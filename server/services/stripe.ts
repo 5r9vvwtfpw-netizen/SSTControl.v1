@@ -1,0 +1,381 @@
+import Stripe from 'stripe';
+import { getUncachableStripeClient } from '../stripeClient';
+import { retryWithBackoff } from '../utils/retry';
+import logger from '../lib/logger';
+
+export interface StripeCheckoutSession {
+  sessionId: string;
+  url: string;
+}
+
+export interface StripeCustomer {
+  id: string;
+  email: string;
+  name?: string;
+  metadata?: Record<string, string>;
+}
+
+export interface StripeSubscription {
+  id: string;
+  status: string;
+  currentPeriodStart: Date;
+  currentPeriodEnd: Date;
+  cancelAtPeriodEnd: boolean;
+  priceId: string;
+  customerId: string;
+}
+
+export interface StripeInvoice {
+  id: string;
+  status: string;
+  amountDue: number;
+  amountPaid: number;
+  currency: string;
+  hostedInvoiceUrl?: string;
+  invoicePdf?: string;
+}
+
+export class StripeService {
+  private stripe: Stripe | null = null;
+
+  private async getClient(): Promise<Stripe> {
+    if (!this.stripe) {
+      this.stripe = await getUncachableStripeClient();
+    }
+    return this.stripe;
+  }
+
+  async createCustomer(data: {
+    email: string;
+    name?: string;
+    companyId: string;
+    metadata?: Record<string, string>;
+  }): Promise<StripeCustomer> {
+    return await retryWithBackoff(async () => {
+      const stripe = await this.getClient();
+      
+      const customer = await stripe.customers.create({
+        email: data.email,
+        name: data.name,
+        metadata: {
+          companyId: data.companyId,
+          ...data.metadata
+        }
+      });
+
+      return {
+        id: customer.id,
+        email: customer.email || data.email,
+        name: customer.name || undefined,
+        metadata: customer.metadata as Record<string, string>
+      };
+    }, {
+      maxAttempts: 3,
+      initialDelayMs: 1000
+    }, {
+      operation: 'createCustomer'
+    });
+  }
+
+  async findOrCreateCustomer(data: {
+    email: string;
+    name?: string;
+    companyId: string;
+  }): Promise<StripeCustomer> {
+    const stripe = await this.getClient();
+    
+    const existingCustomers = await stripe.customers.list({
+      email: data.email,
+      limit: 1
+    });
+
+    if (existingCustomers.data.length > 0) {
+      const customer = existingCustomers.data[0];
+      return {
+        id: customer.id,
+        email: customer.email || data.email,
+        name: customer.name || undefined,
+        metadata: customer.metadata as Record<string, string>
+      };
+    }
+
+    return this.createCustomer(data);
+  }
+
+  async createCheckoutSession(data: {
+    customerId: string;
+    priceId: string;
+    successUrl: string;
+    cancelUrl: string;
+    metadata?: Record<string, string>;
+    trialPeriodDays?: number;
+    allowPromotionCodes?: boolean;
+  }): Promise<StripeCheckoutSession> {
+    return await retryWithBackoff(async () => {
+      const stripe = await this.getClient();
+
+      const sessionParams: Stripe.Checkout.SessionCreateParams = {
+        customer: data.customerId,
+        mode: 'subscription',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: data.priceId,
+            quantity: 1
+          }
+        ],
+        success_url: data.successUrl,
+        cancel_url: data.cancelUrl,
+        allow_promotion_codes: data.allowPromotionCodes ?? true,
+        metadata: data.metadata
+      };
+
+      if (data.trialPeriodDays) {
+        sessionParams.subscription_data = {
+          trial_period_days: data.trialPeriodDays
+        };
+      }
+
+      const session = await stripe.checkout.sessions.create(sessionParams);
+
+      logger.info({ sessionId: session.id }, 'Stripe checkout session created');
+
+      return {
+        sessionId: session.id,
+        url: session.url!
+      };
+    }, {
+      maxAttempts: 3,
+      initialDelayMs: 1000
+    }, {
+      operation: 'createCheckoutSession'
+    });
+  }
+
+  async createBillingPortalSession(data: {
+    customerId: string;
+    returnUrl: string;
+  }): Promise<string> {
+    return await retryWithBackoff(async () => {
+      const stripe = await this.getClient();
+
+      const session = await stripe.billingPortal.sessions.create({
+        customer: data.customerId,
+        return_url: data.returnUrl
+      });
+
+      return session.url;
+    }, {
+      maxAttempts: 3,
+      initialDelayMs: 1000
+    }, {
+      operation: 'createBillingPortalSession'
+    });
+  }
+
+  async getSubscription(subscriptionId: string): Promise<StripeSubscription | null> {
+    try {
+      const stripe = await this.getClient();
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId) as unknown as Stripe.Subscription;
+
+      return {
+        id: subscription.id,
+        status: subscription.status,
+        currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
+        currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        priceId: typeof subscription.items.data[0]?.price === 'object' 
+          ? subscription.items.data[0].price.id 
+          : '',
+        customerId: typeof subscription.customer === 'string'
+          ? subscription.customer
+          : subscription.customer.id
+      };
+    } catch (error: any) {
+      if (error.type === 'StripeInvalidRequestError') {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async cancelSubscription(subscriptionId: string, immediately: boolean = false): Promise<StripeSubscription> {
+    const stripe = await this.getClient();
+
+    if (immediately) {
+      const subscription = await stripe.subscriptions.cancel(subscriptionId) as unknown as Stripe.Subscription;
+      return {
+        id: subscription.id,
+        status: subscription.status,
+        currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
+        currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        priceId: typeof subscription.items.data[0]?.price === 'object' 
+          ? subscription.items.data[0].price.id 
+          : '',
+        customerId: typeof subscription.customer === 'string'
+          ? subscription.customer
+          : subscription.customer.id
+      };
+    } else {
+      const subscription = await stripe.subscriptions.update(subscriptionId, {
+        cancel_at_period_end: true
+      }) as unknown as Stripe.Subscription;
+      return {
+        id: subscription.id,
+        status: subscription.status,
+        currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
+        currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        priceId: typeof subscription.items.data[0]?.price === 'object' 
+          ? subscription.items.data[0].price.id 
+          : '',
+        customerId: typeof subscription.customer === 'string'
+          ? subscription.customer
+          : subscription.customer.id
+      };
+    }
+  }
+
+  async updateSubscription(subscriptionId: string, newPriceId: string): Promise<StripeSubscription> {
+    const stripe = await this.getClient();
+    
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId) as unknown as Stripe.Subscription;
+    const itemId = subscription.items.data[0].id;
+
+    const updated = await stripe.subscriptions.update(subscriptionId, {
+      items: [{
+        id: itemId,
+        price: newPriceId
+      }],
+      proration_behavior: 'create_prorations'
+    }) as unknown as Stripe.Subscription;
+
+    return {
+      id: updated.id,
+      status: updated.status,
+      currentPeriodStart: new Date((updated as any).current_period_start * 1000),
+      currentPeriodEnd: new Date((updated as any).current_period_end * 1000),
+      cancelAtPeriodEnd: updated.cancel_at_period_end,
+      priceId: typeof updated.items.data[0]?.price === 'object' 
+        ? updated.items.data[0].price.id 
+        : '',
+      customerId: typeof updated.customer === 'string'
+        ? updated.customer
+        : updated.customer.id
+    };
+  }
+
+  async getInvoice(invoiceId: string): Promise<StripeInvoice | null> {
+    try {
+      const stripe = await this.getClient();
+      const invoice = await stripe.invoices.retrieve(invoiceId);
+
+      return {
+        id: invoice.id,
+        status: invoice.status || 'draft',
+        amountDue: invoice.amount_due,
+        amountPaid: invoice.amount_paid,
+        currency: invoice.currency,
+        hostedInvoiceUrl: invoice.hosted_invoice_url || undefined,
+        invoicePdf: invoice.invoice_pdf || undefined
+      };
+    } catch (error: any) {
+      if (error.type === 'StripeInvalidRequestError') {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async listInvoices(customerId: string, limit: number = 10): Promise<StripeInvoice[]> {
+    const stripe = await this.getClient();
+    
+    const invoices = await stripe.invoices.list({
+      customer: customerId,
+      limit
+    });
+
+    return invoices.data.map(invoice => ({
+      id: invoice.id,
+      status: invoice.status || 'draft',
+      amountDue: invoice.amount_due,
+      amountPaid: invoice.amount_paid,
+      currency: invoice.currency,
+      hostedInvoiceUrl: invoice.hosted_invoice_url || undefined,
+      invoicePdf: invoice.invoice_pdf || undefined
+    }));
+  }
+
+  async createProduct(data: {
+    name: string;
+    description?: string;
+    metadata?: Record<string, string>;
+  }): Promise<string> {
+    const stripe = await this.getClient();
+    
+    const product = await stripe.products.create({
+      name: data.name,
+      description: data.description,
+      metadata: data.metadata
+    });
+
+    return product.id;
+  }
+
+  async createPrice(data: {
+    productId: string;
+    unitAmount: number;
+    currency: string;
+    interval: 'month' | 'year';
+    nickname?: string;
+  }): Promise<string> {
+    const stripe = await this.getClient();
+    
+    const price = await stripe.prices.create({
+      product: data.productId,
+      unit_amount: data.unitAmount,
+      currency: data.currency,
+      recurring: {
+        interval: data.interval
+      },
+      nickname: data.nickname
+    });
+
+    return price.id;
+  }
+
+  async listProducts(): Promise<Stripe.Product[]> {
+    const stripe = await this.getClient();
+    
+    const products = await stripe.products.list({
+      active: true,
+      limit: 100
+    });
+
+    return products.data;
+  }
+
+  async listPrices(productId?: string): Promise<Stripe.Price[]> {
+    const stripe = await this.getClient();
+    
+    const params: Stripe.PriceListParams = {
+      active: true,
+      limit: 100
+    };
+
+    if (productId) {
+      params.product = productId;
+    }
+
+    const prices = await stripe.prices.list(params);
+    return prices.data;
+  }
+
+  verifyWebhookSignature(payload: Buffer, signature: string, endpointSecret: string): Stripe.Event {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+    return stripe.webhooks.constructEvent(payload, signature, endpointSecret);
+  }
+}
+
+export const stripeService = new StripeService();
