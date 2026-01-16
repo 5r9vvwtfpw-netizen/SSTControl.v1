@@ -196,6 +196,19 @@ import { calculateChapter, getEmpresaTipoFromChapterAndRisk, getTrialStatus, get
 import { isStandardPersistent, getPersistentStandardCodes } from "../shared/sst-inheritance";
 import { setupTrialWatermarkOnAllPages, addTrialFooter } from "./services/pdf-watermark";
 import { 
+  addStandardHeader, 
+  addSignatureFooter, 
+  addSectionBar, 
+  getSignersForCompany, 
+  getDocumentCode,
+  checkPageBreak,
+  PDF_COLORS,
+  PDF_CONFIG,
+  loadCompanyLogo,
+  formatDate,
+  requiresLSOSignature
+} from "./services/pdf-standardizer";
+import { 
   sendExamRenewalEmail, 
   sendTrainingRenewalEmail, 
   sendTestEmail,
@@ -3641,8 +3654,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Pipe PDF to response
       doc.pipe(res);
       
+      // Add standard corporate header (ISO 45001:2018)
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      await addStandardHeader({
+        doc,
+        company: {
+          id: company.id,
+          name: company.name,
+          nit: company.nit,
+          logoUrl: company.logoUrl,
+        },
+        documentTitle: 'FORMATO ÚNICO DE REPORTE DE ACCIDENTE DE TRABAJO (FURAT)',
+        documentCode: getDocumentCode('furat'),
+        version: '2.0',
+        date: accident.date ? new Date(accident.date) : new Date(),
+        logoBuffer,
+      });
+      
       // Generate content using modular function
       generateFuratPdfContent(doc, accident, worker, company);
+      
+      // Add signature footer with LSO (ISO 45001:2018)
+      const signers = await getSignersForCompany(company.id, true);
+      addSignatureFooter(doc, signers, true);
       
       // Finalize PDF
       doc.end();
@@ -4118,20 +4152,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="Investigacion-${id.substring(0, 8)}.pdf"`);
       doc.pipe(res);
       
+      // Add standard corporate header (ISO 45001:2018)
+      const logoBuffer = await loadCompanyLogo(company?.logoUrl || null);
+      await addStandardHeader({
+        doc,
+        company: {
+          id: company?.id || 'N/A',
+          name: company?.name || 'Empresa',
+          nit: company?.nit || 'N/A',
+          logoUrl: company?.logoUrl,
+        },
+        documentTitle: 'INFORME DE INVESTIGACIÓN DE ACCIDENTE',
+        documentCode: getDocumentCode('investigation'),
+        version: '2.0',
+        date: investigation.eventDate ? new Date(investigation.eventDate) : new Date(),
+        logoBuffer,
+      });
+      
       const GREEN_HEADER = '#1e7e34';
       const pageWidth = doc.page.width - 80;
-      
-      // Header
-      doc.fillColor(GREEN_HEADER).fontSize(18).font('Helvetica-Bold')
-        .text('INFORME DE INVESTIGACIÓN DE ACCIDENTE', { align: 'center' });
-      doc.moveDown(0.5);
-      
-      if (company) {
-        doc.fillColor('#333').fontSize(12).font('Helvetica')
-          .text(company.name, { align: 'center' });
-        doc.fontSize(10).text(`NIT: ${company.nit}`, { align: 'center' });
-      }
-      doc.moveDown(1);
       
       // Event Information Section
       doc.fillColor(GREEN_HEADER).fontSize(14).font('Helvetica-Bold')
@@ -4257,11 +4296,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.font('Helvetica').text(investigation.lessonLearned, { align: 'justify' });
       }
       
-      // Footer
-      doc.moveDown(2);
-      doc.fontSize(8).fillColor('#666')
-        .text(`Documento generado el ${new Date().toLocaleDateString('es-CO')} - Sistema SG-SST`, { align: 'center' });
-      doc.text('Resolución 1401/2007 - Investigación de incidentes y accidentes de trabajo', { align: 'center' });
+      // Add signature footer with LSO for severe/fatal cases (ISO 45001:2018)
+      const requiresLSO = investigation.isSevere || investigation.isFatal;
+      const signers = await getSignersForCompany(investigation.companyId, requiresLSO);
+      addSignatureFooter(doc, signers, requiresLSO);
+      
+      // Legal reference
+      doc.moveDown(1);
+      doc.fontSize(6).fillColor('#666')
+        .text('Resolución 1401/2007 - Investigación de incidentes y accidentes de trabajo', { align: 'center' });
       
       doc.end();
     } catch (error: any) {
@@ -4436,26 +4479,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Generate PDF
+      // Add trial watermark if subscription is in trial period
+      const absences_subscription = await storage.getSubscriptionByCompany(companyId);
+      const absences_trialStatus = getTrialStatus(absences_subscription?.status || 'trial', absences_subscription?.trialEnd || null, true, true);
+
       const GREEN_HEADER = '#1e7e34';
       const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+      setupTrialWatermarkOnAllPages(doc, absences_trialStatus.requiresWatermark);
       
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="estadisticas-ausentismo-${year || 'anual'}-${month || 'completo'}.pdf"`);
       doc.pipe(res);
       
-      // Header
-      doc.fillColor(GREEN_HEADER).fontSize(18).font('Helvetica-Bold')
-        .text('INFORME DE ESTADÍSTICAS DE AUSENTISMO', { align: 'center' });
-      doc.moveDown(0.5);
-      doc.fillColor('#333').fontSize(12).font('Helvetica')
-        .text(`Empresa: ${company.name}`, { align: 'center' });
-      doc.text(`NIT: ${company.nit}`, { align: 'center' });
+      // Add standard corporate header (ISO 45001:2018)
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      await addStandardHeader({
+        doc,
+        company: {
+          id: company.id,
+          name: company.name,
+          nit: company.nit,
+          logoUrl: company.logoUrl,
+        },
+        documentTitle: 'INFORME DE ESTADÍSTICAS DE AUSENTISMO',
+        documentCode: getDocumentCode('absenteeism_statistics'),
+        version: '2.0',
+        date: new Date(),
+        logoBuffer,
+      });
       
       const periodText = year && month 
         ? `Período: ${month}/${year}` 
         : year ? `Año: ${year}` : 'Período: Todos los registros';
-      doc.text(periodText, { align: 'center' });
+      doc.fontSize(10).text(periodText, { align: 'center' });
       doc.moveDown(1.5);
+      
       
       // Summary Statistics Section
       doc.fillColor(GREEN_HEADER).fontSize(14).font('Helvetica-Bold')
@@ -4551,11 +4609,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.text('• Excelente gestión: Mantener los programas de prevención actuales.');
       }
       
-      // Footer
-      doc.moveDown(2);
-      doc.fontSize(8).fillColor('#666')
-        .text(`Documento generado el ${new Date().toLocaleDateString('es-CO')} - Sistema SG-SST`, { align: 'center' });
-      doc.text('Estándar 3.2.3 - Control de Ausentismo por Incidentes, Accidentes y Enfermedades', { align: 'center' });
+      // Add signature footer with LSO (Standard 3.2.3 requires LSO)
+      const signers = await getSignersForCompany(company.id, true);
+      addSignatureFooter(doc, signers, true);
+      
+      // Legal reference
+      doc.moveDown(1);
+      doc.fontSize(6).fillColor('#666')
+        .text('Estándar 3.2.3 - Control de Ausentismo por Incidentes, Accidentes y Enfermedades', { align: 'center' });
       
       doc.end();
     } catch (error: any) {
@@ -5437,8 +5498,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Pipe PDF to response
       doc.pipe(res);
       
+      // Add standard corporate header (ISO 45001:2018)
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      await addStandardHeader({
+        doc,
+        company: {
+          id: company.id,
+          name: company.name,
+          nit: company.nit,
+          logoUrl: company.logoUrl,
+        },
+        documentTitle: 'FORMATO ÚNICO DE REPORTE DE ENFERMEDAD LABORAL (FUREL)',
+        documentCode: getDocumentCode('furel'),
+        version: '2.0',
+        date: disease.diagnosticDate ? new Date(disease.diagnosticDate) : new Date(),
+        logoBuffer,
+      });
+      
       // Generate content using modular function
       generateFurelPdfContent(doc, disease, worker, company);
+      
+      // Add signature footer with LSO (ISO 45001:2018)
+      const signers = await getSignersForCompany(company.id, true);
+      addSignatureFooter(doc, signers, true);
       
       // Finalize PDF
       doc.end();
@@ -7510,6 +7592,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create PDF document
       const doc = new PDFDocument({ size: 'LETTER', margin: 35 });
       
+      // Add trial watermark if subscription is in trial period
+      const jp_subscription = await storage.getSubscriptionByCompany(profile.companyId);
+      const jp_trialStatus = getTrialStatus(jp_subscription?.status || 'trial', jp_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, jp_trialStatus.requiresWatermark);
+      
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="perfil-cargo-${profile.name.replace(/\s+/g, '-').toLowerCase()}.pdf"`);
       
@@ -8889,6 +8976,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const desig_subscription = await storage.getSubscriptionByCompany(companyId);
+      const desig_trialStatus = getTrialStatus(desig_subscription?.status || 'trial', desig_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, desig_trialStatus.requiresWatermark);
       // Set response headers
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="Acta-Designacion-Responsable-SST-${designation.id.substring(0, 8)}.pdf"`);
@@ -9174,6 +9266,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create PDF document
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const budget_subscription = await storage.getSubscriptionByCompany(companyId);
+      const budget_trialStatus = getTrialStatus(budget_subscription?.status || 'trial', budget_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, budget_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
 
@@ -9429,6 +9526,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create PDF document with standard SST Colombia format
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const resalloc_subscription = await storage.getSubscriptionByCompany(companyId);
+      const resalloc_trialStatus = getTrialStatus(resalloc_subscription?.status || 'trial', resalloc_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, resalloc_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
 
@@ -9770,6 +9872,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const workers_subscription = await storage.getSubscriptionByCompany(companyId);
+      const workers_trialStatus = getTrialStatus(workers_subscription?.status || 'trial', workers_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, workers_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
 
@@ -10396,6 +10503,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf10428_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf10428_trialStatus = getTrialStatus(pdf10428_subscription?.status || 'trial', pdf10428_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf10428_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = 612; // LETTER width
       
@@ -10552,6 +10664,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf10584_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf10584_trialStatus = getTrialStatus(pdf10584_subscription?.status || 'trial', pdf10584_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf10584_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = 612; // LETTER width
       
@@ -10752,6 +10869,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf10784_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf10784_trialStatus = getTrialStatus(pdf10784_subscription?.status || 'trial', pdf10784_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf10784_trialStatus.requiresWatermark);
       
       const margin = 35;
       const pageWidth = 612; // LETTER width
@@ -11477,6 +11599,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ size: 'LETTER', layout: 'landscape', margin: 50 });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf11509_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf11509_trialStatus = getTrialStatus(pdf11509_subscription?.status || 'trial', pdf11509_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf11509_trialStatus.requiresWatermark);
       
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="certificado-${certificado.codigoCertificado}.pdf"`);
@@ -12329,6 +12456,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create PDF with standard corporate format
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf12361_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf12361_trialStatus = getTrialStatus(pdf12361_subscription?.status || 'trial', pdf12361_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf12361_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - (margin * 2);
@@ -12433,8 +12565,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           const workerName = hrw.worker ? hrw.worker.name : 'N/A';
           const actividadLabel = actividadesAltoRiesgo[hrw.actividadRiesgo || ''] || hrw.actividadRiesgo || 'N/A';
-          const porcentaje = hrw.porcentajeCotizacion ? `${hrw.porcentajeCotizacion}%` : 'N/A';
-          const ultimoMes = hrw.ultimoMesPago || 'Sin registro';
+          const porcentaje = hrw.porcentajeCotizacionEspecial ? `${hrw.porcentajeCotizacionEspecial}%` : 'N/A';
+          const ultimoMes = hrw.ultimoMesPagado || 'Sin registro';
           const estado = hrw.cumpleCotizacion ? 'Cumple' : 'No Cumple';
           const observaciones = hrw.observaciones || '';
           
@@ -12692,6 +12824,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create PDF
       const doc = new PDFDocument({ size: 'letter', margin: 35 });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf12724_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf12724_trialStatus = getTrialStatus(pdf12724_subscription?.status || 'trial', pdf12724_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf12724_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
       const chunks: Buffer[] = [];
@@ -13225,6 +13362,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         margins: { top: 50, left: 50, bottom: 50, right: 50 },
         size: 'A4'
       });
+      
+      // Add trial watermark if subscription is in trial period
+      const doc_subscription = await storage.getSubscriptionByCompany(companyId);
+      const doc_trialStatus = getTrialStatus(doc_subscription?.status || 'trial', doc_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, doc_trialStatus.requiresWatermark);
 
       res.contentType('application/pdf');
       doc.pipe(res);
@@ -13530,6 +13672,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf13562_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf13562_trialStatus = getTrialStatus(pdf13562_subscription?.status || 'trial', pdf13562_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf13562_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
 
@@ -14707,6 +14854,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create PDF with standard format
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf14739_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf14739_trialStatus = getTrialStatus(pdf14739_subscription?.status || 'trial', pdf14739_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf14739_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - (margin * 2);
@@ -15211,6 +15363,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { default: PDFDocument } = await import('pdfkit');
       // Use margin 50 to align with generateStandardPdfHeader
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', layout: 'landscape' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf15243_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf15243_trialStatus = getTrialStatus(pdf15243_subscription?.status || 'trial', pdf15243_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf15243_trialStatus.requiresWatermark);
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename=trabajadores_alto_riesgo.pdf');
@@ -15485,6 +15642,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50 });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf15517_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf15517_trialStatus = getTrialStatus(pdf15517_subscription?.status || 'trial', pdf15517_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf15517_trialStatus.requiresWatermark);
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename=informe_trabajadores_filtrados.pdf');
@@ -15666,6 +15828,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         size: [340, 215], // 3.375" x 2.125" scaled to points (~86mm x 54mm ID card)
         margin: 20
       });
+      
+      // Add trial watermark if subscription is in trial period
+      const idcard_subscription = await storage.getSubscriptionByCompany(companyId);
+      const idcard_trialStatus = getTrialStatus(idcard_subscription?.status || 'trial', idcard_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, idcard_trialStatus.requiresWatermark);
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename=tarjeta_${worker.name.replace(/\s+/g, '_')}.pdf`);
@@ -15904,6 +16071,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create professional PDF with balanced layout - A4 format
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 40, size: 'A4', bufferPages: true });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf15936_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf15936_trialStatus = getTrialStatus(pdf15936_subscription?.status || 'trial', pdf15936_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf15936_trialStatus.requiresWatermark);
 
       const margin = 40;
       res.setHeader('Content-Type', 'application/pdf');
@@ -16303,6 +16475,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create PDF document
         const PDFDocument = (await import('pdfkit')).default;
         const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf16335_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf16335_trialStatus = getTrialStatus(pdf16335_subscription?.status || 'trial', pdf16335_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf16335_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
 
@@ -16533,6 +16710,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create PDF document
         const PDFDocument = (await import('pdfkit')).default;
         const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf16565_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf16565_trialStatus = getTrialStatus(pdf16565_subscription?.status || 'trial', pdf16565_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf16565_trialStatus.requiresWatermark);
         const margin = 35;
         const pageWidth = doc.page.width;
 
@@ -16765,6 +16947,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create PDF document
         const PDFDocument = (await import('pdfkit')).default;
         const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf16797_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf16797_trialStatus = getTrialStatus(pdf16797_subscription?.status || 'trial', pdf16797_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf16797_trialStatus.requiresWatermark);
         const margin = 35;
         const pageWidth = doc.page.width;
 
@@ -16989,6 +17176,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create PDF document
         const PDFDocument = (await import('pdfkit')).default;
         const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf17021_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf17021_trialStatus = getTrialStatus(pdf17021_subscription?.status || 'trial', pdf17021_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf17021_trialStatus.requiresWatermark);
         const margin = 35;
         const pageWidth = doc.page.width;
 
@@ -17204,6 +17396,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create PDF document
         const PDFDocument = (await import('pdfkit')).default;
         const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf17236_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf17236_trialStatus = getTrialStatus(pdf17236_subscription?.status || 'trial', pdf17236_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf17236_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
 
@@ -17394,6 +17591,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create PDF document
         const PDFDocument = (await import('pdfkit')).default;
         const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf17426_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf17426_trialStatus = getTrialStatus(pdf17426_subscription?.status || 'trial', pdf17426_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf17426_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
 
@@ -17568,7 +17770,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error: any) {
       console.error('Error generating report:', error);
-      res.status(500).send('Error al generar el informe: ' + error.message);
+      
+      // Categorize the error and return appropriate message
+      let statusCode = 500;
+      let errorCode = "PDF_GENERATION_FAILED";
+      let message = "Error al generar el informe. Intente nuevamente en unos momentos.";
+
+      // Check for specific error patterns
+      if (error.message?.includes('no data') || error.message?.includes('No data')) {
+        errorCode = "NO_DATA_FOR_PERIOD";
+        message = "No se encontraron datos para el período seleccionado. Verifique que existan registros para las fechas indicadas.";
+        statusCode = 400;
+      } else if (error.message?.includes('required') || error.message?.includes('obligatorio')) {
+        errorCode = "MISSING_REQUIRED_DATA";
+        message = "Faltan datos obligatorios en el sistema. Complete la información requerida antes de generar el reporte.";
+        statusCode = 400;
+      } else if (error.message?.includes('connection') || error.message?.includes('Connection')) {
+        errorCode = "DATABASE_ERROR";
+        message = "Error al acceder a los datos. Intente nuevamente en unos momentos.";
+        statusCode = 500;
+      } else if (error.message?.includes('permission') || error.message?.includes('unauthorized')) {
+        errorCode = "UNAUTHORIZED";
+        message = "No tiene permisos para generar este informe.";
+        statusCode = 403;
+      } else if (error.message?.includes('subscription') || error.message?.includes('trial')) {
+        errorCode = "SUBSCRIPTION_LIMIT";
+        message = "Esta funcionalidad no está disponible en su plan actual. Actualice su suscripción para acceder a los reportes.";
+        statusCode = 403;
+      }
+      
+      res.status(statusCode).json({ 
+        error: errorCode,
+        message: message,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
@@ -18583,6 +18818,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf18615_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf18615_trialStatus = getTrialStatus(pdf18615_subscription?.status || 'trial', pdf18615_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf18615_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
 
@@ -18753,15 +18993,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Footer on all pages
-      const pageCount = doc.bufferedPageRange().count;
-      for (let i = 0; i < pageCount; i++) {
-        doc.switchToPage(i);
-        const footerY = doc.page.height - 40;
-        doc.fontSize(7).font('Helvetica').fillColor('#666666').text(
-          `Página ${i + 1} de ${pageCount} | Generado el ${new Date().toLocaleDateString('es-CO')} | ${company?.name || ''}`,
-          margin, footerY, { width: pageWidth - 2 * margin, align: 'center' }
-        );
-      }
+      // Add standardized signature footer with LSO requirement (per Estándar 3.1.7)
+      addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -18789,6 +19022,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf18821_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf18821_trialStatus = getTrialStatus(pdf18821_subscription?.status || 'trial', pdf18821_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf18821_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
 
@@ -19218,18 +19456,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get company for branding
       const company = await storage.getCompany(companyId);
 
-      // Download company logo from S3 if available
-      let logoBuffer: Buffer | null = null;
-      if (company?.logoUrl) {
-        try {
-          const normalizedPath = objectStorageService.normalizeObjectEntityPath(company.logoUrl);
-          logoBuffer = await objectStorageService.getObjectBuffer(normalizedPath);
-        } catch (err) {
-          console.warn("Could not download company logo for PDF:", err);
-        }
-      }
+      // Load company logo for PDF header
+      const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf19254_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf19254_trialStatus = getTrialStatus(pdf19254_subscription?.status || 'trial', pdf19254_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf19254_trialStatus.requiresWatermark);
       const margin = 35;
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'inline; filename="programa-capacitacion.pdf"');
@@ -19683,11 +19918,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cases = await storage.getSveCases(companyId, programId);
       const company = await storage.getCompany(companyId);
 
-      // Preload company logo and worker photo from Object Storage
-      const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
-
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf19712_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf19712_trialStatus = getTrialStatus(pdf19712_subscription?.status || 'trial', pdf19712_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf19712_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
 
@@ -19696,18 +19933,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.pipe(res);
 
-      
-      // Standard Header with logo, version control, and signatures
-      let currentY = setupPdfHeadersFooters({
+      // Load logo and signers for standardized header
+      const logo = await loadCompanyLogo(company?.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      // Add standard header with centralized PDF Standardizer service
+      let currentY = await addStandardHeader({
         doc,
-        company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
+        company: company || { id: companyId, name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
         documentTitle: 'SISTEMA DE VIGILANCIA EPIDEMIOLÓGICA OCUPACIONAL',
-        documentCode: `SST-SVE-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+        documentCode: `SST-SVE-${program.id.substring(0, 8)}`,
         version: '1.0',
         date: new Date(program.startDate || new Date()),
-        elaboro: program.responsibleName || 'Responsable SVE',
-        autorizo: req.user?.username || 'Sistema',
-        aprobo: 'Coordinador SST'
+        logoBuffer: logo,
       });
 
       doc.fontSize(9).font('Helvetica-Bold').fillColor('#2d5016').text(program.name, margin, currentY, { width: pageWidth - 2 * margin, align: 'left' });
@@ -19832,15 +20070,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const pageCount = doc.bufferedPageRange().count;
-      for (let i = 0; i < pageCount; i++) {
-        doc.switchToPage(i);
-        const footerY = doc.page.height - 40;
-        doc.fontSize(7).font('Helvetica').fillColor('#666666').text(
-          `Página ${i + 1} de ${pageCount} | Generado el ${new Date().toLocaleDateString('es-CO')} | ${company?.name || ''}`,
-          margin, footerY, { width: pageWidth - 2 * margin, align: 'center' }
-        );
-      }
+      // Add standardized signature footer with LSO requirement (per Estándar 3.1.7)
+      addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -19981,6 +20212,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const doc = new PDFDocument({ size: 'letter', margins: { top: 25, bottom: 25, left: 25, right: 25 } });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf20005_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf20005_trialStatus = getTrialStatus(pdf20005_subscription?.status || 'trial', pdf20005_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf20005_trialStatus.requiresWatermark);
       
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename=Politica_SST_${politica.codigo}_v${politica.version}.pdf`);
@@ -21778,6 +22014,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const evaluacion = await storage.createEvaluacionSst(evaluacionConTipoCorrecto, companyId);
+      
+      // AUTO-INICIALIZAR: Crear respuestas "No Cumple" para todos los estándares aplicables
+      try {
+        const estandaresAplicables = await storage.getEstandaresByTipoEmpresa(tipoEmpresaCorrecto);
+        const puntajeKey = `puntaje${tipoEmpresaCorrecto.charAt(0).toUpperCase() + tipoEmpresaCorrecto.slice(1)}` as 'puntajeTipo1' | 'puntajeTipo2' | 'puntajeTipo3' | 'puntajeTipo4';
+        
+        for (const estandar of estandaresAplicables) {
+          const puntajeMaximo = estandar[puntajeKey] || 0;
+          await storage.createRespuestaEstandar({
+            evaluacionId: evaluacion.id,
+            estandarId: estandar.id,
+            cumple: 0,
+            noAplica: 0,
+            puntajeObtenido: 0,
+            puntajeMaximo: puntajeMaximo,
+            hallazgo: null,
+            causaRaiz: null,
+            evidencias: null,
+            modoVerificacion: null,
+            observaciones: null,
+            justificacionNoAplica: null,
+          }, companyId);
+        }
+        console.log(`Evaluación ${evaluacion.id} inicializada con ${estandaresAplicables.length} estándares en No Cumple`);
+      } catch (initError) {
+        console.error('Error inicializando estándares:', initError);
+      }
+      
       res.status(201).json(evaluacion);
     } catch (error: any) {
       console.error('Error creating evaluación SST:', error);
@@ -22371,6 +22635,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf22395_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf22395_trialStatus = getTrialStatus(pdf22395_subscription?.status || 'trial', pdf22395_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf22395_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
       
@@ -22568,7 +22837,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!hasValidLicensedProfessional) {
         return res.status(400).json({
           error: 'LICENSED_PROFESSIONAL_REQUIRED',
-          message: 'Para generar el reporte oficial del Ministerio del Trabajo, la empresa debe tener asignado un Profesional Licenciado en Salud Ocupacional con licencia vigente. Por favor, asigne un profesional desde Administración > Profesionales Licenciados.',
+          message: "Para generar el reporte oficial del Ministerio del Trabajo, la empresa debe tener asignado un Profesional Licenciado en Salud Ocupacional con licencia vigente. Para asignar un profesional, vaya a Administración > Empresas, haga clic en Editar en su empresa, y use el botón Encontrar Profesionales Certificados en la sección de requisitos.",
           code: 'NO_VALID_LSO'
         });
       }
@@ -22585,6 +22854,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create PDF
       const doc = new PDFDocument({ margin: 40, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf22609_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf22609_trialStatus = getTrialStatus(pdf22609_subscription?.status || 'trial', pdf22609_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf22609_trialStatus.requiresWatermark);
       const margin = 40;
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - 2 * margin;
@@ -22871,22 +23145,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`La autoevaluación debe realizarse anualmente y los resultados deben enviarse a la Administradora de Riesgos Laborales (ARL) y registrarse en la plataforma del Ministerio del Trabajo.`, margin, currentY, { width: contentWidth, align: 'justify' });
       currentY = doc.y + 40;
 
-      // Cuadros de firma
-      const firmaWidth = (contentWidth - 40) / 2;
+      // Cuadros de firma - 3 columnas
+      const firmaWidth3 = (contentWidth - 30) / 3;
 
       // Firma 1 - Responsable SG-SST
-      doc.rect(margin, currentY, firmaWidth, 80).stroke('#1e7e34');
-      doc.fontSize(8).font('Helvetica').fillColor('#666666')
-        .text('Firma del Responsable SG-SST', margin + 10, currentY + 10);
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#000000')
-        .text(evaluacion.responsableNombre, margin + 10, currentY + 60);
+      doc.rect(margin, currentY, firmaWidth3, 80).stroke('#1e7e34');
+      doc.fontSize(7).font('Helvetica').fillColor('#666666')
+        .text('Firma Responsable SG-SST', margin + 5, currentY + 8);
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000')
+        .text(evaluacion.responsableNombre || 'Responsable SST', margin + 5, currentY + 55, { width: firmaWidth3 - 10 });
 
-      // Firma 2 - Representante Legal
-      doc.rect(margin + firmaWidth + 40, currentY, firmaWidth, 80).stroke('#1e7e34');
-      doc.fontSize(8).font('Helvetica').fillColor('#666666')
-        .text('Firma del Representante Legal', margin + firmaWidth + 50, currentY + 10);
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#000000')
-        .text(company.legalRepresentative || 'Representante Legal', margin + firmaWidth + 50, currentY + 60);
+      // Firma 2 - Profesional Licenciado SST
+      const firma2X = margin + firmaWidth3 + 15;
+      doc.rect(firma2X, currentY, firmaWidth3, 80).stroke('#1e7e34');
+      doc.fontSize(7).font('Helvetica').fillColor('#666666')
+        .text('Profesional Licenciado SST', firma2X + 5, currentY + 8);
+      const lsoName = licensedProfessionalData?.fullName || 'Profesional SST';
+      const lsoLicense = licensedProfessionalData?.sstLicenseNumber || '';
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000')
+        .text(lsoName, firma2X + 5, currentY + 45, { width: firmaWidth3 - 10 });
+      if (lsoLicense) {
+        doc.fontSize(6).font('Helvetica').fillColor('#666666')
+          .text(`Lic. ${lsoLicense}`, firma2X + 5, currentY + 60, { width: firmaWidth3 - 10 });
+      }
+
+      // Firma 3 - Representante Legal
+      const firma3X = margin + (firmaWidth3 + 15) * 2;
+      doc.rect(firma3X, currentY, firmaWidth3, 80).stroke('#1e7e34');
+      doc.fontSize(7).font('Helvetica').fillColor('#666666')
+        .text('Representante Legal', firma3X + 5, currentY + 8);
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000')
+        .text(company.legalRepresentative || 'Representante Legal', firma3X + 5, currentY + 55, { width: firmaWidth3 - 10 });
       currentY += 100;
 
       // Fecha de generación
@@ -23281,6 +23570,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf23305_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf23305_trialStatus = getTrialStatus(pdf23305_subscription?.status || 'trial', pdf23305_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf23305_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - 2 * margin;
@@ -24211,8 +24505,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verificar si ya tiene actividades
       const existingActividades = await storage.getActividadesPlanTrabajo(req.params.id, companyId);
+      const forceRegenerate = req.query.force === 'true';
+      
       if (existingActividades.length > 0) {
-        return res.status(400).send('El plan ya tiene actividades programadas. Elimínelas primero para regenerar.');
+        if (!forceRegenerate) {
+          return res.status(400).send('El plan ya tiene actividades programadas. Use force=true para regenerar.');
+        }
+        // Eliminar actividades existentes si force=true
+        for (const act of existingActividades) {
+          await storage.deleteActividadPlanTrabajo(act.id, companyId);
+        }
       }
       
       // Obtener capítulo de la empresa para filtrar actividades según Resolución 0312/2019
@@ -24231,31 +24533,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { minChapter: 1, ciclo: "planear", programa: "otro", actividad: "Designación del Responsable del SG-SST", objetivo: "Formalizar el nombramiento del responsable del sistema", meta: "Acta de designación firmada y comunicada", cargo: "Gerencia General", meses: ["enero"] },
         
         // Estándar 1.2.1 - Capacitación del responsable (Curso 50 horas)
-        { minChapter: 1, ciclo: "planear", programa: "capacitacion", actividad: "Verificación Curso Virtual 50 Horas SST", objetivo: "Asegurar certificación vigente del responsable SG-SST", meta: "Certificado verificado", cargo: "Responsable SG-SST", meses: ["enero"] },
+        { minChapter: 2, ciclo: "planear", programa: "capacitacion", actividad: "Verificación Curso Virtual 50 Horas SST", objetivo: "Asegurar certificación vigente del responsable SG-SST", meta: "Certificado verificado", cargo: "Responsable SG-SST", meses: ["enero"] },
         
         // Estándar 2.1.1 - Afiliación al Sistema de Seguridad Social Integral
         { minChapter: 1, ciclo: "planear", programa: "otro", actividad: "Verificación de Afiliaciones SSSS (ARL, EPS, AFP)", objetivo: "Confirmar afiliación de todos los trabajadores", meta: "100% trabajadores afiliados", cargo: "Responsable SG-SST", meses: ["enero", "julio"] },
         
         // Estándar 2.4.1 - Plan anual de trabajo
         { minChapter: 1, ciclo: "planear", programa: "otro", actividad: "Elaboración/Actualización Plan Anual de Trabajo", objetivo: "Definir actividades SST del año", meta: "Plan aprobado por gerencia", cargo: "Responsable SG-SST", meses: ["enero"] },
-        { minChapter: 1, ciclo: "planear", programa: "otro", actividad: "Autoevaluación de Estándares Mínimos SG-SST", objetivo: "Evaluar cumplimiento según Resolución 0312/2019", meta: "Evaluación completada", cargo: "Responsable SG-SST", meses: ["diciembre"] },
+        { minChapter: 2, ciclo: "planear", programa: "otro", actividad: "Autoevaluación de Estándares Mínimos SG-SST", objetivo: "Evaluar cumplimiento según Resolución 0312/2019", meta: "Evaluación completada", cargo: "Responsable SG-SST", meses: ["diciembre"] },
         
         // Estándar 3.1.1 - Descripción sociodemográfica
-        { minChapter: 1, ciclo: "planear", programa: "medicina-preventiva", actividad: "Actualización del Perfil Sociodemográfico", objetivo: "Mantener actualizado el diagnóstico de condiciones de salud", meta: "100% trabajadores con perfil actualizado", cargo: "Responsable SG-SST", meses: ["febrero"] },
+        { minChapter: 1, ciclo: "planear", programa: "medicina-preventiva", actividad: "Exámenes Médicos Ocupacionales", objetivo: "Mantener actualizado el diagnóstico de condiciones de salud", meta: "100% trabajadores con perfil actualizado", cargo: "Responsable SG-SST", meses: ["febrero"] },
         
         // Estándar 3.1.4 - Evaluaciones médicas ocupacionales
-        { minChapter: 1, ciclo: "hacer", programa: "medicina-preventiva", actividad: "Programación Evaluaciones Médicas Ocupacionales", objetivo: "Realizar exámenes de ingreso, periódicos y retiro", meta: "100% trabajadores con evaluación vigente", cargo: "Responsable SG-SST", meses: ["enero", "julio"] },
+        { minChapter: 2, ciclo: "hacer", programa: "otro", actividad: "Programación Evaluaciones Médicas Ocupacionales", objetivo: "Realizar exámenes de ingreso, periódicos y retiro", meta: "100% trabajadores con evaluación vigente", cargo: "Responsable SG-SST", meses: ["enero", "julio"] },
         { minChapter: 1, ciclo: "hacer", programa: "medicina-preventiva", actividad: "Seguimiento a Recomendaciones Médico-Laborales", objetivo: "Implementar restricciones y recomendaciones médicas", meta: "100% recomendaciones gestionadas", cargo: "Responsable SG-SST", meses: ["marzo", "junio", "septiembre", "diciembre"] },
         
         // Estándar 4.1.1 - Identificación de peligros y evaluación de riesgos (IPERC)
         { minChapter: 1, ciclo: "planear", programa: "identificacion-peligros", actividad: "Elaboración/Actualización Matriz IPERC", objetivo: "Identificar peligros y valorar riesgos", meta: "100% áreas evaluadas", cargo: "Responsable SG-SST", meses: ["febrero", "agosto"] },
         
         // Actividades obligatorias adicionales Capítulo I
-        { minChapter: 1, ciclo: "hacer", programa: "epp", actividad: "Entrega y Capacitación en EPP", objetivo: "Suministrar y capacitar en uso de EPP", meta: "100% trabajadores dotados", cargo: "Responsable SG-SST", meses: ["enero", "julio"] },
-        { minChapter: 1, ciclo: "hacer", programa: "emergencias", actividad: "Plan de Prevención y Respuesta ante Emergencias", objetivo: "Mantener actualizado plan de emergencias", meta: "Plan vigente y socializado", cargo: "Responsable SG-SST", meses: ["marzo"] },
+        { minChapter: 1, ciclo: "hacer", programa: "epp", actividad: "Entrega de EPP", objetivo: "Suministrar elementos de protección personal", meta: "100% trabajadores dotados", cargo: "Responsable SG-SST", meses: ["enero", "julio"] },
+        { minChapter: 1, ciclo: "hacer", programa: "capacitacion", actividad: "Capacitación en uso de EPP", objetivo: "Formar en uso correcto de elementos de protección", meta: "100% trabajadores capacitados", cargo: "Responsable SG-SST", meses: ["enero", "julio"] },
+        { minChapter: 2, ciclo: "hacer", programa: "emergencias", actividad: "Plan de Prevención y Respuesta ante Emergencias", objetivo: "Mantener actualizado plan de emergencias", meta: "Plan vigente y socializado", cargo: "Responsable SG-SST", meses: ["marzo"] },
         { minChapter: 1, ciclo: "hacer", programa: "otro", actividad: "Reporte de Accidentes de Trabajo y Enfermedades Laborales", objetivo: "Reportar AT y EL a ARL en tiempos establecidos", meta: "100% reportes oportunos", cargo: "Responsable SG-SST", meses: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"] },
-        { minChapter: 1, ciclo: "verificar", programa: "otro", actividad: "Revisión por la Alta Dirección", objetivo: "Evaluar desempeño del SG-SST", meta: "1 revisión anual documentada", cargo: "Gerencia General", meses: ["diciembre"] },
-        { minChapter: 1, ciclo: "actuar", programa: "otro", actividad: "Acciones Correctivas y de Mejora", objetivo: "Implementar mejoras basadas en hallazgos", meta: "100% acciones cerradas", cargo: "Responsable SG-SST", meses: ["junio", "diciembre"] },
+        { minChapter: 2, ciclo: "verificar", programa: "otro", actividad: "Revisión por la Alta Dirección", objetivo: "Evaluar desempeño del SG-SST", meta: "1 revisión anual documentada", cargo: "Gerencia General", meses: ["diciembre"] },
+        { minChapter: 2, ciclo: "actuar", programa: "mejora-continua", actividad: "Acciones Correctivas y de Mejora", objetivo: "Implementar mejoras basadas en hallazgos", meta: "100% acciones cerradas", cargo: "Responsable SG-SST", meses: ["junio", "diciembre"] },
         
         // =====================================================
         // CAPÍTULO II - 21 ESTÁNDARES (Art. 9)
@@ -24625,11 +24928,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         peligros = await storage.getPeligrosIperc(activeMatriz.id, companyId);
       }
       const totalPages = actividades.length > 0 ? 2 : 1;
-
       const doc = new PDFDocument({ 
         margin: 40, 
         size: 'LETTER'
       });
+      
+      // Add trial watermark if subscription is in trial period
+      const plantra_subscription = await storage.getSubscriptionByCompany(companyId);
+      const plantra_trialStatus = getTrialStatus(plantra_subscription?.status || 'trial', plantra_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, plantra_trialStatus.requiresWatermark);
       
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="plan-trabajo-anual-${plan.anio}.pdf"`);
@@ -27041,6 +27348,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Crear documento PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf27065_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf27065_trialStatus = getTrialStatus(pdf27065_subscription?.status || 'trial', pdf27065_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf27065_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
       
@@ -27276,6 +27588,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Crear documento PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf27300_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf27300_trialStatus = getTrialStatus(pdf27300_subscription?.status || 'trial', pdf27300_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf27300_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
       
@@ -27448,6 +27765,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf27472_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf27472_trialStatus = getTrialStatus(pdf27472_subscription?.status || 'trial', pdf27472_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf27472_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
 
@@ -27680,6 +28002,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf27704_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf27704_trialStatus = getTrialStatus(pdf27704_subscription?.status || 'trial', pdf27704_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf27704_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
 
@@ -27918,6 +28245,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf27942_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf27942_trialStatus = getTrialStatus(pdf27942_subscription?.status || 'trial', pdf27942_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf27942_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - 2 * margin;
@@ -28160,6 +28492,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Worker photo not needed for muestreo PDF
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf28184_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf28184_trialStatus = getTrialStatus(pdf28184_subscription?.status || 'trial', pdf28184_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf28184_trialStatus.requiresWatermark);
       const margin = 35;
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="reporte-evaluaciones-sst-${Date.now()}.pdf"`);
@@ -28340,6 +28677,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Worker photo not needed for muestreo PDF
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf28364_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf28364_trialStatus = getTrialStatus(pdf28364_subscription?.status || 'trial', pdf28364_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf28364_trialStatus.requiresWatermark);
       const margin = 35;
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="reporte-auditorias-internas-${Date.now()}.pdf"`);
@@ -28470,6 +28812,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const logoBuffer = await loadCompanyLogoBuffer(companyInfo.logoUrl);
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf28494_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf28494_trialStatus = getTrialStatus(pdf28494_subscription?.status || 'trial', pdf28494_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf28494_trialStatus.requiresWatermark);
       const margin = 35;
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="reporte-revisiones-direccion-${Date.now()}.pdf"`);
@@ -28585,6 +28932,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const logoBuffer = await loadCompanyLogoBuffer(companyInfo.logoUrl);
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf28609_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf28609_trialStatus = getTrialStatus(pdf28609_subscription?.status || 'trial', pdf28609_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf28609_trialStatus.requiresWatermark);
       const margin = 35;
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="reporte-objetivos-indicadores-${Date.now()}.pdf"`);
@@ -28769,6 +29121,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create PDF with standard format
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf28793_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf28793_trialStatus = getTrialStatus(pdf28793_subscription?.status || 'trial', pdf28793_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf28793_trialStatus.requiresWatermark);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="perfil-sociodemografico-${Date.now()}.pdf"`);
       doc.pipe(res);
@@ -29730,6 +30087,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf29754_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf29754_trialStatus = getTrialStatus(pdf29754_subscription?.status || 'trial', pdf29754_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf29754_trialStatus.requiresWatermark);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="comunicacion-sst-${comunicacion.id.substring(0, 8)}.pdf"`);
       doc.pipe(res);
@@ -37883,6 +38245,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf37907_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf37907_trialStatus = getTrialStatus(pdf37907_subscription?.status || 'trial', pdf37907_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf37907_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
       
@@ -38059,6 +38426,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf38083_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf38083_trialStatus = getTrialStatus(pdf38083_subscription?.status || 'trial', pdf38083_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf38083_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
       
@@ -38254,6 +38626,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf38278_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf38278_trialStatus = getTrialStatus(pdf38278_subscription?.status || 'trial', pdf38278_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf38278_trialStatus.requiresWatermark);
       const margin = 35;
       const pageWidth = doc.page.width;
       
@@ -38640,6 +39017,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const activities = await storage.getPromotionPreventionActivities(companyId);
 
       const doc = new PDFDocument({ size: 'LETTER', margin: 35, bufferPages: true });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf38664_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf38664_trialStatus = getTrialStatus(pdf38664_subscription?.status || 'trial', pdf38664_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf38664_trialStatus.requiresWatermark);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="promocion-prevencion-${Date.now()}.pdf"`);
       doc.pipe(res);
@@ -39705,7 +40087,27 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.send(pdfBuffer);
     } catch (error: any) {
       console.error('[GET /api/legal-docs/protecciones-legales/pdf] Error:', error.message);
-      res.status(500).json({ message: 'Error generating PDF', error: error.message });
+      
+      let statusCode = 500;
+      let errorCode = "PDF_GENERATION_FAILED";
+      let message = "Error al generar el documento PDF. Intente nuevamente en unos momentos.";
+      
+      // Categorize the error
+      if (error.message?.includes('permission') || error.message?.includes('unauthorized')) {
+        errorCode = "UNAUTHORIZED";
+        message = "No tiene permisos para descargar este documento.";
+        statusCode = 403;
+      } else if (error.message?.includes('connection') || error.message?.includes('Connection')) {
+        errorCode = "DATABASE_ERROR";
+        message = "Error al acceder a los datos. Intente nuevamente en unos momentos.";
+        statusCode = 500;
+      }
+      
+      res.status(statusCode).json({ 
+        error: errorCode,
+        message: message,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
@@ -39725,8 +40127,29 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.setHeader('Content-Length', pdfBuffer.length);
       res.send(pdfBuffer);
     } catch (error: any) {
-      console.error('[GET /api/legal-docs/proteccion-datos/pdf] Error:', error.message);
-      res.status(500).json({ message: 'Error generating PDF', error: error.message });
+console.error('[GET /api/legal-docs/proteccion-datos/pdf] Error:', error.message);
+      
+      // Categorize the error and return appropriate message
+      let statusCode = 500;
+      let errorCode = "PDF_GENERATION_FAILED";
+      let message = "Error al generar el documento PDF. Intente nuevamente en unos momentos.";
+      
+      // Categorize the error
+      if (error.message?.includes('permission') || error.message?.includes('unauthorized')) {
+        errorCode = "UNAUTHORIZED";
+        message = "No tiene permisos para descargar este documento.";
+        statusCode = 403;
+      } else if (error.message?.includes('connection') || error.message?.includes('Connection')) {
+        errorCode = "DATABASE_ERROR";
+        message = "Error al acceder a los datos. Intente nuevamente en unos momentos.";
+        statusCode = 500;
+      }
+      
+      res.status(statusCode).json({ 
+        error: errorCode,
+        message: message,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
@@ -39747,7 +40170,28 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.send(pdfBuffer);
     } catch (error: any) {
       console.error('[GET /api/legal-docs/medidas-seguridad/pdf] Error:', error.message);
-      res.status(500).json({ message: 'Error generating PDF', error: error.message });
+      
+      // Categorize the error and return appropriate message
+      let statusCode = 500;
+      let errorCode = "PDF_GENERATION_FAILED";
+      let message = "Error al generar el documento PDF. Intente nuevamente en unos momentos.";
+      
+      // Categorize the error
+      if (error.message?.includes('permission') || error.message?.includes('unauthorized')) {
+        errorCode = "UNAUTHORIZED";
+        message = "No tiene permisos para descargar este documento.";
+        statusCode = 403;
+      } else if (error.message?.includes('connection') || error.message?.includes('Connection')) {
+        errorCode = "DATABASE_ERROR";
+        message = "Error al acceder a los datos. Intente nuevamente en unos momentos.";
+        statusCode = 500;
+      }
+      
+      res.status(statusCode).json({ 
+        error: errorCode,
+        message: message,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
@@ -39845,8 +40289,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           delivery: eppDeliveries,
           worker: {
             id: schema.workers.id,
-            fullName: schema.workers.fullName,
-            identification: schema.workers.identification,
+            name: schema.workers.name,
+            identificationNumber: schema.workers.identificationNumber,
             position: schema.workers.position,
           },
           catalogItem: {
@@ -39859,15 +40303,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         .leftJoin(schema.workers, eq(eppDeliveries.workerId, schema.workers.id))
         .leftJoin(eppCatalog, eq(eppDeliveries.eppCatalogId, eppCatalog.id))
         .where(eq(eppDeliveries.companyId, effectiveCompanyId))
-        .orderBy(desc(eppDeliveries.fechaEntrega));
+        .orderBy(desc(eppDeliveries.deliveryDate));
       } else {
         // Admin can see all
         deliveriesQuery = db.select({
           delivery: eppDeliveries,
           worker: {
             id: schema.workers.id,
-            fullName: schema.workers.fullName,
-            identification: schema.workers.identification,
+            name: schema.workers.name,
+            identificationNumber: schema.workers.identificationNumber,
             position: schema.workers.position,
           },
           catalogItem: {
@@ -39879,11 +40323,19 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         .from(eppDeliveries)
         .leftJoin(schema.workers, eq(eppDeliveries.workerId, schema.workers.id))
         .leftJoin(eppCatalog, eq(eppDeliveries.eppCatalogId, eppCatalog.id))
-        .orderBy(desc(eppDeliveries.fechaEntrega));
+        .orderBy(desc(eppDeliveries.deliveryDate));
       }
       
       const deliveries = await deliveriesQuery;
-      res.json(deliveries);
+      
+      // Flatten the response to match frontend expectations
+      const flattenedDeliveries = deliveries.map((d: any) => ({
+        ...d.delivery,
+        worker: d.worker,
+        catalogItem: d.catalogItem,
+      }));
+      
+      res.json(flattenedDeliveries);
     } catch (error: any) {
       console.error("[GET /api/epp/deliveries] Error:", error.message);
       res.status(500).send("Error al obtener entregas de EPP");
@@ -39903,7 +40355,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const validatedData = insertEppDeliverySchema.parse({
         ...req.body,
         companyId: effectiveCompanyId,
-        entregadoPor: userId,
+        deliveredBy: req.user!.username || "admin",
       });
       
       const [newDelivery] = await db.insert(eppDeliveries)
@@ -39917,6 +40369,45 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(400).json({ error: "Datos inválidos", details: error.errors });
       }
       res.status(500).send("Error al registrar entrega de EPP");
+    }
+  });
+
+  // PATCH /api/epp/deliveries/:id - Actualizar entrega de EPP
+  app.patch("/api/epp/deliveries/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const { id } = req.params;
+      
+      // Get the delivery to verify ownership
+      const [delivery] = await db.select()
+        .from(eppDeliveries)
+        .where(eq(eppDeliveries.id, id));
+      
+      if (!delivery) {
+        return res.status(404).send("Entrega de EPP no encontrada");
+      }
+      
+      // Check tenant isolation
+      if (!isAdmin && delivery.companyId !== effectiveCompanyId) {
+        return res.status(403).send("No autorizado para actualizar esta entrega");
+      }
+      
+      // Validate partial data
+      const validatedData = insertEppDeliverySchema.partial().parse(req.body);
+      
+      const [updatedDelivery] = await db.update(eppDeliveries)
+        .set(validatedData)
+        .where(eq(eppDeliveries.id, id))
+        .returning();
+      
+      res.json(updatedDelivery);
+    } catch (error: any) {
+      console.error("[PATCH /api/epp/deliveries/:id] Error:", error.message);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Datos inválidos", details: error.errors });
+      }
+      res.status(500).send("Error al actualizar entrega de EPP");
     }
   });
 
@@ -40239,6 +40730,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       // Crear PDF
       const doc = new PDFDocument({ size: 'LETTER', margin: 40 });
+      
+      // Add trial watermark if subscription is in trial period
+      const pdf40263_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf40263_trialStatus = getTrialStatus(pdf40263_subscription?.status || 'trial', pdf40263_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf40263_trialStatus.requiresWatermark);
       
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename=plan-mejoramiento-contexto.pdf');

@@ -7603,7 +7603,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
       
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       
       // Setup headers and footers
@@ -8996,7 +8996,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let headerY = 50;
       
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       
       // Add company logo if available
@@ -9139,6 +9139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY = doc.y + 15;
       
       // Signature section
+      checkSignatureSpace(doc);
       
       doc.fontSize(8).text('En constancia de lo anterior, se firma la presente acta:', margin, currentY, { lineBreak: false });
       currentY += 50;
@@ -9279,7 +9280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
 
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
 
       // Standard Header
@@ -9539,7 +9540,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
 
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
 
       // Standard Header with logo, company info, and version table
@@ -9885,7 +9886,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
 
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
 
       // Standard Header with logo, version control table in green, and automatic footer with signatures
@@ -10515,7 +10516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
       
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       
       const year = new Date(eleccion.fechaConvocatoria).getFullYear();
@@ -10676,7 +10677,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
       
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       
       const year = new Date(eleccion.fechaVotacion).getFullYear();
@@ -10881,7 +10882,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
       
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       
       const contentStartY = setupPdfHeadersFooters({
@@ -12471,24 +12472,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Pipe PDF to response
       doc.pipe(res);
       
-      // Load company logo and signers using centralized PDF Standardizer
-      const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, true); // true = requires LSO
+      // Preload company logo and worker photo from Object Storage
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
+      // Worker photo not needed for muestreo PDF
       
-      // Add standard corporate header (ISO 45001:2018)
-      await addStandardHeader({
+      // Use standardized corporate header/footer system
+      setupPdfHeadersFooters({
         doc,
-        company: {
-          id: company.id,
-          name: company.name,
-          nit: company.nit,
-          logoUrl: company.logoUrl,
-        },
-        documentTitle: 'EVIDENCIA TRABAJADORES DE ACTIVIDADES DE ALTO RIESGO',
-        documentCode: `SST-AR-1.1.5-${new Date().getFullYear()}`,
+        company,
+        documentTitle: 'IDENTIFICACIÓN DE TRABAJADORES DE ALTO RIESGO',
+        documentCode: 'SST-FMT-115',
         version: '1.0',
         date: new Date(),
-        logoBuffer: logo,
+        elaboro: 'Responsable SG-SST',
+        autorizo: 'COPASST / Vigía SST',
+        aprobo: 'Representante Legal',
+        logoBuffer
       });
       
       // ISO Banner
@@ -12652,9 +12651,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'Este documento cumple con los requisitos del Estándar 1.1.5 de la Resolución 0312/2019 y el Decreto 2090 de 2003 sobre actividades de alto riesgo.',
         margin, doc.y, { align: 'center', width: contentWidth }
       );
-      
-      // Add signature footer with LSO (ISO 45001:2018)
-      addSignatureFooter(doc, signers, true); // true = requires LSO
       
       // Finalize PDF
       doc.end();
@@ -12846,7 +12842,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       
       // Standard Header with logo, version control table in green, and automatic footer with signatures
@@ -13689,7 +13685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.pipe(res);
       // Load company logo for PDF header
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
 
 
@@ -14876,7 +14872,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
       
       // Preload company logo
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       
       // Setup standard headers and footers
       const fechaVerificacion = new Date(verificacion.fecha);
@@ -15377,25 +15373,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', 'attachment; filename=trabajadores_alto_riesgo.pdf');
 
       doc.pipe(res);
+      // Load company logo for PDF header
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
+      // Worker photo not needed for muestreo PDF
+
       
-      // Load company logo and signers using centralized PDF Standardizer
-      const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, true); // true = requires LSO
-      
-      // Add standard corporate header (ISO 45001:2018)
-      let currentY = await addStandardHeader({
+      // Standard Header with logo, version control, and signatures
+      let currentY = setupPdfHeadersFooters({
         doc,
-        company: {
-          id: company.id,
-          name: company.name,
-          nit: company.nit,
-          logoUrl: company.logoUrl,
-        },
-        documentTitle: 'INFORME DE TRABAJADORES DE ALTO RIESGO',
+        company,
+        documentTitle: 'REGISTRO DE TRABAJADORES EN ACTIVIDADES DE ALTO RIESGO',
         documentCode: `SST-TAR-${new Date().getFullYear()}`,
         version: '1.0',
         date: new Date(),
-        logoBuffer: logo,
+        elaboro: 'Coordinador SST',
+        autorizo: req.user?.username || 'Sistema',
+        aprobo: 'ARL',
+        logoBuffer
       });
 
       // Información normativa
@@ -15609,9 +15603,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.text('• Este registro hace parte del Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST).', margin + 10, yPos, { lineBreak: false });
       }
 
-      // Add signature footer with LSO (ISO 45001:2018)
-      addSignatureFooter(doc, signers, true); // true = requires LSO
-      
       doc.end();
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -15663,7 +15654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
 
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       
       // Standard Header with logo, version control, and signatures at footer
@@ -15849,7 +15840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
 
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
 
       // Background border
@@ -16102,7 +16093,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const textDark = '#333333';
       const textMuted = '#666666';
 
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       let pageNumber = 1;
 
@@ -19002,8 +18993,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Footer on all pages
-      // Add standardized signature footer with LSO requirement (per Estándar 3.1.7)
-      addSignatureFooter(doc, signers, true);
+      const pageCount = doc.bufferedPageRange().count;
+      for (let i = 0; i < pageCount; i++) {
+        doc.switchToPage(i);
+        const footerY = doc.page.height - 40;
+        doc.fontSize(7).font('Helvetica').fillColor('#666666').text(
+          `Página ${i + 1} de ${pageCount} | Generado el ${new Date().toLocaleDateString('es-CO')} | ${company?.name || ''}`,
+          margin, footerY, { width: pageWidth - 2 * margin, align: 'center' }
+        );
+      }
 
       doc.end();
     } catch (error: any) {
@@ -19068,7 +19066,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
 
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
 
       // Standard Header with logo, version control, and signatures
@@ -19956,8 +19954,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         date: new Date(program.startDate || new Date()),
         logoBuffer: logo,
       });
-
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#2d5016').text(program.name, margin, currentY, { width: pageWidth - 2 * margin, align: 'left' });
       currentY = doc.y + 4;
 
       const riskTypeLabels: Record<string, string> = {
@@ -20079,8 +20075,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Add standardized signature footer with LSO requirement (per Estándar 3.1.7)
-      addSignatureFooter(doc, signers, true);
+      const pageCount = doc.bufferedPageRange().count;
+      for (let i = 0; i < pageCount; i++) {
+        doc.switchToPage(i);
+        const footerY = doc.page.height - 40;
+        doc.fontSize(7).font('Helvetica').fillColor('#666666').text(
+          `Página ${i + 1} de ${pageCount} | Generado el ${new Date().toLocaleDateString('es-CO')} | ${company?.name || ''}`,
+          margin, footerY, { width: pageWidth - 2 * margin, align: 'center' }
+        );
+      }
 
       doc.end();
     } catch (error: any) {
@@ -20232,7 +20235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
 
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
 
       const contentStartY = setupPdfHeadersFooters({
@@ -22639,7 +22642,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const acciones = await storage.getAccionesMejora(req.params.id, companyId);
 
       // Load company logo
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
 
       // Create PDF
@@ -22858,7 +22861,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const acciones = await storage.getAccionesMejora(req.params.id, companyId);
 
       // Load company logo
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
 
       // Create PDF
@@ -23576,7 +23579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ============================================================
       // GENERAR PDF PROFESIONAL
       // ============================================================
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
       
@@ -24957,7 +24960,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contentWidth = pageWidth - 2 * margin;
       
       // Load company logo
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
 
       // Helper para agregar pie de página
@@ -27771,7 +27774,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const solicitudes = await storage.getSolicitudesAdquisicion(companyId);
       const evaluaciones = await storage.getEvaluacionesAdquisicion(companyId);
 
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
@@ -28008,7 +28011,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const evaluaciones = await storage.getAllEvaluacionesProveedores(companyId);
       const seguimientos = await storage.getAllSeguimientosProveedores(companyId);
 
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
@@ -28251,7 +28254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cambios = await storage.getCambiosSst(companyId);
       const automatizaciones = await storage.getAutomatizacionLogsForCompany(companyId);
 
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
@@ -28497,7 +28500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const latestEval = data[0];
       const company = latestEval.company || { name: 'N/A', nit: 'N/A', address: null, logoUrl: null };
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
@@ -28682,7 +28685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const firstAudit = data[0];
       const company = firstAudit.company || { name: 'N/A', nit: 'N/A', address: null, logoUrl: null };
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
@@ -29125,8 +29128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Load company logo
-      const logo = await loadCompanyLogo(company?.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
 
       // Create PDF with standard format
@@ -29143,15 +29145,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const margin = 35;
       const pageWidth = doc.page.width;
 
-      // Use standard header/footer system - ISO 45001:2018 compliant
-      let currentY = await addStandardHeader({
+      // Use standard header/footer system
+      let currentY = setupPdfHeadersFooters({
         doc,
         company,
-        documentTitle: 'PERFIL SOCIODEMOGRÁFICO DE LA POBLACIÓN TRABAJADORA',
-        documentCode: `SST-PSD-${new Date().getFullYear()}`,
+        documentTitle: 'PERFIL SOCIODEMOGRÁFICO Y CONDICIONES DE SALUD',
+        documentCode: 'SST-FMT-311',
         version: '1.0',
-        logoBuffer: logo
+        date: new Date(),
+        elaboro: req.user?.fullName || 'Sistema SST',
+        autorizo: 'Responsable SST',
+        aprobo: 'Gerencia',
+        logoBuffer
       });
+
+      // ISO Certification Banner
       const isoY = currentY;
       doc.rect(margin, isoY, pageWidth - 2 * margin, 25).fill('#f0f4f8');
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e7e34');
@@ -29208,6 +29216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY += 8;
 
       // Check for page break
+      checkSignatureSpace(doc);
 
       // Education Level
       doc.fontSize(10).font('Helvetica-Bold').fillColor('#333333');
@@ -29232,6 +29241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY += 8;
 
       // Check for page break
+      checkSignatureSpace(doc);
 
       // Seniority
       doc.fontSize(10).font('Helvetica-Bold').fillColor('#333333');
@@ -29282,7 +29292,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       currentY += 40;
 
-      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       console.error('Error generating perfil sociodemografico PDF:', error);
@@ -30085,7 +30094,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Load company logo
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
 
       // Create PDF
@@ -38261,7 +38270,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.pipe(res);
       
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       
       const year = new Date(eleccion.fechaConvocatoria).getFullYear();
@@ -38442,7 +38451,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.pipe(res);
       
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       
       const year = new Date(eleccion.fechaVotacion).getFullYear();
@@ -38642,7 +38651,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.pipe(res);
       
       // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       
       const contentStartY = setupPdfHeadersFooters({
@@ -39032,7 +39041,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const margin = 35;
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - 2 * margin;
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
 
       let currentY = setupPdfHeadersFooters({
@@ -39348,7 +39357,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const company = await storage.getCompany(companyId);
       if (!company) return res.status(404).send("Empresa no encontrada");
       const programs = await storage.getEvsPrograms(companyId);
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
@@ -39426,7 +39435,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const company = await storage.getCompany(companyId);
       if (!company) return res.status(404).send("Empresa no encontrada");
       const activities = await storage.getEvsActivities(companyId);
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
@@ -39507,7 +39516,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const controls = await storage.getEvsControls(companyId);
       const workers = await storage.getWorkers(companyId);
       const getWorkerName = (id: string) => workers.find(w => w.id === id)?.name || 'Desconocido';
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
@@ -39581,7 +39590,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const incidents = await storage.getEvsIncidents(companyId);
       const workers = await storage.getWorkers(companyId);
       const getWorkerName = (id: string | null) => id ? (workers.find(w => w.id === id)?.name || 'Desconocido') : 'Confidencial';
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
@@ -39665,7 +39674,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const workers = await storage.getWorkers(companyId);
       const getWorkerName = (id: string) => workers.find(w => w.id === id)?.name || 'Desconocido';
       const getWorkerPosition = (id: string) => workers.find(w => w.id === id)?.position || '';
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
@@ -39814,7 +39823,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const workers = await storage.getWorkers(companyId);
       const worker = workers.find(w => w.id === followup.workerId);
       const workerName = worker?.name || 'Desconocido';
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogoBuffer(company.logoUrl);
       // Worker photo not needed for muestreo PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
