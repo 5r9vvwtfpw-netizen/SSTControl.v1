@@ -196,6 +196,19 @@ import { calculateChapter, getEmpresaTipoFromChapterAndRisk, getTrialStatus, get
 import { isStandardPersistent, getPersistentStandardCodes } from "../shared/sst-inheritance";
 import { setupTrialWatermarkOnAllPages, addTrialFooter } from "./services/pdf-watermark";
 import { 
+  addStandardHeader, 
+  addSignatureFooter, 
+  addSectionBar, 
+  getSignersForCompany, 
+  getDocumentCode,
+  checkPageBreak,
+  PDF_COLORS,
+  PDF_CONFIG,
+  loadCompanyLogo,
+  formatDate,
+  requiresLSOSignature
+} from "./services/pdf-standardizer";
+import { 
   sendExamRenewalEmail, 
   sendTrainingRenewalEmail, 
   sendTestEmail,
@@ -3641,8 +3654,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Pipe PDF to response
       doc.pipe(res);
       
+      // Add standard corporate header (ISO 45001:2018)
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      await addStandardHeader({
+        doc,
+        company: {
+          id: company.id,
+          name: company.name,
+          nit: company.nit,
+          logoUrl: company.logoUrl,
+        },
+        documentTitle: 'FORMATO ÚNICO DE REPORTE DE ACCIDENTE DE TRABAJO (FURAT)',
+        documentCode: getDocumentCode('furat'),
+        version: '2.0',
+        date: accident.date ? new Date(accident.date) : new Date(),
+        logoBuffer,
+      });
+      
       // Generate content using modular function
       generateFuratPdfContent(doc, accident, worker, company);
+      
+      // Add signature footer with LSO (ISO 45001:2018)
+      const signers = await getSignersForCompany(company.id, true);
+      addSignatureFooter(doc, signers, true);
       
       // Finalize PDF
       doc.end();
@@ -4118,20 +4152,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="Investigacion-${id.substring(0, 8)}.pdf"`);
       doc.pipe(res);
       
+      // Add standard corporate header (ISO 45001:2018)
+      const logoBuffer = await loadCompanyLogo(company?.logoUrl || null);
+      await addStandardHeader({
+        doc,
+        company: {
+          id: company?.id || 'N/A',
+          name: company?.name || 'Empresa',
+          nit: company?.nit || 'N/A',
+          logoUrl: company?.logoUrl,
+        },
+        documentTitle: 'INFORME DE INVESTIGACIÓN DE ACCIDENTE',
+        documentCode: getDocumentCode('investigation'),
+        version: '2.0',
+        date: investigation.eventDate ? new Date(investigation.eventDate) : new Date(),
+        logoBuffer,
+      });
+      
       const GREEN_HEADER = '#1e7e34';
       const pageWidth = doc.page.width - 80;
-      
-      // Header
-      doc.fillColor(GREEN_HEADER).fontSize(18).font('Helvetica-Bold')
-        .text('INFORME DE INVESTIGACIÓN DE ACCIDENTE', { align: 'center' });
-      doc.moveDown(0.5);
-      
-      if (company) {
-        doc.fillColor('#333').fontSize(12).font('Helvetica')
-          .text(company.name, { align: 'center' });
-        doc.fontSize(10).text(`NIT: ${company.nit}`, { align: 'center' });
-      }
-      doc.moveDown(1);
       
       // Event Information Section
       doc.fillColor(GREEN_HEADER).fontSize(14).font('Helvetica-Bold')
@@ -4257,11 +4296,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.font('Helvetica').text(investigation.lessonLearned, { align: 'justify' });
       }
       
-      // Footer
-      doc.moveDown(2);
-      doc.fontSize(8).fillColor('#666')
-        .text(`Documento generado el ${new Date().toLocaleDateString('es-CO')} - Sistema SG-SST`, { align: 'center' });
-      doc.text('Resolución 1401/2007 - Investigación de incidentes y accidentes de trabajo', { align: 'center' });
+      // Add signature footer with LSO for severe/fatal cases (ISO 45001:2018)
+      const requiresLSO = investigation.isSevere || investigation.isFatal;
+      const signers = await getSignersForCompany(investigation.companyId, requiresLSO);
+      addSignatureFooter(doc, signers, requiresLSO);
+      
+      // Legal reference
+      doc.moveDown(1);
+      doc.fontSize(6).fillColor('#666')
+        .text('Resolución 1401/2007 - Investigación de incidentes y accidentes de trabajo', { align: 'center' });
       
       doc.end();
     } catch (error: any) {
@@ -4448,19 +4491,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="estadisticas-ausentismo-${year || 'anual'}-${month || 'completo'}.pdf"`);
       doc.pipe(res);
       
-      // Header
-      doc.fillColor(GREEN_HEADER).fontSize(18).font('Helvetica-Bold')
-        .text('INFORME DE ESTADÍSTICAS DE AUSENTISMO', { align: 'center' });
-      doc.moveDown(0.5);
-      doc.fillColor('#333').fontSize(12).font('Helvetica')
-        .text(`Empresa: ${company.name}`, { align: 'center' });
-      doc.text(`NIT: ${company.nit}`, { align: 'center' });
+      // Add standard corporate header (ISO 45001:2018)
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      await addStandardHeader({
+        doc,
+        company: {
+          id: company.id,
+          name: company.name,
+          nit: company.nit,
+          logoUrl: company.logoUrl,
+        },
+        documentTitle: 'INFORME DE ESTADÍSTICAS DE AUSENTISMO',
+        documentCode: getDocumentCode('absenteeism_statistics'),
+        version: '2.0',
+        date: new Date(),
+        logoBuffer,
+      });
       
       const periodText = year && month 
         ? `Período: ${month}/${year}` 
         : year ? `Año: ${year}` : 'Período: Todos los registros';
-      doc.text(periodText, { align: 'center' });
+      doc.fontSize(10).text(periodText, { align: 'center' });
       doc.moveDown(1.5);
+      
       
       // Summary Statistics Section
       doc.fillColor(GREEN_HEADER).fontSize(14).font('Helvetica-Bold')
@@ -4556,11 +4609,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.text('• Excelente gestión: Mantener los programas de prevención actuales.');
       }
       
-      // Footer
-      doc.moveDown(2);
-      doc.fontSize(8).fillColor('#666')
-        .text(`Documento generado el ${new Date().toLocaleDateString('es-CO')} - Sistema SG-SST`, { align: 'center' });
-      doc.text('Estándar 3.2.3 - Control de Ausentismo por Incidentes, Accidentes y Enfermedades', { align: 'center' });
+      // Add signature footer with LSO (Standard 3.2.3 requires LSO)
+      const signers = await getSignersForCompany(company.id, true);
+      addSignatureFooter(doc, signers, true);
+      
+      // Legal reference
+      doc.moveDown(1);
+      doc.fontSize(6).fillColor('#666')
+        .text('Estándar 3.2.3 - Control de Ausentismo por Incidentes, Accidentes y Enfermedades', { align: 'center' });
       
       doc.end();
     } catch (error: any) {
@@ -5442,8 +5498,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Pipe PDF to response
       doc.pipe(res);
       
+      // Add standard corporate header (ISO 45001:2018)
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      await addStandardHeader({
+        doc,
+        company: {
+          id: company.id,
+          name: company.name,
+          nit: company.nit,
+          logoUrl: company.logoUrl,
+        },
+        documentTitle: 'FORMATO ÚNICO DE REPORTE DE ENFERMEDAD LABORAL (FUREL)',
+        documentCode: getDocumentCode('furel'),
+        version: '2.0',
+        date: disease.diagnosticDate ? new Date(disease.diagnosticDate) : new Date(),
+        logoBuffer,
+      });
+      
       // Generate content using modular function
       generateFurelPdfContent(doc, disease, worker, company);
+      
+      // Add signature footer with LSO (ISO 45001:2018)
+      const signers = await getSignersForCompany(company.id, true);
+      addSignatureFooter(doc, signers, true);
       
       // Finalize PDF
       doc.end();
