@@ -42,7 +42,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema, type User, type UserRole } from "@shared/schema";
-import { roleLabels, roleDescriptions } from "@shared/permissions";
+import { roleLabels, roleDescriptions, hasGlobalAccess } from "@shared/permissions";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Plus, Pencil, Trash2, Shield, Info, Building2, Award } from "lucide-react";
 import { z } from "zod";
@@ -167,7 +167,7 @@ export default function GestionUsuarios() {
   
   // Filtrar los roles visibles - ocultar superadmin para usuarios que no son superadmin
   const visibleRoleLabels = useMemo(() => {
-    if (currentUser?.role === 'superadmin') {
+    if (currentUser && hasGlobalAccess(currentUser.role)) {
       return roleLabels;
     }
     // Filtrar el rol superadmin para usuarios no-superadmin
@@ -323,7 +323,7 @@ export default function GestionUsuarios() {
   const handleNew = () => {
     setEditingUser(null);
     // Para usuarios no-superadmin, auto-asignar su propia empresa
-    const defaultCompanyId = currentUser?.role === 'superadmin' ? null : currentUser?.companyId || null;
+    const defaultCompanyId = currentUser && hasGlobalAccess(currentUser.role) ? null : currentUser?.companyId || null;
     form.reset({
       username: "",
       password: "",
@@ -450,7 +450,7 @@ export default function GestionUsuarios() {
                 />
 
                 {/* Empresa (solo visible para superadmin - otros usuarios usan su propia empresa) */}
-                {currentUser?.role === 'superadmin' ? (
+                {currentUser && hasGlobalAccess(currentUser.role) ? (
                   <FormField
                     control={form.control}
                     name="companyId"

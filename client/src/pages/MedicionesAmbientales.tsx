@@ -14,7 +14,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
@@ -69,6 +69,7 @@ export default function MedicionesAmbientales() {
   const { user } = useAuth();
   const { toast } = useToast();
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -91,12 +92,12 @@ export default function MedicionesAmbientales() {
 
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
-    enabled: isAdmin,
+    enabled: isSuperadmin,
   });
 
   const createMeasurementMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertEnvironmentalMeasurementSchema>) => {
-      const payload = isAdmin && formData.companyId 
+      const payload = isSuperadmin && formData.companyId 
         ? { ...data, companyId: formData.companyId }
         : data;
       const res = await apiRequest("POST", "/api/environmental-measurements", payload);
@@ -156,7 +157,7 @@ export default function MedicionesAmbientales() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isAdmin && !formData.companyId) {
+    if (isSuperadmin && !formData.companyId) {
       toast({
         title: "Error",
         description: "Debe seleccionar una empresa",
@@ -239,7 +240,7 @@ export default function MedicionesAmbientales() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                {isAdmin && (
+                {isSuperadmin && (
                   <div className="space-y-2 col-span-2">
                     <Label htmlFor="companyId">Empresa *</Label>
                     <Select

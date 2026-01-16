@@ -98,6 +98,8 @@ export default function Trabajadores() {
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
   // hasGlobalAccess = true only for superadmin/soporte (can see all companies)
   const hasGlobalCompanyAccess = user?.role ? hasGlobalAccess(user.role) : false;
+  // isSuperadmin = true only for superadmin/soporte (can select any company when creating workers)
+  const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("all");
   
   // Effective company ID for filtering: global admins use selectedCompanyId, others use their own companyId
@@ -1362,7 +1364,7 @@ export default function Trabajadores() {
                           {editingWorker?.photoUrl ? "Foto subida por el trabajador" : "El trabajador puede subir su foto desde el Portal de Empleados"}
                         </p>
                       </div>
-                      {isAdmin && (
+                      {isSuperadmin && (
                         <div className="space-y-2 col-span-2">
                           <Label htmlFor="company">Empresa *</Label>
                           <Select
@@ -2035,7 +2037,7 @@ export default function Trabajadores() {
                 </Tabs>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
-                {isAdmin && (
+                {isSuperadmin && (
                   <div className="space-y-2 col-span-2">
                     <Label htmlFor="company">Empresa *</Label>
                     <Select

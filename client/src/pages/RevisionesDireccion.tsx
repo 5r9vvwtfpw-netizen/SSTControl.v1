@@ -19,7 +19,7 @@ import { useSubscriptionFeatures } from "@/hooks/use-subscription-features";
 import UpgradeAlert from "@/components/UpgradeAlert";
 import { z } from "zod";
 import { format } from "date-fns";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 
 const normativaRevisionesDireccion = [
@@ -61,6 +61,7 @@ export default function RevisionesDireccion() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -88,12 +89,12 @@ export default function RevisionesDireccion() {
 
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
-    enabled: isAdmin,
+    enabled: isSuperadmin,
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
-      const payload = isAdmin && data.companyId 
+      const payload = isSuperadmin && data.companyId 
         ? { ...data, companyId: data.companyId }
         : data;
       const res = await apiRequest("POST", "/api/revisiones-direccion", payload);
@@ -238,7 +239,7 @@ export default function RevisionesDireccion() {
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {isAdmin && (
+                {isSuperadmin && (
                   <FormField
                     control={form.control}
                     name="companyId"

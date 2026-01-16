@@ -31,7 +31,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import {
   TIPOS_PLANES_EMERGENCIA, TIPOS_BRIGADAS, CATEGORIAS_AMENAZAS, TIPOS_AMENAZAS,
@@ -118,6 +118,7 @@ export default function PlanEmergencias() {
   const { user } = useAuth();
   const { toast } = useToast();
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   
   const [activeTab, setActiveTab] = useState("planes");
   
@@ -306,7 +307,7 @@ export default function PlanEmergencias() {
 
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
-    enabled: isAdmin,
+    enabled: isSuperadmin,
   });
 
   const { data: workers = [] } = useQuery<Worker[]>({
@@ -1234,7 +1235,7 @@ export default function PlanEmergencias() {
                 </DialogHeader>
                 <Form {...planForm}>
                   <form onSubmit={planForm.handleSubmit(onSubmitPlan)} className="space-y-4">
-                    {isAdmin && (
+                    {isSuperadmin && (
                       <FormField control={planForm.control} name="companyId" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Empresa</FormLabel>
@@ -1461,7 +1462,7 @@ export default function PlanEmergencias() {
                 </DialogHeader>
                 <Form {...brigadaForm}>
                   <form onSubmit={brigadaForm.handleSubmit(onSubmitBrigada)} className="space-y-4">
-                    {isAdmin && (
+                    {isSuperadmin && (
                       <FormField control={brigadaForm.control} name="companyId" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Empresa</FormLabel>
@@ -1773,7 +1774,7 @@ export default function PlanEmergencias() {
                 </DialogHeader>
                 <Form {...analisisForm}>
                   <form onSubmit={analisisForm.handleSubmit(onSubmitAnalisis)} className="space-y-4">
-                    {isAdmin && (
+                    {isSuperadmin && (
                       <FormField control={analisisForm.control} name="companyId" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Empresa</FormLabel>
@@ -1992,7 +1993,7 @@ export default function PlanEmergencias() {
                 </DialogHeader>
                 <Form {...recursoForm}>
                   <form onSubmit={recursoForm.handleSubmit(onSubmitRecurso)} className="space-y-4">
-                    {isAdmin && (
+                    {isSuperadmin && (
                       <FormField control={recursoForm.control} name="companyId" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Empresa</FormLabel>
@@ -2300,7 +2301,7 @@ export default function PlanEmergencias() {
                 </DialogHeader>
                 <Form {...simulacroForm}>
                   <form onSubmit={simulacroForm.handleSubmit(onSubmitSimulacro)} className="space-y-4">
-                    {isAdmin && (
+                    {isSuperadmin && (
                       <FormField control={simulacroForm.control} name="companyId" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Empresa</FormLabel>
@@ -2613,7 +2614,7 @@ export default function PlanEmergencias() {
                       </DialogHeader>
                       <Form {...zonaForm}>
                         <form onSubmit={zonaForm.handleSubmit(onSubmitZona)} className="space-y-4">
-                          {isAdmin && (
+                          {isSuperadmin && (
                             <FormField control={zonaForm.control} name="companyId" render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Empresa</FormLabel>
@@ -2759,7 +2760,7 @@ export default function PlanEmergencias() {
                       </DialogHeader>
                       <Form {...rutaForm}>
                         <form onSubmit={rutaForm.handleSubmit(onSubmitRuta)} className="space-y-4">
-                          {isAdmin && (
+                          {isSuperadmin && (
                             <FormField control={rutaForm.control} name="companyId" render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Empresa</FormLabel>
@@ -2918,7 +2919,7 @@ export default function PlanEmergencias() {
                       </DialogHeader>
                       <Form {...puntoForm}>
                         <form onSubmit={puntoForm.handleSubmit(onSubmitPunto)} className="space-y-4">
-                          {isAdmin && (
+                          {isSuperadmin && (
                             <FormField control={puntoForm.control} name="companyId" render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Empresa</FormLabel>

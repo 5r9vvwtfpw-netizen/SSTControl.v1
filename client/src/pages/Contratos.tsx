@@ -64,7 +64,7 @@ const HORARIOS_PREDEFINIDOS = [
   { value: "hibrido", label: "Híbrido Presencial + Remoto (44h semanales)" },
 ];
 import { format } from "date-fns";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import {
   Dialog,
   DialogContent,
@@ -139,6 +139,7 @@ export default function Contratos() {
 
   // For admin: company filter for workers
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
 
   // Modo masivo para crear contratos a múltiples trabajadores
@@ -848,7 +849,7 @@ export default function Contratos() {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
-                {isAdmin && (
+                {isSuperadmin && (
                   <div className="space-y-2">
                     <Label>Empresa destino</Label>
                     <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
@@ -938,7 +939,7 @@ export default function Contratos() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 {/* Selector de Empresa para filtrar trabajadores */}
-                {isAdmin && (
+                {isSuperadmin && (
                   <div className="space-y-2 col-span-2">
                     <Label htmlFor="companyFilter">Empresa *</Label>
                     <Select

@@ -25,7 +25,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { indicadoresSstPredefinidos, getIndicadorByCodigo, formulasSugeridas } from "@/data/indicadores-sst-predefinidos";
 import { OBJETIVOS_SST_PREDEFINIDOS, OBJETIVOS_POR_CATEGORIA, ObjetivoSst as ObjetivoPredefinido } from "@/data/objetivos-sst-predefinidos";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
@@ -162,10 +162,11 @@ function ObjetivosTab() {
   const [selectedPredefinido, setSelectedPredefinido] = useState<string>("");
   
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
 
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
-    enabled: isAdmin,
+    enabled: isSuperadmin,
   });
 
   const { data: workers = [] } = useQuery<any[]>({
@@ -917,7 +918,7 @@ function ObjetivosTab() {
 
   return (
     <div className="space-y-6">
-      {isAdmin && (
+      {isSuperadmin && (
         <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
           <label className="block text-sm font-medium mb-2">
             Seleccionar Empresa
@@ -992,7 +993,7 @@ function ObjetivosTab() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {isAdmin && (
+                {isSuperadmin && (
                   <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
                     <label className="block text-sm font-medium mb-2">
                       Empresa <span className="text-red-500">*</span>

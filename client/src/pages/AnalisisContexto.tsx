@@ -29,7 +29,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 
 const normativaContexto = [
   {
@@ -141,6 +141,7 @@ export default function AnalisisContexto() {
   const { user } = useAuth();
   const { toast } = useToast();
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
 
   const [activeTab, setActiveTab] = useState("externo");
   const [searchTerm, setSearchTerm] = useState("");
@@ -205,12 +206,12 @@ export default function AnalisisContexto() {
 
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
-    enabled: isAdmin,
+    enabled: isSuperadmin,
   });
 
   const { data: currentCompany } = useQuery<Company>({
     queryKey: ["/api/company/current"],
-    enabled: !isAdmin,
+    enabled: !isSuperadmin,
   });
 
   const { data: factores = [], isLoading: isLoadingFactores } = useQuery<FactorContexto[]>({
@@ -228,14 +229,14 @@ export default function AnalisisContexto() {
 
   useEffect(() => {
     if (dialogOpen && !editingAnalisis) {
-      if (isAdmin && companies.length === 1) {
+      if (isSuperadmin && companies.length === 1) {
         form.setValue("companyId", companies[0].id);
       }
-      if (!isAdmin && currentCompany) {
+      if (!isSuperadmin && currentCompany) {
         form.setValue("companyId", currentCompany.id);
       }
     }
-  }, [dialogOpen, editingAnalisis, isAdmin, companies, currentCompany, form]);
+  }, [dialogOpen, editingAnalisis, isSuperadmin, companies, currentCompany, form]);
 
   useEffect(() => {
     if (selectedAnalisisTemplate && !editingAnalisis) {
@@ -561,7 +562,7 @@ export default function AnalisisContexto() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                {isAdmin && companies.length > 1 && (
+                {isSuperadmin && companies.length > 1 && (
                   <FormField
                     control={form.control}
                     name="companyId"

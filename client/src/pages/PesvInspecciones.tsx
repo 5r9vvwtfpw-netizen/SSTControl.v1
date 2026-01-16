@@ -14,12 +14,13 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 
 export default function PesvInspecciones() {
   const { user } = useAuth();
   const { toast } = useToast();
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -65,12 +66,12 @@ export default function PesvInspecciones() {
 
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
-    enabled: isAdmin,
+    enabled: isSuperadmin,
   });
 
   const createInspectionMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertVehicleInspectionSchema>) => {
-      const payload = isAdmin && formData.companyId 
+      const payload = isSuperadmin && formData.companyId 
         ? { ...data, companyId: formData.companyId }
         : data;
       const res = await apiRequest("POST", "/api/vehicle-inspections", payload);
@@ -120,7 +121,7 @@ export default function PesvInspecciones() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isAdmin && !formData.companyId) {
+    if (isSuperadmin && !formData.companyId) {
       toast({
         title: "Error",
         description: "Debe seleccionar una empresa",
@@ -227,7 +228,7 @@ export default function PesvInspecciones() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                {isAdmin && (
+                {isSuperadmin && (
                   <div className="space-y-2 col-span-2">
                     <Label htmlFor="companyId">Empresa *</Label>
                     <Select

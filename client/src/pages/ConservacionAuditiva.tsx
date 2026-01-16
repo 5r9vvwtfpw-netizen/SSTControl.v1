@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -135,6 +135,7 @@ export default function ConservacionAuditiva() {
   const { user } = useAuth();
   const { toast } = useToast();
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   
   const [activeTab, setActiveTab] = useState("panorama");
   const [searchTerm, setSearchTerm] = useState("");
@@ -260,7 +261,7 @@ export default function ConservacionAuditiva() {
 
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
-    enabled: isAdmin,
+    enabled: isSuperadmin,
   });
 
   const { data: workerAssignments = [] } = useQuery<WorkerExposureAssignment[]>({
@@ -619,14 +620,14 @@ export default function ConservacionAuditiva() {
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isAdmin && !profileForm.companyId) {
+    if (isSuperadmin && !profileForm.companyId) {
       toast({ title: "Error", description: "Debe seleccionar una empresa", variant: "destructive" });
       return;
     }
 
     const data = {
       ...profileForm,
-      companyId: isAdmin ? profileForm.companyId : undefined,
+      companyId: isSuperadmin ? profileForm.companyId : undefined,
       noiseLevel: parseInt(profileForm.noiseLevel),
       exposureHoursDay: profileForm.exposureHoursDay,
       exposedWorkersCount: selectedWorkerIds.length,
@@ -1220,7 +1221,7 @@ export default function ConservacionAuditiva() {
           </DialogHeader>
           <form onSubmit={handleProfileSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              {isAdmin && (
+              {isSuperadmin && (
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="companyId">Empresa *</Label>
                   <Select
