@@ -357,17 +357,7 @@ export default function ProgramaCapacitacionAnual() {
                       </div>
                     )}
 
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      <Link href="/programa-capacitacion">
-                        <Button
-                          size="sm"
-                          variant="default"
-                          data-testid={`button-view-activities-${program.id}`}
-                        >
-                          <ExternalLink className="w-3 h-3 mr-1" />
-                          Ver Actividades
-                        </Button>
-                      </Link>
+                    <div className="flex gap-2 pt-2">
                       <Button
                         size="sm"
                         variant="outline"
