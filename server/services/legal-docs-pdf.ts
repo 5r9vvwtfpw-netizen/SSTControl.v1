@@ -10,6 +10,7 @@
  */
 
 import { PDFDocument } from 'pdf-lib-with-encrypt';
+import { addStandardHeader, addSignatureFooter, PdfSigners, loadCompanyLogo } from './pdf-standardizer';
 
 /**
  * Apply PDF encryption to prevent copying text
@@ -49,6 +50,20 @@ interface LegalDocOptions {
   companyName?: string;
   generatedBy?: string;
   includeAllSections?: boolean;
+}
+
+interface CompanyContext {
+  id: string;
+  name: string;
+  nit: string;
+  address: string;
+  logoUrl: string | null;
+}
+
+interface LegalDocWithCompanyOptions {
+  company: CompanyContext;
+  signers: PdfSigners;
+  logoBuffer: Buffer | null;
 }
 
 /**
@@ -98,7 +113,8 @@ export class LegalDocsPdfService {
   /**
    * Generate complete Legal Protections Table PDF
    */
-  async generateProteccionesLegalesPdf(options: LegalDocOptions = {}): Promise<Buffer> {
+  async generateProteccionesLegalesPdf(companyOptions: LegalDocWithCompanyOptions, options: LegalDocOptions = {}): Promise<Buffer> {
+    const { company, signers, logoBuffer } = companyOptions;
     const { default: PDFDocument } = await import('pdfkit');
     
     const doc = new PDFDocument({ 
@@ -120,29 +136,24 @@ export class LegalDocsPdfService {
     const margin = 40;
     const pageWidth = doc.page.width;
     const contentWidth = pageWidth - (margin * 2);
-    let currentY = margin;
-
-    // Helper functions
-    const addHeader = () => {
-      doc.fontSize(10).font('Helvetica')
-         .fillColor('#666666')
-         .text('SST Colombia S.A.S. | DNDA 13-197-177', margin, 15, { align: 'left' });
-      doc.text(`Generado: ${new Date().toLocaleDateString('es-CO')}`, margin, 15, { width: contentWidth, align: 'right' });
-    };
-
-    const addFooter = (pageNum: number, totalPages: number) => {
-      const footerY = doc.page.height - 30;
-      doc.fontSize(8).font('Helvetica')
-         .fillColor('#999999')
-         .text(`© 2026 SST Colombia S.A.S. - Todos los derechos reservados`, margin, footerY, { align: 'center', width: contentWidth });
-      doc.text(`Página ${pageNum}`, margin, footerY, { width: contentWidth, align: 'right' });
-    };
+    
+    // Use standardized header
+    let currentY = await addStandardHeader({
+      doc,
+      company,
+      documentTitle: 'PROTECCIONES LEGALES SST COLOMBIA',
+      documentCode: `SST-LEG-${new Date().getFullYear()}`,
+      version: '1.0',
+      date: new Date(),
+      logoBuffer,
+    });
+    currentY += 15;
 
     const checkPageBreak = (neededSpace: number) => {
       if (currentY + neededSpace > doc.page.height - 60) {
         doc.addPage();
         currentY = margin + 20;
-        addHeader();
+        currentY = margin + 20; // Reset Y after page break
         return true;
       }
       return false;
@@ -241,7 +252,7 @@ export class LegalDocsPdfService {
     
     doc.addPage();
     currentY = margin + 20;
-    addHeader();
+    currentY = margin + 20; // Reset Y after page break
 
     // Section 1: Intellectual Property
     addSectionTitle('1. PROPIEDAD INTELECTUAL Y REGISTRO DNDA');
@@ -454,15 +465,9 @@ export class LegalDocsPdfService {
     addTableRow('DPO', 'dpo@sstcolombia.com', '');
     addTableRow('Correo Privacidad', 'privacidad@sstcolombia.com', '');
 
-    // Add page numbers
-    const totalPages = doc.bufferedPageRange().count;
-    for (let i = 0; i < totalPages; i++) {
-      doc.switchToPage(i);
-      if (i > 0) { // Skip cover page
-        addFooter(i, totalPages);
-      }
-    }
-
+    // Add standardized signature footer (no LSO required)
+    addSignatureFooter(doc, signers, false);
+    
     // Apply watermarks to all pages
     applyWatermarksToAllPages(doc);
 
@@ -480,7 +485,8 @@ export class LegalDocsPdfService {
   /**
    * Generate Data Protection Summary PDF (Habeas Data + GDPR)
    */
-  async generateProteccionDatosPdf(): Promise<Buffer> {
+  async generateProteccionDatosPdf(companyOptions: LegalDocWithCompanyOptions): Promise<Buffer> {
+    const { company, signers, logoBuffer } = companyOptions;
     const { default: PDFDocument } = await import('pdfkit');
     
     const doc = new PDFDocument({ 
@@ -500,22 +506,18 @@ export class LegalDocsPdfService {
     const margin = 50;
     const pageWidth = doc.page.width;
     const contentWidth = pageWidth - (margin * 2);
-    let currentY = margin;
-
-    // Header
-    doc.fontSize(20).font('Helvetica-Bold')
-       .fillColor('#166534')
-       .text('PROTECCIÓN DE DATOS PERSONALES', margin, currentY, { align: 'center', width: contentWidth });
-    currentY += 30;
     
-    doc.fontSize(14).font('Helvetica')
-       .fillColor('#333333')
-       .text('Resumen Ejecutivo de Cumplimiento', margin, currentY, { align: 'center', width: contentWidth });
-    currentY += 40;
-    
-    doc.fontSize(12).font('Helvetica-Bold').text('SST Colombia S.A.S.', margin, currentY);
-    doc.fontSize(10).font('Helvetica').text('Registro DNDA: 13-197-177', margin, currentY + 15);
-    currentY += 50;
+    // Use standardized header
+    let currentY = await addStandardHeader({
+      doc,
+      company,
+      documentTitle: 'PROTECCIÓN DE DATOS SST COLOMBIA',
+      documentCode: `SST-DAT-${new Date().getFullYear()}`,
+      version: '1.0',
+      date: new Date(),
+      logoBuffer,
+    });
+    currentY += 20;
 
     // Content sections
     const sections = [
@@ -606,10 +608,8 @@ export class LegalDocsPdfService {
     }
 
     // Footer
-    doc.fontSize(8).font('Helvetica')
-       .fillColor('#999999')
-       .text(`© 2026 SST Colombia S.A.S. - Todos los derechos reservados`, margin, doc.page.height - 40, { align: 'center', width: contentWidth });
-    doc.text(`Generado: ${new Date().toLocaleDateString('es-CO')}`, margin, doc.page.height - 30, { align: 'center', width: contentWidth });
+    // Add standardized signature footer (no LSO required)
+    addSignatureFooter(doc, signers, false);
 
     // Apply watermarks to all pages
     applyWatermarksToAllPages(doc);
@@ -628,7 +628,8 @@ export class LegalDocsPdfService {
   /**
    * Generate Security and Audit Measures PDF
    */
-  async generateMedidasSeguridadPdf(): Promise<Buffer> {
+  async generateMedidasSeguridadPdf(companyOptions: LegalDocWithCompanyOptions): Promise<Buffer> {
+    const { company, signers, logoBuffer } = companyOptions;
     const { default: PDFDocument } = await import('pdfkit');
     
     const doc = new PDFDocument({ 
@@ -648,18 +649,18 @@ export class LegalDocsPdfService {
     const margin = 50;
     const pageWidth = doc.page.width;
     const contentWidth = pageWidth - (margin * 2);
-    let currentY = margin;
-
-    // Header
-    doc.fontSize(20).font('Helvetica-Bold')
-       .fillColor('#166534')
-       .text('MEDIDAS DE SEGURIDAD Y AUDITORÍA', margin, currentY, { align: 'center', width: contentWidth });
-    currentY += 30;
     
-    doc.fontSize(14).font('Helvetica')
-       .fillColor('#333333')
-       .text('Documentación Técnica de Seguridad', margin, currentY, { align: 'center', width: contentWidth });
-    currentY += 40;
+    // Use standardized header
+    let currentY = await addStandardHeader({
+      doc,
+      company,
+      documentTitle: 'MEDIDAS DE SEGURIDAD SST COLOMBIA',
+      documentCode: `SST-SEG-${new Date().getFullYear()}`,
+      version: '1.0',
+      date: new Date(),
+      logoBuffer,
+    });
+    currentY += 20;
 
     // Rate Limiting Section
     // Check if section header fits on current page
@@ -778,9 +779,8 @@ export class LegalDocsPdfService {
     }
 
     // Footer
-    doc.fontSize(8).font('Helvetica')
-       .fillColor('#999999')
-       .text(`© 2026 SST Colombia S.A.S. - DNDA 13-197-177 - Todos los derechos reservados`, margin, doc.page.height - 40, { align: 'center', width: contentWidth });
+    // Add standardized signature footer (no LSO required)
+    addSignatureFooter(doc, signers, false);
 
     // Apply watermarks to all pages
     applyWatermarksToAllPages(doc);

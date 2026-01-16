@@ -7602,27 +7602,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       doc.pipe(res);
       
-      // Preload company logo and worker photo from Object Storage
+      // Preload company logo and signers from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const signers = await getSignersForCompany(profile.companyId, false);
       
-      // Setup headers and footers
-      setupPdfHeadersFooters({
+      // Setup standard header
+      await addStandardHeader({
         doc,
         company: {
+          id: company.id,
           name: company.name,
           nit: company.nit,
           address: company.address,
           logoUrl: company.logoUrl,
         },
-        documentTitle: "PERFIL DE CARGO",
-        documentCode: `PC-${profile.id.substring(0, 8).toUpperCase()}`,
-        version: "1.0",
+        documentTitle: 'PERFIL DE CARGO SST',
+        documentCode: `SST-PC-${profile.id.substring(0, 8)}`,
+        version: '1.0',
         date: new Date(),
-        elaboro: "Responsable SST",
-        autorizo: company.legalRepName || "Representante Legal",
-        aprobo: company.legalRepName || "Representante Legal",
-        logoBuffer,
+        logoBuffer: logo,
       });
       
       const margin = 35;
@@ -7793,6 +7791,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text('• Decreto 1072 de 2015 - Decreto Único Reglamentario del Sector Trabajo', margin + 10, doc.y, { width: pageWidth - 2 * margin - 15 });
       doc.text('• Resolución 1843 de 2025 - Exámenes Médicos Ocupacionales', margin + 10, doc.y, { width: pageWidth - 2 * margin - 15 });
       doc.text('• Decreto 768 de 2022 - Tabla de Clasificación de Actividades Económicas y Riesgos', margin + 10, doc.y, { width: pageWidth - 2 * margin - 15 });
+      
+      // Add standard signature footer
+      addSignatureFooter(doc, signers, false);
       
       doc.end();
     } catch (error: any) {
@@ -8995,28 +8996,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let headerY = 50;
       
-      // Preload company logo and worker photo from Object Storage
+      // Preload company logo and signers from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const signers = await getSignersForCompany(companyId);
       
-      // Add company logo if available
-      if (logoBuffer) {
-        try {
-          doc.image(logoBuffer, margin, headerY, { width: 60, height: 60 });
-        } catch (logoError) {
-          console.warn('Could not load company logo for PDF:', logoError);
-        }
-      }
+      // Standard Header ISO 45001:2018
+      let currentY = await addStandardHeader({
+        doc,
+        company,
+        documentTitle: 'ACTA DE DESIGNACIÓN RESPONSABLE SST',
+        documentCode: `SST-DES-${designation.id.substring(0, 8)}`,
+        version: '1.0',
+        date: new Date(designation.designationDate),
+        logoBuffer: logo,
+      });
       
-      // Header - adjusted position if logo exists
-      const textStartX = logoBuffer ? margin + 70 : margin;
-      const textWidth = logoBuffer ? contentWidth - 70 : contentWidth;
-      
-      doc.fontSize(9).font('Helvetica-Bold').text('ACTA DE DESIGNACIÓN DEL RESPONSABLE', textStartX, headerY, { width: textWidth, align: 'center', lineBreak: false });
-      doc.fontSize(9).text('DEL SISTEMA DE GESTIÓN DE SEGURIDAD Y SALUD EN EL TRABAJO', textStartX, headerY + 18, { width: textWidth, align: 'center', lineBreak: false });
-      doc.fontSize(7).font('Helvetica').text('(Resolución 0312 de 2019 - Estándar 1.1.1)', textStartX, headerY + 36, { width: textWidth, align: 'center', lineBreak: false });
-      
-      let currentY = 130;
+      currentY += 15;
       
       // Company info box
       doc.rect(margin, currentY, contentWidth, 60).stroke();
@@ -9193,6 +9188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.fontSize(8).fillColor('gray')
         .text(`Documento generado el ${new Date().toLocaleDateString('es-CO')} - SST Colombia`, margin, currentY, { align: 'center', lineBreak: false })
         .text('Este documento cumple con los requisitos del Estándar 1.1.1 de la Resolución 0312 de 2019', margin, currentY + 10, { align: 'center', lineBreak: false });
+      addSignatureFooter(doc, signers, false);
       // Finalize PDF
       doc.end();
     } catch (error: any) {
@@ -9280,6 +9276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and worker photo from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       // Worker photo not needed for muestreo PDF
 
       // Standard Header
@@ -9540,6 +9537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and worker photo from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       // Worker photo not needed for muestreo PDF
 
       // Standard Header with logo, company info, and version table
@@ -9884,25 +9882,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.pipe(res);
 
-      // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const logo = await loadCompanyLogo(company?.logoUrl);
+      const signers = await getSignersForCompany(companyId);
 
-      // Standard Header with logo, version control table in green, and automatic footer with signatures
-      let currentY = setupPdfHeadersFooters({
+      await addStandardHeader({
         doc,
-        company,
-        documentTitle: 'ACTA DE CONSTITUCIÓN DEL COPASST',
-        logoBuffer,
-        documentCode: `SST-COP-${acta.numeroActa}`,
+        company: {
+          id: company.id,
+          name: company.name,
+          nit: company.nit,
+          logoUrl: company.logoUrl,
+        },
+        documentTitle: 'ACTA REUNIÓN COMITÉ PARITARIO SST (COPASST)',
+        documentCode: `SST-COPASST-${acta.numeroActa}`,
         version: '1.0',
         date: new Date(acta.fecha),
-        elaboro: acta.secretaria || 'Secretario COPASST',
-        autorizo: req.user?.username || 'Sistema',
-        aprobo: acta.presidente || 'Presidente COPASST'
+        logoBuffer: logo,
       });
 
-      currentY += 15;
+      let currentY = doc.y + 15;
 
       // Acta details section with green header
       doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34')
@@ -9951,6 +9949,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           align: 'justify'
         });
 
+      addSignatureFooter(doc, signers, false);
       doc.end();
 
     } catch (error: any) {
@@ -10514,31 +10513,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="convocatoria-copasst-${eleccion.id}.pdf"`);
       doc.pipe(res);
       
-      // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const logo = await loadCompanyLogo(company?.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       
       const year = new Date(eleccion.fechaConvocatoria).getFullYear();
-      
-      const contentStartY = setupPdfHeadersFooters({
+
+      await addStandardHeader({
         doc,
         company: {
+          id: company.id,
           name: company.name,
           nit: company.nit,
-          address: company.address,
-          logoUrl: company.logoUrl
+          logoUrl: company.logoUrl,
         },
-        documentTitle: `CONVOCATORIA A ELECCIONES COPASST ${year}`,
-        documentCode: 'SST-COPASST-CONV',
+        documentTitle: 'CONVOCATORIA ELECCIÓN COPASST',
+        documentCode: `SST-CON-${eleccion.id.substring(0, 8)}`,
         version: '1.0',
         date: new Date(eleccion.fechaConvocatoria),
-        elaboro: company.legalRepName || 'Representante Legal',
-        autorizo: 'Responsable SST',
-        aprobo: company.legalRepName || 'Representante Legal',
-        logoBuffer,
+        logoBuffer: logo,
       });
       
-      doc.y = contentStartY + 10;
+      doc.y = doc.y + 10;
       
       const fechaConvocatoria = new Date(eleccion.fechaConvocatoria).toLocaleDateString('es-CO', {
         year: 'numeric',
@@ -10627,6 +10622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(company.legalRepPosition || 'Gerente General', margin);
       doc.text(company.name, margin);
       
+      addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
       res.status(500).send(`Error generando PDF: ${error.message}`);
@@ -10675,31 +10671,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="acta-escrutinio-copasst-${eleccion.id}.pdf"`);
       doc.pipe(res);
       
-      // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const logo = await loadCompanyLogo(company?.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       
       const year = new Date(eleccion.fechaVotacion).getFullYear();
-      
-      const contentStartY = setupPdfHeadersFooters({
+
+      await addStandardHeader({
         doc,
         company: {
+          id: company.id,
           name: company.name,
           nit: company.nit,
-          address: company.address,
-          logoUrl: company.logoUrl
+          logoUrl: company.logoUrl,
         },
-        documentTitle: `ACTA DE ESCRUTINIO - ELECCIONES COPASST ${year}`,
-        documentCode: 'SST-COPASST-ESC',
+        documentTitle: 'ACTA DE ESCRUTINIO ELECCIÓN COPASST',
+        documentCode: `SST-ESC-${eleccion.id.substring(0, 8)}`,
         version: '1.0',
         date: new Date(eleccion.fechaVotacion),
-        elaboro: 'Jurado de Votación',
-        autorizo: 'Responsable SST',
-        aprobo: company.legalRepName || 'Representante Legal',
-        logoBuffer,
+        logoBuffer: logo,
       });
       
-      doc.y = contentStartY + 10;
+      doc.y = doc.y + 10;
       
       const fechaVotacion = new Date(eleccion.fechaVotacion).toLocaleDateString('es-CO', {
         year: 'numeric', month: 'long', day: 'numeric'
@@ -10825,6 +10817,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text('Jurado 2', margin + sigWidth + 20, labelY, { width: sigWidth });
       doc.text('Jurado 3', margin + (sigWidth + 20) * 2, labelY, { width: sigWidth });
       
+      addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
       res.status(500).send(`Error generando PDF: ${error.message}`);
@@ -10880,29 +10873,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="acta-constitucion-copasst-${periodo.id}.pdf"`);
       doc.pipe(res);
       
-      // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
-      
-      const contentStartY = setupPdfHeadersFooters({
+      const logo = await loadCompanyLogo(company?.logoUrl);
+      const signers = await getSignersForCompany(companyId);
+
+      await addStandardHeader({
         doc,
         company: {
+          id: company.id,
           name: company.name,
           nit: company.nit,
-          address: company.address,
-          logoUrl: company.logoUrl
+          logoUrl: company.logoUrl,
         },
-        documentTitle: 'ACTA DE CONSTITUCIÓN DEL COMITÉ PARITARIO DE SEGURIDAD Y SALUD EN EL TRABAJO',
-        documentCode: 'SST-COPASST-ACT',
+        documentTitle: 'ACTA DE CONSTITUCIÓN COPASST',
+        documentCode: `SST-CST-${periodo.id.substring(0, 8)}`,
         version: '1.0',
         date: new Date(periodo.fechaInicio),
-        elaboro: 'Responsable SST',
-        autorizo: company.legalRepName || 'Representante Legal',
-        aprobo: company.legalRepName || 'Representante Legal',
-        logoBuffer,
+        logoBuffer: logo,
       });
       
-      doc.y = contentStartY + 10;
+      doc.y = doc.y + 10;
       
       const fechaInicio = new Date(periodo.fechaInicio).toLocaleDateString('es-CO', {
         year: 'numeric', month: 'long', day: 'numeric'
@@ -11068,6 +11057,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.fontSize(8).moveDown(1.5);
       }
       
+      addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
       res.status(500).send(`Error generando PDF: ${error.message}`);
@@ -11596,6 +11586,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send("Empresa no encontrada");
       }
       
+      // Get company logo and signers for standardized PDF
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, false);
+      
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ size: 'LETTER', layout: 'landscape', margin: 50 });
       
@@ -11608,21 +11602,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="certificado-${certificado.codigoCertificado}.pdf"`);
       doc.pipe(res);
       
+      const margin = 50;
+      const pageWidth = doc.page.width;
       const pageHeight = doc.page.height;
       
-      // Border
-      doc.rect(margin, margin, pageWidth - 2 * margin, pageHeight - 2 * margin)
-         .lineWidth(3).stroke('#1e3a5f');
-      doc.rect(margin + 10, margin + 10, pageWidth - 2 * margin - 20, pageHeight - 2 * margin - 20)
-         .lineWidth(1).stroke('#1e3a5f');
+      // Standard header
+      await addStandardHeader({
+        doc,
+        company: { id: company.id, name: company.name, nit: company.nit, logoUrl: company.logoUrl },
+        documentTitle: 'CERTIFICADO DE CAPACITACIÓN COPASST',
+        documentCode: `SST-CERT-${req.params.id.substring(0, 8)}`,
+        version: '1.0',
+        date: new Date(certificado.fechaEmision),
+        logoBuffer
+      });
       
-      // Header
-      doc.fontSize(24).font('Helvetica-Bold').fillColor('#1e3a5f');
-      doc.text('CERTIFICADO DE CAPACITACIÓN', margin, margin + 40, { align: 'center', width: pageWidth - 2 * margin });
-      
-      doc.fontSize(9).font('Helvetica');
-      doc.text('COMITÉ PARITARIO DE SEGURIDAD Y SALUD EN EL TRABAJO', { align: 'center', width: pageWidth - 2 * margin });
-      doc.moveDown(2);
+      doc.moveDown(1);
       
       // Content
       doc.fontSize(9).fillColor('#333333');
@@ -11663,10 +11658,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       doc.moveDown(2);
       
-      // Footer
+      // Footer with verification code
       doc.fontSize(8).fillColor('#666666');
       doc.text(`Código de verificación: ${certificado.codigoCertificado}`, { align: 'center', width: pageWidth - 2 * margin });
       doc.text(`${company.name} - NIT: ${company.nit}`, { align: 'center', width: pageWidth - 2 * margin });
+      
+      // Add signature footer (ISO 45001:2018)
+      addSignatureFooter(doc, signers, false);
       
       doc.end();
     } catch (error: any) {
@@ -12473,7 +12471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Load company logo and signers using centralized PDF Standardizer
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, true); // true = requires LSO
+      const signers = await getSignersForCompany(companyId);
       
       // Add standard corporate header (ISO 45001:2018)
       await addStandardHeader({
@@ -12845,24 +12843,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.send(pdfBuffer);
       });
 
-      // Preload company logo and worker photo from Object Storage
+      // Preload company logo and signers from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const signers = await getSignersForCompany(companyId);
       
-      // Standard Header with logo, version control table in green, and automatic footer with signatures
-      let currentY = setupPdfHeadersFooters({
+      // Standard Header ISO 45001:2018
+      let currentY = await addStandardHeader({
         doc,
         company,
-        documentTitle: 'ACTA DE CONSTITUCIÓN DEL COMITÉ DE CONVIVENCIA LABORAL',
-        logoBuffer,
-        documentCode: `SST-CC-${acta.numeroActa}`,
+        documentTitle: 'ACTA REUNIÓN COMITÉ DE CONVIVENCIA LABORAL',
+        documentCode: `SST-CONV-${acta.numeroActa}`,
         version: '1.0',
         date: new Date(acta.fecha),
-        elaboro: 'Secretario Comité',
-        autorizo: req.user?.username || 'Sistema',
-        aprobo: 'Presidente Comité'
+        logoBuffer: logo,
       });
-
+      
+      currentY += 15;
       currentY += 15;
 
       // Acta info section with green header
@@ -12940,6 +12936,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           width: pageWidth - 2 * margin,
           align: 'justify'
         });
+      addSignatureFooter(doc, signers, false);
 
       doc.end();
 
@@ -13353,6 +13350,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate PDF from markdown documentation
   app.get("/api/docs/programa-capacitacion-prevencion/pdf", requireAuth, async (req, res) => {
     try {
+      const companyId = req.user!.companyId;
+      if (!companyId) {
+        return res.status(403).send("Usuario no asociado a una empresa");
+      }
+      
+      const company = await storage.getCompany(companyId);
+      if (!company) {
+        return res.status(404).send("Empresa no encontrada");
+      }
+      
+      // Get company logo and signers for standardized PDF
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, false);
+      
       const markdownPath = path.join(process.cwd(), 'docs', 'PROGRAMA_CAPACITACION_PREVENCION.md');
       
       if (!fs.existsSync(markdownPath)) {
@@ -13375,6 +13386,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.contentType('application/pdf');
       doc.pipe(res);
 
+      // Standard header
+      await addStandardHeader({
+        doc,
+        company: { id: company.id, name: company.name, nit: company.nit, logoUrl: company.logoUrl },
+        documentTitle: 'PROGRAMA DE CAPACITACIÓN Y PREVENCIÓN',
+        documentCode: `SST-PCP-${new Date().getFullYear()}`,
+        version: '1.0',
+        date: new Date(),
+        logoBuffer
+      });
+      
+      doc.moveDown(1);
       let currentY = doc.y;
 
       for (const token of tokens) {
@@ -13689,22 +13712,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.pipe(res);
       // Load company logo for PDF header
-      const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, false);
 
-
-      // Standard Header with logo, version control, and signatures
-      let currentY = setupPdfHeadersFooters({
+      // Standard Header (ISO 45001:2018)
+      await addStandardHeader({
         doc,
-        company,
-        documentTitle: `ACTA DE ${registro.tipo.toUpperCase()}`,
-        documentCode: `SST-IND-${new Date(registro.fecha).getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+        company: { id: company.id, name: company.name, nit: company.nit, logoUrl: company.logoUrl },
+        documentTitle: 'ACTA DE INDUCCIÓN SST',
+        documentCode: `SST-IND-${registro.id.substring(0, 8)}`,
         version: '1.0',
         date: new Date(registro.fecha),
-        elaboro: registro.responsableNombre,
-        autorizo: req.user?.username || 'Sistema',
-        aprobo: 'Coordinador SST'
+        logoBuffer
       });
+      
+      let currentY = doc.y + 10;
 
       // Basic Information
       doc.fontSize(9).font('Helvetica-Bold')
@@ -14015,15 +14037,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.fontSize(7).font('Helvetica')
         .text('Responsable de Inducción', pageWidth - margin - 230, currentY + 35, { width: 200, align: 'center' });
 
-      // Footer
-      doc.fontSize(7).font('Helvetica')
-        .fillColor('#666666')
-        .text(
-          `Generado: ${new Date().toLocaleDateString('es-CO')} | ${company.name} | Sistema de Gestión SST`,
-          margin,
-          doc.page.height - 40,
-          { align: 'center', width: pageWidth - 2 * margin }
-        );
+      // Add signature footer (ISO 45001:2018)
+      addSignatureFooter(doc, signers, false);
 
       doc.end();
 
@@ -14877,6 +14892,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Preload company logo
       const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       
       // Setup standard headers and footers
       const fechaVerificacion = new Date(verificacion.fecha);
@@ -15380,7 +15396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Load company logo and signers using centralized PDF Standardizer
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, true); // true = requires LSO
+      const signers = await getSignersForCompany(companyId);
       
       // Add standard corporate header (ISO 45001:2018)
       let currentY = await addStandardHeader({
@@ -15664,6 +15680,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and worker photo from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       // Worker photo not needed for muestreo PDF
       
       // Standard Header with logo, version control, and signatures at footer
@@ -15850,6 +15867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and worker photo from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       // Worker photo not needed for muestreo PDF
 
       // Background border
@@ -16103,6 +16121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const textMuted = '#666666';
 
       const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       // Worker photo not needed for muestreo PDF
       let pageNumber = 1;
 
@@ -16968,20 +16987,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.setHeader('Content-Disposition', `attachment; filename="Informe-Capacitaciones-${period || 'completo'}.pdf"`);
         doc.pipe(res);
 
-        // Load company logo for standard header
-        const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
+        // Load company logo and signers for standardized PDF
+        const logoBuffer = await loadCompanyLogo(company?.logoUrl);
+        const signers = await getSignersForCompany(companyId, false);
 
-        // Standard Header with logo, version control, and signatures
-        setupPdfHeadersFooters({
+        // Standard Header (ISO 45001:2018)
+        await addStandardHeader({
           doc,
-          company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
-          documentTitle: 'INFORME DE CAPACITACIONES',
-          documentCode: `SST-CAP-${new Date().getFullYear()}`,
+          company: { id: company?.id || companyId, name: company?.name || 'Empresa', nit: company?.nit || 'N/A', logoUrl: company?.logoUrl || null },
+          documentTitle: 'INFORME DE CAPACITACIONES SST',
+          documentCode: `SST-INF-CAP-${new Date().getFullYear()}`,
           version: '1.0',
           date: new Date(),
-          elaboro: 'Responsable SST',
-          autorizo: company?.legalRepName || 'Representante Legal',
-          aprobo: company?.legalRepName || 'Gerencia General',
           logoBuffer,
         });
 
@@ -17141,7 +17158,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           doc.y = rowY + 10;
         }
 
-        // Finalize PDF (footer already drawn by generateStandardPdfHeader)
+        // Add signature footer (ISO 45001:2018)
+        addSignatureFooter(doc, signers, false);
+        
         doc.end();
 
       } else if (reportType === "inspecciones") {
@@ -19069,6 +19088,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and worker photo from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       // Worker photo not needed for muestreo PDF
 
       // Standard Header with logo, version control, and signatures
@@ -19465,8 +19485,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get company for branding
       const company = await storage.getCompany(companyId);
 
-      // Load company logo for PDF header
-      const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
+      // Load company logo and signers for standardized PDF
+      const logoBuffer = await loadCompanyLogo(company?.logoUrl);
+      const signers = await getSignersForCompany(companyId, false);
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
@@ -19480,21 +19501,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
 
       
-      // Standard Header with logo, version control, and signatures
-      let currentY = setupPdfHeadersFooters({
+      // Standard Header (ISO 45001:2018)
+      await addStandardHeader({
         doc,
-        company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
-        logoBuffer,
-        documentTitle: `PROGRAMA DE CAPACITACIÓN Y ENTRENAMIENTO SST - AÑO ${program.year}`,
-        documentCode: `SST-CAP-${program.year}`,
+        company: { id: company?.id || companyId, name: company?.name || 'Empresa', nit: company?.nit || 'N/A', logoUrl: company?.logoUrl || null },
+        documentTitle: 'PROGRAMA DE CAPACITACIÓN SST',
+        documentCode: `SST-PRG-${program.id.substring(0, 8)}`,
         version: '1.0',
         date: new Date(),
-        elaboro: program.responsible || 'Responsable SST',
-        autorizo: req.user?.username || 'Sistema',
-        aprobo: 'Gerencia'
+        logoBuffer,
       });
 
-      doc.y = currentY;
+      doc.y = doc.y + 10;
       const pageWidth = 612 - (margin * 2);
 
       // Program information section - use structured box
@@ -19693,6 +19711,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `Fecha de generación: ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}`,
         { align: 'center' }
       );
+
+      // Add signature footer (ISO 45001:2018)
+      addSignatureFooter(doc, signers, false);
 
       doc.end();
     } catch (error: any) {
@@ -20231,20 +20252,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `inline; filename=Politica_SST_${politica.codigo}_v${politica.version}.pdf`);
       doc.pipe(res);
 
-      // Preload company logo and worker photo from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      // Preload company logo and signers for standardized header
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
 
-      const contentStartY = setupPdfHeadersFooters({
+      const contentStartY = await addStandardHeader({
         doc,
-        company,
+        company: {
+          id: company.id,
+          name: company.name,
+          nit: company.nit,
+          address: company.address,
+          logoUrl: company.logoUrl,
+        },
         documentTitle: 'POLÍTICA DE SEGURIDAD Y SALUD EN EL TRABAJO',
-        documentCode: politica.codigo,
+        documentCode: `SST-POL-${politica.codigo}`,
         version: politica.version,
         date: new Date(politica.fechaEmision),
-        elaboro: elaboroName,
-        autorizo: autorizoName,
-        aprobo: aproboName,
         logoBuffer,
       });
 
@@ -21289,6 +21313,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.font('Helvetica-Bold').text('Fecha de Firma: ', margin, currentY, { continued: true });
       doc.font('Helvetica').text(new Date(politica.fechaFirma).toLocaleDateString('es-CO'));
+
+      // Add standardized signature footer (no LSO required)
+      addSignatureFooter(doc, signers, false);
 
       doc.end();
     } catch (error: any) {
@@ -22638,9 +22665,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const respuestas = await storage.getRespuestasEstandares(req.params.id, companyId);
       const acciones = await storage.getAccionesMejora(req.params.id, companyId);
 
-      // Load company logo
-      const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      // Load company logo and get signers for standardized PDF
+      const logo = await loadCompanyLogo(company?.logoUrl);
+      const signers = await getSignersForCompany(companyId);
 
       // Create PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
@@ -22658,17 +22685,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const contentWidth = pageWidth - 2 * margin;
 
-      // Standard Header with logo, version control, and signatures
-      let currentY = setupPdfHeadersFooters({
+      // Standard Header using centralized PDF Standardizer
+      let currentY = await addStandardHeader({
         doc,
-        company,
-        documentTitle: 'EVALUACIÓN INICIAL DEL SG-SST',
-        documentCode: `SST-EVAL-${evaluacion.anio}`,
+        company: { id: companyId, name: company.name, nit: company.nit || '', logoUrl: company.logoUrl },
+        documentTitle: 'EVALUACIÓN DEL SISTEMA DE GESTIÓN SST',
+        documentCode: `SST-EVA-${evaluacion.anio}`,
         version: '1.0',
         date: new Date(evaluacion.fechaEvaluacion),
-        elaboro: evaluacion.responsableNombre,
-        autorizo: req.user?.username || 'Sistema',
-        aprobo: 'Coordinador SST'
+        logoBuffer: logo
       });
 
       currentY += 4;
@@ -22768,6 +22793,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Add signature footer (no LSO required for management reports)
+      addSignatureFooter(doc, signers, false);
+
       doc.end();
     } catch (error: any) {
       console.error('Error generating evaluación SST PDF:', error);
@@ -22857,9 +22885,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const componentes = await storage.getComponentesSst();
       const acciones = await storage.getAccionesMejora(req.params.id, companyId);
 
-      // Load company logo
-      const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      // Load company logo and get signers for standardized PDF
+      const logo = await loadCompanyLogo(company?.logoUrl);
+      const signers = await getSignersForCompany(companyId);
 
       // Create PDF
       const doc = new PDFDocument({ margin: 40, size: 'LETTER' });
@@ -22876,33 +22904,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="Reporte-Ministerio-SST-${evaluacion.anio}.pdf"`);
       doc.pipe(res);
 
-      // ========== PÁGINA 1: PORTADA OFICIAL ==========
-      let currentY = 60;
+      // Standard Header using centralized PDF Standardizer
+      let currentY = await addStandardHeader({
+        doc,
+        company: { id: companyId, name: company.name, nit: company.nit || '', logoUrl: company.logoUrl },
+        documentTitle: 'REPORTE MINISTERIO DEL TRABAJO - EVALUACIÓN SG-SST',
+        documentCode: `SST-MIN-${evaluacion.anio}`,
+        version: '1.0',
+        date: new Date(evaluacion.fechaEvaluacion),
+        logoBuffer: logo
+      });
 
-      // Logo de la empresa centrado
-      if (logoBuffer) {
-        try {
-          doc.image(logoBuffer, pageWidth / 2 - 40, currentY, { width: 80, height: 80, fit: [80, 80] });
-        } catch (e) {}
-      }
-      currentY += 100;
-
-      // Título principal
-      doc.fontSize(16).font('Helvetica-Bold').fillColor('#1e7e34').text('REPÚBLICA DE COLOMBIA', margin, currentY, { align: 'center', width: contentWidth });
-      currentY = doc.y + 8;
-      doc.fontSize(14).font('Helvetica-Bold').fillColor('#000000').text('MINISTERIO DEL TRABAJO', margin, currentY, { align: 'center', width: contentWidth });
-      currentY = doc.y + 30;
-
-      // Título del documento
-      doc.fontSize(14).font('Helvetica-Bold').fillColor('#1e7e34')
-        .text('INFORME DE AUTOEVALUACIÓN ANUAL', margin, currentY, { align: 'center', width: contentWidth });
-      currentY = doc.y + 5;
-      doc.fontSize(12).font('Helvetica-Bold').fillColor('#000000')
-        .text('SISTEMA DE GESTIÓN DE SEGURIDAD Y SALUD EN EL TRABAJO', margin, currentY, { align: 'center', width: contentWidth });
-      currentY = doc.y + 5;
-      doc.fontSize(10).font('Helvetica').fillColor('#666666')
-        .text('Resolución 0312 de 2019 - Estándares Mínimos del SG-SST', margin, currentY, { align: 'center', width: contentWidth });
-      currentY = doc.y + 40;
+      currentY += 20;
 
       // Cuadro de información de la empresa
       doc.rect(margin, currentY, contentWidth, 120).stroke('#1e7e34');
@@ -23194,6 +23207,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.fontSize(7).font('Helvetica').fillColor('#999999')
         .text('Este documento es válido para efectos de cumplimiento ante el Ministerio del Trabajo y la ARL.', margin, currentY, { align: 'center', width: contentWidth });
+
+      // Add signature footer (no LSO required for management reports)
+      addSignatureFooter(doc, signers, false);
 
       doc.end();
     } catch (error: any) {
@@ -23576,8 +23592,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ============================================================
       // GENERAR PDF PROFESIONAL
       // ============================================================
-      const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      // Load company logo and get signers for standardized PDF
+      const logo = await loadCompanyLogo(company?.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
       
       // Add trial watermark if subscription is in trial period
@@ -23598,18 +23615,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const colorModerado = '#ffc107';
       const colorAceptable = '#28a745';
 
-      // Header
-      let currentY = setupPdfHeadersFooters({
+      // Standard Header using centralized PDF Standardizer
+      let currentY = await addStandardHeader({
         doc,
-        company,
-        documentTitle: 'INFORME DE VERIFICACIÓN INTELIGENTE DEL SG-SST',
-        documentCode: `SST-VER-${evaluacion.anio}-${String(evaluacion.id).slice(-4)}`,
+        company: { id: companyId, name: company.name, nit: company.nit || '', logoUrl: company.logoUrl },
+        documentTitle: 'INFORME DE VERIFICACIÓN INTELIGENTE SG-SST',
+        documentCode: `SST-VER-${evaluacion.anio}`,
         version: '1.0',
         date: fechaActual,
-        elaboro: evaluacion.responsableNombre,
-        autorizo: req.user?.fullName || req.user?.username || 'Sistema',
-        aprobo: 'Alta Dirección',
-        logoBuffer
+        logoBuffer: logo
       });
 
       currentY += 4;
@@ -23996,6 +24010,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY = doc.y + 20;
       doc.fontSize(7).font('Helvetica').fillColor('#666666')
         .text(`Documento generado automáticamente por SGSSTN v1.0 el ${fechaActual.toLocaleDateString('es-CO')} a las ${fechaActual.toLocaleTimeString('es-CO')}`, margin, currentY, { width: contentWidth, align: 'center' });
+
+      // Add signature footer (no LSO required for management reports)
+      addSignatureFooter(doc, signers, false);
 
       doc.end();
     } catch (error: any) {
@@ -24956,9 +24973,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pageHeight = doc.page.height;
       const contentWidth = pageWidth - 2 * margin;
       
-      // Load company logo
+      // Load company logo and signers for standardized PDF
       const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const signers = await getSignersForCompany(companyId);
 
       // Helper para agregar pie de página
       const addPageFooter = (pageNum: number) => {
@@ -24966,68 +24983,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .text(`Página ${pageNum} de ${totalPages}`, margin, pageHeight - 25, { width: contentWidth, align: 'center' });
       };
 
-      // ==================== PÁGINA 1: PORTADA ====================
-      let currentY = 50;
-      
-      // Logo
-      if (logoBuffer) {
-        try {
-          doc.image(logoBuffer, margin, currentY, { width: 60, height: 60 });
-        } catch (err) {
-          doc.rect(margin, currentY, 60, 60).stroke('#cccccc');
-          doc.fontSize(8).font('Helvetica').fillColor('#999999').text('LOGO', margin + 18, currentY + 25);
-        }
-      } else {
-        doc.rect(margin, currentY, 60, 60).stroke('#cccccc');
-        doc.fontSize(8).font('Helvetica').fillColor('#999999').text('LOGO', margin + 18, currentY + 25);
-      }
+      // Add standardized header (ISO 45001:2018)
+      let currentY = await addStandardHeader({
+        doc,
+        company: {
+          id: companyId,
+          name: company.name,
+          nit: company.nit || 'N/A',
+          address: company.address,
+          logoUrl: company.logoUrl
+        },
+        documentTitle: 'PLAN DE TRABAJO ANUAL SG-SST',
+        documentCode: `SST-PTA-${plan.anio}`,
+        version: plan.version || '1.0',
+        date: new Date(plan.fechaElaboracion),
+        logoBuffer: logo
+      });
 
-      // Información de empresa
-      const companyInfoX = margin + 75;
-      doc.fontSize(11).font('Helvetica-Bold').fillColor('#000000')
-        .text(company.name.toUpperCase(), companyInfoX, currentY + 5);
-      doc.fontSize(9).font('Helvetica').fillColor('#333333')
-        .text(`NIT: ${company.nit || 'No registrado'}`, companyInfoX, currentY + 22);
-      if (company.address) {
-        doc.text(company.address, companyInfoX, currentY + 36);
-      }
-
-      // Cuadro de control documental
-      const controlBoxWidth = 180;
-      const controlBoxX = pageWidth - margin - controlBoxWidth;
-      const controlRowHeight = 16;
-      
-      doc.rect(controlBoxX, currentY, controlBoxWidth, controlRowHeight * 3).stroke('#1e7e34');
-      doc.moveTo(controlBoxX, currentY + controlRowHeight).lineTo(controlBoxX + controlBoxWidth, currentY + controlRowHeight).stroke('#1e7e34');
-      doc.moveTo(controlBoxX, currentY + controlRowHeight * 2).lineTo(controlBoxX + controlBoxWidth, currentY + controlRowHeight * 2).stroke('#1e7e34');
-      doc.moveTo(controlBoxX + 60, currentY).lineTo(controlBoxX + 60, currentY + controlRowHeight * 3).stroke('#1e7e34');
-      
-      doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e7e34')
-        .text('Código:', controlBoxX + 5, currentY + 4)
-        .text('Versión:', controlBoxX + 5, currentY + controlRowHeight + 4)
-        .text('Fecha:', controlBoxX + 5, currentY + controlRowHeight * 2 + 4);
-      
-      doc.fontSize(8).font('Helvetica').fillColor('#000000')
-        .text(`SST-PAT-${plan.anio}`, controlBoxX + 65, currentY + 4)
-        .text(plan.version || '1.0', controlBoxX + 65, currentY + controlRowHeight + 4)
-        .text(new Date(plan.fechaElaboracion).toLocaleDateString('es-CO'), controlBoxX + 65, controlRowHeight * 2 + currentY + 4);
-
-      currentY = 140;
-
-      // Título principal
-      doc.fontSize(16).font('Helvetica-Bold').fillColor('#1e7e34')
-        .text('PLAN ANUAL DE TRABAJO', margin, currentY, { width: contentWidth, align: 'center' });
-      currentY += 22;
-      doc.fontSize(14).font('Helvetica-Bold').fillColor('#1e7e34')
-        .text('SISTEMA DE GESTIÓN DE SEGURIDAD Y SALUD EN EL TRABAJO', margin, currentY, { width: contentWidth, align: 'center' });
-      currentY += 20;
-      doc.fontSize(11).font('Helvetica').fillColor('#666666')
-        .text(`Año ${plan.anio}`, margin, currentY, { width: contentWidth, align: 'center' });
-      currentY += 25;
-      doc.fontSize(9).font('Helvetica').fillColor('#666666')
-        .text('Decreto 1072 de 2015 - Resolución 0312 de 2019', margin, currentY, { width: contentWidth, align: 'center' });
-
-      currentY += 40;
+      currentY += 10;
 
       // Objetivo General
       if (plan.objetivoGeneral) {
@@ -25268,6 +25241,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         addPageFooter(2);
       }
+
+      // Add signature footer (no LSO required for management reports)
+      addSignatureFooter(doc, signers, false);
 
       doc.end();
     } catch (error: any) {
@@ -27348,6 +27324,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Obtener datos de la empresa para el logo
       const company = await storage.getCompany(companyId);
       
+      // Load company logo and signers for standardized PDF
+      const logoBuffer = await loadCompanyLogo(company?.logoUrl || null);
+      const signers = await getSignersForCompany(companyId, false);
+      
       // Obtener datos relacionados
       const evaluaciones = await storage.getEvaluacionesImpactoCambio(cambioId, companyId);
       const controles = await storage.getControlesCambio(cambioId, companyId);
@@ -27373,17 +27353,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
       
       
-      // Header estándar con logo, versión y firmas
-      let currentY = setupPdfHeadersFooters({
+      // Header estándar con logo, versión y firmas (estandarizado)
+      let currentY = await addStandardHeader({
         doc,
-        company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
-        documentTitle: 'REPORTE DE GESTIÓN DE CAMBIO SST',
-        documentCode: cambio.codigo,
+        company: { id: companyId, name: company?.name || 'Empresa', nit: company?.nit || 'N/A', address: company?.address, logoUrl: company?.logoUrl },
+        documentTitle: 'REGISTRO DE GESTIÓN DEL CAMBIO SST',
+        documentCode: `SST-GC-${cambio.codigo}`,
         version: '1.0',
         date: cambio.fechaPropuesta ? new Date(cambio.fechaPropuesta) : new Date(),
-        elaboro: cambio.solicitante,
-        autorizo: req.user?.username || 'Sistema',
-        aprobo: 'Coordinador SST'
+        logoBuffer
       });
 
       currentY += 4;
@@ -27561,7 +27539,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.fontSize(7).font('Helvetica').text(obs, margin, currentY, { width: pageWidth - 2 * margin, align: 'justify' });
       }
       
-      // Finalizar PDF
+      // Finalizar PDF con firma estandarizada
+      addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
       console.error('Error generating cambio PDF:', error);
@@ -27613,17 +27592,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
       
       
-      // Header estándar con logo, versión y firmas
-      let currentY = setupPdfHeadersFooters({
+      // Load logo and signers for standardized PDF
+      const logo = await loadCompanyLogo(company?.logoUrl);
+      const signers = await getSignersForCompany(companyId);
+      
+      // Add standardized header (ISO 45001:2018)
+      let currentY = await addStandardHeader({
         doc,
-        company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
-        documentTitle: 'EVALUACIÓN DE IMPACTO SST',
-        documentCode: `${cambio.codigo}-EVAL`,
+        company: {
+          id: companyId,
+          name: company?.name || 'Empresa',
+          nit: company?.nit || 'N/A',
+          address: company?.address,
+          logoUrl: company?.logoUrl
+        },
+        documentTitle: 'EVALUACIÓN DE IMPACTO DE CAMBIO',
+        documentCode: `SST-GC-${cambio.codigo}`,
         version: '1.0',
         date: new Date(evaluacion.fechaEvaluacion),
-        elaboro: evaluacion.evaluador,
-        autorizo: req.user?.username || 'Sistema',
-        aprobo: 'Coordinador SST'
+        logoBuffer: logo
       });
 
       doc.y = currentY;
@@ -27718,6 +27705,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       doc.font('Helvetica').text(recomendaciones, { align: 'justify' });
       
+      // Add signature footer (no LSO required for management reports)
+      addSignatureFooter(doc, signers, false);
+
       // Finalizar PDF
       doc.end();
     } catch (error: any) {
@@ -27772,6 +27762,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const evaluaciones = await storage.getEvaluacionesAdquisicion(companyId);
 
       const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       // Worker photo not needed for muestreo PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
@@ -27786,14 +27777,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="Informe-Panel-Adquisiciones-SST-${Date.now()}.pdf"`);
       doc.pipe(res);
 
-      const contentStartY = setupPdfHeadersFooters({
+      const contentStartY = await addStandardHeader({
         doc,
-        company: { name: company.name, nit: company.nit, address: company.address || '' },
+        company: { id: company.id, name: company.name, nit: company.nit, address: company.address || '' },
         documentTitle: 'INFORME PANEL DE ADQUISICIONES SST',
-        documentCode: 'SST-ADQ-PAN-001',
+        documentCode: `SST-ADQ-${new Date().getFullYear()}`,
         version: '1.0',
         date: new Date(),
-        logoBuffer
+        logoBuffer: logo
       });
 
       doc.y = contentStartY + 15;
@@ -27965,26 +27956,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      checkSignatureSpace(doc, 120);
-      doc.moveDown(2);
-
-      const signatureY = doc.y;
-      const signatureWidth = (pageWidth - 2 * margin - 40) / 2;
-
-      doc.fontSize(8).font('Helvetica');
-      doc.moveTo(margin, signatureY).lineTo(margin + signatureWidth, signatureY).stroke('#000000');
-      doc.text('Elaborado por: Coordinador SST', margin, signatureY + 5, { width: signatureWidth, align: 'center' });
-
-      doc.moveTo(margin + signatureWidth + 40, signatureY).lineTo(pageWidth - margin, signatureY).stroke('#000000');
-      doc.text('Aprobado por: Representante Legal', margin + signatureWidth + 40, signatureY + 5, { width: signatureWidth, align: 'center' });
-
-      doc.moveDown(3);
-      doc.fontSize(7).fillColor('#666666').text(
-        `Documento generado automáticamente el ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`,
-        margin,
-        doc.y,
-        { width: pageWidth - 2 * margin, align: 'center' }
-      );
+      addSignatureFooter(doc, signers, false);
 
       doc.end();
     } catch (error: any) {
@@ -28009,7 +27981,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const seguimientos = await storage.getAllSeguimientosProveedores(companyId);
 
       const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const signers = await getSignersForCompany(companyId);
+      
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
@@ -28023,14 +27996,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="Informe-Panel-Evaluacion-Proveedores-SST-${Date.now()}.pdf"`);
       doc.pipe(res);
 
-      const contentStartY = setupPdfHeadersFooters({
+      // Add standardized header (ISO 45001:2018)
+      const contentStartY = await addStandardHeader({
         doc,
-        company: { name: company.name, nit: company.nit, address: company.address || '' },
-        documentTitle: 'INFORME PANEL DE EVALUACIÓN DE PROVEEDORES SST',
-        documentCode: 'SST-PROV-PAN-001',
+        company: {
+          id: companyId,
+          name: company.name,
+          nit: company.nit || 'N/A',
+          address: company.address,
+          logoUrl: company.logoUrl
+        },
+        documentTitle: 'EVALUACIÓN DE PROVEEDORES Y CONTRATISTAS SST',
+        documentCode: `SST-PRO-${new Date().getFullYear()}`,
         version: '1.0',
         date: new Date(),
-        logoBuffer
+        logoBuffer: logo
       });
 
       doc.y = contentStartY + 15;
@@ -28232,6 +28212,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`Documento generado el ${new Date().toLocaleDateString('es-CO')} a las ${new Date().toLocaleTimeString('es-CO')}`, margin);
       doc.fillColor('#000000');
 
+      // Add signature footer (no LSO required for management reports)
+      addSignatureFooter(doc, signers, false);
+
       doc.end();
     } catch (error: any) {
       console.error('Error generating evaluacion proveedores panel PDF:', error);
@@ -28252,6 +28235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const automatizaciones = await storage.getAutomatizacionLogsForCompany(companyId);
 
       const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       // Worker photo not needed for muestreo PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
@@ -28267,14 +28251,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="Informe-Panel-Gestion-Cambios-SST-${Date.now()}.pdf"`);
       doc.pipe(res);
 
-      const contentStartY = setupPdfHeadersFooters({
+      const contentStartY = await addStandardHeader({
         doc,
-        company: { name: company.name, nit: company.nit, address: company.address || '' },
-        documentTitle: 'INFORME PANEL DE GESTIÓN DE CAMBIOS SST',
-        documentCode: 'SST-GC-PAN-001',
+        company: { id: companyId, name: company.name, nit: company.nit, address: company.address || '', logoUrl: company.logoUrl },
+        documentTitle: 'PANEL DE GESTIÓN DE CAMBIOS SST',
+        documentCode: `SST-PGC-${new Date().getFullYear()}`,
         version: '1.0',
         date: new Date(),
-        logoBuffer
+        logoBuffer: logo
       });
 
       doc.y = contentStartY + 15;
@@ -28430,6 +28414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.fontSize(8).font('Helvetica').fillColor('#666666');
       doc.text(`Documento generado automáticamente el ${new Date().toLocaleDateString('es-CO')} a las ${new Date().toLocaleTimeString('es-CO')}.`, margin, doc.y, { align: 'center', width: contentWidth });
 
+      addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
       console.error('Error generating gestion cambios panel PDF:', error);
@@ -28498,6 +28483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const latestEval = data[0];
       const company = latestEval.company || { name: 'N/A', nit: 'N/A', address: null, logoUrl: null };
       const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       // Worker photo not needed for muestreo PDF
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
@@ -28511,22 +28497,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="reporte-evaluaciones-sst-${Date.now()}.pdf"`);
       doc.pipe(res);
 
-      let currentY = setupPdfHeadersFooters({
+      let currentY = await addStandardHeader({
         doc,
-        company: {
-          name: company.name || 'N/A',
-          nit: company.nit || 'N/A',
-          address: company.address,
-          logoUrl: company.logoUrl
-        },
-        documentTitle: 'REPORTE CONSOLIDADO DE CUMPLIMIENTO - ESTÁNDARES MÍNIMOS',
-        documentCode: 'SST-REP-EVAL',
+        company: { id: companyId, name: company.name || 'N/A', nit: company.nit || 'N/A', address: company.address, logoUrl: company.logoUrl },
+        documentTitle: 'REPORTE CONSOLIDADO DE EVALUACIONES SST',
+        documentCode: `SST-REV-${new Date().getFullYear()}`,
         version: '1.0',
         date: new Date(),
-        elaboro: req.user?.fullName || 'Sistema',
-        autorizo: 'Coordinador SST',
-        aprobo: 'Gerencia',
-        logoBuffer
+        logoBuffer: logo
       });
 
       doc.fontSize(7).font('Helvetica').fillColor('#666666')
@@ -28655,6 +28633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
       console.error('Error generating consolidated evaluaciones PDF:', error);
@@ -28683,6 +28662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const firstAudit = data[0];
       const company = firstAudit.company || { name: 'N/A', nit: 'N/A', address: null, logoUrl: null };
       const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(firstAudit.auditoria.companyId);
       // Worker photo not needed for muestreo PDF
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
@@ -28696,22 +28676,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="reporte-auditorias-internas-${Date.now()}.pdf"`);
       doc.pipe(res);
 
-      let currentY = setupPdfHeadersFooters({
+      let currentY = await addStandardHeader({
         doc,
         company: {
+          id: firstAudit.auditoria.companyId,
           name: company.name || 'N/A',
           nit: company.nit || 'N/A',
-          address: company.address,
-          logoUrl: company.logoUrl
+          address: company.address
         },
-        documentTitle: 'REPORTE CONSOLIDADO DE AUDITORÍAS INTERNAS',
-        documentCode: 'SST-REP-AUD',
+        documentTitle: 'REPORTE CONSOLIDADO DE AUDITORÍAS INTERNAS SST',
+        documentCode: `SST-AUD-${new Date().getFullYear()}`,
         version: '1.0',
         date: new Date(),
-        elaboro: req.user?.fullName || 'Sistema',
-        autorizo: 'Coordinador SST',
-        aprobo: 'Gerencia',
-        logoBuffer
+        logoBuffer: logo
       });
 
       doc.fontSize(7).font('Helvetica').fillColor('#666666')
@@ -28791,6 +28768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentY += 3;
       }
 
+      addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
       console.error('Error generating consolidated auditorias PDF:', error);
@@ -28818,7 +28796,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get company info for header
       const company = userCompanyId ? await storage.getCompany(userCompanyId) : null;
       const companyInfo = company || { name: 'Sistema SST Colombia', nit: 'N/A', address: '', logoUrl: null };
-      const logoBuffer = await loadCompanyLogoBuffer(companyInfo.logoUrl);
+      const logoBuffer = await loadCompanyLogo(companyInfo.logoUrl);
+      const signers = await getSignersForCompany(userCompanyId, false);
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
       
@@ -28831,17 +28810,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="reporte-revisiones-direccion-${Date.now()}.pdf"`);
       doc.pipe(res);
 
-      // Use standard header/footer system
-      let currentY = setupPdfHeadersFooters({
+      // Use standardized header system
+      let currentY = await addStandardHeader({
         doc,
-        company: companyInfo,
-        documentTitle: 'REPORTE CONSOLIDADO DE REVISIONES POR DIRECCIÓN - ISO 45001:2018',
-        documentCode: 'SST-FMT-RD01',
+        company: { id: userCompanyId, name: companyInfo.name, nit: companyInfo.nit, address: companyInfo.address, logoUrl: companyInfo.logoUrl },
+        documentTitle: 'REPORTE DE REVISIONES POR LA DIRECCIÓN',
+        documentCode: `SST-RVD-${new Date().getFullYear()}`,
         version: '1.0',
         date: new Date(),
-        elaboro: req.user?.fullName || 'Sistema SST',
-        autorizo: 'Responsable SST',
-        aprobo: 'Gerencia',
         logoBuffer
       });
 
@@ -28911,6 +28887,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
       console.error('Error generating consolidated revisiones PDF:', error);
@@ -28938,7 +28915,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get company info for header
       const company = userCompanyId ? await storage.getCompany(userCompanyId) : null;
       const companyInfo = company || { name: 'Sistema SST Colombia', nit: 'N/A', address: '', logoUrl: null };
-      const logoBuffer = await loadCompanyLogoBuffer(companyInfo.logoUrl);
+      const logoBuffer = await loadCompanyLogo(companyInfo.logoUrl);
+      const signers = await getSignersForCompany(userCompanyId, false);
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
       
@@ -28951,17 +28929,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="reporte-objetivos-indicadores-${Date.now()}.pdf"`);
       doc.pipe(res);
 
-      // Use standard header/footer system
-      let currentY = setupPdfHeadersFooters({
+      // Use standardized header system
+      let currentY = await addStandardHeader({
         doc,
-        company: companyInfo,
-        documentTitle: `REPORTE CONSOLIDADO DE OBJETIVOS E INDICADORES SST - AÑO ${data.resumen.anio}`,
-        documentCode: 'SST-FMT-OI01',
+        company: { id: userCompanyId, name: companyInfo.name, nit: companyInfo.nit, address: companyInfo.address, logoUrl: companyInfo.logoUrl },
+        documentTitle: 'REPORTE DE OBJETIVOS E INDICADORES SST',
+        documentCode: `SST-OBJ-${new Date().getFullYear()}`,
         version: '1.0',
         date: new Date(),
-        elaboro: req.user?.fullName || 'Sistema SST',
-        autorizo: 'Responsable SST',
-        aprobo: 'Gerencia',
         logoBuffer
       });
 
@@ -29045,6 +29020,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentY = doc.y + 3;
       }
 
+      addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
       console.error('Error generating consolidated objetivos PDF:', error);
@@ -30084,9 +30060,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Load company logo
+      // Load company logo and signers
       const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const signers = await getSignersForCompany(companyId, false);
 
       // Create PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
@@ -30122,23 +30098,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         minute: '2-digit'
       }) : 'No especificada';
 
-      // Setup standard PDF headers and footers
-      let currentY = setupPdfHeadersFooters({
+      // Setup standard PDF headers
+      let currentY = await addStandardHeader({
         doc,
         company: {
+          id: company.id,
           name: company.name,
           nit: company.nit,
           address: company.address,
           logoUrl: company.logoUrl,
         },
-        documentTitle: 'COMUNICACIÓN SST',
-        documentCode: `COM-${comunicacion.id.substring(0, 8).toUpperCase()}`,
+        documentTitle: 'COMUNICACIÓN OFICIAL SST',
+        documentCode: `SST-COM-${comunicacion.id.substring(0, 8)}`,
         version: '1.0',
         date: comunicacion.fechaEnvio ? new Date(comunicacion.fechaEnvio) : new Date(),
-        elaboro: senderName,
-        autorizo: company.legalRepName || "Representante Legal",
-        aprobo: company.legalRepName || "Representante Legal",
-        logoBuffer,
+        logoBuffer: logo,
       });
 
       currentY = 165;
@@ -30286,6 +30260,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.page.height - 70,
         { width: pageWidth - margin * 2, align: 'center' }
       );
+      
+      // Add standard signature footer
+      addSignatureFooter(doc, signers, false);
 
       doc.end();
     } catch (error: any) {
@@ -38262,26 +38239,19 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       // Preload company logo and worker photo from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const signers = await getSignersForCompany(companyId);
       
       const year = new Date(eleccion.fechaConvocatoria).getFullYear();
       
-      const contentStartY = setupPdfHeadersFooters({
+      // Standard Header ISO 45001:2018
+      const contentStartY = await addStandardHeader({
         doc,
-        company: {
-          name: company.name,
-          nit: company.nit,
-          address: company.address,
-          logoUrl: company.logoUrl
-        },
-        documentTitle: `CONVOCATORIA A ELECCIONES - COMITÉ DE CONVIVENCIA LABORAL ${year}`,
-        documentCode: 'SST-CCL-CONV',
+        company,
+        documentTitle: 'CONVOCATORIA ELECCIÓN COMITÉ DE CONVIVENCIA',
+        documentCode: `SST-CCONV-${eleccion.id.substring(0, 8)}`,
         version: '1.0',
         date: new Date(eleccion.fechaConvocatoria),
-        elaboro: company.legalRepName || 'Representante Legal',
-        autorizo: 'Responsable SST',
-        aprobo: company.legalRepName || 'Representante Legal',
-        logoBuffer,
+        logoBuffer: logo,
       });
       
       doc.y = contentStartY + 10;
@@ -38393,6 +38363,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.text(company.legalRepPosition || 'Gerente General', margin);
       doc.text(company.name, margin);
       
+      addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
       res.status(500).send(`Error generando PDF: ${error.message}`);
@@ -38441,28 +38412,24 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.setHeader('Content-Disposition', `attachment; filename="acta-escrutinio-convivencia-${eleccion.id}.pdf"`);
       doc.pipe(res);
       
-      // Preload company logo and worker photo from Object Storage
+      // Preload company logo and signers from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const signers = await getSignersForCompany(companyId, false);
       
-      const year = new Date(eleccion.fechaVotacion).getFullYear();
-      
-      const contentStartY = setupPdfHeadersFooters({
+      const contentStartY = await addStandardHeader({
         doc,
         company: {
+          id: company.id,
           name: company.name,
           nit: company.nit,
           address: company.address,
           logoUrl: company.logoUrl
         },
-        documentTitle: `ACTA DE ESCRUTINIO - COMITÉ DE CONVIVENCIA LABORAL ${year}`,
-        documentCode: 'SST-CCL-ESC',
+        documentTitle: 'ACTA DE ESCRUTINIO ELECCIÓN COMITÉ CONVIVENCIA',
+        documentCode: `SST-ESC-CONV-${eleccion.id.substring(0, 8)}`,
         version: '1.0',
         date: new Date(eleccion.fechaVotacion),
-        elaboro: 'Jurado de Votación',
-        autorizo: 'Responsable SST',
-        aprobo: company.legalRepName || 'Representante Legal',
-        logoBuffer,
+        logoBuffer: logo,
       });
       
       doc.y = contentStartY + 10;
@@ -38588,6 +38555,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.text('Jurado 2', margin + sigWidth + 20, labelY, { width: sigWidth });
       doc.text('Jurado 3', margin + (sigWidth + 20) * 2, labelY, { width: sigWidth });
       
+      // Add standard signature footer
+      addSignatureFooter(doc, signers, false);
+      
       doc.end();
     } catch (error: any) {
       res.status(500).send(`Error generando PDF: ${error.message}`);
@@ -38641,26 +38611,24 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.setHeader('Content-Disposition', `attachment; filename="acta-constitucion-convivencia-${periodo.id}.pdf"`);
       doc.pipe(res);
       
-      // Preload company logo and worker photo from Object Storage
+      // Preload company logo and signers from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const signers = await getSignersForCompany(companyId, false);
       
-      const contentStartY = setupPdfHeadersFooters({
+      const contentStartY = await addStandardHeader({
         doc,
         company: {
+          id: company.id,
           name: company.name,
           nit: company.nit,
           address: company.address,
           logoUrl: company.logoUrl
         },
-        documentTitle: 'ACTA DE CONSTITUCIÓN DEL COMITÉ DE CONVIVENCIA LABORAL',
-        documentCode: 'SST-CCL-ACT',
+        documentTitle: 'ACTA DE CONSTITUCIÓN COMITÉ CONVIVENCIA',
+        documentCode: `SST-CST-CONV-${periodo.id.substring(0, 8)}`,
         version: '1.0',
         date: new Date(periodo.fechaInicio),
-        elaboro: 'Responsable SST',
-        autorizo: company.legalRepName || 'Representante Legal',
-        aprobo: company.legalRepName || 'Representante Legal',
-        logoBuffer,
+        logoBuffer: logo,
       });
       
       doc.y = contentStartY + 10;
@@ -38838,6 +38806,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         
         doc.moveDown(2);
       }
+      
+      // Add standard signature footer
+      addSignatureFooter(doc, signers, false);
       
       doc.end();
     } catch (error: any) {
@@ -39033,19 +39004,22 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - 2 * margin;
       const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const signers = await getSignersForCompany(companyId, false);
 
-      let currentY = setupPdfHeadersFooters({
+      let currentY = await addStandardHeader({
         doc,
-        company,
-        documentTitle: 'ACTIVIDADES DE PROMOCIÓN Y PREVENCIÓN EN SALUD',
-        documentCode: 'SST-FMT-312',
+        company: {
+          id: company.id,
+          name: company.name,
+          nit: company.nit,
+          address: company.address,
+          logoUrl: company.logoUrl
+        },
+        documentTitle: 'INFORME DE PROMOCIÓN Y PREVENCIÓN EN SALUD',
+        documentCode: `SST-PYP-${new Date().getFullYear()}`,
         version: '1.0',
         date: new Date(),
-        elaboro: req.user?.fullName || 'Administrador del Sistema',
-        autorizo: 'Responsable SST',
-        aprobo: 'Gerencia',
-        logoBuffer: logoBuffer || undefined
+        logoBuffer: logo,
       });
 
       // ISO Banner (like sociodemografico)
@@ -39226,6 +39200,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         width: contentWidth,
         align: 'center' 
       });
+      
+      // Add standard signature footer
+      addSignatureFooter(doc, signers, false);
 
       doc.end();
     } catch (error: any) {
@@ -39349,6 +39326,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!company) return res.status(404).send("Empresa no encontrada");
       const programs = await storage.getEvsPrograms(companyId);
       const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       // Worker photo not needed for muestreo PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
@@ -39359,12 +39337,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'inline; filename="Programas-EVS.pdf"');
       doc.pipe(res);
-      let currentY = setupPdfHeadersFooters({ doc, company, documentTitle: "PROGRAMAS DE ESTILOS DE VIDA SALUDABLE", documentCode: `SST-EVS-PROG-${new Date().getFullYear()}`, version: "1.0", date: new Date(), logoBuffer });
+      let currentY = await addStandardHeader({ doc, company, documentTitle: "PROGRAMAS DE ESTILOS DE VIDA SALUDABLE", documentCode: `SST-EVS-PRG-${new Date().getFullYear()}`, version: "1.0", date: new Date(), logoBuffer: logo });
       currentY += 20;
       doc.fontSize(10).font('Helvetica-Bold').text('Listado de Programas EVS', 50, currentY);
       currentY += 20;
       if (programs.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay programas registrados.', 50, currentY); }
       else { programs.forEach((prog, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${prog.name}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Año: ${prog.year} | Categoría: ${prog.category} | Estado: ${prog.status}`, 60, currentY); currentY += 12; doc.text(`Responsable: ${prog.responsibleName || 'N/A'}`, 60, currentY); currentY += 18; }); }
+      addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) { console.error("Error generating EVS programs PDF:", error); res.status(500).send("Error al generar PDF"); }
   });
@@ -39427,6 +39406,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!company) return res.status(404).send("Empresa no encontrada");
       const activities = await storage.getEvsActivities(companyId);
       const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       // Worker photo not needed for muestreo PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
@@ -39437,12 +39417,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'inline; filename="Actividades-EVS.pdf"');
       doc.pipe(res);
-      let currentY = setupPdfHeadersFooters({ doc, company, documentTitle: "ACTIVIDADES DE ESTILOS DE VIDA SALUDABLE", documentCode: `SST-EVS-ACT-${new Date().getFullYear()}`, version: "1.0", date: new Date(), logoBuffer });
+      let currentY = await addStandardHeader({ doc, company, documentTitle: "ACTIVIDADES DE ESTILOS DE VIDA SALUDABLE", documentCode: `SST-EVS-ACT-${new Date().getFullYear()}`, version: "1.0", date: new Date(), logoBuffer: logo });
       currentY += 20;
       doc.fontSize(10).font('Helvetica-Bold').text('Listado de Actividades EVS', 50, currentY);
       currentY += 20;
       if (activities.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay actividades registradas.', 50, currentY); }
       else { activities.forEach((act, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${act.title}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Categoría: ${act.category} | Tipo: ${act.activityType} | Modalidad: ${act.modality}`, 60, currentY); currentY += 12; doc.text(`Fecha: ${act.scheduledDate ? new Date(act.scheduledDate).toLocaleDateString('es-CO') : 'N/A'} | Estado: ${act.status}`, 60, currentY); currentY += 18; }); }
+      addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) { console.error("Error generating EVS activities PDF:", error); res.status(500).send("Error al generar PDF"); }
   });
@@ -39508,6 +39489,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const workers = await storage.getWorkers(companyId);
       const getWorkerName = (id: string) => workers.find(w => w.id === id)?.name || 'Desconocido';
       const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       // Worker photo not needed for muestreo PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
@@ -39518,12 +39500,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'inline; filename="Controles-EVS.pdf"');
       doc.pipe(res);
-      let currentY = setupPdfHeadersFooters({ doc, company, documentTitle: "CONTROLES DE ESTILOS DE VIDA SALUDABLE", documentCode: `SST-EVS-CTRL-${new Date().getFullYear()}`, version: "1.0", date: new Date(), logoBuffer });
+      let currentY = await addStandardHeader({ doc, company, documentTitle: "CONTROLES DE ESTILOS DE VIDA SALUDABLE", documentCode: `SST-EVS-CTL-${new Date().getFullYear()}`, version: "1.0", date: new Date(), logoBuffer: logo });
       currentY += 20;
       doc.fontSize(10).font('Helvetica-Bold').text('Listado de Controles EVS', 50, currentY);
       currentY += 20;
       if (controls.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay controles registrados.', 50, currentY); }
       else { controls.forEach((ctrl, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${getWorkerName(ctrl.workerId)}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Tipo: ${ctrl.controlType} | Fecha: ${ctrl.controlDate ? new Date(ctrl.controlDate).toLocaleDateString('es-CO') : 'N/A'}`, 60, currentY); currentY += 12; doc.text(`Resultado: ${ctrl.result} | Realizado por: ${ctrl.performedBy || 'N/A'}`, 60, currentY); currentY += 18; }); }
+      addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) { console.error("Error generating EVS controls PDF:", error); res.status(500).send("Error al generar PDF"); }
   });
@@ -39582,6 +39565,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const workers = await storage.getWorkers(companyId);
       const getWorkerName = (id: string | null) => id ? (workers.find(w => w.id === id)?.name || 'Desconocido') : 'Confidencial';
       const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       // Worker photo not needed for muestreo PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
@@ -39592,12 +39576,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'inline; filename="Incidentes-EVS.pdf"');
       doc.pipe(res);
-      let currentY = setupPdfHeadersFooters({ doc, company, documentTitle: "INCIDENTES DE ESTILOS DE VIDA SALUDABLE", documentCode: `SST-EVS-INC-${new Date().getFullYear()}`, version: "1.0", date: new Date(), logoBuffer });
+      let currentY = await addStandardHeader({ doc, company, documentTitle: "INCIDENTES ESTILOS DE VIDA SALUDABLE", documentCode: `SST-EVS-INC-${new Date().getFullYear()}`, version: "1.0", date: new Date(), logoBuffer: logo });
       currentY += 20;
       doc.fontSize(10).font('Helvetica-Bold').text('Listado de Incidentes EVS', 50, currentY);
       currentY += 20;
       if (incidents.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay incidentes registrados.', 50, currentY); }
       else { incidents.forEach((inc, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${getWorkerName(inc.workerId)}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Tipo: ${inc.incidentType} | Severidad: ${inc.severity} | Fecha: ${inc.incidentDate ? new Date(inc.incidentDate).toLocaleDateString('es-CO') : 'N/A'}`, 60, currentY); currentY += 12; doc.text(`Estado: ${inc.status}`, 60, currentY); currentY += 18; }); }
+      addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) { console.error("Error generating EVS incidents PDF:", error); res.status(500).send("Error al generar PDF"); }
   });
@@ -39665,8 +39650,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const workers = await storage.getWorkers(companyId);
       const getWorkerName = (id: string) => workers.find(w => w.id === id)?.name || 'Desconocido';
       const getWorkerPosition = (id: string) => workers.find(w => w.id === id)?.position || '';
-      const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
       const followups_subscription = await storage.getSubscriptionByCompany(companyId);
@@ -39681,7 +39666,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const contentWidth = pageWidth - 2 * margin;
       const colorVerdeSst = '#1e7e34';
       
-      let currentY = setupPdfHeadersFooters({ doc, company, documentTitle: "LISTADO DE SEGUIMIENTOS - ESTILOS DE VIDA SALUDABLE", documentCode: `SST-EVS-SEG-${new Date().getFullYear()}`, version: "1.0", date: new Date(), logoBuffer });
+      let currentY = await addStandardHeader({ doc, company: { id: company.id, name: company.name, nit: company.nit, address: company.address, logoUrl: company.logoUrl }, documentTitle: "SEGUIMIENTOS DE ESTILOS DE VIDA SALUDABLE", documentCode: `SST-EVS-SEG-${new Date().getFullYear()}`, version: "1.0", date: new Date(), logoBuffer });
       currentY += 25;
       
       // Sección: RESUMEN EJECUTIVO (barra verde)
@@ -39796,6 +39781,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       doc.fontSize(9).font('Helvetica').text('Este documento contiene el listado de casos en seguimiento del programa de Estilos de Vida Saludable (EVS) de la empresa. Los casos deben ser revisados periódicamente según las fechas establecidas.', margin, currentY, { width: contentWidth });
       
+      // Add standardized signature footer (no LSO required)
+      addSignatureFooter(doc, signers, false);
+      
       doc.end();
     } catch (error: any) { console.error("Error generating EVS followups PDF:", error); res.status(500).send("Error al generar PDF"); }
   });
@@ -39814,8 +39802,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const workers = await storage.getWorkers(companyId);
       const worker = workers.find(w => w.id === followup.workerId);
       const workerName = worker?.name || 'Desconocido';
-      const logo = await loadCompanyLogo(company.logoUrl);
-      // Worker photo not needed for muestreo PDF
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
       const subscription = await storage.getSubscriptionByCompany(companyId);
@@ -39830,7 +39818,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const contentWidth = pageWidth - 2 * margin;
       const colorVerdeSst = '#1e7e34';
       
-      let currentY = setupPdfHeadersFooters({ doc, company, documentTitle: "SEGUIMIENTO DE CASO - ESTILOS DE VIDA SALUDABLE", documentCode: `SST-EVS-SEG-${followup.id.substring(0,8).toUpperCase()}`, version: "1.0", date: new Date(), logoBuffer });
+      let currentY = await addStandardHeader({ doc, company: { id: company.id, name: company.name, nit: company.nit, address: company.address, logoUrl: company.logoUrl }, documentTitle: "SEGUIMIENTO EVS INDIVIDUAL", documentCode: `SST-EVS-SI-${worker?.id?.substring(0,8) || followup.id.substring(0,8)}`, version: "1.0", date: new Date(), logoBuffer });
       currentY += 25;
       
       // Sección: INFORMACIÓN DEL TRABAJADOR (barra verde)
@@ -39948,6 +39936,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         doc.fontSize(10).font('Helvetica').text(followup.responsibleProfessional, margin, currentY);
         currentY += 20;
       }
+      
+      // Add standardized signature footer (no LSO required)
+      addSignatureFooter(doc, signers, false);
       
       doc.end();
     } catch (error: any) { console.error("Error generating EVS followup PDF:", error); res.status(500).send("Error al generar PDF"); }
@@ -40079,7 +40070,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/legal-docs/protecciones-legales/pdf - Complete legal protections table
   app.get("/api/legal-docs/protecciones-legales/pdf", requireAuth, async (req, res) => {
     try {
-      const pdfBuffer = await legalDocsPdfService.generateProteccionesLegalesPdf();
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
+      const company = await storage.getCompany(companyId);
+      if (!company) return res.status(404).send("Empresa no encontrada");
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
+      const pdfBuffer = await legalDocsPdfService.generateProteccionesLegalesPdf({
+        company: { id: company.id, name: company.name, nit: company.nit, address: company.address, logoUrl: company.logoUrl },
+        signers,
+        logoBuffer
+      });
       
       // Anti-indexation headers
       res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
@@ -40117,7 +40118,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/legal-docs/proteccion-datos/pdf - Data protection summary
   app.get("/api/legal-docs/proteccion-datos/pdf", requireAuth, async (req, res) => {
     try {
-      const pdfBuffer = await legalDocsPdfService.generateProteccionDatosPdf();
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
+      const company = await storage.getCompany(companyId);
+      if (!company) return res.status(404).send("Empresa no encontrada");
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
+      const pdfBuffer = await legalDocsPdfService.generateProteccionDatosPdf({
+        company: { id: company.id, name: company.name, nit: company.nit, address: company.address, logoUrl: company.logoUrl },
+        signers,
+        logoBuffer
+      });
       
       // Anti-indexation headers
       res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
@@ -40159,7 +40170,17 @@ console.error('[GET /api/legal-docs/proteccion-datos/pdf] Error:', error.message
   // GET /api/legal-docs/medidas-seguridad/pdf - Security measures documentation
   app.get("/api/legal-docs/medidas-seguridad/pdf", requireAuth, async (req, res) => {
     try {
-      const pdfBuffer = await legalDocsPdfService.generateMedidasSeguridadPdf();
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
+      const company = await storage.getCompany(companyId);
+      if (!company) return res.status(404).send("Empresa no encontrada");
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId);
+      const pdfBuffer = await legalDocsPdfService.generateMedidasSeguridadPdf({
+        company: { id: company.id, name: company.name, nit: company.nit, address: company.address, logoUrl: company.logoUrl },
+        signers,
+        logoBuffer
+      });
       
       // Anti-indexation headers
       res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
