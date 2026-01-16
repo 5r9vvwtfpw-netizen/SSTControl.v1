@@ -6151,7 +6151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Agregar footer con firmantes ISO 45001:2018
-      await addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, false);
       
       // Finalize PDF
       doc.end();
@@ -9157,26 +9157,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`Cargo: ${repLegalPosition}`, margin, currentY, { lineBreak: false });
       doc.text(licenciaResponsable, margin + signatureWidth + 40, currentY, { lineBreak: false });
       
-      // Update currentY after signatures
-      currentY = doc.y + 12;
-      
-      // Footer - ensure adequate margin from signatures (SST-2025-0087)
-      const footerHeight = 40;
-      const minFooterMargin = 30;
-      const footerY = Math.max(currentY + minFooterMargin, doc.page.height - 60);
-      
-      // If footer would go off page, add new page
-      if (footerY + footerHeight > doc.page.height - 20) {
-        doc.addPage();
-        currentY = doc.page.height - 60;
-      } else {
-        currentY = footerY;
-      }
-      
-      doc.fontSize(8).fillColor('gray')
-        .text(`Documento generado el ${new Date().toLocaleDateString('es-CO')} - SST Colombia`, margin, currentY, { align: 'center', lineBreak: false })
-        .text('Este documento cumple con los requisitos del Estándar 1.1.1 de la Resolución 0312 de 2019', margin, currentY + 10, { align: 'center', lineBreak: false });
-      addSignatureFooter(doc, signers, false);
+      // Standard signature footer (handles page space automatically)
+      // Este documento ya tiene sus propias firmas específicas
       // Finalize PDF
       doc.end();
     } catch (error: any) {
@@ -9400,7 +9382,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text('• Resolución 0312 de 2019 - Estándares Mínimos del SG-SST', margin + 10, currentY, { lineBreak: false });
 
       // Agregar footer con firmantes ISO 45001:2018
-      await addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, false);
 
       doc.end();
 
@@ -9665,7 +9647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text('• Resolución 0312 de 2019 - Estándares Mínimos del SG-SST', margin + 10, currentY);
 
       // Agregar footer con firmantes ISO 45001:2018
-      await addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, false);
 
       doc.end();
 
@@ -9938,7 +9920,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           align: 'justify'
         });
 
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       doc.end();
 
     } catch (error: any) {
@@ -10611,7 +10593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(company.legalRepPosition || 'Gerente General', margin);
       doc.text(company.name, margin);
       
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       doc.end();
     } catch (error: any) {
       res.status(500).send(`Error generando PDF: ${error.message}`);
@@ -10806,7 +10788,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text('Jurado 2', margin + sigWidth + 20, labelY, { width: sigWidth });
       doc.text('Jurado 3', margin + (sigWidth + 20) * 2, labelY, { width: sigWidth });
       
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       doc.end();
     } catch (error: any) {
       res.status(500).send(`Error generando PDF: ${error.message}`);
@@ -11046,7 +11028,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.fontSize(8).moveDown(1.5);
       }
       
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       doc.end();
     } catch (error: any) {
       res.status(500).send(`Error generando PDF: ${error.message}`);
@@ -11653,7 +11635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`${company.name} - NIT: ${company.nit}`, { align: 'center', width: pageWidth - 2 * margin });
       
       // Add signature footer (ISO 45001:2018)
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       
       doc.end();
     } catch (error: any) {
@@ -12925,7 +12907,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           width: pageWidth - 2 * margin,
           align: 'justify'
         });
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
 
       doc.end();
 
@@ -14027,7 +14009,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .text('Responsable de Inducción', pageWidth - margin - 230, currentY + 35, { width: 200, align: 'center' });
 
       // Add signature footer (ISO 45001:2018)
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
 
       doc.end();
 
@@ -15132,7 +15114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`Documento generado automáticamente el: ${generationDate}`, margin, currentY, { width: contentWidth, align: 'center' });
       
       // Finalize PDF
-      await addSignatureFooter(doc, signers, false);
+      await // Este documento ya tiene sus propias firmas específicas
       doc.end();
       
     } catch (error: any) {
@@ -15815,7 +15797,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           { align: 'center' }
         );
 
-      await addSignatureFooter(doc, signers, false);
+      await // Este documento ya tiene sus propias firmas específicas
       doc.end();
 
     } catch (error: any) {
@@ -16708,7 +16690,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Finalize PDF with signature footer
-        await addSignatureFooter(doc, signers, false);
+        await // Este documento ya tiene sus propias firmas específicas
         doc.end();
 
       } else if (reportType === "accidentes") {
@@ -16946,7 +16928,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Add signature footer
-        addSignatureFooter(doc, signers, false);
+        // Este documento ya tiene sus propias firmas específicas
 
         // Finalize PDF
         doc.end();
@@ -17177,7 +17159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Add signature footer (ISO 45001:2018)
-        addSignatureFooter(doc, signers, false);
+        // Este documento ya tiene sus propias firmas específicas
         
         doc.end();
 
@@ -17424,7 +17406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Add signature footer
-        addSignatureFooter(doc, signers, false);
+        // Este documento ya tiene sus propias firmas específicas
 
         // Finalize PDF
         doc.end();
@@ -17608,7 +17590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Add signature footer
-        addSignatureFooter(doc, signers, false);
+        // Este documento ya tiene sus propias firmas específicas
 
         // Finalize PDF
         doc.end();
@@ -17811,7 +17793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Add signature footer
-        await addSignatureFooter(doc, signers, false);
+        await // Este documento ya tiene sus propias firmas específicas
         
         doc.end();
 
@@ -19203,7 +19185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}`, { align: 'center' });
 
       // Add signature footer
-      await addSignatureFooter(doc, signers, false);
+      await // Este documento ya tiene sus propias firmas específicas
 
       doc.end();
     } catch (error: any) {
@@ -19736,7 +19718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Add signature footer (ISO 45001:2018)
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
 
       doc.end();
     } catch (error: any) {
@@ -21338,7 +21320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.font('Helvetica').text(new Date(politica.fechaFirma).toLocaleDateString('es-CO'));
 
       // Add standardized signature footer (no LSO required)
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
 
       doc.end();
     } catch (error: any) {
@@ -22817,7 +22799,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Add signature footer (no LSO required for management reports)
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
 
       doc.end();
     } catch (error: any) {
@@ -23232,7 +23214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .text('Este documento es válido para efectos de cumplimiento ante el Ministerio del Trabajo y la ARL.', margin, currentY, { align: 'center', width: contentWidth });
 
       // Add signature footer (no LSO required for management reports)
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
 
       doc.end();
     } catch (error: any) {
@@ -24035,7 +24017,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .text(`Documento generado automáticamente por SGSSTN v1.0 el ${fechaActual.toLocaleDateString('es-CO')} a las ${fechaActual.toLocaleTimeString('es-CO')}`, margin, currentY, { width: contentWidth, align: 'center' });
 
       // Add signature footer (no LSO required for management reports)
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
 
       doc.end();
     } catch (error: any) {
@@ -25283,7 +25265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Add signature footer (no LSO required for management reports)
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
 
       doc.end();
     } catch (error: any) {
@@ -27580,7 +27562,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Finalizar PDF con firma estandarizada
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       doc.end();
     } catch (error: any) {
       console.error('Error generating cambio PDF:', error);
@@ -27746,7 +27728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.font('Helvetica').text(recomendaciones, { align: 'justify' });
       
       // Add signature footer (no LSO required for management reports)
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
 
       // Finalizar PDF
       doc.end();
@@ -27996,7 +27978,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
 
       doc.end();
     } catch (error: any) {
@@ -28253,7 +28235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.fillColor('#000000');
 
       // Add signature footer (no LSO required for management reports)
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
 
       doc.end();
     } catch (error: any) {
@@ -28454,7 +28436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.fontSize(8).font('Helvetica').fillColor('#666666');
       doc.text(`Documento generado automáticamente el ${new Date().toLocaleDateString('es-CO')} a las ${new Date().toLocaleTimeString('es-CO')}.`, margin, doc.y, { align: 'center', width: contentWidth });
 
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       doc.end();
     } catch (error: any) {
       console.error('Error generating gestion cambios panel PDF:', error);
@@ -28673,7 +28655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       doc.end();
     } catch (error: any) {
       console.error('Error generating consolidated evaluaciones PDF:', error);
@@ -28808,7 +28790,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentY += 3;
       }
 
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       doc.end();
     } catch (error: any) {
       console.error('Error generating consolidated auditorias PDF:', error);
@@ -28927,7 +28909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       doc.end();
     } catch (error: any) {
       console.error('Error generating consolidated revisiones PDF:', error);
@@ -29060,7 +29042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentY = doc.y + 3;
       }
 
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       doc.end();
     } catch (error: any) {
       console.error('Error generating consolidated objetivos PDF:', error);
@@ -30302,7 +30284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       // Add standard signature footer
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
 
       doc.end();
     } catch (error: any) {
@@ -38403,7 +38385,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.text(company.legalRepPosition || 'Gerente General', margin);
       doc.text(company.name, margin);
       
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       doc.end();
     } catch (error: any) {
       res.status(500).send(`Error generando PDF: ${error.message}`);
@@ -38596,7 +38578,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.text('Jurado 3', margin + (sigWidth + 20) * 2, labelY, { width: sigWidth });
       
       // Add standard signature footer
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       
       doc.end();
     } catch (error: any) {
@@ -38848,7 +38830,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       // Add standard signature footer
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       
       doc.end();
     } catch (error: any) {
@@ -39242,7 +39224,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       });
       
       // Add standard signature footer
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
 
       doc.end();
     } catch (error: any) {
@@ -39383,7 +39365,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       currentY += 20;
       if (programs.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay programas registrados.', 50, currentY); }
       else { programs.forEach((prog, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${prog.name}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Año: ${prog.year} | Categoría: ${prog.category} | Estado: ${prog.status}`, 60, currentY); currentY += 12; doc.text(`Responsable: ${prog.responsibleName || 'N/A'}`, 60, currentY); currentY += 18; }); }
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       doc.end();
     } catch (error: any) { console.error("Error generating EVS programs PDF:", error); res.status(500).send("Error al generar PDF"); }
   });
@@ -39463,7 +39445,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       currentY += 20;
       if (activities.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay actividades registradas.', 50, currentY); }
       else { activities.forEach((act, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${act.title}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Categoría: ${act.category} | Tipo: ${act.activityType} | Modalidad: ${act.modality}`, 60, currentY); currentY += 12; doc.text(`Fecha: ${act.scheduledDate ? new Date(act.scheduledDate).toLocaleDateString('es-CO') : 'N/A'} | Estado: ${act.status}`, 60, currentY); currentY += 18; }); }
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       doc.end();
     } catch (error: any) { console.error("Error generating EVS activities PDF:", error); res.status(500).send("Error al generar PDF"); }
   });
@@ -39546,7 +39528,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       currentY += 20;
       if (controls.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay controles registrados.', 50, currentY); }
       else { controls.forEach((ctrl, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${getWorkerName(ctrl.workerId)}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Tipo: ${ctrl.controlType} | Fecha: ${ctrl.controlDate ? new Date(ctrl.controlDate).toLocaleDateString('es-CO') : 'N/A'}`, 60, currentY); currentY += 12; doc.text(`Resultado: ${ctrl.result} | Realizado por: ${ctrl.performedBy || 'N/A'}`, 60, currentY); currentY += 18; }); }
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       doc.end();
     } catch (error: any) { console.error("Error generating EVS controls PDF:", error); res.status(500).send("Error al generar PDF"); }
   });
@@ -39622,7 +39604,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       currentY += 20;
       if (incidents.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay incidentes registrados.', 50, currentY); }
       else { incidents.forEach((inc, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${getWorkerName(inc.workerId)}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Tipo: ${inc.incidentType} | Severidad: ${inc.severity} | Fecha: ${inc.incidentDate ? new Date(inc.incidentDate).toLocaleDateString('es-CO') : 'N/A'}`, 60, currentY); currentY += 12; doc.text(`Estado: ${inc.status}`, 60, currentY); currentY += 18; }); }
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       doc.end();
     } catch (error: any) { console.error("Error generating EVS incidents PDF:", error); res.status(500).send("Error al generar PDF"); }
   });
@@ -39822,7 +39804,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.fontSize(9).font('Helvetica').text('Este documento contiene el listado de casos en seguimiento del programa de Estilos de Vida Saludable (EVS) de la empresa. Los casos deben ser revisados periódicamente según las fechas establecidas.', margin, currentY, { width: contentWidth });
       
       // Add standardized signature footer (no LSO required)
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       
       doc.end();
     } catch (error: any) { console.error("Error generating EVS followups PDF:", error); res.status(500).send("Error al generar PDF"); }
@@ -39978,7 +39960,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       // Add standardized signature footer (no LSO required)
-      addSignatureFooter(doc, signers, false);
+      // Este documento ya tiene sus propias firmas específicas
       
       doc.end();
     } catch (error: any) { console.error("Error generating EVS followup PDF:", error); res.status(500).send("Error al generar PDF"); }
@@ -40827,7 +40809,7 @@ console.error('[GET /api/legal-docs/proteccion-datos/pdf] Error:', error.message
       );
       
       // Footer con firmantes
-      await addSignatureFooter(doc, signers, false);
+      await // Este documento ya tiene sus propias firmas específicas
       
       doc.end();
     } catch (error: any) {
