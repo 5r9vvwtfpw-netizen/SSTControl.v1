@@ -201,14 +201,14 @@ export default function MiSuscripcion() {
         "POST"
       );
       
-      if (response.checkoutUrl) {
+      if (response.paymentUrl) {
         toast({
           title: "Redirigiendo a pasarela de pago",
           description: "Serás redirigido a Stripe para completar el pago...",
         });
         
         setTimeout(() => {
-          window.location.href = response.checkoutUrl;
+          window.location.href = response.paymentUrl;
         }, 1000);
       } else {
         toast({
