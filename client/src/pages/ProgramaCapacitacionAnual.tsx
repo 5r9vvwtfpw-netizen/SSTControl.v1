@@ -31,7 +31,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, Calendar, Download, Edit, Trash2, Bot, CalendarDays } from "lucide-react";
+import { Plus, FileText, Calendar, Download, Edit, Trash2, Bot, CalendarDays, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -357,7 +357,17 @@ export default function ProgramaCapacitacionAnual() {
                       </div>
                     )}
 
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      <Link href="/programa-capacitacion">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          data-testid={`button-view-activities-${program.id}`}
+                        >
+                          <ExternalLink className="w-3 h-3 mr-1" />
+                          Ver Actividades
+                        </Button>
+                      </Link>
                       <Button
                         size="sm"
                         variant="outline"
