@@ -1708,6 +1708,7 @@ export default function Trabajadores() {
                       )}
 
                       <DialogFooter className="flex flex-wrap gap-2">
+                        {/* Botones ocultos - SST-2026-0116
                         <Button 
                           type="button" 
                           variant="outline"
@@ -1726,6 +1727,7 @@ export default function Trabajadores() {
                           <CreditCard className="h-4 w-4 mr-2" />
                           Imprimir Tarjeta
                         </Button>
+                        */}
                         <Button 
                           type="submit" 
                           disabled={updateWorkerMutation.isPending || !user?.id} 
@@ -2425,6 +2427,7 @@ export default function Trabajadores() {
                 )}
 
                 <DialogFooter className="flex flex-wrap gap-2">
+                  {/* Botones ocultos - SST-2026-0116
                   {editingWorker && (
                     <>
                       <Button 
@@ -2447,6 +2450,7 @@ export default function Trabajadores() {
                       </Button>
                     </>
                   )}
+                  */}
                   <Button 
                     type="submit" 
                     disabled={createWorkerMutation.isPending || updateWorkerMutation.isPending || !user?.id} 
