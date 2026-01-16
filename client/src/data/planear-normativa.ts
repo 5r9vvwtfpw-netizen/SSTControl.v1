@@ -1142,6 +1142,7 @@ export const ACTIVIDADES_PLAN_ANUAL: {
   { mes: 1, actividad: 'Capacitación en prevención de riesgos', estandar: '1.2.1', frecuencia: 'Semestral', responsable: 'Responsable SST' },
   { mes: 7, actividad: 'Simulacro de evacuación', estandar: '3.1.6', frecuencia: 'Semestral', responsable: 'Brigada de Emergencias' },
   // Actividades anuales
+  { mes: 1, actividad: 'Elaborar/Actualizar Programa de Capacitación Anual', estandar: '1.2.1', frecuencia: 'Anual', responsable: 'Responsable SST' },
   { mes: 1, actividad: 'Evaluación de estándares mínimos (autoevaluación)', estandar: '4.1.1', frecuencia: 'Anual', responsable: 'Responsable SST' },
   { mes: 2, actividad: 'Actualización matriz de peligros y riesgos (IPERC)', estandar: '3.1.1', frecuencia: 'Anual', responsable: 'Responsable SST' },
   { mes: 2, actividad: 'Exámenes médicos ocupacionales periódicos', estandar: '3.1.7', frecuencia: 'Anual', responsable: 'Medicina del Trabajo' },

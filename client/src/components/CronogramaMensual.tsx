@@ -74,6 +74,7 @@ const PROGRAMA_TO_ROUTE_MAP: Record<string, string | null> = {
 
 // Mapa de palabras clave en el nombre de la actividad para determinar la ruta correcta
 const ACTIVIDAD_KEYWORD_ROUTES: { keywords: string[]; route: string }[] = [
+  { keywords: ["programa de capacitacion", "programa de capacitación", "programa capacitacion anual", "programa capacitación anual", "plan de capacitacion", "plan de capacitación", "cronograma de capacitacion", "cronograma de capacitación"], route: "/programa-capacitacion-anual" },
   { keywords: ["50 horas", "curso virtual", "curso 50", "certificacion sst", "certificación sst"], route: "/curso-50-horas" },
   { keywords: ["afiliacion", "afiliaciones", "ssss", "arl", "eps", "afp", "seguridad social"], route: "/afiliaciones-ssss" },
   { keywords: ["designacion", "responsable", "sg-sst", "sgsst"], route: "/designacion-responsable" },
