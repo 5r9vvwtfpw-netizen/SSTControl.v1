@@ -24,9 +24,11 @@ const statusConfig = {
 
 export function TrainingCard({ id, title, date, attendees, totalWorkers, status, onEdit, onManageAttendees, canEdit }: TrainingCardProps) {
   // Corregir división por cero y mostrar 100% cuando está completada
-  const percentage = totalWorkers > 0 
+  // Limitar a máximo 100% para evitar desbordamiento visual
+  const rawPercentage = totalWorkers > 0 
     ? Math.round((attendees / totalWorkers) * 100) 
     : (status === "completada" ? 100 : 0);
+  const percentage = Math.min(rawPercentage, 100);
   const config = statusConfig[status] || statusConfig.programada;
 
   return (
@@ -81,7 +83,7 @@ export function TrainingCard({ id, title, date, attendees, totalWorkers, status,
         </div>
         {status === "completada" && (
           <div className="flex items-center gap-2">
-            <div className="h-2 flex-1 rounded-full bg-muted">
+            <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
               <div
                 className="h-2 rounded-full bg-chart-2"
                 style={{ width: `${percentage}%` }}
