@@ -40698,67 +40698,14 @@ console.error('[GET /api/legal-docs/proteccion-datos/pdf] Error:', error.message
         .from(accionesMejoraContexto)
         .where(eq(accionesMejoraContexto.companyId, companyId))
         .orderBy(desc(accionesMejoraContexto.createdAt));
+      
+      // Cargar logo y obtener firmantes
+      const logoBuffer = await loadCompanyLogo(companyId);
+      const signers = await getSignersForCompany(companyId);
       res.json(acciones);
     } catch (error: any) {
       console.error("[GET /api/acciones-mejora-contexto] Error:", error.message);
       res.status(500).send("Error al obtener acciones de mejora");
-    }
-  });
-
-  app.get("/api/acciones-mejora-contexto/:id", requireAuth, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const [accion] = await db.select()
-        .from(accionesMejoraContexto)
-        .where(eq(accionesMejoraContexto.id, id));
-      if (!accion) return res.status(404).send("Acción de mejora no encontrada");
-      res.json(accion);
-    } catch (error: any) {
-      console.error("[GET /api/acciones-mejora-contexto/:id] Error:", error.message);
-      res.status(500).send("Error al obtener acción de mejora");
-    }
-  });
-
-  app.post("/api/acciones-mejora-contexto", requireAuth, async (req, res) => {
-    try {
-      const companyId = req.user!.activeCompanyId || req.user!.companyId;
-      const data = insertAccionMejoraContextoSchema.parse(req.body);
-      const [accion] = await db.insert(accionesMejoraContexto)
-        .values({ ...data, companyId })
-        .returning();
-      res.status(201).json(accion);
-    } catch (error: any) {
-      console.error("[POST /api/acciones-mejora-contexto] Error:", error.message);
-      res.status(500).send("Error al crear acción de mejora");
-    }
-  });
-
-  app.patch("/api/acciones-mejora-contexto/:id", requireAuth, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const [updated] = await db.update(accionesMejoraContexto)
-        .set({ ...req.body, updatedAt: new Date() })
-        .where(eq(accionesMejoraContexto.id, id))
-        .returning();
-      if (!updated) return res.status(404).send("Acción de mejora no encontrada");
-      res.json(updated);
-    } catch (error: any) {
-      console.error("[PATCH /api/acciones-mejora-contexto/:id] Error:", error.message);
-      res.status(500).send("Error al actualizar acción de mejora");
-    }
-  });
-
-  app.delete("/api/acciones-mejora-contexto/:id", requireAuth, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const [result] = await db.delete(accionesMejoraContexto)
-        .where(eq(accionesMejoraContexto.id, id))
-        .returning();
-      if (!result) return res.status(404).send("Acción de mejora no encontrada");
-      res.json({ success: true });
-    } catch (error: any) {
-      console.error("[DELETE /api/acciones-mejora-contexto/:id] Error:", error.message);
-      res.status(500).send("Error al eliminar acción de mejora");
     }
   });
 
@@ -40775,6 +40722,10 @@ console.error('[GET /api/legal-docs/proteccion-datos/pdf] Error:', error.message
         .where(eq(accionesMejoraContexto.companyId, companyId))
         .orderBy(desc(accionesMejoraContexto.createdAt));
       
+      // Cargar logo y obtener firmantes
+      const logoBuffer = await loadCompanyLogo(companyId);
+      const signers = await getSignersForCompany(companyId);
+      
       // Crear PDF
       const doc = new PDFDocument({ size: 'LETTER', margin: 40 });
       
@@ -40787,19 +40738,18 @@ console.error('[GET /api/legal-docs/proteccion-datos/pdf] Error:', error.message
       res.setHeader('Content-Disposition', 'attachment; filename=plan-mejoramiento-contexto.pdf');
       doc.pipe(res);
       
-      // Encabezado
-      doc.fontSize(16).font('Helvetica-Bold')
-         .text('PLAN DE MEJORAMIENTO', { align: 'center' });
-      doc.fontSize(12).font('Helvetica')
-         .text('Análisis de Contexto Organizacional', { align: 'center' });
-      doc.moveDown(0.5);
+      // Encabezado estandarizado
+      let currentY = await addStandardHeader({
+        doc,
+        company: { id: companyId, name: company?.name || 'N/A', nit: company?.nit || 'N/A' },
+        documentTitle: 'PLAN DE MEJORAMIENTO - CONTEXTO ORGANIZACIONAL',
+        documentCode: `SST-PMC-${new Date().getFullYear()}`,
+        version: '1.0',
+        date: new Date(),
+        logoBuffer,
+      });
       
-      // Info empresa
-      doc.fontSize(10)
-         .text(`Empresa: ${company?.name || 'N/A'}`, { align: 'left' })
-         .text(`NIT: ${company?.nit || 'N/A'}`)
-         .text(`Fecha: ${new Date().toLocaleDateString('es-CO')}`);
-      doc.moveDown();
+      doc.y = currentY + 10;
       
       // Línea separadora
       doc.moveTo(40, doc.y).lineTo(572, doc.y).stroke();
@@ -40859,12 +40809,73 @@ console.error('[GET /api/legal-docs/proteccion-datos/pdf] Error:', error.message
         { align: 'center' }
       );
       
+      // Footer con firmantes
+      await addSignatureFooter(doc, signers, false);
+      
       doc.end();
     } catch (error: any) {
       console.error("[GET /api/acciones-mejora-contexto/pdf] Error:", error.message);
       res.status(500).send("Error al generar PDF del plan de mejoramiento");
     }
+
   });
+  app.get("/api/acciones-mejora-contexto/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const [accion] = await db.select()
+        .from(accionesMejoraContexto)
+        .where(eq(accionesMejoraContexto.id, id));
+      if (!accion) return res.status(404).send("Acción de mejora no encontrada");
+      res.json(accion);
+    } catch (error: any) {
+      console.error("[GET /api/acciones-mejora-contexto/:id] Error:", error.message);
+      res.status(500).send("Error al obtener acción de mejora");
+    }
+  });
+
+  app.post("/api/acciones-mejora-contexto", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.activeCompanyId || req.user!.companyId;
+      const data = insertAccionMejoraContextoSchema.parse(req.body);
+      const [accion] = await db.insert(accionesMejoraContexto)
+        .values({ ...data, companyId })
+        .returning();
+      res.status(201).json(accion);
+    } catch (error: any) {
+      console.error("[POST /api/acciones-mejora-contexto] Error:", error.message);
+      res.status(500).send("Error al crear acción de mejora");
+    }
+  });
+
+  app.patch("/api/acciones-mejora-contexto/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const [updated] = await db.update(accionesMejoraContexto)
+        .set({ ...req.body, updatedAt: new Date() })
+        .where(eq(accionesMejoraContexto.id, id))
+        .returning();
+      if (!updated) return res.status(404).send("Acción de mejora no encontrada");
+      res.json(updated);
+    } catch (error: any) {
+      console.error("[PATCH /api/acciones-mejora-contexto/:id] Error:", error.message);
+      res.status(500).send("Error al actualizar acción de mejora");
+    }
+  });
+
+  app.delete("/api/acciones-mejora-contexto/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const [result] = await db.delete(accionesMejoraContexto)
+        .where(eq(accionesMejoraContexto.id, id))
+        .returning();
+      if (!result) return res.status(404).send("Acción de mejora no encontrada");
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[DELETE /api/acciones-mejora-contexto/:id] Error:", error.message);
+      res.status(500).send("Error al eliminar acción de mejora");
+    }
+  });
+
 
   // Vista consolidada: Plan de mejoramiento (automático + contexto)
   app.get("/api/plan-mejoramiento-consolidado", requireAuth, async (req, res) => {
@@ -40876,6 +40887,10 @@ console.error('[GET /api/legal-docs/proteccion-datos/pdf] Error:', error.message
         .from(accionesMejoraContexto)
         .where(eq(accionesMejoraContexto.companyId, companyId))
         .orderBy(desc(accionesMejoraContexto.createdAt));
+      
+      // Cargar logo y obtener firmantes
+      const logoBuffer = await loadCompanyLogo(companyId);
+      const signers = await getSignersForCompany(companyId);
       
       res.json({
         accionesContexto,
