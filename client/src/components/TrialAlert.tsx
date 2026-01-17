@@ -52,7 +52,18 @@ export function TrialAlert() {
       const response = await apiRequest(
         "POST",
         `/api/billing/subscription/${subscriptionId}/activate`
-      ) as { paymentUrl?: string };
+      ) as { paymentUrl?: string; error?: string; success?: boolean };
+      
+      console.log("Activation response:", response);
+      
+      if (response.error) {
+        toast({
+          title: "Error",
+          description: response.error,
+          variant: "destructive",
+        });
+        return;
+      }
       
       if (response.paymentUrl) {
         toast({
@@ -66,11 +77,12 @@ export function TrialAlert() {
       } else {
         toast({
           title: "Error",
-          description: "No se pudo generar el enlace de pago",
+          description: "No se pudo generar el enlace de pago. Respuesta: " + JSON.stringify(response),
           variant: "destructive",
         });
       }
     } catch (error: any) {
+      console.error("Activation error:", error);
       toast({
         title: "Error al activar suscripción",
         description: error.message || "No se pudo procesar la solicitud",
