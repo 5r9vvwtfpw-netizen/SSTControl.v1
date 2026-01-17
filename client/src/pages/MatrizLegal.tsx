@@ -177,7 +177,7 @@ export default function MatrizLegal() {
 
   const form = useForm<InsertMatrizLegal>({
     resolver: zodResolver(insertMatrizLegalSchema),
-    defaultValues: editingItem || {
+    defaultValues: {
       norma: "",
       titulo: "",
       categoria: "sistema-gestion",
