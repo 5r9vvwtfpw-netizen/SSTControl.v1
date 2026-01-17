@@ -164,6 +164,10 @@ const CHAPTER_2_ADDITIONAL_MODULES = [
   "/indicadores-sst",
   "/indicadores-accidentalidad",  // Estándar 3.2.2 - Registro estadístico de AT, EL e incidentes
   "/indicador-frecuencia-severidad",  // Estándar 3.3.1 - Índices IF y Severidad
+  "/indicador-mortalidad",  // Estándar 3.3.2 - Tasa de Mortalidad
+  "/indicador-ausentismo",  // Estándar 3.3.3 - Tasa de Ausentismo
+  "/indicador-prevalencia",  // Estándar 3.3.4 - Tasa de Prevalencia
+  "/indicador-incidencia",  // Estándar 3.3.5 - Tasa de Incidencia
   
   // Recursos adicionales
   "/politicas-sst",
