@@ -32,13 +32,15 @@ export const PDF_COLORS = {
 export const PROVIDER_CONTACT = {
   name: 'SST Colombia S.A.S.',
   nit: '901.234.567-8',
-  website: 'www.sst-colombia.com',
+  website: 'www.sstcolombia.com',
   emails: {
-    admin: 'admin@sst-colombia.com',
-    billing: 'facturacion@sst-colombia.com',
-    legal: 'legal@sst-colombia.com',
-    payments: 'pagos@sst-colombia.com',
-    support: 'soporte@sst-colombia.com',
+    admin: 'admin@sstcolombia.com',
+    billing: 'facturacion@sstcolombia.com',
+    legal: 'legal@sstcolombia.com',
+    payments: 'pagos@sstcolombia.com',
+    support: 'soporte@sstcolombia.com',
+    dpo: 'dpo@sstcolombia.com',
+    privacy: 'privacidad@sstcolombia.com',
   },
   copyright: `© ${new Date().getFullYear()} SST Colombia S.A.S. - Todos los derechos reservados`,
   dnda: 'DNDA 13-197-177',
@@ -449,8 +451,8 @@ export function addProviderContactFooter(
   const compact = options?.compact ?? false;
   const atCurrentPosition = options?.atCurrentPosition ?? true;
   
-  // Calcular altura del footer de contacto
-  const footerHeight = compact ? 20 : (includeAll ? 45 : 30);
+  // Calcular altura del footer de contacto (incluye DPO y Privacidad)
+  const footerHeight = compact ? 20 : (includeAll ? 55 : 30);
   
   // Determinar posición Y: usar posición actual o parte inferior de la página
   let footerY: number;
@@ -486,7 +488,7 @@ export function addProviderContactFooter(
       { width: pageWidth - margin * 2, align: 'center' }
     );
   } else if (includeAll) {
-    // Versión completa con todos los emails
+    // Versión completa con todos los emails (incluyendo DPO y Privacidad)
     doc.fontSize(7).font('Helvetica-Bold').fillColor(PDF_COLORS.GREEN_PRIMARY);
     doc.text('CONTACTO SST COLOMBIA', margin, contentY, { 
       width: pageWidth - margin * 2, 
@@ -495,7 +497,7 @@ export function addProviderContactFooter(
     
     doc.fontSize(6).font('Helvetica').fillColor('#666666');
     const emailsLine1 = `Soporte: ${PROVIDER_CONTACT.emails.support} | Facturación: ${PROVIDER_CONTACT.emails.billing} | Pagos: ${PROVIDER_CONTACT.emails.payments}`;
-    const emailsLine2 = `Legal: ${PROVIDER_CONTACT.emails.legal} | Administración: ${PROVIDER_CONTACT.emails.admin}`;
+    const emailsLine2 = `Legal: ${PROVIDER_CONTACT.emails.legal} | DPO: ${PROVIDER_CONTACT.emails.dpo} | Privacidad: ${PROVIDER_CONTACT.emails.privacy}`;
     
     doc.text(emailsLine1, margin, contentY + 10, { 
       width: pageWidth - margin * 2, 

@@ -351,19 +351,19 @@ export class InvoicePdfService {
     currentY += 12;
     
     doc.text(
-      'Para consultas o soporte, contacte a soporte@sst-colombia.com',
+      'Para consultas o soporte, contacte a soporte@sstcolombia.com',
       margin,
       currentY,
       { align: 'center' }
     );
     
-    // Provider contact information - All 5 emails
+    // Provider contact information - All 7 emails
     currentY += 10;
     
     doc.fontSize(7)
        .fillColor('#888888')
        .text(
-         'Soporte: soporte@sst-colombia.com | Facturación: facturacion@sst-colombia.com | Pagos: pagos@sst-colombia.com',
+         'Soporte: soporte@sstcolombia.com | Facturación: facturacion@sstcolombia.com | Pagos: pagos@sstcolombia.com',
          margin,
          currentY,
          { align: 'center' }
@@ -372,7 +372,7 @@ export class InvoicePdfService {
     currentY += 9;
     
     doc.text(
-      'Legal: legal@sst-colombia.com | Administración: admin@sst-colombia.com',
+      'Legal: legal@sstcolombia.com | DPO: dpo@sstcolombia.com | Privacidad: privacidad@sstcolombia.com',
       margin,
       currentY,
       { align: 'center' }
