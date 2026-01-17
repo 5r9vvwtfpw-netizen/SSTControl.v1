@@ -163,6 +163,7 @@ const CHAPTER_2_ADDITIONAL_MODULES = [
   "/comunicacion-sst",
   "/indicadores-sst",
   "/indicadores-accidentalidad",  // Estándar 3.2.2 - Registro estadístico de AT, EL e incidentes
+  "/indicador-frecuencia-severidad",  // Estándar 3.3.1 - Índices IF y Severidad
   
   // Recursos adicionales
   "/politicas-sst",
