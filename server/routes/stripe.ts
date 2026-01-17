@@ -94,6 +94,8 @@ export function registerStripeRoutes(app: Express) {
         successUrl: z.string().url().optional(),
         cancelUrl: z.string().url().optional(),
         trialDays: z.number().min(0).max(90).optional(),
+        // Número de trabajadores que el cliente está comprando (mínimo 2 para Microempresa)
+        workersPurchased: z.number().min(1).max(1000).optional(),
         // Contract acceptance data (Ley 527/1999)
         contractAccepted: z.boolean().optional(),
         contractAcceptedAt: z.string().nullable().optional(),
@@ -119,6 +121,23 @@ export function registerStripeRoutes(app: Express) {
         return res.status(404).json({ error: "Empresa no encontrada" });
       }
 
+      // Validar que workersPurchased no sea menor que los trabajadores activos actuales
+      if (validatedData.workersPurchased) {
+        const currentWorkers = await storage.getWorkers(companyId);
+        const activeWorkers = currentWorkers.filter((w: any) => 
+          w.status === 'activo' || w.status === 'inactivo'
+        );
+        
+        if (validatedData.workersPurchased < activeWorkers.length) {
+          return res.status(400).json({ 
+            error: "Cantidad insuficiente de licencias",
+            message: `Tu empresa ya tiene ${activeWorkers.length} trabajadores registrados. Debes comprar al menos ${activeWorkers.length} licencias para continuar.`,
+            currentWorkers: activeWorkers.length,
+            requested: validatedData.workersPurchased
+          });
+        }
+      }
+
       const customer = await stripeService.findOrCreateCustomer({
         email: user.email || '',
         name: company.name || user.fullName || user.username,
@@ -135,6 +154,11 @@ export function registerStripeRoutes(app: Express) {
         companyId,
         userId: user.id.toString()
       };
+      
+      // Include workersPurchased in metadata for worker limit enforcement
+      if (validatedData.workersPurchased) {
+        metadata.workersPurchased = validatedData.workersPurchased.toString();
+      }
       
       // Include contract data in metadata to be processed by webhook (Ley 527/1999)
       if (validatedData.contractAccepted) {

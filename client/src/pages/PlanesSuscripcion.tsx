@@ -74,7 +74,10 @@ export default function PlanesSuscripcion() {
   });
 
   const handleSelectPlan = (planId: string) => {
-    navigate(`/checkout?planId=${planId}`);
+    // Pasar el número de trabajadores de la empresa para calcular el precio correcto
+    // y guardar workersPurchased en la suscripción
+    const workerCount = selectedCompany?.numberOfWorkers || 2; // Mínimo 2 para Microempresa
+    navigate(`/checkout?planId=${planId}&workersPurchased=${workerCount}`);
   };
 
   const handleStartTrial = (planId: string, trialDays: number) => {

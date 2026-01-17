@@ -34,6 +34,8 @@ export default function Checkout() {
   const searchParams = new URLSearchParams(useSearch());
   const planId = searchParams.get('planId');
   const interval = searchParams.get('interval') || 'monthly';
+  const workersPurchasedParam = searchParams.get('workersPurchased');
+  const workersPurchased = workersPurchasedParam ? parseInt(workersPurchasedParam, 10) : undefined;
   const success = searchParams.get('success');
   const sessionId = searchParams.get('session_id');
   const canceled = searchParams.get('canceled');
@@ -79,6 +81,7 @@ export default function Checkout() {
         priceId,
         successUrl,
         cancelUrl,
+        workersPurchased: workersPurchased || 2, // Mínimo 2 trabajadores para Microempresa
         contractAccepted: acceptanceData ? true : false,
         contractAcceptedAt: acceptanceData?.acceptedAt || null,
         contractData: acceptanceData ? {

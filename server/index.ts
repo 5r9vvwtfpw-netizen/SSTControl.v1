@@ -134,6 +134,15 @@ app.post(
                     updateData.contractData = parsedContractData;
                   }
                   
+                  // Process workersPurchased - limita cuántos trabajadores puede registrar
+                  if (session.metadata?.workersPurchased) {
+                    const workersPurchased = parseInt(session.metadata.workersPurchased, 10);
+                    if (!isNaN(workersPurchased) && workersPurchased > 0) {
+                      updateData.workersPurchased = workersPurchased;
+                      logger.info({ companyId, workersPurchased }, 'Workers purchased limit set from checkout');
+                    }
+                  }
+                  
                   await storage.updateSubscription(subscription.id, updateData);
                   
                   const plan = await storage.getSubscriptionPlan(subscription.planId);

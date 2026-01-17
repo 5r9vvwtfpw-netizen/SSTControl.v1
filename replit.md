@@ -33,3 +33,29 @@ The system uses a client-server architecture with a RESTful API. Data integrity 
 -   **Shadcn UI**: UI component library built on Tailwind CSS.
 -   **Amazon S3**: Cloud object storage for file uploads with 20-year retention compliance.
 -   **AWS SDK v3**: For S3 operations.
+
+## Billing System - Worker Quantity Enforcement
+
+### Implementation Details (January 2026)
+The billing system enforces strict worker quantity limits based on what customers purchase:
+
+1. **`workersPurchased` field**: Added to `subscriptions` table to store the exact number of workers the customer paid for.
+
+2. **Enforcement Logic** (`checkWorkerLimit()` middleware):
+   - Priority 1: Validates against `subscription.workersPurchased` (what customer PAID for)
+   - Fallback: Uses `plan.maxWorkers` for legacy subscriptions without `workersPurchased`
+   - Error message: "Tu suscripción permite hasta X trabajadores. Para registrar más, actualiza tu plan."
+
+3. **Checkout Flow**:
+   - `PlanesSuscripcion.tsx` passes `workersPurchased` based on company's current worker count
+   - `Checkout.tsx` reads `workersPurchased` from URL and sends to backend
+   - Server validates that `workersPurchased` >= current active workers
+   - Stripe metadata stores `workersPurchased` for webhook processing
+
+4. **Webhook Processing**:
+   - On successful payment, `workersPurchased` is saved from Stripe metadata to subscription
+
+5. **Business Logic**:
+   - Minimum 2 workers for Microempresa plan
+   - Customers cannot buy fewer licenses than their current active workers
+   - Error: "Tu empresa ya tiene X trabajadores registrados. Debes comprar al menos X licencias."
