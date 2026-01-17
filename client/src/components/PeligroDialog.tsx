@@ -15,6 +15,8 @@ import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { useState, useEffect } from "react";
 import { peligrosGTC45Predefinidos, getPeligroByCodigo, clasificacionPeligroLabels } from "@/data/peligros-gtc45-predefinidos";
+import { SugerenciaPeligrosCIIU } from "@/components/SugerenciaPeligrosCIIU";
+import { PeligroEspecificoSector } from "@/data/peligros-por-ciiu";
 
 const defaultValuesByClasificacion = {
   biologico: {
@@ -338,6 +340,28 @@ export function PeligroDialog({ open, onOpenChange, matrizId, peligro, prefillVa
               </Select>
             </CardContent>
           </Card>
+        )}
+
+        {/* Sugerencias de Peligros según CIIU de la empresa - Solo visible al crear */}
+        {!isEditing && (
+          <SugerenciaPeligrosCIIU
+            onSelectPeligroGTC45={(codigo) => {
+              setSelectedPredefPeligro(codigo);
+            }}
+            onSelectPeligroEspecifico={(peligro: PeligroEspecificoSector) => {
+              form.setValue("clasificacion", peligro.clasificacion as any);
+              form.setValue("descripcionPeligro", peligro.peligro);
+              form.setValue("efectosPosibles", peligro.efectosPosibles);
+              form.setValue("controlesPropuestos", peligro.medidasControl.join(", "));
+              const defaults = defaultValuesByClasificacion[peligro.clasificacion as keyof typeof defaultValuesByClasificacion];
+              if (defaults) {
+                form.setValue("actividadProceso", defaults.actividadProceso);
+                form.setValue("fuenteGeneradora", peligro.descripcion);
+                form.setValue("ubicacion", defaults.ubicacion);
+              }
+            }}
+            selectedCodigos={selectedPredefPeligro ? [selectedPredefPeligro] : []}
+          />
         )}
 
         <Form {...form}>
