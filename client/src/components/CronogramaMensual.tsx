@@ -77,8 +77,8 @@ const ACTIVIDAD_KEYWORD_ROUTES: { keywords: string[]; route: string }[] = [
   { keywords: ["programa de capacitacion", "programa de capacitación", "programa capacitacion anual", "programa capacitación anual", "plan de capacitacion", "plan de capacitación", "cronograma de capacitacion", "cronograma de capacitación"], route: "/programa-capacitacion-anual" },
   { keywords: ["50 horas", "curso virtual", "curso 50", "certificacion sst", "certificación sst"], route: "/curso-50-horas" },
   { keywords: ["afiliacion", "afiliaciones", "ssss", "arl", "eps", "afp", "seguridad social"], route: "/afiliaciones-ssss" },
-  { keywords: ["designacion", "responsable", "sg-sst", "sgsst"], route: "/designacion-responsable" },
-  { keywords: ["accidente", "accidentes", "at", "incidente"], route: "/accidentes" },
+  { keywords: ["designacion", "responsable", "sg-sst", "sgsst", "responsabilidades en sst", "documentacion de responsabilidades", "documentación de responsabilidades"], route: "/designacion-responsable" },
+  { keywords: ["accidente", "accidentes", "at", "incidente", "accidentalidad", "registro estadistico", "registro estadístico"], route: "/accidentes" },
   { keywords: ["investigacion", "investigación"], route: "/investigacion-accidentes" },
   { keywords: ["epp", "proteccion personal", "protección personal", "elementos de proteccion", "entrega epp", "dotacion", "dotación"], route: "/entrega-epp" },
   { keywords: ["induccion", "inducción", "reinduccion", "reinducción"], route: "/registros-induccion" },
@@ -96,6 +96,8 @@ const ACTIVIDAD_KEYWORD_ROUTES: { keywords: string[]; route: string }[] = [
   { keywords: ["documento", "documentos", "conservacion", "conservación"], route: "/conservacion-documentos" },
   { keywords: ["ausentismo", "incapacidad", "incapacidades"], route: "/ausentismo-laboral" },
   { keywords: ["sociodemografico", "sociodemográfico", "perfil"], route: "/perfil-sociodemografico" },
+  { keywords: ["recursos", "asignacion de recursos", "asignación de recursos", "presupuesto", "recursos sst"], route: "/asignacion-recursos" },
+  { keywords: ["revision por la direccion", "revisión por la dirección", "revision gerencial", "revisión gerencial", "revision direccion", "revisión dirección"], route: "/revision-direccion" },
 ];
 
 function getRouteForActividad(actividad: string, programa: string): string | null {
