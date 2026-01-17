@@ -14,12 +14,17 @@ let pool: NeonPool | PgPool;
 let db: ReturnType<typeof drizzleNeon> | ReturnType<typeof drizzlePg>;
 
 if (isProduction && hasAwsRds) {
-  const awsConnectionString = `postgresql://${process.env.AWS_RDS_USER || 'postgres'}:${process.env.AWS_RDS_PASSWORD}@${process.env.AWS_RDS_HOST}:${process.env.AWS_RDS_PORT || '5432'}/${process.env.AWS_RDS_DATABASE || 'postgres'}`;
+  const awsConnectionString = `postgresql://${process.env.AWS_RDS_USER || 'postgres'}:${process.env.AWS_RDS_PASSWORD}@${process.env.AWS_RDS_HOST}:${process.env.AWS_RDS_PORT || '5432'}/${process.env.AWS_RDS_DATABASE || 'postgres'}?sslmode=require`;
   
-  pool = new PgPool({ connectionString: awsConnectionString });
+  pool = new PgPool({ 
+    connectionString: awsConnectionString,
+    ssl: {
+      rejectUnauthorized: false // Required for AWS RDS SSL connections
+    }
+  });
   db = drizzlePg({ client: pool as PgPool, schema });
   
-  console.log('[DB] Connected to AWS RDS PostgreSQL (Production)');
+  console.log('[DB] Connected to AWS RDS PostgreSQL (Production with SSL)');
 } else {
   if (!process.env.DATABASE_URL) {
     throw new Error(
