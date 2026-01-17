@@ -200,6 +200,7 @@ function getRouteForActividad(actividad: string, programa: string): string | nul
     // Verificar si hay keywords específicas que deberían sobrescribir el programa
     const overrideKeywords = [
       { keywords: ["50 horas", "curso virtual", "curso 50"], route: "/curso-50-horas" },
+      { keywords: ["programa de capacitacion", "programa de capacitación", "programa capacitacion anual", "programa capacitación anual"], route: "/programa-capacitacion-anual" },
     ];
     for (const { keywords, route } of overrideKeywords) {
       for (const keyword of keywords) {
