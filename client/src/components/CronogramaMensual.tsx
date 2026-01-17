@@ -63,12 +63,12 @@ const PROGRAMA_TO_ROUTE_MAP: Record<string, string | null> = {
   "comites": "/copasst-gestion",
   "auditoria": "/auditorias-internas",
   "identificacion-peligros": "/iperc",
-  "higiene-seguridad": "/iperc",
-  "riesgo-psicosocial": "/riesgo-psicosocial",
-  "seguridad-vial": "/pesv-politicas",
+  "higiene-seguridad": "/mediciones-ambientales",
+  "riesgo-psicosocial": "/comite-convivencia-actas",
+  "seguridad-vial": "/pesv",
   "vigilancia-epidemiologica": "/vigilancia-epidemiologica",
   "comunicacion": "/comunicacion-sst",
-  "mejora-continua": "/plan-mejoramiento",
+  "mejora-continua": "/plan-mejoramiento-contexto",
   "otro": null,
 };
 
@@ -118,7 +118,7 @@ const ACTIVIDAD_KEYWORD_ROUTES: { keywords: string[]; route: string }[] = [
   { keywords: ["copasst", "vigia", "vigía", "conformacion del copasst", "conformación del copasst", "conformacion/renovacion del copasst", "conformación/renovación del copasst", "reuniones mensuales del copasst", "actas de reuniones mensuales del copasst", "verificar certificacion de miembros copasst", "verificar certificación de miembros copasst"], route: "/copasst-gestion" },
   
   // Comité de Convivencia Laboral
-  { keywords: ["convivencia laboral", "ccl", "comite de convivencia", "comité de convivencia", "reuniones trimestrales del ccl", "actas de reuniones del comite de convivencia", "actas de reuniones del comité de convivencia", "conformacion del comite de convivencia", "conformación del comité de convivencia"], route: "/comite-convivencia" },
+  { keywords: ["convivencia laboral", "ccl", "comite de convivencia", "comité de convivencia", "reuniones trimestrales del ccl", "actas de reuniones del comite de convivencia", "actas de reuniones del comité de convivencia", "conformacion del comite de convivencia", "conformación del comité de convivencia"], route: "/comite-convivencia-actas" },
   
   // Auditorías
   { keywords: ["auditoria", "auditoría", "auditorias", "auditorías", "auditoria interna", "auditoría interna", "planificacion del programa de auditoria", "planificación del programa de auditoría"], route: "/auditorias-internas" },
@@ -130,7 +130,7 @@ const ACTIVIDAD_KEYWORD_ROUTES: { keywords: string[]; route: string }[] = [
   { keywords: ["plan anual", "plan de trabajo", "elaboracion plan", "elaboración plan", "actualizacion plan", "actualización plan", "elaboracion/actualizacion plan anual", "elaboración/actualización plan anual", "seguimiento a programas del sg-sst"], route: "/planes-trabajo-anual" },
   
   // Indicadores SST
-  { keywords: ["indicador", "indicadores", "definicion de indicadores", "definición de indicadores", "seguimiento de indicadores", "indicadores de estructura", "indicadores de proceso", "indicadores de resultado", "analisis de tendencias", "análisis de tendencias"], route: "/indicadores-sst" },
+  { keywords: ["indicador", "indicadores", "definicion de indicadores", "definición de indicadores", "seguimiento de indicadores", "indicadores de estructura", "indicadores de proceso", "indicadores de resultado", "analisis de tendencias", "análisis de tendencias"], route: "/indicadores-accidentalidad" },
   
   // Objetivos SST
   { keywords: ["objetivo", "objetivos", "definicion de objetivos", "definición de objetivos", "objetivos sst"], route: "/objetivos-sst" },
@@ -148,10 +148,10 @@ const ACTIVIDAD_KEYWORD_ROUTES: { keywords: string[]; route: string }[] = [
   { keywords: ["recursos", "asignacion de recursos", "asignación de recursos", "presupuesto", "recursos para sst", "recursos humanos", "recursos tecnicos", "recursos técnicos", "recursos financieros"], route: "/asignacion-recursos" },
   
   // Revisión por la dirección
-  { keywords: ["revision por la direccion", "revisión por la dirección", "revision gerencial", "revisión gerencial", "revision por la alta direccion", "revisión por la alta dirección", "alta direccion", "alta dirección"], route: "/revision-direccion" },
+  { keywords: ["revision por la direccion", "revisión por la dirección", "revision gerencial", "revisión gerencial", "revision por la alta direccion", "revisión por la alta dirección", "alta direccion", "alta dirección"], route: "/revisiones-direccion" },
   
   // Plan de mejoramiento y acciones correctivas
-  { keywords: ["mejoramiento", "mejora continua", "acciones correctivas", "acciones preventivas", "acciones de mejora", "seguimiento a acciones correctivas", "seguimiento a acciones preventivas", "plan de mejoramiento"], route: "/plan-mejoramiento" },
+  { keywords: ["mejoramiento", "mejora continua", "acciones correctivas", "acciones preventivas", "acciones de mejora", "seguimiento a acciones correctivas", "seguimiento a acciones preventivas", "plan de mejoramiento"], route: "/plan-mejoramiento-contexto" },
   
   // Matriz legal
   { keywords: ["matriz de requisitos legales", "requisitos legales", "actualizacion de matriz de requisitos", "actualización de matriz de requisitos", "matriz legal"], route: "/matriz-legal" },
@@ -160,7 +160,7 @@ const ACTIVIDAD_KEYWORD_ROUTES: { keywords: string[]; route: string }[] = [
   { keywords: ["perfiles de cargo", "actualizacion de perfiles de cargo", "actualización de perfiles de cargo"], route: "/perfiles-cargo" },
   
   // Procedimientos de trabajo seguro
-  { keywords: ["procedimientos de trabajo seguro", "actualizacion de procedimientos", "actualización de procedimientos", "procedimiento del sg-sst", "diseño del procedimiento"], route: "/procedimientos-trabajo-seguro" },
+  { keywords: ["procedimientos de trabajo seguro", "actualizacion de procedimientos", "actualización de procedimientos", "procedimiento del sg-sst", "diseño del procedimiento"], route: "/politicas-sst" },
   
   // Comunicación SST
   { keywords: ["comunicacion", "comunicación", "comunicaciones sst", "plan de comunicaciones", "mecanismos de comunicacion", "mecanismos de comunicación", "diseño e implementacion del plan de comunicaciones", "diseño e implementación del plan de comunicaciones"], route: "/comunicacion-sst" },
@@ -184,10 +184,10 @@ const ACTIVIDAD_KEYWORD_ROUTES: { keywords: string[]; route: string }[] = [
   { keywords: ["estilos de vida saludable", "promocion y prevencion en salud", "promoción y prevención en salud", "actividades de promocion", "actividades de promoción"], route: "/estilos-vida-saludable" },
   
   // Higiene y seguridad (genérico para los que no tienen ruta específica)
-  { keywords: ["control de plagas", "fumigacion", "fumigación", "agua potable", "servicios sanitarios", "mediciones ambientales", "ruido", "iluminacion", "iluminación", "manejo de residuos", "residuos", "controles de riesgos", "implementacion de controles", "implementación de controles"], route: "/higiene-seguridad" },
+  { keywords: ["control de plagas", "fumigacion", "fumigación", "agua potable", "servicios sanitarios", "mediciones ambientales", "ruido", "iluminacion", "iluminación", "manejo de residuos", "residuos", "controles de riesgos", "implementacion de controles", "implementación de controles"], route: "/mediciones-ambientales" },
   
   // Mantenimiento
-  { keywords: ["mantenimiento preventivo", "programa de mantenimiento"], route: "/mantenimiento-preventivo" },
+  { keywords: ["mantenimiento preventivo", "programa de mantenimiento"], route: "/inspecciones" },
 ];
 
 function getRouteForActividad(actividad: string, programa: string): string | null {
