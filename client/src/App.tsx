@@ -125,6 +125,7 @@ import AccesosSoporte from "@/pages/AccesosSoporte";
 import IndicadoresAccidentalidad from "@/pages/IndicadoresAccidentalidad";
 import IndiceSeveridadILI from "@/pages/IndiceSeveridadILI";
 import IndiceFrequenciaSeveridad from "@/pages/IndiceFrequenciaSeveridad";
+import IndicadorMortalidad from "@/pages/IndicadorMortalidad";
 import PrevalenciaEnfermedadLaboral from "@/pages/PrevalenciaEnfermedadLaboral";
 import IncidenciaAccidentesEL from "@/pages/IncidenciaAccidentesEL";
 import EstilosVidaSaludable from "@/pages/EstilosVidaSaludable";
@@ -213,6 +214,7 @@ function Router() {
       <ProtectedRoute path="/indicadores-accidentalidad" component={IndicadoresAccidentalidad} />
       <ProtectedRoute path="/indicador-ili-incidentes" component={IndiceSeveridadILI} />
       <ProtectedRoute path="/indicador-frecuencia-severidad" component={IndiceFrequenciaSeveridad} />
+      <ProtectedRoute path="/indicador-mortalidad" component={IndicadorMortalidad} />
       <ProtectedRoute path="/indicador-prevalencia" component={PrevalenciaEnfermedadLaboral} />
       <ProtectedRoute path="/indicador-incidencia" component={IncidenciaAccidentesEL} />
       <ProtectedRoute path="/planes-trabajo-anual/:id" component={DetallePlanTrabajo} />

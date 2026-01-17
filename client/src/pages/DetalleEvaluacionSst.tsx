@@ -3706,6 +3706,34 @@ export default function DetalleEvaluacionSst() {
               </div>
             </div>
           )}
+          {selectedEstandar?.numeroEstandar === "3.3.3" && (
+            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+              <div className="flex items-start gap-3">
+                <Activity className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                    Modo Verificación - Estándar 3.3.3
+                  </p>
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                    Medir la mortalidad por accidentes de trabajo y enfermedad laboral como mínimo una vez al año. Tasa de Mortalidad = (Accidentes Mortales / Trabajadores) × 100,000
+                  </p>
+                  <div className="mt-4 p-3 bg-red-100/50 dark:bg-red-900/30 rounded-md border border-red-200 dark:border-red-800">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <p className="text-xs font-semibold text-red-700 dark:text-red-300">
+                          Módulo Mortalidad AT/EL
+                        </p>
+                      </div>
+                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/indicador-mortalidad"); }} data-testid="button-ir-mortalidad-333">
+                        Ir a Indicadores
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           {selectedEstandar?.numeroEstandar === "3.3.4" && (
             <div className="mb-4 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
               <div className="flex items-start gap-3">
