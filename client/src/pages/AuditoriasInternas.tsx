@@ -6,8 +6,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ClipboardCheck, Calendar, Users, CheckCircle2, Clock, FileText, Shield, UserCheck } from "lucide-react";
-import { useState } from "react";
+import { Plus, Search, ClipboardCheck, Calendar, Users, CheckCircle2, Clock, FileText, Shield, UserCheck, CalendarDays } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -70,6 +71,19 @@ export default function AuditoriasInternas() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
+  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedId = localStorage.getItem("lastPlanTrabajoId");
+    const savedMes = localStorage.getItem("lastCronogramaMes");
+    if (savedId) {
+      setLastPlanTrabajoId(savedId);
+    }
+    if (savedMes) {
+      setLastCronogramaMes(savedMes);
+    }
+  }, []);
   const [dialogOpen, setDialogOpen] = useState(false);
   const hasGlobalAccessUser = user?.role ? hasGlobalAccess(user.role) : false;
 
@@ -214,6 +228,27 @@ export default function AuditoriasInternas() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        {lastPlanTrabajoId ? (
+          <Link 
+            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
+            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
+            data-testid="link-volver-cronograma"
+          >
+            Volver al cronograma
+            <CalendarDays className="h-4 w-4" />
+          </Link>
+        ) : (
+          <Link 
+            href="/planes-trabajo-anual" 
+            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
+            data-testid="link-volver-cronograma"
+          >
+            Volver al Plan Anual
+            <CalendarDays className="h-4 w-4" />
+          </Link>
+        )}
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Auditorías Internas SST</h1>

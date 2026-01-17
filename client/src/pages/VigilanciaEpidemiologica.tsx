@@ -6,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Eye, FileText, Activity, AlertTriangle, Heart, Brain, Ear, Droplet, Wind, Stethoscope, Trash2, Edit, Printer } from "lucide-react";
-import { useState } from "react";
+import { Plus, Search, Eye, FileText, Activity, AlertTriangle, Heart, Brain, Ear, Droplet, Wind, Stethoscope, Trash2, Edit, Printer, CalendarDays } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { SveProgram, SveCase, insertSveProgramSchema, insertSveCaseSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -73,6 +74,19 @@ export default function VigilanciaEpidemiologica() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
+  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedId = localStorage.getItem("lastPlanTrabajoId");
+    const savedMes = localStorage.getItem("lastCronogramaMes");
+    if (savedId) {
+      setLastPlanTrabajoId(savedId);
+    }
+    if (savedMes) {
+      setLastCronogramaMes(savedMes);
+    }
+  }, []);
   const [riskFilter, setRiskFilter] = useState<string>("todos");
   const [programDialogOpen, setProgramDialogOpen] = useState(false);
   const [caseDialogOpen, setCaseDialogOpen] = useState(false);
@@ -450,6 +464,27 @@ export default function VigilanciaEpidemiologica() {
 
   return (
     <div className="p-6 space-y-6">
+      <div className="flex justify-end">
+        {lastPlanTrabajoId ? (
+          <Link 
+            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
+            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
+            data-testid="link-volver-cronograma"
+          >
+            Volver al cronograma
+            <CalendarDays className="h-4 w-4" />
+          </Link>
+        ) : (
+          <Link 
+            href="/planes-trabajo-anual" 
+            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
+            data-testid="link-volver-cronograma"
+          >
+            Volver al Plan Anual
+            <CalendarDays className="h-4 w-4" />
+          </Link>
+        )}
+      </div>
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold text-foreground">Sistema de Vigilancia Epidemiológica Ocupacional (SVE)</h1>

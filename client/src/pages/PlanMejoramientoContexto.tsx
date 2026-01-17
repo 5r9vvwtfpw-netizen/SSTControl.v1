@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import {
   Plus, Search, FileText, Edit2, Trash2, AlertCircle, Clock,
-  CheckCircle2, Target, TrendingUp, Filter, Download, CalendarIcon, ArrowLeft
+  CheckCircle2, Target, TrendingUp, Filter, Download, CalendarIcon, ArrowLeft, CalendarDays
 } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { format } from "date-fns";
@@ -73,6 +73,19 @@ interface PlanConsolidadoResponse {
 export default function PlanMejoramientoContexto() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
+  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedId = localStorage.getItem("lastPlanTrabajoId");
+    const savedMes = localStorage.getItem("lastCronogramaMes");
+    if (savedId) {
+      setLastPlanTrabajoId(savedId);
+    }
+    if (savedMes) {
+      setLastCronogramaMes(savedMes);
+    }
+  }, []);
   const [filterEstado, setFilterEstado] = useState<string>("todos");
   const [filterPrioridad, setFilterPrioridad] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -230,14 +243,37 @@ export default function PlanMejoramientoContexto() {
 
   return (
     <div className="p-6 space-y-6">
-      {fromEvaluation && (
-        <Link href="/evaluaciones-sst" data-testid="link-back-evaluation">
-          <Button variant="ghost" size="sm" className="gap-2 mb-2">
-            <ArrowLeft className="h-4 w-4" />
-            Volver a Evaluación SST
-          </Button>
-        </Link>
-      )}
+      <div className="flex items-center justify-between">
+        {fromEvaluation && (
+          <Link href="/evaluaciones-sst" data-testid="link-back-evaluation">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Volver a Evaluación SST
+            </Button>
+          </Link>
+        )}
+        <div className="ml-auto">
+          {lastPlanTrabajoId ? (
+            <Link 
+              href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
+              className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
+              data-testid="link-volver-cronograma"
+            >
+              Volver al cronograma
+              <CalendarDays className="h-4 w-4" />
+            </Link>
+          ) : (
+            <Link 
+              href="/planes-trabajo-anual" 
+              className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
+              data-testid="link-volver-cronograma"
+            >
+              Volver al Plan Anual
+              <CalendarDays className="h-4 w-4" />
+            </Link>
+          )}
+        </div>
+      </div>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">

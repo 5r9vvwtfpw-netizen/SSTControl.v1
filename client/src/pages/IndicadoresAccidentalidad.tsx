@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { BarChart3, Plus, Edit, Trash2, TrendingUp, ArrowLeft, Calculator, FileText, Save, Calendar, Sparkles } from "lucide-react";
+import { BarChart3, Plus, Edit, Trash2, TrendingUp, ArrowLeft, Calculator, FileText, Save, Calendar, Sparkles, CalendarDays } from "lucide-react";
 import type { AccidentStatistics } from "@shared/schema";
 
 const TREND_ANALYSIS_OPTIONS = [
@@ -90,6 +90,19 @@ export default function IndicadoresAccidentalidad() {
   const { selectedCompany, isLoading: isCompanyLoading } = useCompanyContext();
   const [, navigate] = useLocation();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
+  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedId = localStorage.getItem("lastPlanTrabajoId");
+    const savedMes = localStorage.getItem("lastCronogramaMes");
+    if (savedId) {
+      setLastPlanTrabajoId(savedId);
+    }
+    if (savedMes) {
+      setLastCronogramaMes(savedMes);
+    }
+  }, []);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
@@ -262,6 +275,27 @@ export default function IndicadoresAccidentalidad() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
+      <div className="flex justify-end">
+        {lastPlanTrabajoId ? (
+          <Link 
+            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
+            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
+            data-testid="link-volver-cronograma"
+          >
+            Volver al cronograma
+            <CalendarDays className="h-4 w-4" />
+          </Link>
+        ) : (
+          <Link 
+            href="/planes-trabajo-anual" 
+            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
+            data-testid="link-volver-cronograma"
+          >
+            Volver al Plan Anual
+            <CalendarDays className="h-4 w-4" />
+          </Link>
+        )}
+      </div>
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/evaluaciones-sst")} data-testid="button-back">

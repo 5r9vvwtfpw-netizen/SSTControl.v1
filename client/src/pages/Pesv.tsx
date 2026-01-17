@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,10 +7,24 @@ import { Link } from "wouter";
 import { 
   Car, Users, ClipboardCheck, AlertTriangle, 
   GraduationCap, FileCheck, TrendingUp, TrendingDown,
-  Activity
+  Activity, CalendarDays
 } from "lucide-react";
 
 export default function Pesv() {
+  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
+  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedId = localStorage.getItem("lastPlanTrabajoId");
+    const savedMes = localStorage.getItem("lastCronogramaMes");
+    if (savedId) {
+      setLastPlanTrabajoId(savedId);
+    }
+    if (savedMes) {
+      setLastCronogramaMes(savedMes);
+    }
+  }, []);
+
   const { data: vehicles } = useQuery({ queryKey: ["/api/vehicles"] });
   const { data: drivers } = useQuery({ queryKey: ["/api/drivers"] });
   const { data: inspections } = useQuery({ queryKey: ["/api/vehicle-inspections"] });
@@ -42,6 +57,27 @@ export default function Pesv() {
 
   return (
     <div className="p-6 space-y-6">
+      <div className="flex justify-end mb-2">
+        {lastPlanTrabajoId ? (
+          <Link 
+            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
+            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
+            data-testid="link-volver-cronograma"
+          >
+            Volver al cronograma
+            <CalendarDays className="h-4 w-4" />
+          </Link>
+        ) : (
+          <Link 
+            href="/planes-trabajo-anual" 
+            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
+            data-testid="link-volver-cronograma"
+          >
+            Volver al Plan Anual
+            <CalendarDays className="h-4 w-4" />
+          </Link>
+        )}
+      </div>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold" data-testid="text-pesv-title">Plan Estratégico de Seguridad Vial (PESV)</h1>

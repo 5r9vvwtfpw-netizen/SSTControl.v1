@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertSstDocumentSchema, type SstDocument, type InsertSstDocument, type SstDocumentVersion, type SstDocumentAccessLog, type CambioSst } from "@shared/schema";
-import { Plus, FileText, Search, Filter, Edit, Trash2, Eye, History, Clock, AlertCircle, CheckCircle2, FileWarning, Archive, XCircle, Calendar, Download, ArrowLeft, Wand2, FileCheck, Users, UserCheck } from "lucide-react";
+import { Plus, FileText, Search, Filter, Edit, Trash2, Eye, History, Clock, AlertCircle, CheckCircle2, FileWarning, Archive, XCircle, Calendar, Download, ArrowLeft, Wand2, FileCheck, Users, UserCheck, CalendarDays } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -358,6 +358,19 @@ function DocumentAcknowledgmentsTab({ documentId }: { documentId: string }) {
 export default function ConservacionDocumentos() {
   const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
+  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedId = localStorage.getItem("lastPlanTrabajoId");
+    const savedMes = localStorage.getItem("lastCronogramaMes");
+    if (savedId) {
+      setLastPlanTrabajoId(savedId);
+    }
+    if (savedMes) {
+      setLastCronogramaMes(savedMes);
+    }
+  }, []);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedPhva, setSelectedPhva] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -601,6 +614,27 @@ export default function ConservacionDocumentos() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        {lastPlanTrabajoId ? (
+          <Link 
+            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
+            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
+            data-testid="link-volver-cronograma"
+          >
+            Volver al cronograma
+            <CalendarDays className="h-4 w-4" />
+          </Link>
+        ) : (
+          <Link 
+            href="/planes-trabajo-anual" 
+            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
+            data-testid="link-volver-cronograma"
+          >
+            Volver al Plan Anual
+            <CalendarDays className="h-4 w-4" />
+          </Link>
+        )}
+      </div>
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <Button 

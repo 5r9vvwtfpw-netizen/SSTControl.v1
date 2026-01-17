@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,7 +21,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
   Plus, Edit, Trash2, Calendar, FileText, Download, Search, Filter, 
   ChevronDown, ChevronUp, AlertTriangle, Clock, UserMinus, Activity,
-  TrendingDown, Briefcase, Heart, Baby, Home
+  TrendingDown, Briefcase, Heart, Baby, Home, CalendarDays
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
 import type { WorkerAbsence, Worker, Accident } from "@shared/schema";
@@ -74,6 +75,19 @@ export default function AusentismoLaboral() {
   const { user } = useAuth();
   const { selectedCompany, isLoading: isCompanyLoading } = useCompanyContext();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
+  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedId = localStorage.getItem("lastPlanTrabajoId");
+    const savedMes = localStorage.getItem("lastCronogramaMes");
+    if (savedId) {
+      setLastPlanTrabajoId(savedId);
+    }
+    if (savedMes) {
+      setLastCronogramaMes(savedMes);
+    }
+  }, []);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("todos");
@@ -321,6 +335,27 @@ export default function AusentismoLaboral() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
+      <div className="flex justify-end">
+        {lastPlanTrabajoId ? (
+          <Link 
+            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
+            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
+            data-testid="link-volver-cronograma"
+          >
+            Volver al cronograma
+            <CalendarDays className="h-4 w-4" />
+          </Link>
+        ) : (
+          <Link 
+            href="/planes-trabajo-anual" 
+            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
+            data-testid="link-volver-cronograma"
+          >
+            Volver al Plan Anual
+            <CalendarDays className="h-4 w-4" />
+          </Link>
+        )}
+      </div>
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
