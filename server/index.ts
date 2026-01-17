@@ -76,61 +76,94 @@ app.post(
       switch (event.type) {
         case 'checkout.session.completed':
           const session = event.data.object;
-          logger.info({ sessionId: session.id, metadata: session.metadata }, 'Checkout session completed');
+          logger.info({ sessionId: session.id, metadata: session.metadata, paymentStatus: session.payment_status }, 'Checkout session completed');
           
-          // Process contract acceptance data if present (Ley 527/1999)
-          if (session.metadata?.contractAccepted === 'true' && session.metadata?.companyId) {
-            const companyId = session.metadata.companyId;
-            
-            // Parse and validate contract data
-            let parsedContractData = null;
-            try {
-              if (session.metadata.contractData) {
-                const parsed = JSON.parse(session.metadata.contractData);
-                // Validate required boolean fields
-                parsedContractData = {
-                  acceptedTerms: Boolean(parsed.acceptedTerms),
-                  acceptedDataTreatment: Boolean(parsed.acceptedDataTreatment),
-                  acceptedAutoRenewal: Boolean(parsed.acceptedAutoRenewal),
-                  planName: String(parsed.planName || '')
-                };
-              }
-            } catch (parseError) {
-              logger.error({ err: parseError, raw: session.metadata.contractData }, 'Error parsing contract data JSON');
-            }
-            
-            const contractUpdate = {
-              contractAcceptedAt: session.metadata.contractAcceptedAt ? new Date(session.metadata.contractAcceptedAt) : new Date(),
-              contractTermsVersion: session.metadata.contractTermsVersion || '1.0',
-              contractData: parsedContractData
-            };
-            
+          // Get companyId from metadata
+          const companyId = session.metadata?.companyId;
+          
+          if (companyId && session.payment_status === 'paid') {
             // Retry logic: subscription might not exist immediately after checkout
-            const maxRetries = 3;
+            const maxRetries = 5;
             const retryDelay = 2000; // 2 seconds
             
             for (let attempt = 1; attempt <= maxRetries; attempt++) {
               try {
                 const subscription = await storage.getSubscriptionByCompany(companyId);
                 if (subscription) {
-                  await storage.updateSubscription(subscription.id, contractUpdate);
+                  // Calculate next billing date (1 month from now)
+                  const now = new Date();
+                  const nextBillingDate = new Date(now);
+                  nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+                  
+                  // Build update object
+                  const existingMetadata = subscription.metadata || {};
+                  const updateData: any = {
+                    status: 'active',
+                    currentPeriodStart: now,
+                    currentPeriodEnd: nextBillingDate,
+                    trialEnd: null, // Clear trial
+                    lastPaymentDate: now,
+                    nextPaymentDate: nextBillingDate,
+                    metadata: {
+                      ...existingMetadata,
+                      stripeCustomerId: session.customer as string,
+                      stripeSessionId: session.id,
+                      lastPaymentAmount: session.amount_total ? session.amount_total / 100 : 0
+                    }
+                  };
+                  
+                  // Process contract acceptance data if present (Ley 527/1999)
+                  if (session.metadata?.contractAccepted === 'true') {
+                    let parsedContractData = null;
+                    try {
+                      if (session.metadata.contractData) {
+                        const parsed = JSON.parse(session.metadata.contractData);
+                        parsedContractData = {
+                          acceptedTerms: Boolean(parsed.acceptedTerms),
+                          acceptedDataTreatment: Boolean(parsed.acceptedDataTreatment),
+                          acceptedAutoRenewal: Boolean(parsed.acceptedAutoRenewal),
+                          planName: String(parsed.planName || '')
+                        };
+                      }
+                    } catch (parseError) {
+                      logger.error({ err: parseError }, 'Error parsing contract data JSON');
+                    }
+                    
+                    updateData.contractAcceptedAt = session.metadata.contractAcceptedAt ? new Date(session.metadata.contractAcceptedAt) : now;
+                    updateData.contractTermsVersion = session.metadata.contractTermsVersion || '1.0';
+                    updateData.contractData = parsedContractData;
+                  }
+                  
+                  await storage.updateSubscription(subscription.id, updateData);
+                  
+                  const plan = await storage.getSubscriptionPlan(subscription.planId);
+                  const amountPaid = session.amount_total ? session.amount_total / 100 : 0;
+                  
                   logger.info({ 
                     subscriptionId: subscription.id, 
                     companyId,
+                    planName: plan?.name,
+                    status: 'active',
+                    amountPaid,
+                    currency: 'USD',
+                    stripeSessionId: session.id,
+                    stripeCustomerId: session.customer,
                     attempt 
-                  }, 'Contract acceptance stored in subscription');
+                  }, 'Subscription activated after successful payment');
                   break;
                 } else if (attempt < maxRetries) {
                   logger.info({ companyId, attempt, maxRetries }, 'Subscription not found, retrying...');
                   await new Promise(resolve => setTimeout(resolve, retryDelay));
                 } else {
-                  logger.warn({ companyId }, 'Subscription not found after max retries - contract data may need manual update');
+                  logger.warn({ companyId }, 'Subscription not found after max retries');
                 }
-              } catch (contractError) {
-                logger.error({ err: contractError, companyId, attempt }, 'Error storing contract acceptance data');
+              } catch (updateError) {
+                logger.error({ err: updateError, companyId, attempt }, 'Error activating subscription');
                 if (attempt === maxRetries) break;
               }
             }
+          } else {
+            logger.info({ companyId, paymentStatus: session.payment_status }, 'Checkout completed but payment not confirmed or missing companyId');
           }
           break;
         case 'customer.subscription.created':
