@@ -49,35 +49,37 @@ export function TrialAlert() {
 
     setIsActivating(true);
     try {
-      const response = await apiRequest(
+      const res = await apiRequest(
         "POST",
         `/api/billing/subscription/${subscriptionId}/activate`
-      ) as { paymentUrl?: string; error?: string; success?: boolean };
+      );
       
-      console.log("Activation response:", response);
+      const data = await res.json() as { paymentUrl?: string; error?: string; success?: boolean };
       
-      if (response.error) {
+      console.log("Activation response:", data);
+      
+      if (data.error) {
         toast({
           title: "Error",
-          description: response.error,
+          description: data.error,
           variant: "destructive",
         });
         return;
       }
       
-      if (response.paymentUrl) {
+      if (data.paymentUrl) {
         toast({
           title: "Redirigiendo a pasarela de pago",
           description: "Serás redirigido a Stripe para completar el pago...",
         });
         
         setTimeout(() => {
-          window.location.href = response.paymentUrl!;
+          window.location.href = data.paymentUrl!;
         }, 1000);
       } else {
         toast({
           title: "Error",
-          description: "No se pudo generar el enlace de pago. Respuesta: " + JSON.stringify(response),
+          description: "No se pudo generar el enlace de pago",
           variant: "destructive",
         });
       }
