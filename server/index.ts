@@ -150,6 +150,56 @@ app.post(
                     stripeCustomerId: session.customer,
                     attempt 
                   }, 'Subscription activated after successful payment');
+                  
+                  // Create invoice for this payment
+                  try {
+                    const company = await storage.getCompany(companyId);
+                    if (company && plan) {
+                      const invoiceNumber = await storage.getNextInvoiceNumber();
+                      const priceInCentavos = plan.priceMonthly;
+                      const taxRate = 0.19; // 19% IVA Colombia
+                      const subtotal = Math.round(priceInCentavos / (1 + taxRate));
+                      const taxAmount = priceInCentavos - subtotal;
+                      
+                      const lineItems = JSON.stringify([{
+                        description: `Suscripción ${plan.displayName || plan.name} - Mensual`,
+                        quantity: 1,
+                        unitPrice: priceInCentavos,
+                        total: priceInCentavos
+                      }]);
+                      
+                      const invoice = await storage.createInvoice({
+                        companyId,
+                        subscriptionId: subscription.id,
+                        invoiceNumber,
+                        status: 'paid',
+                        subtotal,
+                        taxAmount,
+                        total: priceInCentavos,
+                        currency: 'COP',
+                        periodStart: now,
+                        periodEnd: nextBillingDate,
+                        issueDate: now,
+                        dueDate: now,
+                        paidDate: now,
+                        customerName: company.name,
+                        customerNit: company.nit || 'N/A',
+                        customerEmail: company.contactEmail || '',
+                        customerAddress: company.address || '',
+                        lineItems
+                      });
+                      
+                      logger.info({ 
+                        invoiceId: invoice.id, 
+                        invoiceNumber,
+                        companyId,
+                        total: priceInCentavos
+                      }, 'Invoice created for payment');
+                    }
+                  } catch (invoiceError) {
+                    logger.error({ err: invoiceError, companyId }, 'Error creating invoice (non-critical)');
+                  }
+                  
                   break;
                 } else if (attempt < maxRetries) {
                   logger.info({ companyId, attempt, maxRetries }, 'Subscription not found, retrying...');
