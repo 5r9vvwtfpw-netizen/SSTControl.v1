@@ -5448,6 +5448,10 @@ export const subscriptions = pgTable("subscriptions", {
   companyId: varchar("company_id").notNull().references(() => companies.id).unique(), // One subscription per company
   planId: varchar("plan_id").notNull().references(() => subscriptionPlans.id),
   
+  // Worker limit purchased - cantidad de trabajadores que el cliente pagó
+  // Este campo limita cuántos trabajadores puede registrar (validado por checkWorkerLimit middleware)
+  workersPurchased: integer("workers_purchased").default(2), // Mínimo 2 para Microempresa
+  
   // Status
   status: subscriptionStatusEnum("status").notNull().default("trial"),
   

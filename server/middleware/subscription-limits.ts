@@ -156,8 +156,11 @@ async function getCompanyLimits(companyId: string): Promise<SubscriptionLimits> 
  * Middleware que verifica si la operación excede el límite de trabajadores
  * Usar ANTES de crear un nuevo trabajador
  * 
- * IMPORTANTE: Este middleware debe ejecutarse DESPUÉS de validar req.body
- * para poder extraer el companyId correcto del payload validado
+ * IMPORTANTE: Valida contra workersPurchased (cantidad que el cliente pagó)
+ * NO contra plan.maxWorkers (límite máximo teórico del plan)
+ * 
+ * Ejemplo: Plan Microempresa permite hasta 10, pero si el cliente pagó por 2,
+ * solo puede registrar 2 trabajadores.
  */
 export function checkWorkerLimit() {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -189,11 +192,32 @@ export function checkWorkerLimit() {
         targetCompanyId = userCompanyId;
       }
 
-      // Obtener límites del plan de la empresa objetivo
-      const limits = await getCompanyLimits(targetCompanyId);
+      // Obtener suscripción activa de la empresa para verificar workersPurchased
+      const subscription = await storage.getSubscriptionByCompany(targetCompanyId);
+      
+      // Determinar el límite real de trabajadores:
+      // 1. PRIORIDAD: subscription.workersPurchased (cantidad que el cliente PAGÓ)
+      // 2. FALLBACK: plan.maxWorkers (para suscripciones antiguas sin workersPurchased)
+      let workerLimit: number | null = null;
+      
+      if (subscription && (subscription.status === 'active' || subscription.status === 'trial')) {
+        // Si tiene workersPurchased definido, usar ese límite
+        if (subscription.workersPurchased && subscription.workersPurchased > 0) {
+          workerLimit = subscription.workersPurchased;
+        } else {
+          // Fallback: obtener límite del plan (para suscripciones sin workersPurchased)
+          const plan = await storage.getSubscriptionPlan(subscription.planId);
+          if (plan) {
+            workerLimit = plan.maxWorkers === -1 ? null : plan.maxWorkers;
+          }
+        }
+      } else {
+        // Sin suscripción válida: usar límites por defecto del Plan Esencial
+        workerLimit = DEFAULT_ESENCIAL_LIMITS.maxWorkers;
+      }
 
       // Si el plan permite trabajadores ilimitados, continuar
-      if (limits.maxWorkers === null) {
+      if (workerLimit === null) {
         return next();
       }
 
@@ -204,12 +228,12 @@ export function checkWorkerLimit() {
       );
 
       // Verificar si se excedería el límite al agregar un nuevo trabajador
-      if (activeWorkers.length >= limits.maxWorkers) {
+      if (activeWorkers.length >= workerLimit) {
         return res.status(403).json({
           error: "Límite de trabajadores alcanzado",
-          message: `El plan actual permite hasta ${limits.maxWorkers} ${limits.maxWorkers === 1 ? 'trabajador' : 'trabajadores'}. Actualiza tu plan para añadir más trabajadores.`,
+          message: `Tu suscripción permite hasta ${workerLimit} ${workerLimit === 1 ? 'trabajador' : 'trabajadores'}. Para registrar más trabajadores, actualiza tu plan o aumenta la cantidad de licencias.`,
           currentCount: activeWorkers.length,
-          limit: limits.maxWorkers,
+          limit: workerLimit,
           upgradeRequired: true
         });
       }
