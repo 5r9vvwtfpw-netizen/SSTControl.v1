@@ -49,14 +49,16 @@ type SubscriptionPlan = {
 };
 
 type Invoice = {
-  id: number;
+  id: string;
   invoiceNumber: string;
-  amount: number;
+  subtotal: number;
+  taxAmount: number;
+  total: number;
   currency: string;
   status: string;
-  issuedAt: string;
+  issueDate: string;
   dueDate: string;
-  paidAt: string | null;
+  paidDate: string | null;
 };
 
 type MySubscriptionResponse = {
@@ -208,7 +210,7 @@ export default function MiCuenta() {
     return <Badge variant={config.variant} data-testid={`badge-invoice-status-${status}`}>{config.label}</Badge>;
   };
 
-  const handleDownloadInvoice = (invoiceId: number, invoiceNumber: string) => {
+  const handleDownloadInvoice = (invoiceId: string, invoiceNumber: string) => {
     const link = document.createElement('a');
     link.href = `/api/billing/invoice/${invoiceId}/download`;
     link.download = `Factura-${invoiceNumber}.pdf`;
@@ -662,11 +664,11 @@ export default function MiCuenta() {
                             {invoice.invoiceNumber}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            Emitida: {formatDate(invoice.issuedAt)}
+                            Emitida: {formatDate(invoice.issueDate)}
                           </p>
-                          {invoice.paidAt && (
+                          {invoice.paidDate && (
                             <p className="text-sm text-muted-foreground">
-                              Pagada: {formatDate(invoice.paidAt)}
+                              Pagada: {formatDate(invoice.paidDate)}
                             </p>
                           )}
                         </div>
@@ -674,7 +676,7 @@ export default function MiCuenta() {
                       <div className="flex items-center gap-4">
                         <div className="text-right">
                           <p className="text-lg font-bold" data-testid={`text-invoice-amount-${invoice.id}`}>
-                            {formatPrice(invoice.amount)}
+                            {formatPrice(invoice.total)}
                           </p>
                           {getInvoiceStatusBadge(invoice.status)}
                         </div>

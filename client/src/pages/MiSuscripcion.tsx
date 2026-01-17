@@ -83,14 +83,16 @@ type PlanChange = {
 };
 
 type Invoice = {
-  id: number;
+  id: string;
   invoiceNumber: string;
-  amount: number;
+  subtotal: number;
+  taxAmount: number;
+  total: number;
   currency: string;
   status: string;
-  issuedAt: string;
+  issueDate: string;
   dueDate: string;
-  paidAt: string | null;
+  paidDate: string | null;
 };
 
 type MySubscriptionResponse = {
@@ -281,7 +283,7 @@ export default function MiSuscripcion() {
     return <Badge variant={config.variant} data-testid={testId}>{config.label}</Badge>;
   };
 
-  const handleDownloadInvoice = (invoiceId: number, invoiceNumber: string) => {
+  const handleDownloadInvoice = (invoiceId: string, invoiceNumber: string) => {
     // Download PDF directly from backend
     const link = document.createElement('a');
     link.href = `/api/billing/invoice/${invoiceId}/download`;
@@ -524,18 +526,18 @@ export default function MiSuscripcion() {
                     </div>
                     <div className="flex gap-4 text-sm text-muted-foreground">
                       <span data-testid={`text-invoice-date-${invoice.id}`}>
-                        Emitida: {formatDate(invoice.issuedAt)}
+                        Emitida: {formatDate(invoice.issueDate)}
                       </span>
-                      {invoice.paidAt && (
+                      {invoice.paidDate && (
                         <span data-testid={`text-invoice-paid-${invoice.id}`}>
-                          Pagada: {formatDate(invoice.paidAt)}
+                          Pagada: {formatDate(invoice.paidDate)}
                         </span>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <p className="text-lg font-bold" data-testid={`text-invoice-amount-${invoice.id}`}>
-                      {formatPrice(invoice.amount)}
+                      {formatPrice(invoice.total)}
                     </p>
                     <Button
                       variant="outline"
