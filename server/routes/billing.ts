@@ -557,13 +557,16 @@ export function registerBillingRoutes(app: Express) {
    */
   app.post("/api/billing/subscription/:id/activate", subscriptionMutationLimiter, requireAuth, async (req, res) => {
     try {
+      console.log('[Billing] Starting subscription activation for:', req.params.id);
       const subscriptionId = req.params.id;
 
       // Get subscription to verify ownership
       const subscription = await storage.getSubscription(subscriptionId);
       if (!subscription) {
+        console.log('[Billing] Subscription not found:', subscriptionId);
         return res.status(404).json({ error: "Suscripción no encontrada" });
       }
+      console.log('[Billing] Found subscription:', subscription.id, 'planId:', subscription.planId);
 
       // Check permissions: admin or owner company
       const isAdmin = req.user!.role === 'admin';
@@ -576,14 +579,19 @@ export function registerBillingRoutes(app: Express) {
       // Get the current plan
       const plan = await storage.getSubscriptionPlan(subscription.planId);
       if (!plan) {
+        console.log('[Billing] Plan not found:', subscription.planId);
         return res.status(404).json({ error: "Plan de suscripción no encontrado" });
       }
+      console.log('[Billing] Found plan:', plan.name, 'price:', plan.priceMonthly);
 
       // Get company info
       const company = await storage.getCompany(subscription.companyId);
+      console.log('[Billing] Company:', company?.name);
       
       // Get Stripe client
+      console.log('[Billing] Getting Stripe client...');
       const stripe = await getUncachableStripeClient();
+      console.log('[Billing] Stripe client obtained');
       
       // Build Stripe Checkout session
       const baseUrl = process.env.REPLIT_DEV_DOMAIN 
@@ -598,48 +606,57 @@ export function registerBillingRoutes(app: Express) {
       const amountInCOP = plan.priceMonthly;
       const amountInUSDCents = Math.max(50, Math.round((amountInCOP / COP_TO_USD_RATE) * 100)); // Minimum 50 cents
       
-      const session = await stripe.checkout.sessions.create({
-        mode: 'payment',
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: `Suscripción ${plan.displayName || plan.name}`,
-                description: `Plan ${plan.displayName || plan.name} - Primer mes`,
-              },
-              unit_amount: amountInUSDCents,
-            },
-            quantity: 1,
-          },
-        ],
-        metadata: {
-          type: 'subscription_activation',
-          subscriptionId: subscriptionId,
-          planId: plan.id,
-          companyId: subscription.companyId,
-          companyName: company?.name || 'Unknown',
-          userId: req.user!.id,
-          amountChargedCOP: amountInCOP.toString(),
-          amountChargedUSD: amountInUSDCents.toString(),
-        },
-        success_url: `${baseUrl}/mi-cuenta?activation=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/mi-cuenta?activation=cancelled`,
-        customer_email: req.user!.email || undefined,
-      });
+      console.log('[Billing] Creating Stripe session. Amount:', amountInUSDCents, 'cents USD, baseUrl:', baseUrl);
       
-      return res.status(200).json({
-        success: true,
-        paymentUrl: session.url,
-        sessionId: session.id,
-        amount: amountInUSDCents,
-        amountCOP: amountInCOP,
-        planName: plan.displayName || plan.name,
-        message: 'Redirigiendo a pasarela de pago...',
-      });
+      try {
+        const session = await stripe.checkout.sessions.create({
+          mode: 'payment',
+          payment_method_types: ['card'],
+          line_items: [
+            {
+              price_data: {
+                currency: 'usd',
+                product_data: {
+                  name: `Suscripción ${plan.displayName || plan.name}`,
+                  description: `Plan ${plan.displayName || plan.name} - Primer mes`,
+                },
+                unit_amount: amountInUSDCents,
+              },
+              quantity: 1,
+            },
+          ],
+          metadata: {
+            type: 'subscription_activation',
+            subscriptionId: subscriptionId,
+            planId: plan.id,
+            companyId: subscription.companyId,
+            companyName: company?.name || 'Unknown',
+            userId: req.user!.id,
+            amountChargedCOP: amountInCOP.toString(),
+            amountChargedUSD: amountInUSDCents.toString(),
+          },
+          success_url: `${baseUrl}/mi-cuenta?activation=success&session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${baseUrl}/mi-cuenta?activation=cancelled`,
+          customer_email: req.user!.email || undefined,
+        });
+        
+        console.log('[Billing] Stripe session created successfully:', session.id, 'URL:', session.url);
+        
+        return res.status(200).json({
+          success: true,
+          paymentUrl: session.url,
+          sessionId: session.id,
+          amount: amountInUSDCents,
+          amountCOP: amountInCOP,
+          planName: plan.displayName || plan.name,
+          message: 'Redirigiendo a pasarela de pago...',
+        });
+      } catch (stripeError: any) {
+        console.error('[Billing] Stripe session creation failed:', stripeError.message, stripeError.type, stripeError.code);
+        return res.status(500).json({ error: `Error de Stripe: ${stripeError.message}` });
+      }
     } catch (error: any) {
-      console.error('Error activating subscription:', error);
+      console.error('[Billing] Error activating subscription:', error.message, error.stack);
       res.status(500).json({ error: error.message || "Error al activar suscripción" });
     }
   });
