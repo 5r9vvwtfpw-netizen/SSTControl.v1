@@ -73,31 +73,121 @@ const PROGRAMA_TO_ROUTE_MAP: Record<string, string | null> = {
 };
 
 // Mapa de palabras clave en el nombre de la actividad para determinar la ruta correcta
+// IMPORTANTE: El orden importa - las keywords más específicas deben ir primero
 const ACTIVIDAD_KEYWORD_ROUTES: { keywords: string[]; route: string }[] = [
-  { keywords: ["programa de capacitacion", "programa de capacitación", "programa capacitacion anual", "programa capacitación anual", "plan de capacitacion", "plan de capacitación", "cronograma de capacitacion", "cronograma de capacitación"], route: "/programa-capacitacion-anual" },
-  { keywords: ["50 horas", "curso virtual", "curso 50", "certificacion sst", "certificación sst"], route: "/curso-50-horas" },
-  { keywords: ["afiliacion", "afiliaciones", "ssss", "arl", "eps", "afp", "seguridad social"], route: "/afiliaciones-ssss" },
-  { keywords: ["designacion", "responsable", "sg-sst", "sgsst", "responsabilidades en sst", "documentacion de responsabilidades", "documentación de responsabilidades"], route: "/designacion-responsable" },
-  { keywords: ["accidente", "accidentes", "at", "incidente", "accidentalidad", "registro estadistico", "registro estadístico"], route: "/accidentes" },
-  { keywords: ["investigacion", "investigación"], route: "/investigacion-accidentes" },
-  { keywords: ["epp", "proteccion personal", "protección personal", "elementos de proteccion", "entrega epp", "dotacion", "dotación"], route: "/entrega-epp" },
-  { keywords: ["induccion", "inducción", "reinduccion", "reinducción"], route: "/registros-induccion" },
-  { keywords: ["examen", "examenes", "exámenes", "medico", "médico", "ocupacional"], route: "/examenes-medicos" },
-  { keywords: ["iperc", "peligro", "peligros", "riesgo", "riesgos", "matriz"], route: "/iperc" },
-  { keywords: ["capacitacion", "capacitación", "formacion", "formación", "entrenamiento"], route: "/capacitaciones" },
-  { keywords: ["inspeccion", "inspección", "inspecciones"], route: "/inspecciones" },
-  { keywords: ["emergencia", "emergencias", "evacuacion", "evacuación", "brigada"], route: "/plan-emergencias" },
-  { keywords: ["copasst", "vigia", "vigía", "comite", "comité"], route: "/copasst-gestion" },
-  { keywords: ["auditoria", "auditoría", "auditorias", "auditorías"], route: "/auditorias-internas" },
-  { keywords: ["politica", "política", "politicas", "políticas"], route: "/politicas-sst" },
-  { keywords: ["plan anual", "plan de trabajo", "elaboracion plan", "elaboración plan", "actualizacion plan", "actualización plan"], route: "/planes-trabajo-anual" },
-  { keywords: ["indicador", "indicadores", "estadistica", "estadísticas"], route: "/indicadores-sst" },
-  { keywords: ["objetivo", "objetivos"], route: "/objetivos-sst" },
-  { keywords: ["documento", "documentos", "conservacion", "conservación"], route: "/conservacion-documentos" },
-  { keywords: ["ausentismo", "incapacidad", "incapacidades"], route: "/ausentismo-laboral" },
-  { keywords: ["sociodemografico", "sociodemográfico", "perfil"], route: "/perfil-sociodemografico" },
-  { keywords: ["recursos", "asignacion de recursos", "asignación de recursos", "presupuesto", "recursos sst"], route: "/asignacion-recursos" },
-  { keywords: ["revision por la direccion", "revisión por la dirección", "revision gerencial", "revisión gerencial", "revision direccion", "revisión dirección"], route: "/revision-direccion" },
+  // Programa de capacitación (específico, debe ir antes de "capacitacion" genérico)
+  { keywords: ["programa de capacitacion", "programa de capacitación", "programa capacitacion anual", "programa capacitación anual", "plan de capacitacion", "plan de capacitación", "cronograma de capacitacion", "cronograma de capacitación", "diseño del programa de capacitacion", "diseño del programa de capacitación"], route: "/programa-capacitacion-anual" },
+  
+  // Curso 50 horas (específico)
+  { keywords: ["50 horas", "curso virtual", "curso 50", "certificacion sst", "certificación sst", "verificacion curso", "verificación curso", "verificar certificacion", "verificar certificación"], route: "/curso-50-horas" },
+  
+  // Afiliaciones SSSS
+  { keywords: ["afiliacion", "afiliaciones", "ssss", "arl", "eps", "afp", "seguridad social", "verificacion de afiliaciones", "verificación de afiliaciones"], route: "/afiliaciones-ssss" },
+  
+  // Designación y responsabilidades
+  { keywords: ["designacion", "designación", "responsable del sg-sst", "responsable del sgsst", "responsabilidades en sst", "responsabilidades especificas", "responsabilidades específicas", "documentacion de responsabilidades", "documentación de responsabilidades", "documentacion de la designacion", "documentación de la designación"], route: "/designacion-responsable" },
+  
+  // Investigación de accidentes (específico, antes de "accidente" genérico)
+  { keywords: ["investigacion de incidentes", "investigación de incidentes", "investigacion de accidentes", "investigación de accidentes", "instructivo para investigacion", "instructivo para investigación"], route: "/investigacion-accidentes" },
+  
+  // Accidentes y reporte
+  { keywords: ["accidente", "accidentes", "at y el", "incidente", "accidentalidad", "registro estadistico", "registro estadístico", "reporte de accidentes", "enfermedad laboral", "instructivo para reporte"], route: "/accidentes" },
+  
+  // EPP
+  { keywords: ["epp", "proteccion personal", "protección personal", "elementos de proteccion", "elementos de protección", "entrega de epp", "entrega y registro de epp", "entrega y capacitacion en epp", "entrega y capacitación en epp", "dotacion", "dotación", "matriz de epp", "inspecciones de epp"], route: "/entrega-epp" },
+  
+  // Inducción
+  { keywords: ["induccion", "inducción", "reinduccion", "reinducción", "induccion y reinduccion", "inducción y reinducción"], route: "/registros-induccion" },
+  
+  // Exámenes médicos
+  { keywords: ["examen", "examenes", "exámenes", "medico ocupacional", "médico ocupacional", "ocupacionales", "profesiograma", "programacion evaluaciones medicas", "programación evaluaciones médicas", "seguimiento de examenes", "seguimiento de exámenes", "historias clinicas ocupacionales", "historias clínicas ocupacionales", "restricciones y recomendaciones medicas", "restricciones y recomendaciones médicas"], route: "/examenes-medicos" },
+  
+  // IPERC y matriz de riesgos
+  { keywords: ["iperc", "matriz iperc", "actualizacion de la matriz iperc", "actualización de la matriz iperc", "elaboracion/actualizacion matriz iperc", "elaboración/actualización matriz iperc", "identificacion de peligros", "identificación de peligros", "evaluacion de riesgos", "evaluación de riesgos"], route: "/iperc" },
+  
+  // Capacitaciones genéricas
+  { keywords: ["capacitacion", "capacitación", "formacion", "formación", "entrenamiento", "capacitacion a brigada", "capacitación a brigada", "capacitacion a miembros", "capacitación a miembros", "capacitacion al comite", "capacitación al comité"], route: "/capacitaciones" },
+  
+  // Inspecciones
+  { keywords: ["inspeccion", "inspección", "inspecciones", "inspecciones de seguridad", "botiquines", "primeros auxilios", "extintores", "redes contra incendio", "señalizacion", "señalización", "demarcacion", "demarcación", "actos y condiciones inseguras", "programa de inspecciones", "diseño del programa de inspecciones"], route: "/inspecciones" },
+  
+  // Plan de emergencias
+  { keywords: ["emergencia", "emergencias", "evacuacion", "evacuación", "brigada de emergencias", "brigadas de emergencias", "conformacion de brigada", "conformación de brigada", "dotacion de brigadas", "dotación de brigadas", "simulacro", "simulacros", "plan de emergencias", "actualizacion plan de emergencias", "actualización plan de emergencias", "plan de prevencion y respuesta", "plan de prevención y respuesta", "mapa de riesgo", "analisis de vulnerabilidad", "análisis de vulnerabilidad"], route: "/plan-emergencias" },
+  
+  // COPASST y reuniones
+  { keywords: ["copasst", "vigia", "vigía", "conformacion del copasst", "conformación del copasst", "conformacion/renovacion del copasst", "conformación/renovación del copasst", "reuniones mensuales del copasst", "actas de reuniones mensuales del copasst", "verificar certificacion de miembros copasst", "verificar certificación de miembros copasst"], route: "/copasst-gestion" },
+  
+  // Comité de Convivencia Laboral
+  { keywords: ["convivencia laboral", "ccl", "comite de convivencia", "comité de convivencia", "reuniones trimestrales del ccl", "actas de reuniones del comite de convivencia", "actas de reuniones del comité de convivencia", "conformacion del comite de convivencia", "conformación del comité de convivencia"], route: "/comite-convivencia" },
+  
+  // Auditorías
+  { keywords: ["auditoria", "auditoría", "auditorias", "auditorías", "auditoria interna", "auditoría interna", "planificacion del programa de auditoria", "planificación del programa de auditoría"], route: "/auditorias-internas" },
+  
+  // Políticas SST
+  { keywords: ["politica", "política", "politicas", "políticas", "publicacion y socializacion de la politica", "publicación y socialización de la política", "reglamento de higiene", "reglamento de higiene y seguridad industrial"], route: "/politicas-sst" },
+  
+  // Plan anual de trabajo
+  { keywords: ["plan anual", "plan de trabajo", "elaboracion plan", "elaboración plan", "actualizacion plan", "actualización plan", "elaboracion/actualizacion plan anual", "elaboración/actualización plan anual", "seguimiento a programas del sg-sst"], route: "/planes-trabajo-anual" },
+  
+  // Indicadores SST
+  { keywords: ["indicador", "indicadores", "definicion de indicadores", "definición de indicadores", "seguimiento de indicadores", "indicadores de estructura", "indicadores de proceso", "indicadores de resultado", "analisis de tendencias", "análisis de tendencias"], route: "/indicadores-sst" },
+  
+  // Objetivos SST
+  { keywords: ["objetivo", "objetivos", "definicion de objetivos", "definición de objetivos", "objetivos sst"], route: "/objetivos-sst" },
+  
+  // Conservación de documentos
+  { keywords: ["documento", "documentos", "conservacion", "conservación", "retencion documental", "retención documental", "archivo", "tabla de retencion", "tabla de retención", "inclusion del sg-sst en la tabla", "inclusión del sg-sst en la tabla", "revision de archivo", "revisión de archivo"], route: "/conservacion-documentos" },
+  
+  // Ausentismo
+  { keywords: ["ausentismo", "incapacidad", "incapacidades", "registro y seguimiento de ausentismo", "seguimiento y analisis del ausentismo", "seguimiento y análisis del ausentismo", "medicion y analisis del ausentismo", "medición y análisis del ausentismo"], route: "/ausentismo-laboral" },
+  
+  // Perfil sociodemográfico
+  { keywords: ["sociodemografico", "sociodemográfico", "descripcion sociodemografica", "descripción sociodemográfica", "actualizacion del perfil sociodemografico", "actualización del perfil sociodemográfico", "caracterizacion de condiciones de salud", "caracterización de condiciones de salud"], route: "/perfil-sociodemografico" },
+  
+  // Asignación de recursos
+  { keywords: ["recursos", "asignacion de recursos", "asignación de recursos", "presupuesto", "recursos para sst", "recursos humanos", "recursos tecnicos", "recursos técnicos", "recursos financieros"], route: "/asignacion-recursos" },
+  
+  // Revisión por la dirección
+  { keywords: ["revision por la direccion", "revisión por la dirección", "revision gerencial", "revisión gerencial", "revision por la alta direccion", "revisión por la alta dirección", "alta direccion", "alta dirección"], route: "/revision-direccion" },
+  
+  // Plan de mejoramiento y acciones correctivas
+  { keywords: ["mejoramiento", "mejora continua", "acciones correctivas", "acciones preventivas", "acciones de mejora", "seguimiento a acciones correctivas", "seguimiento a acciones preventivas", "plan de mejoramiento"], route: "/plan-mejoramiento" },
+  
+  // Matriz legal
+  { keywords: ["matriz de requisitos legales", "requisitos legales", "actualizacion de matriz de requisitos", "actualización de matriz de requisitos", "matriz legal"], route: "/matriz-legal" },
+  
+  // Perfiles de cargo
+  { keywords: ["perfiles de cargo", "actualizacion de perfiles de cargo", "actualización de perfiles de cargo"], route: "/perfiles-cargo" },
+  
+  // Procedimientos de trabajo seguro
+  { keywords: ["procedimientos de trabajo seguro", "actualizacion de procedimientos", "actualización de procedimientos", "procedimiento del sg-sst", "diseño del procedimiento"], route: "/procedimientos-trabajo-seguro" },
+  
+  // Comunicación SST
+  { keywords: ["comunicacion", "comunicación", "comunicaciones sst", "plan de comunicaciones", "mecanismos de comunicacion", "mecanismos de comunicación", "diseño e implementacion del plan de comunicaciones", "diseño e implementación del plan de comunicaciones"], route: "/comunicacion-sst" },
+  
+  // Evaluación inicial del SG-SST
+  { keywords: ["evaluacion inicial", "evaluación inicial", "autoevaluacion de estandares", "autoevaluación de estándares", "estandares minimos", "estándares mínimos", "resolucion 0312", "resolución 0312", "aplicacion de estandares minimos", "aplicación de estándares mínimos"], route: "/evaluaciones-sst" },
+  
+  // Gestión del cambio
+  { keywords: ["gestion del cambio", "gestión del cambio", "procedimiento de gestion del cambio", "procedimiento de gestión del cambio", "implementar cambio"], route: "/gestion-cambios" },
+  
+  // Evaluación de proveedores
+  { keywords: ["proveedores", "contratistas", "evaluacion y seleccion de proveedores", "evaluación y selección de proveedores", "procedimiento de evaluacion y seleccion", "procedimiento de evaluación y selección"], route: "/evaluacion-proveedores" },
+  
+  // Adquisiciones SST
+  { keywords: ["compras", "adquisiciones", "procedimiento de compras", "compras con criterios sst"], route: "/adquisiciones-sst" },
+  
+  // Vigilancia epidemiológica
+  { keywords: ["vigilancia epidemiologica", "vigilancia epidemiológica", "sve", "sistema de vigilancia", "implementacion del sve", "implementación del sve", "programa de vigilancia"], route: "/vigilancia-epidemiologica" },
+  
+  // Estilos de vida saludable
+  { keywords: ["estilos de vida saludable", "promocion y prevencion en salud", "promoción y prevención en salud", "actividades de promocion", "actividades de promoción"], route: "/estilos-vida-saludable" },
+  
+  // Higiene y seguridad (genérico para los que no tienen ruta específica)
+  { keywords: ["control de plagas", "fumigacion", "fumigación", "agua potable", "servicios sanitarios", "mediciones ambientales", "ruido", "iluminacion", "iluminación", "manejo de residuos", "residuos", "controles de riesgos", "implementacion de controles", "implementación de controles"], route: "/higiene-seguridad" },
+  
+  // Mantenimiento
+  { keywords: ["mantenimiento preventivo", "programa de mantenimiento"], route: "/mantenimiento-preventivo" },
 ];
 
 function getRouteForActividad(actividad: string, programa: string): string | null {
