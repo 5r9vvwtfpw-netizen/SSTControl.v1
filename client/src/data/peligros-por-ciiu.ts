@@ -1022,6 +1022,78 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
     capacitacionesObligatorias: ['Operación de prensas', 'LOTO', 'Seguridad en máquinas', 'Primeros auxilios']
   },
 
+  {
+    codigoCIIU: '3250',
+    descripcionCIIU: 'Fabricación de instrumentos, aparatos y materiales médicos y odontológicos',
+    nivelRiesgo: 'III',
+    sector: 'Manufactura',
+    peligrosPrioritarios: ['BIO-001', 'BIO-002', 'QUI-001', 'QUI-003', 'SEG-005', 'FIS-006', 'BIO-MEC-001'],
+    peligrosEspecificos: [
+      {
+        codigo: 'MED-001',
+        clasificacion: 'biologico',
+        peligro: 'Contaminación con material biológico en pruebas',
+        descripcion: 'Contacto con sangre, fluidos corporales durante pruebas de calidad de dispositivos',
+        riesgoPotencial: 'Infección por patógenos',
+        efectosPosibles: 'Hepatitis B/C, VIH, infecciones bacterianas',
+        medidasControl: ['Guantes de nitrilo', 'Bata desechable', 'Gafas de seguridad', 'Protocolos de bioseguridad', 'Vacunación Hepatitis B']
+      },
+      {
+        codigo: 'MED-002',
+        clasificacion: 'quimico',
+        peligro: 'Exposición a óxido de etileno (esterilización)',
+        descripcion: 'Gas utilizado para esterilizar dispositivos médicos sensibles al calor',
+        riesgoPotencial: 'Intoxicación, efectos carcinogénicos',
+        efectosPosibles: 'Irritación respiratoria, náuseas, cáncer (exposición prolongada), efectos reproductivos',
+        medidasControl: ['Sistemas de esterilización cerrados', 'Monitores de gas', 'Ventilación con extracción', 'Respirador con filtros específicos', 'Límites de exposición ocupacional']
+      },
+      {
+        codigo: 'MED-003',
+        clasificacion: 'fisico',
+        peligro: 'Radiación ionizante en control de calidad',
+        descripcion: 'Uso de rayos X o gamma para inspección de dispositivos',
+        riesgoPotencial: 'Efectos de radiación',
+        efectosPosibles: 'Daño celular, cáncer, efectos en sistema reproductivo',
+        medidasControl: ['Blindaje de plomo', 'Dosímetros personales', 'Distancia y tiempo mínimo', 'Capacitación en radioprotección', 'Exámenes médicos periódicos']
+      },
+      {
+        codigo: 'MED-004',
+        clasificacion: 'condiciones_seguridad',
+        peligro: 'Cortes con instrumentos quirúrgicos en fabricación',
+        descripcion: 'Manipulación de bisturíes, agujas, implantes cortantes durante ensamble',
+        riesgoPotencial: 'Laceraciones, heridas punzantes',
+        efectosPosibles: 'Cortes profundos, heridas punzantes, riesgo de infección',
+        medidasControl: ['Guantes anticorte nivel 5', 'Pinzas de manipulación', 'Contenedores para cortopunzantes', 'Capacitación en manipulación segura']
+      },
+      {
+        codigo: 'MED-005',
+        clasificacion: 'quimico',
+        peligro: 'Adhesivos y resinas para dispositivos',
+        descripcion: 'Uso de cianoacrilatos, resinas epoxi y siliconas médicas',
+        riesgoPotencial: 'Sensibilización cutánea y respiratoria',
+        efectosPosibles: 'Dermatitis de contacto, asma ocupacional, irritación ocular',
+        medidasControl: ['Ventilación localizada', 'Guantes de nitrilo', 'Gafas de seguridad', 'Rotación de tareas', 'Productos de baja emisión de VOC']
+      },
+      {
+        codigo: 'MED-006',
+        clasificacion: 'biomecanico',
+        peligro: 'Trabajo de precisión bajo microscopio',
+        descripcion: 'Ensamble de microcomponentes con visión forzada y postura estática',
+        riesgoPotencial: 'Fatiga visual y músculo-esquelética',
+        efectosPosibles: 'Síndrome de visión por computador, cervicalgia, tendinitis',
+        medidasControl: ['Microscopios ergonómicos', 'Pausas visuales cada 20 min', 'Iluminación adecuada', 'Sillas ajustables', 'Ejercicios de estiramiento']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-4725-2005', norma: 'Decreto 4725/2005', descripcion: 'Régimen de registros sanitarios de dispositivos médicos', obligatorio: true },
+      { codigo: 'RES-4002-2007', norma: 'Resolución 4002/2007', descripcion: 'Buenas Prácticas de Manufactura para dispositivos médicos', obligatorio: true },
+      { codigo: 'RES-2400-1979', norma: 'Resolución 2400/1979', descripcion: 'Estatuto de Seguridad Industrial', obligatorio: true },
+      { codigo: 'ISO-13485', norma: 'ISO 13485:2016', descripcion: 'Sistema de gestión de calidad para dispositivos médicos', obligatorio: false }
+    ],
+    eppRecomendado: ['Guantes de nitrilo', 'Guantes anticorte', 'Gafas de seguridad', 'Bata de laboratorio', 'Cofia', 'Calzado cerrado', 'Respirador con filtros (según proceso)', 'Dosímetro (si aplica)'],
+    capacitacionesObligatorias: ['Bioseguridad', 'Buenas Prácticas de Manufactura', 'Manejo de sustancias químicas', 'Ergonomía', 'Uso de EPP', 'Radioprotección (si aplica)']
+  },
+
   // ==================== SECCIÓN D: ELECTRICIDAD ====================
   {
     codigoCIIU: '3511',
