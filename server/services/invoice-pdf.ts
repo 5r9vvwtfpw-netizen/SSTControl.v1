@@ -357,6 +357,38 @@ export class InvoicePdfService {
       { align: 'center' }
     );
     
+    // Provider contact information - All 5 emails
+    currentY += 10;
+    
+    doc.fontSize(7)
+       .fillColor('#888888')
+       .text(
+         'Soporte: soporte@sst-colombia.com | Facturación: facturacion@sst-colombia.com | Pagos: pagos@sst-colombia.com',
+         margin,
+         currentY,
+         { align: 'center' }
+       );
+    
+    currentY += 9;
+    
+    doc.text(
+      'Legal: legal@sst-colombia.com | Administración: admin@sst-colombia.com',
+      margin,
+      currentY,
+      { align: 'center' }
+    );
+    
+    currentY += 10;
+    
+    doc.fontSize(6)
+       .fillColor('#AAAAAA')
+       .text(
+         `© ${new Date().getFullYear()} SST Colombia S.A.S. - DNDA 13-197-177 - Todos los derechos reservados`,
+         margin,
+         currentY,
+         { align: 'center' }
+       );
+    
     // Finalize PDF
     doc.end();
 

@@ -28,6 +28,22 @@ export const PDF_COLORS = {
   GRAY_BORDER: '#dee2e6',
 };
 
+// Información de contacto del proveedor SST Colombia
+export const PROVIDER_CONTACT = {
+  name: 'SST Colombia S.A.S.',
+  nit: '901.234.567-8',
+  website: 'www.sst-colombia.com',
+  emails: {
+    admin: 'admin@sst-colombia.com',
+    billing: 'facturacion@sst-colombia.com',
+    legal: 'legal@sst-colombia.com',
+    payments: 'pagos@sst-colombia.com',
+    support: 'soporte@sst-colombia.com',
+  },
+  copyright: `© ${new Date().getFullYear()} SST Colombia S.A.S. - Todos los derechos reservados`,
+  dnda: 'DNDA 13-197-177',
+};
+
 // Configuración de página
 export const PDF_CONFIG = {
   MARGIN: 35,
@@ -408,6 +424,115 @@ export function addSignatureFooter(
       doc.fillColor(PDF_COLORS.BLACK);
     }
   }
+}
+
+/**
+ * Agrega footer con información de contacto del proveedor SST Colombia
+ * Incluye: emails de contacto, copyright y registro DNDA
+ * 
+ * Esta función agrega el footer en la posición ACTUAL del documento,
+ * no al final de la página. Debe llamarse ANTES de addSignatureFooter
+ * para evitar solapamientos.
+ */
+export function addProviderContactFooter(
+  doc: typeof PDFDocument.prototype,
+  options?: {
+    includeAllEmails?: boolean;
+    compact?: boolean;
+    atCurrentPosition?: boolean; // Si true, usa doc.y actual; si false, usa posición fija
+  }
+): number {
+  const margin = PDF_CONFIG.MARGIN;
+  const pageWidth = doc.page.width;
+  const pageHeight = doc.page.height;
+  const includeAll = options?.includeAllEmails ?? true;
+  const compact = options?.compact ?? false;
+  const atCurrentPosition = options?.atCurrentPosition ?? true;
+  
+  // Calcular altura del footer de contacto
+  const footerHeight = compact ? 20 : (includeAll ? 45 : 30);
+  
+  // Determinar posición Y: usar posición actual o parte inferior de la página
+  let footerY: number;
+  if (atCurrentPosition) {
+    // Verificar si hay espacio suficiente
+    const availableSpace = pageHeight - margin - doc.y;
+    if (availableSpace < footerHeight + 100) { // 100 para footer de firmas
+      doc.addPage();
+      footerY = margin + 20;
+    } else {
+      footerY = doc.y + 15;
+    }
+  } else {
+    footerY = pageHeight - margin - footerHeight - 80; // 80 para footer de firmas
+  }
+  
+  // Línea separadora
+  doc
+    .moveTo(margin, footerY)
+    .lineTo(pageWidth - margin, footerY)
+    .strokeColor(PDF_COLORS.GRAY_BORDER)
+    .stroke();
+  
+  const contentY = footerY + 5;
+  
+  if (compact) {
+    // Versión compacta: una línea
+    doc.fontSize(6).font('Helvetica').fillColor('#666666');
+    doc.text(
+      `${PROVIDER_CONTACT.name} | Soporte: ${PROVIDER_CONTACT.emails.support} | ${PROVIDER_CONTACT.copyright}`,
+      margin,
+      contentY,
+      { width: pageWidth - margin * 2, align: 'center' }
+    );
+  } else if (includeAll) {
+    // Versión completa con todos los emails
+    doc.fontSize(7).font('Helvetica-Bold').fillColor(PDF_COLORS.GREEN_PRIMARY);
+    doc.text('CONTACTO SST COLOMBIA', margin, contentY, { 
+      width: pageWidth - margin * 2, 
+      align: 'center' 
+    });
+    
+    doc.fontSize(6).font('Helvetica').fillColor('#666666');
+    const emailsLine1 = `Soporte: ${PROVIDER_CONTACT.emails.support} | Facturación: ${PROVIDER_CONTACT.emails.billing} | Pagos: ${PROVIDER_CONTACT.emails.payments}`;
+    const emailsLine2 = `Legal: ${PROVIDER_CONTACT.emails.legal} | Administración: ${PROVIDER_CONTACT.emails.admin}`;
+    
+    doc.text(emailsLine1, margin, contentY + 10, { 
+      width: pageWidth - margin * 2, 
+      align: 'center' 
+    });
+    doc.text(emailsLine2, margin, contentY + 19, { 
+      width: pageWidth - margin * 2, 
+      align: 'center' 
+    });
+    
+    doc.fontSize(5).fillColor('#999999');
+    doc.text(`${PROVIDER_CONTACT.copyright} | ${PROVIDER_CONTACT.dnda}`, margin, contentY + 30, { 
+      width: pageWidth - margin * 2, 
+      align: 'center' 
+    });
+  } else {
+    // Versión estándar: solo soporte y copyright
+    doc.fontSize(6).font('Helvetica').fillColor('#666666');
+    doc.text(
+      `Soporte Técnico: ${PROVIDER_CONTACT.emails.support}`,
+      margin,
+      contentY,
+      { width: pageWidth - margin * 2, align: 'center' }
+    );
+    doc.text(
+      `${PROVIDER_CONTACT.copyright} | ${PROVIDER_CONTACT.dnda}`,
+      margin,
+      contentY + 10,
+      { width: pageWidth - margin * 2, align: 'center' }
+    );
+  }
+  
+  doc.fillColor(PDF_COLORS.BLACK);
+  
+  // Actualizar doc.y para el siguiente elemento
+  doc.y = footerY + footerHeight + 5;
+  return doc.y;
 }
 
 /**

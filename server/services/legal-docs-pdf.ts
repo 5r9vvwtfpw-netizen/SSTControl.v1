@@ -10,7 +10,7 @@
  */
 
 import { PDFDocument } from 'pdf-lib-with-encrypt';
-import { addStandardHeader, addSignatureFooter, PdfSigners, loadCompanyLogo } from './pdf-standardizer';
+import { addStandardHeader, addSignatureFooter, addProviderContactFooter, PdfSigners, loadCompanyLogo } from './pdf-standardizer';
 
 /**
  * Apply PDF encryption to prevent copying text
@@ -465,6 +465,9 @@ export class LegalDocsPdfService {
     addTableRow('DPO', 'dpo@sstcolombia.com', '');
     addTableRow('Correo Privacidad', 'privacidad@sstcolombia.com', '');
 
+    // Add provider contact footer with all emails
+    addProviderContactFooter(doc, { includeAllEmails: true });
+
     // Add standardized signature footer (no LSO required)
     addSignatureFooter(doc, signers, false);
     
@@ -608,6 +611,9 @@ export class LegalDocsPdfService {
     }
 
     // Footer
+    // Add provider contact footer
+    addProviderContactFooter(doc, { includeAllEmails: true });
+
     // Add standardized signature footer (no LSO required)
     addSignatureFooter(doc, signers, false);
 
@@ -779,6 +785,9 @@ export class LegalDocsPdfService {
     }
 
     // Footer
+    // Add provider contact footer
+    addProviderContactFooter(doc, { includeAllEmails: true });
+
     // Add standardized signature footer (no LSO required)
     addSignatureFooter(doc, signers, false);
 
