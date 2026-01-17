@@ -454,18 +454,22 @@ export function registerBillingRoutes(app: Express) {
               ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
               : 'http://localhost:5000';
           
+          // Convert COP to USD cents
+          const COP_TO_USD_RATE = 4000;
+          const amountInUSDCents = Math.max(50, Math.round((quote.amountToCharge / COP_TO_USD_RATE) * 100));
+          
           const session = await stripe.checkout.sessions.create({
             mode: 'payment',
             payment_method_types: ['card'],
             line_items: [
               {
                 price_data: {
-                  currency: 'cop',
+                  currency: 'usd',
                   product_data: {
                     name: `Upgrade a ${quote.newPlan.displayName}`,
-                    description: `Cambio de plan: ${quote.oldPlan.displayName} → ${quote.newPlan.displayName} (prorrateado)`,
+                    description: `Cambio de plan: ${quote.oldPlan.displayName} → ${quote.newPlan.displayName}`,
                   },
-                  unit_amount: quote.amountToCharge, // Amount in COP cents (already calculated)
+                  unit_amount: amountInUSDCents,
                 },
                 quantity: 1,
               },
@@ -478,7 +482,8 @@ export function registerBillingRoutes(app: Express) {
               companyId: subscription.companyId,
               companyName: company?.name || 'Unknown',
               userId: req.user!.id,
-              amountToCharge: quote.amountToCharge.toString(),
+              amountToChargeCOP: quote.amountToCharge.toString(),
+              amountToChargeUSD: amountInUSDCents.toString(),
               proratedCredit: quote.proratedCredit.toString(),
             },
             success_url: `${baseUrl}/mi-cuenta?upgrade=success&session_id={CHECKOUT_SESSION_ID}`,
@@ -587,8 +592,11 @@ export function registerBillingRoutes(app: Express) {
           ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
           : 'http://localhost:5000';
       
-      // Calculate the amount - full month price
-      const amountInCents = plan.priceMonthly; // Already in cents
+      // Calculate the amount - convert COP to USD cents
+      // Rate: 1 USD ≈ 4000 COP (approximate)
+      const COP_TO_USD_RATE = 4000;
+      const amountInCOP = plan.priceMonthly;
+      const amountInUSDCents = Math.max(50, Math.round((amountInCOP / COP_TO_USD_RATE) * 100)); // Minimum 50 cents
       
       const session = await stripe.checkout.sessions.create({
         mode: 'payment',
@@ -596,12 +604,12 @@ export function registerBillingRoutes(app: Express) {
         line_items: [
           {
             price_data: {
-              currency: 'cop',
+              currency: 'usd',
               product_data: {
                 name: `Suscripción ${plan.displayName || plan.name}`,
-                description: `Primer mes de suscripción al plan ${plan.displayName || plan.name}`,
+                description: `Plan ${plan.displayName || plan.name} - Primer mes`,
               },
-              unit_amount: amountInCents,
+              unit_amount: amountInUSDCents,
             },
             quantity: 1,
           },
@@ -613,7 +621,8 @@ export function registerBillingRoutes(app: Express) {
           companyId: subscription.companyId,
           companyName: company?.name || 'Unknown',
           userId: req.user!.id,
-          amountCharged: amountInCents.toString(),
+          amountChargedCOP: amountInCOP.toString(),
+          amountChargedUSD: amountInUSDCents.toString(),
         },
         success_url: `${baseUrl}/mi-cuenta?activation=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/mi-cuenta?activation=cancelled`,
@@ -624,7 +633,8 @@ export function registerBillingRoutes(app: Express) {
         success: true,
         paymentUrl: session.url,
         sessionId: session.id,
-        amount: amountInCents,
+        amount: amountInUSDCents,
+        amountCOP: amountInCOP,
         planName: plan.displayName || plan.name,
         message: 'Redirigiendo a pasarela de pago...',
       });
