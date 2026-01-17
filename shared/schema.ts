@@ -13,7 +13,7 @@
  */
 
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, date, pgEnum, jsonb, boolean, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, bigint, date, pgEnum, jsonb, boolean, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -5358,9 +5358,9 @@ export const subscriptionPlans = pgTable("subscription_plans", {
   description: text("description"),
   tagline: text("tagline"), // Subtítulo para marketing ("Ideal para microempresas")
   
-  // Pricing
-  priceMonthly: integer("price_monthly").notNull(), // En centavos COP (e.g., 19900000 = $199,000 COP)
-  priceYearly: integer("price_yearly"), // En centavos COP (opcional, con descuento)
+  // Pricing - Using bigint to support large annual prices (e.g., $43,200,000 COP = 4320000000 centavos)
+  priceMonthly: bigint("price_monthly", { mode: "number" }).notNull(), // En centavos COP (e.g., 19900000 = $199,000 COP)
+  priceYearly: bigint("price_yearly", { mode: "number" }), // En centavos COP (opcional, con descuento)
   currency: text("currency").notNull().default("COP"),
   
   // Límites del plan
