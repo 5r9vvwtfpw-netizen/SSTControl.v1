@@ -31065,12 +31065,23 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
 
-      if (!user.workerId) {
+      // Determinar workerId - usar el directo o buscar por email
+      let workerId = user.workerId;
+      
+      // Fallback: buscar trabajador por email si no tiene workerId directo
+      if (!workerId && user.email) {
+        const worker = await storage.getWorkerByEmail(user.email, companyId);
+        if (worker) {
+          workerId = worker.id;
+        }
+      }
+
+      if (!workerId) {
         return res.status(404).json({ error: "Usuario no asociado a un trabajador" });
       }
 
       // Obtener exámenes del trabajador
-      const exams = await storage.getMedicalExamsByWorker(user.workerId, companyId);
+      const exams = await storage.getMedicalExamsByWorker(workerId, companyId);
       
       // Marcar como leídos los que no tienen notificationReadAt
       const now = new Date();
@@ -31098,7 +31109,18 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
 
-      if (!user.workerId) {
+      // Determinar workerId - usar el directo o buscar por email
+      let workerId = user.workerId;
+      
+      // Fallback: buscar trabajador por email si no tiene workerId directo
+      if (!workerId && user.email) {
+        const worker = await storage.getWorkerByEmail(user.email, companyId);
+        if (worker) {
+          workerId = worker.id;
+        }
+      }
+
+      if (!workerId) {
         return res.status(404).json({ error: "Usuario no asociado a un trabajador" });
       }
 
@@ -31108,7 +31130,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).json({ error: "Examen no encontrado" });
       }
       
-      if (exam.workerId !== user.workerId) {
+      if (exam.workerId !== workerId) {
         return res.status(403).json({ error: "No tiene permiso para confirmar este examen" });
       }
 
