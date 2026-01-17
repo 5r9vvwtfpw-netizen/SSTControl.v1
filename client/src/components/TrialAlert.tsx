@@ -50,8 +50,8 @@ export function TrialAlert() {
     setIsActivating(true);
     try {
       const response = await apiRequest(
-        `/api/billing/subscription/${subscriptionId}/activate`,
-        "POST"
+        "POST",
+        `/api/billing/subscription/${subscriptionId}/activate`
       ) as { paymentUrl?: string };
       
       if (response.paymentUrl) {
