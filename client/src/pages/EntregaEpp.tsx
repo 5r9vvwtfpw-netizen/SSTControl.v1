@@ -300,7 +300,7 @@ export default function EntregaEpp() {
       setManualEntry(true);
       form.setValue("eppCatalogId", "");
       form.setValue("eppName", "");
-      form.setValue("eppCategory", "cabeza");
+      form.setValue("eppCategory", "proteccion_cabeza");
       return;
     }
     
