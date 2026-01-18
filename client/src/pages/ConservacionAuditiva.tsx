@@ -131,6 +131,38 @@ const actionStatusLabels: Record<string, string> = {
   "cancelada": "Cancelada"
 };
 
+// Predefined control action suggestions by type
+const controlActionSuggestions: Record<string, { description: string; objective: string }[]> = {
+  fuente: [
+    { description: "Instalación de silenciadores en equipos de compresión", objective: "Reducir el nivel de ruido en la fuente a menos de 80 dB(A)" },
+    { description: "Reemplazo de equipos ruidosos por modelos de baja emisión sonora", objective: "Eliminar la fuente de ruido excesivo" },
+    { description: "Mantenimiento preventivo de maquinaria para reducir vibraciones", objective: "Reducir emisión de ruido por desgaste mecánico" },
+    { description: "Instalación de amortiguadores antivibratorios en bases de equipos", objective: "Reducir transmisión de ruido estructural" },
+    { description: "Lubricación y ajuste de componentes móviles", objective: "Minimizar ruido por fricción mecánica" },
+  ],
+  medio: [
+    { description: "Instalación de cabinas acústicas insonorizadas", objective: "Aislar las fuentes de ruido del ambiente general" },
+    { description: "Colocación de paneles absorbentes acústicos en paredes y techos", objective: "Reducir reverberación y nivel de ruido ambiental" },
+    { description: "Construcción de barreras acústicas entre áreas de trabajo", objective: "Reducir propagación de ruido entre zonas" },
+    { description: "Instalación de cerramientos parciales en maquinaria", objective: "Contener el ruido en la zona de emisión" },
+    { description: "Tratamiento acústico de ductos de ventilación", objective: "Reducir transmisión de ruido por sistemas HVAC" },
+  ],
+  epp: [
+    { description: "Dotación de protectores auditivos tipo copa NRR 25-30 dB", objective: "Proteger la audición de trabajadores expuestos" },
+    { description: "Entrega de tapones auditivos moldeables NRR 20-25 dB", objective: "Proporcionar protección auditiva cómoda para uso prolongado" },
+    { description: "Suministro de protectores auditivos con comunicación integrada", objective: "Mantener comunicación segura en ambientes ruidosos" },
+    { description: "Capacitación en uso y cuidado correcto de protección auditiva", objective: "Asegurar efectividad del EPP auditivo" },
+    { description: "Verificación de ajuste personalizado de protectores auditivos", objective: "Garantizar atenuación efectiva del ruido" },
+  ],
+  administrativo: [
+    { description: "Rotación de personal en puestos de alta exposición a ruido", objective: "Limitar tiempo de exposición individual a menos de 8 horas/día" },
+    { description: "Programación de pausas activas en ambientes ruidosos", objective: "Reducir dosis de exposición acumulada" },
+    { description: "Señalización de zonas de riesgo auditivo obligatorio", objective: "Alertar sobre uso obligatorio de EPP auditivo" },
+    { description: "Restricción de acceso a áreas de alto ruido", objective: "Minimizar personal expuesto a ruido excesivo" },
+    { description: "Capacitación sobre riesgos de exposición al ruido", objective: "Concientizar sobre prevención de pérdida auditiva" },
+  ],
+};
+
 export default function ConservacionAuditiva() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -1788,7 +1820,7 @@ export default function ConservacionAuditiva() {
                 <Label htmlFor="controlType">Tipo de Control *</Label>
                 <Select
                   value={controlForm.controlType}
-                  onValueChange={(value: any) => setControlForm({ ...controlForm, controlType: value })}
+                  onValueChange={(value: any) => setControlForm({ ...controlForm, controlType: value, description: "", objective: "" })}
                 >
                   <SelectTrigger id="controlType" data-testid="select-control-type">
                     <SelectValue />
@@ -1805,7 +1837,15 @@ export default function ConservacionAuditiva() {
                 <Label htmlFor="exposureProfileId">Perfil de Exposición (opcional)</Label>
                 <Select
                   value={controlForm.exposureProfileId || "none"}
-                  onValueChange={(value) => setControlForm({ ...controlForm, exposureProfileId: value === "none" ? "" : value })}
+                  onValueChange={(value) => {
+                    const profileId = value === "none" ? "" : value;
+                    const selectedProfile = profiles.find(p => p.id === profileId);
+                    setControlForm({ 
+                      ...controlForm, 
+                      exposureProfileId: profileId,
+                      preImplementationLevel: selectedProfile?.noiseLevel?.toString() || controlForm.preImplementationLevel
+                    });
+                  }}
                 >
                   <SelectTrigger id="exposureProfileId" data-testid="select-control-profile">
                     <SelectValue placeholder="Sin asociar" />
@@ -1814,7 +1854,38 @@ export default function ConservacionAuditiva() {
                     <SelectItem value="none">Sin asociar</SelectItem>
                     {profiles.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.name} - {p.area}
+                        {p.name} - {p.area} ({p.noiseLevel} dB)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="suggestedAction">Acción Sugerida (seleccione o escriba manualmente)</Label>
+                <Select
+                  value="custom"
+                  onValueChange={(value) => {
+                    if (value !== "custom") {
+                      const idx = parseInt(value);
+                      const suggestions = controlActionSuggestions[controlForm.controlType] || [];
+                      if (suggestions[idx]) {
+                        setControlForm({
+                          ...controlForm,
+                          description: suggestions[idx].description,
+                          objective: suggestions[idx].objective
+                        });
+                      }
+                    }
+                  }}
+                >
+                  <SelectTrigger id="suggestedAction" data-testid="select-suggested-action">
+                    <SelectValue placeholder="Seleccione una acción predefinida..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="custom">-- Escribir manualmente --</SelectItem>
+                    {(controlActionSuggestions[controlForm.controlType] || []).map((suggestion, idx) => (
+                      <SelectItem key={idx} value={idx.toString()}>
+                        {suggestion.description.substring(0, 60)}...
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1832,7 +1903,7 @@ export default function ConservacionAuditiva() {
                 />
               </div>
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="objective">Objetivo (opcional)</Label>
+                <Label htmlFor="objective">Objetivo</Label>
                 <Input
                   id="objective"
                   value={controlForm.objective}
@@ -1864,14 +1935,46 @@ export default function ConservacionAuditiva() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="responsible">Responsable *</Label>
-                <Input
-                  id="responsible"
-                  value={controlForm.responsible}
-                  onChange={(e) => setControlForm({ ...controlForm, responsible: e.target.value })}
-                  required
-                  placeholder="Nombre del responsable"
-                  data-testid="input-control-responsible"
-                />
+                <Select
+                  value={controlForm.responsible || "custom"}
+                  onValueChange={(value) => setControlForm({ ...controlForm, responsible: value === "custom" ? "" : value })}
+                >
+                  <SelectTrigger id="responsible" data-testid="select-control-responsible">
+                    <SelectValue placeholder="Seleccione responsable" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="custom">-- Escribir nombre --</SelectItem>
+                    {workers.filter(w => 
+                      w.position?.toLowerCase().includes("sst") || 
+                      w.position?.toLowerCase().includes("salud") || 
+                      w.position?.toLowerCase().includes("seguridad") ||
+                      w.position?.toLowerCase().includes("copasst") ||
+                      w.position?.toLowerCase().includes("vigía")
+                    ).map((w) => (
+                      <SelectItem key={w.id} value={w.name}>
+                        {w.name} - {w.position || "SST"}
+                      </SelectItem>
+                    ))}
+                    {workers.filter(w => 
+                      !w.position?.toLowerCase().includes("sst") && 
+                      !w.position?.toLowerCase().includes("salud") &&
+                      !w.position?.toLowerCase().includes("seguridad")
+                    ).slice(0, 15).map((w) => (
+                      <SelectItem key={w.id} value={w.name}>
+                        {w.name} - {w.position || "Trabajador"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {controlForm.responsible === "" && (
+                  <Input
+                    className="mt-2"
+                    value=""
+                    onChange={(e) => setControlForm({ ...controlForm, responsible: e.target.value })}
+                    placeholder="Nombre del responsable"
+                    data-testid="input-control-responsible-manual"
+                  />
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Estado *</Label>
