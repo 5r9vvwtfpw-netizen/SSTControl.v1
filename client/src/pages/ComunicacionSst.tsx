@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   MessageSquare, FileText, Send, AlertCircle, BarChart3, 
-  Clock, CheckCircle2, AlertTriangle, History, ChevronDown, ChevronUp, Plus, X, Bot, CalendarDays
+  Clock, CheckCircle2, AlertTriangle, History, ChevronDown, ChevronUp, Plus, X, Bot
 } from "lucide-react";
 import { Link } from "wouter";
 import { 
@@ -35,6 +35,7 @@ import { z } from "zod";
 import { AutomationAssistant, PlantillaInfo } from "@/components/AutomationAssistant";
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 interface PrefilledFormData {
   tipo: string;
@@ -254,45 +255,11 @@ La Alta Dirección`,
     });
   };
 
-  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
-  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
-
-  useEffect(() => {
-    const savedId = localStorage.getItem("lastPlanTrabajoId");
-    const savedMes = localStorage.getItem("lastCronogramaMes");
-    
-    // Always show the link first, then validate in background
-    if (savedId) {
-      setLastPlanTrabajoId(savedId);
-    }
-    if (savedMes) {
-      setLastCronogramaMes(savedMes);
-    }
-  }, []);
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <BackToEvaluationButton />
-        {lastPlanTrabajoId ? (
-          <Link 
-            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al cronograma
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        ) : (
-          <Link 
-            href="/planes-trabajo-anual" 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al Plan Anual
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        )}
+        <BackToCronogramaButton />
       </div>
       <div>
         <h1 className="text-3xl font-bold" data-testid="text-page-title">Comunicación SST</h1>

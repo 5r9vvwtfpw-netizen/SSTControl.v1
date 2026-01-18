@@ -29,6 +29,7 @@ import { capacitacionesSstPredefinidas, getCapacitacionByCodigo, categoriaLabels
 import { hasCompanyAdminAccess } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 const normativaCapacitaciones = [
   {
@@ -381,45 +382,11 @@ export default function Capacitaciones() {
     return new Date(dateString).toLocaleDateString("es-CO");
   };
 
-  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
-  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
-
-  useEffect(() => {
-    const savedId = localStorage.getItem("lastPlanTrabajoId");
-    const savedMes = localStorage.getItem("lastCronogramaMes");
-    
-    // Always show the link first, then validate in background
-    if (savedId) {
-      setLastPlanTrabajoId(savedId);
-    }
-    if (savedMes) {
-      setLastCronogramaMes(savedMes);
-    }
-  }, []);
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <BackToEvaluationButton />
-        {lastPlanTrabajoId ? (
-          <Link 
-            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al cronograma
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        ) : (
-          <Link 
-            href="/planes-trabajo-anual" 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al Plan Anual
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        )}
+        <BackToCronogramaButton />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>

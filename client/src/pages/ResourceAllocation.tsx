@@ -53,6 +53,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatDateShort, getTodayDateString } from "@/lib/utils/formatters";
 import type { ResourceAllocation, Worker, AdquisicionItem } from "@shared/schema";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 const formSchema = z.object({
   date: z.string().min(1, "Fecha requerida"),
@@ -171,22 +172,6 @@ export default function ResourceAllocation() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPredefinido, setSelectedPredefinido] = useState("");
 
-  // Obtener el ID del plan de trabajo guardado para la navegación de regreso
-  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
-  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
-  
-  useEffect(() => {
-    const savedId = localStorage.getItem("lastPlanTrabajoId");
-    const savedMes = localStorage.getItem("lastCronogramaMes");
-    
-    // Always show the link first, then validate in background
-    if (savedId) {
-      setLastPlanTrabajoId(savedId);
-    }
-    if (savedMes) {
-      setLastCronogramaMes(savedMes);
-    }
-  }, []);
 
   const { data: allocations = [], isLoading } = useQuery<ResourceAllocation[]>({
     queryKey: ["/api/resource-allocations"],
@@ -647,25 +632,7 @@ export default function ResourceAllocation() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <BackToEvaluationButton />
-        {lastPlanTrabajoId ? (
-          <Link 
-            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al cronograma
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        ) : (
-          <Link 
-            href="/planes-trabajo-anual" 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al Plan Anual
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        )}
+        <BackToCronogramaButton />
       </div>
       <div className="flex items-center justify-between">
         <div>

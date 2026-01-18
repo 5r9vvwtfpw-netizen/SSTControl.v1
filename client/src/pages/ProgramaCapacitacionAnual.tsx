@@ -52,6 +52,7 @@ import { AutomationAssistant, type PlantillaInfo, type NormativaInfo } from "@/c
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { CAPACITACIONES_OBLIGATORIAS } from "@/data/catalogos-sst";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 type TrainingProgram = {
   id: string;
@@ -90,23 +91,6 @@ export default function ProgramaCapacitacionAnual() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedCapacitacion, setSelectedCapacitacion] = useState<typeof CAPACITACIONES_OBLIGATORIAS[0] | null>(null);
   const [templatePreFill, setTemplatePreFill] = useState<TemplatePreFillData | null>(null);
-
-  // Obtener el ID del plan de trabajo guardado para la navegación de regreso
-  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
-  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
-  
-  useEffect(() => {
-    const savedId = localStorage.getItem("lastPlanTrabajoId");
-    const savedMes = localStorage.getItem("lastCronogramaMes");
-    
-    // Always show the link first, then validate in background
-    if (savedId) {
-      setLastPlanTrabajoId(savedId);
-    }
-    if (savedMes) {
-      setLastCronogramaMes(savedMes);
-    }
-  }, []);
 
   // Get estándar 1.2.1 data for AutomationAssistant
   const estandar121 = useMemo(() => getEstandarByCodigo('1.2.1'), []);
@@ -230,25 +214,7 @@ export default function ProgramaCapacitacionAnual() {
       {/* Botón volver a evaluación */}
       <div className="flex items-center justify-between">
         <BackToEvaluationButton />
-        {lastPlanTrabajoId ? (
-          <Link 
-            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al cronograma
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        ) : (
-          <Link 
-            href="/planes-trabajo-anual" 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al Plan Anual
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        )}
+        <BackToCronogramaButton />
       </div>
 
       {/* Header */}

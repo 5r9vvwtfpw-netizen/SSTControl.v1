@@ -20,6 +20,7 @@ import { useCompanyContext } from "@/hooks/use-company-context";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { BarChart3, Plus, Edit, Trash2, TrendingUp, ArrowLeft, Calculator, FileText, Save, Calendar, Sparkles, CalendarDays } from "lucide-react";
 import type { AccidentStatistics } from "@shared/schema";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 const TREND_ANALYSIS_OPTIONS = [
   "Se observa una reducción del índice de frecuencia respecto al período anterior",
@@ -90,21 +91,6 @@ export default function IndicadoresAccidentalidad() {
   const { selectedCompany, isLoading: isCompanyLoading } = useCompanyContext();
   const [, navigate] = useLocation();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
-  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
-
-  useEffect(() => {
-    const savedId = localStorage.getItem("lastPlanTrabajoId");
-    const savedMes = localStorage.getItem("lastCronogramaMes");
-    
-    // Always show the link first, then validate in background
-    if (savedId) {
-      setLastPlanTrabajoId(savedId);
-    }
-    if (savedMes) {
-      setLastCronogramaMes(savedMes);
-    }
-  }, []);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
@@ -278,25 +264,7 @@ export default function IndicadoresAccidentalidad() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-end">
-        {lastPlanTrabajoId ? (
-          <Link 
-            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al cronograma
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        ) : (
-          <Link 
-            href="/planes-trabajo-anual" 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al Plan Anual
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        )}
+        <BackToCronogramaButton />
       </div>
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">

@@ -26,6 +26,7 @@ import type { LucideIcon } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import { LuEar, LuHand } from "react-icons/lu";
 import type { EppDelivery, EppCatalog, Worker } from "@shared/schema";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 const formSchema = z.object({
   workerId: z.string().min(1, "Seleccione un trabajador"),
@@ -114,21 +115,6 @@ export default function EntregaEpp() {
   const [categoryFilter, setCategoryFilter] = useState<string>("todos");
   const [manualEntry, setManualEntry] = useState(false);
   const [catalogSearchTerm, setCatalogSearchTerm] = useState("");
-  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
-  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
-
-  useEffect(() => {
-    const savedId = localStorage.getItem("lastPlanTrabajoId");
-    const savedMes = localStorage.getItem("lastCronogramaMes");
-    
-    // Always show the link first, then validate in background
-    if (savedId) {
-      setLastPlanTrabajoId(savedId);
-    }
-    if (savedMes) {
-      setLastCronogramaMes(savedMes);
-    }
-  }, []);
   const [workerSearchTerm, setWorkerSearchTerm] = useState("");
 
   const companyId = selectedCompany?.id || user?.companyId;
@@ -355,16 +341,7 @@ export default function EntregaEpp() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          {lastPlanTrabajoId && (
-            <Link 
-              href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`}
-              className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm"
-              data-testid="link-volver-cronograma"
-            >
-              Volver al cronograma
-              <CalendarDays className="h-4 w-4" />
-            </Link>
-          )}
+          <BackToCronogramaButton />
           <Button onClick={handleNew} data-testid="button-new-delivery">
             <Plus className="h-4 w-4 mr-2" />
             Nueva Entrega

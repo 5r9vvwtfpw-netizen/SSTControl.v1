@@ -11,27 +11,12 @@ import { Link } from "wouter";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AutomationAssistant, type PlantillaInfo } from "@/components/AutomationAssistant";
 import { getEstandarByCodigo } from "@/data/planear-normativa";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 export default function Curso50HorasPage() {
   const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
-  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
-
-  useEffect(() => {
-    const savedId = localStorage.getItem("lastPlanTrabajoId");
-    const savedMes = localStorage.getItem("lastCronogramaMes");
-    
-    // Always show the link first, then validate in background
-    if (savedId) {
-      setLastPlanTrabajoId(savedId);
-    }
-    if (savedMes) {
-      setLastCronogramaMes(savedMes);
-    }
-  }, []);
-
   const { data: curso, isLoading } = useQuery<Curso50Horas | null>({
     queryKey: ["/api/curso-50-horas"],
   });
@@ -244,16 +229,7 @@ export default function Curso50HorasPage() {
             </p>
           </div>
         </div>
-        {lastPlanTrabajoId && (
-          <Link 
-            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`}
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm"
-            data-testid="link-volver-cronograma"
-          >
-            Volver al cronograma
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        )}
+        <BackToCronogramaButton />
       </div>
 
       <AutomationAssistant

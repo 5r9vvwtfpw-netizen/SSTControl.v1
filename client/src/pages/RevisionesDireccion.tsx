@@ -22,6 +22,7 @@ import { z } from "zod";
 import { format } from "date-fns";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 const normativaRevisionesDireccion = [
   {
@@ -60,21 +61,6 @@ export default function RevisionesDireccion() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
-  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
-
-  useEffect(() => {
-    const savedId = localStorage.getItem("lastPlanTrabajoId");
-    const savedMes = localStorage.getItem("lastCronogramaMes");
-    
-    // Always show the link first, then validate in background
-    if (savedId) {
-      setLastPlanTrabajoId(savedId);
-    }
-    if (savedMes) {
-      setLastCronogramaMes(savedMes);
-    }
-  }, []);
   const [dialogOpen, setDialogOpen] = useState(false);
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
@@ -221,25 +207,7 @@ export default function RevisionesDireccion() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-end">
-        {lastPlanTrabajoId ? (
-          <Link 
-            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al cronograma
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        ) : (
-          <Link 
-            href="/planes-trabajo-anual" 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al Plan Anual
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        )}
+        <BackToCronogramaButton />
       </div>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>

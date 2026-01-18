@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Search, Filter, FlaskConical, AlertTriangle, Flame, Skull, Droplet as DropletIcon, Printer, ArrowLeft, Check, ChevronsUpDown, CalendarDays } from "lucide-react";
+import { Plus, Search, Filter, FlaskConical, AlertTriangle, Flame, Skull, Droplet as DropletIcon, Printer, ArrowLeft, Check, ChevronsUpDown } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { cn } from "@/lib/utils";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 const normativaSustanciasQuimicas = [
   {
@@ -164,21 +165,6 @@ export default function SustanciasQuimicas() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
-  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
-  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
-
-  useEffect(() => {
-    const savedId = localStorage.getItem("lastPlanTrabajoId");
-    const savedMes = localStorage.getItem("lastCronogramaMes");
-    
-    // Always show the link first, then validate in background
-    if (savedId) {
-      setLastPlanTrabajoId(savedId);
-    }
-    if (savedMes) {
-      setLastCronogramaMes(savedMes);
-    }
-  }, []);
   const [classFilter, setClassFilter] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [substanceComboboxOpen, setSubstanceComboboxOpen] = useState(false);
@@ -362,25 +348,7 @@ export default function SustanciasQuimicas() {
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        {lastPlanTrabajoId ? (
-          <Link 
-            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al cronograma
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        ) : (
-          <Link 
-            href="/planes-trabajo-anual" 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al Plan Anual
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        )}
+        <BackToCronogramaButton />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">

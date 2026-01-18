@@ -7,26 +7,11 @@ import { Link } from "wouter";
 import { 
   Car, Users, ClipboardCheck, AlertTriangle, 
   GraduationCap, FileCheck, TrendingUp, TrendingDown,
-  Activity, CalendarDays
+  Activity
 } from "lucide-react";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 export default function Pesv() {
-  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
-  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
-
-  useEffect(() => {
-    const savedId = localStorage.getItem("lastPlanTrabajoId");
-    const savedMes = localStorage.getItem("lastCronogramaMes");
-    
-    // Always show the link first, then validate in background
-    if (savedId) {
-      setLastPlanTrabajoId(savedId);
-    }
-    if (savedMes) {
-      setLastCronogramaMes(savedMes);
-    }
-  }, []);
-
   const { data: vehicles } = useQuery({ queryKey: ["/api/vehicles"] });
   const { data: drivers } = useQuery({ queryKey: ["/api/drivers"] });
   const { data: inspections } = useQuery({ queryKey: ["/api/vehicle-inspections"] });
@@ -60,25 +45,7 @@ export default function Pesv() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-end mb-2">
-        {lastPlanTrabajoId ? (
-          <Link 
-            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al cronograma
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        ) : (
-          <Link 
-            href="/planes-trabajo-anual" 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al Plan Anual
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        )}
+        <BackToCronogramaButton />
       </div>
       <div className="flex items-center justify-between">
         <div>

@@ -18,6 +18,7 @@ import { z } from "zod";
 import { formatDateShort } from "@/lib/utils/formatters";
 import { SVE_CLASSIFICATION_CONFIGS, getBadgeConfig } from "@/lib/utils/badge-helpers";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 const normativaVigilancia = [
   {
@@ -74,21 +75,6 @@ export default function VigilanciaEpidemiologica() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
-  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
-
-  useEffect(() => {
-    const savedId = localStorage.getItem("lastPlanTrabajoId");
-    const savedMes = localStorage.getItem("lastCronogramaMes");
-    
-    // Always show the link first, then validate in background
-    if (savedId) {
-      setLastPlanTrabajoId(savedId);
-    }
-    if (savedMes) {
-      setLastCronogramaMes(savedMes);
-    }
-  }, []);
   const [riskFilter, setRiskFilter] = useState<string>("todos");
   const [programDialogOpen, setProgramDialogOpen] = useState(false);
   const [caseDialogOpen, setCaseDialogOpen] = useState(false);
@@ -467,25 +453,7 @@ export default function VigilanciaEpidemiologica() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-end">
-        {lastPlanTrabajoId ? (
-          <Link 
-            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al cronograma
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        ) : (
-          <Link 
-            href="/planes-trabajo-anual" 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al Plan Anual
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        )}
+        <BackToCronogramaButton />
       </div>
       {/* Header */}
       <div className="space-y-2">

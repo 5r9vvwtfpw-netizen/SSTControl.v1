@@ -21,11 +21,12 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
   Plus, Edit, Trash2, Calendar, FileText, Download, Search, Filter, 
   ChevronDown, ChevronUp, AlertTriangle, Clock, UserMinus, Activity,
-  TrendingDown, Briefcase, Heart, Baby, Home, CalendarDays
+  TrendingDown, Briefcase, Heart, Baby, Home
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
 import type { WorkerAbsence, Worker, Accident } from "@shared/schema";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 const formSchema = z.object({
   workerId: z.string().min(1, "Seleccione un trabajador"),
@@ -76,21 +77,6 @@ export default function AusentismoLaboral() {
   const { user } = useAuth();
   const { selectedCompany, isLoading: isCompanyLoading } = useCompanyContext();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
-  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
-
-  useEffect(() => {
-    const savedId = localStorage.getItem("lastPlanTrabajoId");
-    const savedMes = localStorage.getItem("lastCronogramaMes");
-    
-    // Always show the link first, then validate in background
-    if (savedId) {
-      setLastPlanTrabajoId(savedId);
-    }
-    if (savedMes) {
-      setLastCronogramaMes(savedMes);
-    }
-  }, []);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("todos");
@@ -340,25 +326,7 @@ export default function AusentismoLaboral() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <BackToEvaluationButton />
-        {lastPlanTrabajoId ? (
-          <Link 
-            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al cronograma
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        ) : (
-          <Link 
-            href="/planes-trabajo-anual" 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al Plan Anual
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        )}
+        <BackToCronogramaButton />
       </div>
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">

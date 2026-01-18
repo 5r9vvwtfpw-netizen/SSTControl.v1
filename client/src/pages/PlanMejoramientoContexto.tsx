@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import {
   Plus, Search, FileText, Edit2, Trash2, AlertCircle, Clock,
-  CheckCircle2, Target, TrendingUp, Filter, Download, CalendarIcon, ArrowLeft, CalendarDays
+  CheckCircle2, Target, TrendingUp, Filter, Download, CalendarIcon, ArrowLeft
 } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { format } from "date-fns";
@@ -26,6 +26,7 @@ import { AccionMejoraContexto, insertAccionMejoraContextoSchema, User } from "@s
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 const estadosAccion = [
   { value: "pendiente", label: "Pendiente", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" },
@@ -73,21 +74,6 @@ interface PlanConsolidadoResponse {
 export default function PlanMejoramientoContexto() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
-  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
-
-  useEffect(() => {
-    const savedId = localStorage.getItem("lastPlanTrabajoId");
-    const savedMes = localStorage.getItem("lastCronogramaMes");
-    
-    // Always show the link first, then validate in background
-    if (savedId) {
-      setLastPlanTrabajoId(savedId);
-    }
-    if (savedMes) {
-      setLastCronogramaMes(savedMes);
-    }
-  }, []);
   const [filterEstado, setFilterEstado] = useState<string>("todos");
   const [filterPrioridad, setFilterPrioridad] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -255,25 +241,7 @@ export default function PlanMejoramientoContexto() {
           </Link>
         )}
         <div className="ml-auto">
-          {lastPlanTrabajoId ? (
-            <Link 
-              href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
-              className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-              data-testid="link-volver-cronograma"
-            >
-              Volver al cronograma
-              <CalendarDays className="h-4 w-4" />
-            </Link>
-          ) : (
-            <Link 
-              href="/planes-trabajo-anual" 
-              className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-              data-testid="link-volver-cronograma"
-            >
-              Volver al Plan Anual
-              <CalendarDays className="h-4 w-4" />
-            </Link>
-          )}
+          <BackToCronogramaButton />
         </div>
       </div>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

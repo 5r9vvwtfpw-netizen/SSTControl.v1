@@ -57,10 +57,11 @@ import {
   type HighRiskWorker,
   insertHighRiskWorkerSchema
 } from "@shared/schema";
-import { Pencil, Trash2, FileText, Search, CheckCircle2, Building2, Copy, Sparkles, Settings, Users, Zap, ClipboardCheck, Calendar, AlertCircle, Eye, Plus, RefreshCw, UserCheck, Download, AlertTriangle, FileDown, Upload, ExternalLink, CalendarDays } from "lucide-react";
+import { Pencil, Trash2, FileText, Search, CheckCircle2, Building2, Copy, Sparkles, Settings, Users, Zap, ClipboardCheck, Calendar, AlertCircle, Eye, Plus, RefreshCw, UserCheck, Download, AlertTriangle, FileDown, Upload, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { AutomationAssistant, type PlantillaInfo } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { EPS_COLOMBIA, ARL_COLOMBIA, AFP_COLOMBIA, CCF_COLOMBIA, AGREMIACIONES_AUTORIZADAS_MINSALUD, ACTIVIDADES_ALTO_RIESGO_DEC_2090, getActividadAltoRiesgoByValue } from "@/data/catalogos-sst";
 import { compressImage } from "@/lib/imageCompression";
@@ -154,23 +155,6 @@ export default function AfiliacionesSsss() {
   const [activeTab, setActiveTab] = useState("afiliaciones");
   const [viewingAfiliacion, setViewingAfiliacion] = useState<AfiliacionSsss | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-
-  // Obtener el ID del plan de trabajo guardado para la navegación de regreso
-  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
-  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
-  
-  useEffect(() => {
-    const savedId = localStorage.getItem("lastPlanTrabajoId");
-    const savedMes = localStorage.getItem("lastCronogramaMes");
-    
-    // Always show the link first, then validate in background
-    if (savedId) {
-      setLastPlanTrabajoId(savedId);
-    }
-    if (savedMes) {
-      setLastCronogramaMes(savedMes);
-    }
-  }, []);
 
   // Leer parámetro tab de la URL para redirección desde otros módulos
   useEffect(() => {
@@ -1114,25 +1098,7 @@ export default function AfiliacionesSsss() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <BackToEvaluationButton />
-        {lastPlanTrabajoId ? (
-          <Link 
-            href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al cronograma
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        ) : (
-          <Link 
-            href="/planes-trabajo-anual" 
-            className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm" 
-            data-testid="link-volver-cronograma"
-          >
-            Volver al Plan Anual
-            <CalendarDays className="h-4 w-4" />
-          </Link>
-        )}
+        <BackToCronogramaButton />
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-3 max-w-xl">
