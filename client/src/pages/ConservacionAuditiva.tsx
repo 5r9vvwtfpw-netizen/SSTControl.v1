@@ -1277,7 +1277,15 @@ export default function ConservacionAuditiva() {
                 <Label htmlFor="environmentalMeasurementId">Medición Ambiental (opcional)</Label>
                 <Select
                   value={profileForm.environmentalMeasurementId || "none"}
-                  onValueChange={(value) => setProfileForm({ ...profileForm, environmentalMeasurementId: value === "none" ? "" : value })}
+                  onValueChange={(value) => {
+                    const measurementId = value === "none" ? "" : value;
+                    const selectedMeasurement = noiseMeasurements.find(m => m.id === measurementId);
+                    setProfileForm({ 
+                      ...profileForm, 
+                      environmentalMeasurementId: measurementId,
+                      noiseLevel: selectedMeasurement?.valueNumeric?.toString() || profileForm.noiseLevel
+                    });
+                  }}
                 >
                   <SelectTrigger id="environmentalMeasurementId" data-testid="select-profile-measurement">
                     <SelectValue placeholder="Vincular medición" />
