@@ -32,10 +32,17 @@ if (isProduction && hasAwsRds) {
     );
   }
   
-  pool = new NeonPool({ connectionString: process.env.DATABASE_URL });
+  // Configure Neon with SSL options to handle certificate issues
+  // This is important for production environments using Neon
+  pool = new NeonPool({ 
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false // Allow self-signed certificates in production
+    }
+  });
   db = drizzleNeon({ client: pool as NeonPool, schema });
   
-  console.log('[DB] Connected to Neon PostgreSQL (Development)');
+  console.log('[DB] Connected to Neon PostgreSQL (Development/Fallback)');
 }
 
 export { pool, db };

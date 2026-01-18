@@ -805,3 +805,43 @@ export function getDocumentCode(reportType: string, companyNit?: string): string
   const typeCode = typeCodes[reportType] || 'DOC';
   return `${prefix}-${typeCode}-${year}`;
 }
+
+/**
+ * Maneja errores de generación de PDF de manera segura
+ * No expone mensajes técnicos internos (SSL, certificados, etc.) a los usuarios
+ * 
+ * @param error - El error capturado
+ * @param res - Response de Express
+ * @param logContext - Contexto adicional para el log (ej: "training-programs PDF")
+ */
+export function handlePdfError(error: any, res: any, logContext: string = 'PDF'): void {
+  console.error(`[${logContext}] Error generating PDF:`, error);
+  
+  // No enviar headers si ya fueron enviados
+  if (res.headersSent) {
+    return;
+  }
+  
+  // Detectar errores internos que no deben exponerse al usuario
+  const errorMessage = error?.message || '';
+  const isInternalError = 
+    errorMessage.includes('certificate') ||
+    errorMessage.includes('certificado') ||
+    errorMessage.includes('CERT') ||
+    errorMessage.includes('SSL') ||
+    errorMessage.includes('TLS') ||
+    errorMessage.includes('ECONNREFUSED') ||
+    errorMessage.includes('ECONNRESET') ||
+    errorMessage.includes('ETIMEDOUT') ||
+    errorMessage.includes('self signed') ||
+    errorMessage.includes('autofirmado') ||
+    errorMessage.includes('socket hang up') ||
+    errorMessage.includes('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
+  
+  if (isInternalError) {
+    res.status(500).send('Error al generar el documento. Por favor intente nuevamente o contacte soporte técnico.');
+  } else {
+    // Para otros errores, enviar un mensaje genérico pero informativo
+    res.status(500).send('Error al generar el documento. Por favor intente nuevamente.');
+  }
+}
