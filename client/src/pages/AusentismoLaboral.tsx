@@ -729,14 +729,14 @@ export default function AusentismoLaboral() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Vincular con Accidente (opcional)</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={(value) => field.onChange(value === "none" ? "" : value)} value={field.value || "none"}>
                         <FormControl>
                           <SelectTrigger data-testid="select-accident">
                             <SelectValue placeholder="Seleccione accidente relacionado" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Sin vincular</SelectItem>
+                          <SelectItem value="none">Sin vincular</SelectItem>
                           {accidents.map(a => {
                             const accWorker = workers.find(w => w.id === a.workerId);
                             return (
