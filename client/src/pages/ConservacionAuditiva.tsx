@@ -148,6 +148,7 @@ export default function ConservacionAuditiva() {
   const [viewingProfileWorkers, setViewingProfileWorkers] = useState<NoiseExposureProfile | null>(null);
   const [profileForm, setProfileForm] = useState({
     companyId: "",
+    selectedWorkerId: "",
     name: "",
     area: "",
     jobPosition: "",
@@ -479,6 +480,7 @@ export default function ConservacionAuditiva() {
   const resetProfileForm = () => {
     setProfileForm({
       companyId: "",
+      selectedWorkerId: "",
       name: "",
       area: "",
       jobPosition: "",
@@ -557,6 +559,7 @@ export default function ConservacionAuditiva() {
     setSelectedWorkerIds(existingAssignments.map(a => a.workerId));
     setProfileForm({
       companyId: profile.companyId || "",
+      selectedWorkerId: "",
       name: profile.name,
       area: profile.area,
       jobPosition: profile.jobPosition || "",
@@ -1241,16 +1244,41 @@ export default function ConservacionAuditiva() {
                   </Select>
                 </div>
               )}
-              <div className="space-y-2">
-                <Label htmlFor="name">Nombre del Perfil *</Label>
-                <Input
-                  id="name"
-                  value={profileForm.name}
-                  onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                  required
-                  placeholder="Ej: Operador de Maquinaria"
-                  data-testid="input-profile-name"
-                />
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="selectedWorkerId">Trabajador *</Label>
+                <Select
+                  value={profileForm.selectedWorkerId || "none"}
+                  onValueChange={(value) => {
+                    const workerId = value === "none" ? "" : value;
+                    const selectedWorker = workers.find(w => w.id === workerId);
+                    if (selectedWorker) {
+                      setProfileForm({
+                        ...profileForm,
+                        selectedWorkerId: workerId,
+                        name: selectedWorker.name,
+                        area: selectedWorker.department || profileForm.area,
+                        jobPosition: selectedWorker.position || profileForm.jobPosition
+                      });
+                      if (!selectedWorkerIds.includes(workerId)) {
+                        setSelectedWorkerIds([...selectedWorkerIds, workerId]);
+                      }
+                    } else {
+                      setProfileForm({ ...profileForm, selectedWorkerId: "" });
+                    }
+                  }}
+                >
+                  <SelectTrigger id="selectedWorkerId" data-testid="select-profile-worker">
+                    <SelectValue placeholder="Seleccione un trabajador" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Seleccione un trabajador</SelectItem>
+                    {workers.map((worker) => (
+                      <SelectItem key={worker.id} value={worker.id}>
+                        {worker.name} - {worker.position}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="area">Área *</Label>
@@ -1259,22 +1287,25 @@ export default function ConservacionAuditiva() {
                   value={profileForm.area}
                   onChange={(e) => setProfileForm({ ...profileForm, area: e.target.value })}
                   required
-                  placeholder="Ej: Planta de Producción"
+                  placeholder="Se llena al seleccionar trabajador"
                   data-testid="input-profile-area"
+                  className="bg-muted/50"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="jobPosition">Cargo (opcional)</Label>
+                <Label htmlFor="jobPosition">Cargo *</Label>
                 <Input
                   id="jobPosition"
                   value={profileForm.jobPosition}
                   onChange={(e) => setProfileForm({ ...profileForm, jobPosition: e.target.value })}
-                  placeholder="Ej: Operador de Máquina"
+                  required
+                  placeholder="Se llena al seleccionar trabajador"
                   data-testid="input-profile-job"
+                  className="bg-muted/50"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="environmentalMeasurementId">Medición Ambiental (opcional)</Label>
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="environmentalMeasurementId">Medición Ambiental *</Label>
                 <Select
                   value={profileForm.environmentalMeasurementId || "none"}
                   onValueChange={(value) => {
@@ -1283,22 +1314,35 @@ export default function ConservacionAuditiva() {
                     setProfileForm({ 
                       ...profileForm, 
                       environmentalMeasurementId: measurementId,
-                      noiseLevel: selectedMeasurement?.valueNumeric?.toString() || profileForm.noiseLevel
+                      noiseLevel: selectedMeasurement?.valueNumeric?.toString() || profileForm.noiseLevel,
+                      area: selectedMeasurement?.area || profileForm.area
                     });
                   }}
+                  required
                 >
                   <SelectTrigger id="environmentalMeasurementId" data-testid="select-profile-measurement">
-                    <SelectValue placeholder="Vincular medición" />
+                    <SelectValue placeholder="Seleccione una medición" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Sin vincular</SelectItem>
-                    {noiseMeasurements.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.area} - {m.valueNumeric} {m.unit} ({formatDate(m.measurementDate)})
-                      </SelectItem>
-                    ))}
+                    {noiseMeasurements.length === 0 ? (
+                      <SelectItem value="none" disabled>No hay mediciones de ruido registradas</SelectItem>
+                    ) : (
+                      <>
+                        <SelectItem value="none">Seleccione una medición</SelectItem>
+                        {noiseMeasurements.map((m) => (
+                          <SelectItem key={m.id} value={m.id}>
+                            {m.area} - {m.valueNumeric} {m.unit} ({formatDate(m.measurementDate)})
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
+                {noiseMeasurements.length === 0 && (
+                  <p className="text-xs text-amber-600">
+                    Debe registrar mediciones ambientales de ruido antes de crear perfiles de exposición.
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="noiseLevel">Nivel de Ruido dB(A) *</Label>
