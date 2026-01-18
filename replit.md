@@ -76,6 +76,25 @@ The billing system enforces strict worker quantity limits based on what customer
 - El código detecta errores que contienen: 'certificate', 'CERT', 'SSL', 'ECONNREFUSED'
 - Muestra al usuario: "Error al generar el informe. Por favor intente nuevamente o contacte soporte técnico."
 
+**Código de la solución (línea ~24025 en server/routes.ts):**
+```typescript
+} catch (error: any) {
+  console.error('Error generating informe verificación sistema PDF:', error);
+
+  if (!res.headersSent) {
+    // Don't expose internal error messages to users (e.g., SSL/certificate errors)
+    const isInternalError = error.message?.includes('certificate') || 
+                            error.message?.includes('CERT') ||
+                            error.message?.includes('SSL') ||
+                            error.message?.includes('ECONNREFUSED');
+    const userMessage = isInternalError 
+      ? 'Error al generar el informe. Por favor intente nuevamente o contacte soporte técnico.'
+      : error.message;
+    res.status(500).send(userMessage);
+  }
+}
+```
+
 **Para resolver el problema subyacente en producción:**
 1. Verificar configuración SSL de Neon PostgreSQL en `server/db.ts`
 2. Verificar credenciales y región de AWS S3 en variables de entorno
