@@ -443,4 +443,126 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       res.status(500).json({ message: "Error fetching company licensed professionals", error: error.message });
     }
   });
+
+  // GET /api/directory/licensed-professionals - Public directory of available licensed professionals
+  // For clients (admins) to view and invite LSOs to their company
+  app.get("/api/directory/licensed-professionals", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      
+      // Only admins with a company can access this directory
+      if (!user.companyId && user.role !== 'superadmin') {
+        return res.status(403).json({ message: "You need to be associated with a company to view the directory" });
+      }
+
+      // Get all LSOs with valid license status (vigente)
+      const professionals = await db.select({
+        id: schema.users.id,
+        fullName: schema.users.fullName,
+        sstProfessionType: schema.users.sstProfessionType,
+        sstLicenseNumber: schema.users.sstLicenseNumber,
+        sstLicenseIssuer: schema.users.sstLicenseIssuer,
+        sstLicenseStatus: schema.users.sstLicenseStatus,
+        sstPhone: schema.users.sstPhone,
+        email: schema.users.email,
+      })
+      .from(schema.users)
+      .where(and(
+        eq(schema.users.role, 'lso'),
+        eq(schema.users.sstLicenseStatus, 'vigente')
+      ));
+
+      // If user has a company, check which LSOs are already assigned
+      let assignedLsoIds: string[] = [];
+      if (user.companyId) {
+        const assignments = await db.select({
+          userId: schema.licensedProfessionalAssignments.userId,
+        })
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.companyId, user.companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+        assignedLsoIds = assignments.map(a => a.userId);
+      }
+
+      // Add flag indicating if already assigned to user's company
+      const professionalsWithStatus = professionals.map(prof => ({
+        ...prof,
+        alreadyAssigned: assignedLsoIds.includes(prof.id),
+      }));
+
+      res.json(professionalsWithStatus);
+    } catch (error: any) {
+      console.error('[GET /api/directory/licensed-professionals] Error:', error.message);
+      res.status(500).json({ message: "Error fetching directory", error: error.message });
+    }
+  });
+
+  // POST /api/directory/licensed-professionals/:lsoId/request - Request invitation to an LSO
+  app.post("/api/directory/licensed-professionals/:lsoId/request", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      const { lsoId } = req.params;
+      const { message } = req.body;
+
+      // Only admins with a company can request
+      if (!user.companyId) {
+        return res.status(403).json({ message: "Debes estar asociado a una empresa para solicitar un profesional" });
+      }
+
+      // Verify LSO exists and has valid license
+      const [lso] = await db.select()
+        .from(schema.users)
+        .where(and(
+          eq(schema.users.id, lsoId),
+          eq(schema.users.role, 'lso')
+        ));
+
+      if (!lso) {
+        return res.status(404).json({ message: "Profesional no encontrado" });
+      }
+
+      // Check if already assigned
+      const [existingAssignment] = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, lsoId),
+          eq(schema.licensedProfessionalAssignments.companyId, user.companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+
+      if (existingAssignment) {
+        return res.status(400).json({ message: "Este profesional ya está asignado a tu empresa" });
+      }
+
+      // Get company info
+      const [company] = await db.select()
+        .from(schema.companies)
+        .where(eq(schema.companies.id, user.companyId));
+
+      // Create internal message to the LSO
+      await db.insert(schema.internalMessages).values({
+        companyId: user.companyId,
+        senderId: user.id,
+        senderName: user.fullName || user.username,
+        senderRole: user.role,
+        receiverId: lsoId,
+        receiverName: lso.fullName || lso.username,
+        receiverRole: 'lso',
+        subject: `Solicitud de servicios SST - ${company?.name || 'Empresa'}`,
+        content: message || `La empresa ${company?.name || ''} (NIT: ${company?.nit || ''}) está interesada en sus servicios como Profesional Licenciado en SST. Por favor contacte al administrador para más información.`,
+        status: 'unread',
+        priority: 'normal',
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Solicitud enviada exitosamente. El profesional recibirá tu mensaje y podrá contactarte."
+      });
+    } catch (error: any) {
+      console.error('[POST /api/directory/licensed-professionals/:lsoId/request] Error:', error.message);
+      res.status(500).json({ message: "Error al enviar solicitud", error: error.message });
+    }
+  });
 }

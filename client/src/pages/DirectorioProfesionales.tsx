@@ -3,94 +3,131 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, Phone, Mail, Award, ExternalLink, GraduationCap, Building2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { Search, Phone, Mail, Award, Send, GraduationCap, Building2, CheckCircle, Loader2, Users } from "lucide-react";
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
-const profesionalesSST = [
-  {
-    id: 1,
-    nombre: "Dr. Carlos Andrés Martínez",
-    especialidad: "Especialista en Salud Ocupacional",
-    licencia: "SO-12345",
-    ciudad: "Bogotá D.C.",
-    telefono: "+57 310 123 4567",
-    email: "carlos.martinez@sst.com",
-    experiencia: "15 años",
-    servicios: ["Diseño SG-SST", "Auditorías", "Capacitaciones", "Evaluaciones médicas ocupacionales"],
-  },
-  {
-    id: 2,
-    nombre: "Dra. María Fernanda López",
-    especialidad: "Especialista en Higiene y Seguridad Industrial",
-    licencia: "HSI-67890",
-    ciudad: "Medellín",
-    telefono: "+57 311 234 5678",
-    email: "maria.lopez@sst.com",
-    experiencia: "12 años",
-    servicios: ["Matrices IPERC", "Planes de emergencia", "Mediciones ambientales", "PESV"],
-  },
-  {
-    id: 3,
-    nombre: "Ing. Roberto García Pérez",
-    especialidad: "Ingeniero en Seguridad y Salud en el Trabajo",
-    licencia: "SST-11223",
-    ciudad: "Cali",
-    telefono: "+57 312 345 6789",
-    email: "roberto.garcia@sst.com",
-    experiencia: "10 años",
-    servicios: ["Implementación SG-SST", "Inspecciones", "Investigación de accidentes", "Capacitaciones"],
-  },
-  {
-    id: 4,
-    nombre: "Dra. Ana Patricia Rodríguez",
-    especialidad: "Médica Especialista en Salud Ocupacional",
-    licencia: "SO-44556",
-    ciudad: "Barranquilla",
-    telefono: "+57 313 456 7890",
-    email: "ana.rodriguez@sst.com",
-    experiencia: "18 años",
-    servicios: ["Exámenes médicos ocupacionales", "Vigilancia epidemiológica", "Programas de promoción y prevención"],
-  },
-  {
-    id: 5,
-    nombre: "Ing. Luis Alberto Sánchez",
-    especialidad: "Especialista en Ergonomía",
-    licencia: "ERG-78901",
-    ciudad: "Bucaramanga",
-    telefono: "+57 314 567 8901",
-    email: "luis.sanchez@sst.com",
-    experiencia: "8 años",
-    servicios: ["Análisis ergonómico", "Diseño de puestos de trabajo", "Prevención DME", "Capacitaciones ergonomía"],
-  },
-  {
-    id: 6,
-    nombre: "Dra. Carolina Herrera Mejía",
-    especialidad: "Psicóloga Especialista en Riesgo Psicosocial",
-    licencia: "PSI-23456",
-    ciudad: "Bogotá D.C.",
-    telefono: "+57 315 678 9012",
-    email: "carolina.herrera@sst.com",
-    experiencia: "11 años",
-    servicios: ["Batería riesgo psicosocial", "Intervención psicosocial", "Programas de bienestar", "Clima organizacional"],
-  },
+interface LicensedProfessional {
+  id: string;
+  fullName: string;
+  sstProfessionType: string | null;
+  sstLicenseNumber: string | null;
+  sstLicenseIssuer: string | null;
+  sstLicenseStatus: string | null;
+  sstPhone: string | null;
+  email: string | null;
+  alreadyAssigned: boolean;
+}
+
+const SST_PROFESSION_LABELS: Record<string, string> = {
+  medico_ocupacional: "Médico Ocupacional",
+  profesional_sst: "Profesional SST",
+  tecnologo_sst: "Tecnólogo SST",
+  tecnico_sst: "Técnico SST",
+  fisioterapeuta: "Fisioterapeuta",
+  psicologo_sst: "Psicólogo SST",
+  fonoaudiologo: "Fonoaudiólogo",
+  ingeniero_sst: "Ingeniero SST",
+  enfermero_sst: "Enfermero SST",
+  otro: "Otro",
+};
+
+const profesionTypes = [
+  { value: "all", label: "Todas las especialidades" },
+  { value: "medico_ocupacional", label: "Médico Ocupacional" },
+  { value: "profesional_sst", label: "Profesional SST" },
+  { value: "tecnologo_sst", label: "Tecnólogo SST" },
+  { value: "tecnico_sst", label: "Técnico SST" },
+  { value: "fisioterapeuta", label: "Fisioterapeuta" },
+  { value: "psicologo_sst", label: "Psicólogo SST" },
+  { value: "ingeniero_sst", label: "Ingeniero SST" },
+  { value: "enfermero_sst", label: "Enfermero SST" },
 ];
 
-const ciudades = ["Todas", "Bogotá D.C.", "Medellín", "Cali", "Barranquilla", "Bucaramanga"];
-
 export default function DirectorioProfesionales() {
+  const { toast } = useToast();
   const [busqueda, setBusqueda] = useState("");
-  const [ciudadFiltro, setCiudadFiltro] = useState("Todas");
+  const [especialidadFiltro, setEspecialidadFiltro] = useState("all");
+  const [selectedProfessional, setSelectedProfessional] = useState<LicensedProfessional | null>(null);
+  const [requestMessage, setRequestMessage] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  const profesionalesFiltrados = profesionalesSST.filter((prof) => {
-    const coincideBusqueda = 
-      prof.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      prof.especialidad.toLowerCase().includes(busqueda.toLowerCase()) ||
-      prof.servicios.some(s => s.toLowerCase().includes(busqueda.toLowerCase()));
-    
-    const coincideCiudad = ciudadFiltro === "Todas" || prof.ciudad === ciudadFiltro;
-    
-    return coincideBusqueda && coincideCiudad;
+  const { data: professionals, isLoading, error } = useQuery<LicensedProfessional[]>({
+    queryKey: ["/api/directory/licensed-professionals"],
   });
+
+  const requestMutation = useMutation({
+    mutationFn: async ({ lsoId, message }: { lsoId: string; message: string }) => {
+      const res = await apiRequest("POST", `/api/directory/licensed-professionals/${lsoId}/request`, { message });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Solicitud enviada",
+        description: data.message || "El profesional recibirá tu mensaje.",
+      });
+      setDialogOpen(false);
+      setSelectedProfessional(null);
+      setRequestMessage("");
+      queryClient.invalidateQueries({ queryKey: ["/api/directory/licensed-professionals"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo enviar la solicitud",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const profesionalesFiltrados = (professionals || []).filter((prof) => {
+    const coincideBusqueda = 
+      prof.fullName?.toLowerCase().includes(busqueda.toLowerCase()) ||
+      prof.sstLicenseNumber?.toLowerCase().includes(busqueda.toLowerCase()) ||
+      prof.sstLicenseIssuer?.toLowerCase().includes(busqueda.toLowerCase());
+    
+    const coincideEspecialidad = especialidadFiltro === "all" || prof.sstProfessionType === especialidadFiltro;
+    
+    return coincideBusqueda && coincideEspecialidad;
+  });
+
+  const handleRequestContact = (professional: LicensedProfessional) => {
+    setSelectedProfessional(professional);
+    setRequestMessage(`Estimado/a ${professional.fullName},\n\nNuestra empresa está interesada en sus servicios como Profesional Licenciado en SST. Nos gustaría programar una reunión para discutir la posibilidad de colaboración.\n\nQuedamos atentos a su respuesta.`);
+    setDialogOpen(true);
+  };
+
+  const handleSendRequest = () => {
+    if (!selectedProfessional) return;
+    requestMutation.mutate({
+      lsoId: selectedProfessional.id,
+      message: requestMessage,
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="p-8 text-center">
+        <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <h3 className="font-semibold">Error al cargar el directorio</h3>
+        <p className="text-muted-foreground text-sm mt-2">
+          Por favor intenta nuevamente más tarde.
+        </p>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -124,96 +161,114 @@ export default function DirectorioProfesionales() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nombre, especialidad o servicio..."
+            placeholder="Buscar por nombre, licencia o entidad..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             className="pl-10"
             data-testid="input-buscar-profesional"
           />
         </div>
-        <Select value={ciudadFiltro} onValueChange={setCiudadFiltro}>
-          <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-ciudad">
-            <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-            <SelectValue placeholder="Filtrar por ciudad" />
+        <Select value={especialidadFiltro} onValueChange={setEspecialidadFiltro}>
+          <SelectTrigger className="w-full sm:w-[250px]" data-testid="select-especialidad">
+            <GraduationCap className="h-4 w-4 mr-2 text-muted-foreground" />
+            <SelectValue placeholder="Filtrar por especialidad" />
           </SelectTrigger>
           <SelectContent>
-            {ciudades.map((ciudad) => (
-              <SelectItem key={ciudad} value={ciudad}>
-                {ciudad}
+            {profesionTypes.map((tipo) => (
+              <SelectItem key={tipo.value} value={tipo.value}>
+                {tipo.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Users className="h-4 w-4" />
+        <span>{profesionalesFiltrados.length} profesionales encontrados</span>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {profesionalesFiltrados.map((profesional) => (
-          <Card key={profesional.id} className="hover-elevate" data-testid={`card-profesional-${profesional.id}`}>
+          <Card 
+            key={profesional.id} 
+            className={`hover-elevate ${profesional.alreadyAssigned ? 'border-primary/50 bg-primary/5' : ''}`}
+            data-testid={`card-profesional-${profesional.id}`}
+          >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <CardTitle className="text-lg">{profesional.nombre}</CardTitle>
+                  <CardTitle className="text-lg">{profesional.fullName || "Sin nombre"}</CardTitle>
                   <CardDescription className="flex items-center gap-1 mt-1">
                     <GraduationCap className="h-3 w-3" />
-                    {profesional.especialidad}
+                    {SST_PROFESSION_LABELS[profesional.sstProfessionType || ""] || profesional.sstProfessionType || "Sin especialidad"}
                   </CardDescription>
                 </div>
-                <Badge variant="secondary" className="shrink-0">
-                  {profesional.experiencia}
-                </Badge>
+                {profesional.alreadyAssigned && (
+                  <Badge variant="default" className="shrink-0 bg-primary">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Asignado
+                  </Badge>
+                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Award className="h-4 w-4 text-primary" />
-                  <span>Licencia: <strong className="text-foreground">{profesional.licencia}</strong></span>
+                  <span>Licencia: <strong className="text-foreground">{profesional.sstLicenseNumber || "N/A"}</strong></span>
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span>{profesional.ciudad}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Phone className="h-4 w-4" />
-                  <span>{profesional.telefono}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Mail className="h-4 w-4" />
-                  <span className="truncate">{profesional.email}</span>
-                </div>
+                {profesional.sstLicenseIssuer && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Building2 className="h-4 w-4" />
+                    <span className="truncate">{profesional.sstLicenseIssuer}</span>
+                  </div>
+                )}
+                {profesional.sstPhone && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Phone className="h-4 w-4" />
+                    <span>{profesional.sstPhone}</span>
+                  </div>
+                )}
+                {profesional.email && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Mail className="h-4 w-4" />
+                    <span className="truncate">{profesional.email}</span>
+                  </div>
+                )}
               </div>
 
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">Servicios:</p>
-                <div className="flex flex-wrap gap-1">
-                  {profesional.servicios.slice(0, 3).map((servicio) => (
-                    <Badge key={servicio} variant="outline" className="text-xs">
-                      {servicio}
-                    </Badge>
-                  ))}
-                  {profesional.servicios.length > 3 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{profesional.servicios.length - 3} más
-                    </Badge>
-                  )}
-                </div>
-              </div>
-
-              <Button variant="outline" className="w-full" size="sm">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Contactar
-              </Button>
+              {profesional.alreadyAssigned ? (
+                <Button variant="outline" className="w-full" size="sm" disabled>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Ya asignado a tu empresa
+                </Button>
+              ) : (
+                <Button 
+                  variant="default" 
+                  className="w-full" 
+                  size="sm"
+                  onClick={() => handleRequestContact(profesional)}
+                  data-testid={`btn-contactar-${profesional.id}`}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Solicitar Contacto
+                </Button>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {profesionalesFiltrados.length === 0 && (
+      {profesionalesFiltrados.length === 0 && !isLoading && (
         <Card className="p-8 text-center">
           <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="font-semibold">No se encontraron profesionales</h3>
           <p className="text-muted-foreground text-sm mt-2">
-            Intenta ajustar los filtros de búsqueda
+            {professionals?.length === 0 
+              ? "No hay profesionales licenciados con licencia vigente disponibles en este momento."
+              : "Intenta ajustar los filtros de búsqueda"
+            }
           </p>
         </Card>
       )}
@@ -221,11 +276,56 @@ export default function DirectorioProfesionales() {
       <Card className="bg-muted/50">
         <CardContent className="pt-6">
           <p className="text-sm text-muted-foreground text-center">
-            <strong>Nota:</strong> Este directorio es solo referencial. Verifique siempre la vigencia de la licencia 
-            del profesional en el Registro Único Nacional del Talento Humano en Salud (ReTHUS) del Ministerio de Salud.
+            <strong>Nota:</strong> Este directorio muestra únicamente profesionales con licencia SST vigente registrados en nuestra plataforma. 
+            Verifique siempre la vigencia de la licencia del profesional en el Registro Único Nacional del Talento Humano en Salud (ReTHUS) del Ministerio de Salud.
           </p>
         </CardContent>
       </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Solicitar Contacto</DialogTitle>
+            <DialogDescription>
+              Envía un mensaje a {selectedProfessional?.fullName} para solicitar sus servicios SST.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Mensaje</label>
+              <Textarea
+                value={requestMessage}
+                onChange={(e) => setRequestMessage(e.target.value)}
+                rows={6}
+                placeholder="Escribe tu mensaje..."
+                data-testid="textarea-mensaje-solicitud"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSendRequest}
+              disabled={requestMutation.isPending || !requestMessage.trim()}
+              data-testid="btn-enviar-solicitud"
+            >
+              {requestMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Enviar Solicitud
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
