@@ -78,6 +78,7 @@ const SST_LICENSE_STATUS_OPTIONS = [
   { value: "vencida", label: "Vencida" },
   { value: "pendiente_verificacion", label: "Pendiente de Verificación" },
   { value: "suspendida", label: "Suspendida" },
+  { value: "sin_configurar", label: "Sin configurar" },
 ] as const;
 
 const editFormSchema = z.object({
@@ -134,8 +135,15 @@ export default function ProfesionalesLicenciados() {
     if (!professionals) return [];
     
     return professionals.filter((prof) => {
-      if (statusFilter !== "all" && prof.sstLicenseStatus !== statusFilter) {
-        return false;
+      if (statusFilter !== "all") {
+        // Manejar caso especial "sin_configurar" para LSO sin estado de licencia
+        if (statusFilter === "sin_configurar") {
+          if (prof.sstLicenseStatus) {
+            return false;
+          }
+        } else if (prof.sstLicenseStatus !== statusFilter) {
+          return false;
+        }
       }
       if (companyFilter !== "all") {
         const hasCompany = prof.assignments.some(a => a.companyId === companyFilter && a.isActive);
