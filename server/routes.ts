@@ -1398,28 +1398,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== RESPONSE SANITIZATION MIDDLEWARE ==========
   // Intercepta respuestas de error para ocultar mensajes técnicos (SSL, certificados, etc.)
   // IMPORTANTE: Este middleware debe estar ANTES de todas las rutas
+  // Cubre tanto res.send() como res.json() para cobertura completa
   app.use((req, res, next) => {
-    const originalSend = res.send;
-    res.send = function(body: any) {
-      // Solo sanitizar respuestas de error (status >= 500)
-      if (res.statusCode >= 500 && typeof body === 'string') {
-        const technicalPatterns = [
-          'certificate', 'certificado', 'CERT', 'SSL', 'TLS',
-          'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'self signed',
-          'autofirmado', 'socket hang up', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
-        ];
-        
-        const hasTechnicalError = technicalPatterns.some(pattern => 
-          body.toLowerCase().includes(pattern.toLowerCase())
-        );
-        
-        if (hasTechnicalError) {
-          console.error('[Response Sanitizer] Blocked technical error from reaching client:', body.substring(0, 200));
-          return originalSend.call(this, 'Error al procesar la solicitud. Por favor intente nuevamente o contacte soporte técnico.');
+    const technicalPatterns = [
+      'certificate', 'certificado', 'CERT', 'SSL', 'TLS',
+      'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'self signed',
+      'autofirmado', 'socket hang up', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+      'DEPTH_ZERO_SELF_SIGNED_CERT', 'unable to get local issuer'
+    ];
+    
+    const hasTechnicalError = (text: string): boolean => {
+      if (!text) return false;
+      const lowerText = text.toLowerCase();
+      return technicalPatterns.some(pattern => lowerText.includes(pattern.toLowerCase()));
+    };
+    
+    const sanitizedResponse = {
+      error: 'Error interno del servidor',
+      message: 'Error al procesar la solicitud. Por favor intente nuevamente o contacte soporte técnico.'
+    };
+    
+    // Interceptar res.json()
+    const originalJson = res.json.bind(res);
+    res.json = function(body: any) {
+      if (res.statusCode >= 500 && body && typeof body === 'object') {
+        const errorMsg = body.error || body.message || '';
+        if (hasTechnicalError(String(errorMsg))) {
+          console.error('[Response Sanitizer JSON] Blocked technical error:', String(errorMsg).substring(0, 200));
+          return originalJson(sanitizedResponse);
         }
       }
-      return originalSend.call(this, body);
+      return originalJson(body);
     };
+    
+    // Interceptar res.send()
+    const originalSend = res.send.bind(res);
+    res.send = function(body: any) {
+      if (res.statusCode >= 500 && typeof body === 'string') {
+        if (hasTechnicalError(body)) {
+          console.error('[Response Sanitizer SEND] Blocked technical error:', body.substring(0, 200));
+          return originalSend(sanitizedResponse.message);
+        }
+      }
+      return originalSend(body);
+    };
+    
     next();
   });
 

@@ -62,49 +62,41 @@ The billing system enforces strict worker quantity limits based on what customer
 
 ## Troubleshooting - Problemas Conocidos y Soluciones
 
-### Error: "certificado autofirmado en cadena de certificados" (Enero 2026)
+### Error: "certificado autofirmado en cadena de certificados" (Enero 2026) - SOLUCIONADO
 
 **Síntoma:** Al generar informes PDF (como el Informe de Verificación del Sistema SG-SST), el usuario ve el mensaje técnico "certificado autofirmado en cadena de certificados" en lugar del PDF.
 
-**Causa:** Error SSL/TLS en conexiones a servicios externos (Base de datos Neon o Amazon S3) en producción. El error ocurre cuando:
-- La conexión a PostgreSQL/Neon tiene problemas de validación de certificado SSL
-- La conexión a Amazon S3 para cargar logos de empresa falla por certificados
+**Causa:** Error SSL/TLS en conexiones a servicios externos (Base de datos Neon o Amazon S3) en producción.
 
-**Solución implementada:**
-- Mejorado el manejo de errores en endpoints de generación de PDF para no exponer mensajes técnicos internos
-- Ubicación del código: `server/routes.ts` - endpoint `/api/evaluaciones-sst/:id/informe-verificacion-sistema`
-- El código detecta errores que contienen: 'certificate', 'CERT', 'SSL', 'ECONNREFUSED'
-- Muestra al usuario: "Error al generar el informe. Por favor intente nuevamente o contacte soporte técnico."
+**Solución Multicapa Implementada (Enero 2026):**
 
-**Código de la solución (línea ~24025 en server/routes.ts):**
-```typescript
-} catch (error: any) {
-  console.error('Error generating informe verificación sistema PDF:', error);
+1. **Configuración SSL en server/db.ts:**
+   - Agregado `rejectUnauthorized: false` para conexiones Neon PostgreSQL
+   - Nota: Esta es una mitigación temporal, idealmente usar bundle CA correcto
 
-  if (!res.headersSent) {
-    // Don't expose internal error messages to users (e.g., SSL/certificate errors)
-    const isInternalError = error.message?.includes('certificate') || 
-                            error.message?.includes('CERT') ||
-                            error.message?.includes('SSL') ||
-                            error.message?.includes('ECONNREFUSED');
-    const userMessage = isInternalError 
-      ? 'Error al generar el informe. Por favor intente nuevamente o contacte soporte técnico.'
-      : error.message;
-    res.status(500).send(userMessage);
-  }
-}
-```
+2. **Función Helper `handlePdfError()` en server/services/pdf-standardizer.ts:**
+   - Detecta errores técnicos (SSL, certificate, ECONNREFUSED, etc.)
+   - Retorna mensaje amigable al usuario
+   - Aplicada a endpoints de PDF críticos
 
-**Para resolver el problema subyacente en producción:**
-1. Verificar configuración SSL de Neon PostgreSQL en `server/db.ts`
-2. Verificar credenciales y región de AWS S3 en variables de entorno
-3. Revisar si `rejectUnauthorized: false` está configurado para conexiones que lo requieran
-4. Verificar que los certificados CA estén actualizados en el servidor de producción
+3. **Middleware de Sanitización de Respuestas (server/routes.ts línea ~1398):**
+   - Intercepta tanto `res.send()` como `res.json()`
+   - Solo actúa en respuestas con status >= 500
+   - Detecta patrones técnicos en mensajes de error
+   - Reemplaza con mensaje genérico amigable
+   - Patrones detectados: certificate, certificado, CERT, SSL, TLS, ECONNREFUSED, ECONNRESET, ETIMEDOUT, self signed, autofirmado, socket hang up, UNABLE_TO_VERIFY_LEAF_SIGNATURE
 
-**Archivos relevantes:**
-- `server/db.ts` - Configuración de conexión a base de datos
-- `server/objectStorage.ts` - Servicio de almacenamiento S3
-- `server/services/pdf-standardizer.ts` - Función `loadCompanyLogo()` para cargar logos
+4. **Middleware Global de Manejo de Errores (server/routes.ts al final):**
+   - Captura errores no manejados con `next(err)` o `throw`
+   - Registra error completo en logs del servidor
+   - Retorna mensaje sanitizado al cliente
+
+**Resultado:** Los usuarios ahora ven "Error al procesar la solicitud. Por favor intente nuevamente o contacte soporte técnico." en lugar de mensajes técnicos internos.
+
+**Archivos modificados:**
+- `server/db.ts` - Configuración SSL de PostgreSQL
+- `server/services/pdf-standardizer.ts` - Función handlePdfError()
+- `server/routes.ts` - Middlewares de sanitización y error global
 
 ### Error: "Rendered more hooks than during the previous render" (React Hooks)
 
