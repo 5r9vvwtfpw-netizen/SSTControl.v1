@@ -1951,6 +1951,7 @@ export interface IStorage {
   createAudiometryRecord(record: InsertAudiometryRecord, companyId: string): Promise<AudiometryRecord>;
   updateAudiometryRecord(id: string, record: Partial<InsertAudiometryRecord>, companyId: string): Promise<AudiometryRecord | undefined>;
   deleteAudiometryRecord(id: string, companyId: string): Promise<void>;
+  getAudiometryRecordsByWorker(workerId: string, companyId: string): Promise<AudiometryRecord[]>;
   
   // Noise Exposure Profiles methods
   getNoiseExposureProfiles(companyId: string): Promise<NoiseExposureProfile[]>;
@@ -16023,6 +16024,10 @@ export class DbStorage implements IStorage {
   async updateAudiometryRecord(id: string, record: Partial<InsertAudiometryRecord>, companyId: string): Promise<AudiometryRecord | undefined> {
     const [updated] = await db.update(schema.audiometryRecords).set({ ...record, updatedAt: new Date() }).where(and(eq(schema.audiometryRecords.id, id), eq(schema.audiometryRecords.companyId, companyId))).returning();
     return updated;
+  }
+
+  async getAudiometryRecordsByWorker(workerId: string, companyId: string): Promise<AudiometryRecord[]> {
+    return await db.select().from(schema.audiometryRecords).where(and(eq(schema.audiometryRecords.workerId, workerId), eq(schema.audiometryRecords.companyId, companyId))).orderBy(desc(schema.audiometryRecords.scheduledDate));
   }
 
   async deleteAudiometryRecord(id: string, companyId: string): Promise<void> {

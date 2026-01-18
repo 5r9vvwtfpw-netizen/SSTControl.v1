@@ -24,7 +24,8 @@ import type {
   Worker,
   InternalMessage,
   RegistroInduccion,
-  MedicalExam
+  MedicalExam,
+  AudiometryRecord
 } from "@shared/schema";
 import { insertReporteTrabajadorSchema } from "@shared/schema";
 import { z } from "zod";
@@ -32,7 +33,7 @@ import {
   MessageSquare, AlertCircle, Send, CheckCircle2, FileText, User, Briefcase, FileCheck,
   GraduationCap, Calendar, Clock, MapPin, UserCheck, Users, Mail, KeyRound, Eye, EyeOff, Vote,
   Building2, BarChart3, Shield, UserCog, BookOpen, Award, Play, Trophy, Star, FolderOpen, Inbox, Download, Bell, ChevronDown,
-  History, Monitor, Smartphone, Tablet, Video, Heart, ClipboardList, Camera, Upload, Trash2, Loader2
+  History, Monitor, Smartphone, Tablet, Video, Heart, ClipboardList, Camera, Upload, Trash2, Loader2, Headphones
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
@@ -845,6 +846,7 @@ const portalNavGroups = [
     icon: Heart,
     items: [
       { id: "mis-examenes-medicos", label: "Mis Exámenes Médicos", icon: Heart },
+      { id: "mis-audiometrias", label: "Mis Audiometrías", icon: Headphones },
     ]
   },
 ];
@@ -1074,6 +1076,7 @@ function WorkerPortal() {
         {activeSection === "elecciones-copasst" && <EleccionesCopasstTab />}
         {activeSection === "elecciones-convivencia" && <EleccionesConvivenciaTab />}
         {activeSection === "mis-examenes-medicos" && <MisExamenesMedicosTab />}
+        {activeSection === "mis-audiometrias" && <MisAudiometriasTab />}
       </div>
     </div>
   );
@@ -4745,6 +4748,266 @@ function MisExamenesMedicosTab() {
                       {estadoInfo.label}
                     </Badge>
                   </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ==================== TAB: MIS AUDIOMETRÍAS ====================
+// Programa de Conservación Auditiva - Resolución 8321/1983 Art. 53
+
+function MisAudiometriasTab() {
+  const { data: audiometrias = [], isLoading } = useQuery<AudiometryRecord[]>({
+    queryKey: ["/api/portal/mis-audiometrias"],
+  });
+  
+  if (isLoading) {
+    return <ListSkeletonLoading items={4} />;
+  }
+  
+  const tipoAudiometriaLabels: Record<string, string> = {
+    ingreso: "Audiometría de Ingreso",
+    inicial_90_dias: "Audiometría Inicial (90 días)",
+    periodica: "Audiometría Periódica",
+    seguimiento: "Audiometría de Seguimiento",
+    retiro: "Audiometría de Retiro",
+  };
+  
+  const resultadoLabels: Record<string, { label: string; color: string }> = {
+    normal: { label: "Normal", color: "bg-green-600" },
+    trauma_leve: { label: "Trauma Leve", color: "bg-yellow-600" },
+    trauma_moderado: { label: "Trauma Moderado", color: "bg-orange-600" },
+    trauma_severo: { label: "Trauma Severo", color: "bg-red-600" },
+    pendiente: { label: "Pendiente", color: "bg-gray-600" },
+  };
+  
+  const getEstadoInfo = (record: AudiometryRecord): { label: string; color: string } => {
+    if (record.status === "realizada") {
+      return { label: "Realizada", color: "bg-green-600" };
+    }
+    if (record.status === "vencida") {
+      return { label: "Vencida", color: "bg-red-600" };
+    }
+    if (record.status === "cancelada") {
+      return { label: "Cancelada", color: "bg-gray-600" };
+    }
+    return { label: "Programada", color: "bg-blue-600" };
+  };
+  
+  const programadas = audiometrias.filter(a => a.status === "programada");
+  const completadas = audiometrias.filter(a => a.status === "realizada");
+  
+  return (
+    <div className="space-y-6">
+      {/* Audiometrías Programadas */}
+      <Card data-testid="card-audiometrias-programadas">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Headphones className="h-5 w-5" />
+            Audiometrías Programadas
+          </CardTitle>
+          <CardDescription>
+            Exámenes audiométricos que tiene programados según el Programa de Conservación Auditiva (Res. 8321/1983).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {programadas.length === 0 ? (
+            <div className="text-center py-8">
+              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                No tiene audiometrías programadas en este momento
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {programadas.map((record) => {
+                const estadoInfo = getEstadoInfo(record);
+                const fechaProgramada = record.scheduledDate ? new Date(record.scheduledDate) : null;
+                const tipoLabel = tipoAudiometriaLabels[record.audiometryType] || "Audiometría";
+                
+                return (
+                  <Card key={record.id} data-testid={`card-audiometria-${record.id}`}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2 flex-wrap">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-base" data-testid={`text-tipo-audiometria-${record.id}`}>
+                            {tipoLabel}
+                          </CardTitle>
+                          <CardDescription className="flex items-center gap-2 mt-1 flex-wrap">
+                            {fechaProgramada && (
+                              <span className="flex items-center gap-1" data-testid={`text-fecha-audiometria-${record.id}`}>
+                                <Calendar className="h-3 w-3" />
+                                {format(fechaProgramada, "EEEE d 'de' MMMM, yyyy", { locale: es })}
+                              </span>
+                            )}
+                          </CardDescription>
+                        </div>
+                        <Badge className={`${estadoInfo.color} text-white`} data-testid={`badge-estado-audiometria-${record.id}`}>
+                          {estadoInfo.label}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                        {record.clinicName && (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Building2 className="h-4 w-4" />
+                            <span data-testid={`text-clinica-${record.id}`}>
+                              {record.clinicName}
+                            </span>
+                          </div>
+                        )}
+                        {record.observations && (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <FileText className="h-4 w-4" />
+                            <span>{record.observations}</span>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Historial de Audiometrías */}
+      <Card data-testid="card-audiometrias-historial">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <History className="h-5 w-5" />
+            Historial de Audiometrías
+          </CardTitle>
+          <CardDescription>
+            Exámenes audiométricos que ya ha completado con sus resultados.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {completadas.length === 0 ? (
+            <div className="text-center py-8">
+              <FileCheck className="h-12 w-12 mx-auto mb-4 opacity-50 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                No hay audiometrías completadas en su historial
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {completadas.map((record) => {
+                const fechaRealizada = record.examDate ? new Date(record.examDate) : null;
+                const tipoLabel = tipoAudiometriaLabels[record.audiometryType] || "Audiometría";
+                const resultadoInfo = record.overallResult 
+                  ? resultadoLabels[record.overallResult] 
+                  : { label: "Sin Resultado", color: "bg-gray-600" };
+                
+                return (
+                  <Card key={record.id} data-testid={`card-audiometria-historial-${record.id}`}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2 flex-wrap">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <div className="p-2 bg-green-100 dark:bg-green-950 rounded-full flex-shrink-0">
+                              <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-base" data-testid={`text-tipo-historial-audiometria-${record.id}`}>
+                                {tipoLabel}
+                              </CardTitle>
+                              {fechaRealizada && (
+                                <p className="text-xs text-muted-foreground" data-testid={`text-fecha-historial-audiometria-${record.id}`}>
+                                  Realizada el {format(fechaRealizada, "d 'de' MMMM, yyyy", { locale: es })}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge className={`${resultadoInfo.color} text-white`} data-testid={`badge-resultado-audiometria-${record.id}`}>
+                            {resultadoInfo.label}
+                          </Badge>
+                          {record.isBaseline === 1 && (
+                            <Badge variant="outline" className="border-blue-600 text-blue-600" data-testid={`badge-baseline-${record.id}`}>
+                              Línea Base
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-3">
+                        {/* Resultados por Oído */}
+                        {(record.rightEarAverage || record.leftEarAverage) && (
+                          <div className="grid sm:grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
+                            {record.rightEarAverage && (
+                              <div data-testid={`text-oido-derecho-${record.id}`}>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Oído Derecho (Promedio)</p>
+                                <p className="text-lg font-semibold">{record.rightEarAverage} dB</p>
+                              </div>
+                            )}
+                            {record.leftEarAverage && (
+                              <div data-testid={`text-oido-izquierdo-${record.id}`}>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Oído Izquierdo (Promedio)</p>
+                                <p className="text-lg font-semibold">{record.leftEarAverage} dB</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Alerta de Cambio de Umbral */}
+                        {record.thresholdShiftDetected === 1 && (
+                          <div className="flex items-start gap-2 p-3 bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg">
+                            <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="font-medium text-orange-800 dark:text-orange-200">Cambio de Umbral Detectado</p>
+                              {record.thresholdShiftDetails && (
+                                <p className="text-sm text-orange-700 dark:text-orange-300">{record.thresholdShiftDetails}</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Recomendaciones */}
+                        {record.recommendations && (
+                          <div className="text-sm">
+                            <p className="font-medium mb-1">Recomendaciones:</p>
+                            <p className="text-muted-foreground">{record.recommendations}</p>
+                          </div>
+                        )}
+                        
+                        {/* Próxima Audiometría */}
+                        {record.nextAudiometryDate && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            <span>
+                              Próxima audiometría: {format(new Date(record.nextAudiometryDate), "d 'de' MMMM, yyyy", { locale: es })}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Información del profesional */}
+                        <div className="grid sm:grid-cols-2 gap-3 text-sm text-muted-foreground border-t pt-3">
+                          {record.clinicName && (
+                            <div className="flex items-center gap-2">
+                              <Building2 className="h-4 w-4" />
+                              <span>{record.clinicName}</span>
+                            </div>
+                          )}
+                          {record.performedBy && (
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              <span>{record.performedBy}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 );
               })}
             </div>

@@ -31147,6 +31147,46 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+
+  // ============================================================================
+  // AUDIOMETRÍAS - Portal de Empleados
+  // Resolución 8321/1983 - Programa de Conservación Auditiva
+  // ============================================================================
+
+  // GET /api/portal/mis-audiometrias - Obtener audiometrías programadas del trabajador
+  app.get("/api/portal/mis-audiometrias", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      const companyId = user.companyId;
+      
+      if (!companyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
+      // Determinar workerId - usar el directo o buscar por email
+      let workerId = user.workerId;
+      
+      // Fallback: buscar trabajador por email si no tiene workerId directo
+      if (!workerId && user.email) {
+        const worker = await storage.getWorkerByEmail(user.email, companyId);
+        if (worker) {
+          workerId = worker.id;
+        }
+      }
+
+      if (!workerId) {
+        return res.status(404).json({ error: "Usuario no asociado a un trabajador" });
+      }
+
+      // Obtener audiometrías del trabajador
+      const audiometries = await storage.getAudiometryRecordsByWorker(workerId, companyId);
+      
+      res.json(audiometries);
+    } catch (error: any) {
+      console.error('Error fetching worker audiometries:', error);
+      res.status(500).json({ error: error.message || "Error al obtener las audiometrías" });
+    }
+  });
   // ============================================================================
   // COPASST ELECTORAL PARTICIPATION - Portal de Empleados
   // Resolución 2013/1986 - Elecciones de representantes de trabajadores
