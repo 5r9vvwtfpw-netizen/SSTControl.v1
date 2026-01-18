@@ -450,6 +450,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     try {
       const user = req.user!;
       
+      console.log('[GET /api/directory/licensed-professionals] User:', user.username, 'Role:', user.role, 'CompanyId:', user.companyId);
+      
       // Only admins or superadmins can access this directory
       if (!['admin', 'superadmin'].includes(user.role)) {
         return res.status(403).json({ message: "Solo administradores pueden acceder al directorio de profesionales" });
@@ -461,6 +463,7 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       }
 
       // Get all LSOs with valid license status (vigente)
+      console.log('[GET /api/directory/licensed-professionals] Fetching LSOs with vigente license...');
       const professionals = await db.select({
         id: schema.users.id,
         fullName: schema.users.fullName,
@@ -476,6 +479,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         eq(schema.users.role, 'lso'),
         eq(schema.users.sstLicenseStatus, 'vigente')
       ));
+
+      console.log('[GET /api/directory/licensed-professionals] Found', professionals.length, 'LSOs with vigente license');
 
       // If user has a company, check which LSOs are already assigned
       let assignedLsoIds: string[] = [];
@@ -499,8 +504,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
 
       res.json(professionalsWithStatus);
     } catch (error: any) {
-      console.error('[GET /api/directory/licensed-professionals] Error:', error.message);
-      res.status(500).json({ message: "Error fetching directory", error: error.message });
+      console.error('[GET /api/directory/licensed-professionals] Error:', error.message, error.stack);
+      res.status(500).json({ message: "Error al cargar directorio de profesionales. Por favor intente más tarde." });
     }
   });
 

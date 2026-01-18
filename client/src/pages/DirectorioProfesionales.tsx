@@ -118,13 +118,24 @@ export default function DirectorioProfesionales() {
   }
 
   if (error) {
+    const errorMessage = (error as any)?.message || "Error desconocido";
     return (
       <Card className="p-8 text-center">
         <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
         <h3 className="font-semibold">Error al cargar el directorio</h3>
         <p className="text-muted-foreground text-sm mt-2">
-          Por favor intenta nuevamente más tarde.
+          {errorMessage.includes("Solo administradores") || errorMessage.includes("asociado a una empresa")
+            ? errorMessage
+            : "Por favor intenta nuevamente más tarde o contacta soporte técnico."}
         </p>
+        <Button 
+          variant="outline" 
+          className="mt-4"
+          onClick={() => window.location.reload()}
+          data-testid="button-retry-directorio"
+        >
+          Reintentar
+        </Button>
       </Card>
     );
   }
