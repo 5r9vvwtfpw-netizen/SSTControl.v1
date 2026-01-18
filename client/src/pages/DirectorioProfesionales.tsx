@@ -175,7 +175,7 @@ export default function DirectorioProfesionales() {
           </SelectTrigger>
           <SelectContent>
             {profesionTypes.map((tipo) => (
-              <SelectItem key={tipo.value} value={tipo.value}>
+              <SelectItem key={tipo.value} value={tipo.value} data-testid={`option-especialidad-${tipo.value}`}>
                 {tipo.label}
               </SelectItem>
             ))}
@@ -185,7 +185,7 @@ export default function DirectorioProfesionales() {
 
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Users className="h-4 w-4" />
-        <span>{profesionalesFiltrados.length} profesionales encontrados</span>
+        <span data-testid="text-count-profesionales">{profesionalesFiltrados.length} profesionales encontrados</span>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -303,7 +303,7 @@ export default function DirectorioProfesionales() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} data-testid="btn-cancelar-solicitud">
               Cancelar
             </Button>
             <Button 

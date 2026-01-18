@@ -450,9 +450,14 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     try {
       const user = req.user!;
       
-      // Only admins with a company can access this directory
-      if (!user.companyId && user.role !== 'superadmin') {
-        return res.status(403).json({ message: "You need to be associated with a company to view the directory" });
+      // Only admins or superadmins can access this directory
+      if (!['admin', 'superadmin'].includes(user.role)) {
+        return res.status(403).json({ message: "Solo administradores pueden acceder al directorio de profesionales" });
+      }
+      
+      // Admins must have a company associated
+      if (user.role === 'admin' && !user.companyId) {
+        return res.status(403).json({ message: "Debes estar asociado a una empresa para ver el directorio" });
       }
 
       // Get all LSOs with valid license status (vigente)
@@ -507,20 +512,25 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       const { message } = req.body;
 
       // Only admins with a company can request
+      if (!['admin', 'superadmin'].includes(user.role)) {
+        return res.status(403).json({ message: "Solo administradores pueden solicitar profesionales" });
+      }
+      
       if (!user.companyId) {
         return res.status(403).json({ message: "Debes estar asociado a una empresa para solicitar un profesional" });
       }
 
-      // Verify LSO exists and has valid license
+      // Verify LSO exists, has lso role, and has valid license
       const [lso] = await db.select()
         .from(schema.users)
         .where(and(
           eq(schema.users.id, lsoId),
-          eq(schema.users.role, 'lso')
+          eq(schema.users.role, 'lso'),
+          eq(schema.users.sstLicenseStatus, 'vigente')
         ));
 
       if (!lso) {
-        return res.status(404).json({ message: "Profesional no encontrado" });
+        return res.status(404).json({ message: "Profesional no encontrado o sin licencia vigente" });
       }
 
       // Check if already assigned
