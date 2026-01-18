@@ -1804,14 +1804,14 @@ export default function ConservacionAuditiva() {
               <div className="space-y-2">
                 <Label htmlFor="exposureProfileId">Perfil de Exposición (opcional)</Label>
                 <Select
-                  value={controlForm.exposureProfileId}
-                  onValueChange={(value) => setControlForm({ ...controlForm, exposureProfileId: value })}
+                  value={controlForm.exposureProfileId || "none"}
+                  onValueChange={(value) => setControlForm({ ...controlForm, exposureProfileId: value === "none" ? "" : value })}
                 >
                   <SelectTrigger id="exposureProfileId" data-testid="select-control-profile">
                     <SelectValue placeholder="Sin asociar" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin asociar</SelectItem>
+                    <SelectItem value="none">Sin asociar</SelectItem>
                     {profiles.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.name} - {p.area}
