@@ -2703,7 +2703,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/recursos-financieros?from=evaluation"); }} data-testid="button-ir-recursos-291">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/asignacion-recursos?from=evaluation"); }} data-testid="button-ir-recursos-291">
                           Ir a Recursos
                         </Button>
                       </div>
