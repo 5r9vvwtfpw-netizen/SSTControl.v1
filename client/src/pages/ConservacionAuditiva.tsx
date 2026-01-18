@@ -794,6 +794,8 @@ export default function ConservacionAuditiva() {
   useEffect(() => {
     const savedId = localStorage.getItem("lastPlanTrabajoId");
     const savedMes = localStorage.getItem("lastCronogramaMes");
+    
+    // Always show the link first, then validate in background
     if (savedId) {
       setLastPlanTrabajoId(savedId);
     }
