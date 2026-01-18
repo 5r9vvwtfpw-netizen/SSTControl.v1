@@ -108,8 +108,9 @@ export async function seedAdminUser() {
       } else {
         console.log("✅ Usuario admin ya existe");
       }
-      // Siempre verificar/crear superadmin antes de salir
+      // Siempre verificar/crear superadmin y LSO antes de salir
       await seedSuperadminUser();
+      await seedLsoUser();
       return;
     }
 
@@ -142,4 +143,58 @@ export async function seedAdminUser() {
 
   // También crear el superadmin del proveedor SaaS
   await seedSuperadminUser();
+  
+  // Crear usuario LSO de ejemplo si no existe ninguno
+  await seedLsoUser();
+}
+
+/**
+ * Crea un usuario LSO (Licenciado en Salud Ocupacional) de ejemplo si no existe ninguno
+ * Esto asegura que el directorio de profesionales licenciados muestre al menos un registro
+ */
+async function seedLsoUser() {
+  try {
+    console.log("🔐 Verificando usuarios LSO...");
+
+    // Verificar si existe algún usuario con rol 'lso'
+    const existingLso = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.role, "lso"))
+      .limit(1);
+
+    if (existingLso.length > 0) {
+      console.log("✅ Ya existe al menos un usuario LSO");
+      return;
+    }
+
+    console.log("👤 Creando usuario LSO de ejemplo...");
+
+    const hashedPassword = await hashPassword("lso123");
+    
+    await db
+      .insert(schema.users)
+      .values({
+        username: "lsoejemplo",
+        password: hashedPassword,
+        email: "lso@sstcolombia.com",
+        fullName: "Dr. Carlos Rodríguez García",
+        role: "lso",
+        companyId: null,
+        department: "Salud Ocupacional",
+        sstProfessionType: "profesional_sst",
+        sstLicenseNumber: "LSO-2024-001",
+        sstLicenseIssuer: "Ministerio de Trabajo Colombia",
+        sstLicenseIssuedAt: new Date("2024-01-15"),
+        sstLicenseExpiresAt: new Date("2029-01-15"),
+        sstLicenseStatus: "vigente",
+      });
+
+    console.log("✅ Usuario LSO de ejemplo creado exitosamente");
+    console.log("   Usuario: lsoejemplo");
+    console.log("   Contraseña: lso123");
+    console.log("   Licencia: LSO-2024-001 (vigente)");
+  } catch (error) {
+    console.error("⚠️ Error al crear usuario LSO:", error);
+  }
 }
