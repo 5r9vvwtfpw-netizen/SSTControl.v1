@@ -594,7 +594,7 @@ export default function ResponsibleDesignationPage() {
                       name="jobProfileId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Perfil de Cargo (Opcional)</FormLabel>
+                          <FormLabel>Perfil de Cargo</FormLabel>
                           <Select 
                             onValueChange={field.onChange} 
                             value={field.value || undefined}
