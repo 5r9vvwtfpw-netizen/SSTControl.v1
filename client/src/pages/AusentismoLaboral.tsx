@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
 import type { WorkerAbsence, Worker, Accident } from "@shared/schema";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 const formSchema = z.object({
   workerId: z.string().min(1, "Seleccione un trabajador"),
@@ -335,7 +336,8 @@ export default function AusentismoLaboral() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <BackToEvaluationButton />
         {lastPlanTrabajoId ? (
           <Link 
             href={`/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`} 
