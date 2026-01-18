@@ -257,18 +257,18 @@ export function checkUserLimit() {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Determinar el companyId objetivo:
-      // 1. Para admins: usar companyId del payload (req.body.companyId)
+      // 1. Para superadmin/admin: usar companyId del payload (req.body.companyId)
       // 2. Para otros usuarios: usar su propio companyId (req.user.companyId)
       const userRole = req.user?.role;
-      const isAdmin = userRole === 'admin';
+      const isAdmin = userRole === 'admin' || userRole === 'superadmin';
       
       let targetCompanyId: string;
       
       if (isAdmin) {
-        // Admin puede crear usuarios para cualquier empresa
+        // Admin/Superadmin puede crear usuarios para cualquier empresa (o sin empresa para LSO)
         const bodyCompanyId = req.body?.companyId;
         if (typeof bodyCompanyId !== 'string' || bodyCompanyId === '') {
-          // Si admin no especificó empresa, continuar (será validado por la ruta)
+          // Si admin no especificó empresa, continuar (será validado por la ruta o es usuario externo como LSO)
           return next();
         }
         targetCompanyId = bodyCompanyId;
