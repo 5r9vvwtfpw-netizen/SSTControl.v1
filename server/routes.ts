@@ -206,10 +206,11 @@ import {
   PDF_CONFIG,
   loadCompanyLogo,
   formatDate,
-  requiresLSOSignature
+  requiresLSOSignature,
+  handlePdfError
 } from "./services/pdf-standardizer";
-import { 
-  sendExamRenewalEmail, 
+import {
+  sendExamRenewalEmail,
   sendTrainingRenewalEmail, 
   sendTestEmail,
   sendNuevoCambioEmail,
@@ -1394,6 +1395,35 @@ function canAccessMedicalData(role: UserRole): boolean {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
+  // ========== RESPONSE SANITIZATION MIDDLEWARE ==========
+  // Intercepta respuestas de error para ocultar mensajes técnicos (SSL, certificados, etc.)
+  // IMPORTANTE: Este middleware debe estar ANTES de todas las rutas
+  app.use((req, res, next) => {
+    const originalSend = res.send;
+    res.send = function(body: any) {
+      // Solo sanitizar respuestas de error (status >= 500)
+      if (res.statusCode >= 500 && typeof body === 'string') {
+        const technicalPatterns = [
+          'certificate', 'certificado', 'CERT', 'SSL', 'TLS',
+          'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'self signed',
+          'autofirmado', 'socket hang up', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+        ];
+        
+        const hasTechnicalError = technicalPatterns.some(pattern => 
+          body.toLowerCase().includes(pattern.toLowerCase())
+        );
+        
+        if (hasTechnicalError) {
+          console.error('[Response Sanitizer] Blocked technical error from reaching client:', body.substring(0, 200));
+          return originalSend.call(this, 'Error al procesar la solicitud. Por favor intente nuevamente o contacte soporte técnico.');
+        }
+      }
+      return originalSend.call(this, body);
+    };
+    next();
+  });
+
+
   // License status endpoint (public for admin dashboard)
   // License status endpoint (only for superadmin/soporte - hidden from clients)
   app.get("/api/license/status", async (req, res) => {
@@ -6156,8 +6186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Finalize PDF
       doc.end();
     } catch (error: any) {
-      console.error('Error generating PDF:', error);
-      res.status(500).send(error.message);
+      handlePdfError(error, res, 'sst-evaluations');
     }
   });
 
@@ -13429,10 +13458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.end();
 
     } catch (error: any) {
-      console.error('Error generating PDF from markdown:', error);
-      if (!res.headersSent) {
-        res.status(500).send(error.message || 'Error al generar el PDF');
-      }
+      handlePdfError(error, res, 'programa-capacitacion-prevencion');
     }
   });
 
@@ -19189,8 +19215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.end();
     } catch (error: any) {
-      console.error('Error generating PDF:', error);
-      res.status(500).send(error.message);
+      handlePdfError(error, res, 'environmental-measurements');
     }
   });
 
@@ -19722,8 +19747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.end();
     } catch (error: any) {
-      console.error('Error generating PDF:', error);
-      res.status(500).send(error.message);
+      handlePdfError(error, res, 'training-programs');
     }
   });
 
@@ -41067,6 +41091,50 @@ console.error('[GET /api/legal-docs/proteccion-datos/pdf] Error:', error.message
   } else {
     console.log("ℹ️ Pricing Plugin is disabled (set ENABLE_PRICING_PLUGIN=true to enable)");
   }
+
+  // ========== GLOBAL ERROR HANDLER ==========
+  // Middleware global para interceptar errores no manejados y evitar exponer mensajes técnicos
+  // Especialmente importante para errores de SSL/certificados en producción
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error('[Global Error Handler]', {
+      path: req.path,
+      method: req.method,
+      error: err.message,
+      stack: err.stack
+    });
+    
+    if (res.headersSent) {
+      return next(err);
+    }
+    
+    // Detectar errores técnicos que no deben exponerse
+    const errorMessage = err?.message || '';
+    const isInternalError = 
+      errorMessage.includes('certificate') ||
+      errorMessage.includes('certificado') ||
+      errorMessage.includes('CERT') ||
+      errorMessage.includes('SSL') ||
+      errorMessage.includes('TLS') ||
+      errorMessage.includes('ECONNREFUSED') ||
+      errorMessage.includes('ECONNRESET') ||
+      errorMessage.includes('ETIMEDOUT') ||
+      errorMessage.includes('self signed') ||
+      errorMessage.includes('autofirmado') ||
+      errorMessage.includes('socket hang up') ||
+      errorMessage.includes('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
+    
+    if (isInternalError) {
+      res.status(500).json({ 
+        error: 'Error interno del servidor',
+        message: 'Por favor intente nuevamente o contacte soporte técnico.'
+      });
+    } else {
+      res.status(500).json({ 
+        error: 'Error interno del servidor',
+        message: 'Ocurrió un error inesperado. Por favor intente nuevamente.'
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   // Initialize WebSocket for real-time notifications
