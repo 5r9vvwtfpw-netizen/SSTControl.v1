@@ -540,6 +540,60 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
     eppRecomendado: ['Casco minero con lámpara', 'Autorescatador', 'Respirador P100', 'Botas de seguridad mineras', 'Guantes de cuero', 'Overol reflectivo', 'Gafas antiempañantes'],
     capacitacionesObligatorias: ['Seguridad minera subterránea', 'Uso de autorescatador', 'Evacuación de emergencia', 'Primeros auxilios', 'Detección de gases', 'Sostenimiento de galerías']
   },
+  
+  // Código CIIU 1200 - Alias de clasificación antigua para minería de carbón
+  {
+    codigoCIIU: '1200',
+    descripcionCIIU: 'Extracción de carbón y lignito (clasificación CIIU Rev. 3)',
+    nivelRiesgo: 'V',
+    sector: 'Minería',
+    peligrosPrioritarios: ['SEG-003', 'SEG-006', 'QUI-001', 'QUI-002', 'FIS-001', 'FIS-003', 'BIO-MEC-003'],
+    peligrosEspecificos: [
+      {
+        codigo: 'MIN-001',
+        clasificacion: 'condiciones_seguridad',
+        peligro: 'Explosión por grisú',
+        descripcion: 'Acumulación de metano (CH4) en galerías subterráneas',
+        riesgoPotencial: 'Explosión masiva',
+        efectosPosibles: 'Quemaduras graves, asfixia, muerte, derrumbe',
+        medidasControl: ['Medición continua de metano', 'Ventilación mecánica', 'Equipos antiexplosión', 'Límite de concentración <1%', 'Evacuación inmediata']
+      },
+      {
+        codigo: 'MIN-002',
+        clasificacion: 'condiciones_seguridad',
+        peligro: 'Derrumbe de túneles',
+        descripcion: 'Colapso de techos y paredes de galerías',
+        riesgoPotencial: 'Sepultamiento, aplastamiento',
+        efectosPosibles: 'Fracturas múltiples, asfixia, muerte',
+        medidasControl: ['Sostenimiento de galerías', 'Inspección geotécnica', 'Monitoreo de convergencia', 'Refugios mineros', 'Equipos de rescate']
+      },
+      {
+        codigo: 'MIN-003',
+        clasificacion: 'quimico',
+        peligro: 'Neumoconiosis por polvo de carbón',
+        descripcion: 'Inhalación crónica de polvo de carbón',
+        riesgoPotencial: 'Enfermedad pulmonar irreversible',
+        efectosPosibles: 'Antracosis, fibrosis pulmonar masiva progresiva, muerte',
+        medidasControl: ['Supresión de polvo con agua', 'Respiradores P100', 'Monitoreo de partículas', 'Espirometrías periódicas', 'Rotación de personal']
+      },
+      {
+        codigo: 'MIN-004',
+        clasificacion: 'fisico',
+        peligro: 'Deficiencia de oxígeno',
+        descripcion: 'Desplazamiento de O2 por gases (CO2, CH4, CO) en espacios confinados',
+        riesgoPotencial: 'Asfixia',
+        efectosPosibles: 'Pérdida de conciencia, daño cerebral, muerte',
+        medidasControl: ['Monitoreo continuo de O2', 'Equipos de respiración autónoma', 'Ventilación forzada', 'Alarmas de bajo O2', 'Rescate inmediato']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1886-2015', norma: 'Decreto 1886/2015', descripcion: 'Reglamento de seguridad en labores mineras subterráneas', obligatorio: true },
+      { codigo: 'DEC-2222-1993', norma: 'Decreto 2222/1993', descripcion: 'Reglamento de higiene y seguridad en minería', obligatorio: true },
+      { codigo: 'RES-0491-2020', norma: 'Resolución 0491/2020', descripcion: 'Espacios confinados', obligatorio: true }
+    ],
+    eppRecomendado: ['Casco minero con lámpara', 'Autorescatador', 'Respirador P100', 'Botas de seguridad mineras', 'Guantes de cuero', 'Overol reflectivo', 'Gafas antiempañantes'],
+    capacitacionesObligatorias: ['Seguridad minera subterránea', 'Uso de autorescatador', 'Evacuación de emergencia', 'Primeros auxilios', 'Detección de gases', 'Sostenimiento de galerías']
+  },
 
   // ==================== COMERCIO ====================
   {
