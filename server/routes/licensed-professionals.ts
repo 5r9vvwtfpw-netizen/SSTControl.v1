@@ -14,6 +14,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       
       let professionals = await db.select().from(schema.users).where(eq(schema.users.role, 'lso'));
       
+      console.log('[GET /api/licensed-professionals] Found', professionals.length, 'LSO users');
+      
       if (companyId && typeof companyId === 'string') {
         const assignments = await db.select()
           .from(schema.licensedProfessionalAssignments)
