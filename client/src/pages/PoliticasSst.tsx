@@ -1059,7 +1059,7 @@ export default function PoliticasSstPage() {
 
                   {/* Firmas de Aprobación - Solo trabajadores con contratos activos */}
                   <div className="border-t pt-4 space-y-4">
-                    <h3 className="font-semibold text-sm">Firmas de Aprobación (Trabajadores con Contrato Activo)</h3>
+                    <h3 className="font-semibold text-sm">Firmas de Aprobación</h3>
                     {workersConContrato.length === 0 && (
                       <p className="text-sm text-muted-foreground">
                         No hay trabajadores con contratos activos. Primero registre contratos en el módulo de Contratos.
