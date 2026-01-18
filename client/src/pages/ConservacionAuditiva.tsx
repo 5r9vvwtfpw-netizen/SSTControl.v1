@@ -1276,14 +1276,14 @@ export default function ConservacionAuditiva() {
               <div className="space-y-2">
                 <Label htmlFor="environmentalMeasurementId">Medición Ambiental (opcional)</Label>
                 <Select
-                  value={profileForm.environmentalMeasurementId}
-                  onValueChange={(value) => setProfileForm({ ...profileForm, environmentalMeasurementId: value })}
+                  value={profileForm.environmentalMeasurementId || "none"}
+                  onValueChange={(value) => setProfileForm({ ...profileForm, environmentalMeasurementId: value === "none" ? "" : value })}
                 >
                   <SelectTrigger id="environmentalMeasurementId" data-testid="select-profile-measurement">
                     <SelectValue placeholder="Vincular medición" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin vincular</SelectItem>
+                    <SelectItem value="none">Sin vincular</SelectItem>
                     {noiseMeasurements.map((m) => (
                       <SelectItem key={m.id} value={m.id}>
                         {m.area} - {m.valueNumeric} {m.unit} ({formatDate(m.measurementDate)})
