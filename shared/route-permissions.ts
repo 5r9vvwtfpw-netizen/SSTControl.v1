@@ -80,6 +80,7 @@ export const routePermissions: Record<string, Permission[]> = {
   "/examenes-medicos": ["medical_exams:view", "medical_exams:view_self"],
   "/inspecciones": ["inspections:view", "inspections:view_self"],
   "/mediciones-ambientales": ["sst_management:view"],
+  "/conservacion-auditiva": ["sst_management:view"],
   "/sustancias-quimicas": ["sst_management:view"],
   "/vigilancia-epidemiologica": ["diseases:view"],
   "/perfil-sociodemografico": ["sst_management:view"],
