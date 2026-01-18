@@ -540,6 +540,33 @@ export default function ResponsibleDesignationPage() {
                                 if (matchingProfile) {
                                   form.setValue("jobProfileId", matchingProfile.id);
                                 }
+                                
+                                // AUTO-FILL: Buscar designaciones anteriores del trabajador para traer información de licencia SST
+                                const previousDesignation = designations.find(d => d.workerId === value);
+                                if (previousDesignation) {
+                                  // Auto-rellenar información de Licencia SST del trabajador
+                                  if (previousDesignation.licenciaSstNumero) {
+                                    form.setValue("licenciaSstNumero", previousDesignation.licenciaSstNumero);
+                                  }
+                                  if (previousDesignation.licenciaSstVigencia) {
+                                    form.setValue("licenciaSstVigencia", previousDesignation.licenciaSstVigencia);
+                                  }
+                                  if (previousDesignation.nivelFormacion) {
+                                    form.setValue("nivelFormacion", previousDesignation.nivelFormacion);
+                                  }
+                                  if (previousDesignation.curso50Horas) {
+                                    form.setValue("curso50Horas", previousDesignation.curso50Horas);
+                                  }
+                                  if (previousDesignation.curso50HorasFecha) {
+                                    form.setValue("curso50HorasFecha", previousDesignation.curso50HorasFecha);
+                                  }
+                                  
+                                  toast({
+                                    title: "Datos de Licencia SST cargados",
+                                    description: `Se ha cargado la información de licencia SST del trabajador ${selectedWorker.name}`,
+                                    className: "bg-green-50 border-green-200",
+                                  });
+                                }
                               }
                             }} 
                             value={field.value}
