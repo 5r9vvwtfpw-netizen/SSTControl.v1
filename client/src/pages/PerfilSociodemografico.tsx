@@ -481,10 +481,6 @@ export default function PerfilSociodemografico() {
   const completedItems = complianceChecklist.filter(item => item.completed).length;
   const compliancePercentage = Math.round((completedItems / complianceChecklist.length) * 100);
 
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-64">Cargando...</div>;
-  }
-
   const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
   const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
 
@@ -498,6 +494,10 @@ export default function PerfilSociodemografico() {
       setLastCronogramaMes(savedMes);
     }
   }, []);
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64">Cargando...</div>;
+  }
 
   return (
     <div className="space-y-6">

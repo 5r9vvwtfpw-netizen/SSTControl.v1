@@ -324,12 +324,6 @@ export default function MatrizLegal() {
     ? Math.round((estadoStats["cumple"] || 0) / matrizLegal.length * 100)
     : 0;
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-64">Cargando matriz legal...</div>;
-  }
-
-  const isEmpty = !matrizLegal || matrizLegal.length === 0;
-
   const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
   const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
 
@@ -343,6 +337,12 @@ export default function MatrizLegal() {
       setLastCronogramaMes(savedMes);
     }
   }, []);
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64">Cargando matriz legal...</div>;
+  }
+
+  const isEmpty = !matrizLegal || matrizLegal.length === 0;
 
   return (
     <div className="space-y-6">

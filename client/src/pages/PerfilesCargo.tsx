@@ -593,10 +593,6 @@ export default function PerfilesCargo() {
     return colors[riskClass as keyof typeof colors] || "bg-gray-500";
   };
 
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-64">Cargando...</div>;
-  }
-
   const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
   const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
 
@@ -610,6 +606,10 @@ export default function PerfilesCargo() {
       setLastCronogramaMes(savedMes);
     }
   }, []);
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64">Cargando...</div>;
+  }
 
   return (
     <div className="space-y-6">

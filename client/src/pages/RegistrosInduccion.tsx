@@ -399,19 +399,6 @@ export default function RegistrosInduccionPage() {
     return worker ? worker.position : "";
   };
 
-  if (registrosLoading) {
-    return (
-      <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-primary mb-2">Registros de Inducción</h1>
-          <p className="text-muted-foreground">
-            Cargando registros...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
   const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
 
@@ -425,6 +412,19 @@ export default function RegistrosInduccionPage() {
       setLastCronogramaMes(savedMes);
     }
   }, []);
+
+  if (registrosLoading) {
+    return (
+      <div className="p-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-primary mb-2">Registros de Inducción</h1>
+          <p className="text-muted-foreground">
+            Cargando registros...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
