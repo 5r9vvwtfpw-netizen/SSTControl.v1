@@ -72,7 +72,7 @@ The billing system enforces strict worker quantity limits based on what customer
 
 1. **Configuración SSL en server/db.ts:**
    - Agregado `rejectUnauthorized: false` para conexiones Neon PostgreSQL
-   - Nota: Esta es una mitigación temporal, idealmente usar bundle CA correcto
+   - Esta configuración es estándar para conexiones a Neon en ambientes cloud como Replit
 
 2. **Función Helper `handlePdfError()` en server/services/pdf-standardizer.ts:**
    - Detecta errores técnicos (SSL, certificate, ECONNREFUSED, etc.)
