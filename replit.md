@@ -59,3 +59,68 @@ The billing system enforces strict worker quantity limits based on what customer
    - Minimum 2 workers for Microempresa plan
    - Customers cannot buy fewer licenses than their current active workers
    - Error: "Tu empresa ya tiene X trabajadores registrados. Debes comprar al menos X licencias."
+
+## Troubleshooting - Problemas Conocidos y Soluciones
+
+### Error: "certificado autofirmado en cadena de certificados" (Enero 2026)
+
+**Síntoma:** Al generar informes PDF (como el Informe de Verificación del Sistema SG-SST), el usuario ve el mensaje técnico "certificado autofirmado en cadena de certificados" en lugar del PDF.
+
+**Causa:** Error SSL/TLS en conexiones a servicios externos (Base de datos Neon o Amazon S3) en producción. El error ocurre cuando:
+- La conexión a PostgreSQL/Neon tiene problemas de validación de certificado SSL
+- La conexión a Amazon S3 para cargar logos de empresa falla por certificados
+
+**Solución implementada:**
+- Mejorado el manejo de errores en endpoints de generación de PDF para no exponer mensajes técnicos internos
+- Ubicación del código: `server/routes.ts` - endpoint `/api/evaluaciones-sst/:id/informe-verificacion-sistema`
+- El código detecta errores que contienen: 'certificate', 'CERT', 'SSL', 'ECONNREFUSED'
+- Muestra al usuario: "Error al generar el informe. Por favor intente nuevamente o contacte soporte técnico."
+
+**Para resolver el problema subyacente en producción:**
+1. Verificar configuración SSL de Neon PostgreSQL en `server/db.ts`
+2. Verificar credenciales y región de AWS S3 en variables de entorno
+3. Revisar si `rejectUnauthorized: false` está configurado para conexiones que lo requieran
+4. Verificar que los certificados CA estén actualizados en el servidor de producción
+
+**Archivos relevantes:**
+- `server/db.ts` - Configuración de conexión a base de datos
+- `server/objectStorage.ts` - Servicio de almacenamiento S3
+- `server/services/pdf-standardizer.ts` - Función `loadCompanyLogo()` para cargar logos
+
+### Error: "Rendered more hooks than during the previous render" (React Hooks)
+
+**Síntoma:** Página en blanco o error de React al cargar ciertos módulos.
+
+**Causa:** Hooks de React (`useState`, `useEffect`, `useQuery`) ubicados después de un `return` condicional.
+
+**Solución:** Mover TODOS los hooks antes de cualquier `return` condicional en el componente.
+
+```typescript
+// ❌ INCORRECTO - Hook después de return condicional
+function MyComponent() {
+  if (!user) return <Loading />;
+  const [data, setData] = useState(null); // ERROR!
+}
+
+// ✅ CORRECTO - Todos los hooks primero
+function MyComponent() {
+  const [data, setData] = useState(null);
+  if (!user) return <Loading />;
+}
+```
+
+### Error: SelectItem con valor vacío
+
+**Síntoma:** Error de React/Radix al usar `<SelectItem value="">`.
+
+**Causa:** Radix Select no permite valores vacíos en SelectItem.
+
+**Solución:** Usar un valor placeholder como "none" o "all" en lugar de string vacío.
+
+```typescript
+// ❌ INCORRECTO
+<SelectItem value="">Todos</SelectItem>
+
+// ✅ CORRECTO  
+<SelectItem value="all">Todos</SelectItem>
+```
