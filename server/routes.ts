@@ -24026,11 +24026,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error generating informe verificación sistema PDF:', error);
 
       if (!res.headersSent) {
-        res.status(500).send(error.message);
+        // Don't expose internal error messages to users (e.g., SSL/certificate errors)
+        const isInternalError = error.message?.includes('certificate') || 
+                                error.message?.includes('CERT') ||
+                                error.message?.includes('SSL') ||
+                                error.message?.includes('ECONNREFUSED');
+        const userMessage = isInternalError 
+          ? 'Error al generar el informe. Por favor intente nuevamente o contacte soporte técnico.'
+          : error.message;
+        res.status(500).send(userMessage);
       }
     }
   });
-
 
   // PLAN ANUAL DE TRABAJO ROUTES (PLANEAR > Gestión Integral)
 
