@@ -55,6 +55,12 @@ export type Permission =
   | "diseases:edit"
   | "diseases:delete"
   
+  // Salud ocupacional (PCA, audiometrías, etc.)
+  | "health:view"
+  | "health:create"
+  | "health:edit"
+  | "health:delete"
+  
   // Evaluaciones SST
   | "sst_evaluations:view"
   | "sst_evaluations:create"
@@ -274,6 +280,10 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "diseases:create",
     "diseases:edit",
     "diseases:delete",
+    "health:view",
+    "health:create",
+    "health:edit",
+    "health:delete",
     "sst_evaluations:view",
     "sst_evaluations:create",
     "sst_evaluations:edit",
@@ -421,6 +431,10 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "diseases:create",
     "diseases:edit",
     "diseases:delete",
+    "health:view",
+    "health:create",
+    "health:edit",
+    "health:delete",
     "sst_evaluations:view",
     "sst_evaluations:create",
     "sst_evaluations:edit",
@@ -559,6 +573,10 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "diseases:create",
     "diseases:edit",
     "diseases:delete",
+    "health:view",
+    "health:create",
+    "health:edit",
+    "health:delete",
     "sst_evaluations:view",
     "sst_evaluations:create",
     "sst_evaluations:edit",
@@ -675,6 +693,10 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "diseases:create",
     "diseases:edit",
     "diseases:delete",
+    "health:view",
+    "health:create",
+    "health:edit",
+    "health:delete",
     "sst_evaluations:view",
     "sst_evaluations:create",
     "sst_evaluations:edit",
@@ -843,6 +865,10 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "diseases:create",
     "diseases:edit",
     "diseases:delete",
+    "health:view",
+    "health:create",
+    "health:edit",
+    "health:delete",
     "sst_evaluations:view",
     "sst_evaluations:create",
     "sst_evaluations:edit",
