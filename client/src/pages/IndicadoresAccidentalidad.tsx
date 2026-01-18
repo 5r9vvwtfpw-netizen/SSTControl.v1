@@ -21,6 +21,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { BarChart3, Plus, Edit, Trash2, TrendingUp, ArrowLeft, Calculator, FileText, Save, Calendar, Sparkles, CalendarDays } from "lucide-react";
 import type { AccidentStatistics } from "@shared/schema";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 const TREND_ANALYSIS_OPTIONS = [
   "Se observa una reducción del índice de frecuencia respecto al período anterior",
@@ -263,14 +264,12 @@ export default function IndicadoresAccidentalidad() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/evaluaciones-sst")} data-testid="button-back">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <BarChart3 className="h-6 w-6 text-violet-600" />

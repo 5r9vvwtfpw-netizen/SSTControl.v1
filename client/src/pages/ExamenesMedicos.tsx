@@ -23,13 +23,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Activity, Calendar, User, Stethoscope, AlertCircle, CheckCircle2, Clock, FileText, Bell, AlertTriangle, Eye, EyeOff, Mail, CalendarDays } from "lucide-react";
+import { Plus, Activity, Calendar, User, Stethoscope, AlertCircle, CheckCircle2, Clock, FileText, Bell, AlertTriangle, Eye, EyeOff, Mail, CalendarDays, Upload, Loader2, File, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { differenceInDays, addDays, isAfter, isBefore, parseISO } from "date-fns";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { useUpload } from "@/hooks/use-upload";
 
 const normativaExamenesMedicos = [
   {
@@ -82,7 +83,38 @@ export default function ExamenesMedicos() {
     followUpDate: "",
     examResults: "",
     status: "programado" as "programado" | "realizado" | "vencido" | "cancelado",
+    documentUrl: "" as string,
+    documentFileName: "" as string,
   });
+
+  const { uploadFile, isUploading: isUploadingFile } = useUpload({
+    onSuccess: (response) => {
+      setFormData(prev => ({
+        ...prev,
+        documentUrl: response.objectPath,
+        documentFileName: response.metadata.name,
+      }));
+      toast({
+        title: "Archivo subido",
+        description: "El documento del examen se ha subido correctamente",
+        className: "bg-green-50 border-green-200",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error al subir archivo",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await uploadFile(file);
+    }
+  };
 
   const { data: exams = [], isLoading } = useQuery<MedicalExam[]>({
     queryKey: ["/api/medical-exams"],
@@ -181,6 +213,8 @@ export default function ExamenesMedicos() {
       followUpDate: "",
       examResults: "",
       status: "programado",
+      documentUrl: "",
+      documentFileName: "",
     });
   };
 
@@ -200,6 +234,8 @@ export default function ExamenesMedicos() {
       followUpDate: exam.followUpDate || "",
       examResults: exam.examResults || "",
       status: exam.status,
+      documentUrl: exam.documentUrl || "",
+      documentFileName: exam.documentFileName || "",
     });
     setDialogOpen(true);
   };
@@ -219,6 +255,8 @@ export default function ExamenesMedicos() {
       recommendations: formData.recommendations || undefined,
       followUpDate: formData.followUpDate || undefined,
       examResults: formData.examResults || undefined,
+      documentUrl: formData.documentUrl || undefined,
+      documentFileName: formData.documentFileName || undefined,
     };
 
     if (editingExam) {
@@ -615,6 +653,47 @@ export default function ExamenesMedicos() {
                   />
                   <p className="text-xs text-muted-foreground">
                     No incluir diagnósticos específicos por privacidad
+                  </p>
+                </div>
+
+                <div className="space-y-2 col-span-2">
+                  <Label>Documento del Examen (PDF/Imagen)</Label>
+                  <div className="flex items-center gap-2">
+                    {formData.documentUrl ? (
+                      <div className="flex items-center gap-2 p-2 border rounded-md bg-muted/30 flex-1">
+                        <File className="h-4 w-4 text-primary" />
+                        <span className="text-sm truncate flex-1">{formData.documentFileName || "Documento subido"}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setFormData(prev => ({ ...prev, documentUrl: "", documentFileName: "" }))}
+                          data-testid="button-remove-document-medical-exam"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex-1">
+                        <Input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={handleFileUpload}
+                          disabled={isUploadingFile}
+                          className="cursor-pointer"
+                          data-testid="input-upload-document-medical-exam"
+                        />
+                      </div>
+                    )}
+                    {isUploadingFile && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Subiendo...
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Suba el certificado o concepto de aptitud del examen médico
                   </p>
                 </div>
               </div>

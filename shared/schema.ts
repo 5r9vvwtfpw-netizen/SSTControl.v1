@@ -1164,6 +1164,9 @@ export const medicalExams = pgTable("medical_exams", {
   followUpDate: date("follow_up_date"), // Fecha de próximo seguimiento
   examResults: text("exam_results"), // Resultados generales (sin diagnósticos específicos)
   status: medicalExamStatusEnum("status").notNull().default("programado"),
+  // Documento del examen médico (PDF/imagen del certificado)
+  documentUrl: text("document_url"), // URL del archivo del examen
+  documentFileName: text("document_file_name"), // Nombre original del archivo
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   // Portal de empleados - notificación y confirmación de lectura (Estándar 3.1.4)
   notificationSentAt: timestamp("notification_sent_at"), // Cuando se notificó al empleado
