@@ -4751,20 +4751,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/absences - Create absence (auto-link to accident if accidentId provided)
   app.post("/api/absences", requireAuth, async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
       const isAdmin = hasGlobalAccess(req.user!.role);
       
-      let companyId: string;
-      if (isAdmin) {
+      // Use getEffectiveCompanyId for consistency with other endpoints
+      // This reads X-Company-Id header for superadmins, or falls back to user's companyId
+      let companyId: string | null = getEffectiveCompanyId(req);
+      
+      // Fallback to body.companyId for backward compatibility
+      if (!companyId && isAdmin && req.body.companyId) {
         companyId = req.body.companyId;
-        if (!companyId) {
-          return res.status(400).send("Admin debe especificar companyId");
-        }
-      } else {
-        if (!userCompanyId) {
-          return res.status(403).send("Usuario no asociado a una empresa");
-        }
-        companyId = userCompanyId;
+      }
+      
+      if (!companyId) {
+        return res.status(400).send("Debe seleccionar una empresa");
       }
       
       // Validate input
