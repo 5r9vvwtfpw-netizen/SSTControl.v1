@@ -1690,36 +1690,50 @@ export default function InvestigacionAccidentes() {
           <DialogHeader>
             <DialogTitle>Agregar Participante</DialogTitle>
             <DialogDescription>
-              Registre los participantes en la investigación del accidente
+              Seleccione un trabajador para pre-llenar automáticamente los datos
             </DialogDescription>
           </DialogHeader>
 
           <Form {...participantForm}>
             <form onSubmit={participantForm.handleSubmit(handleAddParticipant)} className="space-y-4">
-              <FormField
-                control={participantForm.control}
-                name="participantName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nombre del Participante *</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Nombre completo" data-testid="input-participant-name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Selector de Trabajador para auto-completar */}
+              <div className="p-3 bg-muted/50 rounded-lg border">
+                <FormLabel className="text-sm font-medium">Seleccionar Trabajador</FormLabel>
+                <Select 
+                  onValueChange={(workerId) => {
+                    const worker = workers.find((w: Worker) => String(w.id) === workerId);
+                    if (worker) {
+                      participantForm.setValue("participantName", worker.name || "");
+                      participantForm.setValue("participantDocument", worker.identificationNumber || "");
+                      participantForm.setValue("participantPosition", worker.position || "");
+                      participantForm.setValue("participantArea", worker.department || "");
+                    }
+                  }}
+                >
+                  <SelectTrigger className="mt-2" data-testid="select-worker-autofill">
+                    <SelectValue placeholder="Buscar trabajador para auto-completar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {workers.filter((w: Worker) => w.status === "activo").map((worker: Worker) => (
+                      <SelectItem key={worker.id} value={String(worker.id)}>
+                        {worker.name} - {worker.identificationNumber}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={participantForm.control}
-                  name="participantDocument"
+                  name="participantName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Documento</FormLabel>
+                      <FormLabel>Nombre del Participante *</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="CC o CE" data-testid="input-participant-doc" />
+                        <Input {...field} placeholder="Nombre completo" data-testid="input-participant-name" />
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -1751,12 +1765,12 @@ export default function InvestigacionAccidentes() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={participantForm.control}
-                  name="participantPosition"
+                  name="participantDocument"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cargo</FormLabel>
+                      <FormLabel>Documento</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Cargo o posición" data-testid="input-participant-position" />
+                        <Input {...field} placeholder="CC o CE" data-testid="input-participant-doc" />
                       </FormControl>
                     </FormItem>
                   )}
@@ -1775,6 +1789,19 @@ export default function InvestigacionAccidentes() {
                   )}
                 />
               </div>
+
+              <FormField
+                control={participantForm.control}
+                name="participantPosition"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cargo</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Cargo o posición" data-testid="input-participant-position" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={participantForm.control}
