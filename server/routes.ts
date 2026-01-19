@@ -4766,6 +4766,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).send("Debe seleccionar una empresa");
       }
       
+      // DEBUG: Log received data for diagnosis
+      console.log('[DEBUG-ABSENCE] Creating absence with:', {
+        workerId: req.body.workerId,
+        companyId,
+        headerCompanyId: req.headers['x-company-id'],
+        bodyCompanyId: req.body.companyId,
+        userCompanyId: req.user!.companyId
+      });
+      
+      // VALIDATION: Verify worker exists before insert to prevent FK errors
+      if (req.body.workerId) {
+        const [existingWorker] = await db.select({ id: schema.workers.id, companyId: schema.workers.companyId })
+          .from(schema.workers)
+          .where(eq(schema.workers.id, req.body.workerId))
+          .limit(1);
+        
+        if (!existingWorker) {
+          console.error('[ERROR-ABSENCE] Worker not found:', req.body.workerId);
+          return res.status(400).send("El trabajador seleccionado no existe. Por favor actualice la página y seleccione un trabajador válido.");
+        }
+        
+        // Verify worker belongs to the same company
+        if (existingWorker.companyId !== companyId) {
+          console.error('[ERROR-ABSENCE] Worker company mismatch:', { workerCompanyId: existingWorker.companyId, requestCompanyId: companyId });
+          return res.status(400).send("El trabajador no pertenece a la empresa seleccionada. Por favor verifique la empresa activa.");
+        }
+      }
+      
       // Validate input
       const validatedData = insertWorkerAbsenceSchema.parse({
         ...req.body,
