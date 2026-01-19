@@ -350,11 +350,26 @@ export function checkUserLimit() {
       const currentUsers = await storage.getUsersByCompany(targetCompanyId);
       const usersWithSameRole = currentUsers.filter(u => u.role === newUserRole);
 
-      // Límite: 1 usuario por rol incluido en el plan
-      const limitPerRole = 1;
+      // Límite base: 1 usuario por rol incluido en el plan
+      const baseLimit = 1;
+      
+      // Obtener asientos extra pagados para este rol
+      let extraSeats = 0;
+      try {
+        const extraSeatData = await storage.getCompanyExtraSeatsByRole(targetCompanyId, newUserRole);
+        if (extraSeatData) {
+          extraSeats = extraSeatData.extraSeats;
+        }
+      } catch (e) {
+        // Si falla, continuar sin asientos extra
+        console.error('Error fetching extra seats:', e);
+      }
+      
+      // Límite total = base + asientos extra pagados
+      const totalLimit = baseLimit + extraSeats;
 
-      // Verificar si ya existe un usuario con este rol
-      if (usersWithSameRole.length >= limitPerRole) {
+      // Verificar si ya existe un usuario con este rol que excede el límite
+      if (usersWithSameRole.length >= totalLimit) {
         // Obtener nombre amigable del rol para el mensaje
         const roleNames: Record<string, string> = {
           'superusuario': 'Super Usuario',
@@ -369,17 +384,22 @@ export function checkUserLimit() {
         };
         
         const roleName = roleNames[newUserRole] || newUserRole;
+        const pricePerSeatCop = 10000; // $10,000 COP/mes por asiento
         
         return res.status(403).json({
           error: "Límite de usuarios por rol alcanzado",
-          message: `Tu plan incluye 1 usuario "${roleName}" sin costo adicional. Para agregar usuarios adicionales de este rol, por favor contacta a nuestro equipo de soporte.`,
-          supportEmail: "soporte@sstcolombia.com",
+          message: extraSeats > 0 
+            ? `Ya tienes ${totalLimit} usuarios "${roleName}" (1 incluido + ${extraSeats} adicionales). Puedes comprar más asientos a $${pricePerSeatCop.toLocaleString('es-CO')} COP/mes.`
+            : `Tu plan incluye 1 usuario "${roleName}" sin costo adicional. Puedes comprar asientos adicionales a $${pricePerSeatCop.toLocaleString('es-CO')} COP/mes.`,
           currentCount: usersWithSameRole.length,
-          limit: limitPerRole,
+          limit: totalLimit,
+          baseLimit: baseLimit,
+          extraSeats: extraSeats,
           role: newUserRole,
           roleName: roleName,
+          pricePerSeatCop: pricePerSeatCop,
           upgradeRequired: true,
-          contactSupport: true
+          canPurchase: true
         });
       }
 
