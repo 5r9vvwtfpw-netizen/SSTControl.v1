@@ -3882,12 +3882,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).send("Debe seleccionar un accidente para investigar");
       }
       
+      // DEBUG: Log all accidents for this company to diagnose production issue
+      const allCompanyAccidents = await db.select({ id: schema.accidents.id, type: schema.accidents.type })
+        .from(schema.accidents)
+        .where(eq(schema.accidents.companyId, companyId));
+      console.log('[DEBUG-INVESTIGATION] Looking for accidentId:', validatedData.accidentId);
+      console.log('[DEBUG-INVESTIGATION] Available accidents for company', companyId, ':', allCompanyAccidents.map(a => a.id));
+      
       const [existingAccident] = await db.select()
         .from(schema.accidents)
         .where(eq(schema.accidents.id, validatedData.accidentId))
         .limit(1);
       
+      console.log('[DEBUG-INVESTIGATION] Found accident:', existingAccident ? 'YES' : 'NO');
+      
       if (!existingAccident) {
+        console.log('[DEBUG-INVESTIGATION] ERROR - Accident not found. Requested ID:', validatedData.accidentId, 'Type:', typeof validatedData.accidentId);
         return res.status(400).send("El accidente seleccionado no existe. Por favor seleccione un accidente válido de la lista.");
       }
       
