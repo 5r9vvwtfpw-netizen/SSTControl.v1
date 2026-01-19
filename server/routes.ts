@@ -3734,8 +3734,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Finalize PDF
       doc.end();
     } catch (error: any) {
-      console.error('Error generating FURAT PDF:', error);
-      res.status(500).send(error.message);
+      handlePdfError(error, res, 'furat-pdf');
     }
   });
 
@@ -4361,8 +4360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       doc.end();
     } catch (error: any) {
-      console.error('Error generating investigation PDF:', error);
-      res.status(500).send(error.message);
+      handlePdfError(error, res, 'investigation-pdf');
     }
   });
 
@@ -4673,8 +4671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       doc.end();
     } catch (error: any) {
-      console.error("Error generating absence statistics PDF:", error);
-      res.status(500).send(error.message);
+      handlePdfError(error, res, 'absence-statistics-pdf');
     }
   });
   
@@ -5578,8 +5575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Finalize PDF
       doc.end();
     } catch (error: any) {
-      console.error('Error generating FUREL PDF:', error);
-      res.status(500).send(error.message);
+      handlePdfError(error, res, 'furel-pdf');
     }
   });
 
@@ -7837,8 +7833,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       doc.end();
     } catch (error: any) {
-      console.error('[GET /api/job-profiles/:id/pdf] Error:', error.message);
-      res.status(500).send(error.message);
+      handlePdfError(error, res, 'job-profile-pdf');
     }
   });
 
@@ -9214,8 +9209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Finalize PDF
       doc.end();
     } catch (error: any) {
-      console.error('Error generating Acta de Designación PDF:', error);
-      res.status(500).send(error.message);
+      handlePdfError(error, res, 'acta-designacion-pdf');
     }
   });
 
@@ -9439,10 +9433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.end();
 
     } catch (error: any) {
-      console.error('Error generating resumen PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).send(error.message || 'Error al generar el resumen');
-      }
+      handlePdfError(error, res, 'resumen-pdf');
     }
   });
 
@@ -9976,10 +9967,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.end();
 
     } catch (error: any) {
-      console.error('Error generating COPASST acta PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).send(error.message || 'Error al generar el PDF del acta');
-      }
+      handlePdfError(error, res, 'copasst-acta-pdf');
     }
   });
 
