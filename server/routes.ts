@@ -4566,7 +4566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Generate PDF
       // Add trial watermark if subscription is in trial period
-      const absences_subscription = await storage.getSubscriptionByCompany(companyId);
+      const absences_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const absences_trialStatus = getTrialStatus(absences_subscription?.status || 'trial', absences_subscription?.trialEnd || null, true, true);
 
       const GREEN_HEADER = '#1e7e34';
