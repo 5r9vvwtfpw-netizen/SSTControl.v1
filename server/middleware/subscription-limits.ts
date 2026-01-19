@@ -264,7 +264,6 @@ const GLOBAL_ACCESS_ROLES = ['superadmin', 'admin', 'soporte'];
  */
 const ADMIN_ROLES_WITH_LIMIT = [
   'superusuario',
-  'gerente',
   'responsable_sst',
   'coordinador_sst',
   'coordinador_rrhh',
@@ -272,8 +271,7 @@ const ADMIN_ROLES_WITH_LIMIT = [
   'jefe_personal',
   'supervisor',
   'vigia_sst',
-  'auditor_sst',
-  'lso'
+  'auditor_interno'
 ];
 
 /**
@@ -360,7 +358,6 @@ export function checkUserLimit() {
         // Obtener nombre amigable del rol para el mensaje
         const roleNames: Record<string, string> = {
           'superusuario': 'Super Usuario',
-          'gerente': 'Gerente General',
           'responsable_sst': 'Responsable SST',
           'coordinador_sst': 'Coordinador SST',
           'coordinador_rrhh': 'Coordinador RRHH',
@@ -368,8 +365,7 @@ export function checkUserLimit() {
           'jefe_personal': 'Jefe de Personal',
           'supervisor': 'Supervisor',
           'vigia_sst': 'Vigía SST',
-          'auditor_sst': 'Auditor Interno SG-SST',
-          'lso': 'Licenciado en Salud Ocupacional'
+          'auditor_interno': 'Auditor Interno SG-SST'
         };
         
         const roleName = roleNames[newUserRole] || newUserRole;

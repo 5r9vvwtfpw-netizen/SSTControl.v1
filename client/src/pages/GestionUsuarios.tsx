@@ -165,17 +165,27 @@ export default function GestionUsuarios() {
     queryKey: ["/api/companies"],
   });
   
-  // Filtrar los roles visibles - ocultar superadmin para usuarios que no son superadmin
+  // Roles que solo deben ser visibles para usuarios con acceso global (proveedor)
+  const providerOnlyRoles = ['superadmin', 'admin', 'soporte'];
+  
+  // Roles que no se gestionan desde esta pantalla (ej: LSO va a Directorio de Profesionales)
+  const hiddenFromRoleList = ['lso'];
+  
+  // Filtrar los roles visibles según el usuario actual
   const visibleRoleLabels = useMemo(() => {
-    if (currentUser && hasGlobalAccess(currentUser.role)) {
-      return roleLabels;
-    }
-    // Filtrar el rol superadmin para usuarios no-superadmin
     const filtered: Record<string, string> = {};
     for (const [role, label] of Object.entries(roleLabels)) {
-      if (role !== 'superadmin') {
-        filtered[role] = label;
+      // Siempre ocultar roles que no se gestionan desde aquí
+      if (hiddenFromRoleList.includes(role)) {
+        continue;
       }
+      // Si no tiene acceso global, ocultar roles del proveedor
+      if (!currentUser || !hasGlobalAccess(currentUser.role)) {
+        if (providerOnlyRoles.includes(role)) {
+          continue;
+        }
+      }
+      filtered[role] = label;
     }
     return filtered;
   }, [currentUser?.role]);
@@ -796,9 +806,9 @@ export default function GestionUsuarios() {
               const isUnlimited = role === 'trabajador' || role === 'worker';
               const isGlobalRole = ['superadmin', 'admin', 'soporte'].includes(role);
               const hasRoleLimit = [
-                'superusuario', 'gerente', 'responsable_sst', 'coordinador_sst',
+                'superusuario', 'responsable_sst', 'coordinador_sst',
                 'coordinador_rrhh', 'coordinador_salud', 'jefe_personal',
-                'supervisor', 'vigia_sst', 'auditor_sst', 'lso'
+                'supervisor', 'vigia_sst', 'auditor_interno'
               ].includes(role);
               const limitPerRole = 1;
               

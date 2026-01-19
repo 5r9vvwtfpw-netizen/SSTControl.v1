@@ -53,15 +53,14 @@ The monetization comes from **worker count**, not from admin users. The user lim
    - Low server impact as they only read their own information
    - Badge: "Ilimitado" (green color)
 
-3. **Company Roles with Limit** (11 roles):
+3. **Company Roles with Limit** (9 roles):
    - 1 user per role INCLUDED in the plan
-   - Roles: superusuario, gerente, responsable_sst, coordinador_sst, coordinador_rrhh, coordinador_salud, jefe_personal, supervisor, vigia_sst, auditor_sst, lso
+   - Roles: superusuario, responsable_sst, coordinador_sst, coordinador_rrhh, coordinador_salud, jefe_personal, supervisor, vigia_sst, auditor_interno
    - Additional users of the same role require contacting support (soporte@sstcolombia.com)
    - Badge: "X/1" with red color when limit reached
 
-**Special Cases:**
-- LSO can be created without companyId (external professionals)
-- Other limited roles REQUIRE a companyId
+**Hidden from User Management:**
+- LSO (Licenciado en Salud Ocupacional): Managed from "Directorio de Profesionales", not from user management
 
 **Error Message when limit exceeded:**
 "Tu plan incluye 1 usuario [RoleName] sin costo adicional. Para agregar usuarios adicionales de este rol, por favor contacta a nuestro equipo de soporte."
