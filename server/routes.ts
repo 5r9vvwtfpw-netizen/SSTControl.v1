@@ -10636,7 +10636,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
-      res.status(500).send(`Error generando PDF: ${error.message}`);
+      handlePdfError(error, res, 'copasst-elecciones-convocatoria-pdf');
     }
   });
 
@@ -10831,7 +10831,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
-      res.status(500).send(`Error generando PDF: ${error.message}`);
+      handlePdfError(error, res, 'copasst-elecciones-acta-escrutinio-pdf');
     }
   });
 
@@ -11071,7 +11071,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
-      res.status(500).send(`Error generando PDF: ${error.message}`);
+      handlePdfError(error, res, 'copasst-periodos-acta-constitucion-pdf');
     }
   });
 
@@ -11679,7 +11679,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       doc.end();
     } catch (error: any) {
-      res.status(500).send(`Error generando PDF: ${error.message}`);
+      handlePdfError(error, res, 'copasst-capacitacion-certificados-pdf');
     }
   });
 
@@ -12669,8 +12669,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.end();
       
     } catch (error: any) {
-      console.error('Error generating high risk workers PDF:', error);
-      res.status(500).send("Error al generar el PDF de evidencia");
+      handlePdfError(error, res, 'high-risk-workers-evidencia-pdf');
     }
   });
   // Get single high risk worker
@@ -12952,10 +12951,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.end();
 
     } catch (error: any) {
-      console.error('Error generating Comité de Convivencia acta PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).send(error.message || 'Error al generar el PDF del acta');
-      }
+      handlePdfError(error, res, 'comite-convivencia-actas-pdf');
     }
   });
 
@@ -14051,10 +14047,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.end();
 
     } catch (error: any) {
-      console.error('Error generating inducción PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).send(error.message || 'Error al generar el PDF del registro');
-      }
+      handlePdfError(error, res, 'registros-induccion-pdf');
     }
   });
 
@@ -15155,8 +15148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.end();
       
     } catch (error: any) {
-      console.error('Error generating verification PDF:', error);
-      res.status(500).send("Error al generar el PDF de verificación");
+      handlePdfError(error, res, 'verificaciones-muestreo-sgss-evidencia-pdf');
     }
   });
 
@@ -15655,7 +15647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       doc.end();
     } catch (error: any) {
-      res.status(500).send(error.message);
+      handlePdfError(error, res, 'trabajadores-alto-riesgo-report-pdf');
     }
   });
 
@@ -19068,10 +19060,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.end();
     } catch (error: any) {
-      console.error('Error generating hazardous substances inventory PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).send(error.message);
-      }
+      handlePdfError(error, res, 'hazardous-substances-inventory-pdf');
     }
   });
 
@@ -20145,10 +20134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.end();
     } catch (error: any) {
-      console.error('Error generating SVE program PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).send(error.message);
-      }
+      handlePdfError(error, res, 'sve-programs-pdf');
     }
   });
 
@@ -21359,10 +21345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.end();
     } catch (error: any) {
-      console.error('Error generating política SST PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).send(error.message);
-      }
+      handlePdfError(error, res, 'politicas-sst-pdf');
     }
   });
 
@@ -22838,10 +22821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.end();
     } catch (error: any) {
-      console.error('Error generating evaluación SST PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).send(error.message);
-      }
+      handlePdfError(error, res, 'evaluaciones-sst-pdf');
     }
   });
 
@@ -23255,10 +23235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.end();
     } catch (error: any) {
-      console.error('Error generating ministerio PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).send(error.message);
-      }
+      handlePdfError(error, res, 'evaluaciones-sst-ministerio-pdf');
     }
   });
 
@@ -25332,10 +25309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.end();
     } catch (error: any) {
-      console.error('Error generating plan trabajo anual PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).send(error.message);
-      }
+      handlePdfError(error, res, 'planes-trabajo-anual-pdf');
     }
   });
   // POST /api/actividades-plan-trabajo - Crear nueva actividad
@@ -27628,8 +27602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
-      console.error('Error generating cambio PDF:', error);
-      res.status(500).send(error.message);
+      handlePdfError(error, res, 'cambios-sst-pdf');
     }
   });
 
@@ -28045,8 +28018,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.end();
     } catch (error: any) {
-      console.error('Error generating adquisiciones panel PDF:', error);
-      res.status(500).json({ error: error.message || "Error al generar PDF" });
+      handlePdfError(error, res, 'adquisiciones-sst-panel-pdf');
     }
 
 
@@ -28302,8 +28274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.end();
     } catch (error: any) {
-      console.error('Error generating evaluacion proveedores panel PDF:', error);
-      res.status(500).json({ error: error.message || "Error al generar PDF" });
+      handlePdfError(error, res, 'evaluacion-proveedores-panel-pdf');
     }
   });
 
@@ -28502,8 +28473,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
-      console.error('Error generating gestion cambios panel PDF:', error);
-      res.status(500).json({ error: error.message || "Error al generar PDF" });
+      handlePdfError(error, res, 'gestion-cambios-panel-pdf');
     }
   });
 
@@ -28721,10 +28691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
-      console.error('Error generating consolidated evaluaciones PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).json({ error: error.message || "Error al generar PDF" });
-      }
+      handlePdfError(error, res, 'evaluaciones-sst-consolidado-pdf');
     }
   });
 
@@ -28856,10 +28823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
-      console.error('Error generating consolidated auditorias PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).json({ error: error.message || "Error al generar PDF" });
-      }
+      handlePdfError(error, res, 'auditorias-internas-consolidado-pdf');
     }
   });
 
@@ -28975,10 +28939,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
-      console.error('Error generating consolidated revisiones PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).json({ error: error.message || "Error al generar PDF" });
-      }
+      handlePdfError(error, res, 'revisiones-direccion-consolidado-pdf');
     }
   });
 
@@ -29108,10 +29069,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
-      console.error('Error generating consolidated objetivos PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).json({ error: error.message || "Error al generar PDF" });
-      }
+      handlePdfError(error, res, 'objetivos-indicadores-consolidado-pdf');
     }
   });
 
@@ -29346,10 +29304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
-      console.error('Error generating perfil sociodemografico PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).json({ error: error.message || "Error al generar PDF" });
-      }
+      handlePdfError(error, res, 'perfil-sociodemografico-pdf');
     }
   });
 
@@ -30351,8 +30306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       doc.end();
     } catch (error: any) {
-      console.error('Error generating comunicación SST PDF:', error);
-      res.status(500).json({ error: error.message || "Error al generar PDF" });
+      handlePdfError(error, res, 'comunicaciones-sst-pdf');
     }
   });
 
@@ -38513,7 +38467,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
-      res.status(500).send(`Error generando PDF: ${error.message}`);
+      handlePdfError(error, res, 'convivencia-convocatoria-pdf');
     }
   });
 
@@ -38707,7 +38661,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       doc.end();
     } catch (error: any) {
-      res.status(500).send(`Error generando PDF: ${error.message}`);
+      handlePdfError(error, res, 'convivencia-acta-escrutinio-pdf');
     }
   });
 
@@ -38959,7 +38913,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       doc.end();
     } catch (error: any) {
-      res.status(500).send(`Error generando PDF: ${error.message}`);
+      handlePdfError(error, res, 'convivencia-acta-constitucion-pdf');
     }
   });
 
@@ -39353,10 +39307,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       doc.end();
     } catch (error: any) {
-      console.error('Error generating promocion-prevencion PDF:', error);
-      if (!res.headersSent) {
-        res.status(500).json({ error: error.message || "Error al generar PDF" });
-      }
+      handlePdfError(error, res, 'promocion-prevencion-pdf');
     }
   });
   // ===========================================
@@ -39492,7 +39443,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       else { programs.forEach((prog, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${prog.name}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Año: ${prog.year} | Categoría: ${prog.category} | Estado: ${prog.status}`, 60, currentY); currentY += 12; doc.text(`Responsable: ${prog.responsibleName || 'N/A'}`, 60, currentY); currentY += 18; }); }
       addSignatureFooter(doc, signers, false);
       doc.end();
-    } catch (error: any) { console.error("Error generating EVS programs PDF:", error); res.status(500).send("Error al generar PDF"); }
+    } catch (error: any) {
+      handlePdfError(error, res, 'evs-programs-pdf');
+    }
   });
   app.get("/api/evs/programs/:id", requireAuth, async (req, res) => {
     const companyId = req.user!.companyId;
@@ -39572,7 +39525,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       else { activities.forEach((act, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${act.title}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Categoría: ${act.category} | Tipo: ${act.activityType} | Modalidad: ${act.modality}`, 60, currentY); currentY += 12; doc.text(`Fecha: ${act.scheduledDate ? new Date(act.scheduledDate).toLocaleDateString('es-CO') : 'N/A'} | Estado: ${act.status}`, 60, currentY); currentY += 18; }); }
       addSignatureFooter(doc, signers, false);
       doc.end();
-    } catch (error: any) { console.error("Error generating EVS activities PDF:", error); res.status(500).send("Error al generar PDF"); }
+    } catch (error: any) {
+      handlePdfError(error, res, 'evs-activities-pdf');
+    }
   });
   app.get("/api/evs/activities/:id", requireAuth, async (req, res) => {
     const companyId = req.user!.companyId;
@@ -39655,7 +39610,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       else { controls.forEach((ctrl, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${getWorkerName(ctrl.workerId)}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Tipo: ${ctrl.controlType} | Fecha: ${ctrl.controlDate ? new Date(ctrl.controlDate).toLocaleDateString('es-CO') : 'N/A'}`, 60, currentY); currentY += 12; doc.text(`Resultado: ${ctrl.result} | Realizado por: ${ctrl.performedBy || 'N/A'}`, 60, currentY); currentY += 18; }); }
       addSignatureFooter(doc, signers, false);
       doc.end();
-    } catch (error: any) { console.error("Error generating EVS controls PDF:", error); res.status(500).send("Error al generar PDF"); }
+    } catch (error: any) {
+      handlePdfError(error, res, 'evs-controls-pdf');
+    }
   });
   app.get("/api/evs/controls/:id", requireAuth, async (req, res) => {
     const companyId = req.user!.companyId;
@@ -39731,7 +39688,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       else { incidents.forEach((inc, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${getWorkerName(inc.workerId)}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Tipo: ${inc.incidentType} | Severidad: ${inc.severity} | Fecha: ${inc.incidentDate ? new Date(inc.incidentDate).toLocaleDateString('es-CO') : 'N/A'}`, 60, currentY); currentY += 12; doc.text(`Estado: ${inc.status}`, 60, currentY); currentY += 18; }); }
       addSignatureFooter(doc, signers, false);
       doc.end();
-    } catch (error: any) { console.error("Error generating EVS incidents PDF:", error); res.status(500).send("Error al generar PDF"); }
+    } catch (error: any) {
+      handlePdfError(error, res, 'evs-incidents-pdf');
+    }
   });
   app.get("/api/evs/incidents/:id", requireAuth, async (req, res) => {
     const companyId = req.user!.companyId;
@@ -39932,7 +39891,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       addSignatureFooter(doc, signers, false);
       
       doc.end();
-    } catch (error: any) { console.error("Error generating EVS followups PDF:", error); res.status(500).send("Error al generar PDF"); }
+    } catch (error: any) {
+      handlePdfError(error, res, 'evs-followups-pdf');
+    }
   });
 
 
@@ -40088,7 +40049,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       addSignatureFooter(doc, signers, false);
       
       doc.end();
-    } catch (error: any) { console.error("Error generating EVS followup PDF:", error); res.status(500).send("Error al generar PDF"); }
+    } catch (error: any) {
+      handlePdfError(error, res, 'evs-followup-detail-pdf');
+    }
   });
   app.get("/api/evs/followups/:id", requireAuth, async (req, res) => {
     const companyId = req.user!.companyId;
@@ -40237,28 +40200,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.setHeader('Content-Length', pdfBuffer.length);
       res.send(pdfBuffer);
     } catch (error: any) {
-      console.error('[GET /api/legal-docs/protecciones-legales/pdf] Error:', error.message);
-      
-      let statusCode = 500;
-      let errorCode = "PDF_GENERATION_FAILED";
-      let message = "Error al generar el documento PDF. Intente nuevamente en unos momentos.";
-      
-      // Categorize the error
-      if (error.message?.includes('permission') || error.message?.includes('unauthorized')) {
-        errorCode = "UNAUTHORIZED";
-        message = "No tiene permisos para descargar este documento.";
-        statusCode = 403;
-      } else if (error.message?.includes('connection') || error.message?.includes('Connection')) {
-        errorCode = "DATABASE_ERROR";
-        message = "Error al acceder a los datos. Intente nuevamente en unos momentos.";
-        statusCode = 500;
-      }
-      
-      res.status(statusCode).json({ 
-        error: errorCode,
-        message: message,
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
+      handlePdfError(error, res, 'legal-docs-protecciones-legales-pdf');
     }
   });
 
@@ -40288,29 +40230,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.setHeader('Content-Length', pdfBuffer.length);
       res.send(pdfBuffer);
     } catch (error: any) {
-console.error('[GET /api/legal-docs/proteccion-datos/pdf] Error:', error.message);
-      
-      // Categorize the error and return appropriate message
-      let statusCode = 500;
-      let errorCode = "PDF_GENERATION_FAILED";
-      let message = "Error al generar el documento PDF. Intente nuevamente en unos momentos.";
-      
-      // Categorize the error
-      if (error.message?.includes('permission') || error.message?.includes('unauthorized')) {
-        errorCode = "UNAUTHORIZED";
-        message = "No tiene permisos para descargar este documento.";
-        statusCode = 403;
-      } else if (error.message?.includes('connection') || error.message?.includes('Connection')) {
-        errorCode = "DATABASE_ERROR";
-        message = "Error al acceder a los datos. Intente nuevamente en unos momentos.";
-        statusCode = 500;
-      }
-      
-      res.status(statusCode).json({ 
-        error: errorCode,
-        message: message,
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
+      handlePdfError(error, res, 'legal-docs-proteccion-datos-pdf');
     }
   });
 
@@ -40340,29 +40260,7 @@ console.error('[GET /api/legal-docs/proteccion-datos/pdf] Error:', error.message
       res.setHeader('Content-Length', pdfBuffer.length);
       res.send(pdfBuffer);
     } catch (error: any) {
-      console.error('[GET /api/legal-docs/medidas-seguridad/pdf] Error:', error.message);
-      
-      // Categorize the error and return appropriate message
-      let statusCode = 500;
-      let errorCode = "PDF_GENERATION_FAILED";
-      let message = "Error al generar el documento PDF. Intente nuevamente en unos momentos.";
-      
-      // Categorize the error
-      if (error.message?.includes('permission') || error.message?.includes('unauthorized')) {
-        errorCode = "UNAUTHORIZED";
-        message = "No tiene permisos para descargar este documento.";
-        statusCode = 403;
-      } else if (error.message?.includes('connection') || error.message?.includes('Connection')) {
-        errorCode = "DATABASE_ERROR";
-        message = "Error al acceder a los datos. Intente nuevamente en unos momentos.";
-        statusCode = 500;
-      }
-      
-      res.status(statusCode).json({ 
-        error: errorCode,
-        message: message,
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
+      handlePdfError(error, res, 'legal-docs-medidas-seguridad-pdf');
     }
   });
 
@@ -40938,8 +40836,7 @@ console.error('[GET /api/legal-docs/proteccion-datos/pdf] Error:', error.message
       
       doc.end();
     } catch (error: any) {
-      console.error("[GET /api/acciones-mejora-contexto/pdf] Error:", error.message);
-      res.status(500).send("Error al generar PDF del plan de mejoramiento");
+      handlePdfError(error, res, 'acciones-mejora-contexto-pdf');
     }
 
   });
