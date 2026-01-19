@@ -34,6 +34,38 @@ The system uses a client-server architecture with a RESTful API. Data integrity 
 -   **Amazon S3**: Cloud object storage for file uploads with 20-year retention compliance.
 -   **AWS SDK v3**: For S3 operations.
 
+## User Limits System - Per-Role Model (January 2026)
+
+### Business Model
+The monetization comes from **worker count**, not from admin users. The user limit system is designed to allow companies to operate their SST system without artificial restrictions on administrative roles.
+
+### Implementation Details (`checkUserLimit()` middleware in server/middleware/subscription-limits.ts)
+
+**Three categories of roles:**
+
+1. **Global Access Roles** (superadmin, admin, soporte): 
+   - NO LIMIT - These are platform-level roles for SST Colombia staff
+   - Cannot be created by tenant users
+   - Badge: "Solo proveedor" (amber color)
+
+2. **Unlimited Roles** (trabajador, worker):
+   - UNLIMITED - Workers only access the Portal de Empleados (read-only)
+   - Low server impact as they only read their own information
+   - Badge: "Ilimitado" (green color)
+
+3. **Company Roles with Limit** (11 roles):
+   - 1 user per role INCLUDED in the plan
+   - Roles: superusuario, gerente, responsable_sst, coordinador_sst, coordinador_rrhh, coordinador_salud, jefe_personal, supervisor, vigia_sst, auditor_sst, lso
+   - Additional users of the same role require contacting support (soporte@sstcolombia.com)
+   - Badge: "X/1" with red color when limit reached
+
+**Special Cases:**
+- LSO can be created without companyId (external professionals)
+- Other limited roles REQUIRE a companyId
+
+**Error Message when limit exceeded:**
+"Tu plan incluye 1 usuario [RoleName] sin costo adicional. Para agregar usuarios adicionales de este rol, por favor contacta a nuestro equipo de soporte."
+
 ## Billing System - Worker Quantity Enforcement
 
 ### Implementation Details (January 2026)
