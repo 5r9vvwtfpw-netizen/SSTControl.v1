@@ -360,6 +360,8 @@ import type {
   InsertDocumentWorkerAssignment,
   DocumentAcknowledgment,
   InsertDocumentAcknowledgment,
+  CompanyExtraSeats,
+  InsertCompanyExtraSeats,
 } from "@shared/schema";
 import { eq, desc, asc, and, or, lt, lte, gte, sql, inArray, isNotNull, isNull, count } from "drizzle-orm";
 import session from "express-session";
@@ -16197,6 +16199,62 @@ export class DbStorage implements IStorage {
     const [assignedCount] = await db.select({ count: count() }).from(schema.documentWorkerAssignments).where(and(eq(schema.documentWorkerAssignments.documentId, documentId), eq(schema.documentWorkerAssignments.companyId, companyId)));
     const [acknowledgedCount] = await db.select({ count: count() }).from(schema.documentAcknowledgments).where(and(eq(schema.documentAcknowledgments.documentId, documentId), eq(schema.documentAcknowledgments.companyId, companyId)));
     return { totalAssigned: assignedCount?.count || 0, totalAcknowledged: acknowledgedCount?.count || 0 };
+  }
+
+  // ============================================================================
+  // COMPANY EXTRA SEATS (Usuarios Adicionales de Pago)
+  // ============================================================================
+
+  async getCompanyExtraSeats(companyId: string): Promise<CompanyExtraSeats[]> {
+    return await db.select().from(schema.companyExtraSeats)
+      .where(and(
+        eq(schema.companyExtraSeats.companyId, companyId),
+        eq(schema.companyExtraSeats.status, 'active')
+      ))
+      .orderBy(schema.companyExtraSeats.role);
+  }
+
+  async getCompanyExtraSeatsByRole(companyId: string, role: string): Promise<CompanyExtraSeats | undefined> {
+    const [seat] = await db.select().from(schema.companyExtraSeats)
+      .where(and(
+        eq(schema.companyExtraSeats.companyId, companyId),
+        eq(schema.companyExtraSeats.role, role as any),
+        eq(schema.companyExtraSeats.status, 'active')
+      ));
+    return seat;
+  }
+
+  async createCompanyExtraSeat(data: InsertCompanyExtraSeats): Promise<CompanyExtraSeats> {
+    const [created] = await db.insert(schema.companyExtraSeats).values(data).returning();
+    return created;
+  }
+
+  async updateCompanyExtraSeat(id: string, data: Partial<InsertCompanyExtraSeats>): Promise<CompanyExtraSeats | undefined> {
+    const [updated] = await db.update(schema.companyExtraSeats)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(schema.companyExtraSeats.id, id))
+      .returning();
+    return updated;
+  }
+
+  async incrementCompanyExtraSeat(companyId: string, role: string): Promise<CompanyExtraSeats> {
+    const existingSeat = await this.getCompanyExtraSeatsByRole(companyId, role);
+    
+    if (existingSeat) {
+      const [updated] = await db.update(schema.companyExtraSeats)
+        .set({ extraSeats: existingSeat.extraSeats + 1, updatedAt: new Date() })
+        .where(eq(schema.companyExtraSeats.id, existingSeat.id))
+        .returning();
+      return updated;
+    } else {
+      return await this.createCompanyExtraSeat({
+        companyId,
+        role: role as any,
+        extraSeats: 1,
+        pricePerSeatCop: 10000,
+        status: 'active'
+      });
+    }
   }
 
   // ============================================================================

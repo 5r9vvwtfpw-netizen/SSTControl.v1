@@ -360,4 +360,109 @@ export function registerStripeRoutes(app: Express) {
       res.json({ publishableKey: '' });
     }
   });
+
+  // ==========================================
+  // USUARIO ADICIONAL - Checkout para asientos extra por rol
+  // ==========================================
+  // Precio fijo: $10,000 COP/mes por usuario adicional del mismo rol
+  const EXTRA_SEAT_PRICE_COP = 10000;
+  
+  app.post("/api/stripe/create-extra-seat-checkout", subscriptionMutationLimiter, requireAuth, async (req, res) => {
+    try {
+      const extraSeatSchema = z.object({
+        role: z.string().min(1, "Rol es requerido"),
+        successUrl: z.string().url().optional(),
+        cancelUrl: z.string().url().optional()
+      });
+
+      const validatedData = extraSeatSchema.parse(req.body);
+      const user = req.user!;
+      const companyId = user.companyId;
+
+      if (!companyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
+      const company = await storage.getCompany(companyId);
+      if (!company) {
+        return res.status(404).json({ error: "Empresa no encontrada" });
+      }
+
+      // Verificar que la empresa tenga suscripción activa
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      if (!subscription || !['active', 'trial'].includes(subscription.status)) {
+        return res.status(403).json({ 
+          error: "Se requiere suscripción activa",
+          message: "Debes tener una suscripción activa para agregar usuarios adicionales."
+        });
+      }
+
+      // Obtener o crear cliente de Stripe
+      const customer = await stripeService.findOrCreateCustomer({
+        email: user.email || '',
+        name: company.name || user.fullName || user.username,
+        companyId
+      });
+
+      const replitDomains = process.env.REPLIT_DOMAINS;
+      const baseUrl = replitDomains 
+        ? `https://${replitDomains.split(',')[0]}`
+        : 'http://localhost:5000';
+
+      // Metadata para procesar en webhook
+      const metadata: Record<string, string> = {
+        companyId,
+        userId: user.id.toString(),
+        purchaseType: 'extra_seat',
+        role: validatedData.role,
+        pricePerSeatCop: EXTRA_SEAT_PRICE_COP.toString()
+      };
+
+      // Crear sesión de checkout usando el método de precio dinámico
+      const session = await stripeService.createExtraSeatCheckoutSession({
+        customerId: customer.id,
+        role: validatedData.role,
+        priceAmountCop: EXTRA_SEAT_PRICE_COP,
+        successUrl: validatedData.successUrl || `${baseUrl}/usuarios?extra_seat_success=true&role=${validatedData.role}`,
+        cancelUrl: validatedData.cancelUrl || `${baseUrl}/usuarios?extra_seat_canceled=true`,
+        metadata
+      });
+
+      logger.info({ 
+        sessionId: session.sessionId, 
+        companyId,
+        role: validatedData.role,
+        pricePerSeatCop: EXTRA_SEAT_PRICE_COP
+      }, 'Extra seat checkout session created');
+
+      res.json({
+        sessionId: session.sessionId,
+        url: session.url,
+        role: validatedData.role,
+        pricePerSeatCop: EXTRA_SEAT_PRICE_COP
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      logger.error({ err: error }, 'Error creating extra seat checkout session');
+      res.status(500).json({ error: "Error al crear sesión de pago para usuario adicional" });
+    }
+  });
+
+  // Endpoint para obtener asientos extra por empresa
+  app.get("/api/company-extra-seats", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
+      const extraSeats = await storage.getCompanyExtraSeats(companyId);
+      res.json(extraSeats);
+    } catch (error: any) {
+      logger.error({ err: error }, 'Error fetching company extra seats');
+      res.status(500).json({ error: "Error al obtener asientos adicionales" });
+    }
+  });
 }

@@ -376,6 +376,58 @@ export class StripeService {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
     return stripe.webhooks.constructEvent(payload, signature, endpointSecret);
   }
+
+  // ==========================================
+  // USUARIO ADICIONAL - Checkout para asientos extra por rol
+  // ==========================================
+  async createExtraSeatCheckoutSession(data: {
+    customerId: string;
+    role: string;
+    priceAmountCop: number;
+    successUrl: string;
+    cancelUrl: string;
+    metadata?: Record<string, string>;
+  }): Promise<StripeCheckoutSession> {
+    return await retryWithBackoff(async () => {
+      const stripe = await this.getClient();
+
+      // Crear sesión de checkout con precio dinámico usando price_data
+      const session = await stripe.checkout.sessions.create({
+        customer: data.customerId,
+        mode: 'subscription',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'cop',
+              product_data: {
+                name: `Usuario Adicional - ${data.role}`,
+                description: `Asiento adicional para el rol ${data.role} (facturación mensual)`
+              },
+              unit_amount: data.priceAmountCop * 100, // Stripe usa centavos
+              recurring: {
+                interval: 'month'
+              }
+            },
+            quantity: 1
+          }
+        ],
+        success_url: data.successUrl,
+        cancel_url: data.cancelUrl,
+        metadata: data.metadata
+      });
+
+      return {
+        sessionId: session.id,
+        url: session.url || ''
+      };
+    }, {
+      maxAttempts: 3,
+      initialDelayMs: 1000
+    }, {
+      operation: 'createExtraSeatCheckoutSession'
+    });
+  }
 }
 
 export const stripeService = new StripeService();
