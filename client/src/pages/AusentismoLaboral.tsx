@@ -90,7 +90,7 @@ export default function AusentismoLaboral() {
   const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
 
   const { data: absences = [], isLoading } = useQuery<WorkerAbsence[]>({
-    queryKey: ["/api/absences", companyId],
+    queryKey: ["/api/absences"],
     enabled: !!companyId,
   });
 
@@ -100,7 +100,7 @@ export default function AusentismoLaboral() {
   });
 
   const { data: accidents = [] } = useQuery<Accident[]>({
-    queryKey: ["/api/accidents", companyId],
+    queryKey: ["/api/accidents"],
     enabled: !!companyId,
   });
 
