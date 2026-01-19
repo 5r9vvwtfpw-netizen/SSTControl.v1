@@ -3846,20 +3846,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/investigations - Create investigation
   app.post("/api/investigations", requirePermission("accidents:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
       const isAdmin = hasGlobalAccess(req.user!.role);
       
-      let companyId: string;
-      if (isAdmin) {
+      // Use effectiveCompanyId from header (X-Company-Id) for superadmins, or user's companyId
+      let companyId: string | null = getEffectiveCompanyId(req);
+      
+      // If admin is sending companyId in body, use that (backward compatibility)
+      if (isAdmin && req.body.companyId) {
         companyId = req.body.companyId;
-        if (!companyId) {
-          return res.status(400).send("Admin debe especificar companyId");
-        }
-      } else {
-        if (!userCompanyId) {
-          return res.status(403).send("Usuario no asociado a una empresa");
-        }
-        companyId = userCompanyId;
+      }
+      
+      if (!companyId) {
+        return res.status(400).send("Se requiere seleccionar una empresa");
       }
       
       // Inject companyId into body before validation
