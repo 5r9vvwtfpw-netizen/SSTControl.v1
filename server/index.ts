@@ -80,6 +80,28 @@ app.post(
           
           // Get companyId from metadata
           const companyId = session.metadata?.companyId;
+          const purchaseType = session.metadata?.purchaseType;
+          
+          // Handle extra_seat purchase (usuarios adicionales de pago)
+          if (purchaseType === 'extra_seat' && companyId && session.payment_status === 'paid') {
+            const role = session.metadata?.role;
+            if (role) {
+              try {
+                const extraSeat = await storage.incrementCompanyExtraSeat(companyId, role);
+                logger.info({ 
+                  companyId, 
+                  role, 
+                  extraSeats: extraSeat.extraSeats,
+                  stripeSessionId: session.id 
+                }, 'Extra seat purchased successfully');
+              } catch (extraSeatError) {
+                logger.error({ err: extraSeatError, companyId, role }, 'Error processing extra seat purchase');
+              }
+            } else {
+              logger.warn({ companyId, sessionId: session.id }, 'Extra seat purchase missing role metadata');
+            }
+            break;
+          }
           
           if (companyId && session.payment_status === 'paid') {
             // Retry logic: subscription might not exist immediately after checkout
