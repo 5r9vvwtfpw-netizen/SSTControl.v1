@@ -23646,9 +23646,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ============================================================
       // GENERAR PDF PROFESIONAL
       // ============================================================
-      // Load company logo and get signers for standardized PDF
-      const logo = await loadCompanyLogo(company?.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      // Load company logo and get signers for standardized PDF (with fallback on errors)
+      let logo: Buffer | null = null;
+      let signers: any[] = [];
+      try {
+        logo = await loadCompanyLogo(company?.logoUrl);
+      } catch (logoError) {
+        console.warn("[PDF Informe Verificación] Error loading logo, continuing without it:", logoError);
+      }
+      try {
+        signers = await getSignersForCompany(companyId);
+      } catch (signersError) {
+        console.warn("[PDF Informe Verificación] Error loading signers, continuing without them:", signersError);
+      }
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
       
       // Add trial watermark if subscription is in trial period
