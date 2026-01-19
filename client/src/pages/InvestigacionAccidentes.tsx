@@ -366,14 +366,9 @@ export default function InvestigacionAccidentes() {
   });
 
   // Query para LSOs asignados a la empresa (profesionales externos del directorio)
+  // Uses dedicated endpoint that only requires authentication (no special permissions)
   const { data: assignedLSOs = [] } = useQuery<any[]>({
-    queryKey: ["/api/licensed-professionals", { companyId: user?.companyId }],
-    queryFn: async () => {
-      if (!user?.companyId) return [];
-      const res = await fetch(`/api/licensed-professionals?companyId=${user.companyId}`);
-      if (!res.ok) return [];
-      return res.json();
-    },
+    queryKey: ["/api/company/assigned-sst-professionals"],
     enabled: !!user?.companyId,
   });
 

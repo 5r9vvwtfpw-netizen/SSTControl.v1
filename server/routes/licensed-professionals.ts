@@ -582,4 +582,56 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       res.status(500).json({ message: "Error al enviar solicitud", error: error.message });
     }
   });
+
+  // GET /api/company/assigned-sst-professionals - Get SST professionals assigned to current user's company
+  // This endpoint only requires authentication, no special permissions
+  // Used by accident investigation form and other modules that need to select an assigned professional
+  app.get("/api/company/assigned-sst-professionals", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      const companyId = user.companyId;
+      
+      if (!companyId) {
+        return res.json([]);
+      }
+      
+      // Get active assignments for this company
+      const assignments = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.companyId, companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+      
+      if (assignments.length === 0) {
+        return res.json([]);
+      }
+      
+      const assignedUserIds = assignments.map(a => a.userId);
+      
+      // Get the professionals (LSOs) assigned to this company
+      const professionals = await db.select()
+        .from(schema.users)
+        .where(and(
+          eq(schema.users.role, 'lso'),
+          sql`${schema.users.id} IN (${sql.join(assignedUserIds.map(id => sql`${id}`), sql`, `)})`
+        ));
+      
+      // Map to include assignment info and exclude password
+      const professionalsWithInfo = professionals.map(prof => {
+        const assignment = assignments.find(a => a.userId === prof.id);
+        const { password, ...profWithoutPassword } = prof;
+        return {
+          ...profWithoutPassword,
+          assignedAt: assignment?.assignedAt,
+          isActive: assignment?.isActive
+        };
+      });
+      
+      res.json(professionalsWithInfo);
+    } catch (error: any) {
+      console.error('[GET /api/company/assigned-sst-professionals] Error:', error.message);
+      res.status(500).json({ message: "Error fetching assigned SST professionals", error: error.message });
+    }
+  });
 }
