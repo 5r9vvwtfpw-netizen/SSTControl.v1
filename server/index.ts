@@ -311,6 +311,13 @@ app.use(requireValidLicense);
     }
   });
   
+  // Ejecutar migraciones automáticas (sincroniza columnas faltantes)
+  try {
+    await runMigrations();
+  } catch (error) {
+    logger.error({ err: error }, "⚠️ Migraciones fallaron");
+  }
+
   // Crear usuario admin si no existe (crítico para primer acceso)
   try {
     await seedAdminUser();
