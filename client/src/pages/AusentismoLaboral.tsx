@@ -27,6 +27,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import type { WorkerAbsence, Worker, Accident } from "@shared/schema";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { CIE10_CATALOG, CIE10_OPTIONS } from "@/data/cie10-colombia";
 
 const formSchema = z.object({
   workerId: z.string().min(1, "Seleccione un trabajador"),
@@ -68,29 +69,6 @@ const statusLabels: Record<string, { label: string; color: string }> = {
   finalizada: { label: "Finalizada", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
   prorroga: { label: "En Prórroga", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" },
   reubicacion: { label: "Reubicación", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
-};
-
-const CIE10_CATALOG: Record<string, string> = {
-  "M54.5": "Lumbago no especificado",
-  "M54.4": "Lumbago con ciática",
-  "M54.2": "Cervicalgia",
-  "S62.6": "Fractura de otro dedo de la mano",
-  "S62.5": "Fractura del pulgar",
-  "S93.4": "Esguince y torcedura del tobillo",
-  "S83.5": "Esguince de rodilla",
-  "T14.0": "Herida superficial de región corporal no especificada",
-  "T14.1": "Herida abierta de región corporal no especificada",
-  "J06.9": "Infección aguda de vías respiratorias superiores",
-  "J11.1": "Influenza con otras manifestaciones respiratorias",
-  "K29.7": "Gastritis no especificada",
-  "F32.9": "Episodio depresivo, no especificado",
-  "F41.9": "Trastorno de ansiedad, no especificado",
-  "G43.9": "Migraña, no especificada",
-  "R51": "Cefalea",
-  "A09": "Diarrea y gastroenteritis de presunto origen infeccioso",
-  "N39.0": "Infección de vías urinarias",
-  "B34.9": "Infección viral, no especificada",
-  "Z96.6": "Presencia de implante ortopédico articular"
 };
 
 const COLORS = ['#ef4444', '#f97316', '#3b82f6', '#ec4899', '#8b5cf6', '#6b7280', '#06b6d4', '#f59e0b', '#64748b', '#84cc16'];
@@ -744,48 +722,53 @@ export default function AusentismoLaboral() {
                 />
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="diagnosis"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Diagnóstico</FormLabel>
+              <FormField
+                control={form.control}
+                name="cie10Code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Código CIE-10</FormLabel>
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        if (CIE10_CATALOG[value]) {
+                          form.setValue('diagnosis', CIE10_CATALOG[value]);
+                        }
+                      }} 
+                      value={field.value}
+                    >
                       <FormControl>
-                        <Input {...field} placeholder="Ej: Lumbalgia" data-testid="input-diagnosis" />
+                        <SelectTrigger data-testid="select-cie10">
+                          <SelectValue placeholder="Seleccione código CIE-10..." />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      <SelectContent className="max-h-[300px]">
+                        {CIE10_OPTIONS.map((option) => (
+                          <SelectItem key={option.code} value={option.code}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">El diagnóstico se llenará automáticamente al seleccionar</p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="cie10Code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Código CIE-10</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="Ej: M54.5"
-                          data-testid="input-cie10"
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            field.onChange(e);
-                            const upperValue = value.toUpperCase();
-                            if (CIE10_CATALOG[upperValue]) {
-                              form.setValue('diagnosis', CIE10_CATALOG[upperValue]);
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <p className="text-xs text-muted-foreground mt-1">Ingrese el código y el diagnóstico se completará automáticamente</p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="diagnosis"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Diagnóstico</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Se llena automáticamente con el código CIE-10" data-testid="input-diagnosis" readOnly className="bg-muted/50" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
