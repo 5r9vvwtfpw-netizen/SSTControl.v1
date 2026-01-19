@@ -463,10 +463,10 @@ export class LegalDocsPdfService {
     addTableRow('Campo', 'Valor', '', true);
     addTableRow('Razón Social', 'SST Colombia S.A.S.', '');
     addTableRow('Domicilio', 'Bogotá D.C., Colombia', '');
-    addTableRow('Correo Legal', 'legal@sstcolombia.com', '');
-    addTableRow('Soporte Técnico', 'soporte@sstcolombia.com', '');
-    addTableRow('DPO', 'dpo@sstcolombia.com', '');
-    addTableRow('Correo Privacidad', 'privacidad@sstcolombia.com', '');
+    addTableRow('Correo Legal', 'legal@sst-colombia.com', '');
+    addTableRow('Soporte Técnico', 'soporte@sst-colombia.com', '');
+    addTableRow('DPO', 'dpo@sst-colombia.com', '');
+    addTableRow('Correo Privacidad', 'privacidad@sst-colombia.com', '');
 
     // Add provider contact footer with all emails
     addProviderContactFooter(doc, { includeAllEmails: true });
@@ -560,7 +560,7 @@ export class LegalDocsPdfService {
         items: [
           'Cliente = Responsable del Tratamiento (Data Controller)',
           'SST Colombia = Encargado del Tratamiento (Data Processor)',
-          'Oficial de Protección de Datos (DPO): dpo@sstcolombia.com'
+          'Oficial de Protección de Datos (DPO): dpo@sst-colombia.com'
         ]
       },
       {

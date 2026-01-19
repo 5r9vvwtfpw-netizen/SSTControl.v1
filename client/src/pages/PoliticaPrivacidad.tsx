@@ -79,7 +79,7 @@ export default function PoliticaPrivacidad() {
                     </div>
                     <div className="bg-muted p-3 rounded">
                       <p className="font-semibold">Datos de Contacto del DPO (Data Protection Officer):</p>
-                      <p className="mt-1">Oficial de Protección de Datos: <a href="mailto:dpo@sstcolombia.com" className="text-primary hover:underline">dpo@sstcolombia.com</a></p>
+                      <p className="mt-1">Oficial de Protección de Datos: <a href="mailto:dpo@sst-colombia.com" className="text-primary hover:underline">dpo@sst-colombia.com</a></p>
                       <p>Dirección: Bogotá D.C., Colombia</p>
                       <p>Teléfono: +57 (1) XXX-XXXX</p>
                     </div>
@@ -436,7 +436,7 @@ export default function PoliticaPrivacidad() {
                       <li>Implementar acciones para mitigar el daño</li>
                     </ul>
                     <p className="mt-3"><strong>13.2 Canal de Reporte:</strong></p>
-                    <p>Si detecta una posible brecha de seguridad, repórtela inmediatamente a: <a href="mailto:security@sstcolombia.com" className="text-primary hover:underline">security@sstcolombia.com</a></p>
+                    <p>Si detecta una posible brecha de seguridad, repórtela inmediatamente a: <a href="mailto:security@sst-colombia.com" className="text-primary hover:underline">security@sst-colombia.com</a></p>
                   </div>
                 </section>
 
@@ -478,7 +478,7 @@ export default function PoliticaPrivacidad() {
                     <p><strong>16.1 Canales de Contacto:</strong></p>
                     <div className="bg-muted p-3 rounded">
                       <p><strong>Oficial de Protección de Datos (DPO):</strong></p>
-                      <p className="mt-1">Email: <a href="mailto:dpo@sstcolombia.com" className="text-primary hover:underline">dpo@sstcolombia.com</a></p>
+                      <p className="mt-1">Email: <a href="mailto:dpo@sst-colombia.com" className="text-primary hover:underline">dpo@sst-colombia.com</a></p>
                       <p>Teléfono: +57 (1) XXX-XXXX</p>
                       <p>Dirección: Bogotá D.C., Colombia</p>
                       <p>Horario de atención: Lunes a Viernes 8:00-17:00</p>

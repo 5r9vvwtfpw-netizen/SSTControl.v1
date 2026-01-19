@@ -317,7 +317,7 @@ export function ContratoServiciosSaas({
                   EL PROVEEDOR ofrece soporte técnico a través de los siguientes canales:
                 </p>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>Correo electrónico: soporte@sstcolombia.com</li>
+                  <li>Correo electrónico: soporte@sst-colombia.com</li>
                   <li>Chat en línea: Lunes a Viernes, 8:00 am - 6:00 pm (hora Colombia)</li>
                   <li>Centro de ayuda con documentación y tutoriales</li>
                 </ul>
@@ -439,38 +439,38 @@ export function ContratoServiciosSaas({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-muted-foreground">Soporte Técnico:</span>
-                  <a href="mailto:soporte@sstcolombia.com" className="text-primary hover:underline">
-                    soporte@sstcolombia.com
+                  <a href="mailto:soporte@sst-colombia.com" className="text-primary hover:underline">
+                    soporte@sst-colombia.com
                   </a>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-muted-foreground">Facturación:</span>
-                  <a href="mailto:facturacion@sstcolombia.com" className="text-primary hover:underline">
-                    facturacion@sstcolombia.com
+                  <a href="mailto:facturacion@sst-colombia.com" className="text-primary hover:underline">
+                    facturacion@sst-colombia.com
                   </a>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-muted-foreground">Pagos:</span>
-                  <a href="mailto:pagos@sstcolombia.com" className="text-primary hover:underline">
-                    pagos@sstcolombia.com
+                  <a href="mailto:pagos@sst-colombia.com" className="text-primary hover:underline">
+                    pagos@sst-colombia.com
                   </a>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-muted-foreground">Legal:</span>
-                  <a href="mailto:legal@sstcolombia.com" className="text-primary hover:underline">
-                    legal@sstcolombia.com
+                  <a href="mailto:legal@sst-colombia.com" className="text-primary hover:underline">
+                    legal@sst-colombia.com
                   </a>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-muted-foreground">DPO:</span>
-                  <a href="mailto:dpo@sstcolombia.com" className="text-primary hover:underline">
-                    dpo@sstcolombia.com
+                  <a href="mailto:dpo@sst-colombia.com" className="text-primary hover:underline">
+                    dpo@sst-colombia.com
                   </a>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-muted-foreground">Privacidad:</span>
-                  <a href="mailto:privacidad@sstcolombia.com" className="text-primary hover:underline">
-                    privacidad@sstcolombia.com
+                  <a href="mailto:privacidad@sst-colombia.com" className="text-primary hover:underline">
+                    privacidad@sst-colombia.com
                   </a>
                 </div>
               </div>

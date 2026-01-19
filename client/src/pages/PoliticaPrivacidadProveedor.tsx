@@ -60,11 +60,11 @@ export default function PoliticaPrivacidadProveedor() {
                       </p>
                       <p className="flex items-center gap-2">
                         <Mail className="h-4 w-4" />
-                        <span><strong>Correo de Privacidad:</strong> <a href="mailto:privacidad@sstcolombia.com" className="text-primary hover:underline">privacidad@sstcolombia.com</a></span>
+                        <span><strong>Correo de Privacidad:</strong> <a href="mailto:privacidad@sst-colombia.com" className="text-primary hover:underline">privacidad@sst-colombia.com</a></span>
                       </p>
                       <p className="flex items-center gap-2">
                         <Mail className="h-4 w-4" />
-                        <span><strong>Oficial de Protección de Datos (DPO):</strong> <a href="mailto:dpo@sstcolombia.com" className="text-primary hover:underline">dpo@sstcolombia.com</a></span>
+                        <span><strong>Oficial de Protección de Datos (DPO):</strong> <a href="mailto:dpo@sst-colombia.com" className="text-primary hover:underline">dpo@sst-colombia.com</a></span>
                       </p>
                       <p className="flex items-center gap-2">
                         <Phone className="h-4 w-4" />
@@ -268,7 +268,7 @@ export default function PoliticaPrivacidadProveedor() {
                     <div className="bg-muted p-4 rounded-lg mt-4">
                       <p className="font-semibold text-foreground">¿Cómo ejercer sus derechos ARCO?</p>
                       <p className="mt-2">
-                        Para ejercer sus derechos, envíe una solicitud a <a href="mailto:arco@sstcolombia.com" className="text-primary hover:underline">arco@sstcolombia.com</a> 
+                        Para ejercer sus derechos, envíe una solicitud a <a href="mailto:arco@sst-colombia.com" className="text-primary hover:underline">arco@sst-colombia.com</a> 
                         {" "}o a través del módulo "Solicitudes ARCO" disponible en la plataforma, indicando:
                       </p>
                       <ul className="list-disc pl-6 space-y-1 mt-2">
@@ -400,7 +400,7 @@ export default function PoliticaPrivacidadProveedor() {
                       <p className="text-sm">
                         <strong>Nota:</strong> El cliente puede solicitar en cualquier momento un reporte detallado 
                         de todos los accesos del proveedor a sus datos enviando una solicitud a 
-                        {" "}<a href="mailto:transparencia@sstcolombia.com" className="text-primary hover:underline">transparencia@sstcolombia.com</a>.
+                        {" "}<a href="mailto:transparencia@sst-colombia.com" className="text-primary hover:underline">transparencia@sst-colombia.com</a>.
                       </p>
                     </div>
                   </div>
@@ -453,17 +453,17 @@ export default function PoliticaPrivacidadProveedor() {
                       <p><strong>Oficial de Protección de Datos (DPO):</strong></p>
                       <p className="flex items-center gap-2">
                         <Mail className="h-4 w-4" />
-                        <a href="mailto:dpo@sstcolombia.com" className="text-primary hover:underline">dpo@sstcolombia.com</a>
+                        <a href="mailto:dpo@sst-colombia.com" className="text-primary hover:underline">dpo@sst-colombia.com</a>
                       </p>
                       <p><strong>Solicitudes ARCO:</strong></p>
                       <p className="flex items-center gap-2">
                         <Mail className="h-4 w-4" />
-                        <a href="mailto:arco@sstcolombia.com" className="text-primary hover:underline">arco@sstcolombia.com</a>
+                        <a href="mailto:arco@sst-colombia.com" className="text-primary hover:underline">arco@sst-colombia.com</a>
                       </p>
                       <p><strong>Transparencia (Accesos del Proveedor):</strong></p>
                       <p className="flex items-center gap-2">
                         <Mail className="h-4 w-4" />
-                        <a href="mailto:transparencia@sstcolombia.com" className="text-primary hover:underline">transparencia@sstcolombia.com</a>
+                        <a href="mailto:transparencia@sst-colombia.com" className="text-primary hover:underline">transparencia@sst-colombia.com</a>
                       </p>
                       <p className="flex items-center gap-2 mt-3">
                         <Phone className="h-4 w-4" />

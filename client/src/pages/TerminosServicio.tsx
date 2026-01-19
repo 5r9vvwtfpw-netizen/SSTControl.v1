@@ -271,9 +271,9 @@ export default function TerminosServicio() {
                     <p><strong>Razón Social:</strong> SST Colombia S.A.S.</p>
                     <p><strong>NIT:</strong> 900.XXX.XXX-X (Pendiente de asignación)</p>
                     <p><strong>Domicilio:</strong> Bogotá D.C., Colombia</p>
-                    <p><strong>Correo Electrónico:</strong> legal@sstcolombia.com</p>
-                    <p><strong>Soporte Técnico:</strong> soporte@sstcolombia.com</p>
-                    <p><strong>Protección de Datos (DPO):</strong> dpo@sstcolombia.com</p>
+                    <p><strong>Correo Electrónico:</strong> legal@sst-colombia.com</p>
+                    <p><strong>Soporte Técnico:</strong> soporte@sst-colombia.com</p>
+                    <p><strong>Protección de Datos (DPO):</strong> dpo@sst-colombia.com</p>
                     <p><strong>Teléfono:</strong> +57 (1) XXX-XXXX</p>
                   </div>
                 </section>
@@ -287,7 +287,7 @@ export default function TerminosServicio() {
                     COMPRENDIDO Y ACEPTADO ESTOS TÉRMINOS Y CONDICIONES DE SERVICIO EN SU TOTALIDAD.</strong>
                   </p>
                   <p className="text-muted-foreground mt-3 text-xs">
-                    Si tiene preguntas sobre estos Términos, por favor contacte a legal@sstcolombia.com antes de usar la Plataforma.
+                    Si tiene preguntas sobre estos Términos, por favor contacte a legal@sst-colombia.com antes de usar la Plataforma.
                   </p>
                 </section>
 

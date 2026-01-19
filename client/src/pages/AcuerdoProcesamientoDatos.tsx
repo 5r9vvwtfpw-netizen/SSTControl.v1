@@ -394,8 +394,8 @@ export default function AcuerdoProcesamientoDatos() {
                       <p className="mt-1">SST Colombia S.A.S.</p>
                       <p>NIT: 900.XXX.XXX-X</p>
                       <p>Domicilio: Bogotá D.C., Colombia</p>
-                      <p>DPO Email: <a href="mailto:dpo@sstcolombia.com" className="text-primary hover:underline">dpo@sstcolombia.com</a></p>
-                      <p>Legal Email: <a href="mailto:legal@sstcolombia.com" className="text-primary hover:underline">legal@sstcolombia.com</a></p>
+                      <p>DPO Email: <a href="mailto:dpo@sst-colombia.com" className="text-primary hover:underline">dpo@sst-colombia.com</a></p>
+                      <p>Legal Email: <a href="mailto:legal@sst-colombia.com" className="text-primary hover:underline">legal@sst-colombia.com</a></p>
                       <p>Teléfono: +57 (1) XXX-XXXX</p>
                     </div>
                   </div>
