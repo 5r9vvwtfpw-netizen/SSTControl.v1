@@ -426,6 +426,27 @@ app.use(requireValidLicense);
       statusCode: status,
     }, `Unhandled error: ${message}`);
 
+    // PROTECCIÓN AUTOMÁTICA PARA ENDPOINTS PDF
+    // Detecta si es una ruta PDF y sanitiza errores técnicos (SSL, certificados, etc.)
+    const isPdfRoute = req.path.toLowerCase().includes('pdf');
+    const isInternalError = 
+      message.includes('certificate') ||
+      message.includes('certificado') ||
+      message.includes('CERT') ||
+      message.includes('SSL') ||
+      message.includes('TLS') ||
+      message.includes('ECONNREFUSED') ||
+      message.includes('ECONNRESET') ||
+      message.includes('ETIMEDOUT') ||
+      message.includes('self signed') ||
+      message.includes('autofirmado') ||
+      message.includes('socket hang up') ||
+      message.includes('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
+
+    if (isPdfRoute && isInternalError) {
+      return res.status(500).send('Error al generar el documento. Por favor intente nuevamente o contacte soporte técnico.');
+    }
+
     res.status(status).json({ message });
   });
 

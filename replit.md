@@ -136,17 +136,38 @@ The billing system enforces strict worker quantity limits based on what customer
    - Reemplaza con mensaje genérico amigable
    - Patrones detectados: certificate, certificado, CERT, SSL, TLS, ECONNREFUSED, ECONNRESET, ETIMEDOUT, self signed, autofirmado, socket hang up, UNABLE_TO_VERIFY_LEAF_SIGNATURE
 
-4. **Middleware Global de Manejo de Errores (server/routes.ts al final):**
+4. **Middleware Global de Manejo de Errores (server/index.ts línea ~418):**
    - Captura errores no manejados con `next(err)` o `throw`
    - Registra error completo en logs del servidor
+   - **PROTECCIÓN AUTOMÁTICA PARA ENDPOINTS PDF**: Detecta si la ruta contiene "pdf" y sanitiza errores SSL/certificados automáticamente
    - Retorna mensaje sanitizado al cliente
 
 **Resultado:** Los usuarios ahora ven "Error al procesar la solicitud. Por favor intente nuevamente o contacte soporte técnico." en lugar de mensajes técnicos internos.
 
+**Protección Automática para Futuros Endpoints PDF (Enero 2026):**
+- Cualquier nuevo endpoint con "pdf" en su ruta estará protegido automáticamente por el middleware global
+- La protección detecta errores SSL/certificados y muestra mensaje amigable
+- **Recomendación**: Aunque hay protección automática, es mejor usar `handlePdfError()` en el catch de cada endpoint para mayor control
+
+**Patrón recomendado para nuevos endpoints PDF:**
+```typescript
+import { handlePdfError } from "./services/pdf-standardizer";
+
+app.get("/api/nuevo-modulo/pdf", requireAuth, async (req, res) => {
+  try {
+    // ... código para generar PDF ...
+    doc.end();
+  } catch (error: any) {
+    handlePdfError(error, res, 'nuevo-modulo-pdf');
+  }
+});
+```
+
 **Archivos modificados:**
 - `server/db.ts` - Configuración SSL de PostgreSQL
 - `server/services/pdf-standardizer.ts` - Función handlePdfError()
-- `server/routes.ts` - Middlewares de sanitización y error global
+- `server/routes.ts` - Todos los 50 endpoints PDF con handlePdfError()
+- `server/index.ts` - Middleware global con protección automática para rutas PDF
 
 ### Error: "Rendered more hooks than during the previous render" (React Hooks)
 
