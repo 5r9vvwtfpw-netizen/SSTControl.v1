@@ -89,6 +89,15 @@ export default function AusentismoLaboral() {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
 
+  // Reset form and close dialog when company changes to prevent stale workerId references
+  useEffect(() => {
+    if (dialogOpen) {
+      setDialogOpen(false);
+      setEditingId(null);
+      form.reset();
+    }
+  }, [companyId]);
+
   const { data: absences = [], isLoading } = useQuery<WorkerAbsence[]>({
     queryKey: ["/api/absences"],
     enabled: !!companyId,
