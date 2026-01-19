@@ -1313,8 +1313,8 @@ export default function Trabajadores() {
                   
                   <TabsContent value="datos" className="mt-4">
                     <form onSubmit={handleSubmit} className="space-y-4">
-                      {/* Photo Display Section - Workers upload their own photos via portal */}
-                      <div className="flex flex-col items-center gap-3 pb-4 border-b">
+                      {/* Photo Display Section - Hidden from admin view per client request, workers manage via portal */}
+                      <div className="hidden flex-col items-center gap-3 pb-4 border-b">
                         <Label className="text-sm font-medium">Foto para Carnet</Label>
                         <div className="h-24 w-24 rounded-lg border-2 border-muted overflow-hidden bg-muted flex items-center justify-center">
                           {editingWorker?.photoUrl && !photoLoadError ? (
