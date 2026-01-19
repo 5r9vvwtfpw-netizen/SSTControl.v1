@@ -114,8 +114,11 @@ export class LegalDocsPdfService {
    * Generate complete Legal Protections Table PDF
    */
   async generateProteccionesLegalesPdf(companyOptions: LegalDocWithCompanyOptions, options: LegalDocOptions = {}): Promise<Buffer> {
+    console.log('[LegalDocsPdf] Starting generateProteccionesLegalesPdf');
     const { company, signers, logoBuffer } = companyOptions;
+    console.log(`[LegalDocsPdf] Company: ${company?.name}, Logo: ${logoBuffer ? 'yes' : 'no'}`);
     const { default: PDFDocument } = await import('pdfkit');
+    console.log('[LegalDocsPdf] PDFDocument imported successfully');
     
     const doc = new PDFDocument({ 
       margin: 40, 
@@ -474,13 +477,28 @@ export class LegalDocsPdfService {
     // Apply watermarks to all pages
     applyWatermarksToAllPages(doc);
 
+    console.log('[LegalDocsPdf] PDF content generated, ending document...');
     doc.end();
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      doc.on('error', (err: Error) => {
+        console.error('[LegalDocsPdf] PDF stream error:', err);
+        reject(err);
+      });
       doc.on('end', async () => {
-        const rawPdf = Buffer.concat(chunks);
-        const encryptedPdf = await applyPdfEncryption(rawPdf);
-        resolve(encryptedPdf);
+        try {
+          console.log('[LegalDocsPdf] PDF stream ended, concatenating chunks...');
+          const rawPdf = Buffer.concat(chunks);
+          console.log(`[LegalDocsPdf] Raw PDF size: ${rawPdf.length} bytes`);
+          const encryptedPdf = await applyPdfEncryption(rawPdf);
+          console.log(`[LegalDocsPdf] Final PDF size: ${encryptedPdf.length} bytes`);
+          resolve(encryptedPdf);
+        } catch (encryptError: any) {
+          console.error('[LegalDocsPdf] Error in PDF finalization:', encryptError);
+          // Return raw PDF if encryption fails
+          const rawPdf = Buffer.concat(chunks);
+          resolve(rawPdf);
+        }
       });
     });
   }
@@ -489,8 +507,11 @@ export class LegalDocsPdfService {
    * Generate Data Protection Summary PDF (Habeas Data + GDPR)
    */
   async generateProteccionDatosPdf(companyOptions: LegalDocWithCompanyOptions): Promise<Buffer> {
+    console.log('[LegalDocsPdf] Starting generateProteccionDatosPdf');
     const { company, signers, logoBuffer } = companyOptions;
+    console.log(`[LegalDocsPdf] Company: ${company?.name}, Logo: ${logoBuffer ? 'yes' : 'no'}`);
     const { default: PDFDocument } = await import('pdfkit');
+    console.log('[LegalDocsPdf] PDFDocument imported successfully');
     
     const doc = new PDFDocument({ 
       margin: 50, 
@@ -620,13 +641,27 @@ export class LegalDocsPdfService {
     // Apply watermarks to all pages
     applyWatermarksToAllPages(doc);
 
+    console.log('[LegalDocsPdf] PDF content generated, ending document...');
     doc.end();
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      doc.on('error', (err: Error) => {
+        console.error('[LegalDocsPdf] PDF stream error:', err);
+        reject(err);
+      });
       doc.on('end', async () => {
-        const rawPdf = Buffer.concat(chunks);
-        const encryptedPdf = await applyPdfEncryption(rawPdf);
-        resolve(encryptedPdf);
+        try {
+          console.log('[LegalDocsPdf] PDF stream ended, concatenating chunks...');
+          const rawPdf = Buffer.concat(chunks);
+          console.log(`[LegalDocsPdf] Raw PDF size: ${rawPdf.length} bytes`);
+          const encryptedPdf = await applyPdfEncryption(rawPdf);
+          console.log(`[LegalDocsPdf] Final PDF size: ${encryptedPdf.length} bytes`);
+          resolve(encryptedPdf);
+        } catch (encryptError: any) {
+          console.error('[LegalDocsPdf] Error in PDF finalization:', encryptError);
+          const rawPdf = Buffer.concat(chunks);
+          resolve(rawPdf);
+        }
       });
     });
   }
@@ -635,8 +670,11 @@ export class LegalDocsPdfService {
    * Generate Security and Audit Measures PDF
    */
   async generateMedidasSeguridadPdf(companyOptions: LegalDocWithCompanyOptions): Promise<Buffer> {
+    console.log('[LegalDocsPdf] Starting generateMedidasSeguridadPdf');
     const { company, signers, logoBuffer } = companyOptions;
+    console.log(`[LegalDocsPdf] Company: ${company?.name}, Logo: ${logoBuffer ? 'yes' : 'no'}`);
     const { default: PDFDocument } = await import('pdfkit');
+    console.log('[LegalDocsPdf] PDFDocument imported successfully');
     
     const doc = new PDFDocument({ 
       margin: 50, 
@@ -794,13 +832,27 @@ export class LegalDocsPdfService {
     // Apply watermarks to all pages
     applyWatermarksToAllPages(doc);
 
+    console.log('[LegalDocsPdf] PDF content generated, ending document...');
     doc.end();
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      doc.on('error', (err: Error) => {
+        console.error('[LegalDocsPdf] PDF stream error:', err);
+        reject(err);
+      });
       doc.on('end', async () => {
-        const rawPdf = Buffer.concat(chunks);
-        const encryptedPdf = await applyPdfEncryption(rawPdf);
-        resolve(encryptedPdf);
+        try {
+          console.log('[LegalDocsPdf] PDF stream ended, concatenating chunks...');
+          const rawPdf = Buffer.concat(chunks);
+          console.log(`[LegalDocsPdf] Raw PDF size: ${rawPdf.length} bytes`);
+          const encryptedPdf = await applyPdfEncryption(rawPdf);
+          console.log(`[LegalDocsPdf] Final PDF size: ${encryptedPdf.length} bytes`);
+          resolve(encryptedPdf);
+        } catch (encryptError: any) {
+          console.error('[LegalDocsPdf] Error in PDF finalization:', encryptError);
+          const rawPdf = Buffer.concat(chunks);
+          resolve(rawPdf);
+        }
       });
     });
   }
