@@ -23660,6 +23660,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn("[PDF Informe Verificación] Error loading signers, continuing without them:", signersError);
       }
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
+      // Buffer para acumular el PDF completo antes de enviarlo
+      const pdfChunks: Buffer[] = [];
       
       // Add trial watermark if subscription is in trial period
       const pdf23305_subscription = await storage.getSubscriptionByCompany(companyId);
@@ -23671,7 +23673,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="verificacion-sgsst-${evaluacion.anio}.pdf"`);
-      doc.pipe(res);
+      // Recolectar chunks en buffer en vez de enviar directamente
+      doc.on('data', (chunk: Buffer) => pdfChunks.push(chunk));
 
       // Color definitions
       const colorVerdeSst = '#1e7e34';
@@ -24078,7 +24081,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add signature footer (no LSO required for management reports)
       addSignatureFooter(doc, signers, false);
 
+      // Esperar a que el PDF esté completo y enviarlo
+      doc.on('end', () => {
+        const pdfBuffer = Buffer.concat(pdfChunks);
+        res.end(pdfBuffer);
+      });
       doc.end();
+
     } catch (error: any) {
       console.error('Error generating informe verificación sistema PDF:', error);
 
