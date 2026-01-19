@@ -96,6 +96,34 @@ export const PROCESOS_TRABAJO: { codigo: string; nombre: string; area: string; a
   { codigo: 'AG-01', nombre: 'Siembra y Cultivo', area: 'AGR', actividades: ['Preparación de suelo', 'Siembra', 'Fumigación', 'Fertilización'] },
   { codigo: 'AG-02', nombre: 'Cosecha', area: 'AGR', actividades: ['Recolección', 'Clasificación', 'Empaque', 'Transporte a centro de acopio'] },
   { codigo: 'AG-03', nombre: 'Procesamiento Agrícola', area: 'BEN', actividades: ['Lavado', 'Selección', 'Transformación', 'Empaque final'] },
+  
+  // Procesos Gestión Ambiental
+  { codigo: 'GA-01', nombre: 'Gestión de Residuos', area: 'AMB', actividades: ['Clasificación de residuos', 'Almacenamiento temporal', 'Entrega a gestor autorizado', 'Registro y seguimiento'] },
+  { codigo: 'GA-02', nombre: 'Monitoreo Ambiental', area: 'AMB', actividades: ['Medición de emisiones', 'Muestreo de aguas', 'Control de ruido', 'Informes ambientales'] },
+  { codigo: 'GA-03', nombre: 'Gestión de Vertimientos', area: 'AMB', actividades: ['Tratamiento de aguas residuales', 'Monitoreo de descargas', 'Mantenimiento de PTAR', 'Cumplimiento de permisos'] },
+  { codigo: 'GA-04', nombre: 'Gestión de Emisiones', area: 'AMB', actividades: ['Control de fuentes fijas', 'Monitoreo de calidad del aire', 'Mantenimiento de filtros', 'Reportes a autoridad ambiental'] },
+  
+  // Procesos SST
+  { codigo: 'SST-01', nombre: 'Gestión de Seguridad y Salud', area: 'SST', actividades: ['Inspecciones de seguridad', 'Investigación de accidentes', 'Capacitación SST', 'Auditorías internas'] },
+  { codigo: 'SST-02', nombre: 'Vigilancia Epidemiológica', area: 'SST', actividades: ['Exámenes médicos ocupacionales', 'Seguimiento de condiciones de salud', 'Programas de prevención', 'Estadísticas de salud'] },
+  { codigo: 'SST-03', nombre: 'Gestión de Emergencias', area: 'SST', actividades: ['Planificación de emergencias', 'Simulacros', 'Mantenimiento de equipos', 'Capacitación de brigadas'] },
+  
+  // Procesos Jurídicos
+  { codigo: 'JU-01', nombre: 'Gestión Legal', area: 'JUR', actividades: ['Revisión de contratos', 'Asesoría legal', 'Gestión de litigios', 'Cumplimiento normativo'] },
+  
+  // Procesos Calidad
+  { codigo: 'QA-01', nombre: 'Control de Calidad', area: 'CAL', actividades: ['Inspección de productos', 'Pruebas de laboratorio', 'Control estadístico', 'Gestión de no conformidades'] },
+  { codigo: 'QA-02', nombre: 'Aseguramiento de Calidad', area: 'CAL', actividades: ['Auditorías de calidad', 'Gestión documental', 'Mejora continua', 'Certificaciones'] },
+  
+  // Procesos Ingeniería
+  { codigo: 'IN-01', nombre: 'Diseño y Desarrollo', area: 'ING', actividades: ['Diseño de proyectos', 'Cálculos técnicos', 'Elaboración de planos', 'Especificaciones técnicas'] },
+  { codigo: 'IN-02', nombre: 'Gestión de Proyectos', area: 'ING', actividades: ['Planificación', 'Seguimiento de obras', 'Control presupuestal', 'Gestión de contratistas'] },
+  
+  // Procesos Espacios Confinados
+  { codigo: 'EC-01', nombre: 'Trabajo en Espacios Confinados', area: 'CON', actividades: ['Evaluación de atmósfera', 'Permisos de trabajo', 'Rescate en espacios confinados', 'Ventilación y monitoreo'] },
+  
+  // Procesos Atención al Público
+  { codigo: 'AP-01', nombre: 'Atención al Cliente', area: 'ATE', actividades: ['Recepción de usuarios', 'Orientación e información', 'Gestión de PQRS', 'Servicio al ciudadano'] },
 ];
 
 // =====================================================
