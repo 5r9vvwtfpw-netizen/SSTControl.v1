@@ -3877,6 +3877,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Parse and validate data
       const validatedData = insertAccidentInvestigationSchema.parse(sanitizedBody);
       
+      // Validate that accident exists and belongs to this company
+      if (!validatedData.accidentId || validatedData.accidentId === '') {
+        return res.status(400).send("Debe seleccionar un accidente para investigar");
+      }
+      
+      const [existingAccident] = await db.select()
+        .from(schema.accidents)
+        .where(eq(schema.accidents.id, validatedData.accidentId))
+        .limit(1);
+      
+      if (!existingAccident) {
+        return res.status(400).send("El accidente seleccionado no existe. Por favor seleccione un accidente válido de la lista.");
+      }
+      
+      if (!isAdmin && existingAccident.companyId !== companyId) {
+        return res.status(403).send("No tiene permisos para investigar este accidente");
+      }
+      
       // Auto-calculate dueDate (15 days from event date per Res. 1401/2007)
       const eventDate = new Date(validatedData.eventDate);
       const dueDate = new Date(eventDate);
