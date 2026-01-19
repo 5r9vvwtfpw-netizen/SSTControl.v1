@@ -1814,7 +1814,20 @@ export default function InvestigacionAccidentes() {
                     <FormControl>
                       <Checkbox 
                         checked={field.value} 
-                        onCheckedChange={field.onChange}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          // Auto-fill license data from assigned LSO when checkbox is checked
+                          if (checked && sstResponsibles.length > 0) {
+                            const firstLSO = sstResponsibles[0];
+                            if (firstLSO.licenciaSstNumero) {
+                              participantForm.setValue("licenseNumber", firstLSO.licenciaSstNumero);
+                            }
+                            if (firstLSO.licenciaSstVigencia) {
+                              const expiryDate = firstLSO.licenciaSstVigencia.split("T")[0];
+                              participantForm.setValue("licenseExpiry", expiryDate);
+                            }
+                          }
+                        }}
                         data-testid="checkbox-has-license"
                       />
                     </FormControl>
