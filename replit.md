@@ -62,8 +62,27 @@ The monetization comes from **worker count**, not from admin users. The user lim
 **Hidden from User Management:**
 - LSO (Licenciado en Salud Ocupacional): Managed from "Directorio de Profesionales", not from user management
 
+### Paid Extra Seats (January 2026)
+
+Companies can now purchase additional user seats for administrative roles when they exceed the 1-user-per-role limit.
+
+**Pricing:**
+- $10,000 COP/month (~$2.50 USD) per additional seat
+
+**Implementation:**
+1. **Database**: `company_extra_seats` table stores purchased extra seats per company/role
+2. **Checkout**: `POST /api/stripe/extra-seat-checkout` creates Stripe session with metadata `purchaseType: 'extra_seat'`
+3. **Webhook**: On successful payment, `storage.incrementCompanyExtraSeat()` adds seat count
+4. **Middleware**: `checkUserLimit()` in `subscription-limits.ts` calculates `totalLimit = baseLimit (1) + extraSeats`
+
+**User Flow:**
+1. User attempts to create a second user with same administrative role
+2. Modal appears showing current count, price, and "Ir a Pagar" button
+3. User clicks button → Redirected to Stripe checkout
+4. After payment → Can create additional user
+
 **Error Message when limit exceeded:**
-"Tu plan incluye 1 usuario [RoleName] sin costo adicional. Para agregar usuarios adicionales de este rol, por favor contacta a nuestro equipo de soporte."
+"Tu plan incluye 1 usuario [RoleName] sin costo adicional. Puedes comprar asientos adicionales a $10,000 COP/mes."
 
 ## Billing System - Worker Quantity Enforcement
 

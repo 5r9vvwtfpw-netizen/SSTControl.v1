@@ -1055,15 +1055,20 @@ export default function GestionUsuarios() {
                 if (!extraSeatPurchaseInfo || !currentUser?.companyId) return;
                 setIsPurchaseLoading(true);
                 try {
-                  const response = await apiRequest("POST", "/api/stripe/extra-seat-checkout", {
-                    role: extraSeatPurchaseInfo.role,
-                    companyId: currentUser.companyId
+                  const response = await fetch("/api/stripe/extra-seat-checkout", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      role: extraSeatPurchaseInfo.role,
+                      companyId: currentUser.companyId
+                    }),
+                    credentials: "include"
                   });
                   const data = await response.json();
                   if (data.checkoutUrl) {
                     window.location.href = data.checkoutUrl;
                   } else {
-                    throw new Error("No se pudo obtener la URL de pago");
+                    throw new Error(data.message || "No se pudo obtener la URL de pago");
                   }
                 } catch (err: any) {
                   toast({
@@ -1075,7 +1080,6 @@ export default function GestionUsuarios() {
                 }
               }}
               disabled={isPurchaseLoading}
-              className="bg-green-600 hover:bg-green-700"
               data-testid="button-go-to-checkout"
             >
               {isPurchaseLoading ? "Redirigiendo..." : "Ir a Pagar"}
