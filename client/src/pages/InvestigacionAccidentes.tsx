@@ -365,10 +365,46 @@ export default function InvestigacionAccidentes() {
     queryKey: ["/api/responsible-designations"],
   });
 
-  // Filtrar solo responsables activos con licencia SST
-  const sstResponsibles = responsibleDesignations.filter(r => 
+  // Query para LSOs asignados a la empresa (profesionales externos del directorio)
+  const { data: assignedLSOs = [] } = useQuery<any[]>({
+    queryKey: ["/api/licensed-professionals", { companyId: user?.companyId }],
+    queryFn: async () => {
+      if (!user?.companyId) return [];
+      const res = await fetch(`/api/licensed-professionals?companyId=${user.companyId}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!user?.companyId,
+  });
+
+  // Filtrar solo responsables activos con licencia SST (internos)
+  const sstResponsiblesInternal = responsibleDesignations.filter(r => 
     r.status === "activo" && r.licenciaSstNumero
   );
+  
+  // Combinar LSOs externos asignados con responsables internos
+  const sstResponsibles = [
+    // LSOs externos asignados desde el directorio
+    ...assignedLSOs.filter(lso => lso.sstLicenseStatus === 'vigente').map(lso => ({
+      id: `lso_${lso.id}`,
+      workerId: lso.id,
+      position: lso.sstProfessionType === 'medico_ocupacional' ? 'Médico Ocupacional' :
+                lso.sstProfessionType === 'profesional_sst' ? 'Profesional SST' :
+                lso.sstProfessionType === 'tecnologo_sst' ? 'Tecnólogo SST' :
+                lso.sstProfessionType === 'tecnico_sst' ? 'Técnico SST' : 'LSO',
+      status: "activo",
+      licenciaSstNumero: lso.sstLicenseNumber,
+      licenciaSstVigencia: lso.sstLicenseExpiry,
+      documento: lso.email,
+      isExternalLSO: true,
+      fullName: lso.fullName || lso.username,
+    })),
+    // Responsables internos con licencia
+    ...sstResponsiblesInternal.map(r => ({
+      ...r,
+      isExternalLSO: false,
+    })),
+  ];
 
   const createInvestigationMutation = useMutation({
     mutationFn: async (data: InvestigationFormData) => {
@@ -1393,13 +1429,23 @@ export default function InvestigacionAccidentes() {
                         <Select onValueChange={(value) => {
                           const responsible = sstResponsibles.find(r => r.id === value);
                           if (responsible) {
-                            const worker = workers.find(w => w.id === responsible.workerId);
-                            field.onChange(worker?.name || responsible.position);
-                            form.setValue("licensedProfessionalDocument", worker?.identificationNumber || "");
+                            // Para LSOs externos, usar fullName directamente
+                            if ((responsible as any).isExternalLSO) {
+                              field.onChange((responsible as any).fullName || responsible.position);
+                              form.setValue("licensedProfessionalDocument", (responsible as any).documento || "");
+                            } else {
+                              // Para responsables internos, buscar en workers
+                              const worker = workers.find(w => w.id === responsible.workerId);
+                              field.onChange(worker?.name || responsible.position);
+                              form.setValue("licensedProfessionalDocument", worker?.identificationNumber || "");
+                            }
                             form.setValue("licensedProfessionalLicense", responsible.licenciaSstNumero || "");
                             form.setValue("licensedProfessionalLicenseExpiry", responsible.licenciaSstVigencia || "");
                           }
                         }} value={sstResponsibles.find(r => {
+                          if ((r as any).isExternalLSO) {
+                            return (r as any).fullName === field.value;
+                          }
                           const worker = workers.find(w => w.id === r.workerId);
                           return worker?.name === field.value;
                         })?.id || ""}>
@@ -1412,9 +1458,18 @@ export default function InvestigacionAccidentes() {
                           </FormControl>
                           <SelectContent>
                             {sstResponsibles.length === 0 ? (
-                              <SelectItem value="_empty" disabled>No hay responsables SST con licencia</SelectItem>
+                              <SelectItem value="_empty" disabled>No hay profesionales SST con licencia vigente</SelectItem>
                             ) : (
                               sstResponsibles.map((resp) => {
+                                // Para LSOs externos, mostrar fullName
+                                if ((resp as any).isExternalLSO) {
+                                  return (
+                                    <SelectItem key={resp.id} value={resp.id}>
+                                      {(resp as any).fullName} - {resp.position} (LSO Externo)
+                                    </SelectItem>
+                                  );
+                                }
+                                // Para responsables internos, buscar en workers
                                 const worker = workers.find(w => w.id === resp.workerId);
                                 return (
                                   <SelectItem key={resp.id} value={resp.id}>
