@@ -150,11 +150,23 @@ type UserFormData = z.infer<typeof userFormSchema>;
 
 type UserWithoutPassword = Omit<User, "password">;
 
+interface ExtraSeatPurchaseInfo {
+  role: string;
+  roleName: string;
+  pricePerSeatCop: number;
+  currentCount: number;
+  limit: number;
+  extraSeats: number;
+}
+
 export default function GestionUsuarios() {
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithoutPassword | null>(null);
+  const [showExtraSeatModal, setShowExtraSeatModal] = useState(false);
+  const [extraSeatPurchaseInfo, setExtraSeatPurchaseInfo] = useState<ExtraSeatPurchaseInfo | null>(null);
+  const [isPurchaseLoading, setIsPurchaseLoading] = useState(false);
   
   const { data: users, isLoading } = useQuery<UserWithoutPassword[]>({
     queryKey: ["/api/users"],
@@ -216,7 +228,19 @@ export default function GestionUsuarios() {
 
   const createMutation = useMutation({
     mutationFn: async (data: UserFormData) => {
-      return await apiRequest("POST", "/api/users", data);
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include"
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        const error: any = new Error(errorData?.message || "Error al crear usuario");
+        error.data = errorData;
+        throw error;
+      }
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -228,7 +252,25 @@ export default function GestionUsuarios() {
       setOpen(false);
       form.reset();
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      // Obtener datos del error (adjuntados en mutationFn)
+      const errorData = error.data || null;
+      
+      // Detectar si es error de límite con opción de compra
+      if (errorData?.canPurchase && errorData?.role && errorData?.pricePerSeatCop) {
+        setExtraSeatPurchaseInfo({
+          role: errorData.role,
+          roleName: errorData.roleName || errorData.role,
+          pricePerSeatCop: errorData.pricePerSeatCop,
+          currentCount: errorData.currentCount || 0,
+          limit: errorData.limit || 1,
+          extraSeats: errorData.extraSeats || 0
+        });
+        setShowExtraSeatModal(true);
+        setOpen(false);
+        return;
+      }
+      
       toast({
         title: "Error",
         description: error.message,
@@ -957,6 +999,90 @@ export default function GestionUsuarios() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal para compra de asiento adicional */}
+      <Dialog open={showExtraSeatModal} onOpenChange={setShowExtraSeatModal}>
+        <DialogContent className="sm:max-w-md" data-testid="modal-extra-seat">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-yellow-600" />
+              Límite de Usuario Alcanzado
+            </DialogTitle>
+            <DialogDescription>
+              Tu plan incluye 1 usuario "{extraSeatPurchaseInfo?.roleName}" sin costo adicional.
+              {extraSeatPurchaseInfo && extraSeatPurchaseInfo.extraSeats > 0 && (
+                <span className="block mt-1">
+                  Ya has comprado {extraSeatPurchaseInfo.extraSeats} asiento(s) adicional(es).
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="bg-muted rounded-lg p-4 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Rol:</span>
+                <Badge>{extraSeatPurchaseInfo?.roleName}</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Usuarios actuales:</span>
+                <span className="font-medium">{extraSeatPurchaseInfo?.currentCount}/{extraSeatPurchaseInfo?.limit}</span>
+              </div>
+              <div className="border-t pt-3 mt-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Costo por usuario adicional:</span>
+                  <span className="text-lg font-bold text-primary">
+                    ${extraSeatPurchaseInfo?.pricePerSeatCop?.toLocaleString('es-CO')} COP/mes
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Aprox. $2.50 USD/mes
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowExtraSeatModal(false)}
+              data-testid="button-cancel-purchase"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!extraSeatPurchaseInfo || !currentUser?.companyId) return;
+                setIsPurchaseLoading(true);
+                try {
+                  const response = await apiRequest("POST", "/api/stripe/extra-seat-checkout", {
+                    role: extraSeatPurchaseInfo.role,
+                    companyId: currentUser.companyId
+                  });
+                  const data = await response.json();
+                  if (data.checkoutUrl) {
+                    window.location.href = data.checkoutUrl;
+                  } else {
+                    throw new Error("No se pudo obtener la URL de pago");
+                  }
+                } catch (err: any) {
+                  toast({
+                    title: "Error",
+                    description: err.message || "Error al iniciar el proceso de pago",
+                    variant: "destructive"
+                  });
+                  setIsPurchaseLoading(false);
+                }
+              }}
+              disabled={isPurchaseLoading}
+              className="bg-green-600 hover:bg-green-700"
+              data-testid="button-go-to-checkout"
+            >
+              {isPurchaseLoading ? "Redirigiendo..." : "Ir a Pagar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
