@@ -9217,3 +9217,38 @@ export const insertAccionMejoraContextoSchema = createInsertSchema(accionesMejor
   });
 export type InsertAccionMejoraContexto = z.infer<typeof insertAccionMejoraContextoSchema>;
 export type AccionMejoraContexto = typeof accionesMejoraContexto.$inferSelect;
+
+// ==========================================
+// ASIENTOS EXTRA POR ROL (Usuarios Adicionales de Pago)
+// ==========================================
+// Cuando una empresa necesita más de 1 usuario del mismo rol administrativo,
+// puede comprar asientos adicionales a $10,000 COP/mes por asiento.
+// Esta tabla registra cuántos asientos extra tiene cada empresa por rol.
+export const companyExtraSeats = pgTable("company_extra_seats", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  
+  // Rol para el cual se compraron asientos adicionales
+  role: userRoleEnum("role").notNull(),
+  
+  // Cantidad de asientos extra comprados (además del 1 incluido gratis)
+  extraSeats: integer("extra_seats").notNull().default(1),
+  
+  // Precio por asiento en COP (para histórico)
+  pricePerSeatCop: integer("price_per_seat_cop").notNull().default(10000),
+  
+  // Stripe subscription item ID para gestión de facturación
+  stripeSubscriptionItemId: text("stripe_subscription_item_id"),
+  
+  // Estado del asiento
+  status: text("status").notNull().default("active"), // active, canceled, pending
+  
+  // Auditoría
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+export const insertCompanyExtraSeatsSchema = createInsertSchema(companyExtraSeats)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertCompanyExtraSeats = z.infer<typeof insertCompanyExtraSeatsSchema>;
+export type CompanyExtraSeats = typeof companyExtraSeats.$inferSelect;
