@@ -3,7 +3,19 @@ import { requireAuth, requirePermission } from "../auth";
 import { db } from "../db";
 import * as schema from "@shared/schema";
 import { eq, and, sql, desc } from "drizzle-orm";
-import { hasPermission } from "@shared/permissions";
+import { hasPermission, hasGlobalAccess } from "@shared/permissions";
+import type { Request } from "express";
+
+// Helper function to get effective company ID (same as in routes.ts)
+function getEffectiveCompanyId(req: Request): string | null {
+  const headerCompanyId = req.headers['x-company-id'] as string | undefined;
+  const isGlobalUser = hasGlobalAccess(req.user!.role);
+  
+  if (isGlobalUser && headerCompanyId) {
+    return headerCompanyId;
+  }
+  return req.user!.companyId || null;
+}
 
 export function registerLicensedProfessionalsRoutes(app: Express) {
 
@@ -589,7 +601,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
   app.get("/api/company/assigned-sst-professionals", requireAuth, async (req, res) => {
     try {
       const user = req.user!;
-      const companyId = user.companyId;
+      // Use getEffectiveCompanyId for superadmin company context
+      const companyId = getEffectiveCompanyId(req);
       
       if (!companyId) {
         return res.json([]);
