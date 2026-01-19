@@ -92,7 +92,7 @@ export default function IndiceFrequenciaSeveridad() {
           </Button>
           <Button 
             variant="outline" 
-            onClick={() => navigate("/plan-anual-trabajo")} 
+            onClick={() => navigate("/planes-trabajo-anual")} 
             data-testid="button-work-plan"
           >
             Ir al Cronograma
