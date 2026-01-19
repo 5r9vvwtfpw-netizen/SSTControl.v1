@@ -1077,6 +1077,9 @@ export default function InvestigacionAccidentes() {
                           variant="outline"
                           size="sm"
                           data-testid={`button-download-pdf-${investigation.id}`}
+                          onClick={() => {
+                            window.open(`/api/investigations/${investigation.id}/pdf`, '_blank');
+                          }}
                         >
                           <Download className="h-4 w-4 mr-1" />
                           Descargar PDF
