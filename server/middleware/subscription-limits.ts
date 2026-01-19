@@ -247,61 +247,143 @@ export function checkWorkerLimit() {
 }
 
 /**
- * Middleware que verifica si la operación excede el límite de usuarios
- * Usar ANTES de crear un nuevo usuario
+ * Roles que tienen acceso ilimitado (no cuentan contra el límite por rol)
+ * El rol 'trabajador' solo accede al Portal de Empleados (lectura)
+ */
+const UNLIMITED_ROLES = ['trabajador', 'worker'];
+
+/**
+ * Roles con acceso global que no están asociados a una empresa específica
+ * Estos roles no tienen límite por empresa ya que operan a nivel de plataforma
+ */
+const GLOBAL_ACCESS_ROLES = ['superadmin', 'admin', 'soporte'];
+
+/**
+ * Roles administrativos por empresa que tienen límite de 1 por rol incluido en el plan
+ * Si la empresa necesita más usuarios del mismo rol, debe contactar soporte (costo adicional)
+ */
+const ADMIN_ROLES_WITH_LIMIT = [
+  'superusuario',
+  'gerente',
+  'responsable_sst',
+  'coordinador_sst',
+  'coordinador_rrhh',
+  'coordinador_salud',
+  'jefe_personal',
+  'supervisor',
+  'vigia_sst',
+  'auditor_sst',
+  'lso'
+];
+
+/**
+ * Middleware que verifica si la operación excede el límite de usuarios por rol
  * 
- * IMPORTANTE: Este middleware debe ejecutarse DESPUÉS de validar req.body
- * para poder extraer el companyId correcto del payload validado
+ * MODELO DE NEGOCIO:
+ * - Roles con acceso global (superadmin, admin, soporte): SIN LÍMITE (operan a nivel plataforma)
+ * - Rol 'trabajador': ILIMITADO (accede solo al Portal de Empleados)
+ * - Roles administrativos por empresa: 1 usuario por rol INCLUIDO en el plan
+ * - Si necesitan más usuarios del mismo rol, deben contactar soporte (costo adicional)
+ * 
+ * Usar ANTES de crear un nuevo usuario
  */
 export function checkUserLimit() {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Determinar el companyId objetivo:
-      // 1. Para superadmin/admin: usar companyId del payload (req.body.companyId)
-      // 2. Para otros usuarios: usar su propio companyId (req.user.companyId)
-      const userRole = req.user?.role;
-      const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+      // Obtener el rol del nuevo usuario que se intenta crear
+      const newUserRole = req.body?.role;
       
-      let targetCompanyId: string;
-      
-      if (isAdmin) {
-        // Admin/Superadmin puede crear usuarios para cualquier empresa (o sin empresa para LSO)
-        const bodyCompanyId = req.body?.companyId;
-        if (typeof bodyCompanyId !== 'string' || bodyCompanyId === '') {
-          // Si admin no especificó empresa, continuar (será validado por la ruta o es usuario externo como LSO)
-          return next();
-        }
-        targetCompanyId = bodyCompanyId;
-      } else {
-        // Usuario normal solo puede crear usuarios para su propia empresa
-        const userCompanyId = req.user?.companyId;
-        if (!userCompanyId) {
-          return res.status(401).json({ 
-            error: "Authentication required" 
-          });
-        }
-        targetCompanyId = userCompanyId;
-      }
-
-      // Obtener límites del plan de la empresa objetivo
-      const limits = await getCompanyLimits(targetCompanyId);
-
-      // Si el plan permite usuarios ilimitados, continuar
-      if (limits.maxUsers === null) {
+      if (!newUserRole) {
+        // Si no hay rol especificado, permitir que la validación de la ruta lo maneje
         return next();
       }
 
-      // Contar usuarios actuales de la empresa objetivo
-      const currentUsers = await storage.getUsersByCompany(targetCompanyId);
+      // Roles con acceso global no tienen límite (operan a nivel de plataforma)
+      if (GLOBAL_ACCESS_ROLES.includes(newUserRole)) {
+        return next();
+      }
 
-      // Verificar si se excedería el límite al agregar un nuevo usuario
-      if (currentUsers.length >= limits.maxUsers) {
+      // Si el rol es ilimitado (trabajador), permitir siempre
+      if (UNLIMITED_ROLES.includes(newUserRole)) {
+        return next();
+      }
+
+      // Para roles con límite, necesitamos un companyId
+      const userRole = req.user?.role;
+      const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+      
+      let targetCompanyId: string | null = null;
+      
+      if (isAdmin) {
+        // Admin/Superadmin puede crear usuarios para cualquier empresa
+        const bodyCompanyId = req.body?.companyId;
+        if (typeof bodyCompanyId === 'string' && bodyCompanyId !== '') {
+          targetCompanyId = bodyCompanyId;
+        }
+      } else {
+        // Usuario normal solo puede crear usuarios para su propia empresa
+        targetCompanyId = req.user?.companyId || null;
+      }
+
+      // Solo aplicar límite a roles que explícitamente tienen límite por empresa
+      if (!ADMIN_ROLES_WITH_LIMIT.includes(newUserRole)) {
+        // Rol no está en la lista de limitados (ej: rol desconocido), permitir
+        return next();
+      }
+
+      // Si no hay companyId y el rol requiere límite, verificar si es rol externo permitido
+      // Solo LSO puede crearse sin companyId (profesionales externos)
+      const EXTERNAL_ROLES_ALLOWED = ['lso'];
+      
+      if (!targetCompanyId) {
+        if (EXTERNAL_ROLES_ALLOWED.includes(newUserRole)) {
+          // LSO externo puede crearse sin empresa
+          return next();
+        }
+        // Otros roles limitados REQUIEREN una empresa
+        return res.status(400).json({
+          error: "Empresa requerida",
+          message: "Este rol requiere estar asociado a una empresa.",
+          role: newUserRole
+        });
+      }
+
+      // Contar usuarios actuales de la empresa con el MISMO ROL
+      const currentUsers = await storage.getUsersByCompany(targetCompanyId);
+      const usersWithSameRole = currentUsers.filter(u => u.role === newUserRole);
+
+      // Límite: 1 usuario por rol incluido en el plan
+      const limitPerRole = 1;
+
+      // Verificar si ya existe un usuario con este rol
+      if (usersWithSameRole.length >= limitPerRole) {
+        // Obtener nombre amigable del rol para el mensaje
+        const roleNames: Record<string, string> = {
+          'superusuario': 'Super Usuario',
+          'gerente': 'Gerente General',
+          'responsable_sst': 'Responsable SST',
+          'coordinador_sst': 'Coordinador SST',
+          'coordinador_rrhh': 'Coordinador RRHH',
+          'coordinador_salud': 'Coordinador de Salud Ocupacional',
+          'jefe_personal': 'Jefe de Personal',
+          'supervisor': 'Supervisor',
+          'vigia_sst': 'Vigía SST',
+          'auditor_sst': 'Auditor Interno SG-SST',
+          'lso': 'Licenciado en Salud Ocupacional'
+        };
+        
+        const roleName = roleNames[newUserRole] || newUserRole;
+        
         return res.status(403).json({
-          error: "Límite de usuarios alcanzado",
-          message: `El plan actual permite hasta ${limits.maxUsers} ${limits.maxUsers === 1 ? 'usuario' : 'usuarios'}. Actualiza tu plan para añadir más usuarios.`,
-          currentCount: currentUsers.length,
-          limit: limits.maxUsers,
-          upgradeRequired: true
+          error: "Límite de usuarios por rol alcanzado",
+          message: `Tu plan incluye 1 usuario "${roleName}" sin costo adicional. Para agregar usuarios adicionales de este rol, por favor contacta a nuestro equipo de soporte.`,
+          supportEmail: "soporte@sstcolombia.com",
+          currentCount: usersWithSameRole.length,
+          limit: limitPerRole,
+          role: newUserRole,
+          roleName: roleName,
+          upgradeRequired: true,
+          contactSupport: true
         });
       }
 

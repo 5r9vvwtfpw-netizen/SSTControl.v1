@@ -791,17 +791,58 @@ export default function GestionUsuarios() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {Object.entries(visibleRoleLabels).map(([role, label]) => (
-              <div key={role} className="flex items-start gap-3 p-3 rounded-md border">
-                <Shield className="h-5 w-5 mt-0.5 text-primary" />
-                <div className="flex-1 space-y-1">
-                  <div className="font-medium">{label}</div>
-                  <p className="text-sm text-muted-foreground">
-                    {roleDescriptions[role as UserRole]}
-                  </p>
+            {Object.entries(visibleRoleLabels).map(([role, label]) => {
+              const usersWithThisRole = users?.filter(u => u.role === role).length || 0;
+              const isUnlimited = role === 'trabajador' || role === 'worker';
+              const isGlobalRole = ['superadmin', 'admin', 'soporte'].includes(role);
+              const hasRoleLimit = [
+                'superusuario', 'gerente', 'responsable_sst', 'coordinador_sst',
+                'coordinador_rrhh', 'coordinador_salud', 'jefe_personal',
+                'supervisor', 'vigia_sst', 'auditor_sst', 'lso'
+              ].includes(role);
+              const limitPerRole = 1;
+              
+              return (
+                <div key={role} className="flex items-start gap-3 p-3 rounded-md border">
+                  <Shield className="h-5 w-5 mt-0.5 text-primary" />
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="font-medium">{label}</div>
+                      {isUnlimited ? (
+                        <Badge variant="secondary" className="text-xs">
+                          <span className="text-green-600 dark:text-green-400">Ilimitado</span>
+                        </Badge>
+                      ) : isGlobalRole ? (
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Badge variant="outline" className="text-xs">
+                              <span className="text-amber-600 dark:text-amber-400">Solo proveedor</span>
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Rol reservado para personal del proveedor SST Colombia</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : hasRoleLimit ? (
+                        <Badge 
+                          variant={usersWithThisRole >= limitPerRole ? "destructive" : "outline"}
+                          className="text-xs"
+                        >
+                          {usersWithThisRole}/{limitPerRole}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">
+                          Sin límite
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {roleDescriptions[role as UserRole]}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>
