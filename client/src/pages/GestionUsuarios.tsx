@@ -1055,7 +1055,7 @@ export default function GestionUsuarios() {
                 if (!extraSeatPurchaseInfo || !currentUser?.companyId) return;
                 setIsPurchaseLoading(true);
                 try {
-                  const response = await fetch("/api/stripe/extra-seat-checkout", {
+                  const response = await fetch("/api/stripe/create-extra-seat-checkout", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -1065,10 +1065,10 @@ export default function GestionUsuarios() {
                     credentials: "include"
                   });
                   const data = await response.json();
-                  if (data.checkoutUrl) {
-                    window.location.href = data.checkoutUrl;
+                  if (data.url) {
+                    window.location.href = data.url;
                   } else {
-                    throw new Error(data.message || "No se pudo obtener la URL de pago");
+                    throw new Error(data.error || data.message || "No se pudo obtener la URL de pago");
                   }
                 } catch (err: any) {
                   toast({
