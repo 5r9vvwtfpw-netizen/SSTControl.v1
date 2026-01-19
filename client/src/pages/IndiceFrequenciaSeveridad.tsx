@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
-import { ArrowLeft, TrendingUp, TrendingDown, Activity, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ArrowRight, TrendingUp, TrendingDown, Activity, AlertTriangle } from "lucide-react";
 import type { AccidentStatistics } from "@shared/schema";
 
 function calculateIndicators(data: AccidentStatistics) {
@@ -71,7 +71,7 @@ export default function IndiceFrequenciaSeveridad() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => window.history.back()} data-testid="button-back">
             <ArrowLeft className="h-5 w-5" />
@@ -81,16 +81,34 @@ export default function IndiceFrequenciaSeveridad() {
             <p className="text-muted-foreground">Frecuencia de accidentalidad, Medición de la severidad de AT y EL</p>
           </div>
         </div>
-        <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-          <SelectTrigger className="w-32" data-testid="select-year">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {years.map(y => (
-              <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center flex-wrap gap-3">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate("/evaluaciones-sst")} 
+            data-testid="button-initial-evaluation"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Ir a Evaluación Inicial
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate("/plan-anual-trabajo")} 
+            data-testid="button-work-plan"
+          >
+            Ir al Cronograma
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+          <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+            <SelectTrigger className="w-32" data-testid="select-year">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map(y => (
+                <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20">

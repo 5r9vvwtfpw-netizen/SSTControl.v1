@@ -70,6 +70,29 @@ const statusLabels: Record<string, { label: string; color: string }> = {
   reubicacion: { label: "Reubicación", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
 };
 
+const CIE10_CATALOG: Record<string, string> = {
+  "M54.5": "Lumbago no especificado",
+  "M54.4": "Lumbago con ciática",
+  "M54.2": "Cervicalgia",
+  "S62.6": "Fractura de otro dedo de la mano",
+  "S62.5": "Fractura del pulgar",
+  "S93.4": "Esguince y torcedura del tobillo",
+  "S83.5": "Esguince de rodilla",
+  "T14.0": "Herida superficial de región corporal no especificada",
+  "T14.1": "Herida abierta de región corporal no especificada",
+  "J06.9": "Infección aguda de vías respiratorias superiores",
+  "J11.1": "Influenza con otras manifestaciones respiratorias",
+  "K29.7": "Gastritis no especificada",
+  "F32.9": "Episodio depresivo, no especificado",
+  "F41.9": "Trastorno de ansiedad, no especificado",
+  "G43.9": "Migraña, no especificada",
+  "R51": "Cefalea",
+  "A09": "Diarrea y gastroenteritis de presunto origen infeccioso",
+  "N39.0": "Infección de vías urinarias",
+  "B34.9": "Infección viral, no especificada",
+  "Z96.6": "Presencia de implante ortopédico articular"
+};
+
 const COLORS = ['#ef4444', '#f97316', '#3b82f6', '#ec4899', '#8b5cf6', '#6b7280', '#06b6d4', '#f59e0b', '#64748b', '#84cc16'];
 
 export default function AusentismoLaboral() {
@@ -743,8 +766,21 @@ export default function AusentismoLaboral() {
                     <FormItem>
                       <FormLabel>Código CIE-10</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Ej: M54.5" data-testid="input-cie10" />
+                        <Input
+                          {...field}
+                          placeholder="Ej: M54.5"
+                          data-testid="input-cie10"
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            field.onChange(e);
+                            const upperValue = value.toUpperCase();
+                            if (CIE10_CATALOG[upperValue]) {
+                              form.setValue('diagnosis', CIE10_CATALOG[upperValue]);
+                            }
+                          }}
+                        />
                       </FormControl>
+                      <p className="text-xs text-muted-foreground mt-1">Ingrese el código y el diagnóstico se completará automáticamente</p>
                       <FormMessage />
                     </FormItem>
                   )}
