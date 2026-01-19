@@ -5,6 +5,10 @@ import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
+// Disable SSL certificate validation globally for Node.js
+// This is needed for production environments with self-signed certificates
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 neonConfig.webSocketConstructor = ws;
 
 const isProduction = process.env.NODE_ENV === 'production';
