@@ -3865,8 +3865,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Inject companyId into body before validation
       const bodyWithCompanyId = { ...req.body, companyId };
       
+      // Sanitize empty date strings to null (PostgreSQL requires null, not '')
+      const dateFields = ['investigationEndDate', 'licensedProfessionalLicenseExpiry', 'actionsClosedDate', 'furatDate', 'ministryReportDate', 'arlNotificationDate', 'epsNotificationDate', 'approvedAt'];
+      const sanitizedBody = { ...bodyWithCompanyId };
+      dateFields.forEach(field => {
+        if (sanitizedBody[field] === '' || sanitizedBody[field] === undefined) {
+          sanitizedBody[field] = null;
+        }
+      });
+      
       // Parse and validate data
-      const validatedData = insertAccidentInvestigationSchema.parse(bodyWithCompanyId);
+      const validatedData = insertAccidentInvestigationSchema.parse(sanitizedBody);
       
       // Auto-calculate dueDate (15 days from event date per Res. 1401/2007)
       const eventDate = new Date(validatedData.eventDate);
