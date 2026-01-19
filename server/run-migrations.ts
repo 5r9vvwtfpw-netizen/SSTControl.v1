@@ -1,4 +1,5 @@
 import { syncAccidentInvestigationsTable } from './migrations/sync-accident-investigations';
+import { syncInvestigationFindings } from './migrations/sync-investigation-findings';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -9,6 +10,7 @@ export async function runMigrations() {
   
   try {
     await syncAccidentInvestigationsTable();
+    await syncInvestigationFindings();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);
