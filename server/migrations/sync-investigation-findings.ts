@@ -71,6 +71,9 @@ export async function syncInvestigationFindings() {
       { name: 'verification_date', definition: 'DATE' },
       { name: 'verified_by', definition: 'VARCHAR' },
       { name: 'evidence_urls', definition: 'TEXT[]' },
+      { name: 'effectiveness', definition: 'TEXT' },
+      { name: 'closure_evidence', definition: 'TEXT' },
+      { name: 'observations', definition: 'TEXT' },
       { name: 'created_at', definition: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP' },
       { name: 'updated_at', definition: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP' },
     ];
