@@ -54,8 +54,7 @@ export const sstProfessionTypeEnum = pgEnum("sst_profession_type", [
   "fonoaudiologo",            // Fonoaudiólogo (SVE auditivo)
   "ingeniero_sst",            // Ingeniero con especialización en SST
   "enfermero_sst",            // Enfermero con formación en SST
-  "otro",                     // Otro profesional con licencia SST
-  "licenciado_salud_ocupacional" // Licenciado en Salud Ocupacional (título universitario)
+  "otro"                      // Otro profesional con licencia SST
 ]);
 
 // Estado de licencia SST

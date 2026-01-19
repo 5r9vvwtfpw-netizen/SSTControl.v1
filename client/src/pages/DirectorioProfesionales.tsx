@@ -24,7 +24,6 @@ interface LicensedProfessional {
 }
 
 const SST_PROFESSION_LABELS: Record<string, string> = {
-  licenciado_salud_ocupacional: "Licenciado en Salud Ocupacional",
   medico_ocupacional: "Médico Ocupacional",
   profesional_sst: "Profesional SST",
   tecnologo_sst: "Tecnólogo SST",
@@ -39,7 +38,6 @@ const SST_PROFESSION_LABELS: Record<string, string> = {
 
 const profesionTypes = [
   { value: "all", label: "Todas las especialidades" },
-  { value: "licenciado_salud_ocupacional", label: "Licenciado en Salud Ocupacional" },
   { value: "medico_ocupacional", label: "Médico Ocupacional" },
   { value: "profesional_sst", label: "Profesional SST" },
   { value: "tecnologo_sst", label: "Tecnólogo SST" },
