@@ -56,7 +56,7 @@ export default function PoliticaPrivacidadProveedor() {
                       <p><strong>NIT:</strong> Consultar en sección "Mi Cuenta" del sistema</p>
                       <p className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
-                        <span><strong>Domicilio:</strong> Bogotá D.C., Colombia</span>
+                        <span><strong>Domicilio:</strong> Medellín, Colombia</span>
                       </p>
                       <p className="flex items-center gap-2">
                         <Mail className="h-4 w-4" />
@@ -471,7 +471,7 @@ export default function PoliticaPrivacidadProveedor() {
                       </p>
                       <p className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
-                        <span>Bogotá D.C., Colombia</span>
+                        <span>Medellín, Colombia</span>
                       </p>
                     </div>
                     <p className="text-sm">

@@ -462,7 +462,7 @@ export class LegalDocsPdfService {
     
     addTableRow('Campo', 'Valor', '', true);
     addTableRow('Razón Social', 'SST Colombia S.A.S.', '');
-    addTableRow('Domicilio', 'Bogotá D.C., Colombia', '');
+    addTableRow('Domicilio', 'Medellín, Colombia', '');
     addTableRow('Correo Legal', 'legal@sst-colombia.com', '');
     addTableRow('Soporte Técnico', 'soporte@sst-colombia.com', '');
     addTableRow('DPO', 'dpo@sst-colombia.com', '');

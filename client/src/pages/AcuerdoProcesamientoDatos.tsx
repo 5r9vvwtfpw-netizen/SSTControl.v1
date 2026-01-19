@@ -393,7 +393,7 @@ export default function AcuerdoProcesamientoDatos() {
                       <p><strong>Encargado del Tratamiento:</strong></p>
                       <p className="mt-1">SST Colombia S.A.S.</p>
                       <p>NIT: 900.XXX.XXX-X</p>
-                      <p>Domicilio: Bogotá D.C., Colombia</p>
+                      <p>Domicilio: Medellín, Colombia</p>
                       <p>DPO Email: <a href="mailto:dpo@sst-colombia.com" className="text-primary hover:underline">dpo@sst-colombia.com</a></p>
                       <p>Legal Email: <a href="mailto:legal@sst-colombia.com" className="text-primary hover:underline">legal@sst-colombia.com</a></p>
                       <p>Teléfono: +57 (1) XXX-XXXX</p>

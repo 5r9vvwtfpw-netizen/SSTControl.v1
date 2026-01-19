@@ -270,7 +270,7 @@ export default function TerminosServicio() {
                   <div className="space-y-2 text-muted-foreground">
                     <p><strong>Razón Social:</strong> SST Colombia S.A.S.</p>
                     <p><strong>NIT:</strong> 900.XXX.XXX-X (Pendiente de asignación)</p>
-                    <p><strong>Domicilio:</strong> Bogotá D.C., Colombia</p>
+                    <p><strong>Domicilio:</strong> Medellín, Colombia</p>
                     <p><strong>Correo Electrónico:</strong> legal@sst-colombia.com</p>
                     <p><strong>Soporte Técnico:</strong> soporte@sst-colombia.com</p>
                     <p><strong>Protección de Datos (DPO):</strong> dpo@sst-colombia.com</p>
