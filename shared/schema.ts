@@ -45,6 +45,7 @@ export const inductionTypeEnum = pgEnum("induction_type", ["induccion", "reinduc
 
 // Tipo de profesión SST enum (Resolución 0312/2019, Decreto 1072/2015)
 export const sstProfessionTypeEnum = pgEnum("sst_profession_type", [
+  "licenciado_salud_ocupacional", // Licenciado en Salud Ocupacional (título universitario)
   "medico_ocupacional",       // Médico con especialización en Salud Ocupacional/Medicina del Trabajo
   "profesional_sst",          // Profesional con posgrado en SST
   "tecnologo_sst",            // Tecnólogo en SST
