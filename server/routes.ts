@@ -4787,14 +4787,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // VALIDATION: Verify worker exists before insert to prevent FK errors
+      console.log('[ABSENCE] Creating absence - workerId:', req.body.workerId, 'companyId:', companyId);
       if (req.body.workerId) {
         const [existingWorker] = await db.select({ id: schema.workers.id, companyId: schema.workers.companyId })
           .from(schema.workers)
           .where(eq(schema.workers.id, req.body.workerId))
           .limit(1);
         
+        console.log('[ABSENCE] Worker lookup result:', existingWorker ? 'FOUND' : 'NOT FOUND', existingWorker?.id);
+        
         if (!existingWorker) {
-          console.error('[ERROR-ABSENCE] Worker not found:', req.body.workerId);
+          console.error('[ERROR-ABSENCE] Worker not found in DB:', req.body.workerId);
           return res.status(400).send("El trabajador seleccionado no existe. Por favor actualice la página y seleccione un trabajador válido.");
         }
         
