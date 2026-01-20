@@ -376,13 +376,80 @@ export const sociodemographicDiagnosis = pgTable("sociodemographic_diagnosis", {
 // Accidents table
 export const severityEnum = pgEnum("severity", ["leve", "grave", "mortal"]);
 export const accidentTypeEnum = pgEnum("accident_type", [
-  "caida",
-  "golpe",
+  // Caídas
+  "caida_mismo_nivel",
+  "caida_diferente_nivel",
+  "caida_objetos",
+  "caida", // Legacy
+  
+  // Golpes
+  "golpe_objeto",
+  "golpe_objeto_movil",
+  "golpe_herramientas",
+  "proyeccion_particulas",
+  "golpe", // Legacy
+  
+  // Cortes
   "corte",
-  "quemadura",
-  "intoxicacion",
-  "electrocucion",
+  "punzamiento",
+  "amputacion",
+  
+  // Atrapamientos
   "atrapamiento",
+  "aplastamiento",
+  "atrapamiento_maquinaria",
+  
+  // Quemaduras
+  "quemadura_termica",
+  "quemadura_quimica",
+  "quemadura_electrica",
+  "quemadura_radiacion",
+  "quemadura", // Legacy
+  
+  // Eléctricos
+  "electrocucion",
+  "choque_electrico",
+  "arco_electrico",
+  
+  // Químicos/Biológicos
+  "intoxicacion",
+  "inhalacion_gases",
+  "contacto_sustancias",
+  "exposicion_biologica",
+  "mordedura_picadura",
+  
+  // Esfuerzos físicos
+  "sobreesfuerzo",
+  "movimiento_repetitivo",
+  "manipulacion_cargas",
+  "postura_forzada",
+  
+  // Tránsito
+  "accidente_transito",
+  "accidente_vehiculo_trabajo",
+  "atropellamiento",
+  
+  // Sector minero
+  "derrumbe",
+  "explosion",
+  "incendio",
+  "asfixia",
+  "inmersion",
+  
+  // Espacios confinados
+  "atmosfera_peligrosa",
+  
+  // Violencia
+  "agresion_fisica",
+  "asalto_robo",
+  
+  // Otros
+  "exposicion_ruido",
+  "exposicion_vibraciones",
+  "exposicion_temperaturas",
+  "radiacion_ionizante",
+  "esfuerzo_visual",
+  "estres_agudo",
   "otro"
 ]);
 export const journeyTypeEnum = pgEnum("journey_type", ["ordinaria", "extraordinaria"]);
