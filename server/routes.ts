@@ -41077,6 +41077,305 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // Inducción Virtual routes
   registerInduccionVirtualRoutes(app);
   
+
+  // ============================================================================
+  // INVESTIGATIONS V2 - Módulo de Investigación de Accidentes (Versión 2)
+  // Rutas simplificadas que reciben companyId explícitamente del frontend
+  // ============================================================================
+  
+  // GET /api/investigations-v2 - List investigations (simplified)
+  app.get("/api/investigations-v2", requireAuth, async (req, res) => {
+    try {
+      // Get companyId from user's session directly
+      const userCompanyId = req.user!.companyId;
+      
+      // For admins, check X-Company-Id header
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const headerCompanyId = req.headers["x-company-id"] as string | undefined;
+      const companyId = isAdmin && headerCompanyId ? headerCompanyId : userCompanyId;
+      
+      if (!companyId) {
+        return res.status(400).send("Se requiere seleccionar una empresa");
+      }
+      
+      const investigations = await db.select()
+        .from(schema.accidentInvestigations)
+        .where(eq(schema.accidentInvestigations.companyId, companyId))
+        .orderBy(desc(schema.accidentInvestigations.createdAt));
+      
+      res.json(investigations);
+    } catch (error: any) {
+      console.error('[investigations-v2] Error listing investigations:', error);
+      res.status(500).send("Error al cargar investigaciones");
+    }
+  });
+  
+  // POST /api/investigations-v2 - Create investigation (simplified, robust)
+  app.post("/api/investigations-v2", requirePermission("accidents:create"), async (req, res) => {
+    try {
+      // CRITICAL: Get companyId from request body (sent explicitly by frontend)
+      // This bypasses any session/header issues that may occur in production
+      const { accidentId, companyId: bodyCompanyId, eventType, severity, eventDate, eventDescription, ...otherFields } = req.body;
+      
+      // Fallback: if not in body, try user's companyId
+      const userCompanyId = req.user!.companyId;
+      const headerCompanyId = req.headers["x-company-id"] as string | undefined;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      
+      // Priority: body > header (for admins) > user session
+      let companyId = bodyCompanyId;
+      if (!companyId && isAdmin && headerCompanyId) {
+        companyId = headerCompanyId;
+      }
+      if (!companyId) {
+        companyId = userCompanyId;
+      }
+      
+      console.log('[investigations-v2] Creating investigation:', {
+        accidentId,
+        companyId,
+        bodyCompanyId,
+        headerCompanyId,
+        userCompanyId,
+        isAdmin,
+        user: req.user!.username
+      });
+      
+      if (!companyId) {
+        return res.status(400).json({ error: "Se requiere seleccionar una empresa", code: "NO_COMPANY" });
+      }
+      
+      if (!accidentId) {
+        return res.status(400).json({ error: "Debe seleccionar un accidente para investigar", code: "NO_ACCIDENT" });
+      }
+      
+      // Validate accident exists AND belongs to the company
+      const [existingAccident] = await db.select()
+        .from(schema.accidents)
+        .where(and(
+          eq(schema.accidents.id, accidentId),
+          eq(schema.accidents.companyId, companyId)
+        ))
+        .limit(1);
+      
+      if (!existingAccident) {
+        // Check if exists elsewhere for better error
+        const [accidentElsewhere] = await db.select({ id: schema.accidents.id, companyId: schema.accidents.companyId })
+          .from(schema.accidents)
+          .where(eq(schema.accidents.id, accidentId))
+          .limit(1);
+        
+        if (accidentElsewhere) {
+          console.log('[investigations-v2] Accident found in different company:', accidentElsewhere.companyId);
+          return res.status(400).json({ 
+            error: "El accidente pertenece a otra empresa. Recargue la página.", 
+            code: "WRONG_COMPANY" 
+          });
+        }
+        
+        return res.status(400).json({ 
+          error: "El accidente seleccionado no existe", 
+          code: "ACCIDENT_NOT_FOUND" 
+        });
+      }
+      
+      // Calculate due date (15 days from event)
+      const eventDateObj = new Date(eventDate);
+      const dueDate = new Date(eventDateObj);
+      dueDate.setDate(dueDate.getDate() + 15);
+      const dueDateStr = dueDate.toISOString().split('T')[0];
+      
+      // Detect severity flags
+      const isSevere = severity === 'grave' ? 1 : 0;
+      const isFatal = severity === 'mortal' ? 1 : 0;
+      const requiresLicensedProfessional = (isSevere || isFatal) ? 1 : 0;
+      const requiresMinistryReport = isFatal ? 1 : 0;
+      
+      // Calculate SLA status
+      const today = new Date();
+      const dueDateCalc = new Date(dueDateStr);
+      const daysRemaining = Math.ceil((dueDateCalc.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      let slaStatus = 'en_tiempo';
+      if (daysRemaining <= 0) slaStatus = 'vencido';
+      else if (daysRemaining <= 3) slaStatus = 'proximo_vencer';
+      
+      // Sanitize date fields
+      const dateFields = ['investigationEndDate', 'licensedProfessionalLicenseExpiry', 'actionsClosedDate', 'furatDate', 'ministryReportDate', 'arlNotificationDate', 'epsNotificationDate', 'approvedAt'];
+      const sanitizedFields: any = { ...otherFields };
+      dateFields.forEach(field => {
+        if (sanitizedFields[field] === '' || sanitizedFields[field] === undefined) {
+          sanitizedFields[field] = null;
+        }
+      });
+      
+      // Insert investigation
+      const [newInvestigation] = await db.insert(schema.accidentInvestigations)
+        .values({
+          accidentId,
+          companyId,
+          eventType: eventType || 'accidente_trabajo',
+          severity: severity || 'leve',
+          eventDate,
+          eventDescription: eventDescription || '',
+          dueDate: dueDateStr,
+          isSevere,
+          isFatal,
+          requiresLicensedProfessional,
+          requiresMinistryReport,
+          slaStatus,
+          daysRemaining,
+          status: 'en_proceso',
+          createdBy: req.user!.id,
+          ...sanitizedFields
+        })
+        .returning();
+      
+      console.log('[investigations-v2] Investigation created successfully:', newInvestigation.id);
+      res.status(201).json(newInvestigation);
+      
+    } catch (error: any) {
+      console.error('[investigations-v2] Error creating investigation:', error);
+      res.status(500).json({ 
+        error: "Error al crear la investigación", 
+        details: error.message,
+        code: "CREATE_FAILED"
+      });
+    }
+  });
+  
+  // PUT /api/investigations-v2/:id - Update investigation
+  app.put("/api/investigations-v2/:id", requirePermission("accidents:update"), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      
+      // Sanitize date fields
+      const dateFields = ['investigationEndDate', 'licensedProfessionalLicenseExpiry', 'actionsClosedDate', 'furatDate', 'ministryReportDate', 'arlNotificationDate', 'epsNotificationDate', 'approvedAt'];
+      dateFields.forEach(field => {
+        if (updateData[field] === '' || updateData[field] === undefined) {
+          updateData[field] = null;
+        }
+      });
+      
+      const [updated] = await db.update(schema.accidentInvestigations)
+        .set({ ...updateData, updatedAt: new Date() })
+        .where(eq(schema.accidentInvestigations.id, id))
+        .returning();
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Investigación no encontrada" });
+      }
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error('[investigations-v2] Error updating investigation:', error);
+      res.status(500).json({ error: "Error al actualizar la investigación" });
+    }
+  });
+  
+  // DELETE /api/investigations-v2/:id - Delete investigation
+  app.delete("/api/investigations-v2/:id", requirePermission("accidents:delete"), async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // First delete related findings and participants
+      await db.delete(schema.investigationFindings)
+        .where(eq(schema.investigationFindings.investigationId, id));
+      
+      await db.delete(schema.investigationParticipants)
+        .where(eq(schema.investigationParticipants.investigationId, id));
+      
+      // Then delete investigation
+      const [deleted] = await db.delete(schema.accidentInvestigations)
+        .where(eq(schema.accidentInvestigations.id, id))
+        .returning();
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Investigación no encontrada" });
+      }
+      
+      res.json({ success: true, message: "Investigación eliminada" });
+    } catch (error: any) {
+      console.error('[investigations-v2] Error deleting investigation:', error);
+      res.status(500).json({ error: "Error al eliminar la investigación" });
+    }
+  });
+  
+  // POST /api/investigations-v2/:id/findings - Add finding
+  app.post("/api/investigations-v2/:id/findings", requirePermission("accidents:create"), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const findingData = req.body;
+      
+      const [newFinding] = await db.insert(schema.investigationFindings)
+        .values({
+          ...findingData,
+          investigationId: id,
+          createdBy: req.user!.id
+        })
+        .returning();
+      
+      res.status(201).json(newFinding);
+    } catch (error: any) {
+      console.error('[investigations-v2] Error adding finding:', error);
+      res.status(500).json({ error: "Error al agregar hallazgo" });
+    }
+  });
+  
+  // GET /api/investigations-v2/:id/findings - Get findings
+  app.get("/api/investigations-v2/:id/findings", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const findings = await db.select()
+        .from(schema.investigationFindings)
+        .where(eq(schema.investigationFindings.investigationId, id));
+      
+      res.json(findings);
+    } catch (error: any) {
+      console.error('[investigations-v2] Error getting findings:', error);
+      res.status(500).json({ error: "Error al cargar hallazgos" });
+    }
+  });
+  
+  // POST /api/investigations-v2/:id/participants - Add participant
+  app.post("/api/investigations-v2/:id/participants", requirePermission("accidents:create"), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const participantData = req.body;
+      
+      const [newParticipant] = await db.insert(schema.investigationParticipants)
+        .values({
+          ...participantData,
+          investigationId: id
+        })
+        .returning();
+      
+      res.status(201).json(newParticipant);
+    } catch (error: any) {
+      console.error('[investigations-v2] Error adding participant:', error);
+      res.status(500).json({ error: "Error al agregar participante" });
+    }
+  });
+  
+  // GET /api/investigations-v2/:id/participants - Get participants
+  app.get("/api/investigations-v2/:id/participants", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const participants = await db.select()
+        .from(schema.investigationParticipants)
+        .where(eq(schema.investigationParticipants.investigationId, id));
+      
+      res.json(participants);
+    } catch (error: any) {
+      console.error('[investigations-v2] Error getting participants:', error);
+      res.status(500).json({ error: "Error al cargar participantes" });
+    }
+  });
+
+
+
   // Stripe payment routes (new payment provider)
   registerStripeRoutes(app);
 
