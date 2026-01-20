@@ -689,6 +689,30 @@ export default function InvestigacionAccidentes() {
 
   const isSevereOrFatal = form.watch("isSevere") || form.watch("isFatal");
 
+  // === TRAZABILIDAD INTELIGENTE DEL ACCIDENTE ===
+  // Obtener el accidente seleccionado para mostrar trazabilidad
+  const selectedAccidentId = form.watch("accidentId");
+  const selectedAccident = accidents.find(a => a.id === selectedAccidentId);
+  const affectedWorker = selectedAccident ? workers.find(w => w.id === selectedAccident.workerId) : null;
+  
+  // Obtener datos del profesional SST seleccionado para mostrar estado de licencia
+  const selectedProfessionalLicenseExpiry = form.watch("licensedProfessionalLicenseExpiry");
+  const getLicenseStatus = () => {
+    if (!selectedProfessionalLicenseExpiry) return null;
+    const expiryDate = new Date(selectedProfessionalLicenseExpiry);
+    const today = new Date();
+    const daysRemaining = differenceInDays(expiryDate, today);
+    
+    if (daysRemaining < 0) {
+      return { status: 'vencida', color: 'bg-red-500', text: 'Licencia Vencida', days: Math.abs(daysRemaining) };
+    } else if (daysRemaining <= 30) {
+      return { status: 'proxima', color: 'bg-yellow-500', text: 'Próxima a Vencer', days: daysRemaining };
+    } else {
+      return { status: 'vigente', color: 'bg-green-500', text: 'Licencia Vigente', days: daysRemaining };
+    }
+  };
+  const licenseStatus = getLicenseStatus();
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -1441,13 +1465,65 @@ export default function InvestigacionAccidentes() {
                 </div>
               )}
 
+              {/* === TARJETA INTELIGENTE DE TRAZABILIDAD DEL ACCIDENTE === */}
+              {selectedAccident && (
+                <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    <h4 className="font-semibold text-amber-800 dark:text-amber-200">Trazabilidad del Registro de Accidente</h4>
+                  </div>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Trabajador Afectado</p>
+                      <p className="font-medium text-sm">{affectedWorker?.name || "No identificado"}</p>
+                      <p className="text-xs text-muted-foreground">{affectedWorker?.identificationNumber || ""}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Tipo de Accidente</p>
+                      <Badge variant="outline" className="text-xs">
+                        {selectedAccident.type?.replace(/_/g, ' ').toUpperCase() || "Sin clasificar"}
+                      </Badge>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Fecha del Evento</p>
+                      <p className="font-medium text-sm">{selectedAccident.date ? format(new Date(selectedAccident.date), "dd/MM/yyyy", { locale: es }) : "Sin fecha"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Lugar del Accidente</p>
+                      <p className="text-sm">{selectedAccident.location?.replace(/_/g, ' ') || "No especificado"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Severidad</p>
+                      <Badge className={selectedAccident.severity === 'mortal' ? 'bg-red-600' : selectedAccident.severity === 'grave' ? 'bg-orange-500' : 'bg-blue-500'}>
+                        {selectedAccident.severity?.toUpperCase() || "SIN CLASIFICAR"}
+                      </Badge>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">ID Registro</p>
+                      <p className="font-mono text-xs text-muted-foreground">{selectedAccident.id.slice(0, 8)}...</p>
+                    </div>
+                  </div>
+                  {selectedAccident.description && (
+                    <div className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-700">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Descripción del Evento</p>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{selectedAccident.description}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {isSevereOrFatal && (
                 <div className="grid md:grid-cols-2 gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <div className="md:col-span-2">
+                  <div className="md:col-span-2 flex items-center justify-between">
                     <p className="text-sm font-medium text-blue-800 dark:text-blue-200 flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4" />
                       Accidente grave/mortal: Requiere participación de profesional SST con licencia vigente
                     </p>
+                    {licenseStatus && (
+                      <Badge className={licenseStatus.color + " text-white"}>
+                        {licenseStatus.text} ({licenseStatus.days} días)
+                      </Badge>
+                    )}
                   </div>
                   <FormField
                     control={form.control}
