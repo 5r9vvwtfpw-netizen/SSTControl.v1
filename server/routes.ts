@@ -3311,7 +3311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Map Excel columns to database fields (including Estándar 3.1.1 sociodemographic data)
           const workerData = {
-            companyId,
+            companyId: effectiveCompanyId,
             identificationNumber: row['Cédula']?.toString().trim() || row['Cedula']?.toString().trim() || row['Identificación']?.toString().trim(),
             name: row['Nombre Completo']?.toString().trim() || row['Nombre']?.toString().trim(),
             email: row['Email']?.toString().trim() || row['Correo']?.toString().trim() || undefined,
@@ -3933,7 +3933,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [newInvestigation] = await db.insert(schema.accidentInvestigations)
         .values({
           ...validatedData,
-          companyId,
+          companyId: effectiveCompanyId,
           dueDate: dueDateStr,
           isSevere,
           isFatal,
@@ -8829,7 +8829,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               : 'Por definir';
             
             await storage.createInternalMessage({
-              companyId,
+              companyId: effectiveCompanyId,
               senderId: req.user!.id,
               senderName: req.user!.fullName || req.user!.username,
               senderRole: req.user!.role,
@@ -10265,7 +10265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const workerUser = await storage.getUserByWorkerId(worker.id);
             if (workerUser) {
               await storage.createInternalMessage({
-                companyId,
+                companyId: effectiveCompanyId,
                 senderId: req.user!.id,
                 senderName: req.user!.fullName || req.user!.username,
                 senderRole: req.user!.role,
@@ -10319,7 +10319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const workerUser = await storage.getUserByWorkerId(worker.id);
               if (workerUser) {
                 await storage.createInternalMessage({
-                  companyId,
+                  companyId: effectiveCompanyId,
                   senderId: req.user!.id,
                   senderName: req.user!.fullName || req.user!.username,
                   senderRole: req.user!.role,
@@ -11512,7 +11512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             fechaVencimiento.setFullYear(fechaVencimiento.getFullYear() + 1);
             
             await storage.createCopasstCertificado({
-              companyId,
+              companyId: effectiveCompanyId,
               userId,
               cursoId: req.params.cursoId,
               codigoCertificado: certCode,
@@ -12328,7 +12328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const validatedData = insertCopasstBancoPreguntaSchema.parse({
             ...preguntas[i],
-            companyId,
+            companyId: effectiveCompanyId,
           });
           await storage.createCopasstBancoPregunta(validatedData);
           importedCount++;
@@ -13661,7 +13661,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               : 'Por definir';
             
             await storage.createInternalMessage({
-              companyId,
+              companyId: effectiveCompanyId,
               senderId: req.user!.id,
               senderName: req.user!.fullName || req.user!.username,
               senderRole: req.user!.role,
@@ -18003,7 +18003,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Registrar notificación en base de datos
         if (emailResult.success) {
           await storage.createEmailNotification({
-            companyId,
+            companyId: effectiveCompanyId,
             workerId: worker.id,
             type: 'exam_renewal',
             referenceId: exam.id,
@@ -18017,7 +18017,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           results.push({ type: 'exam', worker: worker.name, status: 'sent' });
         } else {
           await storage.createEmailNotification({
-            companyId,
+            companyId: effectiveCompanyId,
             workerId: worker.id,
             type: 'exam_renewal',
             referenceId: exam.id,
@@ -18073,7 +18073,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Registrar notificación
           if (emailResult.success) {
             await storage.createEmailNotification({
-              companyId,
+              companyId: effectiveCompanyId,
               workerId: worker.id,
               type: 'training_renewal',
               referenceId: training.id,
@@ -18087,7 +18087,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             results.push({ type: 'training', worker: worker.name, training: training.title, status: 'sent' });
           } else {
             await storage.createEmailNotification({
-              companyId,
+              companyId: effectiveCompanyId,
               workerId: worker.id,
               type: 'training_renewal',
               referenceId: training.id,
@@ -30082,7 +30082,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const workerUser = await storage.getUserByWorkerId(worker.id);
                 if (workerUser) {
                   await storage.createInternalMessage({
-                    companyId,
+                    companyId: effectiveCompanyId,
                     senderId: req.user!.id,
                     senderName: req.user!.fullName || req.user!.username,
                     senderRole: req.user!.role,
@@ -36797,7 +36797,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         try {
           // Create internal message notification
           await storage.createInternalMessage({
-            companyId,
+            companyId: effectiveCompanyId,
             senderId: companyAdmin.id,
             senderName: "SST Colombia Soporte",
             senderRole: 'superadmin' as any,
@@ -37284,7 +37284,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         actorId: user.id,
         eventType: 'access_started',
         payload: {
-          companyId,
+          companyId: effectiveCompanyId,
           startedAt: new Date().toISOString(),
           ipAddress: req.ip || 'unknown',
           userAgent: req.headers['user-agent'] || 'unknown',
@@ -37951,7 +37951,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             const workerUser = await storage.getUserByWorkerId(worker.id);
             if (workerUser) {
               await storage.createInternalMessage({
-                companyId,
+                companyId: effectiveCompanyId,
                 senderId: req.user!.id,
                 senderName: req.user!.fullName || req.user!.username,
                 senderRole: req.user!.role,
@@ -38046,7 +38046,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               const workerUser = await storage.getUserByWorkerId(worker.id);
               if (workerUser) {
                 await storage.createInternalMessage({
-                  companyId,
+                  companyId: effectiveCompanyId,
                   senderId: req.user!.id,
                   senderName: req.user!.fullName || req.user!.username,
                   senderRole: req.user!.role,
@@ -40202,7 +40202,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               const subject = isVirtualCourse ? 'Curso Virtual Asignado' : 'Actividad de Bienestar Programada';
               
               await storage.createInternalMessage({
-                companyId,
+                companyId: effectiveCompanyId,
                 senderId: req.user!.id,
                 senderName: req.user!.fullName || req.user!.username,
                 senderRole: req.user!.role,
@@ -41149,33 +41149,31 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(400).json({ error: "Debe seleccionar un accidente para investigar", code: "NO_ACCIDENT" });
       }
       
-      // Validate accident exists AND belongs to the company
+      // ROBUST FIX: First find accident by ID only, then use ITS companyId
       const [existingAccident] = await db.select()
         .from(schema.accidents)
-        .where(and(
-          eq(schema.accidents.id, accidentId),
-          eq(schema.accidents.companyId, companyId)
-        ))
+        .where(eq(schema.accidents.id, accidentId))
         .limit(1);
       
       if (!existingAccident) {
-        // Check if exists elsewhere for better error
-        const [accidentElsewhere] = await db.select({ id: schema.accidents.id, companyId: schema.accidents.companyId })
-          .from(schema.accidents)
-          .where(eq(schema.accidents.id, accidentId))
-          .limit(1);
-        
-        if (accidentElsewhere) {
-          console.log('[investigations-v2] Accident found in different company:', accidentElsewhere.companyId);
-          return res.status(400).json({ 
-            error: "El accidente pertenece a otra empresa. Recargue la página.", 
-            code: "WRONG_COMPANY" 
-          });
-        }
-        
+        console.log('[investigations-v2] Accident not found:', accidentId);
         return res.status(400).json({ 
           error: "El accidente seleccionado no existe", 
           code: "ACCIDENT_NOT_FOUND" 
+        });
+      }
+      
+      // Use the accident's actual companyId for the investigation
+      const effectiveCompanyId = existingAccident.companyId;
+      console.log('[investigations-v2] Using accident companyId:', effectiveCompanyId, 'instead of:', companyId);
+      
+      // For non-admin users, validate they belong to the same company
+      const isAdminCheck = hasGlobalAccess(req.user!.role);
+      if (!isAdminCheck && req.user!.companyId !== effectiveCompanyId) {
+        console.log('[investigations-v2] User company mismatch:', req.user!.companyId, 'vs', effectiveCompanyId);
+        return res.status(403).json({ 
+          error: "No tiene permiso para investigar accidentes de otra empresa", 
+          code: "FORBIDDEN" 
         });
       }
       
@@ -41213,7 +41211,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const [newInvestigation] = await db.insert(schema.accidentInvestigations)
         .values({
           accidentId,
-          companyId,
+          companyId: effectiveCompanyId,
           eventType: eventType || 'accidente_trabajo',
           investigationStartDate: todayStr,
           eventDate,
