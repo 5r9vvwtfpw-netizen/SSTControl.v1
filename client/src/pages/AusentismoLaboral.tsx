@@ -98,19 +98,44 @@ export default function AusentismoLaboral() {
     }
   }, [companyId]);
 
+  // Include companyId in queryKey to force refetch when superadmin changes company
   const { data: absences = [], isLoading } = useQuery<WorkerAbsence[]>({
-    queryKey: ["/api/absences"],
+    queryKey: ["/api/absences", companyId || ""],
     enabled: !!companyId,
+    queryFn: async () => {
+      const res = await fetch("/api/absences", {
+        credentials: "include",
+        headers: companyId ? { "X-Company-Id": companyId } : {},
+      });
+      if (!res.ok) throw new Error("Error loading absences");
+      return res.json();
+    },
   });
 
   const { data: workers = [] } = useQuery<Worker[]>({
-    queryKey: ["/api/workers"],
+    queryKey: ["/api/workers", companyId || ""],
     enabled: !!companyId,
+    queryFn: async () => {
+      const res = await fetch("/api/workers", {
+        credentials: "include",
+        headers: companyId ? { "X-Company-Id": companyId } : {},
+      });
+      if (!res.ok) throw new Error("Error loading workers");
+      return res.json();
+    },
   });
 
   const { data: accidents = [] } = useQuery<Accident[]>({
-    queryKey: ["/api/accidents"],
+    queryKey: ["/api/accidents", companyId || ""],
     enabled: !!companyId,
+    queryFn: async () => {
+      const res = await fetch("/api/accidents", {
+        credentials: "include",
+        headers: companyId ? { "X-Company-Id": companyId } : {},
+      });
+      if (!res.ok) throw new Error("Error loading accidents");
+      return res.json();
+    },
   });
 
   const form = useForm<FormData>({
