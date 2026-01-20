@@ -41150,13 +41150,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       // ROBUST FIX: First find accident by ID only, then use ITS companyId
+      console.log('[investigations-v2] Searching for accident by ID:', accidentId);
+      
       const [existingAccident] = await db.select()
         .from(schema.accidents)
         .where(eq(schema.accidents.id, accidentId))
         .limit(1);
       
+      console.log('[investigations-v2] Accident found:', existingAccident ? existingAccident.id : 'NOT FOUND');
+      
       if (!existingAccident) {
-        console.log('[investigations-v2] Accident not found:', accidentId);
+        console.log('[investigations-v2] Accident not found in DB:', accidentId);
         return res.status(400).json({ 
           error: "El accidente seleccionado no existe", 
           code: "ACCIDENT_NOT_FOUND" 
