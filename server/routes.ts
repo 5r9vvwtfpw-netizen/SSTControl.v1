@@ -41397,6 +41397,47 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     console.log("ℹ️ Pricing Plugin is disabled (set ENABLE_PRICING_PLUGIN=true to enable)");
   }
 
+  
+  // DIAGNOSTIC ENDPOINT - Check if accident exists (temporary for debugging)
+  app.get("/api/debug/accident/:id", requireAuth, async (req, res) => {
+    try {
+      const accidentId = req.params.id;
+      console.log('[DEBUG] Checking accident:', accidentId);
+      
+      const [accident] = await db.select({
+        id: schema.accidents.id,
+        companyId: schema.accidents.companyId,
+        eventDate: schema.accidents.eventDate
+      })
+        .from(schema.accidents)
+        .where(eq(schema.accidents.id, accidentId))
+        .limit(1);
+      
+      if (accident) {
+        console.log('[DEBUG] Accident found:', accident);
+        res.json({ found: true, accident });
+      } else {
+        // List all accident IDs for comparison
+        const allAccidents = await db.select({
+          id: schema.accidents.id,
+          companyId: schema.accidents.companyId
+        })
+          .from(schema.accidents)
+          .limit(10);
+        
+        console.log('[DEBUG] Accident NOT found. Available accidents:', allAccidents.map(a => a.id));
+        res.json({ 
+          found: false, 
+          searchedId: accidentId,
+          availableAccidents: allAccidents 
+        });
+      }
+    } catch (error: any) {
+      console.error('[DEBUG] Error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ========== GLOBAL ERROR HANDLER ==========
   // Middleware global para interceptar errores no manejados y evitar exponer mensajes técnicos
   // Especialmente importante para errores de SSL/certificados en producción
