@@ -1339,9 +1339,12 @@ export default function ConservacionAuditiva() {
                   </SelectContent>
                 </Select>
                 {noiseMeasurements.length === 0 && (
-                  <p className="text-xs text-amber-600">
-                    Debe registrar mediciones ambientales de ruido antes de crear perfiles de exposición.
-                  </p>
+                  <div className="text-xs text-amber-600 space-y-1">
+                    <p>Debe registrar mediciones ambientales de ruido antes de crear perfiles de exposición.</p>
+                    <Link href="/mediciones-ambientales" className="text-teal-600 hover:underline font-medium">
+                      → Ir a Mediciones Ambientales para registrar
+                    </Link>
+                  </div>
                 )}
               </div>
               <div className="space-y-2">
