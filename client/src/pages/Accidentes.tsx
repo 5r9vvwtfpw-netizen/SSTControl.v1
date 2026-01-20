@@ -10,14 +10,79 @@ import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 
+// Tipos de accidentes según Decreto 1072/2015 y clasificación internacional de lesiones ocupacionales
 const ACCIDENT_TYPES = [
-  { value: "caida", label: "Caída (mismo nivel o altura)" },
-  { value: "golpe", label: "Golpe con/contra objeto" },
-  { value: "corte", label: "Corte o punzamiento" },
-  { value: "atrapamiento", label: "Atrapamiento" },
-  { value: "quemadura", label: "Quemadura (térmica o química)" },
-  { value: "intoxicacion", label: "Intoxicación" },
+  // Caídas
+  { value: "caida_mismo_nivel", label: "Caída al mismo nivel (resbalón, tropiezo)" },
+  { value: "caida_diferente_nivel", label: "Caída de diferente nivel (escaleras, andamios, alturas)" },
+  { value: "caida_objetos", label: "Caída de objetos" },
+  
+  // Golpes y contacto con objetos
+  { value: "golpe_objeto", label: "Golpe con/contra objeto fijo" },
+  { value: "golpe_objeto_movil", label: "Golpe por objeto en movimiento" },
+  { value: "golpe_herramientas", label: "Golpe por herramientas manuales" },
+  { value: "proyeccion_particulas", label: "Proyección de partículas/fragmentos" },
+  
+  // Cortes y punzamientos
+  { value: "corte", label: "Corte o laceración" },
+  { value: "punzamiento", label: "Punzamiento o perforación" },
+  { value: "amputacion", label: "Amputación traumática" },
+  
+  // Atrapamientos
+  { value: "atrapamiento", label: "Atrapamiento por/entre objetos" },
+  { value: "aplastamiento", label: "Aplastamiento" },
+  { value: "atrapamiento_maquinaria", label: "Atrapamiento por maquinaria" },
+  
+  // Quemaduras
+  { value: "quemadura_termica", label: "Quemadura térmica (calor/frío)" },
+  { value: "quemadura_quimica", label: "Quemadura química" },
+  { value: "quemadura_electrica", label: "Quemadura eléctrica" },
+  { value: "quemadura_radiacion", label: "Quemadura por radiación" },
+  
+  // Riesgos eléctricos
   { value: "electrocucion", label: "Electrocución" },
+  { value: "choque_electrico", label: "Choque eléctrico (contacto)" },
+  { value: "arco_electrico", label: "Arco eléctrico" },
+  
+  // Riesgos químicos y biológicos
+  { value: "intoxicacion", label: "Intoxicación/Envenenamiento" },
+  { value: "inhalacion_gases", label: "Inhalación de gases/vapores" },
+  { value: "contacto_sustancias", label: "Contacto con sustancias peligrosas" },
+  { value: "exposicion_biologica", label: "Exposición a agentes biológicos" },
+  { value: "mordedura_picadura", label: "Mordedura o picadura de animal/insecto" },
+  
+  // Esfuerzos físicos
+  { value: "sobreesfuerzo", label: "Sobreesfuerzo físico" },
+  { value: "movimiento_repetitivo", label: "Lesión por movimientos repetitivos" },
+  { value: "manipulacion_cargas", label: "Lesión por manipulación de cargas" },
+  { value: "postura_forzada", label: "Lesión por postura forzada" },
+  
+  // Accidentes de tránsito
+  { value: "accidente_transito", label: "Accidente de tránsito (in itinere)" },
+  { value: "accidente_vehiculo_trabajo", label: "Accidente con vehículo en trabajo" },
+  { value: "atropellamiento", label: "Atropellamiento" },
+  
+  // Sector minero
+  { value: "derrumbe", label: "Derrumbe/Desprendimiento de material" },
+  { value: "explosion", label: "Explosión" },
+  { value: "incendio", label: "Incendio" },
+  { value: "asfixia", label: "Asfixia/Sofocación" },
+  { value: "inmersion", label: "Inmersión/Ahogamiento" },
+  
+  // Espacios confinados
+  { value: "atmosfera_peligrosa", label: "Exposición a atmósfera peligrosa" },
+  
+  // Violencia
+  { value: "agresion_fisica", label: "Agresión física" },
+  { value: "asalto_robo", label: "Asalto/Robo" },
+  
+  // Otros
+  { value: "exposicion_ruido", label: "Exposición aguda a ruido" },
+  { value: "exposicion_vibraciones", label: "Exposición a vibraciones" },
+  { value: "exposicion_temperaturas", label: "Exposición a temperaturas extremas" },
+  { value: "radiacion_ionizante", label: "Exposición a radiación ionizante" },
+  { value: "esfuerzo_visual", label: "Fatiga visual aguda" },
+  { value: "estres_agudo", label: "Estrés térmico/Golpe de calor" },
   { value: "otro", label: "Otro (especificar)" },
 ];
 
