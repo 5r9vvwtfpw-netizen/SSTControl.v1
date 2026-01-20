@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useCompanyContext } from "@/hooks/use-company-context";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
@@ -253,6 +254,8 @@ function calculateSlaStatus(dueDate: string): { status: string; daysRemaining: n
 export default function InvestigacionAccidentes() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { selectedCompany } = useCompanyContext();
+  const companyId = selectedCompany?.id || user?.companyId;
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [slaFilter, setSlaFilter] = useState<string>("todos");
@@ -323,16 +326,44 @@ export default function InvestigacionAccidentes() {
     },
   });
 
+  // Include companyId in queryKey to prevent cache staleness when superadmin changes company
   const { data: investigations = [], isLoading: loadingInvestigations } = useQuery<AccidentInvestigation[]>({
-    queryKey: ["/api/investigations"],
+    queryKey: ["/api/investigations", companyId || ""],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const res = await fetch("/api/investigations", {
+        credentials: "include",
+        headers: companyId ? { "X-Company-Id": companyId } : {},
+      });
+      if (!res.ok) throw new Error("Error loading investigations");
+      return res.json();
+    },
   });
 
   const { data: accidents = [] } = useQuery<Accident[]>({
-    queryKey: ["/api/accidents"],
+    queryKey: ["/api/accidents", companyId || ""],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const res = await fetch("/api/accidents", {
+        credentials: "include",
+        headers: companyId ? { "X-Company-Id": companyId } : {},
+      });
+      if (!res.ok) throw new Error("Error loading accidents");
+      return res.json();
+    },
   });
 
   const { data: workers = [] } = useQuery<Worker[]>({
-    queryKey: ["/api/workers"],
+    queryKey: ["/api/workers", companyId || ""],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const res = await fetch("/api/workers", {
+        credentials: "include",
+        headers: companyId ? { "X-Company-Id": companyId } : {},
+      });
+      if (!res.ok) throw new Error("Error loading workers");
+      return res.json();
+    },
   });
 
   // Queries para COPASST - miembros y actas
