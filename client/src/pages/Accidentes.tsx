@@ -169,6 +169,33 @@ export default function Accidentes() {
     },
   });
 
+  // Mutación para eliminar accidente (solo superadmin)
+  const deleteAccidentMutation = useMutation({
+    mutationFn: async (accidentId: string) => {
+      const res = await apiRequest("DELETE", `/api/accidents/${accidentId}`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Error al eliminar accidente");
+      }
+      return accidentId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/accidents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({
+        title: "Accidente eliminado",
+        description: "El registro del accidente ha sido eliminado",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -553,6 +580,9 @@ export default function Accidentes() {
                 date={formatDate(accident.date)}
                 time={accident.time}
                 worker={worker?.name || "Desconocido"}
+                showDeleteButton={user?.role === 'superadmin'}
+                onDelete={(id) => deleteAccidentMutation.mutate(id)}
+                isDeleting={deleteAccidentMutation.isPending}
               />
             );
           })}

@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, User, Trash2 } from "lucide-react";
 
 interface AccidentCardProps {
   id: string;
@@ -10,6 +11,9 @@ interface AccidentCardProps {
   date: string;
   time: string;
   worker: string;
+  showDeleteButton?: boolean;
+  onDelete?: (id: string) => void;
+  isDeleting?: boolean;
 }
 
 const severityConfig = {
@@ -18,15 +22,35 @@ const severityConfig = {
   mortal: { label: "Mortal", variant: "destructive" as const },
 };
 
-export function AccidentCard({ id, type, description, severity, date, time, worker }: AccidentCardProps) {
+export function AccidentCard({ id, type, description, severity, date, time, worker, showDeleteButton, onDelete, isDeleting }: AccidentCardProps) {
   return (
-    <Card data-testid={`card-accident-${id}`} className="hover-elevate">
+    <Card data-testid={`card-accident-${id}`} className="hover-elevate relative">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-base">{type}</CardTitle>
-          <Badge variant={severityConfig[severity].variant} data-testid={`badge-severity-${id}`}>
-            {severityConfig[severity].label}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={severityConfig[severity].variant} data-testid={`badge-severity-${id}`}>
+              {severityConfig[severity].label}
+            </Badge>
+            {showDeleteButton && onDelete && (
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="h-6 w-6 text-destructive hover:bg-destructive/10"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (confirm('¿Está seguro de eliminar este accidente? Esta acción no se puede deshacer.')) {
+                    onDelete(id);
+                  }
+                }}
+                disabled={isDeleting}
+                data-testid={`button-delete-accident-${id}`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
