@@ -41209,12 +41209,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       });
       
       // Insert investigation
+      const todayStr = new Date().toISOString().split('T')[0];
       const [newInvestigation] = await db.insert(schema.accidentInvestigations)
         .values({
           accidentId,
           companyId,
           eventType: eventType || 'accidente_trabajo',
-          severity: severity || 'leve',
+          investigationStartDate: todayStr,
           eventDate,
           eventDescription: eventDescription || '',
           dueDate: dueDateStr,
