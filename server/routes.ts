@@ -3311,7 +3311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Map Excel columns to database fields (including Estándar 3.1.1 sociodemographic data)
           const workerData = {
-            companyId: effectiveCompanyId,
+            companyId,
             identificationNumber: row['Cédula']?.toString().trim() || row['Cedula']?.toString().trim() || row['Identificación']?.toString().trim(),
             name: row['Nombre Completo']?.toString().trim() || row['Nombre']?.toString().trim(),
             email: row['Email']?.toString().trim() || row['Correo']?.toString().trim() || undefined,
@@ -3851,11 +3851,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use effectiveCompanyId from header (X-Company-Id) for superadmins, or user's companyId
       let companyId: string | null = getEffectiveCompanyId(req);
       
-      // DEBUG: Log user info and companyId resolution
-      console.log("[DEBUG-INVESTIGATION] User:", req.user!.username, "role:", req.user!.role, "userCompanyId:", req.user!.companyId);
-      console.log("[DEBUG-INVESTIGATION] Header X-Company-Id:", req.headers["x-company-id"]);
-      console.log("[DEBUG-INVESTIGATION] Initial companyId from getEffectiveCompanyId:", companyId);
-      
       // If admin is sending companyId in body, use that (backward compatibility)
       if (isAdmin && req.body.companyId) {
         companyId = req.body.companyId;
@@ -3933,7 +3928,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [newInvestigation] = await db.insert(schema.accidentInvestigations)
         .values({
           ...validatedData,
-          companyId: effectiveCompanyId,
+          companyId,
           dueDate: dueDateStr,
           isSevere,
           isFatal,
@@ -4787,17 +4782,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // VALIDATION: Verify worker exists before insert to prevent FK errors
-      console.log('[ABSENCE] Creating absence - workerId:', req.body.workerId, 'companyId:', companyId);
       if (req.body.workerId) {
         const [existingWorker] = await db.select({ id: schema.workers.id, companyId: schema.workers.companyId })
           .from(schema.workers)
           .where(eq(schema.workers.id, req.body.workerId))
           .limit(1);
         
-        console.log('[ABSENCE] Worker lookup result:', existingWorker ? 'FOUND' : 'NOT FOUND', existingWorker?.id);
-        
         if (!existingWorker) {
-          console.error('[ERROR-ABSENCE] Worker not found in DB:', req.body.workerId);
+          console.error('[ERROR-ABSENCE] Worker not found:', req.body.workerId);
           return res.status(400).send("El trabajador seleccionado no existe. Por favor actualice la página y seleccione un trabajador válido.");
         }
         
@@ -8832,7 +8824,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               : 'Por definir';
             
             await storage.createInternalMessage({
-              companyId: effectiveCompanyId,
+              companyId,
               senderId: req.user!.id,
               senderName: req.user!.fullName || req.user!.username,
               senderRole: req.user!.role,
@@ -10268,7 +10260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const workerUser = await storage.getUserByWorkerId(worker.id);
             if (workerUser) {
               await storage.createInternalMessage({
-                companyId: effectiveCompanyId,
+                companyId,
                 senderId: req.user!.id,
                 senderName: req.user!.fullName || req.user!.username,
                 senderRole: req.user!.role,
@@ -10322,7 +10314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const workerUser = await storage.getUserByWorkerId(worker.id);
               if (workerUser) {
                 await storage.createInternalMessage({
-                  companyId: effectiveCompanyId,
+                  companyId,
                   senderId: req.user!.id,
                   senderName: req.user!.fullName || req.user!.username,
                   senderRole: req.user!.role,
@@ -11515,7 +11507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             fechaVencimiento.setFullYear(fechaVencimiento.getFullYear() + 1);
             
             await storage.createCopasstCertificado({
-              companyId: effectiveCompanyId,
+              companyId,
               userId,
               cursoId: req.params.cursoId,
               codigoCertificado: certCode,
@@ -12331,7 +12323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const validatedData = insertCopasstBancoPreguntaSchema.parse({
             ...preguntas[i],
-            companyId: effectiveCompanyId,
+            companyId,
           });
           await storage.createCopasstBancoPregunta(validatedData);
           importedCount++;
@@ -13664,7 +13656,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               : 'Por definir';
             
             await storage.createInternalMessage({
-              companyId: effectiveCompanyId,
+              companyId,
               senderId: req.user!.id,
               senderName: req.user!.fullName || req.user!.username,
               senderRole: req.user!.role,
@@ -18006,7 +17998,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Registrar notificación en base de datos
         if (emailResult.success) {
           await storage.createEmailNotification({
-            companyId: effectiveCompanyId,
+            companyId,
             workerId: worker.id,
             type: 'exam_renewal',
             referenceId: exam.id,
@@ -18020,7 +18012,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           results.push({ type: 'exam', worker: worker.name, status: 'sent' });
         } else {
           await storage.createEmailNotification({
-            companyId: effectiveCompanyId,
+            companyId,
             workerId: worker.id,
             type: 'exam_renewal',
             referenceId: exam.id,
@@ -18076,7 +18068,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Registrar notificación
           if (emailResult.success) {
             await storage.createEmailNotification({
-              companyId: effectiveCompanyId,
+              companyId,
               workerId: worker.id,
               type: 'training_renewal',
               referenceId: training.id,
@@ -18090,7 +18082,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             results.push({ type: 'training', worker: worker.name, training: training.title, status: 'sent' });
           } else {
             await storage.createEmailNotification({
-              companyId: effectiveCompanyId,
+              companyId,
               workerId: worker.id,
               type: 'training_renewal',
               referenceId: training.id,
@@ -30085,7 +30077,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const workerUser = await storage.getUserByWorkerId(worker.id);
                 if (workerUser) {
                   await storage.createInternalMessage({
-                    companyId: effectiveCompanyId,
+                    companyId,
                     senderId: req.user!.id,
                     senderName: req.user!.fullName || req.user!.username,
                     senderRole: req.user!.role,
@@ -36800,7 +36792,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         try {
           // Create internal message notification
           await storage.createInternalMessage({
-            companyId: effectiveCompanyId,
+            companyId,
             senderId: companyAdmin.id,
             senderName: "SST Colombia Soporte",
             senderRole: 'superadmin' as any,
@@ -37287,7 +37279,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         actorId: user.id,
         eventType: 'access_started',
         payload: {
-          companyId: effectiveCompanyId,
+          companyId,
           startedAt: new Date().toISOString(),
           ipAddress: req.ip || 'unknown',
           userAgent: req.headers['user-agent'] || 'unknown',
@@ -37954,7 +37946,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             const workerUser = await storage.getUserByWorkerId(worker.id);
             if (workerUser) {
               await storage.createInternalMessage({
-                companyId: effectiveCompanyId,
+                companyId,
                 senderId: req.user!.id,
                 senderName: req.user!.fullName || req.user!.username,
                 senderRole: req.user!.role,
@@ -38049,7 +38041,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               const workerUser = await storage.getUserByWorkerId(worker.id);
               if (workerUser) {
                 await storage.createInternalMessage({
-                  companyId: effectiveCompanyId,
+                  companyId,
                   senderId: req.user!.id,
                   senderName: req.user!.fullName || req.user!.username,
                   senderRole: req.user!.role,
@@ -40205,7 +40197,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               const subject = isVirtualCourse ? 'Curso Virtual Asignado' : 'Actividad de Bienestar Programada';
               
               await storage.createInternalMessage({
-                companyId: effectiveCompanyId,
+                companyId,
                 senderId: req.user!.id,
                 senderName: req.user!.fullName || req.user!.username,
                 senderRole: req.user!.role,
@@ -41080,308 +41072,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // Inducción Virtual routes
   registerInduccionVirtualRoutes(app);
   
-
-  // ============================================================================
-  // INVESTIGATIONS V2 - Módulo de Investigación de Accidentes (Versión 2)
-  // Rutas simplificadas que reciben companyId explícitamente del frontend
-  // ============================================================================
-  
-  // GET /api/investigations-v2 - List investigations (simplified)
-  app.get("/api/investigations-v2", requireAuth, async (req, res) => {
-    try {
-      // Get companyId from user's session directly
-      const userCompanyId = req.user!.companyId;
-      
-      // For admins, check X-Company-Id header
-      const isAdmin = hasGlobalAccess(req.user!.role);
-      const headerCompanyId = req.headers["x-company-id"] as string | undefined;
-      const companyId = isAdmin && headerCompanyId ? headerCompanyId : userCompanyId;
-      
-      if (!companyId) {
-        return res.status(400).send("Se requiere seleccionar una empresa");
-      }
-      
-      const investigations = await db.select()
-        .from(schema.accidentInvestigations)
-        .where(eq(schema.accidentInvestigations.companyId, companyId))
-        .orderBy(desc(schema.accidentInvestigations.createdAt));
-      
-      res.json(investigations);
-    } catch (error: any) {
-      console.error('[investigations-v2] Error listing investigations:', error);
-      res.status(500).send("Error al cargar investigaciones");
-    }
-  });
-  
-  // POST /api/investigations-v2 - Create investigation (simplified, robust)
-  app.post("/api/investigations-v2", requirePermission("accidents:create"), async (req, res) => {
-    try {
-      // CRITICAL: Get companyId from request body (sent explicitly by frontend)
-      // This bypasses any session/header issues that may occur in production
-      const { accidentId, companyId: bodyCompanyId, eventType, severity, eventDate, eventDescription, ...otherFields } = req.body;
-      
-      // Fallback: if not in body, try user's companyId
-      const userCompanyId = req.user!.companyId;
-      const headerCompanyId = req.headers["x-company-id"] as string | undefined;
-      const isAdmin = hasGlobalAccess(req.user!.role);
-      
-      // Priority: body > header (for admins) > user session
-      let companyId = bodyCompanyId;
-      if (!companyId && isAdmin && headerCompanyId) {
-        companyId = headerCompanyId;
-      }
-      if (!companyId) {
-        companyId = userCompanyId;
-      }
-      
-      console.log('[investigations-v2] Creating investigation:', {
-        accidentId,
-        companyId,
-        bodyCompanyId,
-        headerCompanyId,
-        userCompanyId,
-        isAdmin,
-        user: req.user!.username
-      });
-      
-      if (!companyId) {
-        return res.status(400).json({ error: "Se requiere seleccionar una empresa", code: "NO_COMPANY" });
-      }
-      
-      if (!accidentId) {
-        return res.status(400).json({ error: "Debe seleccionar un accidente para investigar", code: "NO_ACCIDENT" });
-      }
-      
-      // ROBUST FIX: First find accident by ID only, then use ITS companyId
-      console.log('[investigations-v2] Searching for accident by ID:', accidentId);
-      
-      const [existingAccident] = await db.select()
-        .from(schema.accidents)
-        .where(eq(schema.accidents.id, accidentId))
-        .limit(1);
-      
-      console.log('[investigations-v2] Accident found:', existingAccident ? existingAccident.id : 'NOT FOUND');
-      
-      if (!existingAccident) {
-        console.log('[investigations-v2] Accident not found in DB:', accidentId);
-        return res.status(400).json({ 
-          error: "El accidente seleccionado no existe", 
-          code: "ACCIDENT_NOT_FOUND" 
-        });
-      }
-      
-      // Use the accident's actual companyId for the investigation
-      const effectiveCompanyId = existingAccident.companyId;
-      console.log('[investigations-v2] Using accident companyId:', effectiveCompanyId, 'instead of:', companyId);
-      
-      // For non-admin users, validate they belong to the same company
-      const isAdminCheck = hasGlobalAccess(req.user!.role);
-      if (!isAdminCheck && req.user!.companyId !== effectiveCompanyId) {
-        console.log('[investigations-v2] User company mismatch:', req.user!.companyId, 'vs', effectiveCompanyId);
-        return res.status(403).json({ 
-          error: "No tiene permiso para investigar accidentes de otra empresa", 
-          code: "FORBIDDEN" 
-        });
-      }
-      
-      // Calculate due date (15 days from event)
-      const eventDateObj = new Date(eventDate);
-      const dueDate = new Date(eventDateObj);
-      dueDate.setDate(dueDate.getDate() + 15);
-      const dueDateStr = dueDate.toISOString().split('T')[0];
-      
-      // Detect severity flags
-      const isSevere = severity === 'grave' ? 1 : 0;
-      const isFatal = severity === 'mortal' ? 1 : 0;
-      const requiresLicensedProfessional = (isSevere || isFatal) ? 1 : 0;
-      const requiresMinistryReport = isFatal ? 1 : 0;
-      
-      // Calculate SLA status
-      const today = new Date();
-      const dueDateCalc = new Date(dueDateStr);
-      const daysRemaining = Math.ceil((dueDateCalc.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      let slaStatus = 'en_tiempo';
-      if (daysRemaining <= 0) slaStatus = 'vencido';
-      else if (daysRemaining <= 3) slaStatus = 'proximo_vencer';
-      
-      // Sanitize date fields
-      const dateFields = ['investigationEndDate', 'licensedProfessionalLicenseExpiry', 'actionsClosedDate', 'furatDate', 'ministryReportDate', 'arlNotificationDate', 'epsNotificationDate', 'approvedAt'];
-      const sanitizedFields: any = { ...otherFields };
-      dateFields.forEach(field => {
-        if (sanitizedFields[field] === '' || sanitizedFields[field] === undefined) {
-          sanitizedFields[field] = null;
-        }
-      });
-      
-      // Insert investigation
-      const todayStr = new Date().toISOString().split('T')[0];
-      const [newInvestigation] = await db.insert(schema.accidentInvestigations)
-        .values({
-          accidentId,
-          companyId: effectiveCompanyId,
-          eventType: eventType || 'accidente_trabajo',
-          investigationStartDate: todayStr,
-          eventDate,
-          eventDescription: eventDescription || '',
-          dueDate: dueDateStr,
-          isSevere,
-          isFatal,
-          requiresLicensedProfessional,
-          requiresMinistryReport,
-          slaStatus,
-          daysRemaining,
-          status: 'en_proceso',
-          createdBy: req.user!.id,
-          ...sanitizedFields
-        })
-        .returning();
-      
-      console.log('[investigations-v2] Investigation created successfully:', newInvestigation.id);
-      res.status(201).json(newInvestigation);
-      
-    } catch (error: any) {
-      console.error('[investigations-v2] Error creating investigation:', error);
-      res.status(500).json({ 
-        error: "Error al crear la investigación", 
-        details: error.message,
-        code: "CREATE_FAILED"
-      });
-    }
-  });
-  
-  // PUT /api/investigations-v2/:id - Update investigation
-  app.put("/api/investigations-v2/:id", requirePermission("accidents:update"), async (req, res) => {
-    try {
-      const { id } = req.params;
-      const updateData = req.body;
-      
-      // Sanitize date fields
-      const dateFields = ['investigationEndDate', 'licensedProfessionalLicenseExpiry', 'actionsClosedDate', 'furatDate', 'ministryReportDate', 'arlNotificationDate', 'epsNotificationDate', 'approvedAt'];
-      dateFields.forEach(field => {
-        if (updateData[field] === '' || updateData[field] === undefined) {
-          updateData[field] = null;
-        }
-      });
-      
-      const [updated] = await db.update(schema.accidentInvestigations)
-        .set({ ...updateData, updatedAt: new Date() })
-        .where(eq(schema.accidentInvestigations.id, id))
-        .returning();
-      
-      if (!updated) {
-        return res.status(404).json({ error: "Investigación no encontrada" });
-      }
-      
-      res.json(updated);
-    } catch (error: any) {
-      console.error('[investigations-v2] Error updating investigation:', error);
-      res.status(500).json({ error: "Error al actualizar la investigación" });
-    }
-  });
-  
-  // DELETE /api/investigations-v2/:id - Delete investigation
-  app.delete("/api/investigations-v2/:id", requirePermission("accidents:delete"), async (req, res) => {
-    try {
-      const { id } = req.params;
-      
-      // First delete related findings and participants
-      await db.delete(schema.investigationFindings)
-        .where(eq(schema.investigationFindings.investigationId, id));
-      
-      await db.delete(schema.investigationParticipants)
-        .where(eq(schema.investigationParticipants.investigationId, id));
-      
-      // Then delete investigation
-      const [deleted] = await db.delete(schema.accidentInvestigations)
-        .where(eq(schema.accidentInvestigations.id, id))
-        .returning();
-      
-      if (!deleted) {
-        return res.status(404).json({ error: "Investigación no encontrada" });
-      }
-      
-      res.json({ success: true, message: "Investigación eliminada" });
-    } catch (error: any) {
-      console.error('[investigations-v2] Error deleting investigation:', error);
-      res.status(500).json({ error: "Error al eliminar la investigación" });
-    }
-  });
-  
-  // POST /api/investigations-v2/:id/findings - Add finding
-  app.post("/api/investigations-v2/:id/findings", requirePermission("accidents:create"), async (req, res) => {
-    try {
-      const { id } = req.params;
-      const findingData = req.body;
-      
-      const [newFinding] = await db.insert(schema.investigationFindings)
-        .values({
-          ...findingData,
-          investigationId: id,
-          createdBy: req.user!.id
-        })
-        .returning();
-      
-      res.status(201).json(newFinding);
-    } catch (error: any) {
-      console.error('[investigations-v2] Error adding finding:', error);
-      res.status(500).json({ error: "Error al agregar hallazgo" });
-    }
-  });
-  
-  // GET /api/investigations-v2/:id/findings - Get findings
-  app.get("/api/investigations-v2/:id/findings", requireAuth, async (req, res) => {
-    try {
-      const { id } = req.params;
-      
-      const findings = await db.select()
-        .from(schema.investigationFindings)
-        .where(eq(schema.investigationFindings.investigationId, id));
-      
-      res.json(findings);
-    } catch (error: any) {
-      console.error('[investigations-v2] Error getting findings:', error);
-      res.status(500).json({ error: "Error al cargar hallazgos" });
-    }
-  });
-  
-  // POST /api/investigations-v2/:id/participants - Add participant
-  app.post("/api/investigations-v2/:id/participants", requirePermission("accidents:create"), async (req, res) => {
-    try {
-      const { id } = req.params;
-      const participantData = req.body;
-      
-      const [newParticipant] = await db.insert(schema.investigationParticipants)
-        .values({
-          ...participantData,
-          investigationId: id
-        })
-        .returning();
-      
-      res.status(201).json(newParticipant);
-    } catch (error: any) {
-      console.error('[investigations-v2] Error adding participant:', error);
-      res.status(500).json({ error: "Error al agregar participante" });
-    }
-  });
-  
-  // GET /api/investigations-v2/:id/participants - Get participants
-  app.get("/api/investigations-v2/:id/participants", requireAuth, async (req, res) => {
-    try {
-      const { id } = req.params;
-      
-      const participants = await db.select()
-        .from(schema.investigationParticipants)
-        .where(eq(schema.investigationParticipants.investigationId, id));
-      
-      res.json(participants);
-    } catch (error: any) {
-      console.error('[investigations-v2] Error getting participants:', error);
-      res.status(500).json({ error: "Error al cargar participantes" });
-    }
-  });
-
-
-
   // Stripe payment routes (new payment provider)
   registerStripeRoutes(app);
 
@@ -41396,47 +41086,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   } else {
     console.log("ℹ️ Pricing Plugin is disabled (set ENABLE_PRICING_PLUGIN=true to enable)");
   }
-
-  
-  // DIAGNOSTIC ENDPOINT - Check if accident exists (temporary for debugging)
-  app.get("/api/debug/accident/:id", requireAuth, async (req, res) => {
-    try {
-      const accidentId = req.params.id;
-      console.log('[DEBUG] Checking accident:', accidentId);
-      
-      const [accident] = await db.select({
-        id: schema.accidents.id,
-        companyId: schema.accidents.companyId,
-        eventDate: schema.accidents.eventDate
-      })
-        .from(schema.accidents)
-        .where(eq(schema.accidents.id, accidentId))
-        .limit(1);
-      
-      if (accident) {
-        console.log('[DEBUG] Accident found:', accident);
-        res.json({ found: true, accident });
-      } else {
-        // List all accident IDs for comparison
-        const allAccidents = await db.select({
-          id: schema.accidents.id,
-          companyId: schema.accidents.companyId
-        })
-          .from(schema.accidents)
-          .limit(10);
-        
-        console.log('[DEBUG] Accident NOT found. Available accidents:', allAccidents.map(a => a.id));
-        res.json({ 
-          found: false, 
-          searchedId: accidentId,
-          availableAccidents: allAccidents 
-        });
-      }
-    } catch (error: any) {
-      console.error('[DEBUG] Error:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
 
   // ========== GLOBAL ERROR HANDLER ==========
   // Middleware global para interceptar errores no manejados y evitar exponer mensajes técnicos
