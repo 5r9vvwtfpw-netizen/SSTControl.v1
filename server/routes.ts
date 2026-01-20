@@ -3851,6 +3851,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use effectiveCompanyId from header (X-Company-Id) for superadmins, or user's companyId
       let companyId: string | null = getEffectiveCompanyId(req);
       
+      // DEBUG: Log user info and companyId resolution
+      console.log("[DEBUG-INVESTIGATION] User:", req.user!.username, "role:", req.user!.role, "userCompanyId:", req.user!.companyId);
+      console.log("[DEBUG-INVESTIGATION] Header X-Company-Id:", req.headers["x-company-id"]);
+      console.log("[DEBUG-INVESTIGATION] Initial companyId from getEffectiveCompanyId:", companyId);
+      
       // If admin is sending companyId in body, use that (backward compatibility)
       if (isAdmin && req.body.companyId) {
         companyId = req.body.companyId;
