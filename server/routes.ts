@@ -3880,27 +3880,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).send("Debe seleccionar un accidente para investigar");
       }
       
-      // DEBUG: Log all accidents for this company to diagnose production issue
-      const allCompanyAccidents = await db.select({ id: schema.accidents.id, type: schema.accidents.type })
-        .from(schema.accidents)
-        .where(eq(schema.accidents.companyId, companyId));
-      console.log('[DEBUG-INVESTIGATION] Looking for accidentId:', validatedData.accidentId);
-      console.log('[DEBUG-INVESTIGATION] Available accidents for company', companyId, ':', allCompanyAccidents.map(a => a.id));
-      
+      // Validate accident exists AND belongs to the effective company (prevents cross-company issues)
+      // This is the definitive database-level validation to fix cache staleness bugs
       const [existingAccident] = await db.select()
         .from(schema.accidents)
-        .where(eq(schema.accidents.id, validatedData.accidentId))
+        .where(and(
+          eq(schema.accidents.id, validatedData.accidentId),
+          eq(schema.accidents.companyId, companyId)
+        ))
         .limit(1);
       
-      console.log('[DEBUG-INVESTIGATION] Found accident:', existingAccident ? 'YES' : 'NO');
+      console.log('[DEBUG-INVESTIGATION] Looking for accidentId:', validatedData.accidentId, 'in company:', companyId);
+      console.log('[DEBUG-INVESTIGATION] Found accident in company:', existingAccident ? 'YES' : 'NO');
       
       if (!existingAccident) {
-        console.log('[DEBUG-INVESTIGATION] ERROR - Accident not found. Requested ID:', validatedData.accidentId, 'Type:', typeof validatedData.accidentId);
+        // Check if accident exists in another company (helps diagnose cache issues)
+        const [accidentInOtherCompany] = await db.select({ id: schema.accidents.id, companyId: schema.accidents.companyId })
+          .from(schema.accidents)
+          .where(eq(schema.accidents.id, validatedData.accidentId))
+          .limit(1);
+        
+        if (accidentInOtherCompany) {
+          console.log('[DEBUG-INVESTIGATION] ERROR - Accident found but in different company:', accidentInOtherCompany.companyId, 'vs expected:', companyId);
+          return res.status(400).send("El accidente seleccionado pertenece a otra empresa. Por favor recargue la página y seleccione un accidente de la lista actualizada.");
+        }
+        
+        console.log('[DEBUG-INVESTIGATION] ERROR - Accident not found anywhere. ID:', validatedData.accidentId);
         return res.status(400).send("El accidente seleccionado no existe. Por favor seleccione un accidente válido de la lista.");
-      }
-      
-      if (!isAdmin && existingAccident.companyId !== companyId) {
-        return res.status(403).send("No tiene permisos para investigar este accidente");
       }
       
       // Auto-calculate dueDate (15 days from event date per Res. 1401/2007)
