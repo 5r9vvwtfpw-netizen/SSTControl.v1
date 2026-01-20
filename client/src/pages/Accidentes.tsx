@@ -86,7 +86,9 @@ const ACCIDENT_TYPES = [
   { value: "otro", label: "Otro (especificar)" },
 ];
 
+// Ubicaciones según sectores económicos colombianos
 const LOCATION_OPTIONS = [
+  // Áreas generales/comunes
   { value: "area_produccion", label: "Área de producción" },
   { value: "bodega_almacen", label: "Bodega / Almacén" },
   { value: "oficinas", label: "Oficinas administrativas" },
@@ -97,8 +99,99 @@ const LOCATION_OPTIONS = [
   { value: "banos", label: "Baños" },
   { value: "comedor_cafeteria", label: "Comedor / Cafetería" },
   { value: "exterior", label: "Área exterior" },
+  { value: "taller_mantenimiento", label: "Taller de mantenimiento" },
+  { value: "laboratorio", label: "Laboratorio" },
+  { value: "cuarto_tecnico", label: "Cuarto técnico / Cuarto de máquinas" },
+  
+  // Sector Minero
+  { value: "mina_cielo_abierto", label: "Mina a cielo abierto" },
+  { value: "mina_subterranea", label: "Mina subterránea / Túnel" },
+  { value: "frente_explotacion", label: "Frente de explotación" },
+  { value: "galeria_minera", label: "Galería / Socavón" },
+  { value: "planta_beneficio_minera", label: "Planta de beneficio minero" },
+  { value: "tolva_trituradora", label: "Tolva / Trituradora" },
+  { value: "polvorin", label: "Polvorín / Almacén de explosivos" },
+  { value: "banda_transportadora", label: "Banda transportadora" },
+  { value: "patio_acopio", label: "Patio de acopio" },
+  
+  // Sector Construcción
+  { value: "obra_civil", label: "Obra civil / Construcción" },
+  { value: "andamio_plataforma", label: "Andamio / Plataforma elevada" },
+  { value: "excavacion_zanja", label: "Excavación / Zanja" },
+  { value: "cimentacion", label: "Cimentación / Fundación" },
+  { value: "cubierta_tejado", label: "Cubierta / Tejado" },
+  { value: "fachada", label: "Fachada" },
+  { value: "torre_grua", label: "Torre / Grúa" },
+  { value: "demolicion", label: "Zona de demolición" },
+  { value: "encofrado", label: "Encofrado" },
+  
+  // Sector Hidrocarburos
+  { value: "pozo_petrolero", label: "Pozo petrolero" },
+  { value: "plataforma_petrolera", label: "Plataforma petrolera" },
+  { value: "refineria", label: "Refinería" },
+  { value: "estacion_servicio", label: "Estación de servicio" },
+  { value: "tanque_almacenamiento", label: "Tanque de almacenamiento" },
+  { value: "oleoducto_gasoducto", label: "Oleoducto / Gasoducto" },
+  { value: "planta_gas", label: "Planta de gas" },
+  
+  // Sector Transporte
   { value: "vehiculo", label: "En vehículo" },
   { value: "desplazamiento", label: "En desplazamiento laboral" },
+  { value: "via_publica", label: "Vía pública" },
+  { value: "terminal_transporte", label: "Terminal de transporte" },
+  { value: "muelle_portuario", label: "Muelle / Puerto" },
+  { value: "aeropuerto", label: "Aeropuerto" },
+  { value: "ferrocarril", label: "Ferrocarril / Vía férrea" },
+  { value: "embarcacion", label: "Embarcación / Buque" },
+  
+  // Sector Agroindustrial
+  { value: "campo_cultivo", label: "Campo de cultivo" },
+  { value: "invernadero", label: "Invernadero" },
+  { value: "beneficiadero", label: "Beneficiadero" },
+  { value: "corral_establo", label: "Corral / Establo" },
+  { value: "silo", label: "Silo" },
+  { value: "planta_procesamiento", label: "Planta de procesamiento agrícola" },
+  
+  // Sector Energía
+  { value: "subestacion", label: "Subestación eléctrica" },
+  { value: "linea_transmision", label: "Línea de transmisión" },
+  { value: "central_generacion", label: "Central de generación" },
+  { value: "poste_electrico", label: "Poste eléctrico" },
+  { value: "panel_solar", label: "Panel solar / Parque eólico" },
+  
+  // Sector Salud
+  { value: "sala_cirugia", label: "Sala de cirugía / Quirófano" },
+  { value: "urgencias", label: "Urgencias" },
+  { value: "hospitalizacion", label: "Hospitalización" },
+  { value: "laboratorio_clinico", label: "Laboratorio clínico" },
+  { value: "morgue", label: "Morgue" },
+  
+  // Sector Comercio/Servicios
+  { value: "punto_venta", label: "Punto de venta / Local comercial" },
+  { value: "cocina_restaurante", label: "Cocina / Restaurante" },
+  { value: "hotel", label: "Hotel / Hospedaje" },
+  { value: "call_center", label: "Call center" },
+  { value: "centro_comercial", label: "Centro comercial" },
+  
+  // Espacios confinados
+  { value: "espacio_confinado", label: "Espacio confinado" },
+  { value: "tanque_silo", label: "Tanque / Silo / Cisterna" },
+  { value: "pozo_alcantarillado", label: "Pozo / Alcantarillado" },
+  { value: "camara_inspeccion", label: "Cámara de inspección" },
+  
+  // Trabajos en altura
+  { value: "trabajo_altura", label: "Trabajo en alturas (>1.5m)" },
+  { value: "azotea_terraza", label: "Azotea / Terraza" },
+  
+  // Telecomunicaciones
+  { value: "torre_comunicaciones", label: "Torre de comunicaciones" },
+  { value: "data_center", label: "Data center" },
+  
+  // Otros
+  { value: "zona_residuos", label: "Zona de residuos / Reciclaje" },
+  { value: "piscina", label: "Piscina / Zona húmeda" },
+  { value: "gimnasio", label: "Gimnasio / Área deportiva" },
+  { value: "aula_capacitacion", label: "Aula / Sala de capacitación" },
   { value: "otro", label: "Otro (especificar)" },
 ];
 import { useQuery, useMutation } from "@tanstack/react-query";
