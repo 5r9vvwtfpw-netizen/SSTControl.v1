@@ -389,7 +389,7 @@ export default function InvestigacionAccidentes() {
                 lso.sstProfessionType === 'tecnico_sst' ? 'Técnico SST' : 'LSO',
       status: "activo",
       licenciaSstNumero: lso.sstLicenseNumber,
-      licenciaSstVigencia: lso.sstLicenseExpiry,
+      licenciaSstVigencia: lso.sstLicenseExpiresAt,
       documento: lso.email,
       isExternalLSO: true,
       fullName: lso.fullName || lso.username,
