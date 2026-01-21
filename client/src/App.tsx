@@ -218,6 +218,7 @@ function Router() {
       <ProtectedRoute path="/indicador-mortalidad" component={IndicadorMortalidad} />
       <ProtectedRoute path="/indicador-prevalencia" component={PrevalenciaEnfermedadLaboral} />
       <ProtectedRoute path="/indicador-incidencia" component={IncidenciaAccidentesEL} />
+      <ProtectedRoute path="/indicador-ausentismo" component={AusentismoLaboral} />
       <ProtectedRoute path="/planes-trabajo-anual/:id" component={DetallePlanTrabajo} />
       <ProtectedRoute path="/planes-trabajo-anual" component={PlanesTrabajoAnual} />
       <ProtectedRoute path="/iperc" component={Iperc} />
