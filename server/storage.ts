@@ -379,8 +379,10 @@ const PostgresSessionStore = connectPg(session);
 const isProduction = process.env.NODE_ENV === 'production';
 const hasAwsRds = !!(process.env.AWS_RDS_HOST && process.env.AWS_RDS_PASSWORD);
 
-let pool: NeonPool | PgPool;
-let db: ReturnType<typeof drizzleNeon> | ReturnType<typeof drizzlePg>;
+// Use 'any' type to avoid TypeScript conflicts between NeonPool and PgPool interfaces
+// Both drivers are functionally compatible at runtime
+let pool: any;
+let db: any;
 
 if (isProduction && hasAwsRds) {
   // Production: Use AWS RDS PostgreSQL with pg driver (TCP connection)
@@ -389,7 +391,7 @@ if (isProduction && hasAwsRds) {
     connectionString: awsConnectionString,
     ssl: { rejectUnauthorized: false }
   });
-  db = drizzlePg({ client: pool as PgPool, schema });
+  db = drizzlePg({ client: pool, schema });
   console.log('[Storage] Connected to AWS RDS PostgreSQL (Production)');
 } else {
   // Development: Use Neon PostgreSQL with WebSocket driver
