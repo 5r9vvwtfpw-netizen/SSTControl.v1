@@ -109,6 +109,7 @@ import PoliticaPrivacidadProveedor from "@/pages/PoliticaPrivacidadProveedor";
 import DocumentosLegalesPdf from "@/pages/DocumentosLegalesPdf";
 import RegistroAccesosProveedor from "@/pages/RegistroAccesosProveedor";
 import CrearEmpresa from "@/pages/CrearEmpresa";
+import CrearEmpresaCiiuFirst from "@/pages/CrearEmpresaCiiuFirst";
 import TicketsSoporte from "@/pages/TicketsSoporte";
 import AdminTicketsSoporte from "@/pages/AdminTicketsSoporte";
 import AdminUsuariosSoporte from "@/pages/AdminUsuariosSoporte";
@@ -164,7 +165,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={HomeGateway} />
-      <ProtectedRoute path="/crear-empresa" component={CrearEmpresa} />
+      <ProtectedRoute path="/crear-empresa" component={CrearEmpresaCiiuFirst} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/empresas/:id" component={CompanyDetail} />
       <ProtectedRoute path="/empresas" component={CompanyManagement} />
