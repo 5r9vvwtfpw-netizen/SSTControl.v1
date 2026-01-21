@@ -125,18 +125,18 @@ export function processCiiuAutomation(options: CiiuAutomationOptions): CiiuAutom
       };
     }
     
-    // Código CIIU no encontrado - usar default pero informar
-    const defaultRisk: RiskLevel = "I";
-    const chapter = calculateChapter(numberOfWorkers, defaultRisk);
+    // MODO ESTRICTO: Código CIIU no encontrado - NO asignar riesgo automáticamente
+    // Esto fuerza al usuario a proporcionar el nivel de riesgo manualmente
+    // para evitar clasificaciones incorrectas
     return {
       ciiuCode,
       isValidCiiu: false,
-      riskLevel: defaultRisk,
-      calculatedChapter: chapter,
-      standardsCount: getChapterStandards(chapter),
+      riskLevel: null,
+      calculatedChapter: "1", // Placeholder - se calculará con el riesgo manual
+      standardsCount: 7,
       riskSource: 'default',
       wasAutoAssigned: false,
-      message: `Código CIIU ${ciiuCode} no encontrado en tabla Decreto 1607/2002. Se asignó nivel de riesgo I por defecto. Recomendación: Verificar el código CIIU o asignar nivel de riesgo manualmente.`
+      message: `[CIIU-WARN] Código CIIU ${ciiuCode} no encontrado en tabla Decreto 1607/2002. Se requiere asignar nivel de riesgo manualmente para cumplir con normatividad.`
     };
   }
   
@@ -200,8 +200,33 @@ export function prepareCompanyWithCiiuAutomation<T extends {
     }
   }
   
-  // Si hay riesgo manual o no se pudo auto-asignar, calcular capítulo normalmente
-  const riskLevel = companyData.riskLevel ?? "I";
+  // Si hay riesgo manual, calcular capítulo normalmente
+  if (companyData.riskLevel) {
+    const chapter = calculateChapter(workers, companyData.riskLevel);
+    return {
+      ...companyData,
+      riskLevel: companyData.riskLevel,
+      calculatedChapter: chapter,
+      _ciiuAutomationApplied: false
+    };
+  }
+  
+  // MODO ESTRICTO: Si hay CIIU pero es inválido, NO asignar riesgo por defecto
+  // El sistema debe requerir selección manual del nivel de riesgo
+  if (companyData.ciiuCode && !isValidCiiuCode(companyData.ciiuCode)) {
+    console.log(`[CIIU-WARN] Código CIIU ${companyData.ciiuCode} no reconocido. Se requiere nivel de riesgo manual.`);
+    const chapter = calculateChapter(workers, "I"); // Temporal para cálculos
+    return {
+      ...companyData,
+      riskLevel: "I" as RiskLevel, // Fallback conservador pero con advertencia
+      calculatedChapter: chapter,
+      _ciiuAutomationApplied: false,
+      _ciiuAutomationMessage: `[CIIU-WARN] Código CIIU ${companyData.ciiuCode} no encontrado en Decreto 1607/2002. Nivel de riesgo I asignado temporalmente - verificar y ajustar según actividad real.`
+    };
+  }
+  
+  // Sin CIIU - usar default "I" (comportamiento normal)
+  const riskLevel = companyData.riskLevel ?? "I" as RiskLevel;
   const chapter = calculateChapter(workers, riskLevel);
   
   return {
