@@ -3860,6 +3860,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).send("Se requiere seleccionar una empresa");
       }
       
+      // DIAGNOSTIC LOGGING - Production debugging
+      console.log('[DEBUG-INV-CREATE] ========================================');
+      console.log('[DEBUG-INV-CREATE] Headers received:', JSON.stringify({
+        'x-company-id': req.headers['x-company-id'],
+        'content-type': req.headers['content-type']
+      }));
+      console.log('[DEBUG-INV-CREATE] User:', req.user?.username, '| Role:', req.user?.role, '| User companyId:', req.user?.companyId);
+      console.log('[DEBUG-INV-CREATE] Effective companyId used:', companyId);
+      console.log('[DEBUG-INV-CREATE] Body accidentId:', req.body.accidentId);
+      console.log('[DEBUG-INV-CREATE] IsAdmin:', isAdmin);
+      console.log('[DEBUG-INV-CREATE] ========================================');
+      
       // Inject companyId into body before validation
       const bodyWithCompanyId = { ...req.body, companyId };
       
