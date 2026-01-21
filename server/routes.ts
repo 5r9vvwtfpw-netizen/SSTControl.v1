@@ -3851,9 +3851,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use effectiveCompanyId from header (X-Company-Id) for superadmins, or user's companyId
       let companyId: string | null = getEffectiveCompanyId(req);
       
-      // If admin is sending companyId in body, use that (backward compatibility)
-      if (isAdmin && req.body.companyId) {
+      // ALWAYS prefer companyId from body when present (more reliable than headers)
+      if (req.body.companyId) {
         companyId = req.body.companyId;
+        console.log('[DEBUG-INV-CREATE] Using companyId from body:', companyId);
       }
       
       if (!companyId) {
