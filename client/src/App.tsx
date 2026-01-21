@@ -103,6 +103,7 @@ import MiCuenta from "@/pages/MiCuenta";
 import MiSuscripcion from "@/pages/MiSuscripcion";
 import Pricing from "@/pages/Pricing";
 import PricingPluginCalculator from "@/pages/PricingPluginCalculator";
+import PricingCalculatorV2 from "@/pages/PricingCalculatorV2";
 import PricingPluginAdmin from "@/pages/PricingPluginAdmin";
 import Welcome from "@/pages/Welcome";
 import PoliticaPrivacidadProveedor from "@/pages/PoliticaPrivacidadProveedor";
@@ -261,6 +262,7 @@ function Router() {
       <ProtectedRoute path="/pesv/auditorias" component={PesvAuditorias} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/pricing-plugin/calculator" component={PricingPluginCalculator} />
+      <Route path="/calculadora-precios" component={PricingCalculatorV2} />
       <ProtectedRoute path="/pricing-plugin/admin/pricing" component={PricingPluginAdmin} />
       <ProtectedRoute path="/registro-accesos-proveedor" component={RegistroAccesosProveedor} />
       <Route path="/terminos-servicio" component={TerminosServicio} />
