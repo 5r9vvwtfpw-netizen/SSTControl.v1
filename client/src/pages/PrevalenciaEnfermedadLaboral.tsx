@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { ArrowLeft, TrendingUp, TrendingDown, Activity, AlertTriangle, Info } from "lucide-react";
 import type { AccidentStatistics } from "@shared/schema";
+import { TrazabilidadIndicadores334 } from "@/components/TrazabilidadIndicadores334";
 
 function calculatePrevalencia(data: AccidentStatistics) {
   const totalWorkers = data.totalWorkers ?? 1;
@@ -178,6 +179,15 @@ export default function PrevalenciaEnfermedadLaboral() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Trazabilidad de enfermedades laborales - Estándar 3.3.4 */}
+      {companyId && (
+        <TrazabilidadIndicadores334
+          companyId={companyId}
+          year={selectedYear}
+          onNavigateToDisease={(id) => navigate(`/enfermedades-laborales/${id}`)}
+        />
+      )}
 
       {!currentYearData && !isLoading && (
         <Card className="border-dashed border-2">
