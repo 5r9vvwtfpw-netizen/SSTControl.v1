@@ -17,6 +17,12 @@ The frontend uses React 18, TypeScript, and Vite, with Tailwind CSS and Shadcn U
 
 **Company Registration Flow (CIIU-First):** The company creation form (`CrearEmpresaCiiuFirst.tsx`) uses a 2-step wizard that asks for CIIU code first. This automatically calculates the risk level (I-V) using Decreto 1607/2002 before showing applicable standards. This prevents false expectations where users with high-risk activities (IV/V) would need 61 standards regardless of worker count.
 
+**CIIU Integration Components (January 2026):**
+- `IpercCiiuFilter.tsx`: Filters sector-specific hazards by CIIU code with normative references, PPE requirements, and training recommendations
+- `EstandaresLiberadosCiiu.tsx`: Determines applicable standards using CIIU→Risk Level→Chapter chain per Resolución 0312/2019 (7 Ch.1 / 21 Ch.2 / 61 Ch.3)
+- `IpercIntegracionCiiu.tsx`: Integration wrapper combining filters and standards with unified `CompanyContext` interface
+- Core function `calcularContextoIperc()` serves as single source of truth for the CIIU→Riesgo→Capítulo→Estándares chain
+
 ### Technical Implementations
 The system is built with a React 18, TypeScript, Vite frontend and an Express.js, TypeScript backend using PostgreSQL with Drizzle ORM. It features an 11-Tier Role-Based Access Control (RBAC) system with multi-tenant architecture. Key modules include comprehensive compliance for Resolution 0312/2019 standards, ISO 45001:2018 internal audits, management reviews, EVS, COPASST management, virtual training, smart induction, sociodemographic profiling, accident investigation and statistics, worker absenteeism control, and EPP delivery management. The system tracks SST evaluations year-to-year, offering data inheritance and review workflows, automated email notifications, a worker portal, Stripe-integrated billing, an interactive chatbot, and full legal compliance for Habeas Data and GDPR.
 
