@@ -62,6 +62,7 @@ AWS_RDS_HOST = "database-1.cpm6200cuaih.sa-east-1.rds.amazonaws.com"
 AWS_RDS_PORT = "5432"
 AWS_RDS_USER = "postgres"
 AWS_RDS_DATABASE = "postgres"
+NODE_ENV = "production"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-1a32e428-68e0-4edd-a4f5-f7aa98c8512e"
