@@ -440,6 +440,7 @@ export default function InvestigacionAccidentes() {
       
       const payload = {
         ...data,
+        companyId: companyId, // Incluir companyId explícitamente en el payload
         dueDate: format(dueDate, "yyyy-MM-dd"),
         slaStatus: slaInfo.status,
         daysRemaining: slaInfo.daysRemaining,
