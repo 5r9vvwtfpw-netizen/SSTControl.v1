@@ -2050,9 +2050,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/companies/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
       const validatedData = insertCompanySchema.partial().parse(req.body);
+      // Automatización CIIU: Si cambia el código CIIU, recalcular nivel de riesgo
+      // Solo auto-asignar si se proporciona CIIU y no hay riesgo manual explícito
+      let dataToUpdate = { ...validatedData };
       
-      // Storage will automatically recalculate chapter if needed
-      const company = await storage.updateCompany(req.params.id, validatedData);
+      if (validatedData.ciiuCode !== undefined) {
+        // Obtener empresa actual para conocer numberOfWorkers si no se proporciona
+        const existingCompany = await storage.getCompany(req.params.id);
+        if (existingCompany) {
+          const workers = validatedData.numberOfWorkers ?? existingCompany.numberOfWorkers;
+          const processedData = prepareCompanyWithCiiuAutomation({
+            ...validatedData,
+            numberOfWorkers: workers
+          });
+          
+          // Logging de automatización
+          if ((processedData as any)._ciiuAutomationApplied) {
+            console.log(`[CIIU-AUTO] Empresa actualizada con automatización: ${(processedData as any)._ciiuAutomationMessage}`);
+          }
+          
+          // Limpiar campos internos
+          const { _ciiuAutomationApplied, _ciiuAutomationMessage, ...cleanData } = processedData as any;
+          dataToUpdate = cleanData;
+        }
+      }
+      
+      // Storage will use the pre-calculated or existing riskLevel and chapter
+      const company = await storage.updateCompany(req.params.id, dataToUpdate);
       if (!company) {
         return res.status(404).send("Empresa no encontrada");
       }
