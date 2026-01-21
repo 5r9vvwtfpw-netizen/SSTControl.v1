@@ -78,6 +78,7 @@ import {
 } from "lucide-react";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { FindingDialogSmart } from "@/components/FindingDialogSmart";
 
 const EVENT_TYPES = [
   { value: "accidente_trabajo", label: "Accidente de Trabajo" },
@@ -656,6 +657,10 @@ export default function InvestigacionAccidentes() {
     setSelectedInvestigationId(investigationId);
     setFindingDialogOpen(true);
   };
+
+  const selectedInvestigationForFinding = selectedInvestigationId 
+    ? investigations.find(inv => inv.id === selectedInvestigationId) || null
+    : null;
 
   const getWorkerName = (workerId: string | undefined) => {
     if (!workerId) return "N/A";
@@ -2018,130 +2023,13 @@ export default function InvestigacionAccidentes() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={findingDialogOpen} onOpenChange={setFindingDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Agregar Hallazgo</DialogTitle>
-            <DialogDescription>
-              Registre los hallazgos y acciones correctivas de la investigación
-            </DialogDescription>
-          </DialogHeader>
-
-          <Form {...findingForm}>
-            <form onSubmit={findingForm.handleSubmit(handleAddFinding)} className="space-y-4">
-              <FormField
-                control={findingForm.control}
-                name="findingType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Hallazgo *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-finding-type">
-                          <SelectValue placeholder="Seleccione tipo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {FINDING_TYPES.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={findingForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descripción del Hallazgo *</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} placeholder="Describa el hallazgo..." data-testid="textarea-finding-desc" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={findingForm.control}
-                name="correctiveAction"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Acción Correctiva *</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} placeholder="Describa la acción correctiva..." data-testid="textarea-corrective-action" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={findingForm.control}
-                  name="responsibleName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Responsable *</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Nombre del responsable" data-testid="input-finding-responsible" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={findingForm.control}
-                  name="responsibleArea"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Área</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Área o departamento" data-testid="input-finding-area" />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={findingForm.control}
-                name="dueDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Fecha Límite *</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} data-testid="input-finding-due-date" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setFindingDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={createFindingMutation.isPending}
-                  data-testid="button-submit-finding"
-                >
-                  {createFindingMutation.isPending && (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  )}
-                  Agregar Hallazgo
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+      <FindingDialogSmart
+        open={findingDialogOpen}
+        onOpenChange={setFindingDialogOpen}
+        investigationId={selectedInvestigationId}
+        investigation={selectedInvestigationForFinding}
+        workers={workers}
+      />
     </div>
   );
 }
