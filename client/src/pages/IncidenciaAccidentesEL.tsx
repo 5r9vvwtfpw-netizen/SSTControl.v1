@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { ArrowLeft, TrendingUp, TrendingDown, Activity, AlertTriangle, Info } from "lucide-react";
 import type { AccidentStatistics } from "@shared/schema";
+import { TrazabilidadIndicadores335 } from "@/components/TrazabilidadIndicadores335";
 
 function calculateIncidencia(data: AccidentStatistics) {
   const totalWorkers = data.totalWorkers ?? 1;
@@ -225,6 +226,16 @@ export default function IncidenciaAccidentesEL() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Trazabilidad de casos nuevos - Estándar 3.3.5 */}
+      {companyId && (
+        <TrazabilidadIndicadores335
+          companyId={companyId}
+          year={selectedYear}
+          onNavigateToAccident={(id) => navigate(`/investigacion-accidentes/${id}`)}
+          onNavigateToDisease={(id) => navigate(`/enfermedades-laborales/${id}`)}
+        />
+      )}
 
       {!currentYearData && !isLoading && (
         <Card className="border-dashed border-2">
