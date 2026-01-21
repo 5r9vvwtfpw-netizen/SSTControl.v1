@@ -41188,6 +41188,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // ========== INFORMES EJECUTIVOS ROUTES ==========
+  // Importación dinámica para rutas de informes ejecutivos
+  const { registerInformesEjecutivosRoutes } = await import("./routes-informes-ejecutivos");
+  registerInformesEjecutivosRoutes(app);
+
   // ========== GLOBAL ERROR HANDLER ==========
   // Middleware global para interceptar errores no manejados y evitar exponer mensajes técnicos
   // Especialmente importante para errores de SSL/certificados en producción
