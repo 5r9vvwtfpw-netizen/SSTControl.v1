@@ -90,9 +90,6 @@ export default function Dashboard() {
               Resumen del sistema de Salud y Seguridad en el Trabajo
             </p>
           </div>
-          <div className="flex-shrink-0">
-            <PrintDashboardButton title="Imprimir Panel" />
-          </div>
         </div>
       </div>
 
