@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
+import { db, pool } from "./db";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import * as schema from "@shared/schema";
 import { calculateChapter } from "@shared/utils";
@@ -372,8 +373,9 @@ import ws from "ws";
 neonConfig.webSocketConstructor = ws;
 
 const PostgresSessionStore = connectPg(session);
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const db = drizzle(pool, { schema });
+// FIXED: Now using db and pool from ./db for AWS RDS support
+// const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// const db = drizzle(pool, { schema });
 
 export interface IStorage {
   sessionStore: session.Store;
