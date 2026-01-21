@@ -3910,6 +3910,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .limit(1);
       
       console.log('[DEBUG-INVESTIGATION] Looking for accidentId:', validatedData.accidentId, 'in company:', companyId);
+      
+      // DEBUG: Also try raw SQL query to compare
+      try {
+        const rawResult = await db.execute(sql`SELECT id, company_id FROM accidents WHERE id = ${validatedData.accidentId} LIMIT 1`);
+        console.log('[DEBUG-INVESTIGATION] Raw SQL result rows:', rawResult.rows?.length || 0);
+        if (rawResult.rows && rawResult.rows.length > 0) {
+          console.log('[DEBUG-INVESTIGATION] Raw SQL first row:', JSON.stringify(rawResult.rows[0]));
+        }
+      } catch (sqlErr: any) {
+        console.log('[DEBUG-INVESTIGATION] Raw SQL error:', sqlErr.message);
+      }
+      
       console.log('[DEBUG-INVESTIGATION] Found accident in company:', existingAccident ? 'YES' : 'NO');
       
       if (!existingAccident) {
