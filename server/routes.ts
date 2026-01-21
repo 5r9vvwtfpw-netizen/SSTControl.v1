@@ -41154,6 +41154,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     console.log("ℹ️ Pricing Plugin is disabled (set ENABLE_PRICING_PLUGIN=true to enable)");
   }
 
+  // PRICING V2 - Modelo basado en Riesgo ARL (siempre activo)
+  const { default: pricingV2Routes } = await import("../pricing_plugin/routes-v2");
+  app.use("/api/pricing-v2", pricingV2Routes);
+  console.log("✅ Pricing V2 (Riesgo ARL) enabled at /api/pricing-v2");
+
 
   // ========== DIAGNOSTIC ENDPOINT ==========
   // Endpoint de diagnóstico para verificar conexión de BD
