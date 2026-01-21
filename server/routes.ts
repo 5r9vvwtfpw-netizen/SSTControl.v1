@@ -40835,7 +40835,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const companyId = req.user!.activeCompanyId || req.user!.companyId;
       
       // Obtener datos de empresa
-      const [company] = await db.select().from(companies).where(eq(companies.id, companyId));
+      const [company] = await db.select().from(schema.companies).where(eq(companies.id, companyId));
       
       // Obtener acciones de mejora
       const acciones = await db.select()
@@ -41117,6 +41117,40 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   } else {
     console.log("ℹ️ Pricing Plugin is disabled (set ENABLE_PRICING_PLUGIN=true to enable)");
   }
+
+
+  // ========== DIAGNOSTIC ENDPOINT ==========
+  // Endpoint de diagnóstico para verificar conexión de BD
+  app.get("/api/db-diagnostic", async (req, res) => {
+    const diagKey = req.query.key;
+    if (diagKey !== "sst-diag-2026") {
+      return res.status(403).json({ error: "Acceso denegado" });
+    }
+    try {
+      const isProduction = process.env.NODE_ENV === "production";
+      const hasAwsRds = !!(process.env.AWS_RDS_HOST && process.env.AWS_RDS_PASSWORD);
+      const accidentCount = await db.select({ count: sql<number>`count(*)` }).from(schema.accidents);
+      const companyCount = await db.select({ count: sql<number>`count(*)` }).from(schema.companies);
+      const workerCount = await db.select({ count: sql<number>`count(*)` }).from(schema.workers);
+      res.json({
+        environment: {
+          NODE_ENV: process.env.NODE_ENV,
+          isProduction,
+          hasAwsRds,
+          expectedDB: isProduction && hasAwsRds ? "AWS RDS" : "Neon",
+          awsRdsHost: process.env.AWS_RDS_HOST ? process.env.AWS_RDS_HOST.substring(0, 25) + "..." : "NOT SET"
+        },
+        counts: {
+          accidents: accidentCount[0]?.count || 0,
+          companies: companyCount[0]?.count || 0,
+          workers: workerCount[0]?.count || 0
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: "Error de diagnóstico", message: error.message });
+    }
+  });
 
   // ========== GLOBAL ERROR HANDLER ==========
   // Middleware global para interceptar errores no manejados y evitar exponer mensajes técnicos
