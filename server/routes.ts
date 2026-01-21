@@ -3598,13 +3598,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const effectiveCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
+    // DEBUG: Log which DB is being used
+    const isProductionEnv = process.env.NODE_ENV === 'production';
+    const hasAwsRdsConfig = !!(process.env.AWS_RDS_HOST && process.env.AWS_RDS_PASSWORD);
+    console.log('[DEBUG-ACCIDENTS-LIST] NODE_ENV:', process.env.NODE_ENV, '| isProduction:', isProductionEnv, '| hasAwsRds:', hasAwsRdsConfig);
+    console.log('[DEBUG-ACCIDENTS-LIST] AWS_RDS_HOST:', process.env.AWS_RDS_HOST ? 'SET' : 'NOT SET');
+    
     // If effectiveCompanyId is set (from header for superadmin or user's company), filter by it
     if (effectiveCompanyId) {
       const accidents = await storage.getAccidents(effectiveCompanyId);
+      // DEBUG: Log accident IDs returned
+      console.log('[DEBUG-ACCIDENTS-LIST] Returning', accidents.length, 'accidents. First 3 IDs:', accidents.slice(0, 3).map(a => a.id));
       return res.json(accidents);
     }
-    
-    // Admin without specific company: get all accidents
     if (isAdmin) {
       const accidents = await storage.getAllAccidents();
       return res.json(accidents);
