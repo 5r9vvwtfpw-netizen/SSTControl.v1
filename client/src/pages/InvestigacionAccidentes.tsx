@@ -451,7 +451,19 @@ export default function InvestigacionAccidentes() {
         status: "en_proceso",
         completionPercentage: 10,
       };
-      const res = await apiRequest("POST", "/api/investigations", payload);
+      const res = await fetch("/api/investigations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(companyId ? { "X-Company-Id": companyId } : {}),
+        },
+        body: JSON.stringify(payload),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Error al crear investigación");
+      }
       return res.json();
     },
     onSuccess: () => {
