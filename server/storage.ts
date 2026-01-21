@@ -1,5 +1,4 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
-import { db, pool } from "./db";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import * as schema from "@shared/schema";
 import { calculateChapter } from "@shared/utils";
@@ -373,9 +372,26 @@ import ws from "ws";
 neonConfig.webSocketConstructor = ws;
 
 const PostgresSessionStore = connectPg(session);
-// FIXED: Now using db and pool from ./db for AWS RDS support
-// const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-// const db = drizzle(pool, { schema });
+
+// AWS RDS detection for production environment
+const isProduction = process.env.NODE_ENV === 'production';
+const hasAwsRds = !!(process.env.AWS_RDS_HOST && process.env.AWS_RDS_PASSWORD);
+
+let pool: Pool;
+let db: ReturnType<typeof drizzle>;
+
+if (isProduction && hasAwsRds) {
+  // Production: Use AWS RDS PostgreSQL
+  const awsConnectionString = `postgresql://${process.env.AWS_RDS_USER || 'postgres'}:${process.env.AWS_RDS_PASSWORD}@${process.env.AWS_RDS_HOST}:${process.env.AWS_RDS_PORT || '5432'}/${process.env.AWS_RDS_DATABASE || 'postgres'}?sslmode=require`;
+  pool = new Pool({ connectionString: awsConnectionString });
+  db = drizzle(pool, { schema });
+  console.log('[Storage] Connected to AWS RDS PostgreSQL (Production)');
+} else {
+  // Development: Use Neon PostgreSQL
+  pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  db = drizzle(pool, { schema });
+  console.log('[Storage] Connected to Neon PostgreSQL (Development)');
+}
 
 export interface IStorage {
   sessionStore: session.Store;
