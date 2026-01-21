@@ -6193,6 +6193,19 @@ export class DbStorage implements IStorage {
       nivelCumplimiento = 'aceptable';
     }
 
+    // Verificar si todos los estándares aplicables tienen respuesta para activación automática
+    const totalEstandaresAplicables = estandaresAplicables.length;
+    const totalRespuestasRegistradas = respuestas.length;
+    const todosEstandaresRespondidos = totalRespuestasRegistradas >= totalEstandaresAplicables;
+    
+    // Determinar si debe activarse automáticamente
+    // Si todos los estándares tienen respuesta Y estado es "en-progreso", cambiar a "completada"
+    let nuevoEstado = evaluacion.estado;
+    if (todosEstandaresRespondidos && evaluacion.estado === 'en-progreso') {
+      nuevoEstado = 'completada';
+      console.log(`[Evaluación ${evaluacionId}] ✅ Activación automática: Todos los ${totalEstandaresAplicables} estándares respondidos. Estado: en-progreso → completada`);
+    }
+
     // Actualizar evaluación
     await this.updateEvaluacionSst(evaluacionId, {
       puntajeTotal,
@@ -6201,6 +6214,7 @@ export class DbStorage implements IStorage {
       nivelCumplimiento,
       puntajesPorComponente: JSON.stringify(puntajesPorComponente),
       puntajesPorCicloPhva: JSON.stringify(puntajesPorCicloPhva),
+      ...(nuevoEstado !== evaluacion.estado ? { estado: nuevoEstado } : {}),
     } as any, companyId);
   }
 
