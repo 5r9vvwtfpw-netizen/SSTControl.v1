@@ -206,3 +206,31 @@ function MyComponent() {
 // ✅ CORRECTO  
 <SelectItem value="all">Todos</SelectItem>
 ```
+
+### Bug: Puntajes PHVA mostraban >100% (297%, 1000%) - SOLUCIONADO (Enero 2026)
+
+**Síntoma:** Los puntajes PHVA y de cumplimiento mostraban valores incorrectos como 297% y 1000%.
+
+**Causa:** Las respuestas de estándares se guardaban con `puntaje_obtenido` y `puntaje_maximo` incorrectos, usando valores de tipo1 (5, 10, 20 puntos) en lugar del tipo de empresa correcto (tipo3 usa 1, 2 puntos).
+
+**Solución Implementada (Enero 2026):**
+
+1. **Migración mejorada en `server/migrations/fix-evaluaciones-puntajes.ts`:**
+   - Recalcula TODAS las evaluaciones usando puntajes correctos según tipo de empresa
+   - Corrige cada respuesta individual con `puntajeObtenido` y `puntajeMaximo` correctos
+   - Actualiza `puntajesPorCicloPhva` con valores coherentes
+   - Se ejecuta automáticamente al iniciar el servidor
+
+2. **Lógica de corrección:**
+   - Obtiene el puntaje máximo del estándar según tipo de empresa (tipo1, tipo2, tipo3, tipo4)
+   - Recalcula: cumple/noAplica = puntajeMax, no cumple = 0
+   - Agrupa por ciclo PHVA y componente
+   - Limita porcentaje a máximo 100%
+
+**Archivos modificados:**
+- `server/migrations/fix-evaluaciones-puntajes.ts` - Migración de corrección mejorada
+
+**Resultado:**
+- Evaluación corregida: 100% → 80% (puntajes reales)
+- PHVA: Planear 25/25 (100%), Hacer 11/20 (55%)
+- 27 respuestas actualizadas con puntajes correctos
