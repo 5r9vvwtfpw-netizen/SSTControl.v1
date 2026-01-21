@@ -1,5 +1,7 @@
-import { drizzle } from "drizzle-orm/neon-serverless";
-import { Pool, neonConfig } from "@neondatabase/serverless";
+import { drizzle as drizzleNeon } from "drizzle-orm/neon-serverless";
+import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
+import { Pool as NeonPool, neonConfig } from "@neondatabase/serverless";
+import { Pool as PgPool } from "pg";
 import * as schema from "@shared/schema";
 import { calculateChapter } from "@shared/utils";
 import { logAuditEvent, type AuditContext } from './lib/audit-logger';
@@ -377,19 +379,22 @@ const PostgresSessionStore = connectPg(session);
 const isProduction = process.env.NODE_ENV === 'production';
 const hasAwsRds = !!(process.env.AWS_RDS_HOST && process.env.AWS_RDS_PASSWORD);
 
-let pool: Pool;
-let db: ReturnType<typeof drizzle>;
+let pool: NeonPool | PgPool;
+let db: ReturnType<typeof drizzleNeon> | ReturnType<typeof drizzlePg>;
 
 if (isProduction && hasAwsRds) {
-  // Production: Use AWS RDS PostgreSQL
+  // Production: Use AWS RDS PostgreSQL with pg driver (TCP connection)
   const awsConnectionString = `postgresql://${process.env.AWS_RDS_USER || 'postgres'}:${process.env.AWS_RDS_PASSWORD}@${process.env.AWS_RDS_HOST}:${process.env.AWS_RDS_PORT || '5432'}/${process.env.AWS_RDS_DATABASE || 'postgres'}?sslmode=require`;
-  pool = new Pool({ connectionString: awsConnectionString });
-  db = drizzle(pool, { schema });
+  pool = new PgPool({ 
+    connectionString: awsConnectionString,
+    ssl: { rejectUnauthorized: false }
+  });
+  db = drizzlePg({ client: pool as PgPool, schema });
   console.log('[Storage] Connected to AWS RDS PostgreSQL (Production)');
 } else {
-  // Development: Use Neon PostgreSQL
-  pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  db = drizzle(pool, { schema });
+  // Development: Use Neon PostgreSQL with WebSocket driver
+  pool = new NeonPool({ connectionString: process.env.DATABASE_URL });
+  db = drizzleNeon(pool, { schema });
   console.log('[Storage] Connected to Neon PostgreSQL (Development)');
 }
 
