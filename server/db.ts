@@ -14,6 +14,13 @@ neonConfig.webSocketConstructor = ws;
 const isProduction = process.env.NODE_ENV === 'production';
 const hasAwsRds = !!(process.env.AWS_RDS_HOST && process.env.AWS_RDS_PASSWORD);
 
+console.log('[DB-DEBUG] NODE_ENV:', process.env.NODE_ENV);
+console.log('[DB-DEBUG] isProduction:', isProduction);
+console.log('[DB-DEBUG] AWS_RDS_HOST exists:', !!process.env.AWS_RDS_HOST);
+console.log('[DB-DEBUG] AWS_RDS_PASSWORD exists:', !!process.env.AWS_RDS_PASSWORD);
+console.log('[DB-DEBUG] hasAwsRds:', hasAwsRds);
+console.log('[DB-DEBUG] Will use:', isProduction && hasAwsRds ? 'AWS RDS' : 'Neon');
+
 let pool: NeonPool | PgPool;
 let db: ReturnType<typeof drizzleNeon> | ReturnType<typeof drizzlePg>;
 
