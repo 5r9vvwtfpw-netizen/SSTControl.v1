@@ -194,6 +194,7 @@ import * as schema from "@shared/schema";
 import type { UserRole, User } from "@shared/schema";
 import { calculateChapter, getEmpresaTipoFromChapterAndRisk, getTrialStatus, getChapterDescription } from "@shared/utils";
 import { isStandardPersistent, getPersistentStandardCodes } from "../shared/sst-inheritance";
+import { prepareCompanyWithCiiuAutomation, processCiiuAutomation } from "@shared/ciiu-company-automation";
 import { setupTrialWatermarkOnAllPages, addTrialFooter } from "./services/pdf-watermark";
 import { 
   addStandardHeader, 
@@ -2003,8 +2004,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Storage will automatically calculate chapter
-      const company = await storage.createCompany(validatedData);
+      // Automatización CIIU: Si hay código CIIU, obtener nivel de riesgo automáticamente
+      const processedData = prepareCompanyWithCiiuAutomation(validatedData);
+      
+      // Logging de automatización (opcional para auditoría)
+      if ((processedData as any)._ciiuAutomationApplied) {
+        console.log(`[CIIU-AUTO] Empresa creada con automatización: ${(processedData as any)._ciiuAutomationMessage}`);
+      }
+      
+      // Limpiar campos internos antes de guardar
+      const { _ciiuAutomationApplied, _ciiuAutomationMessage, ...companyDataToSave } = processedData as any;
+      
+      // Storage will use the pre-calculated riskLevel and chapter
+      const company = await storage.createCompany(companyDataToSave);
       
       // For non-admin users: associate the new company to their account
       // Keep their role as superusuario (full company admin)
