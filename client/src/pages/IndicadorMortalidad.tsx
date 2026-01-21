@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { ArrowLeft, TrendingUp, TrendingDown, Skull, AlertTriangle, Activity } from "lucide-react";
 import type { AccidentStatistics } from "@shared/schema";
+import { TrazabilidadIndicadores333 } from "@/components/TrazabilidadIndicadores333";
 
 function calculateMortalityRate(data: AccidentStatistics) {
   const totalWorkers = data.totalWorkers ?? 1;
@@ -193,6 +194,15 @@ export default function IndicadorMortalidad() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Trazabilidad de accidentes mortales - Estándar 3.3.3 */}
+      {companyId && (
+        <TrazabilidadIndicadores333
+          companyId={companyId}
+          year={selectedYear}
+          onNavigateToAccident={(id) => navigate(`/investigacion-accidentes/${id}`)}
+        />
+      )}
 
       {currentYearData && currentIndicators && currentIndicators.fatalAccidents > 0 && (
         <Card className="border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/20">
