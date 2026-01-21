@@ -4,371 +4,320 @@ import { Response } from 'express';
 export function generateInformePreciosEjecutivo(res: Response) {
   const doc = new PDFDocument({
     size: 'LETTER',
-    margins: { top: 50, bottom: 50, left: 50, right: 50 }
+    margins: { top: 60, bottom: 60, left: 60, right: 60 }
   });
 
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', 'attachment; filename=Informe-Ejecutivo-Precios-SST-Colombia.pdf');
   doc.pipe(res);
 
-  const primaryColor = '#1e40af';
-  const accentColor = '#059669';
-  const textColor = '#1f2937';
-  const lightGray = '#f3f4f6';
+  const primaryColor = '#1e3a5f';
+  const accentColor = '#2d8659';
+  const textColor = '#333333';
+  const headerBg = '#1e3a5f';
+  const lightBg = '#f5f5f5';
+  const pageWidth = 612 - 120;
 
-  // Header
-  doc.fillColor(primaryColor)
-     .fontSize(24)
+  // ===== PORTADA =====
+  doc.rect(0, 0, 612, 792).fill('#1e3a5f');
+  
+  doc.fontSize(32)
+     .fillColor('#ffffff')
      .font('Helvetica-Bold')
-     .text('INFORME EJECUTIVO', { align: 'center' });
+     .text('INFORME EJECUTIVO', 60, 280, { align: 'center', width: pageWidth });
+  
+  doc.moveDown(0.5);
+  doc.fontSize(18)
+     .font('Helvetica')
+     .text('Propuesta Comercial', { align: 'center', width: pageWidth });
   
   doc.moveDown(0.3);
-  doc.fontSize(16)
-     .fillColor(textColor)
-     .text('Propuesta Comercial SST-Colombia', { align: 'center' });
+  doc.fontSize(24)
+     .font('Helvetica-Bold')
+     .text('SST-COLOMBIA', { align: 'center', width: pageWidth });
   
-  doc.moveDown(0.3);
+  doc.moveDown(2);
+  doc.fontSize(14)
+     .font('Helvetica')
+     .text('Sistema Integral de Gestión de', { align: 'center', width: pageWidth });
+  doc.text('Seguridad y Salud en el Trabajo', { align: 'center', width: pageWidth });
+  
   doc.fontSize(12)
-     .fillColor('#6b7280')
-     .text('Sistema Integral de Gestión SST con Modelo de Precios Diferenciado', { align: 'center' });
+     .text('Enero 2026 | Versión 2.0', 60, 680, { align: 'center', width: pageWidth });
 
-  doc.moveDown(1);
-  doc.moveTo(50, doc.y).lineTo(562, doc.y).strokeColor(primaryColor).lineWidth(2).stroke();
-  doc.moveDown(1);
-
-  // 1. Resumen Ejecutivo
-  addSection(doc, '1. RESUMEN EJECUTIVO', primaryColor);
+  // ===== PÁGINA 2: RESUMEN =====
+  doc.addPage();
+  addHeader(doc, 'RESUMEN EJECUTIVO', primaryColor);
+  
   doc.fontSize(11)
      .fillColor(textColor)
      .font('Helvetica')
-     .text('SST-Colombia presenta un modelo de precios innovador basado en la complejidad real del cumplimiento normativo, combinado con una propuesta de valor única en el mercado colombiano: ', { continued: true })
-     .font('Helvetica-Bold')
-     .text('dos portales especializados incluidos sin costo adicional.');
+     .text('SST-Colombia presenta un modelo de precios innovador basado en la complejidad real del cumplimiento normativo, combinado con una propuesta de valor única en el mercado colombiano:', 60, doc.y + 10, { width: pageWidth });
   
-  doc.moveDown(1.5);
-
-  // 2. Propuesta de Valor Única
-  addSection(doc, '2. PROPUESTA DE VALOR ÚNICA', primaryColor);
-  
-  doc.fontSize(12)
-     .font('Helvetica-Bold')
+  doc.moveDown(0.8);
+  doc.font('Helvetica-Bold')
      .fillColor(accentColor)
-     .text('DIFERENCIADORES COMPETITIVOS (INCLUIDOS SIN COSTO)');
-  doc.moveDown(0.5);
-
-  // Portal del Trabajador
-  doc.fontSize(11)
-     .font('Helvetica-Bold')
-     .fillColor(primaryColor)
-     .text('Portal del Trabajador - INCLUIDO');
-  doc.font('Helvetica')
-     .fillColor(textColor)
-     .fontSize(10);
-  const portalTrabajador = [
-    '• Acceso 24/7 desde cualquier dispositivo',
-    '• Consulta de certificados y capacitaciones',
-    '• Reporte de condiciones inseguras',
-    '• Firma electrónica de documentos',
-    '• Cumplimiento Habeas Data (Ley 1581/2012)',
-    '• Trazabilidad individual para auditorías'
-  ];
-  portalTrabajador.forEach(item => doc.text(item));
-  doc.moveDown(0.5);
-  doc.fontSize(10).fillColor('#6b7280').text('Valor de mercado: $3,000 - $5,000/usuario/mes');
-  
-  doc.moveDown(1);
-
-  // Portal del Licenciado
-  doc.fontSize(11)
-     .font('Helvetica-Bold')
-     .fillColor(primaryColor)
-     .text('Portal del Licenciado SST - INCLUIDO');
-  doc.font('Helvetica')
-     .fillColor(textColor)
-     .fontSize(10);
-  const portalLicenciado = [
-    '• Gestión de múltiples empresas desde un solo dashboard',
-    '• Generación de informes consolidados',
-    '• Herramientas profesionales de productividad',
-    '• Acceso a todas las funcionalidades del sistema',
-    '• Ideal para consultores independientes y firmas SST'
-  ];
-  portalLicenciado.forEach(item => doc.text(item));
-  doc.moveDown(0.5);
-  doc.fontSize(10).fillColor('#6b7280').text('Valor de mercado: $150,000 - $300,000/mes');
+     .fontSize(12)
+     .text('DOS PORTALES ESPECIALIZADOS INCLUIDOS SIN COSTO ADICIONAL', { align: 'center', width: pageWidth });
 
   doc.moveDown(1.5);
-
-  // 3. Modelo de Precios
-  addSection(doc, '3. MODELO DE PRECIOS', primaryColor);
+  addSectionTitle(doc, 'PROPUESTA DE VALOR ÚNICA', primaryColor);
   
-  doc.fontSize(11)
-     .font('Helvetica-Bold')
-     .fillColor(textColor)
-     .text('Fórmula de Cálculo:');
+  // Portal del Trabajador
+  doc.moveDown(0.5);
+  drawHighlightBox(doc, 60, doc.y, pageWidth, 120, accentColor, 'PORTAL DEL TRABAJADOR - INCLUIDO');
+  doc.y += 25;
+  doc.fontSize(10).fillColor(textColor).font('Helvetica');
+  const items1 = [
+    'Acceso 24/7 desde cualquier dispositivo',
+    'Consulta de certificados y capacitaciones',
+    'Reporte de condiciones inseguras',
+    'Firma electrónica de documentos',
+    'Cumplimiento Habeas Data (Ley 1581/2012)'
+  ];
+  items1.forEach(item => {
+    doc.text('• ' + item, 75, doc.y, { width: pageWidth - 30 });
+    doc.moveDown(0.3);
+  });
+  doc.fontSize(9).fillColor('#666666').text('Valor de mercado: $3,000 - $5,000/usuario/mes', 75);
+  
+  doc.y += 20;
+  
+  // Portal del Licenciado
+  drawHighlightBox(doc, 60, doc.y, pageWidth, 110, accentColor, 'PORTAL DEL LICENCIADO SST - INCLUIDO');
+  doc.y += 25;
+  doc.fontSize(10).fillColor(textColor).font('Helvetica');
+  const items2 = [
+    'Gestión de múltiples empresas desde un solo dashboard',
+    'Generación de informes consolidados',
+    'Herramientas profesionales de productividad',
+    'Acceso completo a todas las funcionalidades'
+  ];
+  items2.forEach(item => {
+    doc.text('• ' + item, 75, doc.y, { width: pageWidth - 30 });
+    doc.moveDown(0.3);
+  });
+  doc.fontSize(9).fillColor('#666666').text('Valor de mercado: $150,000 - $300,000/mes', 75);
+
+  // ===== PÁGINA 3: MODELO DE PRECIOS =====
+  doc.addPage();
+  addHeader(doc, 'MODELO DE PRECIOS', primaryColor);
+  
+  doc.moveDown(0.5);
+  doc.fontSize(11).fillColor(textColor).font('Helvetica-Bold')
+     .text('Fórmula de Cálculo:', 60, doc.y + 10);
+  
+  doc.moveDown(0.5);
+  drawFormulaBox(doc, 60, doc.y, pageWidth);
+  
+  doc.y += 50;
+  addSectionTitle(doc, 'Tarifa por Trabajador', primaryColor);
   doc.moveDown(0.3);
-  doc.font('Helvetica')
-     .fontSize(10)
-     .fillColor(primaryColor)
-     .text('PRECIO MENSUAL = (Trabajadores × Tarifa/Trabajador) + (Estándares × $8,000)', { align: 'center' });
   
-  doc.moveDown(1);
-
-  // Tabla Tarifa por Trabajador
-  doc.fontSize(11)
-     .font('Helvetica-Bold')
-     .fillColor(textColor)
-     .text('3.1 Tarifa por Trabajador');
-  doc.moveDown(0.5);
-  
-  drawTable(doc, [
+  drawSimpleTable(doc, 60, doc.y, [
     ['Capítulo', 'Empleados', 'Tarifa/Trabajador'],
-    ['I', '1-10', '$26,000'],
-    ['II', '11-50', '$24,000'],
-    ['III', '51-200', '$22,000'],
+    ['I', '1 - 10', '$26,000'],
+    ['II', '11 - 50', '$24,000'],
+    ['III', '51 - 200', '$22,000'],
     ['III+', '201+', '$20,000']
-  ], [100, 150, 150]);
+  ], [120, 150, 150], headerBg);
 
-  doc.moveDown(1);
-
-  // Tabla Tarifa por Estándar
-  doc.fontSize(11)
-     .font('Helvetica-Bold')
-     .fillColor(textColor)
-     .text('3.2 Tarifa por Estándar Normativo');
-  doc.moveDown(0.5);
+  doc.y += 20;
+  addSectionTitle(doc, 'Tarifa por Estándar Normativo', primaryColor);
+  doc.moveDown(0.3);
   
-  drawTable(doc, [
+  drawSimpleTable(doc, 60, doc.y, [
     ['Nivel de Riesgo', 'Estándares', 'Costo Mensual'],
     ['Riesgo I - II', '7 estándares', '$56,000'],
     ['Riesgo III', '21 estándares', '$168,000'],
     ['Riesgo IV - V', '61 estándares', '$488,000']
-  ], [150, 120, 130]);
+  ], [150, 130, 140], headerBg);
 
-  doc.moveDown(0.5);
-  doc.fontSize(10)
-     .font('Helvetica-Bold')
-     .fillColor(accentColor)
-     .text('Tarifa unitaria: $8,000 COP/estándar/mes');
+  doc.y += 15;
+  doc.fontSize(11).font('Helvetica-Bold').fillColor(accentColor)
+     .text('Tarifa unitaria: $8,000 COP por estándar/mes', 60, doc.y, { align: 'center', width: pageWidth });
 
-  // Nueva página
+  // ===== PÁGINA 4: TABLAS DE PRECIOS =====
   doc.addPage();
-
-  // 4. Tabla de Precios por Segmento
-  addSection(doc, '4. TABLA DE PRECIOS POR SEGMENTO', primaryColor);
-
-  // Capítulo I
-  doc.fontSize(11)
-     .font('Helvetica-Bold')
-     .fillColor(textColor)
-     .text('Capítulo I (1-10 trabajadores)');
-  doc.moveDown(0.5);
+  addHeader(doc, 'TABLA DE PRECIOS POR SEGMENTO', primaryColor);
   
-  drawTable(doc, [
+  doc.moveDown(0.3);
+  addSectionTitle(doc, 'Capítulo I (1-10 trabajadores)', primaryColor);
+  doc.moveDown(0.3);
+  
+  drawSimpleTable(doc, 60, doc.y, [
     ['Empleados', 'Riesgo I-II', 'Riesgo III', 'Riesgo IV-V'],
     ['1', '$82,000', '$194,000', '$514,000'],
     ['5', '$186,000', '$298,000', '$618,000'],
     ['10', '$316,000', '$428,000', '$748,000']
-  ], [100, 110, 110, 110]);
+  ], [110, 110, 110, 110], headerBg);
 
-  doc.moveDown(1);
-
-  // Capítulo II
-  doc.fontSize(11)
-     .font('Helvetica-Bold')
-     .fillColor(textColor)
-     .text('Capítulo II (11-50 trabajadores)');
-  doc.moveDown(0.5);
+  doc.y += 15;
+  addSectionTitle(doc, 'Capítulo II (11-50 trabajadores)', primaryColor);
+  doc.moveDown(0.3);
   
-  drawTable(doc, [
+  drawSimpleTable(doc, 60, doc.y, [
     ['Empleados', 'Riesgo I-II', 'Riesgo III', 'Riesgo IV-V'],
     ['15', '$416,000', '$528,000', '$848,000'],
     ['30', '$776,000', '$888,000', '$1,208,000'],
     ['50', '$1,256,000', '$1,368,000', '$1,688,000']
-  ], [100, 110, 110, 110]);
+  ], [110, 110, 110, 110], headerBg);
 
-  doc.moveDown(1);
-
-  // Capítulo III
-  doc.fontSize(11)
-     .font('Helvetica-Bold')
-     .fillColor(textColor)
-     .text('Capítulo III (51-200 trabajadores)');
-  doc.moveDown(0.5);
+  doc.y += 15;
+  addSectionTitle(doc, 'Capítulo III (51-200 trabajadores)', primaryColor);
+  doc.moveDown(0.3);
   
-  drawTable(doc, [
+  drawSimpleTable(doc, 60, doc.y, [
     ['Empleados', 'Riesgo I-II', 'Riesgo III', 'Riesgo IV-V'],
     ['75', '$1,706,000', '$1,818,000', '$2,138,000'],
     ['100', '$2,256,000', '$2,368,000', '$2,688,000'],
     ['150', '$3,356,000', '$3,468,000', '$3,788,000']
-  ], [100, 110, 110, 110]);
+  ], [110, 110, 110, 110], headerBg);
 
-  doc.moveDown(1.5);
-
-  // 5. Comparativo con Competencia
-  addSection(doc, '5. COMPARATIVO CON LA COMPETENCIA', primaryColor);
-
-  doc.fontSize(11)
-     .font('Helvetica-Bold')
-     .fillColor(textColor)
-     .text('Precios de Mercado');
-  doc.moveDown(0.5);
+  // ===== PÁGINA 5: COMPARATIVO =====
+  doc.addPage();
+  addHeader(doc, 'ANÁLISIS COMPARATIVO', primaryColor);
   
-  drawTable(doc, [
+  doc.moveDown(0.3);
+  addSectionTitle(doc, 'Precios del Mercado Colombiano', primaryColor);
+  doc.moveDown(0.3);
+  
+  drawSimpleTable(doc, 60, doc.y, [
     ['Competidor', 'Segmento', 'Precio/mes', 'Portales'],
-    ['Cuidamos.co', '3-5 emp', '$249,000', 'No'],
-    ['Cuidamos.co', '6-10 emp', '$299,000', 'No'],
-    ['Cuidamos.co', '11-15 emp', '$450,000', 'No'],
-    ['Fasem', 'Base', '$328,000', 'No'],
-    ['SST-Colombia', 'Variable', '$82,000 - $3,788,000', 'SÍ (2)']
-  ], [120, 80, 130, 80]);
+    ['Cuidamos.co', '3-5 emp', '$249,000', 'No incluye'],
+    ['Cuidamos.co', '6-10 emp', '$299,000', 'No incluye'],
+    ['Cuidamos.co', '11-15 emp', '$450,000', 'No incluye'],
+    ['Fasem', 'Base', '$328,000', 'No incluye'],
+    ['SST-Colombia', 'Variable', '$82K - $3.7M', 'SÍ (2 gratis)']
+  ], [120, 100, 110, 110], headerBg);
 
-  doc.moveDown(1);
-
-  doc.fontSize(11)
-     .font('Helvetica-Bold')
-     .fillColor(textColor)
-     .text('Análisis Comparativo');
-  doc.moveDown(0.5);
+  doc.y += 15;
+  addSectionTitle(doc, 'Ventaja Competitiva', primaryColor);
+  doc.moveDown(0.3);
   
-  drawTable(doc, [
+  drawSimpleTable(doc, 60, doc.y, [
     ['Escenario', 'SST-Colombia', 'Competencia', 'Ventaja'],
     ['5 emp, Riesgo I', '$186,000', '$249,000', '25% más económico'],
     ['10 emp, Riesgo I', '$316,000', '$299,000', 'Similar + 2 portales'],
     ['15 emp, Riesgo II', '$416,000', '$450,000', '7% más económico']
-  ], [110, 90, 90, 130]);
+  ], [110, 100, 100, 130], headerBg);
 
-  // Nueva página
-  doc.addPage();
-
-  // 6. Valor vs Consultor
-  addSection(doc, '6. VALOR VS. CONSULTOR TRADICIONAL', primaryColor);
+  doc.y += 15;
+  addSectionTitle(doc, 'Valor vs. Consultor Tradicional', primaryColor);
+  doc.moveDown(0.3);
   
-  drawTable(doc, [
-    ['Servicio', 'Consultor Humano', 'SST-Colombia', 'Ahorro'],
+  drawSimpleTable(doc, 60, doc.y, [
+    ['Servicio', 'Consultor', 'SST-Colombia', 'Ahorro'],
     ['Gestión 61 estándares', '$2,400,000/mes', '$488,000/mes', '80%'],
     ['Costo por estándar', '$39,344', '$8,000', '80%'],
     ['Portal trabajadores', '+$150,000/mes', 'INCLUIDO', '100%'],
     ['Portal licenciado', '+$200,000/mes', 'INCLUIDO', '100%']
-  ], [130, 110, 100, 70]);
+  ], [130, 110, 100, 80], headerBg);
 
-  doc.moveDown(1.5);
-
-  // 7. Lo que incluye
-  addSection(doc, '7. LO QUE INCLUYE SST-COLOMBIA', primaryColor);
+  // ===== PÁGINA 6: RESUMEN Y RECOMENDACIÓN =====
+  doc.addPage();
+  addHeader(doc, 'RESUMEN DE LA PROPUESTA', primaryColor);
   
-  doc.fontSize(10)
-     .font('Helvetica')
-     .fillColor(textColor);
-  
-  const modulos = [
-    '• Cumplimiento Resolución 0312/2019 - Gestión automática de estándares según riesgo',
-    '• ISO 45001:2018 - Auditorías internas y revisión por la dirección',
-    '• Informes Ministerio de Trabajo - PDFs automáticos listos para auditoría',
-    '• Estadísticas AT/EL - Indicadores de accidentalidad y enfermedad laboral',
-    '• Ciclo PHVA automatizado - Plan-Do-Check-Act con seguimiento',
-    '• Módulo PESV - Plan Estratégico de Seguridad Vial',
-    '• COPASST/Vigía - Gestión de comités paritarios',
-    '• Capacitaciones - Programación y seguimiento de formación',
-    '• Alertas automáticas - Vencimientos, exámenes médicos, renovaciones',
-    '• Trazabilidad 20 años - Cumplimiento normativo de retención documental'
-  ];
-  modulos.forEach(item => {
-    doc.text(item);
-    doc.moveDown(0.2);
-  });
-
-  doc.moveDown(1);
-
-  // 8. Resumen
-  addSection(doc, '8. RESUMEN DE LA PROPUESTA', primaryColor);
-  
-  drawTable(doc, [
+  doc.moveDown(0.3);
+  drawSimpleTable(doc, 60, doc.y, [
     ['Concepto', 'Detalle'],
     ['Modelo de cobro', 'Por trabajador + Por estándar'],
     ['Tarifa trabajador', '$20,000 - $26,000 según volumen'],
     ['Tarifa estándar', '$8,000/estándar/mes'],
     ['Portal Trabajador', 'INCLUIDO SIN COSTO'],
     ['Portal Licenciado SST', 'INCLUIDO SIN COSTO'],
-    ['Diferenciación', 'Único en Colombia con precio por riesgo'],
-    ['Ventaja competitiva', '2 portales gratis + precio justo']
-  ], [180, 280]);
+    ['Diferenciación', 'Único en Colombia con precio por riesgo real'],
+    ['Ventaja competitiva', '2 portales gratis + precio justo por complejidad']
+  ], [200, 240], headerBg);
 
-  doc.moveDown(1.5);
-
-  // 9. Recomendación
-  addSection(doc, '9. RECOMENDACIÓN', primaryColor);
+  doc.y += 30;
+  addSectionTitle(doc, 'RECOMENDACIÓN', primaryColor);
   
-  doc.fontSize(12)
-     .font('Helvetica-Bold')
-     .fillColor(accentColor)
-     .text('APROBAR el modelo de precios propuesto que:');
   doc.moveDown(0.5);
+  doc.rect(60, doc.y, pageWidth, 130).fill('#e8f5e9').stroke('#2d8659');
   
-  doc.fontSize(11)
-     .font('Helvetica')
-     .fillColor(textColor);
+  doc.y += 15;
+  doc.fontSize(14).font('Helvetica-Bold').fillColor(accentColor)
+     .text('APROBAR el modelo de precios propuesto', 75, doc.y, { width: pageWidth - 30 });
+  
+  doc.moveDown(0.8);
+  doc.fontSize(11).font('Helvetica').fillColor(textColor);
   const recomendaciones = [
-    '✓ Mantiene tarifas por trabajador actuales',
-    '✓ Agrega componente por estándares ($8,000/estándar)',
-    '✓ Incluye Portal del Trabajador sin costo adicional',
-    '✓ Incluye Portal del Licenciado SST sin costo adicional',
-    '✓ Posiciona a SST-Colombia como líder en valor agregado'
+    'Mantiene tarifas por trabajador actuales (innegociables)',
+    'Agrega componente por estándares ($8,000/estándar)',
+    'Incluye Portal del Trabajador sin costo adicional',
+    'Incluye Portal del Licenciado SST sin costo adicional',
+    'Posiciona a SST-Colombia como líder en valor agregado'
   ];
   recomendaciones.forEach(item => {
-    doc.text(item);
-    doc.moveDown(0.2);
+    doc.text('✓ ' + item, 75, doc.y, { width: pageWidth - 30 });
+    doc.moveDown(0.4);
   });
 
   // Footer
-  doc.moveDown(2);
-  doc.moveTo(50, doc.y).lineTo(562, doc.y).strokeColor('#d1d5db').lineWidth(1).stroke();
+  doc.y = 720;
+  doc.moveTo(60, doc.y).lineTo(552, doc.y).strokeColor('#cccccc').lineWidth(1).stroke();
   doc.moveDown(0.5);
-  doc.fontSize(10)
-     .fillColor('#6b7280')
-     .text('Elaborado por: Equipo SST-Colombia', { align: 'center' });
-  doc.text('Fecha: Enero 2026 | Versión: 2.0', { align: 'center' });
+  doc.fontSize(9).fillColor('#666666').font('Helvetica')
+     .text('SST-Colombia | Informe Ejecutivo | Enero 2026 | Versión 2.0', 60, doc.y, { align: 'center', width: pageWidth });
 
   doc.end();
 }
 
-function addSection(doc: PDFKit.PDFDocument, title: string, color: string) {
-  doc.fontSize(14)
+function addHeader(doc: PDFKit.PDFDocument, title: string, color: string) {
+  const pageWidth = 612 - 120;
+  doc.rect(0, 0, 612, 80).fill(color);
+  doc.fontSize(20)
+     .fillColor('#ffffff')
      .font('Helvetica-Bold')
-     .fillColor(color)
-     .text(title);
-  doc.moveDown(0.5);
+     .text(title, 60, 30, { width: pageWidth });
+  doc.y = 100;
 }
 
-function drawTable(doc: PDFKit.PDFDocument, data: string[][], colWidths: number[]) {
-  const startX = 50;
-  let currentY = doc.y;
-  const rowHeight = 20;
-  const padding = 5;
-  const headerBg = '#1e40af';
-  const evenRowBg = '#f9fafb';
+function addSectionTitle(doc: PDFKit.PDFDocument, title: string, color: string) {
+  doc.fontSize(13)
+     .font('Helvetica-Bold')
+     .fillColor(color)
+     .text(title, 60);
+}
+
+function drawHighlightBox(doc: PDFKit.PDFDocument, x: number, y: number, width: number, height: number, color: string, title: string) {
+  doc.rect(x, y, width, height).fill('#f0f9f4').stroke(color);
+  doc.rect(x, y, width, 20).fill(color);
+  doc.fontSize(11).font('Helvetica-Bold').fillColor('#ffffff')
+     .text(title, x + 10, y + 5, { width: width - 20 });
+}
+
+function drawFormulaBox(doc: PDFKit.PDFDocument, x: number, y: number, width: number) {
+  doc.rect(x, y, width, 35).fill('#e3f2fd').stroke('#1e3a5f');
+  doc.fontSize(12).font('Helvetica-Bold').fillColor('#1e3a5f')
+     .text('PRECIO = (Trabajadores × Tarifa) + (Estándares × $8,000)', x + 20, y + 10, { width: width - 40, align: 'center' });
+}
+
+function drawSimpleTable(doc: PDFKit.PDFDocument, x: number, y: number, data: string[][], colWidths: number[], headerColor: string) {
+  const rowHeight = 22;
+  const padding = 8;
+  let currentY = y;
 
   data.forEach((row, rowIndex) => {
-    let currentX = startX;
+    let currentX = x;
     
-    // Draw row background
     if (rowIndex === 0) {
-      doc.rect(startX, currentY, colWidths.reduce((a, b) => a + b, 0), rowHeight)
-         .fill(headerBg);
+      doc.rect(x, currentY, colWidths.reduce((a, b) => a + b, 0), rowHeight).fill(headerColor);
     } else if (rowIndex % 2 === 0) {
-      doc.rect(startX, currentY, colWidths.reduce((a, b) => a + b, 0), rowHeight)
-         .fill(evenRowBg);
+      doc.rect(x, currentY, colWidths.reduce((a, b) => a + b, 0), rowHeight).fill('#f5f5f5');
+    } else {
+      doc.rect(x, currentY, colWidths.reduce((a, b) => a + b, 0), rowHeight).fill('#ffffff');
     }
 
-    // Draw cells
     row.forEach((cell, colIndex) => {
       doc.fontSize(9)
          .font(rowIndex === 0 ? 'Helvetica-Bold' : 'Helvetica')
-         .fillColor(rowIndex === 0 ? '#ffffff' : '#1f2937')
-         .text(cell, currentX + padding, currentY + padding, {
+         .fillColor(rowIndex === 0 ? '#ffffff' : '#333333')
+         .text(cell, currentX + padding, currentY + 6, {
            width: colWidths[colIndex] - padding * 2,
-           height: rowHeight - padding * 2,
-           align: 'left'
+           height: rowHeight - 4,
+           align: colIndex === 0 ? 'left' : 'center'
          });
       currentX += colWidths[colIndex];
     });
@@ -376,11 +325,8 @@ function drawTable(doc: PDFKit.PDFDocument, data: string[][], colWidths: number[
     currentY += rowHeight;
   });
 
-  // Draw border
-  doc.rect(startX, doc.y - (data.length * rowHeight), colWidths.reduce((a, b) => a + b, 0), data.length * rowHeight)
-     .strokeColor('#d1d5db')
-     .lineWidth(0.5)
-     .stroke();
+  doc.rect(x, y, colWidths.reduce((a, b) => a + b, 0), data.length * rowHeight)
+     .strokeColor('#cccccc').lineWidth(0.5).stroke();
 
   doc.y = currentY + 5;
 }
