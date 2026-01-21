@@ -1,22 +1,22 @@
 // ChatbotAsistente.tsx - Comprehensive Knowledge Base for SST Colombia Chatbot
 // Complete coverage of all modules, step-by-step guides, troubleshooting, and best practices
 
-// Imágenes del tutorial
-import imgRegistro from "@assets/Captura_de_pantalla_2025-12-06_a_las_20.18.43_1765050037160.png";
-import imgCorreoVerificado from "@assets/Captura_de_pantalla_2025-12-06_a_las_20.18.53_1765050037161.png";
-import imgConfigurarEmpresa from "@assets/Captura_de_pantalla_2025-12-06_a_las_20.22.58_1765050037165.png";
-import imgPanelControl from "@assets/Captura_de_pantalla_2025-12-06_a_las_20.21.35_1765050037164.png";
-import imgMenuConfiguracion from "@assets/Captura_de_pantalla_2025-12-06_a_las_20.21.26_1765050037163.png";
-import imgMenuConfigEmpresas from "@assets/Captura_de_pantalla_2025-12-06_a_las_20.25.06_1765050037166.png";
-import imgGestionEmpresas from "@assets/Captura_de_pantalla_2025-12-06_a_las_20.25.13_1765050037161.png";
-import imgMenuPlanearContratos from "@assets/Captura_de_pantalla_2025-12-06_a_las_20.26.10_1765050037164.png";
-import imgMenuEvaluacionInicial from "@assets/Captura_de_pantalla_2025-12-06_a_las_20.26.02_1765050037162.png";
-import imgEvaluacionInicialVacia from "@assets/Captura_de_pantalla_2025-12-06_a_las_20.26.19_1765050037165.png";
-import imgNuevaEvaluacion from "@assets/Captura_de_pantalla_2025-12-06_a_las_20.32.38_1765050037163.png";
-import imgEvaluacionEstandares from "@assets/Captura_de_pantalla_2025-12-06_a_las_20.32.58_1765050037164.png";
-import imgAfiliacionesSSSS from "@assets/Captura_de_pantalla_2025-12-06_a_las_20.29.57_1765050037160.png";
-import imgNuevaAfiliacion from "@assets/Captura_de_pantalla_2025-12-06_a_las_20.31.07_1765050037162.png";
-import imgMensajesInternos from "@assets/Captura_de_pantalla_2025-12-06_a_las_19.27.44_1765050037163.png";
+// Imágenes del tutorial - placeholders (las imágenes originales fueron eliminadas)
+const imgRegistro = "";
+const imgCorreoVerificado = "";
+const imgConfigurarEmpresa = "";
+const imgPanelControl = "";
+const imgMenuConfiguracion = "";
+const imgMenuConfigEmpresas = "";
+const imgGestionEmpresas = "";
+const imgMenuPlanearContratos = "";
+const imgMenuEvaluacionInicial = "";
+const imgEvaluacionInicialVacia = "";
+const imgNuevaEvaluacion = "";
+const imgEvaluacionEstandares = "";
+const imgAfiliacionesSSSS = "";
+const imgNuevaAfiliacion = "";
+const imgMensajesInternos = "";
 
 export interface Message {
   id: string;

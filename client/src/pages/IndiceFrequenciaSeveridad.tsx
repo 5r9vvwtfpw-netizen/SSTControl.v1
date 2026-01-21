@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { ArrowLeft, ArrowRight, TrendingUp, TrendingDown, Activity, AlertTriangle } from "lucide-react";
+import { TrazabilidadIndicadores331 } from "@/components/TrazabilidadIndicadores331";
 import type { AccidentStatistics } from "@shared/schema";
 
 function calculateIndicators(data: AccidentStatistics) {
@@ -226,6 +227,14 @@ export default function IndiceFrequenciaSeveridad() {
           </Table>
         </CardContent>
       </Card>
+
+      {companyId && (
+        <TrazabilidadIndicadores331 
+          companyId={companyId} 
+          year={selectedYear}
+          onNavigateToAccident={(accidentId) => navigate(`/investigacion-accidentes?id=${accidentId}`)}
+        />
+      )}
 
       {!currentYearData && !isLoading && (
         <Card className="border-dashed border-2">
