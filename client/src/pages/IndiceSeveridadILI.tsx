@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { ArrowLeft, BarChart3, Calculator, Calendar, TrendingUp, Info } from "lucide-react";
 import type { AccidentStatistics } from "@shared/schema";
+import { TrazabilidadIndicadores332 } from "@/components/TrazabilidadIndicadores332";
 
 /**
  * Cálculo de indicadores oficiales según Decreto 1072/2015 y Resolución 0312/2019
@@ -265,6 +266,16 @@ export default function IndiceSeveridadILI() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Trazabilidad de datos - Estándar 3.3.2 */}
+      {companyId && (
+        <TrazabilidadIndicadores332
+          companyId={companyId}
+          year={selectedYear}
+          onNavigateToAccident={(id) => navigate(`/investigacion-accidentes/${id}`)}
+          onNavigateToDisease={(id) => navigate(`/enfermedades-laborales/${id}`)}
+        />
+      )}
 
       {/* Sin datos alert */}
       {!currentYearData && !isLoading && (
