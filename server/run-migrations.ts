@@ -1,6 +1,7 @@
 import { syncAccidentInvestigationsTable } from './migrations/sync-accident-investigations';
 import { syncInvestigationFindings } from './migrations/sync-investigation-findings';
 import { syncWorkersPurchasedColumn } from './migrations/sync-workers-purchased';
+import { syncAccidentTypeEnum } from './migrations/sync-accident-type-enum';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -11,6 +12,7 @@ export async function runMigrations() {
   
   try {
     await syncWorkersPurchasedColumn();
+    await syncAccidentTypeEnum();
     await syncAccidentInvestigationsTable();
     await syncInvestigationFindings();
     console.log('✅ Migraciones completadas exitosamente');
