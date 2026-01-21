@@ -6,12 +6,16 @@ This project is an integral management system for Occupational Health and Safety
 ## User Preferences
 I prefer simple language and clear explanations. I want iterative development with regular updates. Please ask before making major architectural changes or introducing new dependencies. I prefer detailed explanations for complex features. Do not make changes to the `shared/` folder without explicit instruction.
 
+### Secure Coding Principles
+1. **Add-Only Principle**: Do not modify existing code; only add new code. Create new files/components instead of editing existing ones.
+2. **Secure Development**: Follow established patterns, validations, and maintain architectural coherence.
+
 ## System Architecture
 
 ### UI/UX Decisions
 The frontend uses React 18, TypeScript, and Vite, with Tailwind CSS and Shadcn UI for a modern, responsive, Material Design-inspired interface. Navigation aligns with the PHVA cycle (Plan-Do-Check-Act) using horizontal tabs. Company logos are integrated into all PDF documents.
 
-**Company Registration Flow (CIIU-First):** The company creation form (`CrearEmpresa.tsx`) uses a 2-step wizard that asks for CIIU code first. This automatically calculates the risk level (I-V) using Decreto 1607/2002 before showing applicable standards. This prevents false expectations where users with high-risk activities (IV/V) would need 61 standards regardless of worker count.
+**Company Registration Flow (CIIU-First):** The company creation form (`CrearEmpresaCiiuFirst.tsx`) uses a 2-step wizard that asks for CIIU code first. This automatically calculates the risk level (I-V) using Decreto 1607/2002 before showing applicable standards. This prevents false expectations where users with high-risk activities (IV/V) would need 61 standards regardless of worker count.
 
 ### Technical Implementations
 The system is built with a React 18, TypeScript, Vite frontend and an Express.js, TypeScript backend using PostgreSQL with Drizzle ORM. It features an 11-Tier Role-Based Access Control (RBAC) system with multi-tenant architecture. Key modules include comprehensive compliance for Resolution 0312/2019 standards, ISO 45001:2018 internal audits, management reviews, EVS, COPASST management, virtual training, smart induction, sociodemographic profiling, accident investigation and statistics, worker absenteeism control, and EPP delivery management. The system tracks SST evaluations year-to-year, offering data inheritance and review workflows, automated email notifications, a worker portal, Stripe-integrated billing, an interactive chatbot, and full legal compliance for Habeas Data and GDPR.
