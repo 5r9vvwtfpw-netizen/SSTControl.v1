@@ -92,10 +92,12 @@ export function ParticipantDialogSmart({
 
   const createParticipantMutation = useMutation({
     mutationFn: async (data: ParticipantFormData & { investigationId: string }) => {
-      const { investigationId: invId, hasLicense, ...rest } = data;
+      const { investigationId: invId, hasLicense, licenseExpiry, licenseNumber, ...rest } = data;
       const payload = {
         ...rest,
         hasLicense: hasLicense ? 1 : 0,
+        licenseNumber: licenseNumber || null,
+        licenseExpiry: licenseExpiry || null,
       };
       const res = await apiRequest("POST", `/api/investigations/${invId}/participants`, payload);
       return res.json();
