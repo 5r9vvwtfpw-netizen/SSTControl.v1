@@ -1908,11 +1908,11 @@ export default function ConservacionAuditiva() {
                 </Select>
               </div>
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="suggestedAction">Acción Sugerida (seleccione o escriba manualmente)</Label>
+                <Label htmlFor="suggestedAction">Acción Sugerida (seleccione para autocompletar)</Label>
                 <Select
-                  value="custom"
+                  value=""
                   onValueChange={(value) => {
-                    if (value !== "custom") {
+                    if (value) {
                       const idx = parseInt(value);
                       const suggestions = controlActionSuggestions[controlForm.controlType] || [];
                       if (suggestions[idx]) {
@@ -1925,14 +1925,13 @@ export default function ConservacionAuditiva() {
                     }
                   }}
                 >
-                  <SelectTrigger id="suggestedAction" data-testid="select-suggested-action">
-                    <SelectValue placeholder="Seleccione una acción predefinida..." />
+                  <SelectTrigger id="suggestedAction" data-testid="select-suggested-action" className="border-primary/50">
+                    <SelectValue placeholder={`▼ Seleccione de ${(controlActionSuggestions[controlForm.controlType] || []).length} acciones predefinidas...`} />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="custom">-- Escribir manualmente --</SelectItem>
+                  <SelectContent className="max-h-80">
                     {(controlActionSuggestions[controlForm.controlType] || []).map((suggestion, idx) => (
-                      <SelectItem key={idx} value={idx.toString()}>
-                        {suggestion.description.substring(0, 60)}...
+                      <SelectItem key={idx} value={idx.toString()} className="py-2">
+                        <span className="font-medium">{suggestion.description}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
