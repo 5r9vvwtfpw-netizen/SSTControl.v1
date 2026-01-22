@@ -662,7 +662,7 @@ export default function ConservacionAuditiva() {
 
     const data = {
       ...profileForm,
-      companyId: isSuperadmin ? profileForm.companyId : undefined,
+      companyId: isSuperadmin ? profileForm.companyId : user?.companyId,
       noiseLevel: parseInt(profileForm.noiseLevel),
       exposureHoursDay: profileForm.exposureHoursDay,
       exposedWorkersCount: selectedWorkerIds.length,
