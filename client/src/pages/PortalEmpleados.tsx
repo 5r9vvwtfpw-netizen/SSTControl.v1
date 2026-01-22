@@ -1999,45 +1999,13 @@ interface WorkerDocument {
 }
 
 function MisDocumentosTab() {
-  const { data: contract, isLoading: loadingContract } = useQuery<Contract>({
+  const { data: contract, isLoading } = useQuery<Contract>({
     queryKey: ["/api/portal/my-contract"],
   });
 
-  const { data: capacitaciones = [], isLoading: loadingCapacitaciones } = useQuery<WorkerCapacitacion[]>({
-    queryKey: ["/api/portal/mis-capacitaciones"],
-  });
-
-  const isLoading = loadingContract || loadingCapacitaciones;
-
   if (isLoading) {
-    return <ListSkeletonLoading items={4} />;
+    return <ListSkeletonLoading items={2} />;
   }
-
-  const completedTrainings = capacitaciones.filter((c) => c.estado === "asistio");
-
-  const documents: WorkerDocument[] = [];
-
-  if (contract) {
-    documents.push({
-      id: `contract-${contract.id}`,
-      type: "contract",
-      title: `Contrato de Trabajo - ${contract.contractType ?? 'Sin tipo'}`,
-      description: `${contract.position ?? 'Sin cargo'} - ${contract.department || 'Sin departamento'}`,
-      date: contract.startDate,
-      status: contract.status,
-    });
-  }
-
-  completedTrainings.forEach((cap) => {
-    documents.push({
-      id: `training-${cap.id}`,
-      type: "training_certificate",
-      title: cap.tituloCurso ?? 'Sin título',
-      description: `${cap.categoria ?? 'Sin categoría'} - ${cap.duracionHoras || 0} horas`,
-      date: cap.fechaInicio,
-      status: "completado",
-    });
-  });
 
   return (
     <div className="space-y-6">
@@ -2045,69 +2013,49 @@ function MisDocumentosTab() {
         <CardHeader className="pb-4">
           <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
             <FolderOpen className="h-5 w-5" />
-            Mis Documentos
+            Información Laboral
           </CardTitle>
           <CardDescription className="text-sm">
-            Certificados de capacitación y documentos laborales
+            Información de su vinculación laboral con la empresa
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {completedTrainings.length === 0 ? (
+          {!contract ? (
             <EmptyState
               icon={FolderOpen}
-              title="Sin documentos"
-              description="Aún no has completado capacitaciones. Los certificados aparecerán aquí cuando finalices un curso."
+              title="Sin información"
+              description="No se encontró información de contrato laboral registrada."
             />
           ) : (
             <div className="space-y-4">
-              {/* Training Certificates Section */}
-              {completedTrainings.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="font-medium flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-                    <Award className="h-3.5 w-3.5" />
-                    Certificados de Capacitación ({completedTrainings.length})
-                  </h3>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {completedTrainings.map((cap) => (
-                      <Card 
-                        key={cap.id} 
-                        className="border-green-200 dark:border-green-800"
-                        data-testid={`card-certificate-${cap.id}`}
-                      >
-                        <CardContent className="p-3">
-                          <div className="flex items-start gap-2.5">
-                            <div className="h-8 w-8 rounded-md bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
-                              <Award className="h-4 w-4 text-green-600 dark:text-green-400" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-xs line-clamp-2" data-testid={`text-certificate-title-${cap.id}`}>
-                                {cap.tituloCurso}
-                              </p>
-                              <p className="text-[11px] text-muted-foreground mt-0.5">
-                                {cap.categoria ?? ''}
-                                {cap.duracionHoras && ` • ${cap.duracionHoras}h`}
-                              </p>
-                              <p className="text-[11px] text-muted-foreground">
-                                {format(new Date(cap.fechaInicio), "d MMM yyyy", { locale: es })}
-                              </p>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="mt-2 h-7 text-xs"
-                                onClick={() => window.open(`/api/capacitacion-asistencia/${cap.asistenciaId}/certificado-pdf`, '_blank')}
-                                data-testid={`button-download-certificate-${cap.id}`}
-                              >
-                                <Download className="h-3 w-3 mr-1" />
-                                Descargar
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Tipo de Contrato</p>
+                    <p className="font-medium">{contract.contractType ?? 'No especificado'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Cargo</p>
+                    <p className="font-medium">{contract.position ?? 'No especificado'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Departamento</p>
+                    <p className="font-medium">{contract.department || 'No especificado'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Fecha de Ingreso</p>
+                    <p className="font-medium">
+                      {contract.startDate ? format(new Date(contract.startDate), "d 'de' MMMM, yyyy", { locale: es }) : 'No especificada'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Estado</p>
+                    <Badge variant={contract.status === 'activo' ? 'default' : 'secondary'}>
+                      {contract.status === 'activo' ? 'Activo' : contract.status === 'vencido' ? 'Vencido' : contract.status === 'terminado' ? 'Terminado' : contract.status === 'suspendido' ? 'Suspendido' : contract.status}
+                    </Badge>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           )}
         </CardContent>
