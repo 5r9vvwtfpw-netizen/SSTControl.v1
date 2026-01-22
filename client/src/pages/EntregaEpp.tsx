@@ -538,8 +538,8 @@ export default function EntregaEpp() {
                       <SelectTrigger data-testid="select-catalog" className="bg-white dark:bg-slate-900">
                         <SelectValue placeholder="Busque o seleccione EPP del catálogo" />
                       </SelectTrigger>
-                      <SelectContent className="max-h-[300px] z-50" position="popper" sideOffset={5}>
-                        <div className="px-2 pb-2 sticky top-0 bg-popover">
+                      <SelectContent className="max-h-[300px] z-50 overflow-hidden" position="popper" sideOffset={5}>
+                        <div className="px-2 py-2 border-b bg-popover">
                           <div className="relative">
                             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
                             <Input
@@ -551,6 +551,7 @@ export default function EntregaEpp() {
                             />
                           </div>
                         </div>
+                        <div className="max-h-[240px] overflow-y-auto">
                         <SelectItem value="manual" className="border-b mb-1">
                           <div className="flex items-center gap-2">
                             <Plus className="h-4 w-4" />
@@ -578,6 +579,7 @@ export default function EntregaEpp() {
                             );
                           })
                         )}
+                        </div>
                       </SelectContent>
                     </Select>
                   </div>
