@@ -18562,7 +18562,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = userCompanyId;
       }
       
+      console.log("[DEBUG-NOISE] req.body:", JSON.stringify(req.body, null, 2));
       const parsed = insertNoiseExposureProfileSchema.safeParse(req.body);
+      if (!parsed.success) {
+        console.log("[DEBUG-NOISE] Zod error:", parsed.error.format());
+      }
       if (!parsed.success) {
         return res.status(400).send(parsed.error.message);
       }
