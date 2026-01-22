@@ -6,6 +6,7 @@ import { format, addDays } from "date-fns";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { adaptFindingPayload } from "@/lib/finding-payload-adapter";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -232,7 +233,9 @@ export function FindingDialogSmart({
   const createFindingMutation = useMutation({
     mutationFn: async (data: FindingFormData & { investigationId: string }) => {
       const { investigationId, ...rest } = data;
-      const res = await apiRequest("POST", `/api/investigations/${investigationId}/findings`, rest);
+      // Use adapter to ensure both description and finding_description are populated
+      const adaptedPayload = adaptFindingPayload(rest);
+      const res = await apiRequest("POST", `/api/investigations/${investigationId}/findings`, adaptedPayload);
       return res.json();
     },
     onSuccess: () => {
