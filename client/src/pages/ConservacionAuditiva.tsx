@@ -847,6 +847,7 @@ export default function ConservacionAuditiva() {
 
     const data = {
       ...controlForm,
+      companyId: user?.companyId,
       exposureProfileId: controlForm.exposureProfileId || undefined,
       objective: controlForm.objective || undefined,
       implementationDate: controlForm.implementationDate || undefined,
