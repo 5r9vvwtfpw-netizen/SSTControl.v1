@@ -248,7 +248,7 @@ export default function MedicionesAmbientales() {
 
       <AutomationAssistant
         titulo="Mediciones Ambientales"
-        estandar="2.2.1"
+        estandar="4.1.4"
         descripcion="Monitoreo de factores de riesgo físicos y químicos ocupacionales"
         normativaAplicable={normativaMediciones}
         compact={true}
