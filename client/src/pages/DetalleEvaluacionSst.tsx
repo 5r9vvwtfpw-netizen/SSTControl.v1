@@ -4090,6 +4090,24 @@ export default function DetalleEvaluacionSst() {
                         </Button>
                       </div>
                     </div>
+                    <div className="p-3 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md border border-emerald-200 dark:border-emerald-800">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <FlaskConical className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <div>
+                            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                              Mediciones Ambientales
+                            </p>
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                              Ruido, iluminación, temperatura, gases y vapores
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/mediciones-ambientales"); }} data-testid="button-ir-mediciones-414">
+                          Ir a Mediciones
+                        </Button>
+                      </div>
+                    </div>
                     <div className="p-3 bg-teal-100/50 dark:bg-teal-900/30 rounded-md border border-teal-200 dark:border-teal-800">
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
