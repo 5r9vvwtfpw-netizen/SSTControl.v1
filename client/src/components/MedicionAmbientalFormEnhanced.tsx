@@ -37,6 +37,32 @@ const MEASUREMENT_UNITS_BY_TYPE: Record<string, string> = {
   vibraciones: "m/s²",
 };
 
+// Common work areas for environmental measurements in Colombian industries
+const COMMON_WORK_AREAS = [
+  "Producción",
+  "Manufactura",
+  "Almacén",
+  "Bodega",
+  "Oficinas Administrativas",
+  "Taller de Mantenimiento",
+  "Sala de Máquinas",
+  "Área de Carga y Descarga",
+  "Laboratorio",
+  "Cafetería / Comedor",
+  "Recepción",
+  "HSEQ",
+  "Recursos Humanos",
+  "Gerencia",
+  "Área de Soldadura",
+  "Área de Pintura",
+  "Cuarto de Control",
+  "Subestación Eléctrica",
+  "Planta de Tratamiento",
+  "Área de Calderas",
+  "Patio de Maniobras",
+  "Parqueadero",
+];
+
 interface MedicionAmbientalFormEnhancedProps {
   onSubmit: (data: InsertEnvironmentalMeasurement) => Promise<void>;
   isLoading?: boolean;
@@ -213,13 +239,20 @@ export function MedicionAmbientalFormEnhanced({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Área o Puesto de Trabajo *</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Ej: Sala de Máquinas, Oficina Administrativa"
-                          {...field}
-                          data-testid="input-area-enhanced"
-                        />
-                      </FormControl>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-area-enhanced">
+                            <SelectValue placeholder="Seleccione el área de medición" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {COMMON_WORK_AREAS.map((area) => (
+                            <SelectItem key={area} value={area}>
+                              {area}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
