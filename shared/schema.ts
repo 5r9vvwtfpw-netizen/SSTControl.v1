@@ -8446,6 +8446,7 @@ export const investigationFindings = pgTable("investigation_findings", {
   // Tipo de causa
   findingType: causaTypeEnum("finding_type").notNull(),
   description: text("description").notNull(),
+  findingDescription: text("finding_description"), // Campo legacy para compatibilidad con BD existente
   
   // Vinculación con peligro IPERC (si aplica)
   linkedIpercId: varchar("linked_iperc_id").references(() => peligrosIperc.id, { onDelete: "set null" }),

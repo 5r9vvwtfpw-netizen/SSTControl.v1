@@ -17,7 +17,7 @@ interface FindingFormData {
 
 interface AdaptedFindingPayload {
   findingType: string;
-  finding_description: string; // Legacy field - must be populated
+  findingDescription: string; // Legacy field - uses camelCase for Drizzle compatibility
   description: string; // Current field - must be populated
   correctiveAction: string;
   responsibleName: string;
@@ -39,7 +39,7 @@ export function adaptFindingPayload(formData: FindingFormData): AdaptedFindingPa
 
   return {
     ...formData,
-    finding_description: description, // Map to legacy field
+    findingDescription: description, // Map to legacy field using camelCase
     description: description, // Ensure current field is also populated
   };
 }
@@ -53,7 +53,7 @@ export function validateFindingPayload(payload: AdaptedFindingPayload): boolean 
   const requiredFields: (keyof AdaptedFindingPayload)[] = [
     "findingType",
     "description",
-    "finding_description",
+    "findingDescription",
     "correctiveAction",
     "responsibleName",
     "dueDate",
