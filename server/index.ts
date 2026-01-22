@@ -283,6 +283,9 @@ app.use('/uploads', express.static('public/uploads'));
 // Serve documentation files
 app.use('/docs', express.static('docs'));
 
+// Serve public JSON files (CIIU classification for external pricing pages)
+app.use(express.static('public'));
+
 // Request logging middleware with Pino (Bloque 2: Infrastructure)
 app.use(requestLoggerMiddleware);
 
