@@ -18,6 +18,7 @@ import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { MedicionAmbientalFormEnhanced } from "@/components/MedicionAmbientalFormEnhanced";
 
 const normativaMediciones = [
   {
@@ -202,148 +203,45 @@ export default function MedicionesAmbientales() {
               Nueva Medición
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Registrar Nueva Medición Ambiental</DialogTitle>
-              <DialogDescription>Complete los datos de la medición ocupacional</DialogDescription>
+              <DialogDescription>Sistema inteligente con trazabilidad automática</DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                {isSuperadmin && (
-                  <div className="space-y-2 col-span-2">
-                    <Label htmlFor="companyId">Empresa *</Label>
-                    <Select
-                      value={formData.companyId}
-                      onValueChange={(value) => setFormData({ ...formData, companyId: value })}
-                    >
-                      <SelectTrigger id="companyId" data-testid="select-company">
-                        <SelectValue placeholder="Seleccione empresa" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {companies.map((company) => (
-                          <SelectItem key={company.id} value={company.id}>
-                            {company.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="measurementType">Tipo de Medición</Label>
-                  <Select
-                    value={formData.measurementType}
-                    onValueChange={(value: any) => setFormData({ ...formData, measurementType: value })}
-                  >
-                    <SelectTrigger id="measurementType" data-testid="select-measurement-type">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ruido">Ruido</SelectItem>
-                      <SelectItem value="iluminacion">Iluminación</SelectItem>
-                      <SelectItem value="temperatura">Temperatura</SelectItem>
-                      <SelectItem value="agente_quimico">Agente Químico</SelectItem>
-                      <SelectItem value="material_particulado">Material Particulado</SelectItem>
-                      <SelectItem value="vibraciones">Vibraciones</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="area">Área</Label>
-                  <Input
-                    id="area"
-                    value={formData.area}
-                    onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                    required
-                    placeholder="Ej: Planta de Producción"
-                    data-testid="input-area"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="measurementDate">Fecha de Medición</Label>
-                  <Input
-                    id="measurementDate"
-                    type="date"
-                    value={formData.measurementDate}
-                    onChange={(e) => setFormData({ ...formData, measurementDate: e.target.value })}
-                    required
-                    data-testid="input-measurement-date"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="valueNumeric">Valor Medido</Label>
-                  <Input
-                    id="valueNumeric"
-                    value={formData.valueNumeric}
-                    onChange={(e) => setFormData({ ...formData, valueNumeric: e.target.value })}
-                    placeholder="Ej: 85.5"
-                    data-testid="input-value-numeric"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="unit">Unidad de Medida</Label>
-                  <Input
-                    id="unit"
-                    value={formData.unit}
-                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                    placeholder="Ej: dB, lux, °C, mg/m³"
-                    data-testid="input-unit"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="legalLimit">Límite Legal (Opcional)</Label>
-                  <Input
-                    id="legalLimit"
-                    value={formData.legalLimit}
-                    onChange={(e) => setFormData({ ...formData, legalLimit: e.target.value })}
-                    placeholder="Ej: 85 dB"
-                    data-testid="input-legal-limit"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="measuredBy">Medido Por</Label>
-                  <Input
-                    id="measuredBy"
-                    value={formData.measuredBy}
-                    onChange={(e) => setFormData({ ...formData, measuredBy: e.target.value })}
-                    required
-                    placeholder="Nombre del técnico"
-                    data-testid="input-measured-by"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="status">Estado</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value: any) => setFormData({ ...formData, status: value })}
-                  >
-                    <SelectTrigger id="status" data-testid="select-status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="conforme">Conforme</SelectItem>
-                      <SelectItem value="no_conforme">No Conforme</SelectItem>
-                      <SelectItem value="pendiente_analisis">Pendiente Análisis</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="observations">Observaciones (opcional)</Label>
-                  <Textarea
-                    id="observations"
-                    value={formData.observations}
-                    onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
-                    placeholder="Observaciones, condiciones ambientales, recomendaciones"
-                    data-testid="input-observations"
-                  />
-                </div>
+            {isSuperadmin && (
+              <div className="space-y-2 mb-4">
+                <Label htmlFor="companyId">Empresa *</Label>
+                <Select
+                  value={formData.companyId}
+                  onValueChange={(value) => setFormData({ ...formData, companyId: value })}
+                >
+                  <SelectTrigger id="companyId" data-testid="select-company">
+                    <SelectValue placeholder="Seleccione empresa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companies.map((company) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <DialogFooter>
-                <Button type="submit" disabled={createMeasurementMutation.isPending} data-testid="button-submit-measurement">
-                  {createMeasurementMutation.isPending ? "Guardando..." : "Guardar"}
-                </Button>
-              </DialogFooter>
-            </form>
+            )}
+            <MedicionAmbientalFormEnhanced
+              onSubmit={async (data) => {
+                const payload = {
+                  ...data,
+                  companyId: isSuperadmin ? formData.companyId : user?.companyId || ""
+                };
+                await apiRequest("POST", "/api/environmental-measurements", payload);
+                queryClient.invalidateQueries({ queryKey: ["/api/environmental-measurements"] });
+                setDialogOpen(false);
+                toast({ title: "Éxito", description: "Medición registrada correctamente" });
+              }}
+              isLoading={createMeasurementMutation.isPending}
+              onCancel={() => setDialogOpen(false)}
+            />
           </DialogContent>
         </Dialog>
       </div>
