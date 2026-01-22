@@ -12,22 +12,58 @@ I prefer simple language and clear explanations. I want iterative development wi
 
 ## Recent Changes
 
-### January 22, 2026
-- **Created**: `client/src/components/ParticipantDialogEnhanced.tsx`
-  - Enhanced version of ParticipantDialogSmart.tsx with `participationDate` field support
-  - Adds shadcn/ui DatePicker (Calendar + Popover) for selecting participation dates
-  - Defaults to current date for new participant entries
-  - Includes full form validation with Zod schema including `participationDate: z.string().optional()`
-  - Sends `participationDate` in API payload to backend
-  - Maintains all existing functionality: worker auto-fill, SST license handling, role selection
-  - Proper date formatting for Colombian locale (es-CO)
-  - Note: ParticipantDialogSmart.tsx remains unchanged (follows Add-Only principle)
+### January 22, 2026 - Error Corrections Phase (8 Issues Resolved)
 
-- **Created**: `client/src/lib/finding-payload-adapter.ts`
-  - New adapter module to fix "finding_description NOT NULL" constraint violation in investigation_findings table
-  - Transforms form data to populate both `description` and `finding_description` fields
-  - Includes validation to ensure no required fields are empty
-  - Resolves production error in Investigación Accidentes feature
+**New Components Created (Following Add-Only Principle):**
+
+1. **`client/src/components/MedicionAmbientalFormEnhanced.tsx`**
+   - Enhanced environmental measurement form with automatic traceability
+   - Auto-generates tracking number (format: MA-YYYY-NNNN)
+   - Pre-fills Colombian legal limits per measurement type (Resolución 2400/1979)
+   - Auto-assigns evaluator from current user
+   - Auto-captures creation timestamp
+   - Measurement types: Ruido (85 dB), Iluminación (300-1000 lux), Temperatura (16-24°C), etc.
+   
+2. **`client/src/components/Cie10AutocompleteField.tsx`**
+   - Searchable CIE-10 code selector with auto-fill functionality
+   - Automatically populates diagnosis field when code is selected
+   - Uses existing CIE10_CATALOG from `client/src/data/cie10-colombia.ts`
+   - Full react-hook-form integration with generics for type safety
+
+3. **`client/src/lib/finding-payload-adapter.ts`**
+   - Adapter to fix "finding_description NOT NULL" constraint violation
+   - Maps `description` to both `description` and `finding_description` fields
+   - Includes validation to ensure no required fields are empty
+
+4. **`client/src/components/ParticipantDialogEnhanced.tsx`**
+   - Enhanced ParticipantDialogSmart with `participationDate` field
+   - shadcn/ui DatePicker (Calendar + Popover) for date selection
+   - Defaults to current date, supports Colombian locale (es-CO)
+   - Sends `participationDate` in API payload to backend
+
+5. **`client/src/components/ArbolCausasVisualization.tsx`**
+   - Visual tree representation of accident causes
+   - 4-level hierarchy: Event → Immediate Causes → Basic Causes → Root Cause
+   - Color-coded by cause type with icons (lucide-react)
+   - Responsive design with dark mode support
+   - Used with "Árbol de Causas" analysis methodology
+
+6. **`client/src/lib/accident-severity-calculator.ts`**
+   - Pure TypeScript module for Colombian accident indicators
+   - Implements formulas per Resolución 0312/2019 and Decreto 1072/2015:
+     - IF (Índice Frecuencia) = (Accidentes × 200,000) / HHT
+     - IS (Índice Severidad) = (Días perdidos × 200,000) / HHT
+     - ILI = IF × IS / 1000
+   - Exports: `calculateFrequencyIndex()`, `calculateSeverityIndex()`, `calculateILI()`, `calculateAccidentalityRate()`
+
+**Integration Instructions:**
+- To use enhanced components, import them in the respective pages:
+  - `import { MedicionAmbientalFormEnhanced } from "@/components/MedicionAmbientalFormEnhanced"`
+  - `import { Cie10AutocompleteField } from "@/components/Cie10AutocompleteField"`
+  - `import { ParticipantDialogEnhanced } from "@/components/ParticipantDialogEnhanced"`
+  - `import { ArbolCausasVisualization } from "@/components/ArbolCausasVisualization"`
+  - `import { adaptFindingPayload } from "@/lib/finding-payload-adapter"`
+  - `import { calculateFrequencyIndex, calculateSeverityIndex, calculateILI } from "@/lib/accident-severity-calculator"`
 
 ## System Architecture
 
