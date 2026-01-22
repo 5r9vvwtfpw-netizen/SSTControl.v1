@@ -10,6 +10,15 @@ I prefer simple language and clear explanations. I want iterative development wi
 1. **Add-Only Principle**: Do not modify existing code; only add new code. Create new files/components instead of editing existing ones.
 2. **Secure Development**: Follow established patterns, validations, and maintain architectural coherence.
 
+## Recent Changes
+
+### January 22, 2026
+- **Created**: `client/src/lib/finding-payload-adapter.ts`
+  - New adapter module to fix "finding_description NOT NULL" constraint violation in investigation_findings table
+  - Transforms form data to populate both `description` and `finding_description` fields
+  - Includes validation to ensure no required fields are empty
+  - Resolves production error in Investigación Accidentes feature
+
 ## System Architecture
 
 ### UI/UX Decisions
