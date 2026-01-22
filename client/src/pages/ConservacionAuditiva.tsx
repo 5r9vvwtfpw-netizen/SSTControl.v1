@@ -730,6 +730,7 @@ export default function ConservacionAuditiva() {
     e.preventDefault();
     createAudiometryMutation.mutate({
       ...audiometryForm,
+      companyId: user?.companyId,
       status: "programada",
     });
   };
