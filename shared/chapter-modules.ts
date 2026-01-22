@@ -122,6 +122,7 @@ const CHAPTER_1_MODULES = [
   
   // Estándares SST (visualización)
   "/estandares-sst",
+  "/cumplimiento-0312",  // Módulo de Cumplimiento Resolución 0312/2019 - disponible para todos
   
   // Dashboards básicos
   "/dashboard-verificar",
