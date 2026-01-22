@@ -34,21 +34,26 @@ import {
 } from "lucide-react";
 import { useMemo } from "react";
 import { peligrosPorCIIU } from "@/data/peligros-por-ciiu";
+import { getCiiuRiskClassification } from "@shared/ciiu-unified-classification";
 
 export type RiskLevel = "I" | "II" | "III" | "IV" | "V";
 export type Chapter = "1" | "2" | "3";
 
 /**
- * Obtiene el nivel de riesgo desde el código CIIU usando el mapeo de peligros
- * Si no encuentra el CIIU, retorna null para indicar que se debe usar el riesgo manual
+ * Obtiene el nivel de riesgo desde el código CIIU
+ * Usa clasificación unificada: peligrosPorCIIU + Decreto 768/2022 + Decreto 1607/2002
+ * Si no encuentra el CIIU en ninguna fuente, retorna null
  */
 export function getRiskLevelFromCiiu(ciiuCode: string | null | undefined): RiskLevel | null {
   if (!ciiuCode) return null;
   
   const ciiuData = peligrosPorCIIU.find(p => p.codigoCIIU === ciiuCode);
-  if (!ciiuData) return null;
+  if (ciiuData) return ciiuData.nivelRiesgo;
   
-  return ciiuData.nivelRiesgo;
+  const clasificacion = getCiiuRiskClassification(ciiuCode);
+  if (clasificacion.found) return clasificacion.riskLevel;
+  
+  return null;
 }
 
 export interface EstandarInfo {

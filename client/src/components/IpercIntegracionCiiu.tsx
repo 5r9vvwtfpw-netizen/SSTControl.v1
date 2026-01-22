@@ -26,7 +26,7 @@ import { useMemo } from "react";
 import { IpercCiiuFilter, getCiiuPeligrosData } from "./IpercCiiuFilter";
 import { 
   EstandaresLiberadosCiiu, 
-  getRiskLevelFromCiiu,
+  getRiskLevelFromCiiu as getRiskFromPeligros,
   calcularEstandaresLiberados,
   calcularCapituloAplicable,
   getEstandaresLiberados,
@@ -34,6 +34,27 @@ import {
   type Chapter
 } from "./EstandaresLiberadosCiiu";
 import { PeligroEspecificoSector } from "@/data/peligros-por-ciiu";
+import { getCiiuRiskClassification, MARCO_LEGAL_CLASIFICACION_RIESGOS } from "@shared/ciiu-unified-classification";
+
+/**
+ * Obtiene el nivel de riesgo usando clasificación unificada (Decreto 768/2022 + 1607/2002)
+ * Prioriza peligrosPorCIIU para mantener compatibilidad, luego usa clasificación oficial
+ */
+export function getRiskLevelFromCiiu(ciiuCode: string | null | undefined): RiskLevel | null {
+  if (!ciiuCode) return null;
+  
+  const riesgoPeligros = getRiskFromPeligros(ciiuCode);
+  if (riesgoPeligros) return riesgoPeligros;
+  
+  const clasificacion = getCiiuRiskClassification(ciiuCode);
+  if (clasificacion.found) {
+    return clasificacion.riskLevel;
+  }
+  
+  return null;
+}
+
+export { MARCO_LEGAL_CLASIFICACION_RIESGOS };
 
 export interface CompanyContext {
   /** Código CIIU de la empresa (4 dígitos) */
@@ -270,7 +291,6 @@ export function IpercIntegracionCiiu({
 
 // Re-exportar utilidades para uso externo
 export { 
-  getRiskLevelFromCiiu,
   calcularCapituloAplicable,
   getEstandaresLiberados,
   getCiiuPeligrosData,
