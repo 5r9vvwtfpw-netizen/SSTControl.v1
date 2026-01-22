@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, CheckCircle2, FileText, Download, ArrowLeft, Save, Sparkles, X, Check, MinusCircle, Plus, Pencil, ExternalLink, UserCheck, Users, DollarSign, ShieldCheck, Shield, AlertCircle, GraduationCap, BookOpen, Target, ClipboardList, BarChart3, Scale, MessageSquare, ShoppingCart, RefreshCcw, HeartPulse, Activity, FileCheck, FolderLock, UserCog, Camera, Trash2, FolderOpen, Search, UserMinus, FlaskConical, History, Calendar, HardHat, Lightbulb } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileText, Download, ArrowLeft, Save, Sparkles, X, Check, MinusCircle, Plus, Pencil, ExternalLink, UserCheck, Users, DollarSign, ShieldCheck, Shield, AlertCircle, GraduationCap, BookOpen, Target, ClipboardList, ClipboardCheck, BarChart3, Scale, MessageSquare, ShoppingCart, RefreshCcw, HeartPulse, Activity, FileCheck, FolderLock, UserCog, Camera, Trash2, FolderOpen, Search, UserMinus, FlaskConical, History, Calendar, HardHat, Lightbulb } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -4261,6 +4261,137 @@ export default function DetalleEvaluacionSst() {
                         </Button>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {selectedEstandar?.numeroEstandar === "4.2.2" && (
+            <div className="mb-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+              <div className="flex items-start gap-3">
+                <Shield className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
+                    Modo Verificación - Estándar 4.2.2
+                  </p>
+                  <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">
+                    Solicitar los soportes documentales implementados por la empresa donde se verifica el cumplimiento de las responsabilidades de los trabajadores frente a la aplicación de las medidas de prevención y control de los peligros/riesgos (físicos, ergonómicos, biológicos, químicos, de seguridad, públicos, psicosociales, entre otros).
+                  </p>
+                  <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-2">
+                    Realizar visita a las instalaciones para verificar el cumplimiento de las medidas de prevención y control por parte de los trabajadores.
+                  </p>
+                  <div className="mt-3 p-3 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md border border-emerald-200 dark:border-emerald-800">
+                    <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 mb-2">
+                      Normativa aplicable:
+                    </p>
+                    <ul className="text-xs text-emerald-600 dark:text-emerald-400 space-y-1 list-disc list-inside">
+                      <li><strong>Decreto 1072/2015 Art. 2.2.4.6.10</strong> - Responsabilidades de los trabajadores</li>
+                      <li><strong>Resolución 0312/2019 Art. 16</strong> - Estándar mínimo 4.2.2</li>
+                      <li><strong>Decreto 1072/2015 Art. 2.2.4.6.24</strong> - Medidas de prevención y control</li>
+                      <li>Verificación de uso correcto de EPP por parte de los trabajadores</li>
+                      <li>Cumplimiento de procedimientos de trabajo seguro</li>
+                    </ul>
+                  </div>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-3 font-medium">
+                    Evidencia esperada: Registros de observación de comportamiento seguro, inspecciones de uso de EPP, actas de llamados de atención por incumplimientos, registros de capacitación en autocuidado, formatos de verificación en campo
+                  </p>
+                  <div className="mt-4 space-y-2">
+                    <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                      Fuentes de evidencia con trazabilidad:
+                    </p>
+                    <div className="p-3 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md border border-emerald-200 dark:border-emerald-800">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <div>
+                            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                              Entrega de EPP
+                            </p>
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                              Registros de entrega y verificación de uso de EPP
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/entrega-epp"); }} data-testid="button-ir-epp-422">
+                          Ir a EPP
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md border border-emerald-200 dark:border-emerald-800">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <ClipboardCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <div>
+                            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                              Inspecciones de Seguridad
+                            </p>
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                              Verificación de cumplimiento de medidas por trabajadores
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/inspecciones"); }} data-testid="button-ir-inspecciones-422">
+                          Ir a Inspecciones
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md border border-emerald-200 dark:border-emerald-800">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <GraduationCap className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <div>
+                            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                              Capacitaciones
+                            </p>
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                              Formación en autocuidado y uso de medidas de control
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/capacitaciones"); }} data-testid="button-ir-capacitaciones-422">
+                          Ir a Capacitaciones
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md border border-emerald-200 dark:border-emerald-800">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <div>
+                            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                              Matriz IPERC
+                            </p>
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                              Controles asignados a trabajadores por cargo/área
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/iperc"); }} data-testid="button-ir-iperc-422">
+                          Ir a IPERC
+                        </Button>
+                      </div>
+                    </div>
+                    {companyChapter !== 1 && (
+                      <div className="p-3 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md border border-emerald-200 dark:border-emerald-800">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <FolderOpen className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                            <div>
+                              <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                                Gestión Documental
+                              </p>
+                              <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                                Actas de observación, llamados de atención, registros de campo
+                              </p>
+                            </div>
+                          </div>
+                          <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/conservacion-documentos"); }} data-testid="button-ir-documentos-422">
+                            Ir a Documentos
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
