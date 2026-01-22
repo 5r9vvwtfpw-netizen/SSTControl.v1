@@ -18205,7 +18205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const measurements = await storage.getAllEnvironmentalMeasurements();
@@ -18226,7 +18226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const measurement = await storage.getEnvironmentalMeasurementById(req.params.id);
@@ -18253,7 +18253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       let companyId: string;
       if (isAdmin) {
@@ -18287,7 +18287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const existingMeasurement = await storage.getEnvironmentalMeasurementById(req.params.id);
@@ -18323,7 +18323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const existingMeasurement = await storage.getEnvironmentalMeasurementById(req.params.id);
@@ -18351,7 +18351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const records = await storage.getAllAudiometryRecords();
@@ -18372,7 +18372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const record = await storage.getAudiometryRecordById(req.params.id);
@@ -18399,7 +18399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       let companyId: string;
       if (isAdmin) {
@@ -18433,7 +18433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const existingRecord = await storage.getAudiometryRecordById(req.params.id);
@@ -18469,7 +18469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const existingRecord = await storage.getAudiometryRecordById(req.params.id);
@@ -18495,7 +18495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const profiles = await storage.getAllNoiseExposureProfiles();
@@ -18516,7 +18516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const profile = await storage.getNoiseExposureProfileById(req.params.id);
@@ -18543,7 +18543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       let companyId: string;
       if (isAdmin) {
@@ -18577,7 +18577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const existingProfile = await storage.getNoiseExposureProfileById(req.params.id);
@@ -18613,7 +18613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const existingProfile = await storage.getNoiseExposureProfileById(req.params.id);
@@ -18654,7 +18654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       let companyId: string;
       if (isAdmin) {
@@ -18704,7 +18704,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const actions = await storage.getAllPcaControlActions();
@@ -18725,7 +18725,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const action = await storage.getPcaControlActionById(req.params.id);
@@ -18752,7 +18752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       let companyId: string;
       if (isAdmin) {
@@ -18786,7 +18786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const existingAction = await storage.getPcaControlActionById(req.params.id);
@@ -18822,7 +18822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       if (isAdmin) {
         const existingAction = await storage.getPcaControlActionById(req.params.id);
@@ -18881,7 +18881,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const userCompanyId = user.companyId;
-      const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+      const isAdmin = hasGlobalAccess(user.role);
       
       let companyId: string;
       if (isAdmin) {
