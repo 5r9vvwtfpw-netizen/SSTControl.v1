@@ -22,6 +22,13 @@ import { BarChart3, Plus, Edit, Trash2, TrendingUp, ArrowLeft, Calculator, FileT
 import type { AccidentStatistics } from "@shared/schema";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import {
+  calculateFrequencyIndex,
+  calculateSeverityIndex,
+  calculateILI,
+  calculateAccidentalityRate,
+  type AccidentSeverityData,
+} from "@/lib/accident-severity-calculator";
 
 const TREND_ANALYSIS_OPTIONS = [
   "Se observa una reducción del índice de frecuencia respecto al período anterior",
@@ -78,10 +85,18 @@ type FormData = z.infer<typeof formSchema>;
 
 function calculateIndicators(data: { hoursWorkedHHT: number; totalAccidents: number; lostDays: number; totalWorkers: number; totalOccupationalDiseases: number }) {
   const { hoursWorkedHHT, totalAccidents, lostDays, totalWorkers, totalOccupationalDiseases } = data;
-  const indicadorIF = hoursWorkedHHT > 0 ? (totalAccidents * 200000) / hoursWorkedHHT : 0;
-  const indicadorIS = hoursWorkedHHT > 0 ? (lostDays * 200000) / hoursWorkedHHT : 0;
-  const indicadorILI = (indicadorIF * indicadorIS) / 1000;
-  const tasaAccidentalidad = (totalAccidents / totalWorkers) * 100;
+  
+  const severityData: AccidentSeverityData = {
+    totalDaysLost: lostDays,
+    totalWorkerHours: hoursWorkedHHT,
+    numberOfAccidents: totalAccidents,
+    numberOfWorkers: totalWorkers,
+  };
+  
+  const indicadorIF = calculateFrequencyIndex(severityData);
+  const indicadorIS = calculateSeverityIndex(severityData);
+  const indicadorILI = calculateILI(severityData);
+  const tasaAccidentalidad = calculateAccidentalityRate(severityData);
   const tasaEnfermedadLaboral = (totalOccupationalDiseases / totalWorkers) * 100;
   return { indicadorIF, indicadorIS, indicadorILI, tasaAccidentalidad, tasaEnfermedadLaboral };
 }
@@ -545,7 +560,7 @@ export default function IndicadoresAccidentalidad() {
                   <FormField control={form.control} name="totalWorkers" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Número de Trabajadores *</FormLabel>
-                      <FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))} onBlur={() => { if (field.value === '' || field.value == null) field.onChange(0); }} data-testid="input-workers" /></FormControl>
+                      <FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))} onBlur={() => { if (field.value == null || isNaN(field.value as number)) field.onChange(0); }} data-testid="input-workers" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
@@ -560,28 +575,28 @@ export default function IndicadoresAccidentalidad() {
                   <FormField control={form.control} name="totalAccidents" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Total Accidentes de Trabajo</FormLabel>
-                      <FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))} onBlur={() => { if (field.value === '' || field.value == null) field.onChange(0); }} data-testid="input-accidents" /></FormControl>
+                      <FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))} onBlur={() => { if (field.value == null || isNaN(field.value as number)) field.onChange(0); }} data-testid="input-accidents" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="fatalAccidents" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Accidentes Mortales</FormLabel>
-                      <FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))} onBlur={() => { if (field.value === '' || field.value == null) field.onChange(0); }} data-testid="input-fatal" /></FormControl>
+                      <FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))} onBlur={() => { if (field.value == null || isNaN(field.value as number)) field.onChange(0); }} data-testid="input-fatal" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="lostDays" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Días Perdidos</FormLabel>
-                      <FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))} onBlur={() => { if (field.value === '' || field.value == null) field.onChange(0); }} data-testid="input-lost-days" /></FormControl>
+                      <FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))} onBlur={() => { if (field.value == null || isNaN(field.value as number)) field.onChange(0); }} data-testid="input-lost-days" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="totalOccupationalDiseases" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Enfermedades Laborales</FormLabel>
-                      <FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))} onBlur={() => { if (field.value === '' || field.value == null) field.onChange(0); }} data-testid="input-diseases" /></FormControl>
+                      <FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))} onBlur={() => { if (field.value == null || isNaN(field.value as number)) field.onChange(0); }} data-testid="input-diseases" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />

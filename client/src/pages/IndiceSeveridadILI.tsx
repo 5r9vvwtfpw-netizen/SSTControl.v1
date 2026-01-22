@@ -11,9 +11,17 @@ import { useCompanyContext } from "@/hooks/use-company-context";
 import { ArrowLeft, BarChart3, Calculator, Calendar, TrendingUp, Info } from "lucide-react";
 import type { AccidentStatistics } from "@shared/schema";
 import { TrazabilidadIndicadores332 } from "@/components/TrazabilidadIndicadores332";
+import {
+  calculateFrequencyIndex,
+  calculateSeverityIndex,
+  calculateILI,
+  calculateAccidentalityRate,
+  type AccidentSeverityData,
+} from "@/lib/accident-severity-calculator";
 
 /**
  * Cálculo de indicadores oficiales según Decreto 1072/2015 y Resolución 0312/2019
+ * Utiliza el módulo accident-severity-calculator para garantizar consistencia
  */
 function calculateILIIndicators(data: Partial<AccidentStatistics>) {
   const hht = typeof data.hoursWorkedHHT === "string" ? parseFloat(data.hoursWorkedHHT) : (data.hoursWorkedHHT || 0);
@@ -23,21 +31,22 @@ function calculateILIIndicators(data: Partial<AccidentStatistics>) {
   const totalIncidents = data.totalIncidents || 0;
   const totalOccupationalDiseases = data.totalOccupationalDiseases || 0;
 
-  // IF = (Número de accidentes de trabajo en el periodo / Número de horas hombre trabajadas en el periodo) * 240.000 (o 200.000 según Res 0312)
-  // El código existente usa 200.000
-  const indicadorIF = hht > 0 ? (totalAccidents * 200000) / hht : 0;
-  
-  // IS = (Número de días perdidos por accidentes de trabajo en el periodo / Número de horas hombre trabajadas en el periodo) * 240.000
-  const indicadorIS = hht > 0 ? (lostDays * 200000) / hht : 0;
-  
-  // ILI = (IF * IS) / 1000
-  const indicadorILI = (indicadorIF * indicadorIS) / 1000;
+  const severityData: AccidentSeverityData = {
+    totalDaysLost: lostDays,
+    totalWorkerHours: hht,
+    numberOfAccidents: totalAccidents,
+    numberOfWorkers: totalWorkers,
+  };
+
+  const indicadorIF = calculateFrequencyIndex(severityData);
+  const indicadorIS = calculateSeverityIndex(severityData);
+  const indicadorILI = calculateILI(severityData);
   
   // Tasa de incidentes = (Total incidentes / Total trabajadores) * 100
   const tasaIncidentes = (totalIncidents / totalWorkers) * 100;
   
   // Tasa de AT = (Total AT / Total trabajadores) * 100
-  const tasaAT = (totalAccidents / totalWorkers) * 100;
+  const tasaAT = calculateAccidentalityRate(severityData);
 
   // Tasa de EL = (Total EL / Total trabajadores) * 100
   const tasaEL = (totalOccupationalDiseases / totalWorkers) * 100;

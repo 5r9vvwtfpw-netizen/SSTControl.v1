@@ -13,6 +13,16 @@ I prefer simple language and clear explanations. I want iterative development wi
 ## Recent Changes
 
 ### January 22, 2026
+- **Created**: `client/src/components/ParticipantDialogEnhanced.tsx`
+  - Enhanced version of ParticipantDialogSmart.tsx with `participationDate` field support
+  - Adds shadcn/ui DatePicker (Calendar + Popover) for selecting participation dates
+  - Defaults to current date for new participant entries
+  - Includes full form validation with Zod schema including `participationDate: z.string().optional()`
+  - Sends `participationDate` in API payload to backend
+  - Maintains all existing functionality: worker auto-fill, SST license handling, role selection
+  - Proper date formatting for Colombian locale (es-CO)
+  - Note: ParticipantDialogSmart.tsx remains unchanged (follows Add-Only principle)
+
 - **Created**: `client/src/lib/finding-payload-adapter.ts`
   - New adapter module to fix "finding_description NOT NULL" constraint violation in investigation_findings table
   - Transforms form data to populate both `description` and `finding_description` fields

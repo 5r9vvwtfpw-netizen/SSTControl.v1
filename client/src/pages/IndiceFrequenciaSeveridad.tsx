@@ -11,6 +11,12 @@ import { useCompanyContext } from "@/hooks/use-company-context";
 import { ArrowLeft, ArrowRight, TrendingUp, TrendingDown, Activity, AlertTriangle } from "lucide-react";
 import { TrazabilidadIndicadores331 } from "@/components/TrazabilidadIndicadores331";
 import type { AccidentStatistics } from "@shared/schema";
+import {
+  calculateFrequencyIndex,
+  calculateSeverityIndex,
+  calculateAccidentalityRate,
+  type AccidentSeverityData,
+} from "@/lib/accident-severity-calculator";
 
 function calculateIndicators(data: AccidentStatistics) {
   const hht = parseFloat(data.hoursWorkedHHT?.toString() || "0") || 0;
@@ -18,9 +24,16 @@ function calculateIndicators(data: AccidentStatistics) {
   const lostDays = data.lostDays ?? 0;
   const totalWorkers = data.totalWorkers ?? 1;
   
-  const indicadorIF = hht > 0 ? (totalAccidents * 200000) / hht : 0;
-  const indicadorIS = hht > 0 ? (lostDays * 200000) / hht : 0;
-  const tasaAccidentalidad = (totalAccidents / totalWorkers) * 100;
+  const severityData: AccidentSeverityData = {
+    totalDaysLost: lostDays,
+    totalWorkerHours: hht,
+    numberOfAccidents: totalAccidents,
+    numberOfWorkers: totalWorkers,
+  };
+  
+  const indicadorIF = calculateFrequencyIndex(severityData);
+  const indicadorIS = calculateSeverityIndex(severityData);
+  const tasaAccidentalidad = calculateAccidentalityRate(severityData);
   
   return { indicadorIF, indicadorIS, tasaAccidentalidad };
 }
