@@ -134,32 +134,109 @@ const actionStatusLabels: Record<string, string> = {
 // Predefined control action suggestions by type
 const controlActionSuggestions: Record<string, { description: string; objective: string }[]> = {
   fuente: [
+    // Industria manufacturera
     { description: "Instalación de silenciadores en equipos de compresión", objective: "Reducir el nivel de ruido en la fuente a menos de 80 dB(A)" },
     { description: "Reemplazo de equipos ruidosos por modelos de baja emisión sonora", objective: "Eliminar la fuente de ruido excesivo" },
     { description: "Mantenimiento preventivo de maquinaria para reducir vibraciones", objective: "Reducir emisión de ruido por desgaste mecánico" },
     { description: "Instalación de amortiguadores antivibratorios en bases de equipos", objective: "Reducir transmisión de ruido estructural" },
     { description: "Lubricación y ajuste de componentes móviles", objective: "Minimizar ruido por fricción mecánica" },
+    // Minería y canteras
+    { description: "Uso de perforadoras hidráulicas de bajo ruido en frentes de explotación", objective: "Reducir niveles de ruido en operación minera" },
+    { description: "Mantenimiento de sistemas de trituración y molienda", objective: "Controlar ruido en plantas de beneficio" },
+    { description: "Instalación de silenciadores en equipos de ventilación de túneles", objective: "Reducir ruido en minería subterránea" },
+    // Construcción
+    { description: "Uso de martillos neumáticos con sistemas de amortiguación", objective: "Reducir ruido en obras de construcción" },
+    { description: "Empleo de maquinaria de construcción con cabinas insonorizadas", objective: "Proteger operadores de maquinaria pesada" },
+    { description: "Uso de sierras circulares con sistemas de reducción de ruido", objective: "Controlar ruido en corte de materiales" },
+    // Transporte y logística
+    { description: "Mantenimiento de montacargas y equipos de carga", objective: "Reducir ruido en operaciones de almacén" },
+    { description: "Uso de alarmas de reversa con tono modulado", objective: "Reducir ruido continuo de alertas" },
+    // Agroindustria
+    { description: "Instalación de silenciadores en tractores y maquinaria agrícola", objective: "Reducir exposición en labores de campo" },
+    { description: "Mantenimiento de equipos de procesamiento agrícola", objective: "Controlar ruido en plantas de empaque" },
+    // Industria alimentaria
+    { description: "Aislamiento de compresores de refrigeración industrial", objective: "Reducir ruido en plantas de alimentos" },
+    { description: "Uso de molinos de baja emisión sonora", objective: "Controlar ruido en procesos de molienda" },
+    // Metalurgia
+    { description: "Instalación de prensas hidráulicas silenciosas", objective: "Reducir impacto sonoro en estampado" },
+    { description: "Uso de sistemas de soldadura con menor emisión de ruido", objective: "Controlar ruido en talleres de soldadura" },
+    // Textil
+    { description: "Modernización de telares con tecnología de bajo ruido", objective: "Reducir exposición en área de tejido" },
+    { description: "Instalación de silenciadores en máquinas de confección", objective: "Controlar ruido en plantas textiles" },
+    // Energía
+    { description: "Instalación de silenciadores en generadores eléctricos", objective: "Reducir ruido en plantas de generación" },
+    { description: "Encapsulamiento de turbinas y equipos rotativos", objective: "Aislar fuentes de ruido en subestaciones" },
   ],
   medio: [
+    // Soluciones generales
     { description: "Instalación de cabinas acústicas insonorizadas", objective: "Aislar las fuentes de ruido del ambiente general" },
     { description: "Colocación de paneles absorbentes acústicos en paredes y techos", objective: "Reducir reverberación y nivel de ruido ambiental" },
     { description: "Construcción de barreras acústicas entre áreas de trabajo", objective: "Reducir propagación de ruido entre zonas" },
     { description: "Instalación de cerramientos parciales en maquinaria", objective: "Contener el ruido en la zona de emisión" },
     { description: "Tratamiento acústico de ductos de ventilación", objective: "Reducir transmisión de ruido por sistemas HVAC" },
+    // Industria y manufactura
+    { description: "Construcción de salas de control insonorizadas", objective: "Proteger personal de supervisión del ruido" },
+    { description: "Instalación de puertas acústicas industriales", objective: "Reducir transmisión de ruido entre áreas" },
+    { description: "Uso de cortinas acústicas flexibles en líneas de producción", objective: "Aislar zonas ruidosas sin modificar estructura" },
+    // Minería
+    { description: "Instalación de cabinas aisladas en salas de control minero", objective: "Proteger operadores de equipos de trituración" },
+    { description: "Uso de pantallas acústicas portátiles en frentes de trabajo", objective: "Reducir exposición en zonas de explotación" },
+    // Construcción
+    { description: "Instalación de cerramientos temporales en obras", objective: "Contener ruido de maquinaria de construcción" },
+    { description: "Uso de vallas acústicas perimetrales", objective: "Reducir impacto sonoro en comunidades vecinas" },
+    // Oficinas y call centers
+    { description: "Instalación de divisiones acústicas entre puestos de trabajo", objective: "Reducir interferencia sonora entre estaciones" },
+    { description: "Uso de techos acústicos absorbentes", objective: "Controlar reverberación en espacios abiertos" },
+    { description: "Instalación de alfombras y materiales absorbentes en pisos", objective: "Reducir ruido de impacto y pisadas" },
+    // Salud
+    { description: "Aislamiento acústico de salas de equipos médicos ruidosos", objective: "Proteger pacientes y personal de salud" },
+    // Educación
+    { description: "Tratamiento acústico de aulas y auditorios", objective: "Mejorar condiciones de aprendizaje" },
+    // Hotelería y restaurantes
+    { description: "Aislamiento de cocinas industriales", objective: "Reducir ruido hacia zonas de atención al público" },
   ],
   epp: [
+    // Protección auditiva general
     { description: "Dotación de protectores auditivos tipo copa NRR 25-30 dB", objective: "Proteger la audición de trabajadores expuestos" },
     { description: "Entrega de tapones auditivos moldeables NRR 20-25 dB", objective: "Proporcionar protección auditiva cómoda para uso prolongado" },
     { description: "Suministro de protectores auditivos con comunicación integrada", objective: "Mantener comunicación segura en ambientes ruidosos" },
     { description: "Capacitación en uso y cuidado correcto de protección auditiva", objective: "Asegurar efectividad del EPP auditivo" },
     { description: "Verificación de ajuste personalizado de protectores auditivos", objective: "Garantizar atenuación efectiva del ruido" },
+    // Industria especializada
+    { description: "Dotación de orejeras con sistema Bluetooth para comunicación", objective: "Facilitar comunicación sin retiro del EPP" },
+    { description: "Suministro de tapones auditivos de silicona reutilizables", objective: "Reducir costos y residuos de EPP desechable" },
+    { description: "Entrega de protectores con nivel de atenuación activa", objective: "Proteger sin aislar sonidos de alerta" },
+    // Minería
+    { description: "Dotación de cascos con protección auditiva integrada", objective: "Protección combinada cabeza-oídos en minería" },
+    // Construcción
+    { description: "Suministro de protectores auditivos compatibles con cascos de obra", objective: "Asegurar uso combinado de EPP en construcción" },
+    // Agroindustria
+    { description: "Entrega de tapones auditivos resistentes a humedad y polvo", objective: "Mantener protección en condiciones de campo" },
+    // Laboratorios
+    { description: "Dotación de protectores auditivos hipoalergénicos", objective: "Protección para personal con sensibilidad" },
   ],
   administrativo: [
+    // Controles generales
     { description: "Rotación de personal en puestos de alta exposición a ruido", objective: "Limitar tiempo de exposición individual a menos de 8 horas/día" },
     { description: "Programación de pausas activas en ambientes ruidosos", objective: "Reducir dosis de exposición acumulada" },
     { description: "Señalización de zonas de riesgo auditivo obligatorio", objective: "Alertar sobre uso obligatorio de EPP auditivo" },
     { description: "Restricción de acceso a áreas de alto ruido", objective: "Minimizar personal expuesto a ruido excesivo" },
     { description: "Capacitación sobre riesgos de exposición al ruido", objective: "Concientizar sobre prevención de pérdida auditiva" },
+    // Vigilancia médica
+    { description: "Implementación de programa de vigilancia audiométrica periódica", objective: "Detectar pérdida auditiva temprana" },
+    { description: "Análisis de tendencia de resultados audiométricos", objective: "Identificar deterioro auditivo progresivo" },
+    { description: "Evaluación médica de aptitud para trabajo en ruido", objective: "Proteger trabajadores con predisposición auditiva" },
+    // Procedimientos
+    { description: "Elaboración de procedimiento de trabajo seguro en áreas ruidosas", objective: "Estandarizar prácticas de protección auditiva" },
+    { description: "Programa de inspección y mantenimiento de EPP auditivo", objective: "Asegurar condiciones óptimas de protectores" },
+    { description: "Registro y seguimiento de dosis de exposición por trabajador", objective: "Documentar exposición para control epidemiológico" },
+    // Organización del trabajo
+    { description: "Programación de trabajos ruidosos en horarios de menor ocupación", objective: "Reducir número de expuestos simultáneamente" },
+    { description: "Asignación de áreas de descanso alejadas de fuentes de ruido", objective: "Permitir recuperación auditiva durante pausas" },
+    { description: "Evaluación de puestos de trabajo con mediciones periódicas", objective: "Mantener actualizado mapa de ruido ocupacional" },
+    // Capacitación especializada
+    { description: "Inducción específica para trabajadores de áreas críticas", objective: "Preparar personal nuevo en zonas de alto ruido" },
+    { description: "Entrenamiento en comunicación por señales en áreas ruidosas", objective: "Garantizar seguridad sin retiro de EPP" },
   ],
 };
 
