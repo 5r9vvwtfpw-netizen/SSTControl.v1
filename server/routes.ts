@@ -17561,7 +17561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // If inspectionId is provided, generate single inspection report
         if (inspectionId) {
-          const inspection = await storage.getInspection(inspectionId);
+          const inspection = await storage.getInspectionById(inspectionId);
           if (!inspection) {
             return res.status(404).json({ error: "Inspección no encontrada" });
           }
