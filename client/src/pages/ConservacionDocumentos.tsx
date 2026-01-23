@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { AutomationAssistant, type NormativaInfo, type PlantillaInfo } from "@/components/AutomationAssistant";
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { useUpload } from "@/hooks/use-upload";
 
 const categoryLabels: Record<string, string> = {
@@ -642,7 +643,8 @@ export default function ConservacionDocumentos() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-4">
+        <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
       <div className="flex justify-between items-center flex-wrap gap-4">
