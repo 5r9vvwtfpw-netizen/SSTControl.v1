@@ -4018,7 +4018,172 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // PATCH /api/investigations/:id - Update investigation
+  // GET /api/investigations/pdf - Export all investigations to PDF
+  app.get("/api/investigations/pdf", requirePermission("accidents:view"), async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Empresa no especificada" });
+      }
+
+      const company = await storage.getCompany(effectiveCompanyId);
+      if (!company) {
+        return res.status(404).json({ error: "Empresa no encontrada" });
+      }
+
+      // Get all investigations for the company
+      const investigations = await db.select()
+        .from(schema.accidentInvestigations)
+        .where(eq(schema.accidentInvestigations.companyId, effectiveCompanyId))
+        .orderBy(desc(schema.accidentInvestigations.createdAt));
+
+      const doc = new PDFDocument({ size: 'LETTER', margin: 35, bufferPages: true });
+
+      // Add trial watermark if subscription is in trial period
+      const invPdfSubscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
+      const invPdfTrialStatus = getTrialStatus(invPdfSubscription?.status || 'trial', invPdfSubscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, invPdfTrialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=investigaciones_accidentes.pdf');
+      doc.pipe(res);
+
+      // Preload company logo
+      const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(effectiveCompanyId, false);
+
+      // Standard Header
+      await addStandardHeader({
+        doc,
+        company: {
+          id: company.id,
+          name: company.name,
+          nit: company.nit,
+          address: company.address,
+          logoUrl: company.logoUrl,
+        },
+        documentTitle: 'INFORME DE INVESTIGACIONES DE ACCIDENTES',
+        documentCode: `SST-IA-${new Date().getFullYear()}`,
+        version: '1.0',
+        date: new Date(),
+        logoBuffer: logo,
+      });
+
+      const margin = 35;
+      const pageWidth = doc.page.width;
+
+      doc.moveDown(1);
+
+      // Summary Section
+      doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e7e34');
+      doc.text('RESUMEN DE INVESTIGACIONES', margin);
+      doc.moveDown(0.5);
+
+      const completadas = investigations.filter(i => i.status === 'completada').length;
+      const enProceso = investigations.filter(i => i.status === 'en_proceso').length;
+      const pendientes = investigations.filter(i => i.status === 'pendiente').length;
+
+      doc.fontSize(9).font('Helvetica').fillColor('#000000');
+      doc.text(`Total de Investigaciones: ${investigations.length}`, margin);
+      doc.text(`Completadas: ${completadas}`, margin);
+      doc.text(`En Proceso: ${enProceso}`, margin);
+      doc.text(`Pendientes: ${pendientes}`, margin);
+      doc.moveDown(1);
+
+      // Separator
+      doc.strokeColor('#1e7e34').lineWidth(1)
+        .moveTo(margin, doc.y)
+        .lineTo(pageWidth - margin, doc.y)
+        .stroke();
+      doc.moveDown(1);
+
+      // Investigations List
+      doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e7e34');
+      doc.text('DETALLE DE INVESTIGACIONES', margin);
+      doc.moveDown(0.5);
+
+      if (investigations.length === 0) {
+        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#666666');
+        doc.text('No hay investigaciones registradas', margin);
+      } else {
+        for (const [index, inv] of investigations.entries()) {
+          // Check for page break
+          if (doc.y > doc.page.height - 150) {
+            doc.addPage();
+            doc.font('Helvetica').fontSize(9).fillColor('#000000');
+          }
+
+          // Investigation Header
+          doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34');
+          doc.text(`${index + 1}. ${inv.accidentType === 'trabajo' ? 'Accidente de Trabajo' : 'Casi Accidente'}`, margin);
+
+          doc.fontSize(8).font('Helvetica').fillColor('#000000');
+          doc.text(`Afectado: ${inv.affectedPerson}`, margin + 10);
+          doc.text(`Fecha del evento: ${inv.accidentDate ? new Date(inv.accidentDate).toLocaleDateString('es-CO') : 'No especificada'}`, margin + 10);
+          doc.text(`Fecha de investigación: ${inv.investigationDate ? new Date(inv.investigationDate).toLocaleDateString('es-CO') : 'No especificada'}`, margin + 10);
+
+          // Status badge
+          const statusLabels: Record<string, string> = {
+            pendiente: 'Pendiente',
+            en_proceso: 'En Proceso',
+            completada: 'Completada'
+          };
+          doc.text(`Estado: ${statusLabels[inv.status] || inv.status}`, margin + 10);
+
+          if (inv.description) {
+            doc.moveDown(0.3);
+            doc.fontSize(8).font('Helvetica-Bold');
+            doc.text('Descripción:', margin + 10);
+            doc.font('Helvetica');
+            doc.text(inv.description.substring(0, 300) + (inv.description.length > 300 ? '...' : ''), margin + 20, doc.y, {
+              width: pageWidth - margin * 2 - 20
+            });
+          }
+
+          if (inv.immediateCauses) {
+            doc.moveDown(0.3);
+            doc.fontSize(8).font('Helvetica-Bold');
+            doc.text('Causas Inmediatas:', margin + 10);
+            doc.font('Helvetica');
+            doc.text(inv.immediateCauses.substring(0, 200) + (inv.immediateCauses.length > 200 ? '...' : ''), margin + 20, doc.y, {
+              width: pageWidth - margin * 2 - 20
+            });
+          }
+
+          if (inv.rootCause) {
+            doc.moveDown(0.3);
+            doc.fontSize(8).font('Helvetica-Bold');
+            doc.text('Causa Raíz:', margin + 10);
+            doc.font('Helvetica');
+            doc.text(inv.rootCause.substring(0, 200) + (inv.rootCause.length > 200 ? '...' : ''), margin + 20, doc.y, {
+              width: pageWidth - margin * 2 - 20
+            });
+          }
+
+          doc.moveDown(1);
+
+          // Separator between investigations
+          if (index < investigations.length - 1) {
+            doc.strokeColor('#cccccc').lineWidth(0.5)
+              .moveTo(margin, doc.y)
+              .lineTo(pageWidth - margin, doc.y)
+              .stroke();
+            doc.moveDown(0.5);
+          }
+        }
+      }
+
+      // Footer with signatures
+      addSignatureFooter(doc, signers, false);
+      doc.end();
+
+    } catch (error: any) {
+      console.error('Error generating investigations PDF:', error);
+      handlePdfError(error, res, 'investigations-pdf');
+    }
+  });
+
+    // PATCH /api/investigations/:id - Update investigation
   app.patch("/api/investigations/:id", requirePermission("accidents:edit"), async (req, res) => {
     try {
       const { id } = req.params;

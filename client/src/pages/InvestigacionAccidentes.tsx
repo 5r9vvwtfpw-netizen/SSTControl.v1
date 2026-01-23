@@ -264,6 +264,7 @@ export default function InvestigacionAccidentes() {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [editingInvestigation, setEditingInvestigation] = useState<AccidentInvestigation | null>(null);
   const [participantDialogOpen, setParticipantDialogOpen] = useState(false);
   const [findingDialogOpen, setFindingDialogOpen] = useState(false);
@@ -749,10 +750,12 @@ export default function InvestigacionAccidentes() {
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
+            onClick={handleExportPdf}
+            disabled={isExporting}
             data-testid="button-export-pdf"
           >
             <Download className="h-4 w-4 mr-2" />
-            Exportar PDF
+            {isExporting ? "Generando..." : "Exportar PDF"}
           </Button>
           <Button
             onClick={() => {
