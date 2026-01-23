@@ -4559,27 +4559,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.moveDown(0.3);
       doc.fillColor('#333').fontSize(10);
       
-      if (investigation.immediateActCauses && investigation.immediateActCauses.length > 0) {
+      if (investigation.immediateActCauses && Array.isArray(investigation.immediateActCauses) && investigation.immediateActCauses.length > 0) {
         doc.font('Helvetica-Bold').text('Causas Inmediatas - Actos Inseguros:');
-        investigation.immediateActCauses.forEach(c => doc.font('Helvetica').text(`  • ${c}`));
+        investigation.immediateActCauses.forEach(c => doc.font('Helvetica').text(`  • ${c || '-'}`));
         doc.moveDown(0.3);
       }
       
-      if (investigation.immediateConditionCauses && investigation.immediateConditionCauses.length > 0) {
+      if (investigation.immediateConditionCauses && Array.isArray(investigation.immediateConditionCauses) && investigation.immediateConditionCauses.length > 0) {
         doc.font('Helvetica-Bold').text('Causas Inmediatas - Condiciones Inseguras:');
-        investigation.immediateConditionCauses.forEach(c => doc.font('Helvetica').text(`  • ${c}`));
+        investigation.immediateConditionCauses.forEach(c => doc.font('Helvetica').text(`  • ${c || '-'}`));
         doc.moveDown(0.3);
       }
       
-      if (investigation.basicPersonalCauses && investigation.basicPersonalCauses.length > 0) {
+      if (investigation.basicPersonalCauses && Array.isArray(investigation.basicPersonalCauses) && investigation.basicPersonalCauses.length > 0) {
         doc.font('Helvetica-Bold').text('Causas Básicas - Factores Personales:');
-        investigation.basicPersonalCauses.forEach(c => doc.font('Helvetica').text(`  • ${c}`));
+        investigation.basicPersonalCauses.forEach(c => doc.font('Helvetica').text(`  • ${c || '-'}`));
         doc.moveDown(0.3);
       }
       
-      if (investigation.basicWorkCauses && investigation.basicWorkCauses.length > 0) {
+      if (investigation.basicWorkCauses && Array.isArray(investigation.basicWorkCauses) && investigation.basicWorkCauses.length > 0) {
         doc.font('Helvetica-Bold').text('Causas Básicas - Factores del Trabajo:');
-        investigation.basicWorkCauses.forEach(c => doc.font('Helvetica').text(`  • ${c}`));
+        investigation.basicWorkCauses.forEach(c => doc.font('Helvetica').text(`  • ${c || '-'}`));
         doc.moveDown(0.3);
       }
       
