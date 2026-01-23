@@ -13886,7 +13886,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .fillColor('#000000')
         .text('INFORMACIÓN GENERAL', margin, currentY);
       
-      currentY += 3;
+      currentY = doc.y + 5;
 
       const infoData = [
         { label: 'Trabajador:', value: worker.name },
@@ -13903,16 +13903,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .text(item.label, margin, currentY, { width: 120, continued: true })
           .font('Helvetica')
           .text(item.value, { width: pageWidth - margin - 170 });
-        currentY += 18;
+        currentY = doc.y + 4;
       }
 
       currentY += 4;
 
       // Afiliaciones
       doc.fontSize(9).font('Helvetica-Bold')
+        .fillColor('#000000')
         .text('AFILIACIONES', margin, currentY);
       
-      currentY += 3;
+      currentY = doc.y + 5;
 
       const afiliacionesData = [
         { label: 'EPS:', value: registro.eps || 'No especificada' },
@@ -13925,7 +13926,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .text(item.label, margin, currentY, { width: 120, continued: true })
           .font('Helvetica')
           .text(item.value, { width: pageWidth - margin - 170 });
-        currentY += 18;
+        currentY = doc.y + 4;
       }
 
       currentY += 6;
@@ -13942,7 +13943,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .fillColor('#1e7e34')
         .text('EVALUACIÓN SST', margin, currentY);
       
-      currentY += 3;
+      currentY = doc.y + 5;
 
       try {
         const evaluacionSst = JSON.parse(registro.evaluacionSst || '{}');
@@ -13975,7 +13976,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .fillColor(evaluacionSst[itemKey] ? '#1e7e34' : '#dc3545')
             .text(response, { width: pageWidth - margin - 430, align: 'right' });
           
-          currentY += 6;
+          currentY = doc.y + 3;
 
           if (currentY > doc.page.height - 100) {
             doc.addPage();
@@ -14005,7 +14006,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .fillColor('#1e7e34')
         .text('RECONOCIMIENTO DE LA SECCIÓN', margin, currentY);
       
-      currentY += 3;
+      currentY = doc.y + 5;
 
       try {
         const evaluacionSeccion = JSON.parse(registro.evaluacionSeccion || '{}');
@@ -14026,7 +14027,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .fillColor(evaluacionSeccion[itemKey] ? '#1e7e34' : '#dc3545')
             .text(response, { width: pageWidth - margin - 430, align: 'right' });
           
-          currentY += 6;
+          currentY = doc.y + 3;
         }
       } catch (e) {
         doc.fontSize(7).font('Helvetica')
@@ -14073,7 +14074,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .fillColor('#1e7e34')
         .text('CONOCIMIENTO EN MAQUINARIA Y EQUIPOS', margin, currentY);
       
-      currentY += 3;
+      currentY = doc.y + 5;
 
       try {
         const evaluacionMaquinas = JSON.parse(registro.evaluacionMaquinas || '{}');
@@ -14094,7 +14095,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .fillColor(evaluacionMaquinas[itemKey] ? '#1e7e34' : '#dc3545')
             .text(response, { width: pageWidth - margin - 430, align: 'right' });
           
-          currentY += 6;
+          currentY = doc.y + 3;
         }
       } catch (e) {
         doc.fontSize(7).font('Helvetica')
@@ -14117,14 +14118,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .fillColor('#000000')
         .text('EXPERIENCIA DEL TRABAJADOR', margin, currentY);
       
-      currentY += 3;
+      currentY = doc.y + 5;
 
       doc.fontSize(8).font('Helvetica-Bold')
         .text('¿Tiene experiencia previa en el cargo? ', margin, currentY, { continued: true })
         .font('Helvetica')
         .text(registro.tieneExperiencia ? 'Sí' : 'No');
       
-      currentY += 18;
+      currentY = doc.y + 4;
 
       if (registro.tieneExperiencia && registro.tiempoExperiencia) {
         doc.fontSize(8).font('Helvetica-Bold')
@@ -14132,13 +14133,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .font('Helvetica')
           .text(registro.tiempoExperiencia);
         
-        currentY += 18;
+        currentY = doc.y + 4;
       }
 
       if (registro.tieneExperiencia && registro.observacionesExperiencia) {
         doc.fontSize(8).font('Helvetica-Bold')
           .text('Observaciones:', margin, currentY);
-        currentY += 6;
+        currentY = doc.y + 3;
         
         doc.fontSize(7).font('Helvetica')
           .text(registro.observacionesExperiencia, margin, currentY, {
