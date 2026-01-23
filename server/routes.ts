@@ -19925,16 +19925,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       doc.strokeColor('#cccccc').lineWidth(1).moveTo(50, doc.y).lineTo(562, doc.y).stroke();
       doc.moveDown(0.2);
+      // Reset X position to margin and specify width for proper centering
       doc.fontSize(8).fillColor('#666666').text(
         'Este programa se elabora en cumplimiento del Decreto 1072 de 2015 (Artículos 2.2.4.6.8 y 2.2.4.6.11)\n' +
         'y la Resolución 0312 de 2019 del Ministerio del Trabajo.\n' +
         'Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST)',
-        { align: 'center' }
+        margin, doc.y, { width: pageWidth, align: 'center' }
       );
       doc.moveDown(0.1);
       doc.text(
         `Fecha de generación: ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}`,
-        { align: 'center' }
+        margin, doc.y, { width: pageWidth, align: 'center' }
       );
 
       // Add signature footer (ISO 45001:2018)
