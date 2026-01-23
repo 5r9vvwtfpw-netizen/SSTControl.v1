@@ -276,9 +276,9 @@ export function InspectionFormEnhanced({
 
       {showItemsList && verificationItems.length > 0 && (
         <div className="border rounded-md p-4 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <h4 className="font-medium text-sm">Ítems de Verificación ({stats.total})</h4>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Badge variant="outline" className="text-green-600 border-green-300">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
                 {stats.conforme} Conforme
@@ -292,6 +292,13 @@ export function InspectionFormEnhanced({
                 {stats.pending} Sin evaluar
               </Badge>
             </div>
+          </div>
+
+          <div className="bg-gray-100 dark:bg-gray-800 rounded-md px-3 py-2 text-xs text-muted-foreground flex items-center gap-4">
+            <Info className="h-4 w-4 shrink-0" />
+            <span>
+              <strong>C</strong> = Conforme (cumple el requisito) | <strong>NC</strong> = No Conforme (hallazgo/incumplimiento)
+            </span>
           </div>
           
           <div className="space-y-2 max-h-[250px] overflow-y-auto">
