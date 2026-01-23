@@ -15848,7 +15848,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         workers = workers.filter(w => w.name.toLowerCase().includes(name.toLowerCase()));
       }
       if (position && typeof position === 'string') {
-        workers = workers.filter(w => w.position.toLowerCase().includes(position.toLowerCase()));
+        workers = workers.filter(w => w.position && w.position.toLowerCase().includes(position.toLowerCase()));
       }
 
       // Get company info for the header
