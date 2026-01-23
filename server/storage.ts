@@ -364,6 +364,10 @@ import type {
   InsertDocumentAcknowledgment,
   CompanyExtraSeats,
   InsertCompanyExtraSeats,
+  HallazgoSistema,
+  InsertHallazgoSistema,
+  TrazabilidadObjetivos,
+  InsertTrazabilidadObjetivos,
 } from "@shared/schema";
 import { eq, desc, asc, and, or, lt, lte, gte, sql, inArray, isNotNull, isNull, count } from "drizzle-orm";
 import session from "express-session";
@@ -2010,6 +2014,28 @@ export interface IStorage {
   getPcaProgramByYear(year: number, companyId: string): Promise<PcaProgram | undefined>;
   createPcaProgram(program: InsertPcaProgram, companyId: string): Promise<PcaProgram>;
   updatePcaProgram(id: string, program: Partial<InsertPcaProgram>, companyId: string): Promise<PcaProgram | undefined>;
+
+  // Hallazgos del Sistema (Trazabilidad Integral SST)
+  getHallazgosSistema(companyId: string): Promise<HallazgoSistema[]>;
+  getHallazgoSistema(id: string, companyId: string): Promise<HallazgoSistema | undefined>;
+  createHallazgoSistema(hallazgo: InsertHallazgoSistema, companyId: string): Promise<HallazgoSistema>;
+  updateHallazgoSistema(id: string, hallazgo: Partial<InsertHallazgoSistema>, companyId: string): Promise<HallazgoSistema | undefined>;
+  deleteHallazgoSistema(id: string, companyId: string): Promise<void>;
+
+  // Trazabilidad de Objetivos SST
+  getTrazabilidadObjetivos(companyId: string, objetivoId?: string): Promise<TrazabilidadObjetivos[]>;
+  createTrazabilidadObjetivo(trazabilidad: InsertTrazabilidadObjetivos, companyId: string): Promise<TrazabilidadObjetivos>;
+  deleteTrazabilidadObjetivo(id: string, companyId: string): Promise<void>;
+
+  // Dashboard de Trazabilidad Integral SST
+  getDashboardTrazabilidad(companyId: string): Promise<{
+    hallazgosPorModulo: Record<string, number>;
+    hallazgosPorSeveridad: Record<string, number>;
+    hallazgosPorEstado: Record<string, number>;
+    objetivosConVinculaciones: number;
+    totalObjetivos: number;
+    porcentajeCumplimiento: number;
+  }>;
 }
 
 export class DbStorage implements IStorage {
@@ -16294,6 +16320,151 @@ export class DbStorage implements IStorage {
         status: 'active'
       });
     }
+  }
+
+  // ============================================================================
+  // TRAZABILIDAD INTEGRAL SST - Hallazgos del Sistema
+  // ============================================================================
+
+  async getHallazgosSistema(companyId: string): Promise<HallazgoSistema[]> {
+    return await db.select()
+      .from(schema.hallazgosSistema)
+      .where(eq(schema.hallazgosSistema.companyId, companyId))
+      .orderBy(desc(schema.hallazgosSistema.createdAt));
+  }
+
+  async getHallazgoSistema(id: string, companyId: string): Promise<HallazgoSistema | undefined> {
+    const [hallazgo] = await db.select()
+      .from(schema.hallazgosSistema)
+      .where(and(
+        eq(schema.hallazgosSistema.id, id),
+        eq(schema.hallazgosSistema.companyId, companyId)
+      ));
+    return hallazgo;
+  }
+
+  async createHallazgoSistema(hallazgo: InsertHallazgoSistema, companyId: string): Promise<HallazgoSistema> {
+    const [newHallazgo] = await db.insert(schema.hallazgosSistema)
+      .values({ ...hallazgo, companyId })
+      .returning();
+    return newHallazgo;
+  }
+
+  async updateHallazgoSistema(id: string, hallazgo: Partial<InsertHallazgoSistema>, companyId: string): Promise<HallazgoSistema | undefined> {
+    const [updated] = await db.update(schema.hallazgosSistema)
+      .set({ ...hallazgo, updatedAt: new Date() })
+      .where(and(
+        eq(schema.hallazgosSistema.id, id),
+        eq(schema.hallazgosSistema.companyId, companyId)
+      ))
+      .returning();
+    return updated;
+  }
+
+  async deleteHallazgoSistema(id: string, companyId: string): Promise<void> {
+    await db.delete(schema.hallazgosSistema)
+      .where(and(
+        eq(schema.hallazgosSistema.id, id),
+        eq(schema.hallazgosSistema.companyId, companyId)
+      ));
+  }
+
+  // ============================================================================
+  // TRAZABILIDAD INTEGRAL SST - Trazabilidad de Objetivos
+  // ============================================================================
+
+  async getTrazabilidadObjetivos(companyId: string, objetivoId?: string): Promise<TrazabilidadObjetivos[]> {
+    if (objetivoId) {
+      return await db.select()
+        .from(schema.trazabilidadObjetivos)
+        .where(and(
+          eq(schema.trazabilidadObjetivos.companyId, companyId),
+          eq(schema.trazabilidadObjetivos.objetivoSstId, objetivoId)
+        ))
+        .orderBy(desc(schema.trazabilidadObjetivos.createdAt));
+    }
+    return await db.select()
+      .from(schema.trazabilidadObjetivos)
+      .where(eq(schema.trazabilidadObjetivos.companyId, companyId))
+      .orderBy(desc(schema.trazabilidadObjetivos.createdAt));
+  }
+
+  async createTrazabilidadObjetivo(trazabilidad: InsertTrazabilidadObjetivos, companyId: string): Promise<TrazabilidadObjetivos> {
+    const [newTrazabilidad] = await db.insert(schema.trazabilidadObjetivos)
+      .values({ ...trazabilidad, companyId })
+      .returning();
+    return newTrazabilidad;
+  }
+
+  async deleteTrazabilidadObjetivo(id: string, companyId: string): Promise<void> {
+    await db.delete(schema.trazabilidadObjetivos)
+      .where(and(
+        eq(schema.trazabilidadObjetivos.id, id),
+        eq(schema.trazabilidadObjetivos.companyId, companyId)
+      ));
+  }
+
+  // ============================================================================
+  // TRAZABILIDAD INTEGRAL SST - Dashboard de Trazabilidad
+  // ============================================================================
+
+  async getDashboardTrazabilidad(companyId: string): Promise<{
+    hallazgosPorModulo: Record<string, number>;
+    hallazgosPorSeveridad: Record<string, number>;
+    hallazgosPorEstado: Record<string, number>;
+    objetivosConVinculaciones: number;
+    totalObjetivos: number;
+    porcentajeCumplimiento: number;
+  }> {
+    const hallazgos = await db.select()
+      .from(schema.hallazgosSistema)
+      .where(eq(schema.hallazgosSistema.companyId, companyId));
+
+    const hallazgosPorModulo: Record<string, number> = {};
+    const hallazgosPorSeveridad: Record<string, number> = {};
+    const hallazgosPorEstado: Record<string, number> = {};
+
+    let hallazgosCerrados = 0;
+    let hallazgosConObjetivo = 0;
+
+    for (const h of hallazgos) {
+      hallazgosPorModulo[h.moduloOrigen] = (hallazgosPorModulo[h.moduloOrigen] || 0) + 1;
+      hallazgosPorSeveridad[h.severidad] = (hallazgosPorSeveridad[h.severidad] || 0) + 1;
+      hallazgosPorEstado[h.estado] = (hallazgosPorEstado[h.estado] || 0) + 1;
+
+      if (h.estado === 'cerrado' || h.estado === 'verificado') {
+        hallazgosCerrados++;
+      }
+      if (h.objetivoSstId) {
+        hallazgosConObjetivo++;
+      }
+    }
+
+    const objetivos = await db.select()
+      .from(schema.objetivosSst)
+      .where(eq(schema.objetivosSst.companyId, companyId));
+
+    const totalObjetivos = objetivos.length;
+
+    const trazabilidades = await db.select()
+      .from(schema.trazabilidadObjetivos)
+      .where(eq(schema.trazabilidadObjetivos.companyId, companyId));
+
+    const objetivosIdsConVinculaciones = new Set(trazabilidades.map(t => t.objetivoSstId));
+    const objetivosConVinculaciones = objetivosIdsConVinculaciones.size;
+
+    const porcentajeCumplimiento = hallazgos.length > 0
+      ? Math.round((hallazgosCerrados / hallazgos.length) * 100)
+      : 100;
+
+    return {
+      hallazgosPorModulo,
+      hallazgosPorSeveridad,
+      hallazgosPorEstado,
+      objetivosConVinculaciones,
+      totalObjetivos,
+      porcentajeCumplimiento,
+    };
   }
 
   // ============================================================================
