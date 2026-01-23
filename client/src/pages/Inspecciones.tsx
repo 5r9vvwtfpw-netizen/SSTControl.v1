@@ -1,11 +1,10 @@
 import { InspectionCard } from "@/components/InspectionCard";
+import { InspectionFormEnhanced } from "@/components/InspectionFormEnhanced";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Filter, Bot } from "lucide-react";
+import { Plus, Search, Filter } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -14,7 +13,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { inspeccionesSstPredefinidas, getInspeccionByCodigo, categoriaInspeccionLabels } from "@/data/inspecciones-sst-predefinidas";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
@@ -57,16 +55,24 @@ export default function Inspecciones() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedPredefInspeccion, setSelectedPredefInspeccion] = useState<string>("");
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    companyId: string;
+    area: string;
+    inspector: string;
+    date: string;
+    findings: number | string;
+    compliance: number | string;
+    observations: string;
+    status: "pendiente" | "completada" | "requiere_accion";
+  }>({
     companyId: "",
     area: "",
     inspector: "",
     date: "",
-    findings: "" as number | string,
-    compliance: "" as number | string,
+    findings: "",
+    compliance: "",
     observations: "",
-    status: "pendiente" as const,
+    status: "pendiente",
   });
 
   const { data: inspections = [], isLoading: inspectionsLoading } = useQuery<Inspection[]>({
@@ -81,23 +87,6 @@ export default function Inspecciones() {
   const { data: workers } = useQuery<Worker[]>({
     queryKey: ["/api/workers"],
   });
-
-  const handleAutoFillFromPredefinido = (codigo: string) => {
-    const inspeccion = getInspeccionByCodigo(codigo);
-    if (!inspeccion) return;
-
-    setFormData({
-      ...formData,
-      area: inspeccion.area,
-      observations: inspeccion.descripcion,
-    });
-
-    toast({
-      title: "Campos auto-rellenados",
-      description: `Los campos se han rellenado con la inspección predefinida "${inspeccion.area}"`,
-      className: "bg-green-50 border-green-200",
-    });
-  };
 
   const createInspectionMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertInspectionSchema>) => {
@@ -154,8 +143,8 @@ export default function Inspecciones() {
       ...formData,
       findings: findingsValue,
       compliance: complianceValue,
-      observations: formData.observations || undefined,
-    });
+      observations: formData.observations || null,
+    } as any);
   };
 
   const filteredInspections = inspections.filter((inspection) => {
@@ -180,12 +169,7 @@ export default function Inspecciones() {
           <p className="text-muted-foreground">Auditorías y verificaciones de cumplimiento</p>
         </div>
         {user?.role && hasCompanyAdminAccess(user.role) && (
-          <Dialog open={dialogOpen} onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) {
-              setSelectedPredefInspeccion("");
-            }
-          }}>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button data-testid="button-add-inspection">
                 <Plus className="h-4 w-4 mr-2" />
@@ -195,162 +179,18 @@ export default function Inspecciones() {
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Registrar Nueva Inspección</DialogTitle>
-                <DialogDescription>Complete los datos de la inspección</DialogDescription>
+                <DialogDescription>Complete los datos de la inspección. El sistema calculará automáticamente hallazgos y cumplimiento.</DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
-                  <div className="flex items-start gap-3">
-                    <Bot className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                    <div className="flex-1 space-y-3">
-                      <div>
-                        <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Asistente Inteligente</p>
-                        <p className="text-xs text-blue-700 dark:text-blue-300">Seleccione una inspección predefinida para auto-rellenar los campos</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Select value={selectedPredefInspeccion} onValueChange={(value) => {
-                          setSelectedPredefInspeccion(value);
-                          handleAutoFillFromPredefinido(value);
-                        }}>
-                          <SelectTrigger className="flex-1 bg-white dark:bg-gray-950" data-testid="select-inspeccion-predefinida">
-                            <SelectValue placeholder="Seleccione una inspección predefinida..." />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[400px]">
-                            {Object.entries(categoriaInspeccionLabels).map(([categoria, label]) => (
-                              <div key={categoria}>
-                                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{label}</div>
-                                {inspeccionesSstPredefinidas.filter(i => i.categoria === categoria).map((insp) => (
-                                  <SelectItem key={insp.codigo} value={insp.codigo}>
-                                    {insp.codigo} - {insp.area}
-                                  </SelectItem>
-                                ))}
-                              </div>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  {isSuperadmin && (
-                    <div className="space-y-2 col-span-2">
-                      <Label htmlFor="companyId">Empresa *</Label>
-                      <Select
-                        value={formData.companyId}
-                        onValueChange={(value) => setFormData({ ...formData, companyId: value })}
-                      >
-                        <SelectTrigger id="companyId" data-testid="select-company">
-                          <SelectValue placeholder="Seleccione empresa" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {companies.map((company) => (
-                            <SelectItem key={company.id} value={company.id}>
-                              {company.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <Label htmlFor="area">Área Inspeccionada</Label>
-                    <Input
-                      id="area"
-                      value={formData.area}
-                      onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                      required
-                      placeholder="Ej: Planta de Producción"
-                      data-testid="input-area"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="inspector">Inspector</Label>
-                    <Select
-                      value={formData.inspector}
-                      onValueChange={(value) => setFormData({ ...formData, inspector: value })}
-                    >
-                      <SelectTrigger id="inspector" data-testid="select-inspector">
-                        <SelectValue placeholder="Seleccione un inspector" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {workers?.map((worker) => (
-                          <SelectItem key={worker.id} value={`${worker.name} - ${worker.position}`}>
-                            {worker.name} - {worker.position}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Fecha de Inspección</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      required
-                      data-testid="input-date"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="findings">Número de Hallazgos</Label>
-                    <Input
-                      id="findings"
-                      type="number"
-                      min="0"
-                      value={formData.findings}
-                      onChange={(e) => setFormData({ ...formData, findings: e.target.value === '' ? '' : e.target.value })}
-                      required
-                      data-testid="input-findings"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="compliance">Cumplimiento (%)</Label>
-                    <Input
-                      id="compliance"
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={formData.compliance}
-                      onChange={(e) => setFormData({ ...formData, compliance: e.target.value === '' ? '' : e.target.value })}
-                      required
-                      data-testid="input-compliance"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Estado</Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value: any) => setFormData({ ...formData, status: value })}
-                    >
-                      <SelectTrigger id="status" data-testid="select-status">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pendiente">Pendiente</SelectItem>
-                        <SelectItem value="aprobada">Aprobada</SelectItem>
-                        <SelectItem value="rechazada">Rechazada</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2 col-span-2">
-                    <Label htmlFor="observations">Observaciones (opcional)</Label>
-                    <Textarea
-                      id="observations"
-                      value={formData.observations}
-                      onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
-                      placeholder="Observaciones generales de la inspección"
-                      data-testid="input-observations"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit" disabled={createInspectionMutation.isPending} data-testid="button-submit-inspection">
-                    {createInspectionMutation.isPending ? "Guardando..." : "Guardar"}
-                  </Button>
-                </DialogFooter>
-              </form>
+              <InspectionFormEnhanced
+                formData={formData}
+                setFormData={setFormData}
+                onSubmit={handleSubmit}
+                isPending={createInspectionMutation.isPending}
+                isSuperadmin={isSuperadmin}
+                companies={companies}
+                workers={workers || []}
+                onCancel={() => setDialogOpen(false)}
+              />
             </DialogContent>
           </Dialog>
         )}
