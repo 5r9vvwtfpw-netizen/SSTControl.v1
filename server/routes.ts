@@ -41656,6 +41656,253 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   const { registerInformesEjecutivosRoutes } = await import("./routes-informes-ejecutivos");
   registerInformesEjecutivosRoutes(app);
 
+
+  // ========== TRAZABILIDAD INTEGRAL SST ==========
+  // Endpoints para el sistema de trazabilidad de hallazgos y vinculación de objetivos
+
+  // GET /api/hallazgos-sistema - Obtener todos los hallazgos del sistema
+  app.get('/api/hallazgos-sistema', requireAuth, async (req, res) => {
+    const user = req.user as User;
+    const effectiveCompanyId = user.role === 'superadmin' 
+      ? (req.query.companyId as string || user.companyId)
+      : user.companyId;
+    
+    if (!effectiveCompanyId) {
+      return res.status(400).json({ error: 'No company associated with user' });
+    }
+    
+    try {
+      const hallazgos = await storage.getHallazgosSistema(effectiveCompanyId);
+      res.json(hallazgos);
+    } catch (error: any) {
+      console.error('[GET /api/hallazgos-sistema] Error:', error.message);
+      res.status(500).json({ error: 'Error al obtener hallazgos del sistema' });
+    }
+  });
+
+  // GET /api/hallazgos-sistema/:id - Obtener un hallazgo específico
+  app.get('/api/hallazgos-sistema/:id', requireAuth, async (req, res) => {
+    const user = req.user as User;
+    const effectiveCompanyId = user.role === 'superadmin' 
+      ? (req.query.companyId as string || user.companyId)
+      : user.companyId;
+    
+    if (!effectiveCompanyId) {
+      return res.status(400).json({ error: 'No company associated with user' });
+    }
+    
+    try {
+      const hallazgo = await storage.getHallazgoSistema(req.params.id, effectiveCompanyId);
+      if (!hallazgo) {
+        return res.status(404).json({ error: 'Hallazgo no encontrado' });
+      }
+      res.json(hallazgo);
+    } catch (error: any) {
+      console.error('[GET /api/hallazgos-sistema/:id] Error:', error.message);
+      res.status(500).json({ error: 'Error al obtener hallazgo' });
+    }
+  });
+
+  // POST /api/hallazgos-sistema - Crear nuevo hallazgo
+  app.post('/api/hallazgos-sistema', requireAuth, async (req, res) => {
+    const user = req.user as User;
+    const effectiveCompanyId = user.role === 'superadmin' 
+      ? (req.body.companyId as string || user.companyId)
+      : user.companyId;
+    
+    if (!effectiveCompanyId) {
+      return res.status(400).json({ error: 'No company associated with user' });
+    }
+    
+    try {
+      // Generar código de hallazgo automático: HS-YYYY-NNNN
+      const year = new Date().getFullYear();
+      const existingHallazgos = await storage.getHallazgosSistema(effectiveCompanyId);
+      const yearHallazgos = existingHallazgos.filter(h => h.codigoHallazgo?.startsWith(`HS-${year}`));
+      const nextNumber = (yearHallazgos.length + 1).toString().padStart(4, '0');
+      const codigoHallazgo = `HS-${year}-${nextNumber}`;
+      
+      const hallazgoData = {
+        ...req.body,
+        codigoHallazgo,
+        responsableId: req.body.responsableId || user.id,
+        responsableNombre: req.body.responsableNombre || user.fullName || user.username,
+      };
+      
+      // Remove companyId from body if present (will be set by storage)
+      delete hallazgoData.companyId;
+      
+      const parsed = schema.insertHallazgoSistemaSchema.safeParse(hallazgoData);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          error: 'Datos inválidos', 
+          details: parsed.error.flatten().fieldErrors 
+        });
+      }
+      
+      const hallazgo = await storage.createHallazgoSistema(parsed.data, effectiveCompanyId);
+      res.status(201).json(hallazgo);
+    } catch (error: any) {
+      console.error('[POST /api/hallazgos-sistema] Error:', error.message);
+      res.status(500).json({ error: 'Error al crear hallazgo' });
+    }
+  });
+
+  // PATCH /api/hallazgos-sistema/:id - Actualizar hallazgo
+  app.patch('/api/hallazgos-sistema/:id', requireAuth, async (req, res) => {
+    const user = req.user as User;
+    const effectiveCompanyId = user.role === 'superadmin' 
+      ? (req.body.companyId as string || user.companyId)
+      : user.companyId;
+    
+    if (!effectiveCompanyId) {
+      return res.status(400).json({ error: 'No company associated with user' });
+    }
+    
+    try {
+      // Verify hallazgo exists and belongs to company
+      const existing = await storage.getHallazgoSistema(req.params.id, effectiveCompanyId);
+      if (!existing) {
+        return res.status(404).json({ error: 'Hallazgo no encontrado' });
+      }
+      
+      // Remove fields that shouldn't be updated
+      const updateData = { ...req.body };
+      delete updateData.id;
+      delete updateData.companyId;
+      delete updateData.codigoHallazgo;
+      delete updateData.createdAt;
+      
+      const hallazgo = await storage.updateHallazgoSistema(req.params.id, updateData, effectiveCompanyId);
+      res.json(hallazgo);
+    } catch (error: any) {
+      console.error('[PATCH /api/hallazgos-sistema/:id] Error:', error.message);
+      res.status(500).json({ error: 'Error al actualizar hallazgo' });
+    }
+  });
+
+  // DELETE /api/hallazgos-sistema/:id - Eliminar hallazgo
+  app.delete('/api/hallazgos-sistema/:id', requireAuth, async (req, res) => {
+    const user = req.user as User;
+    const effectiveCompanyId = user.role === 'superadmin' 
+      ? (req.query.companyId as string || user.companyId)
+      : user.companyId;
+    
+    if (!effectiveCompanyId) {
+      return res.status(400).json({ error: 'No company associated with user' });
+    }
+    
+    try {
+      // Verify hallazgo exists and belongs to company
+      const existing = await storage.getHallazgoSistema(req.params.id, effectiveCompanyId);
+      if (!existing) {
+        return res.status(404).json({ error: 'Hallazgo no encontrado' });
+      }
+      
+      await storage.deleteHallazgoSistema(req.params.id, effectiveCompanyId);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error('[DELETE /api/hallazgos-sistema/:id] Error:', error.message);
+      res.status(500).json({ error: 'Error al eliminar hallazgo' });
+    }
+  });
+
+  // GET /api/trazabilidad-objetivos - Obtener vinculaciones de objetivos
+  app.get('/api/trazabilidad-objetivos', requireAuth, async (req, res) => {
+    const user = req.user as User;
+    const effectiveCompanyId = user.role === 'superadmin' 
+      ? (req.query.companyId as string || user.companyId)
+      : user.companyId;
+    
+    if (!effectiveCompanyId) {
+      return res.status(400).json({ error: 'No company associated with user' });
+    }
+    
+    try {
+      const objetivoId = req.query.objetivoId as string | undefined;
+      const trazabilidad = await storage.getTrazabilidadObjetivos(effectiveCompanyId, objetivoId);
+      res.json(trazabilidad);
+    } catch (error: any) {
+      console.error('[GET /api/trazabilidad-objetivos] Error:', error.message);
+      res.status(500).json({ error: 'Error al obtener trazabilidad de objetivos' });
+    }
+  });
+
+  // POST /api/trazabilidad-objetivos - Crear vinculación objetivo-módulo
+  app.post('/api/trazabilidad-objetivos', requireAuth, async (req, res) => {
+    const user = req.user as User;
+    const effectiveCompanyId = user.role === 'superadmin' 
+      ? (req.body.companyId as string || user.companyId)
+      : user.companyId;
+    
+    if (!effectiveCompanyId) {
+      return res.status(400).json({ error: 'No company associated with user' });
+    }
+    
+    try {
+      const trazabilidadData = {
+        ...req.body,
+        vinculadoPor: user.id,
+      };
+      
+      // Remove companyId from body if present
+      delete trazabilidadData.companyId;
+      
+      const parsed = schema.insertTrazabilidadObjetivosSchema.safeParse(trazabilidadData);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          error: 'Datos inválidos', 
+          details: parsed.error.flatten().fieldErrors 
+        });
+      }
+      
+      const trazabilidad = await storage.createTrazabilidadObjetivo(parsed.data, effectiveCompanyId);
+      res.status(201).json(trazabilidad);
+    } catch (error: any) {
+      console.error('[POST /api/trazabilidad-objetivos] Error:', error.message);
+      res.status(500).json({ error: 'Error al crear vinculación de objetivo' });
+    }
+  });
+
+  // DELETE /api/trazabilidad-objetivos/:id - Eliminar vinculación
+  app.delete('/api/trazabilidad-objetivos/:id', requireAuth, async (req, res) => {
+    const user = req.user as User;
+    const effectiveCompanyId = user.role === 'superadmin' 
+      ? (req.query.companyId as string || user.companyId)
+      : user.companyId;
+    
+    if (!effectiveCompanyId) {
+      return res.status(400).json({ error: 'No company associated with user' });
+    }
+    
+    try {
+      await storage.deleteTrazabilidadObjetivo(req.params.id, effectiveCompanyId);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error('[DELETE /api/trazabilidad-objetivos/:id] Error:', error.message);
+      res.status(500).json({ error: 'Error al eliminar vinculación' });
+    }
+  });
+
+  // GET /api/dashboard-trazabilidad - Obtener estadísticas consolidadas
+  app.get('/api/dashboard-trazabilidad', requireAuth, async (req, res) => {
+    const user = req.user as User;
+    const effectiveCompanyId = user.role === 'superadmin' 
+      ? (req.query.companyId as string || user.companyId)
+      : user.companyId;
+    
+    if (!effectiveCompanyId) {
+      return res.status(400).json({ error: 'No company associated with user' });
+    }
+    
+    try {
+      const dashboard = await storage.getDashboardTrazabilidad(effectiveCompanyId);
+      res.json(dashboard);
+    } catch (error: any) {
+      console.error('[GET /api/dashboard-trazabilidad] Error:', error.message);
+      res.status(500).json({ error: 'Error al obtener dashboard de trazabilidad' });
+    }
+  });
   // ========== GLOBAL ERROR HANDLER ==========
   // Middleware global para interceptar errores no manejados y evitar exponer mensajes técnicos
   // Especialmente importante para errores de SSL/certificados en producción
