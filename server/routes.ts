@@ -2232,7 +2232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const drivers = await storage.getDrivers(companyId);
 
       // Get subscription info for chapter-based module restrictions (Resolución 0312/2019)
-      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       let subscriptionPlanSlug: string | null = null;
       if (subscription) {
         const plan = await storage.getSubscriptionPlan(subscription.planId);
@@ -5850,7 +5850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       // Obtener estado de suscripción para marca de agua
-      const furel_subscription = await storage.getSubscriptionByCompany(companyId);
+      const furel_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const furel_trialStatus = getTrialStatus(furel_subscription?.status || 'trial', furel_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, furel_trialStatus.requiresWatermark);
       const margin = 35;
@@ -6360,7 +6360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       // Obtener estado de suscripción para marca de agua
-      const sst_subscription = await storage.getSubscriptionByCompany(companyId);
+      const sst_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const sst_trialStatus = getTrialStatus(sst_subscription?.status || 'trial', sst_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, sst_trialStatus.requiresWatermark);
       const margin = 35;
@@ -9339,7 +9339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const desig_subscription = await storage.getSubscriptionByCompany(companyId);
+      const desig_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const desig_trialStatus = getTrialStatus(desig_subscription?.status || 'trial', desig_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, desig_trialStatus.requiresWatermark);
       // Set response headers
@@ -9606,7 +9606,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const budget_subscription = await storage.getSubscriptionByCompany(companyId);
+      const budget_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const budget_trialStatus = getTrialStatus(budget_subscription?.status || 'trial', budget_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, budget_trialStatus.requiresWatermark);
       const margin = 35;
@@ -9865,7 +9865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const resalloc_subscription = await storage.getSubscriptionByCompany(companyId);
+      const resalloc_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const resalloc_trialStatus = getTrialStatus(resalloc_subscription?.status || 'trial', resalloc_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, resalloc_trialStatus.requiresWatermark);
       const margin = 35;
@@ -10212,7 +10212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const workers_subscription = await storage.getSubscriptionByCompany(companyId);
+      const workers_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const workers_trialStatus = getTrialStatus(workers_subscription?.status || 'trial', workers_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, workers_trialStatus.requiresWatermark);
       const margin = 35;
@@ -10841,7 +10841,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
       
       // Add trial watermark if subscription is in trial period
-      const pdf10428_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf10428_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf10428_trialStatus = getTrialStatus(pdf10428_subscription?.status || 'trial', pdf10428_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf10428_trialStatus.requiresWatermark);
       const margin = 35;
@@ -10999,7 +10999,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
       
       // Add trial watermark if subscription is in trial period
-      const pdf10584_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf10584_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf10584_trialStatus = getTrialStatus(pdf10584_subscription?.status || 'trial', pdf10584_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf10584_trialStatus.requiresWatermark);
       const margin = 35;
@@ -11201,7 +11201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
       
       // Add trial watermark if subscription is in trial period
-      const pdf10784_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf10784_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf10784_trialStatus = getTrialStatus(pdf10784_subscription?.status || 'trial', pdf10784_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf10784_trialStatus.requiresWatermark);
       
@@ -11926,13 +11926,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get company logo and signers for standardized PDF
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(effectiveCompanyId, false);
       
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ size: 'LETTER', layout: 'landscape', margin: 50 });
       
       // Add trial watermark if subscription is in trial period
-      const pdf11509_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf11509_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf11509_trialStatus = getTrialStatus(pdf11509_subscription?.status || 'trial', pdf11509_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf11509_trialStatus.requiresWatermark);
       
@@ -12793,7 +12793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf12361_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf12361_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf12361_trialStatus = getTrialStatus(pdf12361_subscription?.status || 'trial', pdf12361_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf12361_trialStatus.requiresWatermark);
       const margin = 35;
@@ -13165,7 +13165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ size: 'letter', margin: 35 });
       
       // Add trial watermark if subscription is in trial period
-      const pdf12724_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf12724_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf12724_trialStatus = getTrialStatus(pdf12724_subscription?.status || 'trial', pdf12724_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf12724_trialStatus.requiresWatermark);
       const margin = 35;
@@ -13696,7 +13696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get company logo and signers for standardized PDF
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(effectiveCompanyId, false);
       
       const markdownPath = path.join(process.cwd(), 'docs', 'PROGRAMA_CAPACITACION_PREVENCION.md');
       
@@ -13713,7 +13713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Add trial watermark if subscription is in trial period
-      const doc_subscription = await storage.getSubscriptionByCompany(companyId);
+      const doc_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const doc_trialStatus = getTrialStatus(doc_subscription?.status || 'trial', doc_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, doc_trialStatus.requiresWatermark);
 
@@ -14034,7 +14034,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf13562_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf13562_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf13562_trialStatus = getTrialStatus(pdf13562_subscription?.status || 'trial', pdf13562_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf13562_trialStatus.requiresWatermark);
       const margin = 35;
@@ -14046,7 +14046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
       // Load company logo for PDF header
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(effectiveCompanyId, false);
 
       // Standard Header (ISO 45001:2018)
       await addStandardHeader({
@@ -15222,7 +15222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf14739_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf14739_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf14739_trialStatus = getTrialStatus(pdf14739_subscription?.status || 'trial', pdf14739_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf14739_trialStatus.requiresWatermark);
       const margin = 35;
@@ -15754,7 +15754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', layout: 'landscape' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf15243_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf15243_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf15243_trialStatus = getTrialStatus(pdf15243_subscription?.status || 'trial', pdf15243_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf15243_trialStatus.requiresWatermark);
 
@@ -16038,7 +16038,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 50 });
       
       // Add trial watermark if subscription is in trial period
-      const pdf15517_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf15517_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf15517_trialStatus = getTrialStatus(pdf15517_subscription?.status || 'trial', pdf15517_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf15517_trialStatus.requiresWatermark);
 
@@ -16231,7 +16231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Add trial watermark if subscription is in trial period
-      const idcard_subscription = await storage.getSubscriptionByCompany(companyId);
+      const idcard_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const idcard_trialStatus = getTrialStatus(idcard_subscription?.status || 'trial', idcard_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, idcard_trialStatus.requiresWatermark);
 
@@ -16475,7 +16475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 40, size: 'A4', bufferPages: true });
       
       // Add trial watermark if subscription is in trial period
-      const pdf15936_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf15936_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf15936_trialStatus = getTrialStatus(pdf15936_subscription?.status || 'trial', pdf15936_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf15936_trialStatus.requiresWatermark);
 
@@ -17124,7 +17124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf16565_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf16565_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf16565_trialStatus = getTrialStatus(pdf16565_subscription?.status || 'trial', pdf16565_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf16565_trialStatus.requiresWatermark);
         const margin = 35;
@@ -17138,7 +17138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
 
         // Get signers for standard footer
-        const signers = await getSignersForCompany(companyId, false);
+        const signers = await getSignersForCompany(effectiveCompanyId, false);
 
         // Standard Header with logo, version control, and signatures
         await addStandardHeader({
@@ -17366,7 +17366,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf16797_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf16797_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf16797_trialStatus = getTrialStatus(pdf16797_subscription?.status || 'trial', pdf16797_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf16797_trialStatus.requiresWatermark);
         const margin = 35;
@@ -17378,7 +17378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Load company logo and signers for standardized PDF
         const logoBuffer = await loadCompanyLogo(company?.logoUrl);
-        const signers = await getSignersForCompany(companyId, false);
+        const signers = await getSignersForCompany(effectiveCompanyId, false);
 
         // Standard Header (ISO 45001:2018)
         await addStandardHeader({
@@ -17576,9 +17576,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           doc.pipe(res);
 
           const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
-          const signers = await getSignersForCompany(companyId, false);
+          const signers = await getSignersForCompany(effectiveCompanyId, false);
 
-          const pdfInsp_subscription = await storage.getSubscriptionByCompany(companyId);
+          const pdfInsp_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
           const pdfInsp_trialStatus = getTrialStatus(pdfInsp_subscription?.status || 'trial', pdfInsp_subscription?.trialEnd || null, true, true);
           setupTrialWatermarkOnAllPages(doc, pdfInsp_trialStatus.requiresWatermark);
 
@@ -17741,7 +17741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf17021_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf17021_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf17021_trialStatus = getTrialStatus(pdf17021_subscription?.status || 'trial', pdf17021_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf17021_trialStatus.requiresWatermark);
         const margin = 35;
@@ -17755,7 +17755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
 
         // Get signers for standard footer
-        const signers = await getSignersForCompany(companyId, false);
+        const signers = await getSignersForCompany(effectiveCompanyId, false);
 
         // Standard Header with logo, version control, and signatures
         await addStandardHeader({
@@ -17966,7 +17966,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf17236_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf17236_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf17236_trialStatus = getTrialStatus(pdf17236_subscription?.status || 'trial', pdf17236_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf17236_trialStatus.requiresWatermark);
       const margin = 35;
@@ -17980,7 +17980,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
 
         // Get signers for standard footer
-        const signers = await getSignersForCompany(companyId, false);
+        const signers = await getSignersForCompany(effectiveCompanyId, false);
 
         // Standard Header
         let currentY = await addStandardHeader({
@@ -19397,7 +19397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf18615_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf18615_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf18615_trialStatus = getTrialStatus(pdf18615_subscription?.status || 'trial', pdf18615_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf18615_trialStatus.requiresWatermark);
       const margin = 35;
@@ -19599,7 +19599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf18821_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf18821_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf18821_trialStatus = getTrialStatus(pdf18821_subscription?.status || 'trial', pdf18821_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf18821_trialStatus.requiresWatermark);
       const margin = 35;
@@ -20033,12 +20033,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Load company logo and signers for standardized PDF
       const logoBuffer = await loadCompanyLogo(company?.logoUrl);
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(effectiveCompanyId, false);
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf19254_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf19254_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf19254_trialStatus = getTrialStatus(pdf19254_subscription?.status || 'trial', pdf19254_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf19254_trialStatus.requiresWatermark);
       const margin = 35;
@@ -20502,7 +20502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf19712_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf19712_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf19712_trialStatus = getTrialStatus(pdf19712_subscription?.status || 'trial', pdf19712_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf19712_trialStatus.requiresWatermark);
       const margin = 35;
@@ -20515,7 +20515,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Load logo and signers for standardized header
       const logo = await loadCompanyLogo(company?.logoUrl);
-      const signers = await getSignersForCompany(companyId, true);
+      const signers = await getSignersForCompany(effectiveCompanyId, true);
 
       // Add standard header with centralized PDF Standardizer service
       let currentY = await addStandardHeader({
@@ -20793,7 +20793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ size: 'letter', margins: { top: 25, bottom: 25, left: 25, right: 25 } });
       
       // Add trial watermark if subscription is in trial period
-      const pdf20005_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf20005_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf20005_trialStatus = getTrialStatus(pdf20005_subscription?.status || 'trial', pdf20005_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf20005_trialStatus.requiresWatermark);
       
@@ -23371,7 +23371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf22395_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf22395_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf22395_trialStatus = getTrialStatus(pdf22395_subscription?.status || 'trial', pdf22395_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf22395_trialStatus.requiresWatermark);
       const margin = 35;
@@ -23588,7 +23588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 40, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf22609_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf22609_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf22609_trialStatus = getTrialStatus(pdf22609_subscription?.status || 'trial', pdf22609_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf22609_trialStatus.requiresWatermark);
       const margin = 40;
@@ -24314,7 +24314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pdfChunks: Buffer[] = [];
       
       // Add trial watermark if subscription is in trial period
-      const pdf23305_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf23305_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf23305_trialStatus = getTrialStatus(pdf23305_subscription?.status || 'trial', pdf23305_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf23305_trialStatus.requiresWatermark);
       const margin = 35;
@@ -25702,7 +25702,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Add trial watermark if subscription is in trial period
-      const plantra_subscription = await storage.getSubscriptionByCompany(companyId);
+      const plantra_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const plantra_trialStatus = getTrialStatus(plantra_subscription?.status || 'trial', plantra_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, plantra_trialStatus.requiresWatermark);
       
@@ -28084,7 +28084,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Load company logo and signers for standardized PDF
       const logoBuffer = await loadCompanyLogo(company?.logoUrl || null);
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(effectiveCompanyId, false);
       
       // Obtener datos relacionados
       const evaluaciones = await storage.getEvaluacionesImpactoCambio(cambioId, companyId);
@@ -28097,7 +28097,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf27065_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf27065_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf27065_trialStatus = getTrialStatus(pdf27065_subscription?.status || 'trial', pdf27065_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf27065_trialStatus.requiresWatermark);
       const margin = 35;
@@ -28337,7 +28337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf27300_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf27300_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf27300_trialStatus = getTrialStatus(pdf27300_subscription?.status || 'trial', pdf27300_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf27300_trialStatus.requiresWatermark);
       const margin = 35;
@@ -28526,7 +28526,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf27472_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf27472_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf27472_trialStatus = getTrialStatus(pdf27472_subscription?.status || 'trial', pdf27472_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf27472_trialStatus.requiresWatermark);
       const margin = 35;
@@ -28744,7 +28744,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf27704_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf27704_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf27704_trialStatus = getTrialStatus(pdf27704_subscription?.status || 'trial', pdf27704_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf27704_trialStatus.requiresWatermark);
       const margin = 35;
@@ -28997,7 +28997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf27942_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf27942_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf27942_trialStatus = getTrialStatus(pdf27942_subscription?.status || 'trial', pdf27942_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf27942_trialStatus.requiresWatermark);
       const margin = 35;
@@ -29258,7 +29258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf28184_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf28184_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf28184_trialStatus = getTrialStatus(pdf28184_subscription?.status || 'trial', pdf28184_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf28184_trialStatus.requiresWatermark);
       const margin = 35;
@@ -29434,7 +29434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf28364_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf28364_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf28364_trialStatus = getTrialStatus(pdf28364_subscription?.status || 'trial', pdf28364_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf28364_trialStatus.requiresWatermark);
       const margin = 35;
@@ -29565,7 +29565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
       
       // Add trial watermark if subscription is in trial period
-      const pdf28494_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf28494_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf28494_trialStatus = getTrialStatus(pdf28494_subscription?.status || 'trial', pdf28494_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf28494_trialStatus.requiresWatermark);
       const margin = 35;
@@ -29681,7 +29681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
       
       // Add trial watermark if subscription is in trial period
-      const pdf28609_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf28609_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf28609_trialStatus = getTrialStatus(pdf28609_subscription?.status || 'trial', pdf28609_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf28609_trialStatus.requiresWatermark);
       const margin = 35;
@@ -29866,7 +29866,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
       
       // Add trial watermark if subscription is in trial period
-      const pdf28793_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf28793_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf28793_trialStatus = getTrialStatus(pdf28793_subscription?.status || 'trial', pdf28793_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf28793_trialStatus.requiresWatermark);
       res.setHeader('Content-Type', 'application/pdf');
@@ -30816,13 +30816,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Load company logo and signers
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(effectiveCompanyId, false);
 
       // Create PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
       
       // Add trial watermark if subscription is in trial period
-      const pdf29754_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf29754_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf29754_trialStatus = getTrialStatus(pdf29754_subscription?.status || 'trial', pdf29754_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf29754_trialStatus.requiresWatermark);
       res.setHeader('Content-Type', 'application/pdf');
@@ -39050,7 +39050,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
       
       // Add trial watermark if subscription is in trial period
-      const pdf37907_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf37907_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf37907_trialStatus = getTrialStatus(pdf37907_subscription?.status || 'trial', pdf37907_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf37907_trialStatus.requiresWatermark);
       const margin = 35;
@@ -39225,7 +39225,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
       
       // Add trial watermark if subscription is in trial period
-      const pdf38083_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf38083_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf38083_trialStatus = getTrialStatus(pdf38083_subscription?.status || 'trial', pdf38083_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf38083_trialStatus.requiresWatermark);
       const margin = 35;
@@ -39237,7 +39237,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       // Preload company logo and signers from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(effectiveCompanyId, false);
       
       const contentStartY = await addStandardHeader({
         doc,
@@ -39424,7 +39424,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
       
       // Add trial watermark if subscription is in trial period
-      const pdf38278_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf38278_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf38278_trialStatus = getTrialStatus(pdf38278_subscription?.status || 'trial', pdf38278_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf38278_trialStatus.requiresWatermark);
       const margin = 35;
@@ -39436,7 +39436,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       // Preload company logo and signers from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(effectiveCompanyId, false);
       
       const contentStartY = await addStandardHeader({
         doc,
@@ -39819,7 +39819,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const doc = new PDFDocument({ size: 'LETTER', margin: 35, bufferPages: true });
       
       // Add trial watermark if subscription is in trial period
-      const pdf38664_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf38664_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf38664_trialStatus = getTrialStatus(pdf38664_subscription?.status || 'trial', pdf38664_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf38664_trialStatus.requiresWatermark);
       res.setHeader('Content-Type', 'application/pdf');
@@ -39830,7 +39830,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - 2 * margin;
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(effectiveCompanyId, false);
 
       let currentY = await addStandardHeader({
         doc,
@@ -40162,7 +40162,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
       // Obtener estado de suscripción para marca de agua
-      const programs_subscription = await storage.getSubscriptionByCompany(companyId);
+      const programs_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const programs_trialStatus = getTrialStatus(programs_subscription?.status || 'trial', programs_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, programs_trialStatus.requiresWatermark);
       res.setHeader('Content-Type', 'application/pdf');
@@ -40244,7 +40244,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
       // Obtener estado de suscripción para marca de agua
-      const activities_subscription = await storage.getSubscriptionByCompany(companyId);
+      const activities_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const activities_trialStatus = getTrialStatus(activities_subscription?.status || 'trial', activities_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, activities_trialStatus.requiresWatermark);
       res.setHeader('Content-Type', 'application/pdf');
@@ -40329,7 +40329,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
       // Obtener estado de suscripción para marca de agua
-      const controls_subscription = await storage.getSubscriptionByCompany(companyId);
+      const controls_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const controls_trialStatus = getTrialStatus(controls_subscription?.status || 'trial', controls_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, controls_trialStatus.requiresWatermark);
       res.setHeader('Content-Type', 'application/pdf');
@@ -40407,7 +40407,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
       // Obtener estado de suscripción para marca de agua
-      const incidents_subscription = await storage.getSubscriptionByCompany(companyId);
+      const incidents_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const incidents_trialStatus = getTrialStatus(incidents_subscription?.status || 'trial', incidents_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, incidents_trialStatus.requiresWatermark);
       res.setHeader('Content-Type', 'application/pdf');
@@ -40493,7 +40493,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const signers = await getSignersForCompany(companyId);
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
-      const followups_subscription = await storage.getSubscriptionByCompany(companyId);
+      const followups_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const followups_trialStatus = getTrialStatus(followups_subscription?.status || 'trial', followups_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, followups_trialStatus.requiresWatermark);
       res.setHeader('Content-Type', 'application/pdf');
@@ -40649,7 +40649,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const signers = await getSignersForCompany(companyId);
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
-      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
       res.setHeader('Content-Type', 'application/pdf');
@@ -41487,7 +41487,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const doc = new PDFDocument({ size: 'LETTER', margin: 40 });
       
       // Add trial watermark if subscription is in trial period
-      const pdf40263_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf40263_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf40263_trialStatus = getTrialStatus(pdf40263_subscription?.status || 'trial', pdf40263_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf40263_trialStatus.requiresWatermark);
       
