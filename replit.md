@@ -12,6 +12,23 @@ I prefer simple language and clear explanations. I want iterative development wi
 
 ## Recent Changes
 
+### January 23, 2026 - Standard 4.2.3 Verification Module
+
+**New Component Created (Following Add-Only Principle):**
+
+7. **`client/src/components/Estandar423VerificacionProcedimientos.tsx`**
+   - Verification module for Standard 4.2.3: Procedures, instructional manuals, technical safety sheets (FDS/MSDS), and SST protocols
+   - Document checklist with categories: Work procedures, operational instructions, safety data sheets, SST protocols
+   - Verification criteria per Decreto 1072/2015 Art. 2.2.4.6.24
+   - Normative references: Decreto 1072/2015, Resolución 0312/2019, Decreto 1496/2018 (SGA/GHS), Resolución 0773/2021, Resolución 0491/2020
+   - Evidence tracking for worker document delivery support
+   - Navigation buttons to related modules (Documents, Training, Workers, IPERC)
+   - Integrated into DetalleEvaluacionSst.tsx dialog for Standard 4.2.3 evaluation
+
+**Integration:**
+- Component automatically renders in the SST evaluation dialog when Standard 4.2.3 is selected
+- Import: `import { Estandar423VerificacionProcedimientos } from "@/components/Estandar423VerificacionProcedimientos"`
+
 ### January 22, 2026 - Error Corrections Phase (8 Issues Resolved)
 
 **New Components Created (Following Add-Only Principle):**

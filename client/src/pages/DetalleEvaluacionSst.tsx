@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { MinisterioFechasCard } from "@/components/MinisterioFechasCard";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useCompanyContext } from "@/hooks/use-company-context";
+import { Estandar423VerificacionProcedimientos } from "@/components/Estandar423VerificacionProcedimientos";
 
 export default function DetalleEvaluacionSst() {
   const { id } = useParams();
@@ -4395,6 +4396,15 @@ export default function DetalleEvaluacionSst() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Estándar 4.2.3 - Procedimientos, instructivos, fichas técnicas y protocolos SST */}
+          {selectedEstandar?.numeroEstandar === "4.2.3" && (
+            <div className="mb-4">
+              <Estandar423VerificacionProcedimientos 
+                isVisible={true}
+              />
             </div>
           )}
           
