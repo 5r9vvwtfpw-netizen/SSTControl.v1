@@ -5445,6 +5445,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+  // PATCH /api/inspections/:id - Update an inspection
+  app.patch("/api/inspections/:id", requirePermission("inspections:edit"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const inspectionId = req.params.id;
+      
+      let companyId: string;
+      
+      if (isAdmin) {
+        const existingInspection = await storage.getInspectionById(inspectionId);
+        if (!existingInspection) {
+          return res.status(404).json({ error: "Inspección no encontrada" });
+        }
+        companyId = existingInspection.companyId;
+      } else {
+        if (!userCompanyId) {
+          return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+        }
+        companyId = userCompanyId;
+      }
+      
+      const updated = await storage.updateInspection(inspectionId, req.body, companyId);
+      if (!updated) {
+        return res.status(404).json({ error: "Inspección no encontrada" });
+      }
+      res.json(updated);
+    } catch (error: any) {
+      console.error("[Inspections PATCH] Error:", error);
+      res.status(400).json({ error: error.message || "Error al actualizar inspección" });
+    }
+  });
+
   // Inspections-IPERC linkage routes (HACER phase)
   
   // GET /api/inspections/:id/peligros - List hazards linked to an inspection

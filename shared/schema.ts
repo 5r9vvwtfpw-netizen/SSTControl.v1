@@ -714,11 +714,11 @@ export const insertInspectionSchema = createInsertSchema(inspections)
   .omit({ id: true, createdAt: true })
   .extend({
     area: z.string().min(1, "El área de inspección es obligatoria"),
-    inspector: z.string().min(1, "El nombre del inspector es obligatorio"),
+    inspector: z.string().optional().default(""),
     date: z.string().min(1, "La fecha de inspección es obligatoria"),
     findings: z.coerce.number().min(0, "El número de hallazgos es obligatorio"),
     compliance: z.coerce.number().min(0, "El porcentaje de cumplimiento es obligatorio").max(100, "El porcentaje no puede ser mayor a 100"),
-    observations: z.string().min(1, "Las observaciones son obligatorias"),
+    observations: z.string().optional().default(""),
   });
 export type InsertInspection = z.infer<typeof insertInspectionSchema>;
 export type Inspection = typeof inspections.$inferSelect;
@@ -1095,7 +1095,7 @@ export const insertVehicleInspectionSchema = createInsertSchema(vehicleInspectio
   .omit({ id: true, createdAt: true })
   .extend({
     vehicleId: z.string().min(1, "Debe seleccionar un vehículo"),
-    inspector: z.string().min(1, "El nombre del inspector es obligatorio"),
+    inspector: z.string().optional().default(""),
   });
 export type InsertVehicleInspection = z.infer<typeof insertVehicleInspectionSchema>;
 export type VehicleInspection = typeof vehicleInspections.$inferSelect;
