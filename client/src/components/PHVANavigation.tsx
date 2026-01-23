@@ -123,6 +123,12 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
         { label: "Panel VERIFICAR - Indicadores", path: "/dashboard-verificar" },
       ],
     },
+    {
+      title: "Trazabilidad",
+      items: [
+        { label: "Trazabilidad Integral", path: "/trazabilidad-integral" },
+      ],
+    },
   ],
   actuar: [
     {

@@ -138,6 +138,7 @@ import PartesInteresadas from "@/pages/PartesInteresadas";
 import AnalisisContexto from "@/pages/AnalisisContexto";
 import PlanMejoramientoContexto from "@/pages/PlanMejoramientoContexto";
 import DirectorioProfesionales from "@/pages/DirectorioProfesionales";
+import TrazabilidadIntegralPage from "@/pages/TrazabilidadIntegralPage";
 import { ChapterGate } from "@/components/ChapterGate";
 import { TrialAlert } from "@/components/TrialAlert";
 
@@ -240,6 +241,7 @@ function Router() {
       <ProtectedRoute path="/partes-interesadas" component={PartesInteresadas} />
       <ProtectedRoute path="/analisis-contexto" component={AnalisisContexto} />
       <ProtectedRoute path="/plan-mejoramiento-contexto" component={PlanMejoramientoContexto} />
+      <ProtectedRoute path="/trazabilidad-integral" component={TrazabilidadIntegralPage} />
       <ProtectedRoute path="/portal-empleados" component={PortalEmpleados} />
       <ProtectedRoute path="/informes" component={Informes} />
       <ProtectedRoute path="/solicitudes-arco" component={SolicitudesArco} />

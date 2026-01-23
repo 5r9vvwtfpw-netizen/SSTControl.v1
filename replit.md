@@ -50,9 +50,11 @@ I prefer simple language and clear explanations. I want iterative development wi
    - Recent actions timeline
    - Standard signature footer
 
-**Integration Instructions:**
-- Import component: `import { TrazabilidadIntegral } from "@/components/TrazabilidadIntegral"`
-- Generate PDF: `GET /api/reports/trazabilidad` or `GET /api/reports/trazabilidad-integral`
+**Integration Complete:**
+- Page: `client/src/pages/TrazabilidadIntegralPage.tsx`
+- Route: `/trazabilidad-integral` (App.tsx)
+- Navigation: Menu PHVA > Verificar > Trazabilidad > "Trazabilidad Integral"
+- PDF Report: `GET /api/reports/trazabilidad` or `GET /api/reports/trazabilidad-integral`
 
 ### January 22, 2026 - Error Corrections Phase (8 Issues Resolved)
 
