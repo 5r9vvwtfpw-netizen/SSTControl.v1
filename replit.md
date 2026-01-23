@@ -12,49 +12,35 @@ I prefer simple language and clear explanations. I want iterative development wi
 
 ## Recent Changes
 
-### January 23, 2026 - Sistema de Trazabilidad Integral SST
+### January 23, 2026 - Sistema de Trazabilidad Integral SST (Interno)
 
-**New Traceability System (Following Add-Only Principle):**
+**Traceability System Architecture (Following Add-Only Principle):**
 
-1. **Database Schema (`shared/schema.ts`)**
-   - `origenModuloEnum`: 17 module origins (evaluacion_0312, auditoria_interna, inspeccion, investigacion_accidente, matriz_iperc, medicion_ambiental, capacitacion, examen_medico, entrega_epp, copasst, revision_direccion, plan_emergencias, sve, pesv, gestion_proveedores, contexto_organizacion, otro)
-   - `severidadHallazgoEnum`: baja, media, alta, critica, observacion
-   - `estadoHallazgoEnum`: abierto, en_tratamiento, cerrado, verificado
-   - `hallazgosSistema` table: Central findings tracking with auto-generated tracking codes (HS-YYYY-NNNN)
-   - `trazabilidadObjetivos` table: Links SST objectives to any module record
+The traceability system is **internal and transversal** - it does NOT appear as a separate module in the navigation menu. This preserves the structure of Resolución 0312/2019 without alteration.
 
-2. **Storage Functions (`server/storage.ts`)**
-   - CRUD operations for `hallazgosSistema`
-   - CRUD operations for `trazabilidadObjetivos`
-   - `getDashboardTrazabilidad()`: Consolidated statistics
+**How Traceability Works:**
 
-3. **API Endpoints (`server/routes.ts`)**
+1. **PHVA Panels (Natural Traceability)**:
+   - **Panel PLANEAR**: Evaluation findings, objectives planning
+   - **Panel HACER**: Inspection findings, operational controls, EPP delivery
+   - **Panel VERIFICAR**: Audit findings by severity, objectives compliance, 0312/2019 compliance
+   - **Panel ACTUAR**: Corrective actions status, efficacy, priorities
+
+2. **Database Infrastructure (Internal Use)**:
+   - `hallazgosSistema` table: Central findings tracking with codes (HS-YYYY-NNNN)
+   - `trazabilidadObjetivos` table: Links SST objectives to module records
+   - Available for PDF reports and future integrations
+
+3. **API Endpoints (Internal)**:
    - `GET/POST/PATCH/DELETE /api/hallazgos-sistema`
    - `GET/POST/DELETE /api/trazabilidad-objetivos`
    - `GET /api/dashboard-trazabilidad`
 
-4. **Frontend Component (`client/src/components/TrazabilidadIntegral.tsx`)**
-   - Dashboard with status cards (abierto, en_tratamiento, cerrado, verificado)
-   - Severity cards (baja, media, alta, crítica)
-   - Bar chart by module origin using Recharts
-   - Filterable findings table (by status, severity, module, date range)
-   - Create/Edit dialog with form validation
-   - Objectives linkage section
+4. **PDF Reports**:
+   - Consolidated traceability report: `GET /api/reports/trazabilidad`
+   - Shows findings by module, objectives linkage, actions timeline
 
-5. **PDF Report (`server/routes.ts` - reportType: "trazabilidad" or "trazabilidad-integral")**
-   - Corporate header with company logo
-   - Executive summary with statistics
-   - Findings by module table
-   - Critical/High severity open findings detail
-   - SST objectives linkage
-   - Recent actions timeline
-   - Standard signature footer
-
-**Integration Complete:**
-- Page: `client/src/pages/TrazabilidadIntegralPage.tsx`
-- Route: `/trazabilidad-integral` (App.tsx)
-- Navigation: Menu PHVA > Planear > Gestión Integral > "Trazabilidad Integral"
-- PDF Report: `GET /api/reports/trazabilidad` or `GET /api/reports/trazabilidad-integral`
+**Architecture Decision**: Traceability is embedded in existing PHVA panels rather than as a standalone module. This aligns with Colombian regulations (Resolución 0312/2019, Decreto 1072/2015) which require traceability but do not define it as a separate "module".
 
 ### January 22, 2026 - Error Corrections Phase (8 Issues Resolved)
 
