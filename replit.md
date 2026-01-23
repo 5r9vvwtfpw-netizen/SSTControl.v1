@@ -12,36 +12,6 @@ I prefer simple language and clear explanations. I want iterative development wi
 
 ## Recent Changes
 
-### January 23, 2026 - Sistema de Trazabilidad Integral SST (Interno)
-
-**Traceability System Architecture (Following Add-Only Principle):**
-
-The traceability system is **internal and transversal** - it does NOT appear as a separate module in the navigation menu. This preserves the structure of Resolución 0312/2019 without alteration.
-
-**How Traceability Works:**
-
-1. **PHVA Panels (Natural Traceability)**:
-   - **Panel PLANEAR**: Evaluation findings, objectives planning
-   - **Panel HACER**: Inspection findings, operational controls, EPP delivery
-   - **Panel VERIFICAR**: Audit findings by severity, objectives compliance, 0312/2019 compliance
-   - **Panel ACTUAR**: Corrective actions status, efficacy, priorities
-
-2. **Database Infrastructure (Internal Use)**:
-   - `hallazgosSistema` table: Central findings tracking with codes (HS-YYYY-NNNN)
-   - `trazabilidadObjetivos` table: Links SST objectives to module records
-   - Available for PDF reports and future integrations
-
-3. **API Endpoints (Internal)**:
-   - `GET/POST/PATCH/DELETE /api/hallazgos-sistema`
-   - `GET/POST/DELETE /api/trazabilidad-objetivos`
-   - `GET /api/dashboard-trazabilidad`
-
-4. **PDF Reports**:
-   - Consolidated traceability report: `GET /api/reports/trazabilidad`
-   - Shows findings by module, objectives linkage, actions timeline
-
-**Architecture Decision**: Traceability is embedded in existing PHVA panels rather than as a standalone module. This aligns with Colombian regulations (Resolución 0312/2019, Decreto 1072/2015) which require traceability but do not define it as a separate "module".
-
 ### January 22, 2026 - Error Corrections Phase (8 Issues Resolved)
 
 **New Components Created (Following Add-Only Principle):**
