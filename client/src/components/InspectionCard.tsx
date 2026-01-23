@@ -34,7 +34,8 @@ export function InspectionCard({
   onPrint,
   showActions = true
 }: InspectionCardProps) {
-  const StatusIcon = statusConfig[status].icon;
+  const config = statusConfig[status] || statusConfig.pendiente;
+  const StatusIcon = config.icon;
   const complianceColor = compliance >= 90 ? "text-chart-2" : compliance >= 70 ? "text-chart-3" : "text-chart-4";
 
   return (
@@ -42,9 +43,9 @@ export function InspectionCard({
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-base">{area}</CardTitle>
-          <Badge variant={statusConfig[status].variant} data-testid={`badge-status-${id}`}>
+          <Badge variant={config.variant} data-testid={`badge-status-${id}`}>
             <StatusIcon className="h-3 w-3 mr-1" />
-            {statusConfig[status].label}
+            {config.label}
           </Badge>
         </div>
       </CardHeader>
