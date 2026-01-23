@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, FileText, BarChart3, TrendingUp, Calendar, Users, Building2, AlertCircle, ArrowLeft, ClipboardCheck, Target, Shield, Activity, Briefcase, CheckCircle2 } from "lucide-react";
+import { Download, FileText, BarChart3, TrendingUp, Calendar, Users, Building2, AlertCircle, ArrowLeft, ClipboardCheck, Target, Shield, Activity, Briefcase, CheckCircle2, CalendarDays } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -294,6 +294,40 @@ export default function Informes() {
         </div>
       </div>
 
+      {/* Cronograma de Actividades - Estándar 2.6.1 */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-foreground">Planificación Anual</h2>
+          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Estándar 2.6.1</Badge>
+        </div>
+        <Card className="hover-elevate border-green-200 dark:border-green-800">
+          <CardHeader>
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                <CalendarDays className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-lg">Cronograma de Actividades SST</CardTitle>
+                <CardDescription>Plan de trabajo anual con actividades, responsables y fechas de ejecución</CardDescription>
+                <p className="text-xs text-muted-foreground mt-1">Resolución 0312/2019 Art. 16 - Estándar 2.6.1</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              className="w-full" 
+              variant="outline"
+              asChild
+              data-testid="button-go-cronograma"
+            >
+              <Link href="/cronograma">
+                <CalendarDays className="h-4 w-4 mr-2" />
+                Ir al Cronograma de Actividades
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       {selectedReport && (
         <Card className="border-primary">
