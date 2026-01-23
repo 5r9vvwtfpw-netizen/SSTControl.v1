@@ -9002,27 +9002,27 @@ export class DbStorage implements IStorage {
 
     // ========== CUMPLIMIENTO NORMATIVO ==========
     // Get the latest evaluation regardless of status (shows current progress)
+    // Using evaluacionesSst table (the correct table with real data)
     const lastEvaluation = await db.select()
-      .from(schema.sstEvaluations)
-      .where(eq(schema.sstEvaluations.companyId, companyId))
-      .orderBy(desc(schema.sstEvaluations.evaluationDate))
+      .from(schema.evaluacionesSst)
+      .where(eq(schema.evaluacionesSst.companyId, companyId))
+      .orderBy(desc(schema.evaluacionesSst.fechaEvaluacion))
       .limit(1);
 
-    const evaluationItems = lastEvaluation.length > 0
+    // Get respuestas from the correct table
+    const evaluationResponses = lastEvaluation.length > 0
       ? await db.select()
-          .from(schema.sstEvaluationItems)
-          .where(eq(schema.sstEvaluationItems.evaluationId, lastEvaluation[0].id))
+          .from(schema.respuestasEstandares)
+          .where(eq(schema.respuestasEstandares.evaluacionId, lastEvaluation[0].id))
       : [];
 
     const cumplimientoNormativo = {
-      ultimaEvaluacion: lastEvaluation.length > 0 ? lastEvaluation[0].compliancePercentage : null,
+      ultimaEvaluacion: lastEvaluation.length > 0 ? lastEvaluation[0].porcentajeCumplimiento : null,
       fechaUltimaEvaluacion: lastEvaluation.length > 0 
-        ? lastEvaluation[0].evaluationDate || null
+        ? lastEvaluation[0].fechaEvaluacion?.toISOString().split('T')[0] || null
         : null,
-      estandaresCriticos: evaluationItems.filter(item => item.score === 0).length,
-      estandaresCumplidos: evaluationItems.filter(item => 
-        item.score !== null && item.score > 0
-      ).length
+      estandaresCriticos: evaluationResponses.filter((item: any) => item.cumple === 0).length,
+      estandaresCumplidos: evaluationResponses.filter((item: any) => item.cumple === 1).length
     };
 
     // ========== ACCIDENTALIDAD ==========
