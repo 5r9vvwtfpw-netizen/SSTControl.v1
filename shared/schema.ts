@@ -512,7 +512,7 @@ export const trainingAttendees = pgTable("training_attendees", {
 });
 
 // Inspections table
-export const inspectionStatusEnum = pgEnum("inspection_status", ["pendiente", "completada", "requiere_accion"]);
+export const inspectionStatusEnum = pgEnum("inspection_status", ["aprobada", "pendiente", "rechazada"]);
 
 export const inspections = pgTable("inspections", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
