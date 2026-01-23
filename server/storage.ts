@@ -9001,12 +9001,10 @@ export class DbStorage implements IStorage {
     };
 
     // ========== CUMPLIMIENTO NORMATIVO ==========
+    // Get the latest evaluation regardless of status (shows current progress)
     const lastEvaluation = await db.select()
       .from(schema.sstEvaluations)
-      .where(and(
-        eq(schema.sstEvaluations.companyId, companyId),
-        eq(schema.sstEvaluations.status, 'completada')
-      ))
+      .where(eq(schema.sstEvaluations.companyId, companyId))
       .orderBy(desc(schema.sstEvaluations.evaluationDate))
       .limit(1);
 
