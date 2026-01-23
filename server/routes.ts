@@ -858,6 +858,8 @@ function checkPageSpace(doc: any, neededHeight: number, footerMargin: number = 8
   const maxY = doc.page.height - footerMargin;
   if (doc.y + neededHeight > maxY) {
     doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
   }
   return doc.y;
 }
@@ -874,6 +876,8 @@ function checkSignatureSpace(doc: any, signatureHeight: number = 150): number {
   const maxY = doc.page.height - footerMargin;
   if (doc.y + signatureHeight > maxY) {
     doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
   }
   return doc.y;
 }
@@ -6292,6 +6296,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Check if we need a new page
         if (doc.y > 650) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         }
         
         doc.fontSize(9).font('Helvetica-Bold').fillColor('#1a73e8').text(`${standard.phvaCycle.toUpperCase()} - ${standard.name}`, { underline: false });
@@ -6318,6 +6324,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Check if we need a new page for this item
           if (doc.y > 680) {
             doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           }
           
           doc.fontSize(8).font('Helvetica-Bold').text(`• Ítem ${item.itemNumber}: `, { indent: 40, continued: true });
@@ -7941,6 +7949,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         assignedWorkers.forEach((worker) => {
           if (doc.y > doc.page.height - 80) {
             doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           }
           const rowY = doc.y;
           doc.text(worker.name, col1, rowY, { width: col1Width - 5, ellipsis: true });
@@ -9285,6 +9295,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const respHeight = doc.heightOfString(`• ${resp}`, { width: contentWidth - 20 });
         if (currentY + respHeight > doc.page.height - 80) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           currentY = 50;
         }
         doc.text(`• ${resp}`, margin + 10, currentY, { width: contentWidth - 20 });
@@ -13594,6 +13606,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (doc.y > doc.page.height - 100) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         }
       }
 
@@ -13919,6 +13933,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Evaluación SST
       if (currentY > doc.page.height - 100) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 50;
       }
 
@@ -13963,6 +13979,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           if (currentY > doc.page.height - 100) {
             doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
             currentY = 50;
           }
         }
@@ -13978,6 +13996,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Evaluación de Sección
       if (currentY > doc.page.height - 80) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 50;
       }
 
@@ -14021,6 +14041,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (registro.factoresRiesgo) {
         if (currentY > doc.page.height - 80) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           currentY = 50;
         }
 
@@ -14042,6 +14064,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Evaluación de Maquinaria
       if (currentY > doc.page.height - 80) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 50;
       }
 
@@ -14084,6 +14108,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Experiencia del Trabajador
       if (currentY > doc.page.height - 100) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 50;
       }
 
@@ -14127,6 +14153,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (registro.observaciones) {
         if (currentY > doc.page.height - 80) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           currentY = 50;
         }
 
@@ -14147,6 +14175,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Signatures
       if (currentY > doc.page.height - 80) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 50;
       }
 
@@ -15166,6 +15196,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const detalle of detallesConTrabajador) {
         if (currentY > doc.page.height - 100) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           currentY = 115;
         }
         
@@ -15230,6 +15262,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Section: RESUMEN DE CUMPLIMIENTO
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       
@@ -15258,6 +15292,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (verificacion.observaciones) {
         if (currentY > doc.page.height - 100) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           currentY = 115;
         }
         
@@ -15946,6 +15982,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Page break if needed
           if (doc.y > 700) {
             doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
             doc.moveDown(1);
           }
         });
@@ -16284,6 +16322,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const checkPageBreak = (requiredSpace: number = 60): number => {
         if (currentY + requiredSpace > usableHeight) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           pageNumber++;
           drawPageHeader(false);
           return margin + 80;
@@ -16739,6 +16779,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Check if we need a new page
           if (doc.y > 650) {
             doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           }
 
           // Worker name and identification
@@ -17044,6 +17086,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Check if we need a new page (leave 100px for footer)
             if (rowY > 700) {
               doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
               rowY = doc.y;
               
               // Repeat header on new page
@@ -17284,6 +17328,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           allTrainings.forEach((training, idx) => {
             if (rowY > 700) {
               doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
               rowY = doc.y;
               
               // Repeat header
@@ -17527,6 +17573,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           allInspections.forEach((inspection, idx) => {
             if (rowY > 700) {
               doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
               rowY = doc.y;
               
               // Repeat header
@@ -17715,6 +17763,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             pendingActions.slice(0, 10).forEach((action, idx) => {
               if (doc.y > 680) doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
               
               const priorityColor = action.prioridad === 'alta' ? '#dc3545' : 
                                     action.prioridad === 'media' ? '#ffc107' : '#28a745';
@@ -19092,6 +19142,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Check if we need a new page
           if (currentY > doc.page.height - 100) {
             doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
             currentY = 115;
           }
 
@@ -19791,6 +19843,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Check if we need a new page
           if (doc.y + rowHeight > 720) {
             doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
             doc.y = margin;
             // Redraw header on new page
             doc.rect(margin, doc.y, pageWidth, headerHeight).fill('#166534');
@@ -19865,6 +19919,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.moveDown(0.2);
       if (doc.y > 700) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
       }
       
       doc.strokeColor('#cccccc').lineWidth(1).moveTo(50, doc.y).lineTo(562, doc.y).stroke();
@@ -20212,6 +20268,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sortedCases.forEach((caseItem, index) => {
           if (currentY > doc.page.height - 80) {
             doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
             currentY = 115;
           }
 
@@ -20500,6 +20558,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       objetivos.forEach((objetivo: string, index: number) => {
         if (currentY > doc.page.height - 80) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           currentY = 115;
         }
         doc.fontSize(7).font('Helvetica').fillColor('#000000')
@@ -20523,6 +20583,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsabilidades
       if (currentY > doc.page.height - 100) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34').text('RESPONSABILIDADES', margin, currentY);
@@ -20531,6 +20593,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -20544,6 +20608,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -20557,6 +20623,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -20569,6 +20637,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -20582,6 +20652,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -20595,6 +20667,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -20607,6 +20681,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -20620,6 +20696,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -20633,6 +20711,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -20645,6 +20725,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -20658,6 +20740,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -20671,6 +20755,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -20683,6 +20769,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -20696,6 +20784,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -20709,6 +20799,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -20721,6 +20813,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -20734,6 +20828,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -20747,6 +20843,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -20759,6 +20857,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -20772,6 +20872,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -20785,6 +20887,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -20797,6 +20901,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -20810,6 +20916,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -20823,6 +20931,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -20835,6 +20945,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -20848,6 +20960,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -20861,6 +20975,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -20873,6 +20989,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -20886,6 +21004,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -20899,6 +21019,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -20911,6 +21033,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -20924,6 +21048,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -20937,6 +21063,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -20949,6 +21077,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -20962,6 +21092,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -20975,6 +21107,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -20987,6 +21121,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -21000,6 +21136,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -21013,6 +21151,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -21025,6 +21165,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -21038,6 +21180,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -21051,6 +21195,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -21063,6 +21209,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -21076,6 +21224,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -21089,6 +21239,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -21101,6 +21253,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -21114,6 +21268,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -21127,6 +21283,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -21139,6 +21297,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -21152,6 +21312,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -21165,6 +21327,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -21177,6 +21341,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -21190,6 +21356,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -21203,6 +21371,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -21215,6 +21385,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -21228,6 +21400,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -21241,6 +21415,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -21253,6 +21429,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -21266,6 +21444,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -21279,6 +21459,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -21291,6 +21473,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -21304,6 +21488,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -21317,6 +21503,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -21329,6 +21517,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -21342,6 +21532,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -21355,6 +21547,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -21367,6 +21561,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Alta Dirección - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Alta Dirección:', margin, currentY);
@@ -21380,6 +21576,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Responsable del SG-SST - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Responsable del SG-SST:', margin, currentY);
@@ -21393,6 +21591,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trabajadores - verificar espacio disponible
       if (currentY > doc.page.height - 120) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(8).font('Helvetica-Bold').text('Trabajadores:', margin, currentY);
@@ -21406,6 +21606,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Compromisos Específicos
       if (currentY > doc.page.height - 100) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34').text('COMPROMISOS ESPECÍFICOS', margin, currentY);
@@ -21413,6 +21615,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       compromisos.forEach((compromiso: string, index: number) => {
         if (currentY > doc.page.height - 80) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           currentY = 115;
         }
         doc.fontSize(7).font('Helvetica').fillColor('#000000')
@@ -21427,6 +21631,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Recursos
       if (currentY > doc.page.height - 80) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34').text('RECURSOS', margin, currentY);
@@ -21440,6 +21646,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Revisión y Comunicación
       if (currentY > doc.page.height - 80) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34').text('REVISIÓN Y COMUNICACIÓN', margin, currentY);
@@ -21453,6 +21661,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Información de firmas
       if (currentY > doc.page.height - 100) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 115;
       }
       doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34').text('FIRMAS Y APROBACIÓN', margin, currentY);
@@ -23136,6 +23346,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // ========== PÁGINA 2: RESULTADOS ==========
       doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
       currentY = 50;
 
       // Encabezado verde
@@ -23252,6 +23464,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // ========== PÁGINA 3: DETALLE DE ESTÁNDARES ==========
       doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
       currentY = 50;
 
       doc.rect(margin, currentY, contentWidth, 25).fill('#1e7e34');
@@ -23267,6 +23481,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Check page space
         if (currentY > doc.page.height - 100) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           currentY = 50;
         }
 
@@ -23278,6 +23494,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         compEstandares.forEach(est => {
           if (currentY > doc.page.height - 60) {
             doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
             currentY = 50;
           }
 
@@ -23309,6 +23527,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // ========== PÁGINA FINAL: FIRMAS ==========
       doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
       currentY = 50;
 
       doc.rect(margin, currentY, contentWidth, 25).fill('#1e7e34');
@@ -23894,6 +24114,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // B. ANÁLISIS POR COMPONENTE
       // ============================================================
       doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
       currentY = 100;
 
       doc.fontSize(11).font('Helvetica-Bold').fillColor(colorVerdeSst)
@@ -23903,6 +24125,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const comp of componentes) {
         if (currentY > 650) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           currentY = 100;
         }
 
@@ -23950,6 +24174,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // C. ANÁLISIS DE DATOS DEL SISTEMA
       // ============================================================
       doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
       currentY = 100;
 
       doc.fontSize(11).font('Helvetica-Bold').fillColor(colorVerdeSst)
@@ -24042,6 +24268,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ============================================================
       if (currentY > 600) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 100;
       }
 
@@ -24092,6 +24320,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ============================================================
       if (currentY > 550) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 100;
       }
 
@@ -24128,6 +24358,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ============================================================
       if (currentY > 550) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 100;
       }
 
@@ -25357,6 +25589,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ==================== PÁGINA 2: CRONOGRAMA ====================
       if (actividades.length > 0) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         
         // Agregar encabezado en página 2
         currentY = await addStandardHeader({
@@ -27595,6 +27829,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (y + rowHeight > doc.page.height - 100) {
             doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
             y = 140;
           }
           
@@ -30374,6 +30610,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Check if we need a new page
         if (doc.y > doc.page.height - 120) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           currentY = 60;
         }
         doc.text(line, margin + 5, doc.y, { 
@@ -30389,6 +30627,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (comunicacion.fechaVigenciaInicio || comunicacion.fechaVigenciaFin) {
         if (doc.y > doc.page.height - 100) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           currentY = 60;
         }
 
@@ -30414,6 +30654,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (comunicacion.observaciones) {
         if (doc.y > doc.page.height - 100) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
           currentY = 60;
         }
 
@@ -30429,6 +30671,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Compliance footer
       if (doc.y > doc.page.height - 80) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 60;
       }
 
@@ -39352,6 +39596,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // Green bar section header - DETALLE DE ACTIVIDADES
       if (currentY > doc.page.height - 200) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 50;
       }
       doc.rect(margin, currentY, contentWidth, 18).fill('#1e7e34');
@@ -39368,6 +39614,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         Object.entries(byType).forEach(([type, acts]) => {
           if (currentY > doc.page.height - 100) {
             doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
             currentY = 50;
           }
 
@@ -39379,6 +39627,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           acts.slice(0, 5).forEach(act => {
             if (currentY > doc.page.height - 80) {
               doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
               currentY = 50;
             }
 
@@ -39404,6 +39654,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // Green bar section header - CUMPLIMIENTO NORMATIVO
       if (currentY > doc.page.height - 150) {
         doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 50;
       }
       currentY += 10;
@@ -39985,6 +40237,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         followups.forEach((fup, idx) => {
           if (tableY > doc.page.height - 80) {
             doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
             tableY = 50;
           }
           
@@ -40952,6 +41206,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       for (const accion of acciones) {
         if (doc.y > 700) {
           doc.addPage();
+          // Reset font after page break to maintain consistent text size
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
         }
         
         const y = doc.y;
