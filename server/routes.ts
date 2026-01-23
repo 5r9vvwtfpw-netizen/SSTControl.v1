@@ -17557,6 +17557,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (reportType === "inspecciones") {
         // ===== INFORME DE INSPECCIONES =====
         const inspections = await storage.getInspections(effectiveCompanyId);
+        const inspectionId = req.query.inspectionId as string | undefined;
+        
+        // If inspectionId is provided, generate single inspection report
+        if (inspectionId) {
+          const inspection = await storage.getInspection(inspectionId);
+          if (!inspection) {
+            return res.status(404).json({ error: "Inspección no encontrada" });
+          }
+          
+          const PDFDocument = (await import('pdfkit')).default;
+          const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+          const margin = 35;
+          const pageWidth = doc.page.width;
+
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Content-Disposition', `attachment; filename="Inspeccion-${inspectionId}.pdf"`);
+          doc.pipe(res);
+
+          const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
+          const signers = await getSignersForCompany(companyId, false);
+
+          const pdfInsp_subscription = await storage.getSubscriptionByCompany(companyId);
+          const pdfInsp_trialStatus = getTrialStatus(pdfInsp_subscription?.status || 'trial', pdfInsp_subscription?.trialEnd || null, true, true);
+          setupTrialWatermarkOnAllPages(doc, pdfInsp_trialStatus.requiresWatermark);
+
+          await addStandardHeader({
+            doc,
+            company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
+            documentTitle: 'INFORME DE INSPECCIÓN DE SEGURIDAD',
+            documentCode: `SST-INS-${new Date().getFullYear()}-${inspection.id.substring(0, 8).toUpperCase()}`,
+            version: '1.0',
+            date: new Date(),
+            logoBuffer,
+          });
+
+          const drawGreenHeader = (title: string) => {
+            const startY = doc.y;
+            doc.rect(margin, startY, pageWidth - 2 * margin, 18).fill('#1e7e34');
+            doc.fontSize(10).font('Helvetica-Bold').fillColor('#ffffff')
+              .text(title, margin + 10, startY + 4, { lineBreak: false });
+            doc.fillColor('#000000');
+            doc.y = startY + 24;
+            doc.x = margin;
+          };
+
+          const formatInspDate = (dateStr: string | null | undefined): string => {
+            if (!dateStr) return 'N/A';
+            try {
+              const d = new Date(dateStr);
+              return isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString('es-CO');
+            } catch { return 'N/A'; }
+          };
+
+          drawGreenHeader('INFORMACIÓN DE LA INSPECCIÓN');
+          
+          const infoY = doc.y;
+          doc.rect(margin, infoY, pageWidth - 2 * margin, 80).stroke('#cccccc');
+          
+          doc.fontSize(9).font('Helvetica-Bold').text('Área:', margin + 10, infoY + 8);
+          doc.font('Helvetica').text(inspection.area || 'N/A', margin + 80, infoY + 8);
+          
+          doc.font('Helvetica-Bold').text('Fecha:', margin + 10, infoY + 22);
+          doc.font('Helvetica').text(formatInspDate(inspection.date), margin + 80, infoY + 22);
+          
+          doc.font('Helvetica-Bold').text('Inspector:', margin + 10, infoY + 36);
+          doc.font('Helvetica').text(inspection.inspector || 'N/A', margin + 80, infoY + 36);
+          
+          doc.font('Helvetica-Bold').text('Estado:', margin + 10, infoY + 50);
+          const statusLabels: Record<string, string> = {
+            'aprobada': 'Aprobada',
+            'pendiente': 'Pendiente',
+            'rechazada': 'Rechazada',
+            'completada': 'Completada',
+            'requiere_accion': 'Requiere Acción'
+          };
+          doc.font('Helvetica').text(statusLabels[inspection.status] || inspection.status || 'N/A', margin + 80, infoY + 50);
+          
+          doc.font('Helvetica-Bold').text('Tipo:', margin + 280, infoY + 8);
+          const typeLabels: Record<string, string> = {
+            'pre_operacional': 'Pre-operacional',
+            'puesto_trabajo': 'Puesto de Trabajo',
+            'epp': 'EPP',
+            'instalaciones': 'Instalaciones',
+            'equipos': 'Equipos',
+            'herramientas': 'Herramientas',
+            'vehiculos': 'Vehículos',
+            'extintores': 'Extintores',
+            'botiquines': 'Botiquines',
+            'general': 'General'
+          };
+          doc.font('Helvetica').text(typeLabels[inspection.type || ''] || inspection.type || 'General', margin + 350, infoY + 8);
+          
+          doc.y = infoY + 90;
+
+          drawGreenHeader('RESULTADOS');
+          
+          const resultsY = doc.y;
+          doc.rect(margin, resultsY, pageWidth - 2 * margin, 60).stroke('#cccccc');
+          
+          const findingsCount = typeof inspection.findings === 'number' ? inspection.findings : 0;
+          const complianceVal = typeof inspection.compliance === 'number' ? inspection.compliance : 0;
+          
+          doc.fontSize(9).font('Helvetica-Bold').text('Hallazgos:', margin + 10, resultsY + 8);
+          doc.font('Helvetica').text(String(findingsCount), margin + 80, resultsY + 8);
+          
+          doc.font('Helvetica-Bold').text('Cumplimiento:', margin + 10, resultsY + 22);
+          const complianceColor = complianceVal >= 90 ? '#16a34a' : complianceVal >= 70 ? '#eab308' : '#dc2626';
+          doc.font('Helvetica-Bold').fillColor(complianceColor).text(`${complianceVal}%`, margin + 80, resultsY + 22);
+          doc.fillColor('#000000');
+          
+          doc.fontSize(8).font('Helvetica').fillColor('#666666')
+            .text('Fórmula: % Cumplimiento = (Ítems Conformes / Total Ítems) × 100', margin + 10, resultsY + 40);
+          doc.text('C = Conforme (cumple el requisito) | NC = No Conforme (hallazgo/incumplimiento)', margin + 10, resultsY + 50);
+          doc.fillColor('#000000');
+          
+          doc.y = resultsY + 70;
+
+          if (inspection.observations) {
+            drawGreenHeader('OBSERVACIONES');
+            
+            const obsY = doc.y;
+            const obsHeight = Math.max(40, doc.heightOfString(inspection.observations, { width: pageWidth - 2 * margin - 20 }) + 16);
+            doc.rect(margin, obsY, pageWidth - 2 * margin, obsHeight).stroke('#cccccc');
+            doc.fontSize(9).font('Helvetica').text(inspection.observations, margin + 10, obsY + 8, { width: pageWidth - 2 * margin - 20 });
+            doc.y = obsY + obsHeight + 10;
+          }
+
+          drawGreenHeader('MARCO NORMATIVO');
+          
+          const normY = doc.y;
+          doc.rect(margin, normY, pageWidth - 2 * margin, 50).stroke('#cccccc');
+          doc.fontSize(8).font('Helvetica')
+            .text('• Decreto 1072/2015, Art. 2.2.4.6.12: Documentación del SG-SST', margin + 10, normY + 8)
+            .text('• Decreto 1072/2015, Art. 2.2.4.6.24: Medidas de prevención y control', margin + 10, normY + 20)
+            .text('• Resolución 0312/2019, Art. 16: Evaluación inicial del SG-SST', margin + 10, normY + 32);
+          
+          doc.y = normY + 60;
+
+          addSignatureFooter(doc, signers, false);
+          
+          doc.end();
+          return;
+        }
+        
         
         // Filter by period
         const filterByPeriod = (items: any[], dateField: string) => {

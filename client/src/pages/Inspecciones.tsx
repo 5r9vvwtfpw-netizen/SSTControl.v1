@@ -205,7 +205,7 @@ export default function Inspecciones() {
 
   const handlePrint = async (id: string) => {
     try {
-      const response = await fetch(`/api/reports/inspection?inspectionId=${id}`, {
+      const response = await fetch(`/api/reports/inspecciones?inspectionId=${id}`, {
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Error al generar PDF');
