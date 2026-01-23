@@ -1,6 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, AlertCircle, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, AlertCircle, CheckCircle, Pencil, Trash2, FileText } from "lucide-react";
 
 interface InspectionCardProps {
   id: string;
@@ -9,6 +10,10 @@ interface InspectionCardProps {
   findings: number;
   compliance: number;
   status: "aprobada" | "pendiente" | "rechazada";
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  onPrint?: (id: string) => void;
+  showActions?: boolean;
 }
 
 const statusConfig = {
@@ -17,7 +22,18 @@ const statusConfig = {
   rechazada: { label: "Rechazada", variant: "destructive" as const, icon: AlertCircle },
 };
 
-export function InspectionCard({ id, area, date, findings, compliance, status }: InspectionCardProps) {
+export function InspectionCard({ 
+  id, 
+  area, 
+  date, 
+  findings, 
+  compliance, 
+  status,
+  onEdit,
+  onDelete,
+  onPrint,
+  showActions = true
+}: InspectionCardProps) {
   const StatusIcon = statusConfig[status].icon;
   const complianceColor = compliance >= 90 ? "text-chart-2" : compliance >= 70 ? "text-chart-3" : "text-chart-4";
 
@@ -50,6 +66,38 @@ export function InspectionCard({ id, area, date, findings, compliance, status }:
           </span>
         </div>
       </CardContent>
+      {showActions && (
+        <CardFooter className="flex justify-end gap-2 pt-0">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onPrint?.(id)}
+            data-testid={`button-print-inspection-${id}`}
+            title="Descargar PDF"
+          >
+            <FileText className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onEdit?.(id)}
+            data-testid={`button-edit-inspection-${id}`}
+            title="Editar"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onDelete?.(id)}
+            data-testid={`button-delete-inspection-${id}`}
+            title="Eliminar"
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }

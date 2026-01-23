@@ -3,6 +3,7 @@ import { InspectionFormEnhanced } from "@/components/InspectionFormEnhanced";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Filter } from "lucide-react";
 import { Link } from "wouter";
@@ -55,6 +56,9 @@ export default function Inspecciones() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedInspection, setSelectedInspection] = useState<Inspection | null>(null);
   const [formData, setFormData] = useState<{
     companyId: string;
     area: string;
@@ -124,6 +128,123 @@ export default function Inspecciones() {
       });
     },
   });
+
+  const updateInspectionMutation = useMutation({
+    mutationFn: async (data: { id: string } & z.infer<typeof insertInspectionSchema>) => {
+      const { id, ...updateData } = data;
+      const res = await apiRequest("PATCH", `/api/inspections/${id}`, updateData);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
+      setEditDialogOpen(false);
+      setSelectedInspection(null);
+      toast({
+        title: "Inspección actualizada",
+        description: "La inspección se ha actualizado exitosamente",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteInspectionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("DELETE", `/api/inspections/${id}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      setDeleteDialogOpen(false);
+      setSelectedInspection(null);
+      toast({
+        title: "Inspección eliminada",
+        description: "La inspección se ha eliminado exitosamente",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEdit = (id: string) => {
+    const inspection = inspections.find(i => i.id === id);
+    if (inspection) {
+      setSelectedInspection(inspection);
+      setFormData({
+        companyId: inspection.companyId || "",
+        area: inspection.area,
+        inspector: inspection.inspector || "",
+        date: inspection.date,
+        findings: inspection.findings,
+        compliance: inspection.compliance,
+        observations: inspection.observations || "",
+        status: inspection.status as "pendiente" | "completada" | "requiere_accion",
+      });
+      setEditDialogOpen(true);
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    const inspection = inspections.find(i => i.id === id);
+    if (inspection) {
+      setSelectedInspection(inspection);
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  const handlePrint = async (id: string) => {
+    try {
+      const response = await fetch(`/api/reports/inspection?inspectionId=${id}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Error al generar PDF');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `inspeccion-${id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast({
+        title: "PDF generado",
+        description: "El informe de inspección se ha descargado",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo generar el PDF",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedInspection) return;
+    
+    const findingsValue = formData.findings === '' ? 0 : Number(formData.findings);
+    const complianceValue = formData.compliance === '' ? 0 : Number(formData.compliance);
+    updateInspectionMutation.mutate({
+      id: selectedInspection.id,
+      ...formData,
+      findings: findingsValue,
+      compliance: complianceValue,
+      observations: formData.observations || null,
+    } as any);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,10 +369,53 @@ export default function Inspecciones() {
               findings={inspection.findings}
               compliance={inspection.compliance}
               status={inspection.status}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onPrint={handlePrint}
+              showActions={isAdmin}
             />
           ))}
         </div>
       )}
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Inspección</DialogTitle>
+            <DialogDescription>Modifique los datos de la inspección.</DialogDescription>
+          </DialogHeader>
+          <InspectionFormEnhanced
+            formData={formData}
+            setFormData={setFormData}
+            onSubmit={handleEditSubmit}
+            isPending={updateInspectionMutation.isPending}
+            isSuperadmin={isSuperadmin}
+            companies={companies}
+            workers={workers || []}
+            onCancel={() => setEditDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar Inspección</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Está seguro que desea eliminar la inspección de "{selectedInspection?.area}"? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => selectedInspection && deleteInspectionMutation.mutate(selectedInspection.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
