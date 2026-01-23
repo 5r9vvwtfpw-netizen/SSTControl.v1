@@ -5445,6 +5445,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PATCH /api/inspections/:id - Update an existing inspection
+  app.patch("/api/inspections/:id", requirePermission("inspections:edit"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const inspectionId = req.params.id;
+
+      // Get existing inspection to verify ownership
+      const existingInspection = await storage.getInspectionById(inspectionId);
+      if (!existingInspection) {
+        return res.status(404).json({ error: "Inspección no encontrada" });
+      }
+
+      let effectiveCompanyId: string;
+      if (isAdmin) {
+        effectiveCompanyId = existingInspection.companyId;
+      } else {
+        if (!userCompanyId) {
+          return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+        }
+        if (existingInspection.companyId !== userCompanyId) {
+          return res.status(403).json({ error: "No tiene permisos para editar esta inspección" });
+        }
+        effectiveCompanyId = userCompanyId;
+      }
+
+      const updated = await storage.updateInspection(inspectionId, req.body, effectiveCompanyId);
+      if (!updated) {
+        return res.status(404).json({ error: "No se pudo actualizar la inspección" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating inspection:", error);
+      res.status(500).json({ error: "Error al actualizar la inspección" });
+    }
+  });
+
   // Inspections-IPERC linkage routes (HACER phase)
   
   // GET /api/inspections/:id/peligros - List hazards linked to an inspection
