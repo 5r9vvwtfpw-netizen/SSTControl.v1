@@ -4507,11 +4507,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.moveDown(0.3);
       doc.fillColor('#333').fontSize(10).font('Helvetica');
       
+      // Format dates safely
+      const formatDate = (d: any) => {
+        if (!d) return '-';
+        try {
+          return new Date(d).toLocaleDateString('es-CO');
+        } catch {
+          return String(d);
+        }
+      };
+      
       const eventInfo = [
         ['Tipo de Evento:', investigation.eventType || '-'],
-        ['Fecha del Evento:', investigation.eventDate || '-'],
-        ['Fecha Inicio Investigación:', investigation.investigationStartDate || '-'],
-        ['Fecha Límite (SLA 15 días):', investigation.dueDate || '-'],
+        ['Fecha del Evento:', formatDate(investigation.eventDate)],
+        ['Fecha Inicio Investigación:', formatDate(investigation.investigationStartDate)],
+        ['Fecha Límite (SLA 15 días):', formatDate(investigation.dueDate)],
         ['Estado:', investigation.status || '-'],
         ['Metodología de Análisis:', investigation.analysisMethodology || '-'],
       ];
@@ -4539,15 +4549,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.moveDown(0.3);
       doc.fillColor('#333').fontSize(10);
       
-      if (participants.length === 0) {
+      if (!participants || participants.length === 0) {
         doc.font('Helvetica').text('No se han registrado participantes.');
       } else {
         participants.forEach((p, idx) => {
-          doc.font('Helvetica-Bold').text(`${idx + 1}. ${p.participantName}`);
+          doc.font('Helvetica-Bold').text(`${idx + 1}. ${p.participantName || 'Participante'}`);
           doc.font('Helvetica')
-            .text(`   Rol: ${p.participantRole} | Cargo: ${p.participantPosition || '-'} | Área: ${p.participantArea || '-'}`);
+            .text(`   Rol: ${p.participantRole || '-'} | Cargo: ${p.participantPosition || '-'} | Área: ${p.participantArea || '-'}`);
           if (p.hasLicense) {
-            doc.text(`   Licencia SST: ${p.licenseNumber || '-'} (Vence: ${p.licenseExpiry || '-'})`);
+            const licenseExpiry = p.licenseExpiry ? new Date(p.licenseExpiry).toLocaleDateString('es-CO') : '-';
+            doc.text(`   Licencia SST: ${p.licenseNumber || '-'} (Vence: ${licenseExpiry})`);
           }
         });
       }
@@ -4599,13 +4610,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.font('Helvetica').text('No se han registrado hallazgos/acciones.');
       } else {
         findings.forEach((f, idx) => {
-          doc.font('Helvetica-Bold').text(`${idx + 1}. ${f.findingType.toUpperCase()}: ${f.description}`);
+          doc.font('Helvetica-Bold').text(`${idx + 1}. ${(f.findingType || 'hallazgo').toUpperCase()}: ${f.description || '-'}`);
           doc.font('Helvetica')
-            .text(`   Acción: ${f.correctiveAction}`)
-            .text(`   Responsable: ${f.responsibleName} | Área: ${f.responsibleArea || '-'}`)
-            .text(`   Fecha Límite: ${f.dueDate} | Estado: ${f.status}`);
+            .text(`   Acción: ${f.correctiveAction || '-'}`)
+            .text(`   Responsable: ${f.responsibleName || '-'} | Área: ${f.responsibleArea || '-'}`)
+            .text(`   Fecha Límite: ${f.dueDate ? new Date(f.dueDate).toLocaleDateString('es-CO') : '-'} | Estado: ${f.status || '-'}`);
           if (f.completionDate) {
-            doc.text(`   Fecha Cierre: ${f.completionDate}`);
+            doc.text(`   Fecha Cierre: ${new Date(f.completionDate).toLocaleDateString('es-CO')}`);
           }
           doc.moveDown(0.3);
         });
