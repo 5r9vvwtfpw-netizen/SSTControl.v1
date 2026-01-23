@@ -105,7 +105,6 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
       title: "Gestión Integral",
       items: [
         { label: "Evaluación Inicial", path: "/evaluaciones-sst" },
-        { label: "Trazabilidad Integral", path: "/trazabilidad-integral" },
       ],
     },
   ],
