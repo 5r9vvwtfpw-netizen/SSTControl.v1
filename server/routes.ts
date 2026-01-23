@@ -28825,7 +28825,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         recentCambios.forEach((cambio, idx) => {
           const bgColor = idx % 2 === 0 ? '#ffffff' : '#f5f5f5';
-          doc.rect(margin, rowY, totalTableWidth, 14).fill(bgColor);
+          
+          // Calcular altura del texto de descripción para evitar superposición
+          const desc = cambio.descripcion || '-';
+          doc.fontSize(7).font('Helvetica');
+          const descHeight = doc.heightOfString(desc, { width: colWidths[3] - 6 });
+          const rowHeight = Math.max(14, descHeight + 8);
+          
+          // Verificar salto de página
+          if (rowY + rowHeight > doc.page.height - 100) {
+            doc.addPage();
+            doc.font('Helvetica').fontSize(7).fillColor('#000000');
+            rowY = margin + 20;
+          }
+          
+          doc.rect(margin, rowY, totalTableWidth, rowHeight).fill(bgColor);
 
           xPos = margin;
           doc.fontSize(7).font('Helvetica').fillColor('#000000');
@@ -28836,10 +28850,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           xPos += colWidths[1];
           doc.text(estadoLabels[cambio.estado] || cambio.estado, xPos + 3, rowY + 4, { width: colWidths[2] - 6 });
           xPos += colWidths[2];
-          const desc = cambio.descripcion || '-';
           doc.text(desc, xPos + 3, rowY + 4, { width: colWidths[3] - 6, lineBreak: true });
 
-          rowY += 14;
+          rowY += rowHeight;
         });
       }
 
