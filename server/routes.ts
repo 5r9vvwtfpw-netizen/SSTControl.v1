@@ -7765,8 +7765,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send("Empresa no encontrada");
       }
       
-      // Get workers assigned to this profile
-      const assignedWorkers = await storage.getWorkersByJobProfileId(profile.companyId, id);
+      // Get workers assigned to this profile (by jobProfileId OR position matching profile name)
+      // This matches the client-side logic in PerfilesCargo.tsx that counts workers
+      const allWorkersInCompany = await storage.getWorkers(profile.companyId);
+      const assignedWorkers = allWorkersInCompany.filter(w => 
+        w.jobProfileId === id || w.position === profile.name
+      );
       
       // Create PDF document
       const doc = new PDFDocument({ size: 'LETTER', margin: 35 });
