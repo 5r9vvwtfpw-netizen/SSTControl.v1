@@ -39481,13 +39481,16 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/reportes/promocion-prevencion/pdf - Generate PDF report
   app.get("/api/reportes/promocion-prevencion/pdf", requireAuth, requirePermission("workers:view"), async (req, res) => {
     try {
+      console.log('[PDF] Starting promocion-prevencion PDF generation');
       const companyId = req.user?.companyId;
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
 
       const company = await storage.getCompany(companyId);
       if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
 
+      console.log('[PDF] Company found:', company.name);
       const activities = await storage.getPromotionPreventionActivities(companyId);
+      console.log('[PDF] Activities count:', activities.length);
 
       const doc = new PDFDocument({ size: 'LETTER', margin: 35, bufferPages: true });
       
