@@ -16702,7 +16702,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf16335_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf16335_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf16335_trialStatus = getTrialStatus(pdf16335_subscription?.status || 'trial', pdf16335_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf16335_trialStatus.requiresWatermark);
       const margin = 35;
@@ -16717,18 +16717,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Load company logo for PDF header
         const logoBuffer = await loadCompanyLogo(company?.logoUrl);
-        const signers = await getSignersForCompany(companyId);
+        const signers = await getSignersForCompany(effectiveCompanyId);
         
         // Standard Header with logo, version control, and signatures
         let currentY = await addStandardHeader({
           doc,
           company: company ? {
-            id: companyId,
+            id: effectiveCompanyId,
             name: company.name,
             nit: company.nit || 'N/A',
             address: company.address,
             logoUrl: company.logoUrl,
-          } : { id: companyId, name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
+          } : { id: effectiveCompanyId, name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
           documentTitle: 'INFORME DE CONTRATOS Y DESIGNACIONES SST',
           documentCode: `SST-CD-${new Date().getFullYear()}`,
           version: '1.0',
@@ -17842,7 +17842,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf17426_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf17426_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const pdf17426_trialStatus = getTrialStatus(pdf17426_subscription?.status || 'trial', pdf17426_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf17426_trialStatus.requiresWatermark);
       const margin = 35;
@@ -17856,12 +17856,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Load company logo and signers
         const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
-        const signers = await getSignersForCompany(companyId);
+        const signers = await getSignersForCompany(effectiveCompanyId);
         
         // Standard Header
         let currentY = await addStandardHeader({
           doc,
-          company: company || { id: companyId, name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
+          company: company || { id: effectiveCompanyId, name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
           documentTitle: `INFORME EJECUTIVO MENSUAL SST - ${monthNames[currentMonth].toUpperCase()} ${currentYear}`,
           documentCode: `SST-MEN-${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`,
           version: '1.0',
