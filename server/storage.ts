@@ -9018,8 +9018,8 @@ export class DbStorage implements IStorage {
 
     const cumplimientoNormativo = {
       ultimaEvaluacion: lastEvaluation.length > 0 ? lastEvaluation[0].porcentajeCumplimiento : null,
-      fechaUltimaEvaluacion: lastEvaluation.length > 0 
-        ? lastEvaluation[0].fechaEvaluacion?.toISOString().split('T')[0] || null
+      fechaUltimaEvaluacion: lastEvaluation.length > 0 && lastEvaluation[0].fechaEvaluacion
+        ? String(lastEvaluation[0].fechaEvaluacion).split('T')[0]
         : null,
       estandaresCriticos: evaluationResponses.filter((item: any) => item.cumple === 0).length,
       estandaresCumplidos: evaluationResponses.filter((item: any) => item.cumple === 1).length
