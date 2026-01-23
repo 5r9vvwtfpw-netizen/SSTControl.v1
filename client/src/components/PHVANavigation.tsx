@@ -105,6 +105,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
       title: "Gestión Integral",
       items: [
         { label: "Evaluación Inicial", path: "/evaluaciones-sst" },
+        { label: "Trazabilidad Integral", path: "/trazabilidad-integral" },
       ],
     },
   ],
@@ -121,12 +122,6 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
       title: "Paneles Ejecutivos",
       items: [
         { label: "Panel VERIFICAR - Indicadores", path: "/dashboard-verificar" },
-      ],
-    },
-    {
-      title: "Trazabilidad",
-      items: [
-        { label: "Trazabilidad Integral", path: "/trazabilidad-integral" },
       ],
     },
   ],
