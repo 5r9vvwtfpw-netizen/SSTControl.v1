@@ -97,7 +97,6 @@ const ESTADO_LABELS: Record<string, string> = {
 };
 
 const hallazgoFormSchema = z.object({
-  codigoHallazgo: z.string().min(1, "Código requerido"),
   moduloOrigen: z.enum(MODULOS_ORIGEN),
   descripcion: z.string().min(10, "La descripción debe tener al menos 10 caracteres"),
   severidad: z.enum(SEVERIDADES),
@@ -134,36 +133,35 @@ export function TrazabilidadIntegral({ companyId }: TrazabilidadIntegralProps) {
   const [filterFechaHasta, setFilterFechaHasta] = useState<string>("");
 
   const { data: hallazgos = [], isLoading: loadingHallazgos } = useQuery<HallazgoSistema[]>({
-    queryKey: [`/api/hallazgos-sistema?companyId=${companyId}`],
+    queryKey: ['/api/hallazgos-sistema', companyId],
     enabled: !!companyId,
   });
 
   const { data: dashboardData } = useQuery<{
     totalHallazgos: number;
-    porEstado: Record<string, number>;
-    porSeveridad: Record<string, number>;
-    porModulo: Record<string, number>;
-    objetivosVinculados: number;
+    hallazgosPorEstado: Record<string, number>;
+    hallazgosPorSeveridad: Record<string, number>;
+    hallazgosPorModulo: Record<string, number>;
+    objetivosConVinculaciones: number;
     porcentajeCumplimiento: number;
   }>({
-    queryKey: [`/api/dashboard-trazabilidad?companyId=${companyId}`],
+    queryKey: ['/api/dashboard-trazabilidad', companyId],
     enabled: !!companyId,
   });
 
   const { data: trazabilidadObjetivos = [] } = useQuery<TrazabilidadObjetivos[]>({
-    queryKey: [`/api/trazabilidad-objetivos?companyId=${companyId}`],
+    queryKey: ['/api/trazabilidad-objetivos', companyId],
     enabled: !!companyId,
   });
 
   const { data: objetivos = [] } = useQuery<ObjetivoSst[]>({
-    queryKey: [`/api/objetivos-sst?companyId=${companyId}`],
+    queryKey: ['/api/objetivos-sst', companyId],
     enabled: !!companyId,
   });
 
   const form = useForm<HallazgoFormData>({
     resolver: zodResolver(hallazgoFormSchema),
     defaultValues: {
-      codigoHallazgo: "",
       moduloOrigen: "otro",
       descripcion: "",
       severidad: "media",
@@ -184,8 +182,8 @@ export function TrazabilidadIntegral({ companyId }: TrazabilidadIntegralProps) {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/hallazgos-sistema"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard-trazabilidad"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hallazgos-sistema'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard-trazabilidad'] });
       toast({ title: "Hallazgo creado", description: "El hallazgo se ha registrado correctamente" });
       setIsDialogOpen(false);
       form.reset();
@@ -201,8 +199,8 @@ export function TrazabilidadIntegral({ companyId }: TrazabilidadIntegralProps) {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/hallazgos-sistema"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard-trazabilidad"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hallazgos-sistema'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard-trazabilidad'] });
       toast({ title: "Hallazgo actualizado", description: "Los cambios se han guardado correctamente" });
       setIsDialogOpen(false);
       setEditingHallazgo(null);
@@ -218,8 +216,8 @@ export function TrazabilidadIntegral({ companyId }: TrazabilidadIntegralProps) {
       await apiRequest("DELETE", `/api/hallazgos-sistema/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/hallazgos-sistema"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard-trazabilidad"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hallazgos-sistema'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard-trazabilidad'] });
       toast({ title: "Hallazgo eliminado", description: "El hallazgo se ha eliminado correctamente" });
     },
     onError: (error: Error) => {
@@ -261,7 +259,7 @@ export function TrazabilidadIntegral({ companyId }: TrazabilidadIntegralProps) {
     return ESTADOS.map((estado) => ({
       estado,
       label: ESTADO_LABELS[estado],
-      count: dashboardData?.porEstado?.[estado] || hallazgos.filter((h) => h.estado === estado).length,
+      count: dashboardData?.hallazgosPorEstado?.[estado] || hallazgos.filter((h) => h.estado === estado).length,
       Icon: ESTADO_ICONS[estado],
       colorClass: ESTADO_COLORS[estado],
     }));
@@ -271,7 +269,7 @@ export function TrazabilidadIntegral({ companyId }: TrazabilidadIntegralProps) {
     return SEVERIDADES.filter((s) => s !== "observacion").map((severidad) => ({
       severidad,
       label: SEVERIDAD_HALLAZGO_LABELS[severidad]?.label || severidad,
-      count: dashboardData?.porSeveridad?.[severidad] || hallazgos.filter((h) => h.severidad === severidad).length,
+      count: dashboardData?.hallazgosPorSeveridad?.[severidad] || hallazgos.filter((h) => h.severidad === severidad).length,
       colorClass: SEVERIDAD_COLORS[severidad],
     }));
   }, [hallazgos, dashboardData]);
@@ -284,12 +282,11 @@ export function TrazabilidadIntegral({ companyId }: TrazabilidadIntegralProps) {
     return Math.round((cerradosVerificados / total) * 100);
   }, [hallazgos, dashboardData]);
 
-  const objetivosVinculados = dashboardData?.objetivosVinculados || trazabilidadObjetivos.length;
+  const objetivosVinculados = dashboardData?.objetivosConVinculaciones || trazabilidadObjetivos.length;
 
   const handleOpenCreate = () => {
     setEditingHallazgo(null);
     form.reset({
-      codigoHallazgo: `HAL-${Date.now().toString(36).toUpperCase()}`,
       moduloOrigen: "otro",
       descripcion: "",
       severidad: "media",
@@ -308,7 +305,6 @@ export function TrazabilidadIntegral({ companyId }: TrazabilidadIntegralProps) {
   const handleOpenEdit = (hallazgo: HallazgoSistema) => {
     setEditingHallazgo(hallazgo);
     form.reset({
-      codigoHallazgo: hallazgo.codigoHallazgo,
       moduloOrigen: hallazgo.moduloOrigen as typeof MODULOS_ORIGEN[number],
       descripcion: hallazgo.descripcion,
       severidad: hallazgo.severidad as typeof SEVERIDADES[number],
@@ -694,45 +690,30 @@ export function TrazabilidadIntegral({ companyId }: TrazabilidadIntegralProps) {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="codigoHallazgo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Código del Hallazgo</FormLabel>
+              <FormField
+                control={form.control}
+                name="moduloOrigen"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Módulo de Origen</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <Input {...field} data-testid="input-codigo-hallazgo" />
+                        <SelectTrigger data-testid="select-modulo-origen">
+                          <SelectValue placeholder="Seleccione módulo" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="moduloOrigen"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Módulo de Origen</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-modulo-origen">
-                            <SelectValue placeholder="Seleccione módulo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {MODULOS_ORIGEN.map((modulo) => (
-                            <SelectItem key={modulo} value={modulo}>
-                              {MODULO_ORIGEN_LABELS[modulo] || modulo}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                      <SelectContent>
+                        {MODULOS_ORIGEN.map((modulo) => (
+                          <SelectItem key={modulo} value={modulo}>
+                            {MODULO_ORIGEN_LABELS[modulo] || modulo}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
