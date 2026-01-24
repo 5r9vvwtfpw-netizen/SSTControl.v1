@@ -35592,7 +35592,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         companyId = userCompanyId;
       }
       
-      const validatedData = insertZonaEvacuacionSchema.parse(req.body);
+      // Asignar companyId al body antes de validar para evitar error "Required"
+      const dataToValidate = { ...req.body, companyId };
+      const validatedData = insertZonaEvacuacionSchema.parse(dataToValidate);
       const zona = await storage.createZonaEvacuacion(validatedData, companyId);
       res.status(201).json(zona);
     } catch (error: any) {
@@ -35742,7 +35744,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         companyId = userCompanyId;
       }
       
-      const validatedData = insertRutaEvacuacionSchema.parse(req.body);
+      // Asignar companyId al body antes de validar
+      const dataToValidate = { ...req.body, companyId };
+      const validatedData = insertRutaEvacuacionSchema.parse(dataToValidate);
       const ruta = await storage.createRutaEvacuacion(validatedData, companyId);
       res.status(201).json(ruta);
     } catch (error: any) {
@@ -35892,7 +35896,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         companyId = userCompanyId;
       }
       
-      const validatedData = insertPuntoEncuentroSchema.parse(req.body);
+      // Asignar companyId al body antes de validar
+      const dataToValidate = { ...req.body, companyId };
+      const validatedData = insertPuntoEncuentroSchema.parse(dataToValidate);
       const punto = await storage.createPuntoEncuentro(validatedData, companyId);
       res.status(201).json(punto);
     } catch (error: any) {
