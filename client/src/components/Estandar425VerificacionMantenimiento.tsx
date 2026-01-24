@@ -203,7 +203,7 @@ export function Estandar425VerificacionMantenimiento({ isVisible, evaluationId }
                 Inspecciones
               </Button>
             </Link>
-            <Link href={`/documentos${fromParam}`}>
+            <Link href={`/conservacion-documentos${fromParam}`}>
               <Button variant="outline" size="sm" className="text-xs">
                 <FileText className="h-3 w-3 mr-1" />
                 Documentos
