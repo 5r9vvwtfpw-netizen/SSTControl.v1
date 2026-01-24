@@ -2317,8 +2317,8 @@ export default function PlanEmergencias() {
                             if (tipo) {
                               const consecutivo = simulacros.length + 1;
                               const fecha = new Date().toLocaleDateString('es-CO');
-                              simulacroForm.setValue("codigo", generarCodigoSimulacro(tipo.codigo, consecutivo));
-                              simulacroForm.setValue("nombre", `${tipo.nombre} - ${fecha}`);
+                              simulacroForm.setValue("codigo", generarCodigoSimulacro(tipo.codigo, consecutivo), { shouldValidate: true });
+                              simulacroForm.setValue("nombre", `${tipo.nombre} - ${fecha}`, { shouldValidate: true });
                             }
                           }} 
                           value={field.value}
