@@ -28,6 +28,7 @@ import { Estandar423VerificacionProcedimientos } from "@/components/Estandar423V
 import { Estandar424VerificacionInspecciones } from "@/components/Estandar424VerificacionInspecciones";
 import { Estandar425VerificacionMantenimiento } from "@/components/Estandar425VerificacionMantenimiento";
 import { Estandar426VerificacionEPP } from "@/components/Estandar426VerificacionEPP";
+import { Estandar511VerificacionEmergencias } from "@/components/Estandar511VerificacionEmergencias";
 
 export default function DetalleEvaluacionSst() {
   const { id } = useParams();
@@ -4436,6 +4437,16 @@ export default function DetalleEvaluacionSst() {
           {selectedEstandar?.numeroEstandar === "4.2.6" && (
             <div className="mb-4">
               <Estandar426VerificacionEPP 
+                isVisible={true}
+                evaluationId={id}
+              />
+            </div>
+          )}
+
+          {/* Estándar 5.1.1 - Plan de prevención, preparación y respuesta ante emergencias */}
+          {selectedEstandar?.numeroEstandar === "5.1.1" && (
+            <div className="mb-4">
+              <Estandar511VerificacionEmergencias 
                 isVisible={true}
                 evaluationId={id}
               />
