@@ -166,7 +166,7 @@ export function Estandar426VerificacionEPP({ isVisible, evaluationId }: Estandar
                 Ir a Capacitaciones
               </Button>
             </Link>
-            <Link href={`/gestion-contratistas${fromParam}`}>
+            <Link href={`/evaluacion-proveedores${fromParam}`}>
               <Button size="sm" variant="outline" className="text-xs border-teal-300 text-teal-700 hover:bg-teal-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-900/50">
                 <Building2 className="h-3 w-3 mr-1" />
                 Ir a Contratistas
