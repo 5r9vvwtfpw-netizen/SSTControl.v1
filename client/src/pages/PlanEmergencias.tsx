@@ -897,6 +897,7 @@ export default function PlanEmergencias() {
       codigo: simulacro.codigo,
       nombre: simulacro.nombre,
       tipo: simulacro.tipo,
+      tipoEmergencia: simulacro.tipo || "",
       fechaProgramada: simulacro.fechaProgramada ? new Date(simulacro.fechaProgramada) : new Date(),
       estado: simulacro.estado,
       avisado: simulacro.avisado ?? 1,
