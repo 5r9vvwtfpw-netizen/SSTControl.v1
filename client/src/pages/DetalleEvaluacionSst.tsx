@@ -25,6 +25,7 @@ import { MinisterioFechasCard } from "@/components/MinisterioFechasCard";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { Estandar423VerificacionProcedimientos } from "@/components/Estandar423VerificacionProcedimientos";
+import { Estandar424VerificacionInspecciones } from "@/components/Estandar424VerificacionInspecciones";
 
 export default function DetalleEvaluacionSst() {
   const { id } = useParams();
@@ -4403,6 +4404,16 @@ export default function DetalleEvaluacionSst() {
           {selectedEstandar?.numeroEstandar === "4.2.3" && (
             <div className="mb-4">
               <Estandar423VerificacionProcedimientos 
+                isVisible={true}
+                evaluationId={id}
+              />
+            </div>
+          )}
+
+          {/* Estándar 4.2.4 - Inspecciones a instalaciones, maquinaria o equipos */}
+          {selectedEstandar?.numeroEstandar === "4.2.4" && (
+            <div className="mb-4">
+              <Estandar424VerificacionInspecciones 
                 isVisible={true}
                 evaluationId={id}
               />
