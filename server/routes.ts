@@ -34476,7 +34476,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         companyId = userCompanyId;
       }
       
-      const validatedData = insertBrigadaEmergenciaSchema.parse(req.body);
+      // Asignar companyId al body antes de validar
+      const dataToValidate = { ...req.body, companyId };
+      const validatedData = insertBrigadaEmergenciaSchema.parse(dataToValidate);
       const brigada = await storage.createBrigadaEmergencia(validatedData, companyId);
       res.status(201).json(brigada);
     } catch (error: any) {
@@ -34798,7 +34800,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         companyId = userCompanyId;
       }
       
-      const validatedData = insertAnalisisVulnerabilidadSchema.parse(req.body);
+      // Asignar companyId al body antes de validar
+      const dataToValidate = { ...req.body, companyId };
+      const validatedData = insertAnalisisVulnerabilidadSchema.parse(dataToValidate);
       const analisis = await storage.createAnalisisVulnerabilidad(validatedData, companyId);
       res.status(201).json(analisis);
     } catch (error: any) {
@@ -34948,7 +34952,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         companyId = userCompanyId;
       }
       
-      const validatedData = insertRecursoEmergenciaSchema.parse(req.body);
+      // Asignar companyId al body antes de validar
+      const dataToValidate = { ...req.body, companyId };
+      const validatedData = insertRecursoEmergenciaSchema.parse(dataToValidate);
       const recurso = await storage.createRecursoEmergencia(validatedData, companyId);
       res.status(201).json(recurso);
     } catch (error: any) {
@@ -35093,7 +35099,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/inspecciones-recursos-emergencia - Create inspection
   app.post("/api/inspecciones-recursos-emergencia", requireAuth, requirePermission("emergency_plans:create"), async (req, res) => {
     try {
-      const validatedData = insertInspeccionRecursoEmergenciaSchema.parse(req.body);
+      // Asignar companyId al body antes de validar
+      const dataToValidate = { ...req.body, companyId };
+      const validatedData = insertInspeccionRecursoEmergenciaSchema.parse(dataToValidate);
       
       const userCompanyId = req.user!.companyId;
       const isAdmin = hasGlobalAccess(req.user!.role);
@@ -35270,7 +35278,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         companyId = userCompanyId;
       }
       
-      const validatedData = insertSimulacroSchema.parse(req.body);
+      // Asignar companyId al body antes de validar
+      const dataToValidate = { ...req.body, companyId };
+      const validatedData = insertSimulacroSchema.parse(dataToValidate);
       const simulacro = await storage.createSimulacro(validatedData, companyId);
       res.status(201).json(simulacro);
     } catch (error: any) {
