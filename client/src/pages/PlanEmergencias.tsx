@@ -354,6 +354,11 @@ export default function PlanEmergencias() {
 
   const { data: participantes = [] } = useQuery<ParticipanteSimulacro[]>({
     queryKey: ["/api/participantes-simulacro", selectedSimulacroId],
+    queryFn: async () => {
+      const res = await fetch(`/api/participantes-simulacro?simulacroId=${selectedSimulacroId}`);
+      if (!res.ok) throw new Error("Error fetching participants");
+      return res.json();
+    },
     enabled: !!selectedSimulacroId,
   });
 
