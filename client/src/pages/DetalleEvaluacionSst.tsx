@@ -31,6 +31,7 @@ import { Estandar426VerificacionEPP } from "@/components/Estandar426Verificacion
 import { Estandar511VerificacionEmergencias } from "@/components/Estandar511VerificacionEmergencias";
 import { Estandar512VerificacionBrigada } from "@/components/Estandar512VerificacionBrigada";
 import { Estandar513VerificacionSimulacros } from "@/components/Estandar513VerificacionSimulacros";
+import { Estandar611VerificacionIndicadores } from "@/components/Estandar611VerificacionIndicadores";
 
 export default function DetalleEvaluacionSst() {
   const { id } = useParams();
@@ -4469,6 +4470,16 @@ export default function DetalleEvaluacionSst() {
           {selectedEstandar?.numeroEstandar === "5.1.3" && (
             <div className="mb-4">
               <Estandar513VerificacionSimulacros 
+                isVisible={true}
+                evaluationId={id}
+              />
+            </div>
+          )}
+
+          {/* Estándar 6.1.1 - Definición de indicadores del SG-SST */}
+          {selectedEstandar?.numeroEstandar === "6.1.1" && (
+            <div className="mb-4">
+              <Estandar611VerificacionIndicadores 
                 isVisible={true}
                 evaluationId={id}
               />
