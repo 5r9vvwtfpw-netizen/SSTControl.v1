@@ -83,6 +83,7 @@ export const TIPOS_PLANES_EMERGENCIA: TipoPlan[] = [
 // ============================================
 export interface TipoBrigada {
   codigo: string;
+  tipoEnum: "primeros_auxilios" | "evacuacion" | "control_incendios" | "busqueda_rescate" | "comunicaciones" | "integral";
   nombre: string;
   descripcion: string;
   funcionesAntes: string;
@@ -96,6 +97,7 @@ export interface TipoBrigada {
 export const TIPOS_BRIGADAS: TipoBrigada[] = [
   {
     codigo: "BRI-PAU",
+    tipoEnum: "primeros_auxilios",
     nombre: "Brigada de Primeros Auxilios",
     descripcion: "Encargada de prestar atención inicial de emergencias médicas a trabajadores y visitantes",
     funcionesAntes: "• Mantener actualizado el inventario de botiquines y equipos médicos\n• Verificar fechas de vencimiento de medicamentos\n• Participar en capacitaciones de primeros auxilios\n• Conocer las condiciones de salud especiales del personal\n• Mantener actualizados los números de emergencia médica",
@@ -107,6 +109,7 @@ export const TIPOS_BRIGADAS: TipoBrigada[] = [
   },
   {
     codigo: "BRI-EVA",
+    tipoEnum: "evacuacion",
     nombre: "Brigada de Evacuación",
     descripcion: "Responsable de guiar y coordinar la evacuación segura del personal e instalaciones",
     funcionesAntes: "• Conocer y verificar las rutas de evacuación\n• Verificar señalización de emergencia y estado de salidas\n• Mantener actualizado el censo de personal por áreas\n• Identificar personas con necesidades especiales\n• Participar en simulacros de evacuación",
@@ -118,6 +121,7 @@ export const TIPOS_BRIGADAS: TipoBrigada[] = [
   },
   {
     codigo: "BRI-INC",
+    tipoEnum: "control_incendios",
     nombre: "Brigada contra Incendios",
     descripcion: "Especializada en prevención, detección y control inicial de incendios",
     funcionesAntes: "• Inspeccionar mensualmente extintores y equipos contra incendio\n• Verificar funcionamiento de sistemas de detección\n• Mantener despejadas las áreas de extintores e hidrantes\n• Conocer ubicación de válvulas de corte de servicios\n• Participar en prácticas de manejo de extintores",
@@ -129,6 +133,7 @@ export const TIPOS_BRIGADAS: TipoBrigada[] = [
   },
   {
     codigo: "BRI-BYR",
+    tipoEnum: "busqueda_rescate",
     nombre: "Brigada de Búsqueda y Rescate",
     descripcion: "Especializada en localización y rescate de personas atrapadas o en peligro",
     funcionesAntes: "• Conocer todas las áreas de la empresa incluyendo sótanos y terrazas\n• Mantener actualizados planos de la edificación\n• Verificar equipos de rescate y EPP\n• Identificar posibles zonas de colapso\n• Practicar técnicas de rescate regularmente",
@@ -140,6 +145,7 @@ export const TIPOS_BRIGADAS: TipoBrigada[] = [
   },
   {
     codigo: "BRI-COM",
+    tipoEnum: "comunicaciones",
     nombre: "Brigada de Comunicaciones",
     descripcion: "Responsable de coordinar las comunicaciones internas y externas durante emergencias",
     funcionesAntes: "• Mantener actualizado directorio de emergencias\n• Verificar funcionamiento de radios y sistemas de comunicación\n• Conocer protocolos de comunicación con entidades externas\n• Mantener actualizada lista de contactos de familiares\n• Coordinar con recepción y vigilancia",
@@ -151,6 +157,7 @@ export const TIPOS_BRIGADAS: TipoBrigada[] = [
   },
   {
     codigo: "BRI-INT",
+    tipoEnum: "integral",
     nombre: "Brigada Integral",
     descripcion: "Brigada capacitada en todas las especialidades para empresas con recursos limitados",
     funcionesAntes: "• Cumplir todas las funciones preventivas de las brigadas especializadas\n• Mantener inventario completo de equipos de emergencia\n• Participar en todas las capacitaciones requeridas\n• Conocer todos los procedimientos de emergencia\n• Verificar sistemas de alarma y rutas de evacuación",

@@ -1460,7 +1460,7 @@ export default function PlanEmergencias() {
                         <Select 
                           onValueChange={(value) => {
                             field.onChange(value);
-                            const tipo = TIPOS_BRIGADAS.find(t => t.codigo === value);
+                            const tipo = TIPOS_BRIGADAS.find(t => t.tipoEnum === value);
                             setTipoBrigadaSeleccionado(tipo || null);
                             if (tipo) {
                               brigadaForm.setValue("nombre", `Brigada de ${tipo.nombre}`);
@@ -1475,7 +1475,7 @@ export default function PlanEmergencias() {
                           <FormControl><SelectTrigger data-testid="select-tipo-brigada"><SelectValue placeholder="Seleccione tipo de brigada" /></SelectTrigger></FormControl>
                           <SelectContent>
                             {TIPOS_BRIGADAS.map((tipo) => (
-                              <SelectItem key={tipo.codigo} value={tipo.codigo}>{tipo.nombre}</SelectItem>
+                              <SelectItem key={tipo.tipoEnum} value={tipo.tipoEnum}>{tipo.nombre}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
