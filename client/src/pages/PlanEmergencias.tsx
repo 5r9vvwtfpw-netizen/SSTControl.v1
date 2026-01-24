@@ -2319,6 +2319,8 @@ export default function PlanEmergencias() {
                               const fecha = new Date().toLocaleDateString('es-CO');
                               simulacroForm.setValue("codigo", generarCodigoSimulacro(tipo.codigo, consecutivo), { shouldValidate: true });
                               simulacroForm.setValue("nombre", `${tipo.nombre} - ${fecha}`, { shouldValidate: true });
+                              simulacroForm.setValue("coordinadorNombre", user?.fullName || "Coordinador SST", { shouldValidate: true });
+                              simulacroForm.setValue("estado", "programado", { shouldValidate: true });
                             }
                           }} 
                           value={field.value}
@@ -2402,14 +2404,20 @@ export default function PlanEmergencias() {
                     </div>
                     <FormField control={simulacroForm.control} name="coordinadorNombre" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Coordinador</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Coordinador
+                          <span className="flex items-center gap-1 text-xs text-primary"><Sparkles className="h-3 w-3" /> Auto</span>
+                        </FormLabel>
                         <FormControl><Input {...field} value={field.value || ""} data-testid="input-coordinador-simulacro" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
                     <FormField control={simulacroForm.control} name="estado" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Estado</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Estado
+                          <span className="flex items-center gap-1 text-xs text-primary"><Sparkles className="h-3 w-3" /> Auto</span>
+                        </FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl><SelectTrigger data-testid="select-estado-simulacro"><SelectValue /></SelectTrigger></FormControl>
                           <SelectContent>
