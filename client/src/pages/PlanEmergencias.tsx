@@ -2321,6 +2321,10 @@ export default function PlanEmergencias() {
                               simulacroForm.setValue("nombre", `${tipo.nombre} - ${fecha}`, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
                               simulacroForm.setValue("coordinadorNombre", user?.fullName || "Coordinador SST", { shouldValidate: true, shouldDirty: true, shouldTouch: true });
                               simulacroForm.setValue("estado", "programado", { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+                              // Trigger revalidation after setting all values
+                              setTimeout(() => {
+                                simulacroForm.trigger(["codigo", "nombre", "coordinadorNombre", "estado"]);
+                              }, 100);
                             }
                           }} 
                           value={field.value}
@@ -2397,7 +2401,7 @@ export default function PlanEmergencias() {
                             Nombre *
                             <span className="flex items-center gap-1 text-xs text-primary"><Sparkles className="h-3 w-3" /> Auto</span>
                           </FormLabel>
-                          <FormControl><Input {...field} data-testid="input-nombre-simulacro" placeholder="Simulacro de Evacuación General" /></FormControl>
+                          <FormControl><Input {...field} value={field.value || ""} onChange={(e) => field.onChange(e.target.value)} data-testid="input-nombre-simulacro" placeholder="Simulacro de Evacuación General" /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />
