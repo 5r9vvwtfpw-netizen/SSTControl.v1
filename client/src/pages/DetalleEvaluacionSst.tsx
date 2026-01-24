@@ -4404,6 +4404,7 @@ export default function DetalleEvaluacionSst() {
             <div className="mb-4">
               <Estandar423VerificacionProcedimientos 
                 isVisible={true}
+                evaluationId={id}
               />
             </div>
           )}

@@ -5,6 +5,7 @@ import { Link } from "wouter";
 
 interface Estandar423VerificacionProcedimientosProps {
   isVisible: boolean;
+  evaluationId?: string;
 }
 
 const documentosRequeridos = [
@@ -43,8 +44,12 @@ const criteriosVerificacion = [
   "Verificar registros de capacitación sobre los procedimientos e instructivos",
 ];
 
-export function Estandar423VerificacionProcedimientos({ isVisible }: Estandar423VerificacionProcedimientosProps) {
+export function Estandar423VerificacionProcedimientos({ isVisible, evaluationId }: Estandar423VerificacionProcedimientosProps) {
   if (!isVisible) return null;
+
+  const fromParam = evaluationId 
+    ? `?from=evaluation&evaluationId=${evaluationId}` 
+    : "?from=evaluation";
 
   return (
     <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
@@ -137,7 +142,7 @@ export function Estandar423VerificacionProcedimientos({ isVisible }: Estandar423
               data-testid="button-ver-documentos-423"
               asChild
             >
-              <Link href="/conservacion-documentos">
+              <Link href={`/conservacion-documentos${fromParam}`}>
                 <FileText className="h-4 w-4 mr-2" />
                 Ver Documentos SST
               </Link>
@@ -149,7 +154,7 @@ export function Estandar423VerificacionProcedimientos({ isVisible }: Estandar423
               data-testid="button-ver-capacitaciones-423"
               asChild
             >
-              <Link href="/capacitaciones">
+              <Link href={`/capacitaciones${fromParam}`}>
                 <BookOpen className="h-4 w-4 mr-2" />
                 Ver Capacitaciones
               </Link>
@@ -161,7 +166,7 @@ export function Estandar423VerificacionProcedimientos({ isVisible }: Estandar423
               data-testid="button-ver-trabajadores-423"
               asChild
             >
-              <Link href="/trabajadores">
+              <Link href={`/trabajadores${fromParam}`}>
                 <Users className="h-4 w-4 mr-2" />
                 Ver Trabajadores
               </Link>
@@ -173,7 +178,7 @@ export function Estandar423VerificacionProcedimientos({ isVisible }: Estandar423
               data-testid="button-ver-iperc-423"
               asChild
             >
-              <Link href="/iperc">
+              <Link href={`/iperc${fromParam}`}>
                 <ShieldCheck className="h-4 w-4 mr-2" />
                 Ver Matriz IPERC
               </Link>
