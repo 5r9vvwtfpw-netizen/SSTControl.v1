@@ -1,25 +1,21 @@
 import { PreventiveMeasureCard } from "@/components/PreventiveMeasureCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search, Filter, Sparkles } from "lucide-react";
 import { Link } from "wouter";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { PreventiveMeasure, insertPreventiveMeasureSchema, Worker } from "@shared/schema";
+import { PreventiveMeasure } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { z } from "zod";
 import { hasCompanyAdminAccess } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { MedidaPreventivaFormEnhanced, MedidaPreventivaFormData } from "@/components/MedidaPreventivaFormEnhanced";
 
 const normativaMedidasPreventivas = [
   {
@@ -50,12 +46,6 @@ const normativaMedidasPreventivas = [
   }
 ];
 
-const formSchema = insertPreventiveMeasureSchema
-  .omit({ companyId: true })
-  .extend({
-    relatedArea: z.string().optional(),
-  });
-
 export default function MedidasPreventivas() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -63,34 +53,23 @@ export default function MedidasPreventivas() {
   const [statusFilter, setStatusFilter] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      responsible: "",
-      dueDate: "",
-      status: "pendiente",
-      priority: "media",
-      relatedArea: "",
-    },
-  });
-
   const { data: measures = [], isLoading: measuresLoading } = useQuery<PreventiveMeasure[]>({
     queryKey: ["/api/preventive-measures"],
   });
 
-  const { data: workers = [] } = useQuery<Worker[]>({
-    queryKey: ["/api/workers"],
-  });
-
   const createMeasureMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof formSchema>) => {
+    mutationFn: async (data: MedidaPreventivaFormData) => {
       if (!user?.companyId) {
         throw new Error("Usuario sin empresa asignada");
       }
       const payload = {
-        ...data,
+        title: data.title,
+        description: data.description,
+        responsible: data.responsible,
+        dueDate: data.dueDate,
+        status: data.status,
+        priority: data.priority,
+        relatedArea: data.relatedArea || "",
         companyId: user.companyId,
       };
       const res = await apiRequest("POST", "/api/preventive-measures", payload);
@@ -99,7 +78,6 @@ export default function MedidasPreventivas() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/preventive-measures"] });
       setDialogOpen(false);
-      form.reset();
       toast({
         title: "Medida preventiva creada",
         description: "La medida preventiva se ha registrado exitosamente",
@@ -115,8 +93,8 @@ export default function MedidasPreventivas() {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    createMeasureMutation.mutate(values);
+  const handleFormSubmit = (data: MedidaPreventivaFormData) => {
+    createMeasureMutation.mutate(data);
   };
 
   const filteredMeasures = measures.filter((measure) => {
@@ -159,164 +137,19 @@ export default function MedidasPreventivas() {
                 Nueva Medida
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Registrar Nueva Medida Preventiva</DialogTitle>
-                <DialogDescription>Complete los datos de la medida preventiva</DialogDescription>
+                <DialogTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Formulario Inteligente de Medidas
+                </DialogTitle>
               </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Título</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Ej: Capacitación en uso de EPP" 
-                            data-testid="input-title"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Descripción</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Describa la medida preventiva en detalle"
-                            data-testid="input-description"
-                            rows={3}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="responsible"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Responsable</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-responsible">
-                                <SelectValue placeholder="Seleccione un responsable" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {workers.map((worker) => (
-                                <SelectItem key={worker.id} value={worker.name}>
-                                  {worker.name} - {worker.position}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="dueDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Fecha de Vencimiento</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="date" 
-                              data-testid="input-due-date"
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="priority"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Prioridad</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-priority">
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="baja">Baja</SelectItem>
-                              <SelectItem value="media">Media</SelectItem>
-                              <SelectItem value="alta">Alta</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Estado</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-status">
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="pendiente">Pendiente</SelectItem>
-                              <SelectItem value="en-progreso">En Progreso</SelectItem>
-                              <SelectItem value="completada">Completada</SelectItem>
-                              <SelectItem value="vencida">Vencida</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="relatedArea"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Área Relacionada (opcional)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Ej: Producción, Almacén, etc." 
-                            data-testid="input-related-area"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
-                    <Button 
-                      type="submit" 
-                      disabled={createMeasureMutation.isPending}
-                      data-testid="button-submit"
-                    >
-                      {createMeasureMutation.isPending ? "Guardando..." : "Guardar Medida"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
+              <MedidaPreventivaFormEnhanced
+                onSubmit={handleFormSubmit}
+                onCancel={() => setDialogOpen(false)}
+                existingMeasuresCount={measures.length}
+                isLoading={createMeasureMutation.isPending}
+              />
             </DialogContent>
           </Dialog>
         )}
