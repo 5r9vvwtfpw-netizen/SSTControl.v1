@@ -199,7 +199,7 @@ export default function PlanEmergencias() {
     defaultValues: {
       companyId: "",
       nombre: "",
-      tipo: "integral",
+      tipoBrigada: "integral",
       descripcion: "",
       funcionesAntes: "",
       funcionesDurante: "",
@@ -1451,7 +1451,7 @@ export default function PlanEmergencias() {
                         </FormItem>
                       )} />
                     )}
-                    <FormField control={brigadaForm.control} name="tipo" render={({ field }) => (
+                    <FormField control={brigadaForm.control} name="tipoBrigada" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
                           <Sparkles className="h-4 w-4 text-primary" />
