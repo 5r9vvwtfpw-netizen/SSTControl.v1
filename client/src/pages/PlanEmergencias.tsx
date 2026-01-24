@@ -2317,10 +2317,10 @@ export default function PlanEmergencias() {
                             if (tipo) {
                               const consecutivo = simulacros.length + 1;
                               const fecha = new Date().toLocaleDateString('es-CO');
-                              simulacroForm.setValue("codigo", generarCodigoSimulacro(tipo.codigo, consecutivo), { shouldValidate: true });
-                              simulacroForm.setValue("nombre", `${tipo.nombre} - ${fecha}`, { shouldValidate: true });
-                              simulacroForm.setValue("coordinadorNombre", user?.fullName || "Coordinador SST", { shouldValidate: true });
-                              simulacroForm.setValue("estado", "programado", { shouldValidate: true });
+                              simulacroForm.setValue("codigo", generarCodigoSimulacro(tipo.codigo, consecutivo), { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+                              simulacroForm.setValue("nombre", `${tipo.nombre} - ${fecha}`, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+                              simulacroForm.setValue("coordinadorNombre", user?.fullName || "Coordinador SST", { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+                              simulacroForm.setValue("estado", "programado", { shouldValidate: true, shouldDirty: true, shouldTouch: true });
                             }
                           }} 
                           value={field.value}
