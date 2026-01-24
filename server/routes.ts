@@ -5715,65 +5715,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const company = await storage.getCompany(companyId);
       
-      const doc = new PDFDocument({ size: "LETTER", margin: 50 });
+      // Cargar logo de la empresa
+      const logoBuffer = company?.logoUrl ? await loadCompanyLogo(company.logoUrl) : null;
+      
+      // Obtener firmantes
+      const signers = await getSignersForCompany(companyId, false);
+      
+      const doc = new PDFDocument({ size: "LETTER", margin: PDF_CONFIG.MARGIN });
       
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="hallazgo-${measure.id}.pdf"`);
       doc.pipe(res);
 
-      // Header
-      doc.fontSize(20).font("Helvetica-Bold").text("HALLAZGO / MEDIDA PREVENTIVA", { align: "center" });
-      doc.moveDown(0.5);
-      doc.fontSize(10).font("Helvetica").text(company?.name || "Empresa", { align: "center" });
-      doc.moveDown(1);
+      // 1. Encabezado corporativo estándar
+      let currentY = await addStandardHeader({
+        doc,
+        company: {
+          id: companyId,
+          name: company?.name || "Empresa",
+          nit: company?.nit || "N/A",
+          address: company?.address,
+          logoUrl: company?.logoUrl,
+        },
+        documentTitle: "HALLAZGO / MEDIDA PREVENTIVA",
+        documentCode: getDocumentCode("SST-HAL", new Date().getFullYear()),
+        version: "1.0",
+        date: new Date(),
+        logoBuffer,
+      });
 
-      // Horizontal line
-      doc.moveTo(50, doc.y).lineTo(562, doc.y).stroke();
-      doc.moveDown(1);
+      doc.y = currentY + 10;
 
-      // Priority and Status badges
-      const priorityColors: Record<string, string> = { alta: "#dc2626", media: "#f97316", baja: "#6b7280" };
+      // 2. Sección: Información General
+      currentY = addSectionBar(doc, "INFORMACIÓN GENERAL");
+      doc.y = currentY;
+
+      const priorityLabels: Record<string, string> = { alta: "Alta", media: "Media", baja: "Baja" };
       const statusLabels: Record<string, string> = { pendiente: "Pendiente", "en-progreso": "En Progreso", completada: "Completada", vencida: "Vencida" };
-      
-      doc.fontSize(12).font("Helvetica-Bold");
-      doc.text(`Prioridad: ${measure.priority.charAt(0).toUpperCase() + measure.priority.slice(1)}`, { continued: true });
-      doc.text(`    Estado: ${statusLabels[measure.status] || measure.status}`, { align: "right" });
+
+      doc.fontSize(9).font("Helvetica");
+      doc.text(`Prioridad: ${priorityLabels[measure.priority] || measure.priority}`, PDF_CONFIG.MARGIN, doc.y);
+      doc.text(`Estado: ${statusLabels[measure.status] || measure.status}`, PDF_CONFIG.MARGIN, doc.y + 5);
+      doc.moveDown(1.5);
+
+      // 3. Sección: Detalle del Hallazgo
+      currentY = addSectionBar(doc, "DETALLE DEL HALLAZGO");
+      doc.y = currentY;
+
+      doc.fontSize(10).font("Helvetica-Bold").text("Título:", PDF_CONFIG.MARGIN, doc.y);
+      doc.fontSize(9).font("Helvetica").text(measure.title, PDF_CONFIG.MARGIN, doc.y + 2);
       doc.moveDown(1);
 
-      // Title
-      doc.fontSize(14).font("Helvetica-Bold").text("Título:");
-      doc.fontSize(12).font("Helvetica").text(measure.title);
-      doc.moveDown(0.5);
+      doc.fontSize(10).font("Helvetica-Bold").text("Descripción:", PDF_CONFIG.MARGIN, doc.y);
+      doc.fontSize(9).font("Helvetica").text(measure.description || "N/A", PDF_CONFIG.MARGIN, doc.y + 2);
+      doc.moveDown(1);
 
-      // Description
-      doc.fontSize(14).font("Helvetica-Bold").text("Descripción:");
-      doc.fontSize(12).font("Helvetica").text(measure.description);
-      doc.moveDown(0.5);
+      // 4. Sección: Responsable y Fechas
+      currentY = addSectionBar(doc, "RESPONSABLE Y FECHAS");
+      doc.y = currentY;
 
-      // Responsible
-      doc.fontSize(14).font("Helvetica-Bold").text("Responsable:");
-      doc.fontSize(12).font("Helvetica").text(measure.responsible);
-      doc.moveDown(0.5);
+      doc.fontSize(10).font("Helvetica-Bold").text("Responsable:", PDF_CONFIG.MARGIN, doc.y);
+      doc.fontSize(9).font("Helvetica").text(measure.responsible || "N/A", PDF_CONFIG.MARGIN, doc.y + 2);
+      doc.moveDown(1);
 
-      // Due date
-      doc.fontSize(14).font("Helvetica-Bold").text("Fecha de Vencimiento:");
-      doc.fontSize(12).font("Helvetica").text(measure.dueDate ? new Date(measure.dueDate).toLocaleDateString("es-CO") : "N/A");
-      doc.moveDown(0.5);
+      doc.fontSize(10).font("Helvetica-Bold").text("Fecha de Vencimiento:", PDF_CONFIG.MARGIN, doc.y);
+      doc.fontSize(9).font("Helvetica").text(measure.dueDate ? formatDate(measure.dueDate) : "N/A", PDF_CONFIG.MARGIN, doc.y + 2);
+      doc.moveDown(1);
 
-      // Related area
       if (measure.relatedArea) {
-        doc.fontSize(14).font("Helvetica-Bold").text("Área Relacionada:");
-        doc.fontSize(12).font("Helvetica").text(measure.relatedArea);
-        doc.moveDown(0.5);
+        doc.fontSize(10).font("Helvetica-Bold").text("Área Relacionada:", PDF_CONFIG.MARGIN, doc.y);
+        doc.fontSize(9).font("Helvetica").text(measure.relatedArea, PDF_CONFIG.MARGIN, doc.y + 2);
+        doc.moveDown(1);
       }
 
-      // Footer with normative reference
-      doc.moveDown(2);
-      doc.moveTo(50, doc.y).lineTo(562, doc.y).stroke();
-      doc.moveDown(0.5);
-      doc.fontSize(8).font("Helvetica").fillColor("#666666");
-      doc.text("Referencia normativa: Decreto 1072/2015 Art. 2.2.4.6.33 - Resolución 0312/2019 Estándar 4.1.1", { align: "center" });
-      doc.text(`Generado: ${new Date().toLocaleDateString("es-CO")} - Sistema SG-SST Colombia`, { align: "center" });
+      // 5. Sección: Cumplimiento Normativo
+      currentY = addSectionBar(doc, "CUMPLIMIENTO NORMATIVO");
+      doc.y = currentY;
+
+      doc.fontSize(8).font("Helvetica").fillColor("#333333");
+      doc.text("• Decreto 1072/2015, Artículo 2.2.4.6.33 - Acciones preventivas y correctivas", PDF_CONFIG.MARGIN, doc.y);
+      doc.text("• Resolución 0312/2019, Estándar 4.1.1 - Medidas de prevención y control", PDF_CONFIG.MARGIN, doc.y + 3);
+      doc.text("• ISO 45001:2018, Cláusula 10.2 - Incidentes, no conformidades y acciones correctivas", PDF_CONFIG.MARGIN, doc.y + 3);
+      doc.fillColor("#000000");
+
+      // 6. Footer con firmantes
+      addSignatureFooter(doc, signers, false);
 
       doc.end();
     } catch (error) {
