@@ -92,7 +92,7 @@ export function Estandar513VerificacionSimulacros({ isVisible, evaluationId }: E
               data-testid="button-ver-cronograma-513"
               asChild
             >
-              <Link href={buildUrl("/cronograma-actividades")}>
+              <Link href={buildUrl("/plan-emergencias", "simulacros")}>
                 <Calendar className="h-4 w-4 mr-2" />
                 Ver Cronograma
               </Link>
