@@ -26,6 +26,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { Estandar423VerificacionProcedimientos } from "@/components/Estandar423VerificacionProcedimientos";
 import { Estandar424VerificacionInspecciones } from "@/components/Estandar424VerificacionInspecciones";
+import { Estandar425VerificacionMantenimiento } from "@/components/Estandar425VerificacionMantenimiento";
 
 export default function DetalleEvaluacionSst() {
   const { id } = useParams();
@@ -4414,6 +4415,16 @@ export default function DetalleEvaluacionSst() {
           {selectedEstandar?.numeroEstandar === "4.2.4" && (
             <div className="mb-4">
               <Estandar424VerificacionInspecciones 
+                isVisible={true}
+                evaluationId={id}
+              />
+            </div>
+          )}
+
+          {/* Estándar 4.2.5 - Mantenimiento periódico de instalaciones, equipos, máquinas, herramientas */}
+          {selectedEstandar?.numeroEstandar === "4.2.5" && (
+            <div className="mb-4">
+              <Estandar425VerificacionMantenimiento 
                 isVisible={true}
                 evaluationId={id}
               />
