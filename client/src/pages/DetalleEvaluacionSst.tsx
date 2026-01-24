@@ -29,6 +29,7 @@ import { Estandar424VerificacionInspecciones } from "@/components/Estandar424Ver
 import { Estandar425VerificacionMantenimiento } from "@/components/Estandar425VerificacionMantenimiento";
 import { Estandar426VerificacionEPP } from "@/components/Estandar426VerificacionEPP";
 import { Estandar511VerificacionEmergencias } from "@/components/Estandar511VerificacionEmergencias";
+import { Estandar512VerificacionBrigada } from "@/components/Estandar512VerificacionBrigada";
 
 export default function DetalleEvaluacionSst() {
   const { id } = useParams();
@@ -4447,6 +4448,16 @@ export default function DetalleEvaluacionSst() {
           {selectedEstandar?.numeroEstandar === "5.1.1" && (
             <div className="mb-4">
               <Estandar511VerificacionEmergencias 
+                isVisible={true}
+                evaluationId={id}
+              />
+            </div>
+          )}
+
+          {/* Estándar 5.1.2 - Brigada de prevención, preparación y respuesta ante emergencias */}
+          {selectedEstandar?.numeroEstandar === "5.1.2" && (
+            <div className="mb-4">
+              <Estandar512VerificacionBrigada 
                 isVisible={true}
                 evaluationId={id}
               />
