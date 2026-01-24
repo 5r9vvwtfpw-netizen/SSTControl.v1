@@ -199,7 +199,7 @@ export default function PlanEmergencias() {
     defaultValues: {
       companyId: "",
       nombre: "",
-      tipoBrigada: "integral",
+      tipo: "integral",
       descripcion: "",
       funcionesAntes: "",
       funcionesDurante: "",
@@ -1451,7 +1451,7 @@ export default function PlanEmergencias() {
                         </FormItem>
                       )} />
                     )}
-                    <FormField control={brigadaForm.control} name="tipoBrigada" render={({ field }) => (
+                    <FormField control={brigadaForm.control} name="tipo" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
                           <Sparkles className="h-4 w-4 text-primary" />
@@ -1463,11 +1463,11 @@ export default function PlanEmergencias() {
                             const tipo = TIPOS_BRIGADAS.find(t => t.tipoEnum === value);
                             setTipoBrigadaSeleccionado(tipo || null);
                             if (tipo) {
-                              brigadaForm.setValue("nombre", `Brigada de ${tipo.nombre}`);
-                              brigadaForm.setValue("descripcion", tipo.descripcion);
-                              brigadaForm.setValue("funcionesAntes", tipo.funcionesAntes);
-                              brigadaForm.setValue("funcionesDurante", tipo.funcionesDurante);
-                              brigadaForm.setValue("funcionesDespues", tipo.funcionesDespues);
+                              brigadaForm.setValue("nombre", `Brigada de ${tipo.nombre}`, { shouldValidate: true });
+                              brigadaForm.setValue("descripcion", tipo.descripcion, { shouldValidate: true });
+                              brigadaForm.setValue("funcionesAntes", tipo.funcionesAntes, { shouldValidate: true });
+                              brigadaForm.setValue("funcionesDurante", tipo.funcionesDurante, { shouldValidate: true });
+                              brigadaForm.setValue("funcionesDespues", tipo.funcionesDespues, { shouldValidate: true });
                             }
                           }} 
                           value={field.value}

@@ -6552,7 +6552,7 @@ export const insertBrigadaEmergenciaSchema = createInsertSchema(brigadasEmergenc
   .omit({ id: true, createdAt: true })
   .extend({
     nombre: z.string().min(1, "El nombre de la brigada es obligatorio"),
-    tipoBrigada: z.string().min(1, "El tipo de brigada es obligatorio"),
+    tipo: z.string().min(1, "El tipo de brigada es obligatorio"),
   });
 export type InsertBrigadaEmergencia = z.infer<typeof insertBrigadaEmergenciaSchema>;
 export type BrigadaEmergencia = typeof brigadasEmergencia.$inferSelect;
