@@ -320,6 +320,10 @@ export default function EntregaEpp() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
+      <div className="flex justify-between items-center gap-4">
+        <BackToEvaluationButton />
+        <BackToCronogramaButton />
+      </div>
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <Button
@@ -342,8 +346,6 @@ export default function EntregaEpp() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <BackToEvaluationButton />
-          <BackToCronogramaButton />
           <Button onClick={handleNew} data-testid="button-new-delivery">
             <Plus className="h-4 w-4 mr-2" />
             Nueva Entrega

@@ -348,7 +348,7 @@ export default function SustanciasQuimicas() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end gap-4">
+      <div className="flex justify-between items-center gap-4">
         <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>

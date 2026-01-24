@@ -522,7 +522,7 @@ export default function AnalisisContexto() {
 
   return (
     <div className="container mx-auto p-6 space-y-6" data-testid="page-analisis-contexto">
-      <div className="flex justify-end">
+      <div className="flex justify-start">
         <BackToEvaluationButton />
       </div>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

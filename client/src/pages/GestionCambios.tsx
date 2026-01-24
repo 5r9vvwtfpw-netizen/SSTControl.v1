@@ -217,6 +217,10 @@ export default function GestionCambios() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center gap-4">
+        <BackToEvaluationButton />
+        <BackToCronogramaButton />
+      </div>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href="/evaluaciones-sst">
@@ -225,10 +229,6 @@ export default function GestionCambios() {
             </Button>
           </Link>
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Gestión de Cambios SST</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <BackToEvaluationButton />
-          <BackToCronogramaButton />
         </div>
       </div>
       <div>

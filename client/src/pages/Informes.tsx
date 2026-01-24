@@ -141,7 +141,7 @@ export default function Informes() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex justify-start">
         <BackToEvaluationButton />
       </div>
       <div className="flex items-center gap-4">

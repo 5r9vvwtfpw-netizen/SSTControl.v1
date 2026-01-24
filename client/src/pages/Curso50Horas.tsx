@@ -215,6 +215,10 @@ export default function Curso50HorasPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center gap-4">
+        <BackToEvaluationButton />
+        <BackToCronogramaButton />
+      </div>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Link href="/evaluaciones-sst">
@@ -229,10 +233,6 @@ export default function Curso50HorasPage() {
               Gestión del certificado del curso de capacitación virtual de 50 horas en SST
             </p>
           </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <BackToEvaluationButton />
-          <BackToCronogramaButton />
         </div>
       </div>
 
