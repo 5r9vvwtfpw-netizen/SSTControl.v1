@@ -215,7 +215,7 @@ export function Estandar425VerificacionMantenimiento({ isVisible, evaluationId }
                 Matriz IPERC
               </Button>
             </Link>
-            <Link href={`/hallazgos${fromParam}`}>
+            <Link href={`/medidas${fromParam}`}>
               <Button variant="outline" size="sm" className="text-xs">
                 <Shield className="h-3 w-3 mr-1" />
                 Hallazgos
