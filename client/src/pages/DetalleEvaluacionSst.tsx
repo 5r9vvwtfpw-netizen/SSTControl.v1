@@ -32,6 +32,7 @@ import { Estandar511VerificacionEmergencias } from "@/components/Estandar511Veri
 import { Estandar512VerificacionBrigada } from "@/components/Estandar512VerificacionBrigada";
 import { Estandar513VerificacionSimulacros } from "@/components/Estandar513VerificacionSimulacros";
 import { Estandar611VerificacionIndicadores } from "@/components/Estandar611VerificacionIndicadores";
+import { Estandar612VerificacionAuditoria } from "@/components/Estandar612VerificacionAuditoria";
 
 export default function DetalleEvaluacionSst() {
   const { id } = useParams();
@@ -4480,6 +4481,16 @@ export default function DetalleEvaluacionSst() {
           {selectedEstandar?.numeroEstandar === "6.1.1" && (
             <div className="mb-4">
               <Estandar611VerificacionIndicadores 
+                isVisible={true}
+                evaluationId={id}
+              />
+            </div>
+          )}
+
+          {/* Estándar 6.1.2 - Auditoría anual */}
+          {selectedEstandar?.numeroEstandar === "6.1.2" && (
+            <div className="mb-4">
+              <Estandar612VerificacionAuditoria 
                 isVisible={true}
                 evaluationId={id}
               />
