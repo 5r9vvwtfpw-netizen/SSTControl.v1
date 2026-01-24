@@ -34324,7 +34324,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         companyId = userCompanyId;
       }
       
-      const validatedData = insertPlanEmergenciaSchema.parse(req.body);
+      // Asignar companyId al body antes de validar para usuarios no-admin
+      const dataToValidate = { ...req.body, companyId };
+      const validatedData = insertPlanEmergenciaSchema.parse(dataToValidate);
       const plan = await storage.createPlanEmergencia(validatedData, companyId);
       res.status(201).json(plan);
     } catch (error: any) {
