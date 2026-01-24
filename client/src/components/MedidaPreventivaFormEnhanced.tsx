@@ -62,6 +62,7 @@ interface MedidaPreventivaFormEnhancedProps {
   existingMeasuresCount: number;
   isLoading?: boolean;
   defaultArea?: string;
+  initialData?: Partial<MedidaPreventivaFormData>;
 }
 
 export function MedidaPreventivaFormEnhanced({
@@ -69,7 +70,8 @@ export function MedidaPreventivaFormEnhanced({
   onCancel,
   existingMeasuresCount,
   isLoading = false,
-  defaultArea = ""
+  defaultArea = "",
+  initialData
 }: MedidaPreventivaFormEnhancedProps) {
   const { user } = useAuth();
   const [selectedCategoria, setSelectedCategoria] = useState<'preventiva' | 'correctiva' | 'mejora'>('preventiva');
@@ -87,16 +89,16 @@ export function MedidaPreventivaFormEnhanced({
   const form = useForm<MedidaPreventivaFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      codigo: "",
-      categoria: "preventiva",
-      tipoMedidaCodigo: "",
-      title: "",
-      description: "",
-      responsible: user?.fullName || user?.username || "",
-      dueDate: "",
-      status: "pendiente",
-      priority: "media",
-      relatedArea: defaultArea,
+      codigo: initialData?.codigo || "",
+      categoria: initialData?.categoria || "preventiva",
+      tipoMedidaCodigo: initialData?.tipoMedidaCodigo || "",
+      title: initialData?.title || "",
+      description: initialData?.description || "",
+      responsible: initialData?.responsible || user?.fullName || user?.username || "",
+      dueDate: initialData?.dueDate || "",
+      status: initialData?.status || "pendiente",
+      priority: initialData?.priority || "media",
+      relatedArea: initialData?.relatedArea || defaultArea,
     },
   });
 

@@ -1,8 +1,9 @@
-import { PreventiveMeasureCard } from "@/components/PreventiveMeasureCard";
+import { PreventiveMeasureCardEnhanced } from "@/components/PreventiveMeasureCardEnhanced";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Search, Filter, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
@@ -52,6 +53,10 @@ export default function MedidasPreventivas() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedMeasure, setSelectedMeasure] = useState<PreventiveMeasure | null>(null);
 
   const { data: measures = [], isLoading: measuresLoading } = useQuery<PreventiveMeasure[]>({
     queryKey: ["/api/preventive-measures"],
@@ -93,8 +98,100 @@ export default function MedidasPreventivas() {
     },
   });
 
+  const updateMeasureMutation = useMutation({
+    mutationFn: async (data: MedidaPreventivaFormData & { id: string }) => {
+      const payload = {
+        title: data.title,
+        description: data.description,
+        responsible: data.responsible,
+        dueDate: data.dueDate,
+        status: data.status,
+        priority: data.priority,
+        relatedArea: data.relatedArea || "",
+      };
+      const res = await apiRequest("PATCH", `/api/preventive-measures/${data.id}`, payload);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/preventive-measures"] });
+      setEditDialogOpen(false);
+      setSelectedMeasure(null);
+      toast({
+        title: "Medida actualizada",
+        description: "La medida preventiva se ha actualizado exitosamente",
+        className: "bg-blue-50 border-blue-200",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMeasureMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/preventive-measures/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/preventive-measures"] });
+      setDeleteDialogOpen(false);
+      setSelectedMeasure(null);
+      toast({
+        title: "Medida eliminada",
+        description: "La medida preventiva se ha eliminado exitosamente",
+        className: "bg-red-50 border-red-200",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleFormSubmit = (data: MedidaPreventivaFormData) => {
     createMeasureMutation.mutate(data);
+  };
+
+  const handleEditSubmit = (data: MedidaPreventivaFormData) => {
+    if (selectedMeasure) {
+      updateMeasureMutation.mutate({ ...data, id: selectedMeasure.id });
+    }
+  };
+
+  const handleView = (id: string) => {
+    const measure = measures.find(m => m.id === id);
+    if (measure) {
+      setSelectedMeasure(measure);
+      setViewDialogOpen(true);
+    }
+  };
+
+  const handleEdit = (id: string) => {
+    const measure = measures.find(m => m.id === id);
+    if (measure) {
+      setSelectedMeasure(measure);
+      setEditDialogOpen(true);
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    const measure = measures.find(m => m.id === id);
+    if (measure) {
+      setSelectedMeasure(measure);
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (selectedMeasure) {
+      deleteMeasureMutation.mutate(selectedMeasure.id);
+    }
   };
 
   const filteredMeasures = measures.filter((measure) => {
@@ -192,8 +289,9 @@ export default function MedidasPreventivas() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredMeasures.map((measure) => (
-            <PreventiveMeasureCard
+            <PreventiveMeasureCardEnhanced
               key={measure.id}
+              id={measure.id}
               title={measure.title}
               description={measure.description}
               responsible={measure.responsible}
@@ -201,10 +299,119 @@ export default function MedidasPreventivas() {
               status={measure.status}
               priority={measure.priority}
               relatedArea={measure.relatedArea}
+              onView={handleView}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              showActions={user?.role ? hasCompanyAdminAccess(user.role) : false}
             />
           ))}
         </div>
       )}
+
+      {/* Dialog para Ver detalle */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalle de Medida</DialogTitle>
+            <DialogDescription>Información completa de la medida preventiva</DialogDescription>
+          </DialogHeader>
+          {selectedMeasure && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Título</label>
+                  <p className="text-base">{selectedMeasure.title}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Estado</label>
+                  <p className="text-base capitalize">{selectedMeasure.status}</p>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Descripción</label>
+                <p className="text-base">{selectedMeasure.description}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Responsable</label>
+                  <p className="text-base">{selectedMeasure.responsible}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Fecha de Vencimiento</label>
+                  <p className="text-base">{formatDate(selectedMeasure.dueDate)}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Prioridad</label>
+                  <p className="text-base capitalize">{selectedMeasure.priority}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Área Relacionada</label>
+                  <p className="text-base">{selectedMeasure.relatedArea || "N/A"}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewDialogOpen(false)} data-testid="button-close-view">
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Editar */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Modificar Medida
+            </DialogTitle>
+          </DialogHeader>
+          {selectedMeasure && (
+            <MedidaPreventivaFormEnhanced
+              onSubmit={handleEditSubmit}
+              onCancel={() => setEditDialogOpen(false)}
+              existingMeasuresCount={measures.length}
+              isLoading={updateMeasureMutation.isPending}
+              initialData={{
+                title: selectedMeasure.title,
+                description: selectedMeasure.description,
+                responsible: selectedMeasure.responsible,
+                dueDate: selectedMeasure.dueDate || undefined,
+                status: selectedMeasure.status as "pendiente" | "en-progreso" | "completada" | "vencida",
+                priority: selectedMeasure.priority as "baja" | "media" | "alta",
+                relatedArea: selectedMeasure.relatedArea || "",
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* AlertDialog para Eliminar */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar medida preventiva?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará permanentemente la medida "{selectedMeasure?.title}". 
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              {deleteMeasureMutation.isPending ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
