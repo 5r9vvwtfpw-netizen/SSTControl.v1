@@ -50,9 +50,11 @@ const normativaMedidasPreventivas = [
   }
 ];
 
-const formSchema = insertPreventiveMeasureSchema.extend({
-  relatedArea: z.string().optional(),
-});
+const formSchema = insertPreventiveMeasureSchema
+  .omit({ companyId: true })
+  .extend({
+    relatedArea: z.string().optional(),
+  });
 
 export default function MedidasPreventivas() {
   const { user } = useAuth();
