@@ -5715,7 +5715,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const company = await storage.getCompany(companyId);
       
-      const PDFDocument = require("pdfkit");
       const doc = new PDFDocument({ size: "LETTER", margin: 50 });
       
       res.setHeader("Content-Type", "application/pdf");
