@@ -5700,6 +5700,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendStatus(204);
   });
 
+  // Generate PDF for Preventive Measure (Hallazgo)
+  app.get("/api/preventive-measures/:id/pdf", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) {
+        return res.status(403).send("Usuario no asociado a una empresa");
+      }
+      
+      const measure = await storage.getPreventiveMeasure(req.params.id, companyId);
+      if (!measure) {
+        return res.status(404).send("Medida no encontrada");
+      }
+
+      const company = await storage.getCompany(companyId);
+      
+      const PDFDocument = require("pdfkit");
+      const doc = new PDFDocument({ size: "LETTER", margin: 50 });
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="hallazgo-${measure.id}.pdf"`);
+      doc.pipe(res);
+
+      // Header
+      doc.fontSize(20).font("Helvetica-Bold").text("HALLAZGO / MEDIDA PREVENTIVA", { align: "center" });
+      doc.moveDown(0.5);
+      doc.fontSize(10).font("Helvetica").text(company?.name || "Empresa", { align: "center" });
+      doc.moveDown(1);
+
+      // Horizontal line
+      doc.moveTo(50, doc.y).lineTo(562, doc.y).stroke();
+      doc.moveDown(1);
+
+      // Priority and Status badges
+      const priorityColors: Record<string, string> = { alta: "#dc2626", media: "#f97316", baja: "#6b7280" };
+      const statusLabels: Record<string, string> = { pendiente: "Pendiente", "en-progreso": "En Progreso", completada: "Completada", vencida: "Vencida" };
+      
+      doc.fontSize(12).font("Helvetica-Bold");
+      doc.text(`Prioridad: ${measure.priority.charAt(0).toUpperCase() + measure.priority.slice(1)}`, { continued: true });
+      doc.text(`    Estado: ${statusLabels[measure.status] || measure.status}`, { align: "right" });
+      doc.moveDown(1);
+
+      // Title
+      doc.fontSize(14).font("Helvetica-Bold").text("Título:");
+      doc.fontSize(12).font("Helvetica").text(measure.title);
+      doc.moveDown(0.5);
+
+      // Description
+      doc.fontSize(14).font("Helvetica-Bold").text("Descripción:");
+      doc.fontSize(12).font("Helvetica").text(measure.description);
+      doc.moveDown(0.5);
+
+      // Responsible
+      doc.fontSize(14).font("Helvetica-Bold").text("Responsable:");
+      doc.fontSize(12).font("Helvetica").text(measure.responsible);
+      doc.moveDown(0.5);
+
+      // Due date
+      doc.fontSize(14).font("Helvetica-Bold").text("Fecha de Vencimiento:");
+      doc.fontSize(12).font("Helvetica").text(measure.dueDate ? new Date(measure.dueDate).toLocaleDateString("es-CO") : "N/A");
+      doc.moveDown(0.5);
+
+      // Related area
+      if (measure.relatedArea) {
+        doc.fontSize(14).font("Helvetica-Bold").text("Área Relacionada:");
+        doc.fontSize(12).font("Helvetica").text(measure.relatedArea);
+        doc.moveDown(0.5);
+      }
+
+      // Footer with normative reference
+      doc.moveDown(2);
+      doc.moveTo(50, doc.y).lineTo(562, doc.y).stroke();
+      doc.moveDown(0.5);
+      doc.fontSize(8).font("Helvetica").fillColor("#666666");
+      doc.text("Referencia normativa: Decreto 1072/2015 Art. 2.2.4.6.33 - Resolución 0312/2019 Estándar 4.1.1", { align: "center" });
+      doc.text(`Generado: ${new Date().toLocaleDateString("es-CO")} - Sistema SG-SST Colombia`, { align: "center" });
+
+      doc.end();
+    } catch (error) {
+      console.error("Error generating preventive measure PDF:", error);
+      res.status(500).send("Error al generar el PDF");
+    }
+  });
+
   // Recomendaciones ARL y Autoridades - Estándar 7.1.4
   app.get("/api/recomendaciones-arl", requireAuth, async (req, res) => {
     const companyId = req.user!.companyId;

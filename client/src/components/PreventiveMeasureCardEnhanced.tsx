@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, User, AlertTriangle, Eye, Pencil, Trash2 } from "lucide-react";
+import { Calendar, User, AlertTriangle, Printer, Pencil, Trash2 } from "lucide-react";
 
 interface PreventiveMeasureCardEnhancedProps {
   id: string;
@@ -12,7 +12,7 @@ interface PreventiveMeasureCardEnhancedProps {
   status: string;
   priority: string;
   relatedArea?: string | null;
-  onView?: (id: string) => void;
+  onPrint?: (id: string) => void;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   showActions?: boolean;
@@ -27,7 +27,7 @@ export function PreventiveMeasureCardEnhanced({
   status,
   priority,
   relatedArea,
-  onView,
+  onPrint,
   onEdit,
   onDelete,
   showActions = true,
@@ -89,11 +89,11 @@ export function PreventiveMeasureCardEnhanced({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onView?.(id)}
-            data-testid={`button-view-measure-${id}`}
+            onClick={() => onPrint?.(id)}
+            data-testid={`button-print-measure-${id}`}
           >
-            <Eye className="h-4 w-4 mr-1" />
-            Ver
+            <Printer className="h-4 w-4 mr-1" />
+            Imprimir
           </Button>
           <Button
             variant="ghost"

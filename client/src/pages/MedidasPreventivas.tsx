@@ -53,7 +53,6 @@ export default function MedidasPreventivas() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedMeasure, setSelectedMeasure] = useState<PreventiveMeasure | null>(null);
@@ -164,11 +163,35 @@ export default function MedidasPreventivas() {
     }
   };
 
-  const handleView = (id: string) => {
+  const handlePrint = async (id: string) => {
     const measure = measures.find(m => m.id === id);
     if (measure) {
-      setSelectedMeasure(measure);
-      setViewDialogOpen(true);
+      try {
+        const response = await fetch(`/api/preventive-measures/${id}/pdf`);
+        if (!response.ok) {
+          throw new Error("Error al generar el PDF");
+        }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `hallazgo-${measure.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        toast({
+          title: "PDF generado",
+          description: "El documento se ha descargado correctamente",
+          className: "bg-green-50 border-green-200",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "No se pudo generar el PDF",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -299,7 +322,7 @@ export default function MedidasPreventivas() {
               status={measure.status}
               priority={measure.priority}
               relatedArea={measure.relatedArea}
-              onView={handleView}
+              onPrint={handlePrint}
               onEdit={handleEdit}
               onDelete={handleDelete}
               showActions={user?.role ? hasCompanyAdminAccess(user.role) : false}
@@ -307,59 +330,6 @@ export default function MedidasPreventivas() {
           ))}
         </div>
       )}
-
-      {/* Dialog para Ver detalle */}
-      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Detalle de Medida</DialogTitle>
-            <DialogDescription>Información completa de la medida preventiva</DialogDescription>
-          </DialogHeader>
-          {selectedMeasure && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Título</label>
-                  <p className="text-base">{selectedMeasure.title}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Estado</label>
-                  <p className="text-base capitalize">{selectedMeasure.status}</p>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Descripción</label>
-                <p className="text-base">{selectedMeasure.description}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Responsable</label>
-                  <p className="text-base">{selectedMeasure.responsible}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Fecha de Vencimiento</label>
-                  <p className="text-base">{formatDate(selectedMeasure.dueDate)}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Prioridad</label>
-                  <p className="text-base capitalize">{selectedMeasure.priority}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Área Relacionada</label>
-                  <p className="text-base">{selectedMeasure.relatedArea || "N/A"}</p>
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setViewDialogOpen(false)} data-testid="button-close-view">
-              Cerrar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Dialog para Editar */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
