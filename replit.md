@@ -33,3 +33,28 @@ The system uses a client-server architecture with a RESTful API. Data integrity 
 -   **Shadcn UI**: UI component library built on Tailwind CSS.
 -   **Amazon S3**: Cloud object storage for file uploads with 20-year retention compliance.
 -   **AWS SDK v3**: For S3 operations.
+## PDF Generation Guidelines
+
+### Context Validation (Prevención de Errores)
+Para prevenir errores de variables undefined en endpoints de PDF, usar el helper `server/lib/pdf-context-validator.ts`:
+
+```typescript
+import { validatePdfContext, assertValidCompanyId } from "./lib/pdf-context-validator";
+
+// Al inicio del endpoint de PDF:
+const validation = validatePdfContext(req, { companyId }, { contextName: 'Acta Designación' });
+if (!validation.isValid) {
+  return res.status(400).send(validation.error);
+}
+
+// O usar assertion:
+assertValidCompanyId(companyId, 'responsible-designations-pdf');
+```
+
+### Variables Correctas por Contexto
+- En endpoints con `getEffectiveCompanyId(req)` → usar `effectiveCompanyId`
+- En endpoints sin esa llamada → usar `companyId` (definida localmente)
+- **NUNCA copiar código entre endpoints sin verificar que las variables existan**
+
+### Logging de Errores
+Todos los errores de PDF deben loguearse con `[PDF-CONTEXT-ERROR]` o `[PDF-GENERATION-ERROR]` para fácil búsqueda en logs de producción.
