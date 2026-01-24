@@ -27,6 +27,7 @@ import { useCompanyContext } from "@/hooks/use-company-context";
 import { Estandar423VerificacionProcedimientos } from "@/components/Estandar423VerificacionProcedimientos";
 import { Estandar424VerificacionInspecciones } from "@/components/Estandar424VerificacionInspecciones";
 import { Estandar425VerificacionMantenimiento } from "@/components/Estandar425VerificacionMantenimiento";
+import { Estandar426VerificacionEPP } from "@/components/Estandar426VerificacionEPP";
 
 export default function DetalleEvaluacionSst() {
   const { id } = useParams();
@@ -4425,6 +4426,16 @@ export default function DetalleEvaluacionSst() {
           {selectedEstandar?.numeroEstandar === "4.2.5" && (
             <div className="mb-4">
               <Estandar425VerificacionMantenimiento 
+                isVisible={true}
+                evaluationId={id}
+              />
+            </div>
+          )}
+
+          {/* Estándar 4.2.6 - Entrega de EPP y capacitación en uso adecuado */}
+          {selectedEstandar?.numeroEstandar === "4.2.6" && (
+            <div className="mb-4">
+              <Estandar426VerificacionEPP 
                 isVisible={true}
                 evaluationId={id}
               />
