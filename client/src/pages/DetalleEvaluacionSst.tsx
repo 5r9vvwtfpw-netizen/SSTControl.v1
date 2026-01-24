@@ -35,6 +35,7 @@ import { Estandar611VerificacionIndicadores } from "@/components/Estandar611Veri
 import { Estandar612VerificacionAuditoria } from "@/components/Estandar612VerificacionAuditoria";
 import { Estandar613VerificacionRevisionDireccion } from "@/components/Estandar613VerificacionRevisionDireccion";
 import { Estandar614VerificacionPlanificarAuditoria } from "@/components/Estandar614VerificacionPlanificarAuditoria";
+import { Estandar711VerificacionAccionesCorrectivas } from "@/components/Estandar711VerificacionAccionesCorrectivas";
 
 export default function DetalleEvaluacionSst() {
   const { id } = useParams();
@@ -4513,6 +4514,16 @@ export default function DetalleEvaluacionSst() {
           {selectedEstandar?.numeroEstandar === "6.1.4" && (
             <div className="mb-4">
               <Estandar614VerificacionPlanificarAuditoria 
+                isVisible={true}
+                evaluationId={id}
+              />
+            </div>
+          )}
+
+          {/* Estándar 7.1.1 - Acciones preventivas y correctivas */}
+          {selectedEstandar?.numeroEstandar === "7.1.1" && (
+            <div className="mb-4">
+              <Estandar711VerificacionAccionesCorrectivas 
                 isVisible={true}
                 evaluationId={id}
               />
