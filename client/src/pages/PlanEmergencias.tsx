@@ -946,6 +946,7 @@ export default function PlanEmergencias() {
   };
 
   const onSubmitBrigada = (values: z.infer<typeof brigadaFormSchema>) => {
+    console.log("[DEBUG] onSubmitBrigada called with values:", values);
     if (editingBrigada) {
       updateBrigadaMutation.mutate({ id: editingBrigada.id, data: values });
     } else {
@@ -1573,7 +1574,8 @@ export default function PlanEmergencias() {
                     )} />
                     <DialogFooter>
                       <Button type="button" variant="outline" onClick={() => { setBrigadaDialogOpen(false); setEditingBrigada(null); brigadaForm.reset(); setTipoBrigadaSeleccionado(null); }}>Cancelar</Button>
-                      <Button type="submit" disabled={createBrigadaMutation.isPending || updateBrigadaMutation.isPending} data-testid="button-submit-brigada">
+                      <Button type="submit" disabled={createBrigadaMutation.isPending || updateBrigadaMutation.isPending} data-testid="button-submit-brigada"
+                        onClick={() => console.log("[DEBUG] Form errors:", brigadaForm.formState.errors, "Values:", brigadaForm.getValues())}>
                         {(createBrigadaMutation.isPending || updateBrigadaMutation.isPending) ? "Guardando..." : editingBrigada ? "Actualizar" : "Crear Brigada"}
                       </Button>
                     </DialogFooter>
