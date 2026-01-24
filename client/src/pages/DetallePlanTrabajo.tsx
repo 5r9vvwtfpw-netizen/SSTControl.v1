@@ -114,6 +114,13 @@ export default function DetallePlanTrabajo() {
       setMainTab("mensual");
     }
   }, [searchString]);
+  
+  // Guardar el ID del plan en localStorage para BackToCronogramaButton
+  useEffect(() => {
+    if (id) {
+      localStorage.setItem("lastPlanTrabajoId", id);
+    }
+  }, [id]);
   const [actividadDialogOpen, setActividadDialogOpen] = useState(false);
   const [editingActividad, setEditingActividad] = useState<ActividadPlanTrabajo | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

@@ -23,11 +23,11 @@ export function BackToCronogramaButton({ className = "" }: BackToCronogramaButto
     }
   }, []);
 
-  // Always navigate to cronograma - if we have a specific plan, go to that plan's cronograma
-  // Otherwise, go to the plans list which will show the active plan's cronograma
+  // Always navigate to cronograma tab - if we have a specific plan, go to that plan's cronograma
+  // Otherwise, go to the plans list to select a plan first
   const href = lastPlanTrabajoId 
-    ? `/planes-trabajo-anual/${lastPlanTrabajoId}?tab=mensual${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`
-    : `/planes-trabajo-anual?tab=mensual`;
+    ? `/planes-trabajo-anual/${lastPlanTrabajoId}?tab=cronograma${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`
+    : `/planes-trabajo-anual`;
 
   return (
     <Link 
