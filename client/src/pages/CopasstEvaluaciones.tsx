@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 interface EvaluacionPeriodo {
   id: string;
@@ -296,6 +297,9 @@ export default function CopasstEvaluaciones() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-end">
+        <BackToCronogramaButton />
+      </div>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold" data-testid="text-page-title">Evaluaciones 360° COPASST</h1>

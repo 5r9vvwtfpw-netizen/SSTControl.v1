@@ -80,6 +80,7 @@ import {
   getInstructorSugerido
 } from "@/data/capacitacion-automatizacion";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 const eventoFormSchema = z.object({
   catalogoId: z.string().min(1, "Seleccione una capacitación del catálogo"),
@@ -565,6 +566,9 @@ Atentamente,
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-end">
+        <BackToCronogramaButton />
+      </div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Programa de Capacitación</h1>

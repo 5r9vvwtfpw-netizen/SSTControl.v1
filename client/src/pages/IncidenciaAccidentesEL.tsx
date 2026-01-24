@@ -10,6 +10,7 @@ import { useCompanyContext } from "@/hooks/use-company-context";
 import { ArrowLeft, TrendingUp, TrendingDown, Activity, AlertTriangle, Info } from "lucide-react";
 import type { AccidentStatistics } from "@shared/schema";
 import { TrazabilidadIndicadores335 } from "@/components/TrazabilidadIndicadores335";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 function calculateIncidencia(data: AccidentStatistics) {
   const totalWorkers = data.totalWorkers ?? 1;
@@ -69,6 +70,9 @@ export default function IncidenciaAccidentesEL() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
+      <div className="flex items-center justify-end">
+        <BackToCronogramaButton />
+      </div>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => window.history.back()} data-testid="button-back">

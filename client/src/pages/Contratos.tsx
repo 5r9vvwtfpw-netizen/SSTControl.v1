@@ -9,6 +9,7 @@ import { insertContractSchema } from "@shared/schema";
 import { contractTypeLabels, getArlRateFormatted, getArlRate } from "@shared/arl-rates";
 import { PREDEFINED_PROFILES } from "@/data/perfiles-cargo-predefinidos";
 import type { z } from "zod";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 // Departamentos predefinidos extraídos de perfiles de cargo colombianos
 const DEPARTAMENTOS_PREDEFINIDOS = [
@@ -823,6 +824,9 @@ export default function Contratos() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-end">
+        <BackToCronogramaButton />
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Contratos Laborales</h1>

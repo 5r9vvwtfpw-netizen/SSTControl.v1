@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { AutomationAssistant, type PlantillaInfo } from "@/components/AutomationAssistant";
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { compressImage } from "@/lib/imageCompression";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 const plantillasAltoRiesgo: PlantillaInfo[] = [
   {
@@ -502,6 +503,9 @@ export default function TrabajadoresAltoRiesgo() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-end">
+        <BackToCronogramaButton />
+      </div>
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Trabajadores de Alto Riesgo</h1>

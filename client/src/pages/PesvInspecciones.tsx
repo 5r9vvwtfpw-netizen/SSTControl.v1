@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 export default function PesvInspecciones() {
   const { user } = useAuth();
@@ -206,6 +207,9 @@ export default function PesvInspecciones() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-end">
+        <BackToCronogramaButton />
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Inspecciones Preoperacionales</h1>

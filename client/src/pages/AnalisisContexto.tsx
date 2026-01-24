@@ -31,6 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 const normativaContexto = [
   {
@@ -522,8 +523,9 @@ export default function AnalisisContexto() {
 
   return (
     <div className="container mx-auto p-6 space-y-6" data-testid="page-analisis-contexto">
-      <div className="flex justify-start">
+      <div className="flex items-center justify-between">
         <BackToEvaluationButton />
+        <BackToCronogramaButton className="ml-auto" />
       </div>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>

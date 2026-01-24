@@ -42,6 +42,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { getTodayDateString } from "@/lib/utils/formatters";
 
 const formSchema = insertRecomendacionArlAutoridadSchema.extend({
@@ -389,6 +390,9 @@ export default function RecomendacionesArl() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-end">
+        <BackToCronogramaButton />
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Recomendaciones ARL y Autoridades</h1>

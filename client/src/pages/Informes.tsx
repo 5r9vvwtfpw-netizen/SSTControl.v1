@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { formatReportError } from "@/lib/report-error-messages";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 type ReportCategory = "obligatorio" | "indicadores" | "complementario";
 
@@ -141,8 +142,9 @@ export default function Informes() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-start">
+      <div className="flex items-center justify-between">
         <BackToEvaluationButton />
+        <BackToCronogramaButton className="ml-auto" />
       </div>
       <div className="flex items-center gap-4">
         <Button 
