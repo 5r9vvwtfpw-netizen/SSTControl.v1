@@ -37,6 +37,7 @@ import { Estandar613VerificacionRevisionDireccion } from "@/components/Estandar6
 import { Estandar614VerificacionPlanificarAuditoria } from "@/components/Estandar614VerificacionPlanificarAuditoria";
 import { Estandar711VerificacionAccionesCorrectivas } from "@/components/Estandar711VerificacionAccionesCorrectivas";
 import { Estandar712VerificacionMejoraAltaDireccion } from "@/components/Estandar712VerificacionMejoraAltaDireccion";
+import { Estandar713VerificacionAccionesInvestigaciones } from "@/components/Estandar713VerificacionAccionesInvestigaciones";
 
 export default function DetalleEvaluacionSst() {
   const { id } = useParams();
@@ -4535,6 +4536,16 @@ export default function DetalleEvaluacionSst() {
           {selectedEstandar?.numeroEstandar === "7.1.2" && (
             <div className="mb-4">
               <Estandar712VerificacionMejoraAltaDireccion 
+                isVisible={true}
+                evaluationId={id}
+              />
+            </div>
+          )}
+
+          {/* Estándar 7.1.3 - Acciones de mejora con base en investigaciones */}
+          {selectedEstandar?.numeroEstandar === "7.1.3" && (
+            <div className="mb-4">
+              <Estandar713VerificacionAccionesInvestigaciones 
                 isVisible={true}
                 evaluationId={id}
               />
