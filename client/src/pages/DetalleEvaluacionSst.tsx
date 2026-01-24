@@ -1546,7 +1546,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-designacion-responsable"
                       asChild
                     >
-                      <Link href="/designacion-responsable">
+                      <Link href={`/designacion-responsable?from=evaluation&evaluationId=${id}`}>
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Ir a Designación de Responsables
                       </Link>
@@ -1591,7 +1591,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-designacion-responsabilidades"
                       asChild
                     >
-                      <Link href="/designacion-responsable">
+                      <Link href={`/designacion-responsable?from=evaluation&evaluationId=${id}`}>
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Ir a Designación de Responsabilidades
                       </Link>
@@ -1636,7 +1636,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-asignacion-recursos"
                       asChild
                     >
-                      <Link href="/asignacion-recursos">
+                      <Link href={`/asignacion-recursos?from=evaluation&evaluationId=${id}`}>
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Ir a Asignación de Recursos
                       </Link>
@@ -1691,7 +1691,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-afiliaciones-ssss"
                       asChild
                     >
-                      <Link href="/afiliaciones-ssss">
+                      <Link href={`/afiliaciones-ssss?from=evaluation&evaluationId=${id}`}>
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Ir a Afiliaciones SSSS
                       </Link>
@@ -1734,7 +1734,7 @@ export default function DetalleEvaluacionSst() {
                       size="sm" 
                       className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-900/50"
                       data-testid="button-ir-alto-riesgo"
-                      onClick={() => setLocation('/afiliaciones-ssss?tab=alto-riesgo')}
+                      onClick={() => setLocation(`/afiliaciones-ssss?tab=alto-riesgo&from=evaluation&evaluationId=${id}`)}
                     >
                       <Users className="h-4 w-4 mr-2" />
                       Ir a Trabajadores de Alto Riesgo
@@ -1779,7 +1779,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-copasst"
                       asChild
                     >
-                      <Link href="/copasst-gestion">
+                      <Link href={`/copasst-gestion?from=evaluation&evaluationId=${id}`}>
                         <Users className="h-4 w-4 mr-2" />
                         Ir a Gestión COPASST
                       </Link>
@@ -1824,7 +1824,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-cms-capacitaciones"
                       asChild
                     >
-                      <Link href="/copasst-cms">
+                      <Link href={`/copasst-cms?from=evaluation&evaluationId=${id}`}>
                         <GraduationCap className="h-4 w-4 mr-2" />
                         Gestionar Cursos (Admin)
                       </Link>
@@ -1836,7 +1836,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-gamificacion"
                       asChild
                     >
-                      <Link href="/capacitacion-copasst">
+                      <Link href={`/capacitacion-copasst?from=evaluation&evaluationId=${id}`}>
                         <Sparkles className="h-4 w-4 mr-2" />
                         Capacitación Gamificada
                       </Link>
@@ -1881,7 +1881,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-comite-convivencia"
                       asChild
                     >
-                      <Link href="/comite-convivencia-actas">
+                      <Link href={`/comite-convivencia-actas?from=evaluation&evaluationId=${id}`}>
                         <Users className="h-4 w-4 mr-2" />
                         Gestión Comité Convivencia
                       </Link>
@@ -1926,7 +1926,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-programa-capacitacion"
                       asChild
                     >
-                      <Link href="/programa-capacitacion-anual">
+                      <Link href={`/programa-capacitacion-anual?from=evaluation&evaluationId=${id}`}>
                         <BookOpen className="h-4 w-4 mr-2" />
                         Programa de Capacitación Anual
                       </Link>
@@ -1938,7 +1938,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-iperc"
                       asChild
                     >
-                      <Link href="/iperc">
+                      <Link href={`/iperc?from=evaluation&evaluationId=${id}`}>
                         <Target className="h-4 w-4 mr-2" />
                         Matriz IPERC (Peligros)
                       </Link>
@@ -1950,7 +1950,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-capacitaciones"
                       asChild
                     >
-                      <Link href="/capacitaciones">
+                      <Link href={`/capacitaciones?from=evaluation&evaluationId=${id}`}>
                         <GraduationCap className="h-4 w-4 mr-2" />
                         Registros de Capacitaciones
                       </Link>
@@ -2004,7 +2004,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-registros-induccion"
                       asChild
                     >
-                      <Link href="/registros-induccion">
+                      <Link href={`/registros-induccion?from=evaluation&evaluationId=${id}`}>
                         <ClipboardList className="h-4 w-4 mr-2" />
                         Registros de Inducción
                       </Link>
@@ -2060,7 +2060,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-responsable-sst"
                       asChild
                     >
-                      <Link href="/designacion-responsable">
+                      <Link href={`/designacion-responsable?from=evaluation&evaluationId=${id}`}>
                         <UserCheck className="h-4 w-4 mr-2" />
                         Responsable del SG-SST
                       </Link>
@@ -2072,7 +2072,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-documentos-123"
                       asChild
                     >
-                      <Link href="/curso-50-horas">
+                      <Link href={`/curso-50-horas?from=evaluation&evaluationId=${id}`}>
                         <GraduationCap className="h-4 w-4 mr-2" />
                         Curso 50 Horas SST
                       </Link>
@@ -2131,7 +2131,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-politicas-sst"
                       asChild
                     >
-                      <Link href="/politicas-sst">
+                      <Link href={`/politicas-sst?from=evaluation&evaluationId=${id}`}>
                         <FileText className="h-4 w-4 mr-2" />
                         Ir a Políticas de SST
                       </Link>
@@ -2190,7 +2190,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-objetivos-sst"
                       asChild
                     >
-                      <Link href="/objetivos-sst">
+                      <Link href={`/objetivos-sst?from=evaluation&evaluationId=${id}`}>
                         <Target className="h-4 w-4 mr-2" />
                         Ir a Objetivos SST
                       </Link>
@@ -2331,7 +2331,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-planes-trabajo-anual"
                       asChild
                     >
-                      <Link href="/planes-trabajo-anual">
+                      <Link href={`/planes-trabajo-anual?from=evaluation&evaluationId=${id}`}>
                         <ClipboardList className="h-4 w-4 mr-2" />
                         Ir a Planes de Trabajo Anual
                       </Link>
@@ -2387,7 +2387,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-conservacion-documentos"
                       asChild
                     >
-                      <Link href="/conservacion-documentos">
+                      <Link href={`/conservacion-documentos?from=evaluation&evaluationId=${id}`}>
                         <FileText className="h-4 w-4 mr-2" />
                         Ir a Gestión Documental
                       </Link>
@@ -2443,7 +2443,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-documentos-rendicion"
                       asChild
                     >
-                      <Link href="/conservacion-documentos">
+                      <Link href={`/conservacion-documentos?from=evaluation&evaluationId=${id}`}>
                         <FileText className="h-4 w-4 mr-2" />
                         Ver Actas de Rendición
                       </Link>
@@ -2455,7 +2455,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-informes"
                       asChild
                     >
-                      <Link href="/informes">
+                      <Link href={`/informes?from=evaluation&evaluationId=${id}`}>
                         <BarChart3 className="h-4 w-4 mr-2" />
                         Ver Informes y Métricas
                       </Link>
@@ -2510,7 +2510,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-matriz-legal"
                       asChild
                     >
-                      <Link href="/matriz-legal">
+                      <Link href={`/matriz-legal?from=evaluation&evaluationId=${id}`}>
                         <Scale className="h-4 w-4 mr-2" />
                         Ver Matriz Legal
                       </Link>
@@ -2522,7 +2522,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-iperc-desde-2.7.1"
                       asChild
                     >
-                      <Link href="/iperc">
+                      <Link href={`/iperc?from=evaluation&evaluationId=${id}`}>
                         <AlertTriangle className="h-4 w-4 mr-2" />
                         Ver Matriz IPERC
                       </Link>
@@ -2577,7 +2577,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-comunicacion-sst"
                       asChild
                     >
-                      <Link href="/comunicacion-sst">
+                      <Link href={`/comunicacion-sst?from=evaluation&evaluationId=${id}`}>
                         <MessageSquare className="h-4 w-4 mr-2" />
                         Ver Comunicación SST
                       </Link>
@@ -2668,7 +2668,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/entrega-epp?from=evaluation"); }} data-testid="button-ir-epp-291">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/entrega-epp?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-epp-291">
                           Ir a EPP
                         </Button>
                       </div>
@@ -2686,7 +2686,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/adquisiciones-sst?from=evaluation"); }} data-testid="button-ir-adquisiciones-291">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/adquisiciones-sst?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-adquisiciones-291">
                           Ir a Adquisiciones
                         </Button>
                       </div>
@@ -2704,7 +2704,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/asignacion-recursos?from=evaluation"); }} data-testid="button-ir-recursos-291">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/asignacion-recursos?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-recursos-291">
                           Ir a Recursos
                         </Button>
                       </div>
@@ -2718,7 +2718,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-documentos-2-9-1"
                       asChild
                     >
-                      <Link href="/conservacion-documentos?from=evaluation">
+                      <Link href={`/conservacion-documentos?from=evaluation&evaluationId=${id}`}>
                         <FileText className="h-4 w-4 mr-2" />
                         Ver Documentos SST
                       </Link>
@@ -2776,7 +2776,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-evaluacion-proveedores-2-10-1"
                       asChild
                     >
-                      <Link href="/evaluacion-proveedores">
+                      <Link href={`/evaluacion-proveedores?from=evaluation&evaluationId=${id}`}>
                         <Users className="h-4 w-4 mr-2" />
                         Ver Evaluación de Proveedores
                       </Link>
@@ -2788,7 +2788,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-documentos-2-10-1"
                       asChild
                     >
-                      <Link href="/conservacion-documentos">
+                      <Link href={`/conservacion-documentos?from=evaluation&evaluationId=${id}`}>
                         <FileText className="h-4 w-4 mr-2" />
                         Ver Documentos SST
                       </Link>
@@ -2846,7 +2846,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-gestion-cambios-2-11-1"
                       asChild
                     >
-                      <Link href="/gestion-cambios">
+                      <Link href={`/gestion-cambios?from=evaluation&evaluationId=${id}`}>
                         <RefreshCcw className="h-4 w-4 mr-2" />
                         Ver Gestión de Cambios
                       </Link>
@@ -2858,7 +2858,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-documentos-2-11-1"
                       asChild
                     >
-                      <Link href="/conservacion-documentos">
+                      <Link href={`/conservacion-documentos?from=evaluation&evaluationId=${id}`}>
                         <FileText className="h-4 w-4 mr-2" />
                         Ver Documentos SST
                       </Link>
@@ -2915,7 +2915,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-perfil-sociodemografico-3-1-1"
                       asChild
                     >
-                      <Link href="/perfil-sociodemografico">
+                      <Link href={`/perfil-sociodemografico?from=evaluation&evaluationId=${id}`}>
                         <HeartPulse className="h-4 w-4 mr-2" />
                         Ir a Perfil Sociodemográfico
                       </Link>
@@ -2927,7 +2927,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-examenes-medicos-3-1-1"
                       asChild
                     >
-                      <Link href="/examenes-medicos">
+                      <Link href={`/examenes-medicos?from=evaluation&evaluationId=${id}`}>
                         <Users className="h-4 w-4 mr-2" />
                         Ver Exámenes Médicos
                       </Link>
@@ -2939,7 +2939,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-documentos-3-1-1"
                       asChild
                     >
-                      <Link href="/conservacion-documentos">
+                      <Link href={`/conservacion-documentos?from=evaluation&evaluationId=${id}`}>
                         <FileText className="h-4 w-4 mr-2" />
                         Ver Documentos SST
                       </Link>
@@ -2993,7 +2993,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-actividades-promocion-3-1-2"
                       asChild
                     >
-                      <Link href="/actividades-promocion-prevencion">
+                      <Link href={`/actividades-promocion-prevencion?from=evaluation&evaluationId=${id}`}>
                         <HeartPulse className="h-4 w-4 mr-2" />
                         Ir a Actividades de Promoción
                       </Link>
@@ -3005,7 +3005,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-perfil-sociodemografico-3-1-2"
                       asChild
                     >
-                      <Link href="/perfil-sociodemografico">
+                      <Link href={`/perfil-sociodemografico?from=evaluation&evaluationId=${id}`}>
                         <Users className="h-4 w-4 mr-2" />
                         Ver Perfil Sociodemográfico
                       </Link>
@@ -3058,7 +3058,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-perfiles-cargo-3-1-3"
                       asChild
                     >
-                      <Link href="/perfiles-cargo">
+                      <Link href={`/perfiles-cargo?from=evaluation&evaluationId=${id}`}>
                         <ClipboardList className="h-4 w-4 mr-2" />
                         Ir a Perfiles de Cargo
                       </Link>
@@ -3070,7 +3070,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-examenes-medicos-3-1-3"
                       asChild
                     >
-                      <Link href="/examenes-medicos">
+                      <Link href={`/examenes-medicos?from=evaluation&evaluationId=${id}`}>
                         <HeartPulse className="h-4 w-4 mr-2" />
                         Ver Exámenes Médicos
                       </Link>
@@ -3123,7 +3123,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-examenes-medicos-3-1-4"
                       asChild
                     >
-                      <Link href="/examenes-medicos">
+                      <Link href={`/examenes-medicos?from=evaluation&evaluationId=${id}`}>
                         <FileCheck className="h-4 w-4 mr-2" />
                         Ir a Exámenes Médicos
                       </Link>
@@ -3178,7 +3178,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-examenes-medicos-3-1-5"
                       asChild
                     >
-                      <Link href="/examenes-medicos">
+                      <Link href={`/examenes-medicos?from=evaluation&evaluationId=${id}`}>
                         <FolderLock className="h-4 w-4 mr-2" />
                         Ir a Exámenes Médicos
                       </Link>
@@ -3234,7 +3234,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-examenes-medicos-3-1-6"
                       asChild
                     >
-                      <Link href="/examenes-medicos">
+                      <Link href={`/examenes-medicos?from=evaluation&evaluationId=${id}`}>
                         <HeartPulse className="h-4 w-4 mr-2" />
                         Ir a Exámenes Médicos
                       </Link>
@@ -3246,7 +3246,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-trabajadores-3-1-6"
                       asChild
                     >
-                      <Link href="/trabajadores">
+                      <Link href={`/trabajadores?from=evaluation&evaluationId=${id}`}>
                         <Users className="h-4 w-4 mr-2" />
                         Ver Trabajadores
                       </Link>
@@ -3300,7 +3300,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-evs-3-1-7"
                       asChild
                     >
-                      <Link href="/estilos-vida-saludable">
+                      <Link href={`/estilos-vida-saludable?from=evaluation&evaluationId=${id}`}>
                         <Activity className="h-4 w-4 mr-2" />
                         Ir a Estilos de Vida Saludable
                       </Link>
@@ -3312,7 +3312,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-gestion-documental-317"
                       asChild
                     >
-                      <Link href="/conservacion-documentos">
+                      <Link href={`/conservacion-documentos?from=evaluation&evaluationId=${id}`}>
                         <FolderOpen className="h-4 w-4 mr-2" />
                         Ir a Documentos
                       </Link>
@@ -3376,7 +3376,7 @@ export default function DetalleEvaluacionSst() {
                         size="sm"
                         onClick={() => {
                           setRespuestaDialogOpen(false);
-                          setLocation("/conservacion-documentos");
+                          setLocation(`/conservacion-documentos?from=evaluation&evaluationId=${id}`);
                         }}
                         data-testid="button-ir-gestion-documental-318"
                       >
@@ -3441,7 +3441,7 @@ export default function DetalleEvaluacionSst() {
                         size="sm"
                         onClick={() => {
                           setRespuestaDialogOpen(false);
-                          setLocation("/conservacion-documentos");
+                          setLocation(`/conservacion-documentos?from=evaluation&evaluationId=${id}`);
                         }}
                         data-testid="button-ir-gestion-documental-319"
                       >
@@ -3512,7 +3512,7 @@ export default function DetalleEvaluacionSst() {
                       variant="default"
                       onClick={() => {
                         setRespuestaDialogOpen(false);
-                        setLocation("/accidentes");
+                        setLocation(`/accidentes?from=evaluation&evaluationId=${id}`);
                       }}
                       data-testid="button-ir-registro-accidentes"
                     >
@@ -3522,7 +3522,7 @@ export default function DetalleEvaluacionSst() {
                       variant="default"
                       onClick={() => {
                         setRespuestaDialogOpen(false);
-                        setLocation("/investigacion-accidentes");
+                        setLocation(`/investigacion-accidentes?from=evaluation&evaluationId=${id}`);
                       }}
                       data-testid="button-ir-investigacion-accidentes"
                     >
@@ -3587,7 +3587,7 @@ export default function DetalleEvaluacionSst() {
                       variant="default"
                       onClick={() => {
                         setRespuestaDialogOpen(false);
-                        setLocation("/indicadores-accidentalidad");
+                        setLocation(`/indicadores-accidentalidad?from=evaluation&evaluationId=${id}`);
                       }}
                       data-testid="button-ir-indicadores-accidentalidad"
                     >
@@ -3640,7 +3640,7 @@ export default function DetalleEvaluacionSst() {
                       variant="default"
                       onClick={() => {
                         setRespuestaDialogOpen(false);
-                        setLocation("/ausentismo-laboral");
+                        setLocation(`/ausentismo-laboral?from=evaluation&evaluationId=${id}`);
                       }}
                       data-testid="button-ir-ausentismo-laboral-323"
                     >
@@ -3670,7 +3670,7 @@ export default function DetalleEvaluacionSst() {
                           Módulo Índices IF y Severidad
                         </p>
                       </div>
-                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/indicador-frecuencia-severidad"); }} data-testid="button-ir-if-severidad-331">
+                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/indicador-frecuencia-severidad?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-if-severidad-331">
                         Ir a Indicadores
                       </Button>
                     </div>
@@ -3698,7 +3698,7 @@ export default function DetalleEvaluacionSst() {
                           Módulo ILI e Incidentes
                         </p>
                       </div>
-                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/indicador-ili-incidentes"); }} data-testid="button-ir-ili-332">
+                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/indicador-ili-incidentes?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-ili-332">
                         Ir a Indicadores
                       </Button>
                     </div>
@@ -3726,7 +3726,7 @@ export default function DetalleEvaluacionSst() {
                           Módulo Mortalidad AT/EL
                         </p>
                       </div>
-                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/indicador-mortalidad"); }} data-testid="button-ir-mortalidad-333">
+                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/indicador-mortalidad?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-mortalidad-333">
                         Ir a Indicadores
                       </Button>
                     </div>
@@ -3754,7 +3754,7 @@ export default function DetalleEvaluacionSst() {
                           Módulo Prevalencia EL
                         </p>
                       </div>
-                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/indicador-prevalencia"); }} data-testid="button-ir-prevalencia-334">
+                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/indicador-prevalencia?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-prevalencia-334">
                         Ir a Indicadores
                       </Button>
                     </div>
@@ -3782,7 +3782,7 @@ export default function DetalleEvaluacionSst() {
                           Módulo Incidencia AT/EL
                         </p>
                       </div>
-                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/indicador-incidencia"); }} data-testid="button-ir-incidencia-335">
+                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/indicador-incidencia?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-incidencia-335">
                         Ir a Indicadores
                       </Button>
                     </div>
@@ -3810,7 +3810,7 @@ export default function DetalleEvaluacionSst() {
                           Módulo Ausentismo Laboral
                         </p>
                       </div>
-                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/ausentismo-laboral"); }} data-testid="button-ir-ausentismo-336">
+                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/ausentismo-laboral?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-ausentismo-336">
                         Ir a Ausentismo
                       </Button>
                     </div>
@@ -3851,7 +3851,7 @@ export default function DetalleEvaluacionSst() {
                           Módulo IPERC (Matriz de Peligros)
                         </p>
                       </div>
-                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/iperc"); }} data-testid="button-ir-iperc-411">
+                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/iperc?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-iperc-411">
                         Ir a IPERC
                       </Button>
                     </div>
@@ -3903,7 +3903,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/copasst-gestion"); }} data-testid="button-ir-copasst-412">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/copasst-gestion?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-copasst-412">
                           Ir a COPASST
                         </Button>
                       </div>
@@ -3921,7 +3921,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/capacitaciones"); }} data-testid="button-ir-capacitaciones-412">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/capacitaciones?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-capacitaciones-412">
                           Ir a Capacitaciones
                         </Button>
                       </div>
@@ -3939,7 +3939,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/iperc"); }} data-testid="button-ir-iperc-412">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/iperc?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-iperc-412">
                           Ir a IPERC
                         </Button>
                       </div>
@@ -3994,7 +3994,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/sustancias-quimicas"); }} data-testid="button-ir-sustancias-413">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/sustancias-quimicas?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-sustancias-413">
                           Ir a Sustancias
                         </Button>
                       </div>
@@ -4012,7 +4012,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/iperc"); }} data-testid="button-ir-iperc-413">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/iperc?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-iperc-413">
                           Ir a IPERC
                         </Button>
                       </div>
@@ -4068,7 +4068,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/copasst-gestion"); }} data-testid="button-ir-copasst-414">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/copasst-gestion?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-copasst-414">
                           Ir a COPASST
                         </Button>
                       </div>
@@ -4086,7 +4086,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/conservacion-documentos"); }} data-testid="button-ir-documentos-414">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/conservacion-documentos?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-documentos-414">
                           Ir a Documentos
                         </Button>
                       </div>
@@ -4104,7 +4104,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/mediciones-ambientales"); }} data-testid="button-ir-mediciones-414">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/mediciones-ambientales?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-mediciones-414">
                           Ir a Mediciones
                         </Button>
                       </div>
@@ -4122,7 +4122,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/iperc"); }} data-testid="button-ir-iperc-414">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/iperc?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-iperc-414">
                           Ir a IPERC
                         </Button>
                       </div>
@@ -4140,7 +4140,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/conservacion-auditiva"); }} data-testid="button-ir-pca-414">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/conservacion-auditiva?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-pca-414">
                           Ir a PCA
                         </Button>
                       </div>
@@ -4201,7 +4201,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/iperc"); }} data-testid="button-ir-iperc-421">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/iperc?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-iperc-421">
                           Ir a IPERC
                         </Button>
                       </div>
@@ -4219,7 +4219,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/planes-trabajo-anual"); }} data-testid="button-ir-plan-421">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/planes-trabajo-anual?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-plan-421">
                           Ir a Plan Anual
                         </Button>
                       </div>
@@ -4238,7 +4238,7 @@ export default function DetalleEvaluacionSst() {
                               </p>
                             </div>
                           </div>
-                          <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/conservacion-documentos"); }} data-testid="button-ir-documentos-421">
+                          <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/conservacion-documentos?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-documentos-421">
                             Ir a Documentos
                           </Button>
                         </div>
@@ -4257,7 +4257,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/entrega-epp"); }} data-testid="button-ir-epp-421">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/entrega-epp?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-epp-421">
                           Ir a EPP
                         </Button>
                       </div>
@@ -4314,7 +4314,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/entrega-epp"); }} data-testid="button-ir-epp-422">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/entrega-epp?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-epp-422">
                           Ir a EPP
                         </Button>
                       </div>
@@ -4332,7 +4332,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/inspecciones"); }} data-testid="button-ir-inspecciones-422">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/inspecciones?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-inspecciones-422">
                           Ir a Inspecciones
                         </Button>
                       </div>
@@ -4350,7 +4350,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/capacitaciones"); }} data-testid="button-ir-capacitaciones-422">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/capacitaciones?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-capacitaciones-422">
                           Ir a Capacitaciones
                         </Button>
                       </div>
@@ -4368,7 +4368,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/iperc"); }} data-testid="button-ir-iperc-422">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/iperc?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-iperc-422">
                           Ir a IPERC
                         </Button>
                       </div>
@@ -4387,7 +4387,7 @@ export default function DetalleEvaluacionSst() {
                               </p>
                             </div>
                           </div>
-                          <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/conservacion-documentos"); }} data-testid="button-ir-documentos-422">
+                          <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/conservacion-documentos?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-documentos-422">
                             Ir a Documentos
                           </Button>
                         </div>
@@ -4454,7 +4454,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/analisis-contexto?from=evaluation"); }} data-testid="button-ir-contexto-714">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/analisis-contexto?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-contexto-714">
                           Ir a Análisis
                         </Button>
                       </div>
@@ -4472,7 +4472,7 @@ export default function DetalleEvaluacionSst() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation("/plan-mejoramiento-contexto?from=evaluation"); }} data-testid="button-ir-plan-mejora-714">
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/plan-mejoramiento-contexto?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-plan-mejora-714">
                           Ir a Plan Mejora
                         </Button>
                       </div>

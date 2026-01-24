@@ -20,6 +20,7 @@ import { z } from "zod";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { cn } from "@/lib/utils";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 const normativaSustanciasQuimicas = [
   {
@@ -347,7 +348,8 @@ export default function SustanciasQuimicas() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-4">
+        <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">

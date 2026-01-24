@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AutomationAssistant, type PlantillaInfo } from "@/components/AutomationAssistant";
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 export default function Curso50HorasPage() {
   const { toast } = useToast();
@@ -229,7 +230,10 @@ export default function Curso50HorasPage() {
             </p>
           </div>
         </div>
-        <BackToCronogramaButton />
+        <div className="flex items-center gap-4">
+          <BackToEvaluationButton />
+          <BackToCronogramaButton />
+        </div>
       </div>
 
       <AutomationAssistant

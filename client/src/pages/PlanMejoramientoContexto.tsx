@@ -27,6 +27,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 const estadosAccion = [
   { value: "pendiente", label: "Pendiente", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" },
@@ -231,18 +232,9 @@ export default function PlanMejoramientoContexto() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        {fromEvaluation && (
-          <Link href="/evaluaciones-sst" data-testid="link-back-evaluation">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Volver a Evaluación SST
-            </Button>
-          </Link>
-        )}
-        <div className="ml-auto">
-          <BackToCronogramaButton />
-        </div>
+      <div className="flex items-center justify-end gap-4">
+        <BackToEvaluationButton />
+        <BackToCronogramaButton />
       </div>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>

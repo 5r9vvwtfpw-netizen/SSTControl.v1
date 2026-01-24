@@ -1,6 +1,7 @@
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 
 interface BackToEvaluationButtonProps {
   className?: string;
@@ -8,11 +9,15 @@ interface BackToEvaluationButtonProps {
 
 export function BackToEvaluationButton({ className = "" }: BackToEvaluationButtonProps) {
   const [, setLocation] = useLocation();
+  const searchString = useSearch();
   
-  const searchString = typeof window !== "undefined" ? window.location.search : "";
-  const params = new URLSearchParams(searchString);
-  const fromEvaluation = params.get("from") === "evaluation";
-  const evaluationId = params.get("evaluationId");
+  const { fromEvaluation, evaluationId } = useMemo(() => {
+    const params = new URLSearchParams(searchString);
+    return {
+      fromEvaluation: params.get("from") === "evaluation",
+      evaluationId: params.get("evaluationId"),
+    };
+  }, [searchString]);
   
   if (!fromEvaluation) {
     return null;
@@ -28,9 +33,10 @@ export function BackToEvaluationButton({ className = "" }: BackToEvaluationButto
 
   return (
     <Button
-      variant="ghost"
+      variant="outline"
+      size="sm"
       onClick={handleGoBack}
-      className={`text-primary hover:text-primary/80 hover:bg-transparent p-0 h-auto font-normal no-default-hover-elevate ${className}`}
+      className={className}
       data-testid="button-back-to-evaluation"
     >
       <ArrowLeft className="h-4 w-4 mr-1" />

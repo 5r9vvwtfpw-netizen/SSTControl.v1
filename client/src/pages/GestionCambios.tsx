@@ -41,6 +41,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { z } from "zod";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 interface PlantillaPrefill {
   tipo: string;
@@ -225,7 +226,10 @@ export default function GestionCambios() {
           </Link>
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Gestión de Cambios SST</h1>
         </div>
-        <BackToCronogramaButton />
+        <div className="flex items-center gap-4">
+          <BackToEvaluationButton />
+          <BackToCronogramaButton />
+        </div>
       </div>
       <div>
         <p className="text-muted-foreground">Sistema de gestión de cambios según Decreto 1072/2015 Art. 2.2.4.6.26 - Automatización inteligente de flujos SST</p>

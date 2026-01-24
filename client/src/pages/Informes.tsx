@@ -10,6 +10,7 @@ import { useCompanyContext } from "@/hooks/use-company-context";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { formatReportError } from "@/lib/report-error-messages";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 type ReportCategory = "obligatorio" | "indicadores" | "complementario";
 
@@ -140,6 +141,9 @@ export default function Informes() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <BackToEvaluationButton />
+      </div>
       <div className="flex items-center gap-4">
         <Button 
           variant="ghost" 

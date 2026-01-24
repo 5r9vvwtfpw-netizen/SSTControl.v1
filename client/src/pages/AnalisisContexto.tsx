@@ -30,6 +30,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 const normativaContexto = [
   {
@@ -521,14 +522,9 @@ export default function AnalisisContexto() {
 
   return (
     <div className="container mx-auto p-6 space-y-6" data-testid="page-analisis-contexto">
-      {fromEvaluation && (
-        <Link href="/evaluaciones-sst" data-testid="link-back-evaluation">
-          <Button variant="ghost" size="sm" className="gap-2 mb-2">
-            <ArrowLeft className="h-4 w-4" />
-            Volver a Evaluación SST
-          </Button>
-        </Link>
-      )}
+      <div className="flex justify-end">
+        <BackToEvaluationButton />
+      </div>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold" data-testid="text-page-title">Análisis de Contexto</h1>

@@ -27,6 +27,7 @@ import { useLocation, Link } from "wouter";
 import { LuEar, LuHand } from "react-icons/lu";
 import type { EppDelivery, EppCatalog, Worker } from "@shared/schema";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 const formSchema = z.object({
   workerId: z.string().min(1, "Seleccione un trabajador"),
@@ -341,6 +342,7 @@ export default function EntregaEpp() {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          <BackToEvaluationButton />
           <BackToCronogramaButton />
           <Button onClick={handleNew} data-testid="button-new-delivery">
             <Plus className="h-4 w-4 mr-2" />
