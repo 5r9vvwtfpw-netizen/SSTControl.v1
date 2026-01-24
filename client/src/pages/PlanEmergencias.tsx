@@ -7,7 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Shield, Users, AlertTriangle, Package, Calendar, MapPin, FileText, CheckCircle2, Clock, Edit2, Trash2, Eye, Route, Target, Sparkles, Info } from "lucide-react";
+import { Plus, Search, Shield, Users, AlertTriangle, Package, Calendar, MapPin, FileText, CheckCircle2, Clock, Edit2, Trash2, Eye, Route, Target, Sparkles, Info, FileDown } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -1408,6 +1408,16 @@ export default function PlanEmergencias() {
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => deletePlanMutation.mutate(plan.id)} data-testid={`button-delete-plan-${plan.id}`}>
                         <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => {
+                          window.open(`/api/planes-emergencia/${plan.id}/pdf`, '_blank');
+                        }}
+                        data-testid={`button-download-pdf-plan-${plan.id}`}
+                      >
+                        <FileDown className="h-4 w-4" />
                       </Button>
                     </div>
                   </CardContent>

@@ -34301,6 +34301,41 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+
+  // GET /api/planes-emergencia/:id/pdf - Download PDF report with full traceability
+  app.get("/api/planes-emergencia/:id/pdf", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      
+      let plan;
+      if (isAdmin) {
+        plan = await storage.getPlanEmergenciaById(req.params.id);
+      } else {
+        if (!userCompanyId) {
+          return res.status(403).send("Usuario no asociado a una empresa");
+        }
+        plan = await storage.getPlanEmergencia(req.params.id, userCompanyId);
+      }
+      
+      if (!plan) {
+        return res.status(404).send("Plan de emergencia no encontrado");
+      }
+      
+      const { generatePlanEmergenciasPdf } = await import('./services/pdf-plan-emergencias');
+      const pdfBuffer = await generatePlanEmergenciasPdf({
+        planId: plan.id,
+        companyId: plan.companyId,
+      });
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${plan.codigo}-trazabilidad.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error('Error generating plan emergencia PDF:', error);
+      res.status(500).send('Error interno al generar PDF del plan de emergencia');
+    }
+  });
   // POST /api/planes-emergencia - Create new plan
   app.post("/api/planes-emergencia", requireAuth, requirePermission("emergency_plans:create"), async (req, res) => {
     try {
