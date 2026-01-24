@@ -35134,12 +35134,12 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/inspecciones-recursos-emergencia - Create inspection
   app.post("/api/inspecciones-recursos-emergencia", requireAuth, requirePermission("emergency_plans:create"), async (req, res) => {
     try {
-      // Asignar companyId al body antes de validar
-      const dataToValidate = { ...req.body, companyId };
-      const validatedData = insertInspeccionRecursoEmergenciaSchema.parse(dataToValidate);
-      
       const userCompanyId = req.user!.companyId;
       const isAdmin = hasGlobalAccess(req.user!.role);
+      
+      // Asignar companyId al body antes de validar
+      const dataToValidate = { ...req.body, companyId: userCompanyId };
+      const validatedData = insertInspeccionRecursoEmergenciaSchema.parse(dataToValidate);
       
       // Verify the resource belongs to the user's company (multi-tenant isolation)
       let recurso;
