@@ -34,6 +34,7 @@ import { Estandar513VerificacionSimulacros } from "@/components/Estandar513Verif
 import { Estandar611VerificacionIndicadores } from "@/components/Estandar611VerificacionIndicadores";
 import { Estandar612VerificacionAuditoria } from "@/components/Estandar612VerificacionAuditoria";
 import { Estandar613VerificacionRevisionDireccion } from "@/components/Estandar613VerificacionRevisionDireccion";
+import { Estandar614VerificacionPlanificarAuditoria } from "@/components/Estandar614VerificacionPlanificarAuditoria";
 
 export default function DetalleEvaluacionSst() {
   const { id } = useParams();
@@ -4502,6 +4503,16 @@ export default function DetalleEvaluacionSst() {
           {selectedEstandar?.numeroEstandar === "6.1.3" && (
             <div className="mb-4">
               <Estandar613VerificacionRevisionDireccion 
+                isVisible={true}
+                evaluationId={id}
+              />
+            </div>
+          )}
+
+          {/* Estándar 6.1.4 - Planificar auditoría con el COPASST */}
+          {selectedEstandar?.numeroEstandar === "6.1.4" && (
+            <div className="mb-4">
+              <Estandar614VerificacionPlanificarAuditoria 
                 isVisible={true}
                 evaluationId={id}
               />
