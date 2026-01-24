@@ -199,7 +199,7 @@ export function Estandar424VerificacionInspecciones({ isVisible, evaluationId }:
               data-testid="button-ver-hallazgos-424"
               asChild
             >
-              <Link href={`/medidas-preventivas${fromParam}`}>
+              <Link href={`/medidas${fromParam}`}>
                 <AlertTriangle className="h-4 w-4 mr-2" />
                 Ver Hallazgos/Acciones
               </Link>
