@@ -1793,6 +1793,12 @@ export default function PlanEmergencias() {
                           onValueChange={(value) => {
                             const tipo = TIPOS_AMENAZAS.find(t => t.codigo === value);
                             setTipoAmenazaSeleccionado(tipo || null);
+                            if (tipo) {
+                              const consecutivo = analisis.length + 1;
+                              const codigoGenerado = `AV-${new Date().getFullYear()}-${String(consecutivo).padStart(3, '0')}`;
+                              analisisForm.setValue("codigo", codigoGenerado);
+                              analisisForm.setValue("realizadoPor", user?.fullName || "");
+                            }
                           }}
                           disabled={!categoriaAmenazaSeleccionada}
                           data-testid="select-tipo-amenaza"
@@ -1843,14 +1849,20 @@ export default function PlanEmergencias() {
 
                     <FormField control={analisisForm.control} name="codigo" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Código *</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Código *
+                          {tipoAmenazaSeleccionado && <Badge variant="outline" className="text-xs"><Sparkles className="h-3 w-3 mr-1" />Auto</Badge>}
+                        </FormLabel>
                         <FormControl><Input {...field} data-testid="input-codigo-analisis" placeholder="AV-2024-001" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
                     <FormField control={analisisForm.control} name="realizadoPor" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Realizado Por *</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Realizado Por *
+                          {tipoAmenazaSeleccionado && <Badge variant="outline" className="text-xs"><Sparkles className="h-3 w-3 mr-1" />Auto</Badge>}
+                        </FormLabel>
                         <FormControl><Input {...field} data-testid="input-realizado-analisis" /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1985,8 +1997,8 @@ export default function PlanEmergencias() {
                         </FormLabel>
                         <Select 
                           onValueChange={(value) => {
-                            field.onChange(value);
-                            const selectedTipo = TIPOS_RECURSOS_EMERGENCIA.find(t => t.tipo === value);
+                            const selectedTipo = TIPOS_RECURSOS_EMERGENCIA.find(t => t.codigo === value);
+                            field.onChange(selectedTipo?.tipo || value);
                             setTipoRecursoSeleccionado(selectedTipo || null);
                             if (selectedTipo) {
                               const consecutivo = recursos.length + 1;
@@ -1995,12 +2007,12 @@ export default function PlanEmergencias() {
                               recursoForm.setValue("nombre", selectedTipo.nombre);
                             }
                           }} 
-                          value={field.value}
+                          value={tipoRecursoSeleccionado?.codigo || ""}
                         >
                           <FormControl><SelectTrigger data-testid="select-tipo-recurso"><SelectValue placeholder="Seleccione tipo de recurso" /></SelectTrigger></FormControl>
                           <SelectContent>
                             {TIPOS_RECURSOS_EMERGENCIA.map((tipo) => (
-                              <SelectItem key={tipo.codigo} value={tipo.tipo}>{tipo.nombre}</SelectItem>
+                              <SelectItem key={tipo.codigo} value={tipo.codigo}>{tipo.nombre}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
