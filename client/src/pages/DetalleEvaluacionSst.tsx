@@ -30,6 +30,7 @@ import { Estandar425VerificacionMantenimiento } from "@/components/Estandar425Ve
 import { Estandar426VerificacionEPP } from "@/components/Estandar426VerificacionEPP";
 import { Estandar511VerificacionEmergencias } from "@/components/Estandar511VerificacionEmergencias";
 import { Estandar512VerificacionBrigada } from "@/components/Estandar512VerificacionBrigada";
+import { Estandar513VerificacionSimulacros } from "@/components/Estandar513VerificacionSimulacros";
 
 export default function DetalleEvaluacionSst() {
   const { id } = useParams();
@@ -4458,6 +4459,16 @@ export default function DetalleEvaluacionSst() {
           {selectedEstandar?.numeroEstandar === "5.1.2" && (
             <div className="mb-4">
               <Estandar512VerificacionBrigada 
+                isVisible={true}
+                evaluationId={id}
+              />
+            </div>
+          )}
+
+          {/* Estándar 5.1.3 - Simulacros de emergencias */}
+          {selectedEstandar?.numeroEstandar === "5.1.3" && (
+            <div className="mb-4">
+              <Estandar513VerificacionSimulacros 
                 isVisible={true}
                 evaluationId={id}
               />
