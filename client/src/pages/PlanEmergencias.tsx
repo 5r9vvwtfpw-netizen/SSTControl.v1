@@ -332,6 +332,11 @@ export default function PlanEmergencias() {
 
   const { data: miembros = [] } = useQuery<MiembroBrigada[]>({
     queryKey: ["/api/miembros-brigada", selectedBrigadaId],
+    queryFn: async () => {
+      const res = await fetch(`/api/miembros-brigada?brigadaId=${selectedBrigadaId}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error al cargar miembros");
+      return res.json();
+    },
     enabled: !!selectedBrigadaId,
   });
 
