@@ -2312,7 +2312,7 @@ export default function PlanEmergencias() {
                         <Select 
                           onValueChange={(value) => {
                             field.onChange(value);
-                            const tipo = TIPOS_SIMULACROS.find(t => t.codigo === value);
+                            const tipo = TIPOS_SIMULACROS.find(t => t.tipoEnum === value);
                             setTipoSimulacroSeleccionado(tipo || null);
                             if (tipo) {
                               const consecutivo = simulacros.length + 1;
@@ -2326,7 +2326,7 @@ export default function PlanEmergencias() {
                           <FormControl><SelectTrigger data-testid="select-tipo-simulacro"><SelectValue placeholder="Seleccione tipo de simulacro" /></SelectTrigger></FormControl>
                           <SelectContent>
                             {TIPOS_SIMULACROS.map((tipo) => (
-                              <SelectItem key={tipo.codigo} value={tipo.codigo}>{tipo.nombre}</SelectItem>
+                              <SelectItem key={tipo.tipoEnum} value={tipo.tipoEnum}>{tipo.nombre}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>

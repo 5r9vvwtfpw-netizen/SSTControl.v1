@@ -541,6 +541,7 @@ export const TIPOS_RECURSOS_EMERGENCIA: TipoRecurso[] = [
 // ============================================
 export interface TipoSimulacro {
   codigo: string;
+  tipoEnum: "evacuacion" | "incendio" | "sismo" | "derrame_quimico" | "primeros_auxilios" | "confinamiento" | "integral";
   nombre: string;
   descripcion: string;
   objetivos: string[];
@@ -553,6 +554,7 @@ export interface TipoSimulacro {
 export const TIPOS_SIMULACROS: TipoSimulacro[] = [
   {
     codigo: "SIM-EVA",
+    tipoEnum: "evacuacion",
     nombre: "Simulacro de Evacuación General",
     descripcion: "Práctica de desalojo total de instalaciones",
     objetivos: ["Evaluar tiempos de evacuación", "Verificar funcionamiento de alarmas", "Identificar obstáculos en rutas", "Evaluar coordinación de brigadas"],
@@ -563,6 +565,7 @@ export const TIPOS_SIMULACROS: TipoSimulacro[] = [
   },
   {
     codigo: "SIM-INC",
+    tipoEnum: "incendio",
     nombre: "Simulacro de Incendio",
     descripcion: "Práctica de respuesta ante conato de incendio",
     objetivos: ["Evaluar respuesta de brigada contra incendios", "Verificar disponibilidad y estado de extintores", "Practicar técnicas de extinción", "Coordinar evacuación y control"],
@@ -573,6 +576,7 @@ export const TIPOS_SIMULACROS: TipoSimulacro[] = [
   },
   {
     codigo: "SIM-SIS",
+    tipoEnum: "sismo",
     nombre: "Simulacro de Sismo",
     descripcion: "Práctica de respuesta ante movimiento telúrico",
     objetivos: ["Practicar técnica de protección (agáchese, cúbrase, agárrese)", "Evaluar evacuación post-sismo", "Identificar zonas seguras", "Practicar búsqueda de atrapados"],
@@ -583,6 +587,7 @@ export const TIPOS_SIMULACROS: TipoSimulacro[] = [
   },
   {
     codigo: "SIM-DER",
+    tipoEnum: "derrame_quimico",
     nombre: "Simulacro de Derrame Químico",
     descripcion: "Práctica de respuesta ante derrame de sustancias peligrosas",
     objetivos: ["Evaluar uso de kits de derrames", "Practicar contención y limpieza", "Verificar uso de EPP especializado", "Coordinar evacuación de área afectada"],
@@ -593,6 +598,7 @@ export const TIPOS_SIMULACROS: TipoSimulacro[] = [
   },
   {
     codigo: "SIM-PAU",
+    tipoEnum: "primeros_auxilios",
     nombre: "Simulacro de Primeros Auxilios",
     descripcion: "Práctica de atención de emergencias médicas",
     objetivos: ["Evaluar respuesta de brigada de primeros auxilios", "Practicar técnicas de RCP y uso de DEA", "Verificar estado de botiquines", "Coordinar traslado a centro médico"],
@@ -603,6 +609,7 @@ export const TIPOS_SIMULACROS: TipoSimulacro[] = [
   },
   {
     codigo: "SIM-CON",
+    tipoEnum: "confinamiento",
     nombre: "Simulacro de Confinamiento",
     descripcion: "Práctica de resguardo en instalaciones ante amenaza externa",
     objetivos: ["Evaluar procedimiento de resguardo", "Verificar sistemas de comunicación", "Practicar cierre de accesos", "Coordinar con autoridades"],
@@ -613,6 +620,7 @@ export const TIPOS_SIMULACROS: TipoSimulacro[] = [
   },
   {
     codigo: "SIM-INT",
+    tipoEnum: "integral",
     nombre: "Simulacro Integral",
     descripcion: "Práctica que combina múltiples escenarios de emergencia",
     objetivos: ["Evaluar respuesta a emergencia compleja", "Verificar coordinación entre brigadas", "Practicar toma de decisiones", "Evaluar plan de emergencias completo"],
