@@ -12,6 +12,26 @@ I prefer simple language and clear explanations. I want iterative development wi
 
 ## Recent Changes
 
+### January 24, 2026 - Universal "Back to Evaluation" Navigation
+
+**Enhanced Navigation Flow:**
+- All 79 Links/setLocation in `DetalleEvaluacionSst.tsx` now include `?from=evaluation&evaluationId=${id}` parameters
+- Added `BackToEvaluationButton` to 7 pages that were missing it: EntregaEpp, GestionCambios, SustanciasQuimicas, Curso50Horas, AnalisisContexto, PlanMejoramientoContexto, Informes
+- Total: 45+ pages now have consistent back navigation
+
+**Refactored BackToEvaluationButton:**
+- Uses `useSearch` hook from wouter for reactive URL parameter handling
+- Uses `useMemo` for efficient parameter parsing
+- Styled with `variant="outline" size="sm"` per UI guidelines
+- No custom hover overrides (follows design system)
+
+**Navigation Pattern:**
+- When navigating from evaluation → module: URL includes `?from=evaluation&evaluationId={uuid}`
+- BackToEvaluationButton only shows when `from=evaluation` is present
+- Clicking back returns to specific evaluation `/evaluaciones-sst/{evaluationId}`
+
+**Component Location:** `client/src/components/BackToEvaluationButton.tsx`
+
 ### January 23, 2026 - Standard 4.2.3 Verification Module
 
 **New Component Created (Following Add-Only Principle):**
