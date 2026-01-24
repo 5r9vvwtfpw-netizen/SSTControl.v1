@@ -12,6 +12,76 @@ I prefer simple language and clear explanations. I want iterative development wi
 
 ## Recent Changes
 
+### January 24, 2026 - Smart Form Pattern (Formularios Inteligentes)
+
+**MANDATORY STANDARD FOR ALL NEW FORMS:**
+
+All new forms in the SST Colombia system MUST follow the Smart Form Pattern to minimize client data entry and improve user experience.
+
+**Pattern Requirements:**
+
+1. **Auto-generated Code**: Every form must auto-generate a unique tracking code
+   - Format: `{PREFIX}-{YEAR}-{NNN}` (e.g., MP-2026-001, AV-2026-003)
+   - Generated on form open, read-only field
+
+2. **Type-based Auto-fill**: When user selects a type/category, auto-populate:
+   - Title/Name (from catalog)
+   - Description (suggested text from catalog)
+   - Priority (based on type)
+   - Due date (calculated from type's standard days)
+   - Related area (if applicable)
+
+3. **Context Auto-fill**: Pre-fill fields from context:
+   - Responsible: Current user by default
+   - Date: Current date by default
+   - Company: From session context
+
+4. **Visual Indicators**: Show `<Badge>Auto</Badge>` next to auto-filled fields
+   - Use Sparkles icon from lucide-react
+   - Badge style: `variant="secondary" className="bg-primary/10 text-primary"`
+
+5. **Editable**: All auto-filled fields remain editable by user
+
+**Implementation Files:**
+- **Data Catalog**: `client/src/data/{module}-automatizacion.ts`
+- **Enhanced Form Component**: `client/src/components/{Module}FormEnhanced.tsx`
+
+**Example Implementation:**
+```typescript
+// Data catalog (medidas-preventivas-automatizacion.ts)
+export interface TipoMedidaPreventiva {
+  codigo: string;
+  categoria: 'preventiva' | 'correctiva' | 'mejora';
+  nombre: string;
+  descripcionSugerida: string;
+  prioridadSugerida: 'baja' | 'media' | 'alta';
+  diasPlazoSugerido: number;
+  areasSugeridas: string[];
+}
+
+// Form component (MedidaPreventivaFormEnhanced.tsx)
+const handleTipoChange = (codigo: string) => {
+  const tipo = CATALOGO.find(t => t.codigo === codigo);
+  if (tipo) {
+    form.setValue("title", tipo.nombre);
+    form.setValue("description", tipo.descripcionSugerida);
+    form.setValue("priority", tipo.prioridadSugerida);
+    form.setValue("dueDate", calcularFecha(tipo.diasPlazoSugerido));
+    setAutoFilledFields(new Set(['title', 'description', 'priority', 'dueDate']));
+  }
+};
+```
+
+**Modules Already Implemented:**
+- Plan Emergencias (8 sub-modules): Planes, Brigadas, Vulnerabilidad, Recursos, Simulacros, Zonas, Rutas, Puntos
+- Medidas Preventivas/Correctivas: `MedidaPreventivaFormEnhanced.tsx`
+- Mediciones Ambientales: `MedicionAmbientalFormEnhanced.tsx`
+
+**Code Locations:**
+- `client/src/data/plan-emergencias-automatizacion.ts`
+- `client/src/data/medidas-preventivas-automatizacion.ts`
+- `client/src/components/MedidaPreventivaFormEnhanced.tsx`
+
 ### January 24, 2026 - Universal "Back to Evaluation" Navigation
 
 **Enhanced Navigation Flow:**
