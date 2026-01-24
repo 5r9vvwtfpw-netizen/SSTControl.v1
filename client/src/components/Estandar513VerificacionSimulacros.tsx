@@ -19,9 +19,14 @@ const criteriosVerificacion = [
 export function Estandar513VerificacionSimulacros({ isVisible, evaluationId }: Estandar513VerificacionSimulacrosProps) {
   if (!isVisible) return null;
 
-  const fromParam = evaluationId 
-    ? `?from=evaluation&evaluationId=${evaluationId}` 
-    : "?from=evaluation";
+  const baseParams = evaluationId 
+    ? `from=evaluation&evaluationId=${evaluationId}` 
+    : "from=evaluation";
+  
+  const buildUrl = (path: string, tab?: string) => {
+    const params = tab ? `tab=${tab}&${baseParams}` : baseParams;
+    return `${path}?${params}`;
+  };
 
   return (
     <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
@@ -75,7 +80,7 @@ export function Estandar513VerificacionSimulacros({ isVisible, evaluationId }: E
               data-testid="button-ver-simulacros-513"
               asChild
             >
-              <Link href={`/simulacros${fromParam}`}>
+              <Link href={buildUrl("/plan-emergencias", "simulacros")}>
                 <Users className="h-4 w-4 mr-2" />
                 Ver Simulacros
               </Link>
@@ -87,7 +92,7 @@ export function Estandar513VerificacionSimulacros({ isVisible, evaluationId }: E
               data-testid="button-ver-cronograma-513"
               asChild
             >
-              <Link href={`/cronograma-actividades${fromParam}`}>
+              <Link href={buildUrl("/cronograma-actividades")}>
                 <Calendar className="h-4 w-4 mr-2" />
                 Ver Cronograma
               </Link>
@@ -99,7 +104,7 @@ export function Estandar513VerificacionSimulacros({ isVisible, evaluationId }: E
               data-testid="button-ver-plan-emergencias-513"
               asChild
             >
-              <Link href={`/plan-emergencias${fromParam}`}>
+              <Link href={buildUrl("/plan-emergencias", "planes")}>
                 <ClipboardList className="h-4 w-4 mr-2" />
                 Plan de Emergencias
               </Link>
@@ -111,7 +116,7 @@ export function Estandar513VerificacionSimulacros({ isVisible, evaluationId }: E
               data-testid="button-ver-documentos-513"
               asChild
             >
-              <Link href={`/conservacion-documentos${fromParam}`}>
+              <Link href={buildUrl("/conservacion-documentos")}>
                 <FileText className="h-4 w-4 mr-2" />
                 Ver Documentos
               </Link>

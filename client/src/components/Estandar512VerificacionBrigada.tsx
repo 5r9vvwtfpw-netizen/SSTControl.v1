@@ -19,9 +19,14 @@ const criteriosVerificacion = [
 export function Estandar512VerificacionBrigada({ isVisible, evaluationId }: Estandar512VerificacionBrigadaProps) {
   if (!isVisible) return null;
 
-  const fromParam = evaluationId 
-    ? `?from=evaluation&evaluationId=${evaluationId}` 
-    : "?from=evaluation";
+  const baseParams = evaluationId 
+    ? `from=evaluation&evaluationId=${evaluationId}` 
+    : "from=evaluation";
+  
+  const buildUrl = (path: string, tab?: string) => {
+    const params = tab ? `tab=${tab}&${baseParams}` : baseParams;
+    return `${path}?${params}`;
+  };
 
   return (
     <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
@@ -75,7 +80,7 @@ export function Estandar512VerificacionBrigada({ isVisible, evaluationId }: Esta
               data-testid="button-ver-brigada-512"
               asChild
             >
-              <Link href={`/brigada${fromParam}`}>
+              <Link href={buildUrl("/plan-emergencias", "brigadas")}>
                 <Shield className="h-4 w-4 mr-2" />
                 Ver Brigada
               </Link>
@@ -87,7 +92,7 @@ export function Estandar512VerificacionBrigada({ isVisible, evaluationId }: Esta
               data-testid="button-ver-capacitaciones-512"
               asChild
             >
-              <Link href={`/capacitaciones${fromParam}`}>
+              <Link href={buildUrl("/capacitaciones")}>
                 <GraduationCap className="h-4 w-4 mr-2" />
                 Ver Capacitaciones
               </Link>
@@ -99,7 +104,7 @@ export function Estandar512VerificacionBrigada({ isVisible, evaluationId }: Esta
               data-testid="button-ver-simulacros-512"
               asChild
             >
-              <Link href={`/simulacros${fromParam}`}>
+              <Link href={buildUrl("/plan-emergencias", "simulacros")}>
                 <Users className="h-4 w-4 mr-2" />
                 Ver Simulacros
               </Link>
@@ -111,7 +116,7 @@ export function Estandar512VerificacionBrigada({ isVisible, evaluationId }: Esta
               data-testid="button-ver-documentos-512"
               asChild
             >
-              <Link href={`/conservacion-documentos${fromParam}`}>
+              <Link href={buildUrl("/conservacion-documentos")}>
                 <FileText className="h-4 w-4 mr-2" />
                 Ver Documentos
               </Link>

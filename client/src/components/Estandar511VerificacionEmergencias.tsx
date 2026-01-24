@@ -19,9 +19,14 @@ const criteriosVerificacion = [
 export function Estandar511VerificacionEmergencias({ isVisible, evaluationId }: Estandar511VerificacionEmergenciasProps) {
   if (!isVisible) return null;
 
-  const fromParam = evaluationId 
-    ? `?from=evaluation&evaluationId=${evaluationId}` 
-    : "?from=evaluation";
+  const baseParams = evaluationId 
+    ? `from=evaluation&evaluationId=${evaluationId}` 
+    : "from=evaluation";
+  
+  const buildUrl = (path: string, tab?: string) => {
+    const params = tab ? `tab=${tab}&${baseParams}` : baseParams;
+    return `${path}?${params}`;
+  };
 
   return (
     <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
@@ -75,7 +80,7 @@ export function Estandar511VerificacionEmergencias({ isVisible, evaluationId }: 
               data-testid="button-ver-plan-emergencias-511"
               asChild
             >
-              <Link href={`/plan-emergencias${fromParam}`}>
+              <Link href={buildUrl("/plan-emergencias", "planes")}>
                 <FileText className="h-4 w-4 mr-2" />
                 Ver Plan de Emergencias
               </Link>
@@ -87,7 +92,7 @@ export function Estandar511VerificacionEmergencias({ isVisible, evaluationId }: 
               data-testid="button-ver-simulacros-511"
               asChild
             >
-              <Link href={`/simulacros${fromParam}`}>
+              <Link href={buildUrl("/plan-emergencias", "simulacros")}>
                 <Users className="h-4 w-4 mr-2" />
                 Ver Simulacros
               </Link>
@@ -99,7 +104,7 @@ export function Estandar511VerificacionEmergencias({ isVisible, evaluationId }: 
               data-testid="button-ver-brigada-511"
               asChild
             >
-              <Link href={`/brigada${fromParam}`}>
+              <Link href={buildUrl("/plan-emergencias", "brigadas")}>
                 <AlertTriangle className="h-4 w-4 mr-2" />
                 Ver Brigada
               </Link>
@@ -111,7 +116,7 @@ export function Estandar511VerificacionEmergencias({ isVisible, evaluationId }: 
               data-testid="button-ver-planos-511"
               asChild
             >
-              <Link href={`/conservacion-documentos${fromParam}`}>
+              <Link href={buildUrl("/plan-emergencias", "evacuacion")}>
                 <MapPin className="h-4 w-4 mr-2" />
                 Ver Planos
               </Link>

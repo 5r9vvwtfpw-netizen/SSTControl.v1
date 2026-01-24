@@ -46,6 +46,7 @@ import {
 } from "@/data/plan-emergencias-automatizacion";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { useSearch } from "wouter";
 
 const normativaPlanEmergencias = [
   {
@@ -118,10 +119,15 @@ const puntoFormSchema = insertPuntoEncuentroSchema.extend({
 export default function PlanEmergencias() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const searchString = useSearch();
+  const searchParams = new URLSearchParams(searchString);
+  const tabFromUrl = searchParams.get("tab");
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   
-  const [activeTab, setActiveTab] = useState("planes");
+  const validTabs = ["planes", "brigadas", "analisis", "recursos", "simulacros", "evacuacion"];
+  const initialTab = tabFromUrl && validTabs.includes(tabFromUrl) ? tabFromUrl : "planes";
+  const [activeTab, setActiveTab] = useState(initialTab);
   
   const [planSearchTerm, setPlanSearchTerm] = useState("");
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
