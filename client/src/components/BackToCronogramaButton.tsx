@@ -1,32 +1,29 @@
-import { Button } from "@/components/ui/button";
 import { CalendarDays } from "lucide-react";
 import { Link } from "wouter";
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { PlanTrabajoAnual } from "@shared/schema";
 
 interface BackToCronogramaButtonProps {
   className?: string;
 }
 
 export function BackToCronogramaButton({ className = "" }: BackToCronogramaButtonProps) {
-  const [lastPlanTrabajoId, setLastPlanTrabajoId] = useState<string | null>(null);
-  const [lastCronogramaMes, setLastCronogramaMes] = useState<string | null>(null);
+  // Obtener el plan de trabajo activo (aprobado del año actual)
+  const { data: planes } = useQuery<PlanTrabajoAnual[]>({
+    queryKey: ["/api/planes-trabajo-anual"],
+    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+  });
 
-  useEffect(() => {
-    const savedId = localStorage.getItem("lastPlanTrabajoId");
-    const savedMes = localStorage.getItem("lastCronogramaMes");
-    
-    if (savedId) {
-      setLastPlanTrabajoId(savedId);
-    }
-    if (savedMes) {
-      setLastCronogramaMes(savedMes);
-    }
-  }, []);
+  // Buscar el plan aprobado del año actual, o el más reciente aprobado
+  const currentYear = new Date().getFullYear();
+  const planActivo = planes?.find(p => p.estado === "aprobado" && p.anio === currentYear) 
+    || planes?.find(p => p.estado === "aprobado")
+    || planes?.[0];
 
-  // Always navigate to cronograma tab - if we have a specific plan, go to that plan's cronograma
-  // Otherwise, go to the plans list to select a plan first
-  const href = lastPlanTrabajoId 
-    ? `/planes-trabajo-anual/${lastPlanTrabajoId}?tab=cronograma${lastCronogramaMes ? `&mes=${lastCronogramaMes}` : ''}`
+  // Si hay un plan activo, ir directamente al cronograma
+  // Si no, ir a la lista de planes para que el usuario seleccione uno
+  const href = planActivo 
+    ? `/planes-trabajo-anual/${planActivo.id}?tab=cronograma`
     : `/planes-trabajo-anual`;
 
   return (
