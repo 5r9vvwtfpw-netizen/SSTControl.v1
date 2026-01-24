@@ -2385,7 +2385,7 @@ export default function PlanEmergencias() {
                         <FormItem>
                           <FormLabel className="flex items-center gap-2">
                             Código *
-                            {tipoSimulacroSeleccionado && <Badge variant="outline" className="text-xs"><Sparkles className="h-3 w-3 mr-1" />Auto</Badge>}
+                            <span className="flex items-center gap-1 text-xs text-primary"><Sparkles className="h-3 w-3" /> Auto</span>
                           </FormLabel>
                           <FormControl><Input {...field} data-testid="input-codigo-simulacro" placeholder="SIM-2024-001" /></FormControl>
                           <FormMessage />
@@ -2395,7 +2395,7 @@ export default function PlanEmergencias() {
                         <FormItem>
                           <FormLabel className="flex items-center gap-2">
                             Nombre *
-                            {tipoSimulacroSeleccionado && <Badge variant="outline" className="text-xs"><Sparkles className="h-3 w-3 mr-1" />Auto</Badge>}
+                            <span className="flex items-center gap-1 text-xs text-primary"><Sparkles className="h-3 w-3" /> Auto</span>
                           </FormLabel>
                           <FormControl><Input {...field} data-testid="input-nombre-simulacro" placeholder="Simulacro de Evacuación General" /></FormControl>
                           <FormMessage />
