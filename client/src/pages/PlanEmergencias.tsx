@@ -261,6 +261,7 @@ export default function PlanEmergencias() {
       codigo: "",
       nombre: "",
       tipo: "evacuacion",
+      tipoEmergencia: "evacuacion",
       fechaProgramada: new Date(),
       estado: "programado",
       avisado: 1,
@@ -2312,6 +2313,7 @@ export default function PlanEmergencias() {
                         <Select 
                           onValueChange={(value) => {
                             field.onChange(value);
+                            simulacroForm.setValue("tipoEmergencia", value, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
                             const tipo = TIPOS_SIMULACROS.find(t => t.tipoEnum === value);
                             setTipoSimulacroSeleccionado(tipo || null);
                             if (tipo) {
@@ -2323,7 +2325,7 @@ export default function PlanEmergencias() {
                               simulacroForm.setValue("estado", "programado", { shouldValidate: true, shouldDirty: true, shouldTouch: true });
                               // Trigger revalidation after setting all values
                               setTimeout(() => {
-                                simulacroForm.trigger(["codigo", "nombre", "coordinadorNombre", "estado"]);
+                                simulacroForm.trigger(["codigo", "nombre", "coordinadorNombre", "estado", "tipoEmergencia"]);
                               }, 100);
                             }
                           }} 
