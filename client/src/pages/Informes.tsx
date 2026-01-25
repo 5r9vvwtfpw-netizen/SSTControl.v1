@@ -33,7 +33,7 @@ const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
 
 const reportTypes: ReportType[] = [
   // Obligatorios para Rendición de Cuentas
-  { id: "mensual", name: "Informe de Rendición de Cuentas", icon: ClipboardCheck, description: "Informe consolidado del SG-SST con indicadores clave", category: "obligatorio", normativa: "Decreto 1072/2015 Art. 2.2.4.6.8", documentCode: `SST-MEN-${currentYear}-${currentMonth}`, version: "1.0" },
+  // { id: "mensual", name: "Informe de Rendición de Cuentas", icon: ClipboardCheck, description: "Informe consolidado del SG-SST con indicadores clave", category: "obligatorio", normativa: "Decreto 1072/2015 Art. 2.2.4.6.8", documentCode: `SST-MEN-${currentYear}-${currentMonth}`, version: "1.0" }, // OCULTO - pendiente de revisión
   { id: "cumplimiento", name: "Autoevaluación Estándares Mínimos", icon: CheckCircle2, description: "Evaluación según Resolución 0312/2019", category: "obligatorio", normativa: "Resolución 0312/2019 Art. 28", documentCode: `SST-EVAL-${currentYear}`, version: "1.0" },
   { id: "accidentes", name: "Indicadores de Accidentalidad", icon: Activity, description: "Frecuencia, severidad, días sin accidentes", category: "obligatorio", normativa: "Resolución 0312/2019 Art. 30", documentCode: `SST-IND-ACC-${currentYear}`, version: "1.0" },
   { id: "capacitaciones", name: "Informe de Capacitaciones", icon: BarChart3, description: "Cumplimiento del programa de formación", category: "obligatorio", normativa: "Decreto 1072/2015 Art. 2.2.4.6.11", documentCode: `SST-INF-CAP-${currentYear}`, version: "1.0" },
