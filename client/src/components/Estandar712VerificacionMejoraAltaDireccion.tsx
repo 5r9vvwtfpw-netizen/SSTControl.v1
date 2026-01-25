@@ -80,7 +80,7 @@ export function Estandar712VerificacionMejoraAltaDireccion({ isVisible, evaluati
               data-testid="button-ver-revision-712"
               asChild
             >
-              <Link href={buildUrl("/revision-direccion")}>
+              <Link href={buildUrl("/revisiones-direccion")}>
                 <Briefcase className="h-4 w-4 mr-2" />
                 Revisión Dirección
               </Link>

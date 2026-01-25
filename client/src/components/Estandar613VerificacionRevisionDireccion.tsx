@@ -84,7 +84,7 @@ export function Estandar613VerificacionRevisionDireccion({ isVisible, evaluation
               data-testid="button-ver-revision-direccion-613"
               asChild
             >
-              <Link href={buildUrl("/revision-direccion")}>
+              <Link href={buildUrl("/revisiones-direccion")}>
                 <Briefcase className="h-4 w-4 mr-2" />
                 Revisión Dirección
               </Link>
