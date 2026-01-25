@@ -17119,8 +17119,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Check if we need a new page
           if (doc.y > 650) {
             doc.addPage();
-          // Reset font after page break to maintain consistent text size
-          doc.font('Helvetica').fontSize(7).fillColor('#000000');
+            // Reset font after page break to maintain consistent text size
+            doc.font('Helvetica').fontSize(9).fillColor('#000000');
+          }
+
+          // Check if we need a new page
+          if (doc.y > 650) {
+            doc.addPage();
+            // Reset font after page break to maintain consistent text size
+            doc.font('Helvetica').fontSize(9).fillColor('#000000');
+          }
+
+          // Check if we need a new page
+          if (doc.y > 650) {
+            doc.addPage();
+            // Reset font after page break to maintain consistent text size
+            doc.font('Helvetica').fontSize(9).fillColor('#000000');
+          }
+
+          // Check if we need a new page
+          if (doc.y > 650) {
+            doc.addPage();
+            // Reset font after page break to maintain consistent text size
+            doc.font('Helvetica').fontSize(9).fillColor('#000000');
+          }
+
+          // Check if we need a new page
+          if (doc.y > 650) {
+            doc.addPage();
+            // Reset font after page break to maintain consistent text size
+            doc.font('Helvetica').fontSize(9).fillColor('#000000');
+          }
+
+          // Check if we need a new page
+          if (doc.y > 650) {
+            doc.addPage();
+            // Reset font after page break to maintain consistent text size
+            doc.font('Helvetica').fontSize(9).fillColor('#000000');
+          }
+
+          // Check if we need a new page
+          if (doc.y > 650) {
+            doc.addPage();
+            // Reset font after page break to maintain consistent text size
+            doc.font('Helvetica').fontSize(9).fillColor('#000000');
           }
 
           // Worker name and identification
