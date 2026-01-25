@@ -22908,32 +22908,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const evaluacion = await storage.createEvaluacionSst(evaluacionConTipoCorrecto, companyId);
       
-      // AUTO-INICIALIZAR: Crear respuestas "No Cumple" para todos los estándares aplicables
-      try {
-        const estandaresAplicables = await storage.getEstandaresByTipoEmpresa(tipoEmpresaCorrecto);
-        const puntajeKey = `puntaje${tipoEmpresaCorrecto.charAt(0).toUpperCase() + tipoEmpresaCorrecto.slice(1)}` as 'puntajeTipo1' | 'puntajeTipo2' | 'puntajeTipo3' | 'puntajeTipo4';
-        
-        for (const estandar of estandaresAplicables) {
-          const puntajeMaximo = estandar[puntajeKey] || 0;
-          await storage.createRespuestaEstandar({
-            evaluacionId: evaluacion.id,
-            estandarId: estandar.id,
-            cumple: 0,
-            noAplica: 0,
-            puntajeObtenido: 0,
-            puntajeMaximo: puntajeMaximo,
-            hallazgo: null,
-            causaRaiz: null,
-            evidencias: null,
-            modoVerificacion: null,
-            observaciones: null,
-            justificacionNoAplica: null,
-          }, companyId);
-        }
-        console.log(`Evaluación ${evaluacion.id} inicializada con ${estandaresAplicables.length} estándares en No Cumple`);
-      } catch (initError) {
-        console.error('Error inicializando estándares:', initError);
-      }
+      // NOTA: Ya no se auto-inicializan estándares como "No Cumple"
+      // Los estándares se crean individualmente cuando el usuario los evalúa
+      // Esto evita que aparezcan todos con X roja al crear la evaluación
       
       res.status(201).json(evaluacion);
     } catch (error: any) {
