@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, FileText, BarChart3, TrendingUp, Calendar, Users, Building2, AlertCircle, ArrowLeft, ClipboardCheck, Target, Shield, Activity, Briefcase, CheckCircle2, CalendarDays } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
@@ -12,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatReportError } from "@/lib/report-error-messages";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import type { PlanTrabajoAnual } from "@shared/schema";
 
 type ReportCategory = "obligatorio" | "indicadores" | "complementario";
 
@@ -58,6 +60,23 @@ export default function Informes() {
   const isSuperadmin = user?.role === 'superadmin';
   const effectiveCompanyId = isSuperadmin ? selectedCompanyId : user?.companyId;
   const hasCompanyAssigned = !!effectiveCompanyId;
+
+  // Obtener planes de trabajo para enlace al cronograma activo
+  const { data: planes } = useQuery<PlanTrabajoAnual[]>({
+    queryKey: ["/api/planes-trabajo-anual"],
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Buscar el plan aprobado del año actual, o el más reciente aprobado
+  const currentYear = new Date().getFullYear();
+  const planActivo = planes?.find(p => p.estado === "aprobado" && p.anio === currentYear) 
+    || planes?.find(p => p.estado === "aprobado")
+    || planes?.[0];
+
+  // Si hay un plan activo, ir directamente al cronograma, si no, ir a la lista
+  const cronogramaHref = planActivo 
+    ? `/planes-trabajo-anual/${planActivo.id}?tab=cronograma`
+    : `/planes-trabajo-anual`;
 
   const handleGenerateReport = async (reportId: string) => {
     // Validación para superadmin sin empresa seleccionada
@@ -347,7 +366,7 @@ export default function Informes() {
               asChild
               data-testid="button-go-cronograma"
             >
-              <Link href="/planes-trabajo-anual">
+              <Link href={cronogramaHref}>
                 <CalendarDays className="h-4 w-4 mr-2" />
                 Ir al Cronograma de Actividades
               </Link>
