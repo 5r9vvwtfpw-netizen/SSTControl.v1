@@ -4040,7 +4040,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ size: 'LETTER', margin: 35, bufferPages: true });
 
       // Add trial watermark if subscription is in trial period
-      const invPdfSubscription = await storage.getSubscriptionByCompany(companyId);
+      const invPdfSubscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const invPdfTrialStatus = getTrialStatus(invPdfSubscription?.status || 'trial', invPdfSubscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, invPdfTrialStatus.requiresWatermark);
 
@@ -4819,7 +4819,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Generate PDF
       // Add trial watermark if subscription is in trial period
-      const absences_subscription = await storage.getSubscriptionByCompany(companyId);
+      const absences_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const absences_trialStatus = getTrialStatus(absences_subscription?.status || 'trial', absences_subscription?.trialEnd || null, true, true);
 
       const GREEN_HEADER = '#1e7e34';
@@ -16373,7 +16373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Add trial watermark if subscription is in trial period
-      const idcard_subscription = await storage.getSubscriptionByCompany(companyId);
+      const idcard_subscription = await storage.getSubscriptionByCompany(workerCompanyId);
       const idcard_trialStatus = getTrialStatus(idcard_subscription?.status || 'trial', idcard_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, idcard_trialStatus.requiresWatermark);
 
@@ -16384,7 +16384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and worker photo from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(workerCompanyId);
       // Worker photo not needed for muestreo PDF
 
       // Background border
