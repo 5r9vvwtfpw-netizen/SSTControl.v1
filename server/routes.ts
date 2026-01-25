@@ -16272,7 +16272,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .fillColor('#666666')
           .text('No se encontraron trabajadores con los filtros aplicados', { align: 'center' });
       } else {
-        workers.forEach((worker, index) => {
+        for (let index = 0; index < workers.length; index++) {
+          const worker = workers[index];
+          
+          // Page break check BEFORE rendering worker (if not enough space)
+          if (doc.y > 650) {
+            doc.addPage();
+            doc.font('Helvetica').fontSize(7).fillColor('#000000');
+          }
+          
           // Worker Header
           doc.fontSize(9).font('Helvetica-Bold')
             .fillColor('#1e7e34')
@@ -16317,15 +16325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               .stroke();
             doc.moveDown(1);
           }
-
-          // Page break if needed
-          if (doc.y > 700) {
-            doc.addPage();
-          // Reset font after page break to maintain consistent text size
-          doc.font('Helvetica').fontSize(7).fillColor('#000000');
-            doc.moveDown(1);
-          }
-        });
+        }
       }
 
       // Footer
