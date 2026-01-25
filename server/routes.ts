@@ -35408,8 +35408,18 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         companyId = userCompanyId;
       }
       
-      // Asignar companyId al body antes de validar
-      const dataToValidate = { ...req.body, companyId };
+      // Auto-vincular al plan de emergencias vigente si no se especifica
+      let planEmergenciaId = req.body.planEmergenciaId;
+      if (!planEmergenciaId) {
+        const planesVigentes = await storage.getPlanesEmergencia(companyId);
+        const planVigente = planesVigentes.find(p => p.estado === 'vigente');
+        if (planVigente) {
+          planEmergenciaId = planVigente.id;
+        }
+      }
+      
+      // Asignar companyId y planEmergenciaId al body antes de validar
+      const dataToValidate = { ...req.body, companyId, planEmergenciaId };
       const validatedData = insertSimulacroSchema.parse(dataToValidate);
       const simulacro = await storage.createSimulacro(validatedData, companyId);
       res.status(201).json(simulacro);
