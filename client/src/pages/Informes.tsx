@@ -227,7 +227,7 @@ export default function Informes() {
             const Icon = report.icon;
             const categoryInfo = categoryLabels[report.category];
             return (
-              <Card key={report.id} data-testid={`card-report-${report.id}`} className="hover-elevate border-red-200 dark:border-red-800">
+              <Card key={report.id} data-testid={`card-report-${report.id}`} className="hover-elevate">
                 <CardHeader>
                   <div className="flex items-start gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-md bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
