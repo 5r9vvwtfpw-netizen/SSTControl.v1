@@ -93,7 +93,7 @@ export function Estandar611VerificacionIndicadores({ isVisible, evaluationId }: 
               data-testid="button-ver-estadisticas-611"
               asChild
             >
-              <Link href={buildUrl("/estadisticas-accidentalidad")}>
+              <Link href={buildUrl("/indicadores-accidentalidad")}>
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Estadísticas
               </Link>
