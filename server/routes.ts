@@ -967,6 +967,8 @@ function generateFuratPdfContent(
   worker: any,
   company: any
 ): void {
+  const margin = 35;
+  const pageWidth = doc.page.width;
   let currentY = doc.y;
 
   // Title
@@ -1130,6 +1132,8 @@ function generateFurelPdfContent(
   worker: any,
   company: any
 ): void {
+  const margin = 35;
+  const pageWidth = doc.page.width;
   let currentY = doc.y;
 
   // Title
@@ -8858,6 +8862,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/contracts/import", requirePermission("contracts:create"), contractExcelUpload.single('file'), async (req, res) => {
     try {
+      // Helper function to transform Zod validation errors to user-friendly Spanish messages
+      const formatZodErrorForBulkImport = (error: any): string => {
+        if (error && error.errors && Array.isArray(error.errors)) {
+          return error.errors.map((e: any) => {
+            const fieldName = e.path?.[0] || 'campo';
+            const message = e.message || 'Error de validación';
+            return \`Campo '\${fieldName}': \${message}\`;
+          }).join('; ');
+        }
+        return error?.message || String(error);
+      };
       const userRole = req.user!.role;
       const isAdmin = hasGlobalAccess(userRole);
       
@@ -15895,6 +15910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use margin 50 to align with generateStandardPdfHeader
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', layout: 'landscape' });
       
+      const margin = 35;
       // Add trial watermark if subscription is in trial period
       const pdf15243_subscription = await storage.getSubscriptionByCompany(companyId);
       const pdf15243_trialStatus = getTrialStatus(pdf15243_subscription?.status || 'trial', pdf15243_subscription?.trialEnd || null, true, true);
@@ -16384,6 +16400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and worker photo from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
+      const workerPhotoBuffer = await loadCompanyLogoBuffer(worker.photoUrl);
       const signers = await getSignersForCompany(workerCompanyId);
       // Worker photo not needed for muestreo PDF
 
@@ -16394,9 +16411,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .stroke();
 
       // Company logo (top left)
-      if (logoBuffer) {
+      if (logo) {
         try {
-          doc.image(logoBuffer, 20, 20, { width: 50, height: 50, fit: [50, 50] });
+          doc.image(logo, 20, 20, { width: 50, height: 50, fit: [50, 50] });
         } catch (err) {
           console.error('Error loading logo:', err);
         }
@@ -16665,9 +16682,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.moveTo(col3, margin).lineTo(col3, margin + headerHeight).stroke(headerColor);
         doc.moveTo(col3, margin + headerHeight / 2).lineTo(pageWidth - margin, margin + headerHeight / 2).stroke(headerColor);
 
-        if (logoBuffer) {
+        if (logo) {
           try {
-            doc.image(logoBuffer, col1 + 5, margin + 5, { width: 75, height: 45, fit: [75, 45] });
+            doc.image(logo, col1 + 5, margin + 5, { width: 75, height: 45, fit: [75, 45] });
           } catch (err) {
             doc.fontSize(8).font('Helvetica-Bold').fillColor(headerColor)
               .text(company.name.substring(0, 15), col1 + 5, margin + 15, { width: 80, align: 'center', lineBreak: false });
