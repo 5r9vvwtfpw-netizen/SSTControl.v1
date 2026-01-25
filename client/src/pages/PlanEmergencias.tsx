@@ -46,7 +46,6 @@ import {
 } from "@/data/plan-emergencias-automatizacion";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
-import { ParticipantesSimulacroDialogSmart } from "@/components/ParticipantesSimulacroDialogSmart";
 import { useSearch } from "wouter";
 
 const normativaPlanEmergencias = [
@@ -2544,16 +2543,62 @@ export default function PlanEmergencias() {
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle>Participantes del Simulacro</CardTitle>
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={() => setParticipanteDialogOpen(true)} data-testid="button-add-participante">
-                      <Plus className="h-4 w-4 mr-2" /> Agregar Participantes
-                    </Button>
-                    <ParticipantesSimulacroDialogSmart
-                      open={participanteDialogOpen}
-                      onOpenChange={setParticipanteDialogOpen}
-                      simulacroId={selectedSimulacroId}
-                      workers={workers}
-                      existingParticipants={participantes}
-                    />
+                    <Dialog open={participanteDialogOpen} onOpenChange={(open) => { setParticipanteDialogOpen(open); if (!open) { participanteForm.reset(); } }}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" data-testid="button-add-participante">
+                          <Plus className="h-4 w-4 mr-2" /> Agregar Participante
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Agregar Participante</DialogTitle>
+                        </DialogHeader>
+                        <Form {...participanteForm}>
+                          <form onSubmit={participanteForm.handleSubmit(onSubmitParticipante)} className="space-y-4">
+                            <FormField control={participanteForm.control} name="workerId" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Trabajador</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || ""}>
+                                  <FormControl><SelectTrigger data-testid="select-worker-participante"><SelectValue placeholder="Seleccione trabajador" /></SelectTrigger></FormControl>
+                                  <SelectContent>
+                                    {workers.map((w) => (<SelectItem key={w.id} value={w.id}>{w.name} - {w.position || "Sin cargo"}</SelectItem>))}
+                                  </SelectContent>
+                                </Select>
+                                {field.value && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Cargo: {workers.find(w => w.id === field.value)?.position || "Sin cargo asignado"}
+                                  </p>
+                                )}
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={participanteForm.control} name="rolSimulacro" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2">
+                                  <Sparkles className="h-4 w-4 text-primary" />
+                                  Rol en Simulacro
+                                </FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || "evacuado"}>
+                                  <FormControl><SelectTrigger data-testid="select-rol-participante"><SelectValue /></SelectTrigger></FormControl>
+                                  <SelectContent>
+                                    {ROLES_SIMULACRO.map((rol) => (
+                                      <SelectItem key={rol.valor} value={rol.valor}>{rol.etiqueta}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <DialogFooter>
+                              <Button type="button" variant="outline" onClick={() => setParticipanteDialogOpen(false)}>Cancelar</Button>
+                              <Button type="submit" disabled={createParticipanteMutation.isPending} data-testid="button-submit-participante">
+                                {createParticipanteMutation.isPending ? "Agregando..." : "Agregar"}
+                              </Button>
+                            </DialogFooter>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
                     <Button size="sm" variant="outline" onClick={() => setSelectedSimulacroId(null)}>Cerrar</Button>
                   </div>
                 </div>
