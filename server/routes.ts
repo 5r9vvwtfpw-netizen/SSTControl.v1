@@ -17293,9 +17293,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const currentYear = now.getFullYear();
           
           return items.filter(item => {
-            const itemDate = new Date(item[dateField]);
-            const itemMonth = itemDate.getMonth();
-            const itemYear = itemDate.getFullYear();
+            // Handle date string format 'YYYY-MM-DD' to avoid timezone issues
+            const dateValue = item[dateField];
+            if (!dateValue) return false;
+            
+            // Parse date string directly to avoid UTC offset issues
+            let itemMonth: number;
+            let itemYear: number;
+            let itemDate: Date;
+            
+            if (typeof dateValue === 'string' && dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              // Parse YYYY-MM-DD format directly
+              const [year, month, day] = dateValue.split('-').map(Number);
+              itemYear = year;
+              itemMonth = month - 1; // JS months are 0-indexed
+              itemDate = new Date(year, month - 1, day);
+            } else {
+              // Fallback for other date formats
+              itemDate = new Date(dateValue);
+              itemMonth = itemDate.getMonth();
+              itemYear = itemDate.getFullYear();
+            }
             
             switch (period) {
               case 'mes-actual':
@@ -17535,9 +17553,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const currentYear = now.getFullYear();
           
           return items.filter(item => {
-            const itemDate = new Date(item[dateField]);
-            const itemMonth = itemDate.getMonth();
-            const itemYear = itemDate.getFullYear();
+            // Handle date string format 'YYYY-MM-DD' to avoid timezone issues
+            const dateValue = item[dateField];
+            if (!dateValue) return false;
+            
+            // Parse date string directly to avoid UTC offset issues
+            let itemMonth: number;
+            let itemYear: number;
+            let itemDate: Date;
+            
+            if (typeof dateValue === 'string' && dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              // Parse YYYY-MM-DD format directly
+              const [year, month, day] = dateValue.split('-').map(Number);
+              itemYear = year;
+              itemMonth = month - 1; // JS months are 0-indexed
+              itemDate = new Date(year, month - 1, day);
+            } else {
+              // Fallback for other date formats
+              itemDate = new Date(dateValue);
+              itemMonth = itemDate.getMonth();
+              itemYear = itemDate.getFullYear();
+            }
             
             switch (period) {
               case 'mes-actual':
@@ -17910,9 +17946,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const currentYear = now.getFullYear();
           
           return items.filter(item => {
-            const itemDate = new Date(item[dateField]);
-            const itemMonth = itemDate.getMonth();
-            const itemYear = itemDate.getFullYear();
+            // Handle date string format 'YYYY-MM-DD' to avoid timezone issues
+            const dateValue = item[dateField];
+            if (!dateValue) return false;
+            
+            // Parse date string directly to avoid UTC offset issues
+            let itemMonth: number;
+            let itemYear: number;
+            let itemDate: Date;
+            
+            if (typeof dateValue === 'string' && dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              // Parse YYYY-MM-DD format directly
+              const [year, month, day] = dateValue.split('-').map(Number);
+              itemYear = year;
+              itemMonth = month - 1; // JS months are 0-indexed
+              itemDate = new Date(year, month - 1, day);
+            } else {
+              // Fallback for other date formats
+              itemDate = new Date(dateValue);
+              itemMonth = itemDate.getMonth();
+              itemYear = itemDate.getFullYear();
+            }
             
             switch (period) {
               case 'mes-actual':
