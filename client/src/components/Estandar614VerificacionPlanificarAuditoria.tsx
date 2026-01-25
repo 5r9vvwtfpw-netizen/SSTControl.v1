@@ -104,7 +104,7 @@ export function Estandar614VerificacionPlanificarAuditoria({ isVisible, evaluati
               data-testid="button-ver-comunicaciones-614"
               asChild
             >
-              <Link href={buildUrl("/comunicaciones-sst")}>
+              <Link href={buildUrl("/comunicacion-sst")}>
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Comunicaciones
               </Link>
