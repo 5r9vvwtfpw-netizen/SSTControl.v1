@@ -105,7 +105,7 @@ export function Estandar612VerificacionAuditoria({ isVisible, evaluationId }: Es
               data-testid="button-ver-cronograma-612"
               asChild
             >
-              <Link href={buildUrl("/cronograma-sst")}>
+              <Link href={buildUrl("/planes-trabajo-anual")}>
                 <Calendar className="h-4 w-4 mr-2" />
                 Cronograma SST
               </Link>
