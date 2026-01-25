@@ -35,26 +35,54 @@ The system uses a client-server architecture with a RESTful API. Data integrity 
 -   **AWS SDK v3**: For S3 operations.
 ## PDF Generation Guidelines
 
-### Context Validation (Prevención de Errores)
-Para prevenir errores de variables undefined en endpoints de PDF, usar el helper `server/lib/pdf-context-validator.ts`:
+### LECCIÓN CRÍTICA - Incidente Enero 2026
 
-```typescript
-import { validatePdfContext, assertValidCompanyId } from "./lib/pdf-context-validator";
+**INCIDENTE**: 53 endpoints PDF fallaban en producción con Error 500 por variables undefined.
 
-// Al inicio del endpoint de PDF:
-const validation = validatePdfContext(req, { companyId }, { contextName: 'Acta Designación' });
-if (!validation.isValid) {
-  return res.status(400).send(validation.error);
-}
+**CAUSA RAÍZ**: Copy-paste de código entre endpoints sin verificar que las variables existieran en el nuevo contexto.
 
-// O usar assertion:
-assertValidCompanyId(companyId, 'responsible-designations-pdf');
-```
+**ERRORES CORREGIDOS** (119+ correcciones):
+| Tipo de Error | Cantidad | Ejemplo |
+|---------------|----------|---------|
+| `companyId` / `effectiveCompanyId` sin definir | 17 | Código copiado sin contexto |
+| `const margin` sin declarar | 75 | Faltaba `const margin = 35` |
+| `const pageWidth` sin declarar | 9 | Faltaba `const pageWidth = doc.page.width` |
+| `logoBuffer` / `workerPhotoBuffer` incorrectas | 6 | Referencias a variables inexistentes |
+| Template literal mal escapado | 1 | `\`...\`` en vez de `` `...` `` |
 
-### Variables Correctas por Contexto
-- En endpoints con `getEffectiveCompanyId(req)` → usar `effectiveCompanyId`
-- En endpoints sin esa llamada → usar `companyId` (definida localmente)
-- **NUNCA copiar código entre endpoints sin verificar que las variables existan**
+**SOLUCIÓN IMPLEMENTADA**: Se creó `server/lib/pdf-context-validator.ts` para prevenir errores futuros.
 
-### Logging de Errores
-Todos los errores de PDF deben loguearse con `[PDF-CONTEXT-ERROR]` o `[PDF-GENERATION-ERROR]` para fácil búsqueda en logs de producción.
+### REGLAS OBLIGATORIAS PARA ENDPOINTS PDF
+
+1. **SIEMPRE** declarar al inicio del endpoint:
+   ```typescript
+   const margin = 35;
+   const pageWidth = doc.page.width;
+   ```
+
+2. **SIEMPRE** validar contexto antes de generar PDF:
+   ```typescript
+   import { validatePdfContext, assertValidCompanyId } from "./lib/pdf-context-validator";
+
+   const validation = validatePdfContext(req, { companyId }, { contextName: 'Nombre PDF' });
+   if (!validation.isValid) {
+     return res.status(400).send(validation.error);
+   }
+   ```
+
+3. **NUNCA** copiar código entre endpoints sin verificar variables:
+   - En endpoints con `getEffectiveCompanyId(req)` → usar `effectiveCompanyId`
+   - En endpoints sin esa llamada → usar `companyId` (definida localmente)
+
+4. **SIEMPRE** loguear errores con prefijos estándar:
+   - `[PDF-CONTEXT-ERROR]` para errores de contexto
+   - `[PDF-GENERATION-ERROR]` para errores de generación
+
+### Checklist para Nuevos Endpoints PDF
+
+- [ ] ¿Está definida `companyId` o `effectiveCompanyId`?
+- [ ] ¿Están declaradas `margin` y `pageWidth`?
+- [ ] ¿Se usa `validatePdfContext()` al inicio?
+- [ ] ¿Se carga el logo con `loadCompanyLogoBuffer()`?
+- [ ] ¿Se obtienen los firmantes con `getSignersForCompany()`?
+- [ ] ¿Se usa `addStandardHeader()` y `addSignatureFooter()`?
