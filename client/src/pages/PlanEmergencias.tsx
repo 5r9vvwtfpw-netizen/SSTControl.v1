@@ -350,6 +350,11 @@ export default function PlanEmergencias() {
 
   const { data: inspeccionesRecurso = [] } = useQuery<InspeccionRecursoEmergencia[]>({
     queryKey: ["/api/inspecciones-recursos-emergencia", selectedRecursoId],
+    queryFn: async () => {
+      const res = await fetch(`/api/inspecciones-recursos-emergencia?recursoId=${selectedRecursoId}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error al cargar inspecciones");
+      return res.json();
+    },
     enabled: !!selectedRecursoId,
   });
 
