@@ -8868,7 +8868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return error.errors.map((e: any) => {
             const fieldName = e.path?.[0] || 'campo';
             const message = e.message || 'Error de validación';
-            return \`Campo '\${fieldName}': \${message}\`;
+            return `Campo '${fieldName}': ${message}`;
           }).join('; ');
         }
         return error?.message || String(error);
