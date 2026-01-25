@@ -347,7 +347,7 @@ export default function Informes() {
               asChild
               data-testid="button-go-cronograma"
             >
-              <Link href="/cronograma">
+              <Link href="/planes-trabajo-anual">
                 <CalendarDays className="h-4 w-4 mr-2" />
                 Ir al Cronograma de Actividades
               </Link>
