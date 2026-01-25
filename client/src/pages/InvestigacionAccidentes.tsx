@@ -733,6 +733,54 @@ export default function InvestigacionAccidentes() {
   };
   const licenseStatus = getLicenseStatus();
 
+  // Export PDF function
+  const handleExportPdf = async () => {
+    if (!companyId) {
+      toast({
+        title: "Error",
+        description: "No se encontró la empresa asociada",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsExporting(true);
+    try {
+      const response = await fetch(`/api/reports/investigacion-accidentes?companyId=${companyId}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al generar el PDF');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `investigaciones_accidentes_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "PDF generado",
+        description: "El informe se ha descargado correctamente",
+      });
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar el PDF",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
