@@ -961,7 +961,12 @@ export default function PlanEmergencias() {
     if (editingBrigada) {
       updateBrigadaMutation.mutate({ id: editingBrigada.id, data: values });
     } else {
-      createBrigadaMutation.mutate(values);
+      // Vincular automáticamente al primer plan de emergencias vigente
+      const planActivo = planes.find(p => p.estado === 'vigente') || planes[0];
+      const dataWithPlan = planActivo 
+        ? { ...values, planEmergenciaId: planActivo.id }
+        : values;
+      createBrigadaMutation.mutate(dataWithPlan);
     }
   };
 
@@ -993,7 +998,12 @@ export default function PlanEmergencias() {
     if (editingSimulacro) {
       updateSimulacroMutation.mutate({ id: editingSimulacro.id, data: values });
     } else {
-      createSimulacroMutation.mutate(values);
+      // Vincular automáticamente al primer plan de emergencias vigente
+      const planActivo = planes.find(p => p.estado === 'vigente') || planes[0];
+      const dataWithPlan = planActivo 
+        ? { ...values, planEmergenciaId: planActivo.id }
+        : values;
+      createSimulacroMutation.mutate(dataWithPlan);
     }
   };
 
