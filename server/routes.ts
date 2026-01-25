@@ -16272,19 +16272,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .fillColor('#666666')
           .text('No se encontraron trabajadores con los filtros aplicados', { align: 'center' });
       } else {
+        const margin = 50;
+        const pageHeight = doc.page.height;
+        const contentBottom = pageHeight - 100; // Leave space for footer
+        
         for (let index = 0; index < workers.length; index++) {
           const worker = workers[index];
           
           // Page break check BEFORE rendering worker (if not enough space)
-          if (doc.y > 650) {
+          if (doc.y > contentBottom) {
             doc.addPage();
+            doc.y = margin; // Reset Y position to top margin
             doc.font('Helvetica').fontSize(7).fillColor('#000000');
           }
           
           // Worker Header
           doc.fontSize(9).font('Helvetica-Bold')
             .fillColor('#1e7e34')
-            .text(`${index + 1}. ${worker.name}`, { continued: true })
+            .text(`${index + 1}. ${worker.name}`, margin, doc.y, { continued: true })
             .fillColor('#000000')
             .font('Helvetica')
             .text(` (${worker.identificationNumber || 'Sin cédula'})`);
@@ -16293,13 +16298,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Worker Details
           doc.fontSize(7).font('Helvetica');
-          doc.text(`Cargo: ${worker.position}`, { indent: 15 });
-          doc.text(`Departamento: ${worker.department}`, { indent: 15 });
-          doc.text(`Tipo de Contrato: ${worker.contractType}`, { indent: 15 });
-          doc.text(`Fecha de Inicio: ${new Date(worker.startDate).toLocaleDateString('es-CO')}`, { indent: 15 });
+          doc.text(`Cargo: ${worker.position || 'No especificado'}`, margin + 15, doc.y);
+          doc.text(`Departamento: ${worker.department || 'No especificado'}`, margin + 15, doc.y);
+          doc.text(`Tipo de Contrato: ${worker.contractType || 'No especificado'}`, margin + 15, doc.y);
+          doc.text(`Fecha de Inicio: ${worker.startDate ? new Date(worker.startDate).toLocaleDateString('es-CO') : 'No especificada'}`, margin + 15, doc.y);
           
           if (worker.endDate) {
-            doc.text(`Fecha de Fin: ${new Date(worker.endDate).toLocaleDateString('es-CO')}`, { indent: 15 });
+            doc.text(`Fecha de Fin: ${new Date(worker.endDate).toLocaleDateString('es-CO')}`, margin + 15, doc.y);
           }
 
           // Status badge
@@ -16310,7 +16315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           doc.fillColor(statusColors[worker.status] || '#000000')
             .font('Helvetica-Bold')
-            .text(`Estado: ${worker.status.toUpperCase()}`, { indent: 15 });
+            .text(`Estado: ${(worker.status || 'desconocido').toUpperCase()}`, margin + 15, doc.y);
           
           doc.fillColor('#000000').font('Helvetica');
           
@@ -16320,8 +16325,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (index < workers.length - 1) {
             doc.strokeColor('#cccccc')
               .lineWidth(0.5)
-              .moveTo(50, doc.y)
-              .lineTo(550, doc.y)
+              .moveTo(margin, doc.y)
+              .lineTo(doc.page.width - margin, doc.y)
               .stroke();
             doc.moveDown(1);
           }
