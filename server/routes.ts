@@ -12068,7 +12068,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get company logo and signers for standardized PDF
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(effectiveCompanyId, false);
+      const signers = await getSignersForCompany(companyId, false);
       
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({ size: 'LETTER', layout: 'landscape', margin: 50 });
@@ -13838,7 +13838,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get company logo and signers for standardized PDF
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(effectiveCompanyId, false);
+      const signers = await getSignersForCompany(companyId, false);
       
       const markdownPath = path.join(process.cwd(), 'docs', 'PROGRAMA_CAPACITACION_PREVENCION.md');
       
@@ -14188,7 +14188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
       // Load company logo for PDF header
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(effectiveCompanyId, false);
+      const signers = await getSignersForCompany(companyId, false);
 
       // Standard Header (ISO 45001:2018)
       await addStandardHeader({
@@ -20175,7 +20175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Load company logo and signers for standardized PDF
       const logoBuffer = await loadCompanyLogo(company?.logoUrl);
-      const signers = await getSignersForCompany(effectiveCompanyId, false);
+      const signers = await getSignersForCompany(companyId, false);
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
@@ -20657,7 +20657,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Load logo and signers for standardized header
       const logo = await loadCompanyLogo(company?.logoUrl);
-      const signers = await getSignersForCompany(effectiveCompanyId, true);
+      const signers = await getSignersForCompany(companyId, true);
 
       // Add standard header with centralized PDF Standardizer service
       let currentY = await addStandardHeader({
@@ -28226,7 +28226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Load company logo and signers for standardized PDF
       const logoBuffer = await loadCompanyLogo(company?.logoUrl || null);
-      const signers = await getSignersForCompany(effectiveCompanyId, false);
+      const signers = await getSignersForCompany(companyId, false);
       
       // Obtener datos relacionados
       const evaluaciones = await storage.getEvaluacionesImpactoCambio(cambioId, companyId);
@@ -30958,7 +30958,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Load company logo and signers
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(effectiveCompanyId, false);
+      const signers = await getSignersForCompany(companyId, false);
 
       // Create PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
@@ -39432,7 +39432,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       // Preload company logo and signers from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(effectiveCompanyId, false);
+      const signers = await getSignersForCompany(companyId, false);
       
       const contentStartY = await addStandardHeader({
         doc,
@@ -39631,7 +39631,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       // Preload company logo and signers from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(effectiveCompanyId, false);
+      const signers = await getSignersForCompany(companyId, false);
       
       const contentStartY = await addStandardHeader({
         doc,
@@ -40025,7 +40025,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - 2 * margin;
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(effectiveCompanyId, false);
+      const signers = await getSignersForCompany(companyId, false);
 
       let currentY = await addStandardHeader({
         doc,
