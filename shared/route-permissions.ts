@@ -69,6 +69,7 @@ export const routePermissions: Record<string, Permission[]> = {
   "/registros-induccion": ["trainings:view", "trainings:view_self"],
   "/configuracion-induccion": ["trainings:view", "trainings:view_self"],
   "/capacitaciones": ["trainings:view", "trainings:view_self"],
+  "/copasst": ["sst_management:view"],
   "/copasst-actas": ["sst_management:view"],
   "/copasst-gestion": ["sst_management:view"],
   "/capacitacion-copasst": ["trainings:view", "trainings:view_self"],
