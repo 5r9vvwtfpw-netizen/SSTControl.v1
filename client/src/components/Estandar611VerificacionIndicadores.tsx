@@ -105,7 +105,7 @@ export function Estandar611VerificacionIndicadores({ isVisible, evaluationId }: 
               data-testid="button-ver-metas-611"
               asChild
             >
-              <Link href={buildUrl("/objetivos-metas-sst")}>
+              <Link href={buildUrl("/objetivos-sst")}>
                 <Target className="h-4 w-4 mr-2" />
                 Objetivos y Metas
               </Link>
