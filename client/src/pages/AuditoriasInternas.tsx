@@ -197,7 +197,7 @@ export default function AuditoriasInternas() {
     );
   }
 
-  if (isFeaturesError || !features?.hasAuditorias) {
+  if ((isFeaturesError || !features?.hasAuditorias) && !hasGlobalAccessUser) {
     return (
       <div className="space-y-6">
         <div>
