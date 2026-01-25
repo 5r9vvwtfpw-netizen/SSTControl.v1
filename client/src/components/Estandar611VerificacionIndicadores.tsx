@@ -81,7 +81,7 @@ export function Estandar611VerificacionIndicadores({ isVisible, evaluationId }: 
               data-testid="button-ver-indicadores-611"
               asChild
             >
-              <Link href={buildUrl("/indicadores-sst")}>
+              <Link href={buildUrl("/objetivos-sst?tab=indicadores")}>
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Ver Indicadores
               </Link>
