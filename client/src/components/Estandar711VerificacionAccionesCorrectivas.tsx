@@ -1,7 +1,6 @@
-import { AlertTriangle, CheckCircle2, TrendingUp, Search, Briefcase, ShieldAlert, BarChart3 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, TrendingUp, Search, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Badge } from "@/components/ui/badge";
 
 interface Estandar711VerificacionAccionesCorrectivasProps {
   isVisible: boolean;
@@ -32,20 +31,6 @@ const fuentesAcciones = [
     ruta: "/revisiones-direccion",
     tab: undefined,
     icono: Briefcase,
-  },
-  {
-    nombre: "Inspecciones SST",
-    descripcion: "Condiciones inseguras detectadas en inspecciones de seguridad",
-    ruta: "/inspecciones",
-    tab: undefined,
-    icono: ShieldAlert,
-  },
-  {
-    nombre: "Indicadores SST",
-    descripcion: "Desviaciones en indicadores de gestión y resultado",
-    ruta: "/indicadores-accidentalidad",
-    tab: undefined,
-    icono: BarChart3,
   },
 ];
 
@@ -133,11 +118,6 @@ export function Estandar711VerificacionAccionesCorrectivas({ isVisible, evaluati
             </div>
           </div>
 
-          <div className="flex gap-2 mt-4 flex-wrap">
-            <Badge variant="outline" className="text-xs bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-700">
-              Fase ACTUAR del Ciclo PHVA
-            </Badge>
-          </div>
         </div>
       </div>
     </div>
