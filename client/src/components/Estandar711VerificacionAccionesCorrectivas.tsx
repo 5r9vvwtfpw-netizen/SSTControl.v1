@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, TrendingUp, Search, ClipboardList, Briefcase, ShieldAlert } from "lucide-react";
+import { AlertTriangle, CheckCircle2, TrendingUp, Briefcase, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
@@ -19,20 +19,6 @@ const criteriosVerificacion = [
 ];
 
 const fuentesAcciones = [
-  {
-    nombre: "Investigación de Accidentes",
-    descripcion: "Acciones derivadas de investigación de AT, EL e incidentes (Art. 2.2.4.6.32)",
-    ruta: "/accidentes",
-    tab: "investigaciones",
-    icono: Search,
-  },
-  {
-    nombre: "Auditorías Internas",
-    descripcion: "No conformidades y hallazgos de auditorías del SG-SST",
-    ruta: "/auditorias-internas",
-    tab: "hallazgos",
-    icono: ClipboardList,
-  },
   {
     nombre: "Revisión por Dirección",
     descripcion: "Decisiones y compromisos de la Alta Dirección (Art. 2.2.4.6.31)",
