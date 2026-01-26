@@ -121,6 +121,9 @@ export const routePermissions: Record<string, Permission[]> = {
   "/no-conformidades": ["sst_management:view"],
   "/mejora-continua": ["sst_management:view"],
   
+  // Estándar 7.1.2 - Acciones de mejora conforme a revisión de la Alta Dirección (Decreto 1072/2015 Art. 2.2.4.6.31)
+  "/acciones-mejora-direccion": ["sst_management:view"],
+  
   "/dashboard-verificar": ["sst_management:view"],
   "/reportes/evaluaciones-sst-consolidado": ["sst_management:view"],
   "/reportes/auditorias-internas-consolidado": ["sst_management:view"],
