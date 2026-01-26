@@ -123,6 +123,14 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
         { label: "Panel VERIFICAR - Indicadores", path: "/dashboard-verificar" },
       ],
     },
+    {
+      title: "Estándar 7.1.1 - Mejora Continua",
+      items: [
+        { label: "Acciones Correctivas", path: "/acciones-correctivas" },
+        { label: "No Conformidades", path: "/no-conformidades" },
+        { label: "Oportunidades de Mejora", path: "/mejora-continua" },
+      ],
+    },
   ],
   actuar: [
     {
