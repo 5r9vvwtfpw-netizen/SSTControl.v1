@@ -1,7 +1,6 @@
-import { AlertTriangle, CheckCircle2, FileText, Search, ClipboardCheck, Activity, AlertOctagon, HeartPulse, TreePine } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileText, Search, Activity, AlertOctagon, HeartPulse, TreePine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Badge } from "@/components/ui/badge";
 
 interface Estandar713VerificacionAccionesInvestigacionesProps {
   isVisible: boolean;
@@ -21,35 +20,30 @@ const criteriosVerificacion = [
 const elementosInvestigacion = [
   {
     nombre: "Investigación de Accidentes",
-    descripcion: "Informes de investigación con análisis de causalidad (Res. 1401/2007)",
     ruta: "/accidentes",
     tab: "investigaciones",
     icono: Search,
   },
   {
     nombre: "Registro de Accidentes",
-    descripcion: "Registro y reporte de accidentes de trabajo (FURAT)",
     ruta: "/accidentes",
     tab: undefined,
     icono: AlertOctagon,
   },
   {
     nombre: "Enfermedades Laborales",
-    descripcion: "Investigación y seguimiento de enfermedades laborales",
     ruta: "/examenes-medicos",
     tab: undefined,
     icono: HeartPulse,
   },
   {
     nombre: "Estadísticas AT/EL",
-    descripcion: "Indicadores de accidentalidad y enfermedad laboral",
     ruta: "/accidentes",
     tab: "estadisticas",
     icono: Activity,
   },
   {
     nombre: "Árbol de Causas",
-    descripcion: "Metodología de análisis causal de accidentes",
     ruta: "/accidentes",
     tab: "investigaciones",
     icono: TreePine,
@@ -125,16 +119,13 @@ export function Estandar713VerificacionAccionesInvestigaciones({ isVisible, eval
                   key={idx}
                   variant="outline"
                   size="sm"
-                  className="justify-start h-auto py-2 px-3 border-red-200 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/50"
+                  className="justify-start border-red-200 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/50"
                   data-testid={`button-elemento-713-${idx}`}
                   asChild
                 >
                   <Link href={buildUrl(elemento.ruta, elemento.tab)}>
                     <elemento.icono className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <div className="text-left">
-                      <span className="block text-xs font-medium">{elemento.nombre}</span>
-                      <span className="block text-[10px] text-muted-foreground">{elemento.descripcion}</span>
-                    </div>
+                    <span className="text-xs font-medium">{elemento.nombre}</span>
                   </Link>
                 </Button>
               ))}
@@ -142,21 +133,6 @@ export function Estandar713VerificacionAccionesInvestigaciones({ isVisible, eval
           </div>
 
           <div className="flex gap-2 mt-4 flex-wrap">
-            <Badge variant="outline" className="text-xs bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-700">
-              Fase ACTUAR del Ciclo PHVA
-            </Badge>
-            <Button 
-              variant="default" 
-              size="sm" 
-              className="bg-purple-600 hover:bg-purple-700"
-              data-testid="button-ver-dashboard-actuar-713"
-              asChild
-            >
-              <Link href={buildUrl("/dashboard-actuar")}>
-                <ClipboardCheck className="h-4 w-4 mr-2" />
-                Ver Dashboard Acciones
-              </Link>
-            </Button>
             <Button 
               variant="outline" 
               size="sm" 
