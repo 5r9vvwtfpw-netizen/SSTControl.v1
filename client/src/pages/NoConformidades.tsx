@@ -43,8 +43,12 @@ import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 const estadosNC = [
   { value: "abierta", label: "Abierta", color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
-  { value: "en_tratamiento", label: "En Tratamiento", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300" },
+  { value: "en_analisis", label: "En Análisis", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300" },
+  { value: "accion_definida", label: "Acción Definida", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300" },
+  { value: "en_implementacion", label: "En Implementación", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
+  { value: "verificacion_pendiente", label: "Verificación Pendiente", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300" },
   { value: "cerrada", label: "Cerrada", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
+  { value: "cancelada", label: "Cancelada", color: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300" },
 ];
 
 const tiposNC = [
@@ -57,10 +61,11 @@ const origenesNC = [
   { value: "auditoria_interna", label: "Auditoría Interna" },
   { value: "auditoria_externa", label: "Auditoría Externa" },
   { value: "inspeccion", label: "Inspección" },
-  { value: "accidente", label: "Investigación de Accidente" },
   { value: "revision_direccion", label: "Revisión por la Dirección" },
-  { value: "queja", label: "Queja o Reclamo" },
-  { value: "autoevaluacion", label: "Autoevaluación" },
+  { value: "investigacion_incidente", label: "Investigación de Incidente" },
+  { value: "queja_cliente", label: "Queja de Cliente" },
+  { value: "queja_trabajador", label: "Queja de Trabajador" },
+  { value: "requisito_legal", label: "Requisito Legal" },
   { value: "otro", label: "Otro" },
 ];
 
@@ -74,7 +79,7 @@ const ncFormSchema = z.object({
   fechaDeteccion: z.coerce.date(),
   fechaCierre: z.coerce.date().optional().nullable(),
   responsableId: z.string().optional().nullable(),
-  estado: z.enum(["abierta", "en_tratamiento", "cerrada"]),
+  estado: z.enum(["abierta", "en_analisis", "accion_definida", "en_implementacion", "verificacion_pendiente", "cerrada", "cancelada"]),
   observaciones: z.string().optional(),
 });
 
@@ -116,7 +121,22 @@ export default function NoConformidades() {
 
   const createMutation = useMutation({
     mutationFn: async (data: NCFormData) => {
-      return apiRequest("POST", "/api/no-conformidades", data);
+      const year = new Date().getFullYear();
+      const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      const payload = {
+        codigo: data.codigo || `NC-${year}-${randomSuffix}`,
+        tipo: data.tipo,
+        origen: data.origen,
+        requisitoIncumplido: data.requisito,
+        descripcion: data.descripcion,
+        evidenciaObjetiva: data.evidencia || null,
+        fechaDeteccion: new Date(data.fechaDeteccion).toISOString().split('T')[0],
+        fechaCierre: data.fechaCierre ? new Date(data.fechaCierre).toISOString().split('T')[0] : null,
+        responsableAreaId: data.responsableId || null,
+        estado: data.estado,
+        observaciones: data.observaciones || null,
+      };
+      return apiRequest("POST", "/api/no-conformidades", payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/no-conformidades"] });
@@ -174,10 +194,10 @@ export default function NoConformidades() {
   const estadisticas = useMemo(() => {
     const total = noConformidades.length;
     const abiertas = noConformidades.filter(nc => nc.estado === "abierta").length;
-    const enTratamiento = noConformidades.filter(nc => nc.estado === "en_tratamiento").length;
+    const enProceso = noConformidades.filter(nc => nc.estado && ["en_analisis", "accion_definida", "en_implementacion", "verificacion_pendiente"].includes(nc.estado)).length;
     const cerradas = noConformidades.filter(nc => nc.estado === "cerrada").length;
     const mayores = noConformidades.filter(nc => nc.tipo === "mayor" && nc.estado !== "cerrada").length;
-    return { total, abiertas, enTratamiento, cerradas, mayores };
+    return { total, abiertas, enProceso, cerradas, mayores };
   }, [noConformidades]);
 
   const handleOpenDialog = (nc?: NoConformidad) => {
@@ -193,7 +213,7 @@ export default function NoConformidades() {
         fechaDeteccion: nc.fechaDeteccion ? new Date(nc.fechaDeteccion) : new Date(),
         fechaCierre: nc.fechaCierre ? new Date(nc.fechaCierre) : null,
         responsableId: nc.responsableId?.toString() || null,
-        estado: (nc.estado as "abierta" | "en_tratamiento" | "cerrada") || "abierta",
+        estado: (nc.estado as "abierta" | "en_analisis" | "accion_definida" | "en_implementacion" | "verificacion_pendiente" | "cerrada" | "cancelada") || "abierta",
         observaciones: nc.observaciones || "",
       });
     } else {
@@ -286,7 +306,7 @@ export default function NoConformidades() {
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{estadisticas.enTratamiento}</div>
+            <div className="text-2xl font-bold text-yellow-600">{estadisticas.enProceso}</div>
           </CardContent>
         </Card>
         <Card>

@@ -29,18 +29,18 @@ interface OportunidadMejora {
   codigo?: string | null;
   titulo?: string | null;
   descripcion?: string | null;
-  tipo?: string | null;
-  origen?: string | null;
-  beneficioEsperado?: string | null;
+  categoria?: string | null;
+  fuenteIdentificacion?: string | null;
+  mejoraEsperada?: string | null;
   recursosRequeridos?: string | null;
   responsableId?: number | null;
-  fechaPropuesta?: string | Date | null;
-  fechaImplementacion?: string | Date | null;
-  fechaVerificacion?: string | Date | null;
+  fechaIdentificacion?: string | Date | null;
+  fechaFinImplementacion?: string | Date | null;
+  fechaCierre?: string | Date | null;
   prioridad?: string | null;
   estado?: string | null;
   porcentajeAvance?: number | null;
-  resultadoObtenido?: string | null;
+  resultadosObtenidos?: string | null;
   observaciones?: string | null;
 }
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -49,33 +49,34 @@ import { z } from "zod";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 const estadosMejora = [
-  { value: "propuesta", label: "Propuesta", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" },
-  { value: "aprobada", label: "Aprobada", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
+  { value: "identificada", label: "Identificada", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" },
+  { value: "evaluada", label: "Evaluada", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
+  { value: "aprobada", label: "Aprobada", color: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300" },
   { value: "en_implementacion", label: "En Implementación", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300" },
   { value: "implementada", label: "Implementada", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
-  { value: "verificada", label: "Verificada", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300" },
+  { value: "cerrada", label: "Cerrada", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300" },
+  { value: "rechazada", label: "Rechazada", color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
 ];
 
-const tiposMejora = [
+const categoriasMejora = [
   { value: "proceso", label: "Mejora de Proceso" },
-  { value: "producto", label: "Mejora de Producto/Servicio" },
-  { value: "eficiencia", label: "Eficiencia Operativa" },
-  { value: "seguridad", label: "Mejora en Seguridad" },
-  { value: "salud", label: "Mejora en Salud" },
-  { value: "ambiental", label: "Mejora Ambiental" },
-  { value: "documentacion", label: "Mejora Documental" },
-  { value: "capacitacion", label: "Mejora en Capacitación" },
+  { value: "infraestructura", label: "Infraestructura" },
+  { value: "capacitacion", label: "Capacitación" },
+  { value: "documentacion", label: "Documentación" },
+  { value: "tecnologia", label: "Tecnología" },
+  { value: "cultura_sst", label: "Cultura SST" },
+  { value: "comunicacion", label: "Comunicación" },
   { value: "otro", label: "Otro" },
 ];
 
-const origenesMejora = [
-  { value: "auditoria", label: "Auditoría Interna" },
+const fuentesMejora = [
+  { value: "auditoria_interna", label: "Auditoría Interna" },
   { value: "revision_direccion", label: "Revisión por la Dirección" },
   { value: "sugerencia_empleado", label: "Sugerencia de Empleado" },
   { value: "analisis_indicadores", label: "Análisis de Indicadores" },
   { value: "benchmarking", label: "Benchmarking" },
   { value: "copasst", label: "COPASST" },
-  { value: "investigacion", label: "Investigación de Incidentes" },
+  { value: "investigacion_incidente", label: "Investigación de Incidentes" },
   { value: "otro", label: "Otro" },
 ];
 
@@ -89,18 +90,18 @@ const mejoraFormSchema = z.object({
   codigo: z.string().optional(),
   titulo: z.string().min(1, "El título es requerido"),
   descripcion: z.string().min(1, "La descripción es requerida"),
-  tipo: z.string().min(1, "El tipo es requerido"),
-  origen: z.string().min(1, "El origen es requerido"),
-  beneficioEsperado: z.string().optional(),
+  categoria: z.string().min(1, "La categoría es requerida"),
+  fuente: z.string().min(1, "La fuente es requerida"),
+  mejoraEsperada: z.string().optional(),
   recursosRequeridos: z.string().optional(),
   responsableId: z.string().optional().nullable(),
-  fechaPropuesta: z.coerce.date(),
+  fechaIdentificacion: z.coerce.date(),
   fechaImplementacion: z.coerce.date().optional().nullable(),
-  fechaVerificacion: z.coerce.date().optional().nullable(),
+  fechaCierre: z.coerce.date().optional().nullable(),
   prioridad: z.enum(["alta", "media", "baja"]),
-  estado: z.enum(["propuesta", "aprobada", "en_implementacion", "implementada", "verificada"]),
+  estado: z.enum(["identificada", "evaluada", "aprobada", "en_implementacion", "implementada", "cerrada", "rechazada"]),
   porcentajeAvance: z.number().min(0).max(100).optional(),
-  resultadoObtenido: z.string().optional(),
+  resultadosObtenidos: z.string().optional(),
   observaciones: z.string().optional(),
 });
 
@@ -121,18 +122,18 @@ export default function MejoraContinua() {
     defaultValues: {
       titulo: "",
       descripcion: "",
-      tipo: "",
-      origen: "",
-      beneficioEsperado: "",
+      categoria: "",
+      fuente: "",
+      mejoraEsperada: "",
       recursosRequeridos: "",
       responsableId: null,
-      fechaPropuesta: new Date(),
+      fechaIdentificacion: new Date(),
       fechaImplementacion: null,
-      fechaVerificacion: null,
+      fechaCierre: null,
       prioridad: "media",
-      estado: "propuesta",
+      estado: "identificada",
       porcentajeAvance: 0,
-      resultadoObtenido: "",
+      resultadosObtenidos: "",
       observaciones: "",
     },
   });
@@ -147,7 +148,27 @@ export default function MejoraContinua() {
 
   const createMutation = useMutation({
     mutationFn: async (data: MejoraFormData) => {
-      return apiRequest("POST", "/api/oportunidades-mejora", data);
+      const year = new Date().getFullYear();
+      const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      const payload = {
+        codigo: data.codigo || `OM-${year}-${randomSuffix}`,
+        titulo: data.titulo,
+        categoria: data.categoria,
+        descripcion: data.descripcion,
+        mejoraEsperada: data.mejoraEsperada || null,
+        fuenteIdentificacion: data.fuente,
+        recursosRequeridos: data.recursosRequeridos || null,
+        responsableId: data.responsableId || null,
+        fechaIdentificacion: new Date(data.fechaIdentificacion).toISOString().split('T')[0],
+        fechaFinImplementacion: data.fechaImplementacion ? new Date(data.fechaImplementacion).toISOString().split('T')[0] : null,
+        fechaCierre: data.fechaCierre ? new Date(data.fechaCierre).toISOString().split('T')[0] : null,
+        prioridad: data.prioridad,
+        estado: data.estado,
+        porcentajeAvance: data.porcentajeAvance || 0,
+        resultadosObtenidos: data.resultadosObtenidos || null,
+        observaciones: data.observaciones || null,
+      };
+      return apiRequest("POST", "/api/oportunidades-mejora", payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/oportunidades-mejora"] });
@@ -197,20 +218,20 @@ export default function MejoraContinua() {
         op.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         op.descripcion?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesEstado = filterEstado === "todos" || op.estado === filterEstado;
-      const matchesTipo = filterTipo === "todos" || op.tipo === filterTipo;
+      const matchesTipo = filterTipo === "todos" || op.categoria === filterTipo;
       return matchesSearch && matchesEstado && matchesTipo;
     });
   }, [oportunidades, searchTerm, filterEstado, filterTipo]);
 
   const estadisticas = useMemo(() => {
     const total = oportunidades.length;
-    const propuestas = oportunidades.filter(op => op.estado === "propuesta").length;
+    const identificadas = oportunidades.filter(op => op.estado === "identificada" || op.estado === "evaluada").length;
     const enImplementacion = oportunidades.filter(op => op.estado === "en_implementacion" || op.estado === "aprobada").length;
-    const implementadas = oportunidades.filter(op => op.estado === "implementada" || op.estado === "verificada").length;
+    const implementadas = oportunidades.filter(op => op.estado === "implementada" || op.estado === "cerrada").length;
     const porcentajePromedio = oportunidades.length > 0 
       ? Math.round(oportunidades.reduce((acc, op) => acc + (op.porcentajeAvance || 0), 0) / oportunidades.length)
       : 0;
-    return { total, propuestas, enImplementacion, implementadas, porcentajePromedio };
+    return { total, identificadas, enImplementacion, implementadas, porcentajePromedio };
   }, [oportunidades]);
 
   const handleOpenDialog = (mejora?: OportunidadMejora) => {
@@ -220,18 +241,18 @@ export default function MejoraContinua() {
         codigo: mejora.codigo || "",
         titulo: mejora.titulo || "",
         descripcion: mejora.descripcion || "",
-        tipo: mejora.tipo || "",
-        origen: mejora.origen || "",
-        beneficioEsperado: mejora.beneficioEsperado || "",
+        categoria: mejora.categoria || "",
+        fuente: mejora.fuenteIdentificacion || "",
+        mejoraEsperada: mejora.mejoraEsperada || "",
         recursosRequeridos: mejora.recursosRequeridos || "",
         responsableId: mejora.responsableId?.toString() || null,
-        fechaPropuesta: mejora.fechaPropuesta ? new Date(mejora.fechaPropuesta) : new Date(),
-        fechaImplementacion: mejora.fechaImplementacion ? new Date(mejora.fechaImplementacion) : null,
-        fechaVerificacion: mejora.fechaVerificacion ? new Date(mejora.fechaVerificacion) : null,
+        fechaIdentificacion: mejora.fechaIdentificacion ? new Date(mejora.fechaIdentificacion) : new Date(),
+        fechaImplementacion: mejora.fechaFinImplementacion ? new Date(mejora.fechaFinImplementacion) : null,
+        fechaCierre: mejora.fechaCierre ? new Date(mejora.fechaCierre) : null,
         prioridad: (mejora.prioridad as "alta" | "media" | "baja") || "media",
-        estado: (mejora.estado as "propuesta" | "aprobada" | "en_implementacion" | "implementada" | "verificada") || "propuesta",
+        estado: (mejora.estado as "identificada" | "evaluada" | "aprobada" | "en_implementacion" | "implementada" | "cerrada" | "rechazada") || "identificada",
         porcentajeAvance: mejora.porcentajeAvance || 0,
-        resultadoObtenido: mejora.resultadoObtenido || "",
+        resultadosObtenidos: mejora.resultadosObtenidos || "",
         observaciones: mejora.observaciones || "",
       });
     } else {
@@ -239,18 +260,18 @@ export default function MejoraContinua() {
       form.reset({
         titulo: "",
         descripcion: "",
-        tipo: "",
-        origen: "",
-        beneficioEsperado: "",
+        categoria: "",
+        fuente: "",
+        mejoraEsperada: "",
         recursosRequeridos: "",
         responsableId: null,
-        fechaPropuesta: new Date(),
+        fechaIdentificacion: new Date(),
         fechaImplementacion: null,
-        fechaVerificacion: null,
+        fechaCierre: null,
         prioridad: "media",
-        estado: "propuesta",
+        estado: "identificada",
         porcentajeAvance: 0,
-        resultadoObtenido: "",
+        resultadosObtenidos: "",
         observaciones: "",
       });
     }
@@ -314,11 +335,11 @@ export default function MejoraContinua() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Propuestas</CardTitle>
+            <CardTitle className="text-sm font-medium">Identificadas</CardTitle>
             <FileText className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-600">{estadisticas.propuestas}</div>
+            <div className="text-2xl font-bold text-gray-600">{estadisticas.identificadas}</div>
           </CardContent>
         </Card>
         <Card>
@@ -387,9 +408,9 @@ export default function MejoraContinua() {
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todos los tipos</SelectItem>
-                {tiposMejora.map(tipo => (
-                  <SelectItem key={tipo.value} value={tipo.value}>{tipo.label}</SelectItem>
+                <SelectItem value="todos">Todas las categorías</SelectItem>
+                {categoriasMejora.map(cat => (
+                  <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -434,14 +455,14 @@ export default function MejoraContinua() {
                           {op.titulo}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {tiposMejora.find(t => t.value === op.tipo)?.label || op.tipo}
+                          {categoriasMejora.find(c => c.value === op.categoria)?.label || op.categoria}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {origenesMejora.find(o => o.value === op.origen)?.label || op.origen}
+                          {fuentesMejora.find(f => f.value === op.fuenteIdentificacion)?.label || op.fuenteIdentificacion}
                         </TableCell>
                         <TableCell>{getPrioridadBadge(op.prioridad || "media")}</TableCell>
                         <TableCell>{responsable?.fullName || "-"}</TableCell>
-                        <TableCell>{getEstadoBadge(op.estado || "propuesta")}</TableCell>
+                        <TableCell>{getEstadoBadge(op.estado || "identificada")}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Progress value={op.porcentajeAvance || 0} className="w-16 h-2" />
@@ -511,19 +532,19 @@ export default function MejoraContinua() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="tipo"
+                  name="categoria"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tipo de Mejora</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <FormLabel>Categoría</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
                         <FormControl>
                           <SelectTrigger data-testid="select-tipo-mejora">
-                            <SelectValue placeholder="Seleccionar tipo" />
+                            <SelectValue placeholder="Seleccionar categoría" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {tiposMejora.map(tipo => (
-                            <SelectItem key={tipo.value} value={tipo.value}>{tipo.label}</SelectItem>
+                          {categoriasMejora.map(cat => (
+                            <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -533,19 +554,19 @@ export default function MejoraContinua() {
                 />
                 <FormField
                   control={form.control}
-                  name="origen"
+                  name="fuente"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Origen</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <FormLabel>Fuente de Identificación</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
                         <FormControl>
                           <SelectTrigger data-testid="select-origen-mejora">
-                            <SelectValue placeholder="Seleccionar origen" />
+                            <SelectValue placeholder="Seleccionar fuente" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {origenesMejora.map(origen => (
-                            <SelectItem key={origen.value} value={origen.value}>{origen.label}</SelectItem>
+                          {fuentesMejora.map(fuente => (
+                            <SelectItem key={fuente.value} value={fuente.value}>{fuente.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -575,14 +596,15 @@ export default function MejoraContinua() {
 
               <FormField
                 control={form.control}
-                name="beneficioEsperado"
+                name="mejoraEsperada"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Beneficio Esperado</FormLabel>
+                    <FormLabel>Mejora Esperada</FormLabel>
                     <FormControl>
                       <Textarea 
                         placeholder="Describa los beneficios esperados de implementar esta mejora..."
                         {...field}
+                        value={field.value || ""}
                         data-testid="textarea-beneficio"
                       />
                     </FormControl>
@@ -643,17 +665,17 @@ export default function MejoraContinua() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="fechaPropuesta"
+                  name="fechaIdentificacion"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel>Fecha de Propuesta</FormLabel>
+                      <FormLabel>Fecha de Identificación</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
                               variant="outline"
                               className="w-full pl-3 text-left font-normal"
-                              data-testid="button-fecha-propuesta"
+                              data-testid="button-fecha-identificacion"
                             >
                               {field.value ? (
                                 format(field.value, "PPP", { locale: es })
