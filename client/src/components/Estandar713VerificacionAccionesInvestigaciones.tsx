@@ -92,7 +92,7 @@ export function Estandar713VerificacionAccionesInvestigaciones({ isVisible, eval
               data-testid="button-ver-acciones-713"
               asChild
             >
-              <Link href={buildUrl("/acciones-correctivas")}>
+              <Link href={buildUrl("/dashboard-actuar")}>
                 <ClipboardCheck className="h-4 w-4 mr-2" />
                 Acciones Correctivas
               </Link>

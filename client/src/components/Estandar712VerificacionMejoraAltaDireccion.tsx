@@ -92,7 +92,7 @@ export function Estandar712VerificacionMejoraAltaDireccion({ isVisible, evaluati
               data-testid="button-ver-acciones-712"
               asChild
             >
-              <Link href={buildUrl("/acciones-correctivas")}>
+              <Link href={buildUrl("/dashboard-actuar")}>
                 <ClipboardCheck className="h-4 w-4 mr-2" />
                 Acciones Correctivas
               </Link>
@@ -104,7 +104,7 @@ export function Estandar712VerificacionMejoraAltaDireccion({ isVisible, evaluati
               data-testid="button-ver-mejora-712"
               asChild
             >
-              <Link href={buildUrl("/mejora-continua")}>
+              <Link href={buildUrl("/dashboard-actuar")}>
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Mejora Continua
               </Link>

@@ -81,7 +81,7 @@ export function Estandar711VerificacionAccionesCorrectivas({ isVisible, evaluati
               data-testid="button-ver-acciones-711"
               asChild
             >
-              <Link href={buildUrl("/acciones-correctivas")}>
+              <Link href={buildUrl("/dashboard-actuar")}>
                 <ClipboardCheck className="h-4 w-4 mr-2" />
                 Acciones Correctivas
               </Link>
@@ -93,7 +93,7 @@ export function Estandar711VerificacionAccionesCorrectivas({ isVisible, evaluati
               data-testid="button-ver-no-conformidades-711"
               asChild
             >
-              <Link href={buildUrl("/no-conformidades")}>
+              <Link href={buildUrl("/auditorias-internas", "hallazgos")}>
                 <AlertCircle className="h-4 w-4 mr-2" />
                 No Conformidades
               </Link>
@@ -105,7 +105,7 @@ export function Estandar711VerificacionAccionesCorrectivas({ isVisible, evaluati
               data-testid="button-ver-mejora-711"
               asChild
             >
-              <Link href={buildUrl("/mejora-continua")}>
+              <Link href={buildUrl("/dashboard-actuar")}>
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Mejora Continua
               </Link>
