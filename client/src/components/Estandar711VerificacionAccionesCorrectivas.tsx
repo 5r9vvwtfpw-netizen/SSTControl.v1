@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, FileText, ClipboardCheck, TrendingUp, Search, ClipboardList, Briefcase, BarChart3, ShieldAlert } from "lucide-react";
+import { AlertTriangle, CheckCircle2, TrendingUp, Search, ClipboardList, Briefcase, BarChart3, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
@@ -144,30 +144,6 @@ export function Estandar711VerificacionAccionesCorrectivas({ isVisible, evaluati
             <Badge variant="outline" className="text-xs bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-700">
               Fase ACTUAR del Ciclo PHVA
             </Badge>
-            <Button 
-              variant="default" 
-              size="sm" 
-              className="bg-purple-600 hover:bg-purple-700"
-              data-testid="button-ver-dashboard-actuar-711"
-              asChild
-            >
-              <Link href={buildUrl("/dashboard-actuar")}>
-                <ClipboardCheck className="h-4 w-4 mr-2" />
-                Ver Dashboard Acciones
-              </Link>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900/50"
-              data-testid="button-ver-documentos-711"
-              asChild
-            >
-              <Link href={buildUrl("/conservacion-documentos")}>
-                <FileText className="h-4 w-4 mr-2" />
-                Ver Documentos
-              </Link>
-            </Button>
           </div>
         </div>
       </div>
