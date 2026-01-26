@@ -164,11 +164,6 @@ const CHAPTER_2_ADDITIONAL_MODULES = [
   "/conservacion-documentos",
   "/comunicacion-sst",
   "/indicadores-sst",
-  
-  // Estándar 7.1.1 - Acciones preventivas y correctivas (Decreto 1072/2015 Art. 2.2.4.6.33)
-  "/acciones-correctivas",
-  "/no-conformidades",
-  "/mejora-continua",
   "/indicadores-accidentalidad",  // Estándar 3.2.2 - Registro estadístico de AT, EL e incidentes
   "/indicador-frecuencia-severidad",  // Estándar 3.3.1 - Índices IF y Severidad
   "/indicador-ili-incidentes",  // Estándar 3.3.2 - Índice de Lesión Incapacitante (ILI)
@@ -219,7 +214,6 @@ const CHAPTER_3_ADDITIONAL_MODULES = [
   // Verificar avanzado
   "/auditorias-internas",
   "/revisiones-direccion",
-  "/acciones-mejora-direccion",  // Estándar 7.1.2 - Acciones de mejora conforme a revisión de la Alta Dirección
 ];
 
 // Construir los módulos por capítulo

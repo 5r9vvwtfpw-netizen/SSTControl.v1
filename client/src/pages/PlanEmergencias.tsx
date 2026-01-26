@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Shield, Users, AlertTriangle, Package, Calendar, MapPin, FileText, CheckCircle2, Clock, Edit2, Trash2, Eye, Route, Target, Sparkles, Info, FileDown } from "lucide-react";
 import { Link } from "wouter";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -154,15 +154,6 @@ export default function PlanEmergencias() {
   const [editingSimulacro, setEditingSimulacro] = useState<Simulacro | null>(null);
   const [selectedSimulacroId, setSelectedSimulacroId] = useState<string | null>(null);
   const [participanteDialogOpen, setParticipanteDialogOpen] = useState(false);
-  const participantesPanelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (selectedSimulacroId && participantesPanelRef.current) {
-      setTimeout(() => {
-        participantesPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 100);
-    }
-  }, [selectedSimulacroId]);
   
   const [zonaSearchTerm, setZonaSearchTerm] = useState("");
   const [zonaDialogOpen, setZonaDialogOpen] = useState(false);
@@ -2547,7 +2538,7 @@ export default function PlanEmergencias() {
           )}
 
           {selectedSimulacroId && (
-            <Card className="mt-6" ref={participantesPanelRef}>
+            <Card className="mt-6">
               <CardHeader>
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle>Participantes del Simulacro</CardTitle>

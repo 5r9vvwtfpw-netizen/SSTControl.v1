@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, FileText, Users, Calendar } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileText, ClipboardCheck, Users, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 
@@ -74,6 +74,18 @@ export function Estandar612VerificacionAuditoria({ isVisible, evaluationId }: Es
           </p>
 
           <div className="flex gap-2 mt-3 flex-wrap">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900/50"
+              data-testid="button-ver-auditorias-612"
+              asChild
+            >
+              <Link href={buildUrl("/auditorias-internas")}>
+                <ClipboardCheck className="h-4 w-4 mr-2" />
+                Ver Auditorías
+              </Link>
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 
