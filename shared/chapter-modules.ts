@@ -137,6 +137,9 @@ const CHAPTER_1_MODULES = [
   "/plan-mejoramiento-contexto",
   "/partes-interesadas",
   
+  // Política SST (Estándar 1.1.1 - obligatorio para TODAS las empresas, Decreto 1072/2015 Art. 2.2.4.6.5)
+  "/politicas-sst",
+  
   // Módulos necesarios para cumplir 7 estándares obligatorios (Capítulo I)
   // Estándar 1.2.1 - Capacitación del responsable del SG-SST (obligatorio para todos)
   "/programa-capacitacion-anual",
@@ -173,7 +176,6 @@ const CHAPTER_2_ADDITIONAL_MODULES = [
   "/indicador-incidencia",  // Estándar 3.3.5 - Tasa de Incidencia
   
   // Recursos adicionales
-  "/politicas-sst",
   "/asignacion-recursos",
   
   // Operaciones SST (adicionales)
