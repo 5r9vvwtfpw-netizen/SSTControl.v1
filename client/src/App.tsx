@@ -89,6 +89,9 @@ import PlanEmergencias from "@/pages/PlanEmergencias";
 import AuditoriasInternas from "@/pages/AuditoriasInternas";
 import AuditoriasInternasEnhanced from "@/pages/AuditoriasInternasEnhanced";
 import RevisionesDireccion from "@/pages/RevisionesDireccion";
+import AccionesCorrectivas from "@/pages/AccionesCorrectivas";
+import NoConformidades from "@/pages/NoConformidades";
+import MejoraContinua from "@/pages/MejoraContinua";
 import RecomendacionesArl from "@/pages/RecomendacionesArl";
 import DashboardHacer from "@/pages/DashboardHacer";
 import DashboardVerificar from "@/pages/DashboardVerificar";
@@ -228,6 +231,9 @@ function Router() {
       <ProtectedRoute path="/auditorias-internas" component={AuditoriasInternas} />
       <ProtectedRoute path="/auditorias-internas-enhanced" component={AuditoriasInternasEnhanced} />
       <ProtectedRoute path="/revisiones-direccion" component={RevisionesDireccion} />
+      <ProtectedRoute path="/acciones-correctivas" component={AccionesCorrectivas} />
+      <ProtectedRoute path="/no-conformidades" component={NoConformidades} />
+      <ProtectedRoute path="/mejora-continua" component={MejoraContinua} />
       <ProtectedRoute path="/recomendaciones-arl" component={RecomendacionesArl} />
       <ProtectedRoute path="/dashboard-hacer" component={DashboardHacer} />
       <ProtectedRoute path="/dashboard-verificar" component={DashboardVerificar} />
