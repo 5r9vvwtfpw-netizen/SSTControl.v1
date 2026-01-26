@@ -27,7 +27,7 @@ const elementosRevision = [
   {
     nombre: "Política SST",
     descripcion: "Verificar alineación de acciones con la política de SST",
-    ruta: "/politica-sst",
+    ruta: "/politicas-sst",
     tab: undefined,
     icono: Target,
   },
