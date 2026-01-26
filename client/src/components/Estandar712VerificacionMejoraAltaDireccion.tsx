@@ -41,7 +41,7 @@ const elementosRevision = [
   {
     nombre: "Responsables SST",
     descripcion: "Matriz de responsabilidades y rendición de cuentas",
-    ruta: "/responsables",
+    ruta: "/designacion-responsable",
     tab: undefined,
     icono: Users,
   },
