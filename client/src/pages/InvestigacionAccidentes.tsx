@@ -80,6 +80,7 @@ import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { FindingDialogSmart } from "@/components/FindingDialogSmart";
 import { ParticipantDialogSmart } from "@/components/ParticipantDialogSmart";
+import { ArbolCausasVisualization } from "@/components/ArbolCausasVisualization";
 
 const EVENT_TYPES = [
   { value: "accidente_trabajo", label: "Accidente de Trabajo" },
@@ -1119,6 +1120,17 @@ export default function InvestigacionAccidentes() {
                           )}
                         </div>
                       </div>
+
+                      {/* Visualización Árbol de Causas */}
+                      {investigation.analysisMethodology === "arbol_causas" && (
+                        <div className="mt-6">
+                          <h4 className="font-medium text-sm text-muted-foreground mb-3">Visualización del Árbol de Causas</h4>
+                          <ArbolCausasVisualization 
+                            investigation={investigation} 
+                            eventDescription={investigation.eventDescription || "Sin descripción del evento"}
+                          />
+                        </div>
+                      )}
 
                       {invFindings.length > 0 && (
                         <div className="mt-6">
