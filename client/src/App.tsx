@@ -201,6 +201,7 @@ function Router() {
       <ProtectedRoute path="/actividades-promocion-prevencion" component={ActividadesPromocionPrevencion} />
       <ProtectedRoute path="/estilos-vida-saludable" component={EstilosVidaSaludable} />
       <ProtectedRoute path="/politicas-sst" component={PoliticasSst} />
+      <ProtectedRoute path="/politica-sst" component={PoliticasSst} />
       <ProtectedRoute path="/accidentes" component={Accidentes} />
       <ProtectedRoute path="/investigacion-accidentes" component={InvestigacionAccidentes} />
       <ProtectedRoute path="/ausentismo-laboral" component={AusentismoLaboral} />
