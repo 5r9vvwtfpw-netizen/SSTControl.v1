@@ -42099,6 +42099,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // Importación dinámica para rutas de informes ejecutivos
   const { registerInformesEjecutivosRoutes } = await import("./routes-informes-ejecutivos");
   registerInformesEjecutivosRoutes(app);
+  
+  // ========== ESTÁNDAR 7.1.1 ROUTES ==========
+  // Acciones Correctivas, No Conformidades, Oportunidades Mejora
+  const { registerEstandar711Routes } = await import("./routes-estandar-711");
+  registerEstandar711Routes(app);
 
   // ========== GLOBAL ERROR HANDLER ==========
   // Middleware global para interceptar errores no manejados y evitar exponer mensajes técnicos
