@@ -122,10 +122,7 @@ export function Estandar711VerificacionAccionesCorrectivas({ isVisible, evaluati
                 >
                   <Link href={buildUrl(fuente.ruta, fuente.tab)}>
                     <fuente.icono className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <div className="text-left">
-                      <span className="block text-xs font-medium">{fuente.nombre}</span>
-                      <span className="block text-[10px] text-muted-foreground">{fuente.descripcion}</span>
-                    </div>
+                    <span className="text-xs font-medium">{fuente.nombre}</span>
                   </Link>
                 </Button>
               ))}
