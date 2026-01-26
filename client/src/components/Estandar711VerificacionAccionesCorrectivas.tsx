@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, TrendingUp, Search, Briefcase } from "lucide-react";
+import { AlertTriangle, CheckCircle2, TrendingUp, Search, Briefcase, ShieldAlert, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 
@@ -31,6 +31,20 @@ const fuentesAcciones = [
     ruta: "/revisiones-direccion",
     tab: undefined,
     icono: Briefcase,
+  },
+  {
+    nombre: "Inspecciones SST",
+    descripcion: "Condiciones inseguras detectadas en inspecciones de seguridad",
+    ruta: "/inspecciones",
+    tab: undefined,
+    icono: ShieldAlert,
+  },
+  {
+    nombre: "Indicadores SST",
+    descripcion: "Desviaciones en indicadores de gestión y resultado",
+    ruta: "/indicadores-accidentalidad",
+    tab: undefined,
+    icono: BarChart3,
   },
 ];
 
