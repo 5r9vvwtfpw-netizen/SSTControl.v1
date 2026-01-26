@@ -92,6 +92,7 @@ import RevisionesDireccion from "@/pages/RevisionesDireccion";
 import AccionesCorrectivas from "@/pages/AccionesCorrectivas";
 import NoConformidades from "@/pages/NoConformidades";
 import MejoraContinua from "@/pages/MejoraContinua";
+import AccionesMejoraDireccion from "@/pages/AccionesMejoraDireccion";
 import RecomendacionesArl from "@/pages/RecomendacionesArl";
 import DashboardHacer from "@/pages/DashboardHacer";
 import DashboardVerificar from "@/pages/DashboardVerificar";
@@ -234,6 +235,7 @@ function Router() {
       <ProtectedRoute path="/acciones-correctivas" component={AccionesCorrectivas} />
       <ProtectedRoute path="/no-conformidades" component={NoConformidades} />
       <ProtectedRoute path="/mejora-continua" component={MejoraContinua} />
+      <ProtectedRoute path="/acciones-mejora-direccion" component={AccionesMejoraDireccion} />
       <ProtectedRoute path="/recomendaciones-arl" component={RecomendacionesArl} />
       <ProtectedRoute path="/dashboard-hacer" component={DashboardHacer} />
       <ProtectedRoute path="/dashboard-verificar" component={DashboardVerificar} />

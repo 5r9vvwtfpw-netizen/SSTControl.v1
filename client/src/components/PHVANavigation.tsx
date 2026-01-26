@@ -131,6 +131,12 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
         { label: "Oportunidades de Mejora", path: "/mejora-continua" },
       ],
     },
+    {
+      title: "Estándar 7.1.2 - Revisión Alta Dirección",
+      items: [
+        { label: "Acciones Mejora Dirección", path: "/acciones-mejora-direccion" },
+      ],
+    },
   ],
   actuar: [
     {

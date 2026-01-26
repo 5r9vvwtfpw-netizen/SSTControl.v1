@@ -140,10 +140,7 @@ export default function AccionesMejoraDireccion() {
         ...data,
         fechaCompromiso: data.fechaCompromiso.toISOString().split('T')[0],
       };
-      return apiRequest('/api/acciones-mejora-direccion', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      return apiRequest("POST", "/api/acciones-mejora-direccion", payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/acciones-mejora-direccion"] });
