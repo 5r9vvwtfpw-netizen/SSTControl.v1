@@ -1,6 +1,7 @@
-import { AlertTriangle, CheckCircle2, FileText, Search, ClipboardCheck, Activity } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileText, Search, ClipboardCheck, Activity, AlertOctagon, HeartPulse, TreePine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { Badge } from "@/components/ui/badge";
 
 interface Estandar713VerificacionAccionesInvestigacionesProps {
   isVisible: boolean;
@@ -14,6 +15,45 @@ const criteriosVerificacion = [
   "Verificar el seguimiento a la implementación de las acciones propuestas",
   "Confirmar que se evalúa la eficacia de las acciones para prevenir recurrencia",
   "Verificar que las lecciones aprendidas se comunican a los trabajadores",
+  "Comprobar que se actualiza la matriz IPERC cuando corresponda",
+];
+
+const elementosInvestigacion = [
+  {
+    nombre: "Investigación de Accidentes",
+    descripcion: "Informes de investigación con análisis de causalidad (Res. 1401/2007)",
+    ruta: "/accidentes",
+    tab: "investigaciones",
+    icono: Search,
+  },
+  {
+    nombre: "Registro de Accidentes",
+    descripcion: "Registro y reporte de accidentes de trabajo (FURAT)",
+    ruta: "/accidentes",
+    tab: undefined,
+    icono: AlertOctagon,
+  },
+  {
+    nombre: "Enfermedades Laborales",
+    descripcion: "Investigación y seguimiento de enfermedades laborales",
+    ruta: "/examenes-medicos",
+    tab: undefined,
+    icono: HeartPulse,
+  },
+  {
+    nombre: "Estadísticas AT/EL",
+    descripcion: "Indicadores de accidentalidad y enfermedad laboral",
+    ruta: "/accidentes",
+    tab: "estadisticas",
+    icono: Activity,
+  },
+  {
+    nombre: "Árbol de Causas",
+    descripcion: "Metodología de análisis causal de accidentes",
+    ruta: "/accidentes",
+    tab: "investigaciones",
+    icono: TreePine,
+  },
 ];
 
 export function Estandar713VerificacionAccionesInvestigaciones({ isVisible, evaluationId }: Estandar713VerificacionAccionesInvestigacionesProps) {
@@ -37,9 +77,10 @@ export function Estandar713VerificacionAccionesInvestigaciones({ isVisible, eval
             Modo Verificación - Estándar 7.1.3
           </p>
           <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
-            Acciones de mejora con base en investigaciones de accidentes de trabajo y 
-            enfermedades. Verificar que las acciones correctivas responden a los hallazgos 
-            de las investigaciones y que se evalúa su efectividad.
+            <strong>Acciones de mejora con base en investigaciones de AT y EL.</strong> Según 
+            la Resolución 1401/2007 y el Decreto 1072/2015 Art. 2.2.4.6.32, toda investigación 
+            de accidente o incidente debe generar acciones correctivas que aborden las causas 
+            inmediatas y básicas identificadas, con seguimiento hasta su cierre efectivo.
           </p>
 
           <div className="mt-3 p-3 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md border border-emerald-200 dark:border-emerald-800">
@@ -61,52 +102,59 @@ export function Estandar713VerificacionAccionesInvestigaciones({ isVisible, eval
             <ul className="text-xs text-gray-700 dark:text-gray-300 space-y-1 list-disc list-inside">
               <li><strong>Decreto 1072/2015 Art. 2.2.4.6.32</strong> - Investigación de incidentes, accidentes y enfermedades</li>
               <li><strong>Decreto 1072/2015 Art. 2.2.4.6.33</strong> - Acciones preventivas y correctivas</li>
-              <li><strong>Resolución 1401/2007</strong> - Investigación de accidentes e incidentes</li>
+              <li><strong>Resolución 1401/2007</strong> - Investigación de accidentes e incidentes de trabajo</li>
               <li><strong>Resolución 0312/2019 Art. 16</strong> - Estándar mínimo 7.1.3</li>
+              <li><strong>ISO 45001:2018 Numeral 10.2</strong> - Incidentes, no conformidades y acciones correctivas</li>
             </ul>
           </div>
 
           <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-3 font-medium">
-            Evidencia esperada: Informes de investigación de accidentes, plan de acciones 
-            correctivas, seguimiento de implementación, evaluación de eficacia, 
-            registros de comunicación de lecciones aprendidas.
+            Evidencia esperada: Informes de investigación de accidentes (Formato Res. 1401/2007), 
+            análisis de causalidad (árbol de causas, espina de pescado), plan de acciones correctivas, 
+            seguimiento de implementación, evaluación de eficacia, lecciones aprendidas comunicadas.
           </p>
 
-          <div className="flex gap-2 mt-3 flex-wrap">
+          <div className="mt-4 p-3 bg-red-50 dark:bg-red-950/30 rounded-md border border-red-200 dark:border-red-800">
+            <p className="text-xs font-semibold text-red-700 dark:text-red-300 mb-3 flex items-center gap-2">
+              <AlertOctagon className="h-4 w-4" />
+              Investigación de Accidentes y Enfermedades (Resolución 1401/2007):
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {elementosInvestigacion.map((elemento, idx) => (
+                <Button
+                  key={idx}
+                  variant="outline"
+                  size="sm"
+                  className="justify-start h-auto py-2 px-3 border-red-200 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/50"
+                  data-testid={`button-elemento-713-${idx}`}
+                  asChild
+                >
+                  <Link href={buildUrl(elemento.ruta, elemento.tab)}>
+                    <elemento.icono className="h-4 w-4 mr-2 flex-shrink-0" />
+                    <div className="text-left">
+                      <span className="block text-xs font-medium">{elemento.nombre}</span>
+                      <span className="block text-[10px] text-muted-foreground">{elemento.descripcion}</span>
+                    </div>
+                  </Link>
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-2 mt-4 flex-wrap">
+            <Badge variant="outline" className="text-xs bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-700">
+              Fase ACTUAR del Ciclo PHVA
+            </Badge>
             <Button 
-              variant="outline" 
+              variant="default" 
               size="sm" 
-              className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900/50"
-              data-testid="button-ver-investigaciones-713"
-              asChild
-            >
-              <Link href={buildUrl("/accidentes", "investigaciones")}>
-                <Search className="h-4 w-4 mr-2" />
-                Investigaciones
-              </Link>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900/50"
-              data-testid="button-ver-acciones-713"
+              className="bg-purple-600 hover:bg-purple-700"
+              data-testid="button-ver-dashboard-actuar-713"
               asChild
             >
               <Link href={buildUrl("/dashboard-actuar")}>
                 <ClipboardCheck className="h-4 w-4 mr-2" />
-                Acciones Correctivas
-              </Link>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900/50"
-              data-testid="button-ver-estadisticas-713"
-              asChild
-            >
-              <Link href={buildUrl("/accidentes", "estadisticas")}>
-                <Activity className="h-4 w-4 mr-2" />
-                Estadísticas AT
+                Ver Dashboard Acciones
               </Link>
             </Button>
             <Button 

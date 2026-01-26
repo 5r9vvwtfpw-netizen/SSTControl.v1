@@ -1,6 +1,7 @@
-import { AlertTriangle, CheckCircle2, FileText, ClipboardCheck, TrendingUp, AlertCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileText, ClipboardCheck, TrendingUp, Search, ClipboardList, Briefcase, BarChart3, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { Badge } from "@/components/ui/badge";
 
 interface Estandar711VerificacionAccionesCorrectivasProps {
   isVisible: boolean;
@@ -15,6 +16,44 @@ const criteriosVerificacion = [
   "Confirmar que se evalúa la eficacia de las acciones implementadas",
   "Verificar que las acciones preventivas se basan en la identificación de peligros y evaluación de riesgos",
   "Comprobar que existe registro del cierre efectivo de las acciones",
+];
+
+const fuentesAcciones = [
+  {
+    nombre: "Investigación de Accidentes",
+    descripcion: "Acciones derivadas de investigación de AT, EL e incidentes (Art. 2.2.4.6.32)",
+    ruta: "/accidentes",
+    tab: "investigaciones",
+    icono: Search,
+  },
+  {
+    nombre: "Auditorías Internas",
+    descripcion: "No conformidades y hallazgos de auditorías del SG-SST",
+    ruta: "/auditorias-internas",
+    tab: "hallazgos",
+    icono: ClipboardList,
+  },
+  {
+    nombre: "Revisión por Dirección",
+    descripcion: "Decisiones y compromisos de la Alta Dirección (Art. 2.2.4.6.31)",
+    ruta: "/revisiones-direccion",
+    tab: undefined,
+    icono: Briefcase,
+  },
+  {
+    nombre: "Inspecciones SST",
+    descripcion: "Condiciones inseguras detectadas en inspecciones de seguridad",
+    ruta: "/inspecciones",
+    tab: undefined,
+    icono: ShieldAlert,
+  },
+  {
+    nombre: "Indicadores SST",
+    descripcion: "Desviaciones en indicadores de gestión y resultado",
+    ruta: "/indicadores-sst",
+    tab: undefined,
+    icono: BarChart3,
+  },
 ];
 
 export function Estandar711VerificacionAccionesCorrectivas({ isVisible, evaluationId }: Estandar711VerificacionAccionesCorrectivasProps) {
@@ -38,9 +77,10 @@ export function Estandar711VerificacionAccionesCorrectivas({ isVisible, evaluati
             Modo Verificación - Estándar 7.1.1
           </p>
           <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
-            Acciones preventivas y correctivas. Verificar la evidencia documental de 
-            la implementación de acciones que aborden las causas raíz de los hallazgos 
-            y la evaluación de su eficacia.
+            <strong>Acciones preventivas y correctivas con base en los resultados del SG-SST.</strong> Según 
+            el Decreto 1072/2015 Art. 2.2.4.6.33, verificar que se definan e implementen acciones basadas en 
+            la supervisión, auditorías y revisión por la dirección, orientadas a identificar causas fundamentales 
+            de no conformidades.
           </p>
 
           <div className="mt-3 p-3 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md border border-emerald-200 dark:border-emerald-800">
@@ -69,45 +109,51 @@ export function Estandar711VerificacionAccionesCorrectivas({ isVisible, evaluati
 
           <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-3 font-medium">
             Evidencia esperada: Registro de acciones correctivas y preventivas, análisis 
-            de causas raíz, planes de acción con responsables y fechas, seguimiento de 
-            cumplimiento, evaluación de eficacia, registros de cierre.
+            de causas raíz (5 porqués, espina de pescado), planes de acción con responsables y fechas, 
+            seguimiento de cumplimiento, evaluación de eficacia, registros de cierre.
           </p>
 
-          <div className="flex gap-2 mt-3 flex-wrap">
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md border border-blue-200 dark:border-blue-800">
+            <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-3 flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Fuentes de Acciones Correctivas/Preventivas (Decreto 1072/2015):
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {fuentesAcciones.map((fuente, idx) => (
+                <Button
+                  key={idx}
+                  variant="outline"
+                  size="sm"
+                  className="justify-start h-auto py-2 px-3 border-blue-200 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/50"
+                  data-testid={`button-fuente-${idx}`}
+                  asChild
+                >
+                  <Link href={buildUrl(fuente.ruta, fuente.tab)}>
+                    <fuente.icono className="h-4 w-4 mr-2 flex-shrink-0" />
+                    <div className="text-left">
+                      <span className="block text-xs font-medium">{fuente.nombre}</span>
+                      <span className="block text-[10px] text-muted-foreground">{fuente.descripcion}</span>
+                    </div>
+                  </Link>
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-2 mt-4 flex-wrap">
+            <Badge variant="outline" className="text-xs bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-700">
+              Fase ACTUAR del Ciclo PHVA
+            </Badge>
             <Button 
-              variant="outline" 
+              variant="default" 
               size="sm" 
-              className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900/50"
-              data-testid="button-ver-acciones-711"
+              className="bg-purple-600 hover:bg-purple-700"
+              data-testid="button-ver-dashboard-actuar-711"
               asChild
             >
               <Link href={buildUrl("/dashboard-actuar")}>
                 <ClipboardCheck className="h-4 w-4 mr-2" />
-                Acciones Correctivas
-              </Link>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900/50"
-              data-testid="button-ver-no-conformidades-711"
-              asChild
-            >
-              <Link href={buildUrl("/auditorias-internas", "hallazgos")}>
-                <AlertCircle className="h-4 w-4 mr-2" />
-                No Conformidades
-              </Link>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900/50"
-              data-testid="button-ver-mejora-711"
-              asChild
-            >
-              <Link href={buildUrl("/dashboard-actuar")}>
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Mejora Continua
+                Ver Dashboard Acciones
               </Link>
             </Button>
             <Button 

@@ -1,6 +1,7 @@
-import { AlertTriangle, CheckCircle2, FileText, Briefcase, TrendingUp, ClipboardCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileText, Briefcase, TrendingUp, ClipboardCheck, Users, Target, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { Badge } from "@/components/ui/badge";
 
 interface Estandar712VerificacionMejoraAltaDireccionProps {
   isVisible: boolean;
@@ -14,6 +15,37 @@ const criteriosVerificacion = [
   "Verificar el seguimiento y cierre efectivo de las acciones derivadas de la revisión",
   "Confirmar que se evalúa la eficacia de las acciones implementadas",
   "Verificar que existe comunicación de los resultados a las partes interesadas",
+];
+
+const elementosRevision = [
+  {
+    nombre: "Revisión por Dirección",
+    descripcion: "Actas de revisión con decisiones y compromisos de la Alta Dirección",
+    ruta: "/revisiones-direccion",
+    tab: undefined,
+    icono: Briefcase,
+  },
+  {
+    nombre: "Política SST",
+    descripcion: "Verificar alineación de acciones con la política de SST",
+    ruta: "/politica-sst",
+    tab: undefined,
+    icono: Target,
+  },
+  {
+    nombre: "Objetivos SST",
+    descripcion: "Cumplimiento de objetivos y metas del SG-SST",
+    ruta: "/objetivos-sst",
+    tab: undefined,
+    icono: BarChart3,
+  },
+  {
+    nombre: "Responsables SST",
+    descripcion: "Matriz de responsabilidades y rendición de cuentas",
+    ruta: "/responsables",
+    tab: undefined,
+    icono: Users,
+  },
 ];
 
 export function Estandar712VerificacionMejoraAltaDireccion({ isVisible, evaluationId }: Estandar712VerificacionMejoraAltaDireccionProps) {
@@ -37,9 +69,10 @@ export function Estandar712VerificacionMejoraAltaDireccion({ isVisible, evaluati
             Modo Verificación - Estándar 7.1.2
           </p>
           <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
-            Acciones de mejora conforme a revisión de la Alta Dirección. Verificar que 
-            las acciones correctivas, preventivas y de mejora responden a los hallazgos 
-            de la revisión por la dirección y tienen seguimiento efectivo.
+            <strong>Acciones de mejora conforme a revisión de la Alta Dirección.</strong> Según 
+            el Decreto 1072/2015 Art. 2.2.4.6.31, la Alta Dirección debe revisar el SG-SST mínimo 
+            una vez al año y definir acciones correctivas, preventivas y de mejora con responsables, 
+            recursos y cronograma.
           </p>
 
           <div className="mt-3 p-3 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md border border-emerald-200 dark:border-emerald-800">
@@ -62,51 +95,58 @@ export function Estandar712VerificacionMejoraAltaDireccion({ isVisible, evaluati
               <li><strong>Decreto 1072/2015 Art. 2.2.4.6.31</strong> - Revisión por la alta dirección</li>
               <li><strong>Decreto 1072/2015 Art. 2.2.4.6.34</strong> - Mejora continua</li>
               <li><strong>Resolución 0312/2019 Art. 16</strong> - Estándar mínimo 7.1.2</li>
+              <li><strong>ISO 45001:2018 Numeral 9.3</strong> - Revisión por la dirección</li>
               <li><strong>ISO 45001:2018 Numeral 10.3</strong> - Mejora continua</li>
             </ul>
           </div>
 
           <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-3 font-medium">
-            Evidencia esperada: Acta de revisión por la dirección, plan de acciones 
-            derivadas, seguimiento de implementación, evaluación de eficacia, 
-            comunicaciones a partes interesadas, registros de cierre.
+            Evidencia esperada: Acta de revisión por la dirección, plan de acciones derivadas con 
+            responsables y fechas, asignación de recursos, seguimiento de implementación, 
+            evaluación de eficacia, comunicaciones a partes interesadas.
           </p>
 
-          <div className="flex gap-2 mt-3 flex-wrap">
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md border border-blue-200 dark:border-blue-800">
+            <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-3 flex items-center gap-2">
+              <Briefcase className="h-4 w-4" />
+              Elementos de la Revisión por la Dirección (Decreto 1072/2015 Art. 2.2.4.6.31):
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {elementosRevision.map((elemento, idx) => (
+                <Button
+                  key={idx}
+                  variant="outline"
+                  size="sm"
+                  className="justify-start h-auto py-2 px-3 border-blue-200 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/50"
+                  data-testid={`button-elemento-712-${idx}`}
+                  asChild
+                >
+                  <Link href={buildUrl(elemento.ruta, elemento.tab)}>
+                    <elemento.icono className="h-4 w-4 mr-2 flex-shrink-0" />
+                    <div className="text-left">
+                      <span className="block text-xs font-medium">{elemento.nombre}</span>
+                      <span className="block text-[10px] text-muted-foreground">{elemento.descripcion}</span>
+                    </div>
+                  </Link>
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-2 mt-4 flex-wrap">
+            <Badge variant="outline" className="text-xs bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-700">
+              Fase ACTUAR del Ciclo PHVA
+            </Badge>
             <Button 
-              variant="outline" 
+              variant="default" 
               size="sm" 
-              className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900/50"
-              data-testid="button-ver-revision-712"
-              asChild
-            >
-              <Link href={buildUrl("/revisiones-direccion")}>
-                <Briefcase className="h-4 w-4 mr-2" />
-                Revisión Dirección
-              </Link>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900/50"
-              data-testid="button-ver-acciones-712"
+              className="bg-purple-600 hover:bg-purple-700"
+              data-testid="button-ver-dashboard-actuar-712"
               asChild
             >
               <Link href={buildUrl("/dashboard-actuar")}>
                 <ClipboardCheck className="h-4 w-4 mr-2" />
-                Acciones Correctivas
-              </Link>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900/50"
-              data-testid="button-ver-mejora-712"
-              asChild
-            >
-              <Link href={buildUrl("/dashboard-actuar")}>
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Mejora Continua
+                Ver Dashboard Acciones
               </Link>
             </Button>
             <Button 
