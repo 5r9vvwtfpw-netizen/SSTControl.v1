@@ -139,6 +139,7 @@ const CHAPTER_1_MODULES = [
   
   // Política SST (Estándar 1.1.1 - obligatorio para TODAS las empresas, Decreto 1072/2015 Art. 2.2.4.6.5)
   "/politicas-sst",
+  "/politica-sst",
   
   // Módulos necesarios para cumplir 7 estándares obligatorios (Capítulo I)
   // Estándar 1.2.1 - Capacitación del responsable del SG-SST (obligatorio para todos)
