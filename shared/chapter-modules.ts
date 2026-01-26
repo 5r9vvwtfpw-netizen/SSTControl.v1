@@ -109,6 +109,7 @@ const CHAPTER_1_MODULES = [
   // Accidentes (obligatorio para todos)
   "/accidentes",
   "/investigacion-accidentes",  // Estándar 3.2.1 - Investigación de incidentes, AT y EL
+  "/arbol-causas",  // Visualización de árbol de causas según Resolución 1401/2007
   "/ausentismo-laboral",  // Estándar 3.2.3 - Control de ausentismo laboral
   
   // EPP - Entrega de Elementos de Protección Personal (obligatorio para todos, Decreto 1072/2015)

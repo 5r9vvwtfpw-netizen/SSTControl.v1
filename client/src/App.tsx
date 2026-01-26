@@ -132,6 +132,7 @@ import PrevalenciaEnfermedadLaboral from "@/pages/PrevalenciaEnfermedadLaboral";
 import IncidenciaAccidentesEL from "@/pages/IncidenciaAccidentesEL";
 import EstilosVidaSaludable from "@/pages/EstilosVidaSaludable";
 import InvestigacionAccidentes from "@/pages/InvestigacionAccidentes";
+import ArbolCausas from "@/pages/ArbolCausas";
 import AusentismoLaboral from "@/pages/AusentismoLaboral";
 import EntregaEpp from "@/pages/EntregaEpp";
 import PartesInteresadas from "@/pages/PartesInteresadas";
@@ -204,6 +205,7 @@ function Router() {
       <ProtectedRoute path="/politica-sst" component={PoliticasSst} />
       <ProtectedRoute path="/accidentes" component={Accidentes} />
       <ProtectedRoute path="/investigacion-accidentes" component={InvestigacionAccidentes} />
+      <ProtectedRoute path="/arbol-causas" component={ArbolCausas} />
       <ProtectedRoute path="/ausentismo-laboral" component={AusentismoLaboral} />
       <ProtectedRoute path="/entrega-epp" component={EntregaEpp} />
       <ProtectedRoute path="/capacitaciones" component={Capacitaciones} />

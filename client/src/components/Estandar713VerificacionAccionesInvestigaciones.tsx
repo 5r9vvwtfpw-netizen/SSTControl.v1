@@ -44,8 +44,8 @@ const elementosInvestigacion = [
   },
   {
     nombre: "Árbol de Causas",
-    ruta: "/accidentes",
-    tab: "investigaciones",
+    ruta: "/arbol-causas",
+    tab: undefined,
     icono: TreePine,
   },
 ];
