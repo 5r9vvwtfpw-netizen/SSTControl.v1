@@ -47,10 +47,12 @@ import { z } from "zod";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 const estadosAccion = [
-  { value: "pendiente", label: "Pendiente", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" },
-  { value: "en_progreso", label: "En Progreso", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
-  { value: "completada", label: "Completada", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
+  { value: "abierta", label: "Abierta", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" },
+  { value: "en_proceso", label: "En Proceso", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
+  { value: "implementada", label: "Implementada", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300" },
+  { value: "verificada", label: "Verificada", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
   { value: "cerrada", label: "Cerrada", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300" },
+  { value: "cancelada", label: "Cancelada", color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
 ];
 
 const tiposAccion = [
@@ -60,12 +62,14 @@ const tiposAccion = [
 ];
 
 const origenesAccion = [
-  { value: "accidente", label: "Investigación de Accidente" },
-  { value: "auditoria", label: "Auditoría Interna" },
+  { value: "auditoria_interna", label: "Auditoría Interna" },
   { value: "revision_direccion", label: "Revisión por la Dirección" },
   { value: "inspeccion", label: "Inspección" },
+  { value: "investigacion_accidente", label: "Investigación de Accidente" },
   { value: "no_conformidad", label: "No Conformidad" },
-  { value: "riesgo", label: "Identificación de Riesgos" },
+  { value: "recomendacion_arl", label: "Recomendación ARL" },
+  { value: "analisis_indicadores", label: "Análisis de Indicadores" },
+  { value: "queja_trabajador", label: "Queja de Trabajador" },
   { value: "otro", label: "Otro" },
 ];
 
@@ -86,7 +90,7 @@ const accionFormSchema = z.object({
   fechaLimite: z.coerce.date().optional().nullable(),
   fechaCierre: z.coerce.date().optional().nullable(),
   prioridad: z.enum(["alta", "media", "baja"]),
-  estado: z.enum(["pendiente", "en_progreso", "completada", "cerrada"]),
+  estado: z.enum(["abierta", "en_proceso", "implementada", "verificada", "cerrada", "cancelada"]),
   porcentajeAvance: z.number().min(0).max(100).optional(),
   evaluacionEficacia: z.string().optional(),
   observaciones: z.string().optional(),
@@ -116,7 +120,7 @@ export default function AccionesCorrectivas() {
       fechaLimite: null,
       fechaCierre: null,
       prioridad: "media",
-      estado: "pendiente",
+      estado: "abierta",
       porcentajeAvance: 0,
       evaluacionEficacia: "",
       observaciones: "",
@@ -133,7 +137,26 @@ export default function AccionesCorrectivas() {
 
   const createMutation = useMutation({
     mutationFn: async (data: AccionFormData) => {
-      return apiRequest("POST", "/api/acciones-correctivas", data);
+      // Transformar campos del formulario al formato del backend
+      const year = new Date().getFullYear();
+      const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      const payload = {
+        codigo: data.codigo || `AC-${year}-${randomSuffix}`,
+        tipo: data.tipo,
+        origen: data.origen,
+        hallazgo: data.hallazgo,
+        causaRaiz: data.causaRaiz || null,
+        accionPropuesta: data.accion, // El backend espera "accionPropuesta"
+        responsableId: data.responsableId || null,
+        fechaDeteccion: new Date().toISOString().split('T')[0], // Fecha actual
+        fechaLimite: data.fechaLimite ? new Date(data.fechaLimite).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        fechaCierre: data.fechaCierre ? new Date(data.fechaCierre).toISOString().split('T')[0] : null,
+        prioridad: data.prioridad,
+        estado: data.estado,
+        porcentajeAvance: data.porcentajeAvance || 0,
+        observaciones: data.observaciones || null,
+      };
+      return apiRequest("POST", "/api/acciones-correctivas", payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/acciones-correctivas"] });
@@ -214,7 +237,7 @@ export default function AccionesCorrectivas() {
         fechaLimite: accion.fechaLimite ? new Date(accion.fechaLimite) : null,
         fechaCierre: accion.fechaCierre ? new Date(accion.fechaCierre) : null,
         prioridad: (accion.prioridad as "alta" | "media" | "baja") || "media",
-        estado: (accion.estado as "pendiente" | "en_progreso" | "completada" | "cerrada") || "pendiente",
+        estado: (accion.estado as "abierta" | "en_proceso" | "implementada" | "verificada" | "cerrada" | "cancelada") || "abierta",
         porcentajeAvance: accion.porcentajeAvance || 0,
         evaluacionEficacia: accion.evaluacionEficacia || "",
         observaciones: accion.observaciones || "",
@@ -231,7 +254,7 @@ export default function AccionesCorrectivas() {
         fechaLimite: null,
         fechaCierre: null,
         prioridad: "media",
-        estado: "pendiente",
+        estado: "abierta",
         porcentajeAvance: 0,
         evaluacionEficacia: "",
         observaciones: "",
