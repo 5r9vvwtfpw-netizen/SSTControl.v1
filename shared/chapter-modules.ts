@@ -219,6 +219,7 @@ const CHAPTER_3_ADDITIONAL_MODULES = [
   // Verificar avanzado
   "/auditorias-internas",
   "/revisiones-direccion",
+  "/acciones-mejora-direccion",  // Estándar 7.1.2 - Acciones de mejora conforme a revisión de la Alta Dirección
 ];
 
 // Construir los módulos por capítulo
