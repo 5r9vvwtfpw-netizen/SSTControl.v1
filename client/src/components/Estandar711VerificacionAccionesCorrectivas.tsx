@@ -50,7 +50,7 @@ const fuentesAcciones = [
   {
     nombre: "Indicadores SST",
     descripcion: "Desviaciones en indicadores de gestión y resultado",
-    ruta: "/indicadores-sst",
+    ruta: "/indicadores-accidentalidad",
     tab: undefined,
     icono: BarChart3,
   },
