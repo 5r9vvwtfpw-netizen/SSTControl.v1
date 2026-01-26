@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, FileText, Users, Briefcase, ClipboardList } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileText, Users, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 
@@ -87,18 +87,6 @@ export function Estandar613VerificacionRevisionDireccion({ isVisible, evaluation
               <Link href={buildUrl("/revisiones-direccion")}>
                 <Briefcase className="h-4 w-4 mr-2" />
                 Revisión Dirección
-              </Link>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900/50"
-              data-testid="button-ver-auditorias-613"
-              asChild
-            >
-              <Link href={buildUrl("/auditorias-internas")}>
-                <ClipboardList className="h-4 w-4 mr-2" />
-                Ver Auditorías
               </Link>
             </Button>
             <Button 
