@@ -103,6 +103,7 @@ export const routePermissions: Record<string, Permission[]> = {
   // Verificar
   "/accidentes": ["accidents:view", "accidents:view_self"],
   "/investigacion-accidentes": ["accidents:view", "sst_management:view"],
+  "/arbol-causas": ["accidents:view", "sst_management:view"],  // Árbol de causas según Resolución 1401/2007
   "/ausentismo-laboral": ["accidents:view", "sst_management:view"],
   "/entrega-epp": ["accidents:view", "sst_management:view"],
   "/indicadores-accidentalidad": ["accidents:view", "sst_management:view"],

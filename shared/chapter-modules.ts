@@ -233,8 +233,12 @@ export const MODULES_BY_CHAPTER: Record<ChapterType, string[]> = {
 export function isModuleAllowedForChapter(path: string, chapter: ChapterType): boolean {
   const allowedModules = MODULES_BY_CHAPTER[chapter];
   
-  // Verificar coincidencia exacta
-  if (allowedModules.includes(path)) {
+  // Limpiar query params de la ruta antes de comparar
+  // Ejemplo: "/arbol-causas?from=evaluation&evaluationId=xxx" -> "/arbol-causas"
+  const cleanPath = path.split("?")[0];
+  
+  // Verificar coincidencia exacta (con ruta limpia)
+  if (allowedModules.includes(cleanPath)) {
     return true;
   }
   
@@ -242,14 +246,14 @@ export function isModuleAllowedForChapter(path: string, chapter: ChapterType): b
   // También manejar rutas tipo /pesv/vehiculos/123
   for (const module of allowedModules) {
     // Si la ruta actual comienza con un módulo permitido seguido de /
-    if (path.startsWith(module + "/")) {
+    if (cleanPath.startsWith(module + "/")) {
       return true;
     }
   }
   
   // Verificar si es una subruta de un módulo permitido
   // Por ejemplo: /planes-trabajo-anual/nuevo debería ser permitido si /planes-trabajo-anual está permitido
-  const pathParts = path.split("/").filter(Boolean);
+  const pathParts = cleanPath.split("/").filter(Boolean);
   for (let i = pathParts.length - 1; i >= 1; i--) {
     const parentPath = "/" + pathParts.slice(0, i).join("/");
     if (allowedModules.includes(parentPath)) {
