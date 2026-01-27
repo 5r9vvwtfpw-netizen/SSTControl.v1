@@ -14,7 +14,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PlanTrabajoAnual, Company, Worker, insertPlanTrabajoAnualSchema } from "@shared/schema";
+import { PlanTrabajoAnual, Company, Worker, insertPlanTrabajoAnualSchema, EvaluacionSst } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -120,6 +120,15 @@ export default function PlanesTrabajoAnual() {
   const { data: workers = [] } = useQuery<Worker[]>({
     queryKey: ["/api/workers"],
   });
+
+  // Query para obtener la evaluación SST activa (del año actual)
+  const { data: evaluaciones = [] } = useQuery<EvaluacionSst[]>({
+    queryKey: ["/api/evaluaciones-sst"],
+  });
+
+  // Encontrar la evaluación del año actual o la más reciente
+  const currentYear = new Date().getFullYear();
+  const evaluacionActiva = evaluaciones.find(e => e.anio === currentYear) || evaluaciones[0];
 
   // Objetivo general estándar para empresas colombianas según Decreto 1072/2015
   const objetivoGeneralEstandar = "Planificar, implementar, evaluar y mejorar continuamente las actividades del Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST), orientadas a prevenir accidentes de trabajo y enfermedades laborales, promoviendo ambientes de trabajo seguros y saludables en cumplimiento de la normatividad legal vigente (Decreto 1072/2015, Resolución 0312/2019).";
@@ -338,7 +347,7 @@ export default function PlanesTrabajoAnual() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setLocation("/evaluaciones-sst")}
+          onClick={() => setLocation(evaluacionActiva ? `/evaluaciones-sst/${evaluacionActiva.id}` : "/evaluaciones-sst")}
           data-testid="button-back-to-evaluation"
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
