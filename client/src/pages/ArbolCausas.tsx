@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import type { AccidentInvestigation, Accident, Worker } from "@shared/schema";
+import type { AccidentInvestigation, Accident, Worker, InvestigationFinding } from "@shared/schema";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,11 @@ import {
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { ArbolCausasVisualization } from "@/components/ArbolCausasVisualization";
 
+// Extended investigation type with findings
+interface InvestigationWithFindings extends AccidentInvestigation {
+  findings?: InvestigationFinding[];
+}
+
 export default function ArbolCausas() {
   const { user } = useAuth();
   const { effectiveCompanyId } = useCompanyContext();
@@ -28,19 +33,19 @@ export default function ArbolCausas() {
 
   // Fetch investigations with arbol_causas methodology
   const { data: investigations = [], isLoading: loadingInvestigations } = useQuery<AccidentInvestigation[]>({
-    queryKey: ["/api/investigations", effectiveCompanyId],
+    queryKey: ["/api/investigations"],
     enabled: !!effectiveCompanyId,
   });
 
   // Fetch accidents for worker info
   const { data: accidents = [] } = useQuery<Accident[]>({
-    queryKey: ["/api/accidents", effectiveCompanyId],
+    queryKey: ["/api/accidents"],
     enabled: !!effectiveCompanyId,
   });
 
   // Fetch workers
   const { data: workers = [] } = useQuery<Worker[]>({
-    queryKey: ["/api/workers", effectiveCompanyId],
+    queryKey: ["/api/workers"],
     enabled: !!effectiveCompanyId,
   });
 
@@ -48,6 +53,19 @@ export default function ArbolCausas() {
   const arbolCausasInvestigations = investigations.filter(
     inv => inv.analysisMethodology === "arbol_causas"
   );
+
+  // Auto-select first investigation if none selected
+  useEffect(() => {
+    if (!selectedInvestigationId && arbolCausasInvestigations.length > 0) {
+      setSelectedInvestigationId(arbolCausasInvestigations[0].id);
+    }
+  }, [arbolCausasInvestigations, selectedInvestigationId]);
+
+  // Fetch full investigation details with findings when one is selected
+  const { data: selectedInvestigationDetails, isLoading: loadingDetails } = useQuery<InvestigationWithFindings>({
+    queryKey: ["/api/investigations", selectedInvestigationId],
+    enabled: !!selectedInvestigationId,
+  });
 
   const getAccidentInfo = (accidentId: string | null) => {
     if (!accidentId) return null;
@@ -59,6 +77,38 @@ export default function ArbolCausas() {
     const worker = workers.find(w => w.id === workerId);
     return worker ? worker.name : "Trabajador no encontrado";
   };
+
+  // Transform findings into cause arrays for visualization
+  const investigationForVisualization = useMemo(() => {
+    if (!selectedInvestigationDetails) return null;
+    
+    const findings = selectedInvestigationDetails.findings || [];
+    
+    // Extract causes from findings by type
+    const immediateActCauses = findings
+      .filter(f => f.findingType === "inmediata_acto")
+      .map(f => f.description);
+    const immediateConditionCauses = findings
+      .filter(f => f.findingType === "inmediata_condicion")
+      .map(f => f.description);
+    const basicPersonalCauses = findings
+      .filter(f => f.findingType === "basica_personal")
+      .map(f => f.description);
+    const basicWorkCauses = findings
+      .filter(f => f.findingType === "basica_trabajo")
+      .map(f => f.description);
+    const rootCauseFindings = findings.filter(f => f.findingType === "raiz");
+    
+    return {
+      ...selectedInvestigationDetails,
+      // Use findings data if available, otherwise fall back to investigation fields
+      immediateActCauses: immediateActCauses.length > 0 ? immediateActCauses : selectedInvestigationDetails.immediateActCauses || [],
+      immediateConditionCauses: immediateConditionCauses.length > 0 ? immediateConditionCauses : selectedInvestigationDetails.immediateConditionCauses || [],
+      basicPersonalCauses: basicPersonalCauses.length > 0 ? basicPersonalCauses : selectedInvestigationDetails.basicPersonalCauses || [],
+      basicWorkCauses: basicWorkCauses.length > 0 ? basicWorkCauses : selectedInvestigationDetails.basicWorkCauses || [],
+      rootCause: rootCauseFindings.length > 0 ? rootCauseFindings[0].description : selectedInvestigationDetails.rootCause || null,
+    };
+  }, [selectedInvestigationDetails]);
 
   const selectedInvestigation = selectedInvestigationId 
     ? arbolCausasInvestigations.find(inv => inv.id === selectedInvestigationId)
@@ -224,18 +274,30 @@ export default function ArbolCausas() {
                 
                 <Separator className="my-4" />
                 
-                <ArbolCausasVisualization 
-                  investigation={selectedInvestigation}
-                  eventDescription={selectedInvestigation.eventDescription || "Sin descripción del evento"}
-                />
+                {loadingDetails ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-sm text-muted-foreground">Cargando análisis de causas...</span>
+                  </div>
+                ) : investigationForVisualization ? (
+                  <ArbolCausasVisualization 
+                    investigation={investigationForVisualization}
+                    eventDescription={investigationForVisualization.eventDescription || "Sin descripción del evento"}
+                  />
+                ) : (
+                  <div className="text-center text-muted-foreground py-4">
+                    <Info className="h-6 w-6 mx-auto mb-2" />
+                    <p className="text-sm">No se pudo cargar el análisis de causas</p>
+                  </div>
+                )}
 
-                {selectedInvestigation.rootCause && (
+                {investigationForVisualization?.rootCause && (
                   <>
                     <Separator className="my-4" />
                     <div>
                       <h4 className="text-sm font-medium text-muted-foreground mb-2">Conclusión - Causa Raíz Identificada</h4>
                       <p className="text-sm bg-purple-50 dark:bg-purple-950/30 p-3 rounded-md border border-purple-200 dark:border-purple-800">
-                        {selectedInvestigation.rootCause}
+                        {investigationForVisualization.rootCause}
                       </p>
                     </div>
                   </>
