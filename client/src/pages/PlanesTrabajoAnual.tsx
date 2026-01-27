@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Calendar, CheckCircle2, Clock, FileText, TrendingUp, Sparkles, Wand2, MoreVertical, Pencil, Trash2, CalendarDays } from "lucide-react";
+import { Plus, Search, Calendar, CheckCircle2, Clock, FileText, TrendingUp, Sparkles, Wand2, MoreVertical, Pencil, Trash2, CalendarDays, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -24,7 +24,6 @@ import { z } from "zod";
 import { AutomationAssistant, PlantillaInfo } from "@/components/AutomationAssistant";
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { hasGlobalAccess } from "@shared/permissions";
-import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 const formSchema = insertPlanTrabajoAnualSchema.omit({
@@ -336,7 +335,15 @@ export default function PlanesTrabajoAnual() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <BackToEvaluationButton />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setLocation("/evaluaciones-sst")}
+          data-testid="button-back-to-evaluation"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Volver a la evaluación inicial
+        </Button>
         <BackToCronogramaButton className="ml-auto" />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
