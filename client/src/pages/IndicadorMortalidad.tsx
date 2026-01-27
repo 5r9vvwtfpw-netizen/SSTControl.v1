@@ -12,6 +12,7 @@ import { ArrowLeft, TrendingUp, TrendingDown, Skull, AlertTriangle, Activity } f
 import type { AccidentStatistics } from "@shared/schema";
 import { TrazabilidadIndicadores333 } from "@/components/TrazabilidadIndicadores333";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 function calculateMortalityRate(data: AccidentStatistics) {
   const totalWorkers = data.totalWorkers ?? 1;
@@ -70,7 +71,8 @@ export default function IndicadorMortalidad() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
       <div className="flex items-center justify-between">

@@ -11,6 +11,7 @@ import { ArrowLeft, TrendingUp, TrendingDown, Activity, AlertTriangle, Info } fr
 import type { AccidentStatistics } from "@shared/schema";
 import { TrazabilidadIndicadores335 } from "@/components/TrazabilidadIndicadores335";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 function calculateIncidencia(data: AccidentStatistics) {
   const totalWorkers = data.totalWorkers ?? 1;
@@ -70,7 +71,8 @@ export default function IncidenciaAccidentesEL() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
       <div className="flex items-center justify-between">

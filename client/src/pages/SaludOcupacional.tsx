@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { hasCompanyAdminAccess } from "@shared/permissions";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 const formSchema = insertOccupationalDiseaseSchema.extend({
   diagnosisDate: z.string().min(1, "La fecha de diagnóstico es obligatoria"),
@@ -109,7 +110,8 @@ export default function SaludOcupacional() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">

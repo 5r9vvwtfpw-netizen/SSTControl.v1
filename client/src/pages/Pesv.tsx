@@ -10,6 +10,7 @@ import {
   Activity
 } from "lucide-react";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 export default function Pesv() {
   const { data: vehicles } = useQuery({ queryKey: ["/api/vehicles"] });
@@ -44,7 +45,8 @@ export default function Pesv() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-end mb-2">
+      <div className="flex items-center justify-between mb-2">
+        <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
       <div className="flex items-center justify-between">

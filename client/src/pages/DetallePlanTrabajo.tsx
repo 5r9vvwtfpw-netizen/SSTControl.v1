@@ -22,6 +22,8 @@ import { insertActividadPlanTrabajoSchema } from "@shared/schema";
 import type { PlanTrabajoAnual, ActividadPlanTrabajo } from "@shared/schema";
 import { PROGRAMAS_SST_LABELS, CICLOS_PHVA_LABELS, MESES_LABELS } from "@/lib/actividades-plan-trabajo-predefinidas";
 import { CronogramaMensual } from "@/components/CronogramaMensual";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 const PROGRAMAS_SST = [
   { id: "identificacion-peligros", nombre: "Identificación de Peligros" },
@@ -442,6 +444,11 @@ export default function DetallePlanTrabajo() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <BackToEvaluationButton />
+        <BackToCronogramaButton />
+      </div>
+
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={() => setLocation("/planes-trabajo-anual")} data-testid="button-back">
           <ArrowLeft className="h-4 w-4 mr-2" />

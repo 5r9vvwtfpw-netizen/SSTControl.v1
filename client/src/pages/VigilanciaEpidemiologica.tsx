@@ -19,6 +19,7 @@ import { formatDateShort } from "@/lib/utils/formatters";
 import { SVE_CLASSIFICATION_CONFIGS, getBadgeConfig } from "@/lib/utils/badge-helpers";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 const normativaVigilancia = [
   {
@@ -452,7 +453,8 @@ export default function VigilanciaEpidemiologica() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
       {/* Header */}

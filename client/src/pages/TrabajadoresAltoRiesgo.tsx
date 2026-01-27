@@ -19,6 +19,7 @@ import { AutomationAssistant, type PlantillaInfo } from "@/components/Automation
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { compressImage } from "@/lib/imageCompression";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 const plantillasAltoRiesgo: PlantillaInfo[] = [
   {
@@ -503,7 +504,8 @@ export default function TrabajadoresAltoRiesgo() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
       <div className="flex justify-between items-center">

@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 const normativaRevisionesDireccion = [
   {
@@ -206,7 +207,8 @@ export default function RevisionesDireccion() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

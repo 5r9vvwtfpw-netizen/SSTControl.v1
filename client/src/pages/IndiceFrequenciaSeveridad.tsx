@@ -11,6 +11,7 @@ import { useCompanyContext } from "@/hooks/use-company-context";
 import { ArrowLeft, ArrowRight, TrendingUp, TrendingDown, Activity, AlertTriangle } from "lucide-react";
 import { TrazabilidadIndicadores331 } from "@/components/TrazabilidadIndicadores331";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import type { AccidentStatistics } from "@shared/schema";
 import {
   calculateFrequencyIndex,
@@ -86,7 +87,8 @@ export default function IndiceFrequenciaSeveridad() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
       <div className="flex items-center justify-between flex-wrap gap-4">

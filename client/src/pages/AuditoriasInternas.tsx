@@ -22,6 +22,7 @@ import UpgradeAlert from "@/components/UpgradeAlert";
 import { z } from "zod";
 import { hasGlobalAccess } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 
 const normativaAuditorias = [
@@ -216,7 +217,8 @@ export default function AuditoriasInternas() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">

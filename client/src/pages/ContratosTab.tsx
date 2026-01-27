@@ -51,6 +51,7 @@ import {
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 type ContractType = "indefinido" | "fijo" | "obra_labor" | "ocasional" | "aprendizaje" | "servicios";
 type ContractStatus = "activo" | "vencido" | "terminado" | "suspendido";
@@ -633,7 +634,8 @@ export default function Contratos() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
       {/* Header */}

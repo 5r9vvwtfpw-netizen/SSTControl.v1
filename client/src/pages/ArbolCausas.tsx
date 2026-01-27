@@ -19,6 +19,7 @@ import {
   Info
 } from "lucide-react";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { ArbolCausasVisualization } from "@/components/ArbolCausasVisualization";
 
 // Extended investigation type with findings
@@ -124,17 +125,18 @@ export default function ArbolCausas() {
 
   return (
     <div className="container mx-auto py-6 px-4 max-w-6xl">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <TreePine className="h-8 w-8 text-green-600" />
-          <div>
-            <h1 className="text-2xl font-bold">Árbol de Causas</h1>
-            <p className="text-sm text-muted-foreground">
-              Metodología de análisis causal según Resolución 1401/2007
-            </p>
-          </div>
-        </div>
+      <div className="flex items-center justify-between mb-4">
         <BackToEvaluationButton />
+        <BackToCronogramaButton />
+      </div>
+      <div className="flex items-center gap-3 mb-6">
+        <TreePine className="h-8 w-8 text-green-600" />
+        <div>
+          <h1 className="text-2xl font-bold">Árbol de Causas</h1>
+          <p className="text-sm text-muted-foreground">
+            Metodología de análisis causal según Resolución 1401/2007
+          </p>
+        </div>
       </div>
 
       <Card className="mb-6">

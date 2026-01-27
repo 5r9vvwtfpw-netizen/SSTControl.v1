@@ -12,6 +12,7 @@ import { ArrowLeft, BarChart3, Calculator, Calendar, TrendingUp, Info } from "lu
 import type { AccidentStatistics } from "@shared/schema";
 import { TrazabilidadIndicadores332 } from "@/components/TrazabilidadIndicadores332";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import {
   calculateFrequencyIndex,
   calculateSeverityIndex,
@@ -102,7 +103,8 @@ export default function IndiceSeveridadILI() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
       {/* Header */}
