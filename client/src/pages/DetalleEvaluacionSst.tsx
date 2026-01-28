@@ -735,7 +735,7 @@ export default function DetalleEvaluacionSst() {
           data-testid="button-back"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Volver
+          Salir de la evaluación
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
