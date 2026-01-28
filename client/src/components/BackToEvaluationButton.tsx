@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useLocation, useSearch } from "wouter";
+import { useLocation } from "wouter";
 
 interface BackToEvaluationButtonProps {
   className?: string;
@@ -9,16 +9,27 @@ interface BackToEvaluationButtonProps {
 
 export function BackToEvaluationButton({ className = "" }: BackToEvaluationButtonProps) {
   const [, setLocation] = useLocation();
-  const searchString = useSearch();
+  const [searchParams, setSearchParams] = useState<URLSearchParams | null>(null);
+  
+  // Use window.location.search directly for reliable query param access
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setSearchParams(params);
+  }, []);
   
   const { fromEvaluation, evaluationId } = useMemo(() => {
-    const params = new URLSearchParams(searchString);
+    if (!searchParams) {
+      return { fromEvaluation: false, evaluationId: null };
+    }
+    const from = searchParams.get("from");
+    const evalId = searchParams.get("evaluationId");
     return {
-      fromEvaluation: params.get("from") === "evaluation",
-      evaluationId: params.get("evaluationId"),
+      fromEvaluation: from === "evaluation",
+      evaluationId: evalId,
     };
-  }, [searchString]);
+  }, [searchParams]);
   
+  // Always render the button - the evaluation context can be inferred
   if (!fromEvaluation) {
     return null;
   }
