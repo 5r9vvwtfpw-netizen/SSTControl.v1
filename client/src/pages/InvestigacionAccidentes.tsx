@@ -798,15 +798,6 @@ export default function InvestigacionAccidentes() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
-            variant="outline"
-            onClick={handleExportPdf}
-            disabled={isExporting}
-            data-testid="button-export-pdf"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            {isExporting ? "Generando..." : "Exportar PDF"}
-          </Button>
-          <Button
             onClick={() => {
               setEditingInvestigation(null);
               form.reset();
