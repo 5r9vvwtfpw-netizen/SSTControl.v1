@@ -4541,10 +4541,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.fillColor('#333');
       }
       
-      doc.moveDown(0.2);
       doc.font('Helvetica-Bold').text('Descripción del Evento:');
       doc.font('Helvetica').text(investigation.eventDescription || 'Sin descripción', { align: 'justify' });
-      doc.moveDown(0.3);
       
       // Participants Section - Barra verde estándar
       addSectionBar(doc, '2. EQUIPO INVESTIGADOR');
