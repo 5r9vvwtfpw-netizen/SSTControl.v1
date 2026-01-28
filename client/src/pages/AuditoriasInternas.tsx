@@ -17,8 +17,6 @@ import { Switch } from "@/components/ui/switch";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { useSubscriptionFeatures } from "@/hooks/use-subscription-features";
-import UpgradeAlert from "@/components/UpgradeAlert";
 import { z } from "zod";
 import { hasGlobalAccess } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
@@ -96,11 +94,8 @@ export default function AuditoriasInternas() {
     },
   });
 
-  const { data: features, isLoading: isFeaturesLoading, isError: isFeaturesError } = useSubscriptionFeatures();
-
   const { data: auditorias = [], isLoading } = useQuery<AuditoriaInterna[]>({
     queryKey: ["/api/auditorias-internas"],
-    enabled: !!features?.hasAuditorias, // Only fetch if feature is available
   });
 
   const { data: companies = [] } = useQuery<Company[]>({
@@ -186,38 +181,6 @@ export default function AuditoriasInternas() {
     const item = config[tipo as keyof typeof config] || config["interna"];
     return <Badge className={item.className}>{item.label}</Badge>;
   };
-
-  // Show upgrade alert if feature not available
-  if (isFeaturesLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground">Cargando...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if ((isFeaturesError || !features?.hasAuditorias) && !hasGlobalAccessUser) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <BackToEvaluationButton />
-          <BackToCronogramaButton />
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold" data-testid="text-page-title">Auditorías Internas SST</h1>
-          <p className="text-muted-foreground">ISO 45001:2018 | Resolución 0312/2019</p>
-        </div>
-        <UpgradeAlert
-          feature="Auditorías Internas SST"
-          description="Gestiona auditorías internas del sistema de gestión SST conforme a ISO 45001:2018 y Resolución 0312/2019. Incluye registro de hallazgos, planes de acción y seguimiento."
-          requiredPlan="profesional"
-          variant="card"
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

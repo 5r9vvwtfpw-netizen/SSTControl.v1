@@ -16,8 +16,6 @@ import { RevisionDireccion, Company, insertRevisionDireccionSchema } from "@shar
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { useSubscriptionFeatures } from "@/hooks/use-subscription-features";
-import UpgradeAlert from "@/components/UpgradeAlert";
 import { z } from "zod";
 import { format } from "date-fns";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
@@ -83,11 +81,8 @@ export default function RevisionesDireccion() {
     },
   });
 
-  const { data: features, isLoading: isFeaturesLoading, isError: isFeaturesError } = useSubscriptionFeatures();
-
   const { data: revisiones = [], isLoading } = useQuery<RevisionDireccion[]>({
     queryKey: ["/api/revisiones-direccion"],
-    enabled: !!features?.hasRevisionDireccion, // Only fetch if feature is available
   });
 
   const { data: companies = [] } = useQuery<Company[]>({
@@ -164,46 +159,6 @@ export default function RevisionesDireccion() {
     const item = config[periodicidad.toLowerCase() as keyof typeof config];
     return item ? <Badge className={item.className}>{item.label}</Badge> : null;
   };
-
-  // Show upgrade alert if feature not available
-  if (isFeaturesLoading) {
-    return (
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground">Cargando...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isFeaturesError || !features?.hasRevisionDireccion) {
-    return (
-      <div className="container mx-auto p-6 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <ClipboardCheck className="h-8 w-8 text-primary" />
-            Revisión por Dirección
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Gestión de revisiones gerenciales del Sistema de Gestión SST (ISO 45001:2018 / Resolución 0312)
-          </p>
-        </div>
-        <AutomationAssistant
-          titulo="Revisión por la Alta Dirección"
-          estandar="3.2.1"
-          descripcion="Revisiones gerenciales del SG-SST conforme a ISO 45001 y Decreto 1072"
-          normativaAplicable={normativaRevisionesDireccion}
-          compact={true}
-        />
-        <UpgradeAlert
-          feature="Revisión por Dirección"
-          description="Gestiona revisiones gerenciales del Sistema de Gestión SST conforme a ISO 45001:2018 cláusula 9.3 y Resolución 0312/2019. Incluye registro de entradas, salidas, decisiones y seguimiento."
-          requiredPlan="empresarial"
-          variant="card"
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
