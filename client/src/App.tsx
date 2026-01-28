@@ -204,6 +204,7 @@ function Router() {
       <ProtectedRoute path="/politicas-sst" component={PoliticasSst} />
       <ProtectedRoute path="/politica-sst" component={PoliticasSst} />
       <ProtectedRoute path="/accidentes" component={Accidentes} />
+      <ProtectedRoute path="/investigacion-accidentes/:id" component={InvestigacionAccidentes} />
       <ProtectedRoute path="/investigacion-accidentes" component={InvestigacionAccidentes} />
       <ProtectedRoute path="/arbol-causas" component={ArbolCausas} />
       <ProtectedRoute path="/ausentismo-laboral" component={AusentismoLaboral} />
