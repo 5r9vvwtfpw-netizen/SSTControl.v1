@@ -513,7 +513,7 @@ function DocumentosTab() {
                   ) : '-'}
                 </TableCell>
                 <TableCell>
-                  <Link href={`/investigacion-accidentes/${doc.id}`}>
+                  <Link href={`/portal-licenciado/investigacion/${doc.id}`}>
                     <Button size="sm" data-testid={`button-review-${doc.id}`}>
                       <ExternalLink className="h-4 w-4 mr-1" />
                       Revisar

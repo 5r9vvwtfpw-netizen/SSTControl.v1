@@ -416,6 +416,146 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     }
   });
 
+  // GET /api/portal-licenciado/investigacion/:id - Get specific investigation details for LSO review
+  app.get("/api/portal-licenciado/investigacion/:id", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const { id } = req.params;
+      
+      // Get the investigation with company details
+      const [investigation] = await db.select({
+        id: schema.accidentInvestigations.id,
+        companyId: schema.accidentInvestigations.companyId,
+        companyName: schema.companies.name,
+        companyNit: schema.companies.nit,
+        companyCity: schema.companies.city,
+        companyRiskLevel: schema.companies.riskLevel,
+        accidentId: schema.accidentInvestigations.accidentId,
+        eventType: schema.accidentInvestigations.eventType,
+        eventDate: schema.accidentInvestigations.eventDate,
+        eventDescription: schema.accidentInvestigations.eventDescription,
+        investigationStartDate: schema.accidentInvestigations.investigationStartDate,
+        investigationEndDate: schema.accidentInvestigations.investigationEndDate,
+        dueDate: schema.accidentInvestigations.dueDate,
+        slaStatus: schema.accidentInvestigations.slaStatus,
+        daysRemaining: schema.accidentInvestigations.daysRemaining,
+        isSevere: schema.accidentInvestigations.isSevere,
+        isFatal: schema.accidentInvestigations.isFatal,
+        requiresLicensedProfessional: schema.accidentInvestigations.requiresLicensedProfessional,
+        status: schema.accidentInvestigations.status,
+        immediateActCauses: schema.accidentInvestigations.immediateActCauses,
+        immediateConditionCauses: schema.accidentInvestigations.immediateConditionCauses,
+        rootCause: schema.accidentInvestigations.rootCause,
+        correctiveActions: schema.accidentInvestigations.correctiveActions,
+        preventiveActions: schema.accidentInvestigations.preventiveActions,
+        conclusions: schema.accidentInvestigations.conclusions,
+        licensedProfessionalName: schema.accidentInvestigations.licensedProfessionalName,
+        licensedProfessionalDocument: schema.accidentInvestigations.licensedProfessionalDocument,
+        licensedProfessionalLicense: schema.accidentInvestigations.licensedProfessionalLicense,
+        copasstParticipation: schema.accidentInvestigations.copasstParticipation,
+        copasstMemberName: schema.accidentInvestigations.copasstMemberName,
+        createdAt: schema.accidentInvestigations.createdAt,
+        updatedAt: schema.accidentInvestigations.updatedAt,
+      })
+      .from(schema.accidentInvestigations)
+      .innerJoin(schema.companies, eq(schema.accidentInvestigations.companyId, schema.companies.id))
+      .where(eq(schema.accidentInvestigations.id, id));
+      
+      if (!investigation) {
+        return res.status(404).json({ message: "Investigación no encontrada" });
+      }
+      
+      // Verify the LSO has access to this company
+      const [assignment] = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.companyId, investigation.companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+      
+      if (!assignment) {
+        return res.status(403).json({ message: "No tiene acceso a esta investigación" });
+      }
+      
+      // Get the related accident (full record)
+      const [accident] = await db.select()
+        .from(schema.accidents)
+        .where(eq(schema.accidents.id, investigation.accidentId));
+      
+      // Get participants
+      const participants = await db.select()
+        .from(schema.investigationParticipants)
+        .where(eq(schema.investigationParticipants.investigationId, id));
+      
+      // Get findings
+      const findings = await db.select()
+        .from(schema.investigationFindings)
+        .where(eq(schema.investigationFindings.investigationId, id));
+      
+      res.json({
+        ...investigation,
+        accident,
+        participants,
+        findings,
+      });
+    } catch (error: any) {
+      console.error('[GET /api/portal-licenciado/investigacion/:id] Error:', error.message);
+      res.status(500).json({ message: "Error fetching investigation details", error: error.message });
+    }
+  });
+
+  // PATCH /api/portal-licenciado/investigacion/:id/firmar - LSO signs the investigation
+  app.patch("/api/portal-licenciado/investigacion/:id/firmar", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const { id } = req.params;
+      
+      // Get the investigation
+      const [investigation] = await db.select()
+        .from(schema.accidentInvestigations)
+        .where(eq(schema.accidentInvestigations.id, id));
+      
+      if (!investigation) {
+        return res.status(404).json({ message: "Investigación no encontrada" });
+      }
+      
+      // Verify the LSO has access to this company
+      const [assignment] = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.companyId, investigation.companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+      
+      if (!assignment) {
+        return res.status(403).json({ message: "No tiene acceso a firmar esta investigación" });
+      }
+      
+      // Update the investigation with LSO signature
+      const [updated] = await db.update(schema.accidentInvestigations)
+        .set({
+          licensedProfessionalName: user.fullName || user.username,
+          licensedProfessionalDocument: user.sstLicenseNumber || '', // Use license number as document
+          licensedProfessionalLicense: user.sstLicenseNumber || '',
+          licensedProfessionalLicenseExpiry: user.sstLicenseExpiresAt,
+          status: 'completada',
+          investigationEndDate: new Date().toISOString().split('T')[0],
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.accidentInvestigations.id, id))
+        .returning();
+      
+      console.log(`[LSO-FIRMA] Investigation ${id} signed by ${user.username}`);
+      
+      res.json({ message: "Investigación firmada exitosamente", investigation: updated });
+    } catch (error: any) {
+      console.error('[PATCH /api/portal-licenciado/investigacion/:id/firmar] Error:', error.message);
+      res.status(500).json({ message: "Error signing investigation", error: error.message });
+    }
+  });
+
   // GET /api/companies/:companyId/licensed-professionals - Get licensed professionals assigned to a company
   app.get("/api/companies/:companyId/licensed-professionals", requireAuth, async (req, res) => {
     try {

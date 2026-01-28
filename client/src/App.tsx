@@ -52,6 +52,7 @@ import CompanyDetail from "@/pages/CompanyDetail";
 import GestionUsuarios from "@/pages/GestionUsuarios";
 import ProfesionalesLicenciados from "@/pages/ProfesionalesLicenciados";
 import PortalLicenciado from "@/pages/PortalLicenciado";
+import DetalleInvestigacionLSO from "@/pages/DetalleInvestigacionLSO";
 import PerfilesCargo from "@/pages/PerfilesCargo";
 import ExamenesMedicos from "@/pages/ExamenesMedicos";
 import ResponsibleDesignation from "@/pages/ResponsibleDesignation";
@@ -173,6 +174,7 @@ function Router() {
       <ProtectedRoute path="/empresas" component={CompanyManagement} />
       <ProtectedRoute path="/usuarios" component={GestionUsuarios} />
       <ProtectedRoute path="/profesionales-licenciados" component={ProfesionalesLicenciados} />
+      <ProtectedRoute path="/portal-licenciado/investigacion/:id" component={DetalleInvestigacionLSO} />
       <ProtectedRoute path="/portal-licenciado" component={PortalLicenciado} />
       <ProtectedRoute path="/directorio-profesionales" component={DirectorioProfesionales} />
       <ProtectedRoute path="/trabajadores" component={Trabajadores} />
