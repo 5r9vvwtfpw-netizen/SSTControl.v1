@@ -487,8 +487,7 @@ function DocumentosTab() {
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">
-                    {doc.eventType === 'accidente_trabajo' ? 'Accidente' : 
-                     doc.eventType === 'incidente' ? 'Incidente' : 'Enfermedad'}
+                    {doc.eventType || 'Investigación'}
                   </Badge>
                 </TableCell>
                 <TableCell>
