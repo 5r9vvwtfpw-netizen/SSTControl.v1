@@ -747,7 +747,7 @@ export default function InvestigacionAccidentes() {
     
     setIsExporting(true);
     try {
-      const response = await fetch(`/api/reports/investigacion-accidentes?companyId=${companyId}`, {
+      const response = await fetch(`/api/investigations/pdf`, {
         method: 'GET',
         credentials: 'include',
       });
