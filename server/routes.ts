@@ -4507,7 +4507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Event Information Section - Barra verde estándar
       addSectionBar(doc, '1. INFORMACIÓN DEL EVENTO');
-      doc.moveDown(0.5);
+      doc.moveDown(0.2);
       doc.fillColor('#333').fontSize(10).font('Helvetica');
       
       // Format dates safely
@@ -4541,14 +4541,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.fillColor('#333');
       }
       
-      doc.moveDown(0.5);
+      doc.moveDown(0.2);
       doc.font('Helvetica-Bold').text('Descripción del Evento:');
       doc.font('Helvetica').text(investigation.eventDescription || 'Sin descripción', { align: 'justify' });
-      doc.moveDown(1);
+      doc.moveDown(0.3);
       
       // Participants Section - Barra verde estándar
       addSectionBar(doc, '2. EQUIPO INVESTIGADOR');
-      doc.moveDown(0.5);
+      doc.moveDown(0.2);
       doc.fillColor('#333').fontSize(10);
       
       if (!participants || participants.length === 0) {
@@ -4564,11 +4564,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
       }
-      doc.moveDown(1);
+      doc.moveDown(0.3);
       
       // Causes Analysis Section - Barra verde estándar
       addSectionBar(doc, '3. ANÁLISIS DE CAUSAS');
-      doc.moveDown(0.5);
+      doc.moveDown(0.2);
       doc.fillColor('#333').fontSize(10);
       
       if (investigation.immediateActCauses && Array.isArray(investigation.immediateActCauses) && investigation.immediateActCauses.length > 0) {
@@ -4599,11 +4599,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.font('Helvetica-Bold').text('Causa Raíz Identificada:');
         doc.font('Helvetica').text(`  ${investigation.rootCause}`);
       }
-      doc.moveDown(1);
+      doc.moveDown(0.3);
       
       // Corrective Actions Section - Barra verde estándar
       addSectionBar(doc, '4. ACCIONES CORRECTIVAS Y PREVENTIVAS');
-      doc.moveDown(0.5);
+      doc.moveDown(0.2);
       doc.fillColor('#333').fontSize(10);
       
       if (findings.length === 0) {
@@ -4621,16 +4621,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           doc.moveDown(0.3);
         });
       }
-      doc.moveDown(1);
+      doc.moveDown(0.3);
       
       // Conclusions Section - Barra verde estándar
       addSectionBar(doc, '5. CONCLUSIONES');
-      doc.moveDown(0.5);
+      doc.moveDown(0.2);
       doc.fillColor('#333').fontSize(10).font('Helvetica');
       doc.text(investigation.conclusions || 'Sin conclusiones registradas.', { align: 'justify' });
       
       if (investigation.lessonLearned) {
-        doc.moveDown(0.5);
+        doc.moveDown(0.2);
         doc.font('Helvetica-Bold').text('Lección Aprendida:');
         doc.font('Helvetica').text(investigation.lessonLearned, { align: 'justify' });
       }
@@ -4641,7 +4641,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addSignatureFooter(doc, signers, requiresLSO);
       
       // Legal reference
-      doc.moveDown(1);
+      doc.moveDown(0.3);
       doc.fontSize(6).fillColor('#666')
         .text('Resolución 1401/2007 - Investigación de incidentes y accidentes de trabajo', { align: 'center' });
       
