@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useRef } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { 
   Award, 
   Building2, 
@@ -26,10 +35,14 @@ import {
   Users,
   Shield,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Upload,
+  Loader2
 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -653,19 +666,7 @@ function LicenciaTab() {
               </p>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <XCircle className="h-12 w-12 text-muted-foreground mb-4" />
-              <h4 className="font-medium mb-2">Sin firma digital</h4>
-              <p className="text-sm text-muted-foreground mb-4">
-                No tiene una firma digital cargada. Configure su firma para poder 
-                firmar documentos electrónicamente.
-              </p>
-              <Link href="/mi-cuenta">
-                <Button variant="outline" data-testid="button-upload-signature">
-                  Cargar Firma Digital
-                </Button>
-              </Link>
-            </div>
+            <SignatureUploadSection />
           )}
         </CardContent>
       </Card>
@@ -705,5 +706,165 @@ function SlaStatusBadge({ status }: { status: string }) {
     <Badge className={config.className}>
       {config.label}
     </Badge>
+  );
+}
+
+function SignatureUploadSection() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('signature', file);
+      
+      const response = await fetch('/api/portal-licenciado/firma', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al subir la firma');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Firma cargada",
+        description: "Su firma digital ha sido guardada exitosamente.",
+      });
+      setIsOpen(false);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo cargar la firma",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Formato inválido",
+          description: "Por favor seleccione una imagen (PNG, JPG)",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          title: "Archivo muy grande",
+          description: "El archivo no debe superar 2MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const handleUpload = () => {
+    if (selectedFile) {
+      uploadMutation.mutate(selectedFile);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center py-8 text-center">
+      <XCircle className="h-12 w-12 text-muted-foreground mb-4" />
+      <h4 className="font-medium mb-2">Sin firma digital</h4>
+      <p className="text-sm text-muted-foreground mb-4">
+        No tiene una firma digital cargada. Configure su firma para poder 
+        firmar documentos electrónicamente.
+      </p>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline" data-testid="button-upload-signature">
+            <Upload className="h-4 w-4 mr-2" />
+            Cargar Firma Digital
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cargar Firma Digital</DialogTitle>
+            <DialogDescription>
+              Suba una imagen de su firma manuscrita. Esta se utilizará para firmar documentos SST electrónicamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div 
+              className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {previewUrl ? (
+                <div className="space-y-2">
+                  <img 
+                    src={previewUrl} 
+                    alt="Vista previa de firma" 
+                    className="max-h-32 mx-auto"
+                  />
+                  <p className="text-sm text-muted-foreground">{selectedFile?.name}</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Upload className="h-10 w-10 mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Haga clic para seleccionar una imagen
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    PNG o JPG, máximo 2MB
+                  </p>
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </div>
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                Asegúrese de que la firma sea clara y legible. Se recomienda usar fondo blanco o transparente.
+              </AlertDescription>
+            </Alert>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleUpload} 
+              disabled={!selectedFile || uploadMutation.isPending}
+            >
+              {uploadMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Cargando...
+                </>
+              ) : (
+                'Guardar Firma'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

@@ -5,6 +5,39 @@ import * as schema from "@shared/schema";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { hasPermission, hasGlobalAccess } from "@shared/permissions";
 import type { Request } from "express";
+import multer from "multer";
+import fs from "fs";
+import path from "path";
+
+// Multer configuration for LSO signature uploads
+const lsoSignatureStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = 'public/uploads/lso-signatures';
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'lso-signature-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const uploadLsoSignature = multer({
+  storage: lsoSignatureStorage,
+  limits: {
+    fileSize: 2 * 1024 * 1024, // 2MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (allowedMimeTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Solo se permiten imágenes (PNG, JPG)'));
+    }
+  }
+});
 
 // Helper function to get effective company ID (same as in routes.ts)
 function getEffectiveCompanyId(req: Request): string | null {
@@ -785,6 +818,39 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     } catch (error: any) {
       console.error('[GET /api/company/assigned-sst-professionals] Error:', error.message);
       res.status(500).json({ message: "Error fetching assigned SST professionals", error: error.message });
+    }
+  });
+
+  // POST /api/portal-licenciado/firma - Upload LSO signature
+  app.post("/api/portal-licenciado/firma", requireAuth, uploadLsoSignature.single('signature'), async (req, res) => {
+    try {
+      const user = req.user!;
+      
+      if (user.role !== 'lso') {
+        return res.status(403).json({ message: "Solo los profesionales licenciados pueden cargar su firma" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No se proporcionó ningún archivo" });
+      }
+      
+      const signatureUrl = `/uploads/lso-signatures/${req.file.filename}`;
+      
+      await db.update(schema.users)
+        .set({ 
+          sstSignatureUrl: signatureUrl
+        })
+        .where(eq(schema.users.id, user.id));
+      
+      console.log(`[POST /api/portal-licenciado/firma] LSO ${user.id} uploaded signature: ${signatureUrl}`);
+      
+      res.json({ 
+        message: "Firma cargada exitosamente",
+        signatureUrl 
+      });
+    } catch (error: any) {
+      console.error('[POST /api/portal-licenciado/firma] Error:', error.message);
+      res.status(500).json({ message: "Error al cargar la firma", error: error.message });
     }
   });
 }
