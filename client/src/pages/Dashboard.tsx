@@ -10,7 +10,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useQuery } from "@tanstack/react-query";
 import { Accident, Training, Worker } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useEffect } from "react";
 
 interface StatsData {
   monthlyAccidents: number;
@@ -23,7 +24,21 @@ interface StatsData {
 export default function Dashboard() {
   console.log("[Dashboard] Component mounting");
   const { user } = useAuth();
+  const [, navigate] = useLocation();
   console.log("[Dashboard] User:", user?.role, user?.companyId);
+  
+  // Redirect LSO users to their dedicated portal
+  useEffect(() => {
+    if (user?.role === 'lso') {
+      navigate('/portal-licenciado');
+    }
+  }, [user?.role, navigate]);
+  
+  // If LSO, don't render the dashboard
+  if (user?.role === 'lso') {
+    return null;
+  }
+  
   const needsCompanySetup = !user?.companyId;
 
   const { data: stats, isLoading: statsLoading, isError: statsError } = useQuery<StatsData>({
