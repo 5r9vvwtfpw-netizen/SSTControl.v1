@@ -201,6 +201,10 @@ export default function AuditoriasInternas() {
   if ((isFeaturesError || !features?.hasAuditorias) && !hasGlobalAccessUser) {
     return (
       <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <BackToEvaluationButton />
+          <BackToCronogramaButton />
+        </div>
         <div>
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Auditorías Internas SST</h1>
           <p className="text-muted-foreground">ISO 45001:2018 | Resolución 0312/2019</p>
