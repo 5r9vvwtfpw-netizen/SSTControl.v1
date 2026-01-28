@@ -440,13 +440,6 @@ export function PHVANavigation() {
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/portal-licenciado" className="w-full cursor-pointer">
-                        <FileText className="mr-2 h-4 w-4" />
-                        Mi Portal
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => logoutMutation.mutate()}
                       className="text-destructive cursor-pointer"
