@@ -181,7 +181,7 @@ export default function GestionUsuarios() {
   const providerOnlyRoles = ['superadmin', 'admin', 'soporte'];
   
   // Roles que no se gestionan desde esta pantalla (ej: LSO va a Directorio de Profesionales)
-  const hiddenFromRoleList = ['lso'];
+  const hiddenFromRoleList: string[] = []; // LSO ahora visible
   
   // Filtrar los roles visibles según el usuario actual
   const visibleRoleLabels = useMemo(() => {
@@ -850,7 +850,7 @@ export default function GestionUsuarios() {
               const hasRoleLimit = [
                 'superusuario', 'responsable_sst', 'coordinador_sst',
                 'coordinador_rrhh', 'coordinador_salud', 'jefe_personal',
-                'supervisor', 'vigia_sst', 'auditor_interno'
+                'supervisor', 'vigia_sst', 'auditor_interno', 'lso'
               ].includes(role);
               const limitPerRole = 1;
               
