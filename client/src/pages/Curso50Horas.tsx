@@ -221,12 +221,6 @@ export default function Curso50HorasPage() {
       </div>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Link href="/evaluaciones-sst">
-            <Button variant="ghost" data-testid="button-back">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
-            </Button>
-          </Link>
           <div>
             <h1 className="text-3xl font-bold text-primary mb-2">Curso de 50 Horas</h1>
             <p className="text-muted-foreground">
