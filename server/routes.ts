@@ -4502,13 +4502,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logoBuffer,
       });
       
-      const GREEN_HEADER = '#1e7e34';
-      const pageWidth = doc.page.width - 80;
+      const margin = PDF_CONFIG.MARGIN;
+      const pageWidth = doc.page.width - margin * 2;
       
-      // Event Information Section
-      doc.fillColor(GREEN_HEADER).fontSize(14).font('Helvetica-Bold')
-        .text('1. INFORMACIÓN DEL EVENTO');
-      doc.moveDown(0.3);
+      // Event Information Section - Barra verde estándar
+      addSectionBar(doc, '1. INFORMACIÓN DEL EVENTO');
+      doc.moveDown(0.5);
       doc.fillColor('#333').fontSize(10).font('Helvetica');
       
       // Format dates safely
@@ -4547,10 +4546,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.font('Helvetica').text(investigation.eventDescription || 'Sin descripción', { align: 'justify' });
       doc.moveDown(1);
       
-      // Participants Section
-      doc.fillColor(GREEN_HEADER).fontSize(14).font('Helvetica-Bold')
-        .text('2. EQUIPO INVESTIGADOR');
-      doc.moveDown(0.3);
+      // Participants Section - Barra verde estándar
+      addSectionBar(doc, '2. EQUIPO INVESTIGADOR');
+      doc.moveDown(0.5);
       doc.fillColor('#333').fontSize(10);
       
       if (!participants || participants.length === 0) {
@@ -4568,10 +4566,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       doc.moveDown(1);
       
-      // Causes Analysis Section
-      doc.fillColor(GREEN_HEADER).fontSize(14).font('Helvetica-Bold')
-        .text('3. ANÁLISIS DE CAUSAS');
-      doc.moveDown(0.3);
+      // Causes Analysis Section - Barra verde estándar
+      addSectionBar(doc, '3. ANÁLISIS DE CAUSAS');
+      doc.moveDown(0.5);
       doc.fillColor('#333').fontSize(10);
       
       if (investigation.immediateActCauses && Array.isArray(investigation.immediateActCauses) && investigation.immediateActCauses.length > 0) {
@@ -4604,10 +4601,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       doc.moveDown(1);
       
-      // Corrective Actions Section
-      doc.fillColor(GREEN_HEADER).fontSize(14).font('Helvetica-Bold')
-        .text('4. ACCIONES CORRECTIVAS Y PREVENTIVAS');
-      doc.moveDown(0.3);
+      // Corrective Actions Section - Barra verde estándar
+      addSectionBar(doc, '4. ACCIONES CORRECTIVAS Y PREVENTIVAS');
+      doc.moveDown(0.5);
       doc.fillColor('#333').fontSize(10);
       
       if (findings.length === 0) {
@@ -4627,10 +4623,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       doc.moveDown(1);
       
-      // Conclusions Section
-      doc.fillColor(GREEN_HEADER).fontSize(14).font('Helvetica-Bold')
-        .text('5. CONCLUSIONES');
-      doc.moveDown(0.3);
+      // Conclusions Section - Barra verde estándar
+      addSectionBar(doc, '5. CONCLUSIONES');
+      doc.moveDown(0.5);
       doc.fillColor('#333').fontSize(10).font('Helvetica');
       doc.text(investigation.conclusions || 'Sin conclusiones registradas.', { align: 'justify' });
       
@@ -4826,7 +4821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const absences_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
       const absences_trialStatus = getTrialStatus(absences_subscription?.status || 'trial', absences_subscription?.trialEnd || null, true, true);
 
-      const GREEN_HEADER = '#1e7e34';
+      const margin = PDF_CONFIG.MARGIN;
       const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
       setupTrialWatermarkOnAllPages(doc, absences_trialStatus.requiresWatermark);
       
@@ -4859,8 +4854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       
       // Summary Statistics Section
-      doc.fillColor(GREEN_HEADER).fontSize(14).font('Helvetica-Bold')
-        .text('1. RESUMEN ESTADÍSTICO');
+      addSectionBar(doc, '1. RESUMEN ESTADÍSTICO');
       doc.moveDown(0.5);
       doc.fillColor('#333').fontSize(10).font('Helvetica');
       doc.text(`Total Trabajadores: ${totalWorkers}`);
@@ -4875,8 +4869,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.moveDown(1);
       
       // Breakdown by Cause Section
-      doc.fillColor(GREEN_HEADER).fontSize(14).font('Helvetica-Bold')
-        .text('2. DESGLOSE POR CAUSA');
+      addSectionBar(doc, '2. DESGLOSE POR CAUSA');
       doc.moveDown(0.5);
       doc.fillColor('#333').fontSize(10);
       
@@ -4902,8 +4895,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.moveDown(1);
       
       // Trend Analysis Section
-      doc.fillColor(GREEN_HEADER).fontSize(14).font('Helvetica-Bold')
-        .text('3. ANÁLISIS DE TENDENCIAS');
+      addSectionBar(doc, '3. ANÁLISIS DE TENDENCIAS');
       doc.moveDown(0.5);
       doc.fillColor('#333').fontSize(10).font('Helvetica');
       
@@ -4931,8 +4923,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.moveDown(1);
       
       // Recommendations Section
-      doc.fillColor(GREEN_HEADER).fontSize(14).font('Helvetica-Bold')
-        .text('4. RECOMENDACIONES');
+      addSectionBar(doc, '4. RECOMENDACIONES');
       doc.moveDown(0.5);
       doc.fillColor('#333').fontSize(10).font('Helvetica');
       
@@ -15385,7 +15376,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const margin = 35;
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - (margin * 2);
-      const GREEN_HEADER = '#1e7e34';
       
       // Set response headers
       res.setHeader('Content-Type', 'application/pdf');
