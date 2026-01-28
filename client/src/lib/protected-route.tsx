@@ -62,8 +62,17 @@ export function ProtectedRoute({
     );
   }
 
-  // LSO (Licenciados): Pueden acceder a su portal y a rutas SST, pero redirigir desde "/" a su portal
-  if (user.role === "lso" && path === "/") {
+  // LSO (Licenciados): Solo pueden acceder a su portal específico y mensajes internos
+  // Restringir acceso a todas las demás rutas del sistema
+  const lsoAllowedPaths = [
+    "/portal-licenciado",
+    "/mensajes-internos",
+    "/configuracion-notificaciones",
+  ];
+  const isLsoAllowedPath = lsoAllowedPaths.some(allowed => 
+    path === allowed || path.startsWith(allowed + "/")
+  );
+  if (user.role === "lso" && !isLsoAllowedPath) {
     return (
       <Route path={path}>
         <Redirect to="/portal-licenciado" />

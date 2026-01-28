@@ -371,6 +371,119 @@ export function PHVANavigation() {
     minute: "2-digit",
   });
 
+  // ===== NAVEGACIÓN EXCLUSIVA PARA ROL LSO (Licenciado en Salud Ocupacional) =====
+  // El rol LSO solo debe ver su portal específico, no el menú PHVA completo
+  if (user?.role === 'lso') {
+    return (
+      <header className="sticky top-0 z-50 phva-navigation-header">
+        <div className="bg-gradient-to-r from-primary via-primary/95 to-primary/90 text-primary-foreground">
+          <div className="container mx-auto px-6">
+            <div className="flex items-center justify-between py-3">
+              {/* Logo */}
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
+                  <Shield className="h-7 w-7" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold">SG-SST</h1>
+                  <p className="text-xs opacity-90">Sistema de Gestión</p>
+                </div>
+              </div>
+
+              {/* Navegación simplificada para LSO */}
+              <nav className="flex items-center gap-2">
+                <Link href="/portal-licenciado">
+                  <Button
+                    variant={location === "/portal-licenciado" || location.startsWith("/portal-licenciado") ? "secondary" : "ghost"}
+                    size="default"
+                    className={location === "/portal-licenciado" ? "font-semibold text-primary" : "text-white"}
+                    data-testid="link-portal-licenciado"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Portal del Licenciado
+                  </Button>
+                </Link>
+              </nav>
+
+              {/* Usuario y controles */}
+              <div className="flex items-center gap-4">
+                <NotificationBell />
+                
+                <div className="text-right text-xs hidden lg:block">
+                  <p className="font-medium">{user?.username}</p>
+                  <p className="opacity-75 capitalize">{roleLabels[user?.role || 'lso']}</p>
+                </div>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex items-center gap-2"
+                      data-testid="button-user-menu"
+                    >
+                      <img
+                        src={safetyHelmetAvatar}
+                        alt="Avatar"
+                        className="h-8 w-8 rounded-full border-2 border-white/30"
+                      />
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col">
+                        <span className="font-semibold">{user?.fullName || user?.username}</span>
+                        <span className="text-xs text-muted-foreground capitalize">
+                          {roleLabels[user?.role || 'lso']}
+                        </span>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/portal-licenciado" className="w-full cursor-pointer">
+                        <FileText className="mr-2 h-4 w-4" />
+                        Mi Portal
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => logoutMutation.mutate()}
+                      className="text-destructive cursor-pointer"
+                      data-testid="button-logout"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Cerrar Sesión
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Barra inferior con información */}
+        <div className="bg-card border-b">
+          <div className="container mx-auto px-6">
+            <div className="flex items-center justify-between py-2 text-sm">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground capitalize">{currentDate}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                  <User className="mr-1 h-3 w-3" />
+                  Licenciado en Salud Ocupacional
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+    );
+  }
+  // ===== FIN NAVEGACIÓN EXCLUSIVA LSO =====
+
   return (
     <header className="sticky top-0 z-50 phva-navigation-header">
       {/* Header principal con degradado verde */}
