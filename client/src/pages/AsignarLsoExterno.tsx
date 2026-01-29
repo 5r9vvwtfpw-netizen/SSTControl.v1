@@ -108,21 +108,11 @@ export default function AsignarLsoExterno() {
     enabled: statusData?.status === 'connected',
   });
 
-  // Mutation para asignar LSO
+  // Mutation para asignar LSO (solo envía ID, el backend valida y obtiene datos)
   const assignMutation = useMutation({
     mutationFn: async (lso: LsoRegistration) => {
       return apiRequest("POST", "/api/lso-directory/assign-external", {
         externalLsoId: lso.id,
-        lsoData: {
-          fullName: lso.fullName,
-          email: lso.email,
-          phone: lso.phone,
-          city: lso.city,
-          licenseNumber: lso.licenseNumber,
-          licenseIssuer: lso.licenseIssuer,
-          licenseExpiry: lso.licenseExpiry,
-          signatureUrl: lso.signatureUrl,
-        },
       });
     },
     onSuccess: () => {

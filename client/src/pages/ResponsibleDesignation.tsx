@@ -48,7 +48,7 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { Plus, Pencil, Trash2, UserCheck, FileText, CheckCircle, Bot, Download } from "lucide-react";
+import { Plus, Pencil, Trash2, UserCheck, FileText, CheckCircle, Bot, Download, Award, MapPin, Mail, Phone, Calendar } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ResponsibleDesignation, Worker, JobProfile } from "@shared/schema";
@@ -242,6 +242,12 @@ export default function ResponsibleDesignationPage() {
   const { data: designations = [], isLoading: designationsLoading } = useQuery<ResponsibleDesignation[]>({
     queryKey: ["/api/responsible-designations"],
   });
+
+  // Query para obtener la asignación actual de LSO
+  const { data: lsoAssignmentData } = useQuery<{ ok: boolean; data: { type: string; name: string; email?: string; phone?: string; city?: string; licenseNumber?: string; licenseIssuer?: string; licenseExpiry?: string; assignedAt: string; } | null }>({
+    queryKey: ["/api/lso-directory/company-assignment"],
+  });
+  const lsoAssignment = lsoAssignmentData?.data;
 
   const { data: workers = [] } = useQuery<Worker[]>({
     queryKey: ["/api/workers"],
@@ -1080,27 +1086,79 @@ export default function ResponsibleDesignationPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-primary/20">
+      <Card className={lsoAssignment ? "border-green-200 bg-green-50/50" : "border-primary/20"}>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <UserCheck className="h-5 w-5 text-primary" />
-            Profesional LSO Asignado
+            <UserCheck className={`h-5 w-5 ${lsoAssignment ? "text-green-600" : "text-primary"}`} />
+            Profesional LSO {lsoAssignment ? "Asignado" : ""}
           </CardTitle>
           <CardDescription>
             Licenciado en Seguridad y Salud en el Trabajo para firmar documentos
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Puede asignar un profesional LSO del directorio externo para que firme las investigaciones de accidentes
-            y otros documentos que requieren la validación de un licenciado en SST.
-          </p>
-          <Link href="/asignar-lso-externo">
-            <Button variant="outline" className="gap-2" data-testid="button-asignar-lso">
-              <UserCheck className="h-4 w-4" />
-              Asignar Profesional LSO
-            </Button>
-          </Link>
+          {lsoAssignment ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex items-center gap-2">
+                  <UserCheck className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{lsoAssignment.name}</span>
+                  <Badge variant="outline" className="text-green-600 border-green-300 text-xs">
+                    {lsoAssignment.type === 'external' ? 'Externo' : 'Interno'}
+                  </Badge>
+                </div>
+                {lsoAssignment.email && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span>{lsoAssignment.email}</span>
+                  </div>
+                )}
+                {lsoAssignment.phone && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span>{lsoAssignment.phone}</span>
+                  </div>
+                )}
+                {lsoAssignment.city && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>{lsoAssignment.city}</span>
+                  </div>
+                )}
+                {lsoAssignment.licenseNumber && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Award className="h-4 w-4 text-primary" />
+                    <span>Licencia: {lsoAssignment.licenseNumber}</span>
+                  </div>
+                )}
+                {lsoAssignment.licenseExpiry && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>Vence: {new Date(lsoAssignment.licenseExpiry).toLocaleDateString('es-CO')}</span>
+                  </div>
+                )}
+              </div>
+              <Link href="/asignar-lso-externo">
+                <Button variant="outline" size="sm" className="gap-2 mt-2" data-testid="button-cambiar-lso">
+                  <UserCheck className="h-4 w-4" />
+                  Cambiar Profesional LSO
+                </Button>
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Puede asignar un profesional LSO del directorio externo para que firme las investigaciones de accidentes
+                y otros documentos que requieren la validación de un licenciado en SST.
+              </p>
+              <Link href="/asignar-lso-externo">
+                <Button variant="outline" className="gap-2" data-testid="button-asignar-lso">
+                  <UserCheck className="h-4 w-4" />
+                  Asignar Profesional LSO
+                </Button>
+              </Link>
+            </>
+          )}
         </CardContent>
       </Card>
 

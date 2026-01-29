@@ -146,14 +146,50 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
         });
       }
 
-      const { externalLsoId, lsoData } = req.body;
+      const { externalLsoId } = req.body;
 
-      if (!externalLsoId || !lsoData) {
+      if (!externalLsoId) {
         return res.status(400).json({
           ok: false,
-          message: "externalLsoId y lsoData son requeridos",
+          message: "externalLsoId es requerido",
         });
       }
+
+      // VALIDACIÓN SERVER-SIDE: Obtener datos directamente de la API externa
+      if (!lsoDirectoryApi.isConfigured()) {
+        return res.status(503).json({
+          ok: false,
+          message: "La integración con el directorio LSO no está configurada",
+        });
+      }
+
+      const externalLso = await lsoDirectoryApi.getLsoById(parseInt(externalLsoId.toString()));
+
+      if (!externalLso) {
+        return res.status(404).json({
+          ok: false,
+          message: "Profesional LSO no encontrado en el directorio externo",
+        });
+      }
+
+      if (externalLso.status !== 'confirmed') {
+        return res.status(400).json({
+          ok: false,
+          message: "El profesional LSO no está confirmado en el directorio",
+        });
+      }
+
+      // Usar datos de la API, no datos del cliente (integridad de datos)
+      const lsoData = {
+        fullName: externalLso.fullName,
+        email: externalLso.email,
+        phone: externalLso.phone,
+        city: externalLso.city,
+        licenseNumber: externalLso.licenseNumber,
+        licenseIssuer: externalLso.licenseIssuer,
+        licenseExpiry: externalLso.licenseExpiry,
+        signatureUrl: externalLso.signatureUrl,
+      };
 
       // Verificar que la empresa existe
       const [company] = await db.select()
