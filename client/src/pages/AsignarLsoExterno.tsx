@@ -92,26 +92,26 @@ export default function AsignarLsoExterno() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Query para verificar el estado de la integración
-  const { data: statusData, isLoading: statusLoading } = useQuery<{ ok: boolean; status: string; message: string }>({
-    queryKey: ["/api/lso-directory/status"],
+  // Query para verificar el estado de la integración (usando nuevos endpoints JWT)
+  const { data: statusData, isLoading: statusLoading } = useQuery<{ ok: boolean; configured: boolean; connected?: boolean; message: string }>({
+    queryKey: ["/api/lso-directory-jwt/status"],
   });
 
   // Query para obtener la asignación actual
   const { data: assignmentData, isLoading: assignmentLoading } = useQuery<{ ok: boolean; data: LsoAssignment | null }>({
-    queryKey: ["/api/lso-directory/company-assignment"],
+    queryKey: ["/api/lso-directory-jwt/current-assignment"],
   });
 
-  // Query para obtener el directorio de LSO
+  // Query para obtener el directorio de LSO (búsqueda en tiempo real)
   const { data: directoryData, isLoading: directoryLoading, refetch: refetchDirectory } = useQuery<{ ok: boolean; data: LsoRegistration[]; total: number }>({
-    queryKey: ["/api/lso-directory/external", searchTerm],
-    enabled: statusData?.status === 'connected',
+    queryKey: ["/api/lso-directory-jwt/search", searchTerm],
+    enabled: statusData?.configured === true,
   });
 
-  // Mutation para asignar LSO (solo envía ID, el backend valida y obtiene datos)
+  // Mutation para asignar LSO (usando endpoint JWT - valida con directorio externo)
   const assignMutation = useMutation({
     mutationFn: async (lso: LsoRegistration) => {
-      return apiRequest("POST", "/api/lso-directory/assign-external", {
+      return apiRequest("POST", "/api/lso-directory-jwt/assign", {
         externalLsoId: lso.id,
       });
     },
@@ -120,7 +120,7 @@ export default function AsignarLsoExterno() {
         title: "LSO Asignado",
         description: "El profesional ha sido asignado exitosamente a su empresa.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/lso-directory/company-assignment"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/lso-directory-jwt/current-assignment"] });
       setSelectedLso(null);
       setShowConfirmDialog(false);
     },
@@ -136,14 +136,14 @@ export default function AsignarLsoExterno() {
   // Mutation para remover asignación
   const removeMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("DELETE", "/api/lso-directory/company-assignment");
+      return apiRequest("DELETE", "/api/lso-directory-jwt/unassign");
     },
     onSuccess: () => {
       toast({
         title: "Asignación Removida",
         description: "Se ha removido la asignación del LSO.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/lso-directory/company-assignment"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/lso-directory-jwt/current-assignment"] });
       setShowRemoveDialog(false);
     },
     onError: (error: any) => {
@@ -186,7 +186,7 @@ export default function AsignarLsoExterno() {
     );
   }
 
-  if (statusData?.status === 'not_configured') {
+  if (statusData?.configured === false) {
     return (
       <div className="p-6">
         <Card className="border-orange-200 bg-orange-50">
@@ -201,7 +201,7 @@ export default function AsignarLsoExterno() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Para usar esta funcionalidad, es necesario configurar la variable de entorno <code className="bg-muted px-1 rounded">LSO_API_KEY</code> con la clave de acceso al directorio de profesionales licenciados.
+              Para usar esta funcionalidad, es necesario configurar la variable de entorno <code className="bg-muted px-1 rounded">LANDING_PAGE_API_KEY</code> con la clave de acceso al directorio de profesionales licenciados.
             </p>
           </CardContent>
         </Card>
@@ -209,7 +209,7 @@ export default function AsignarLsoExterno() {
     );
   }
 
-  if (statusData?.status === 'error') {
+  if (statusData?.configured === true && statusData?.connected === false) {
     return (
       <div className="p-6">
         <Card className="border-red-200 bg-red-50">
@@ -229,7 +229,7 @@ export default function AsignarLsoExterno() {
             <Button 
               variant="outline" 
               className="mt-4"
-              onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/lso-directory/status"] })}
+              onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/lso-directory-jwt/status"] })}
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Reintentar Conexión
