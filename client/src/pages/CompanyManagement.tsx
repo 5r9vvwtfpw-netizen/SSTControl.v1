@@ -499,9 +499,30 @@ export default function CompanyManagement() {
                     type="button"
                     size="sm"
                     className="bg-warning text-warning-foreground hover:bg-warning/90 font-semibold"
-                    onClick={() => {
-                      window.open("https://lso.sst-colombia.com.co/directorio", "_blank");
+                    onClick={async () => {
+                      try {
+                        const response = await fetch("/api/lso/directory-url");
+                        const result = await response.json();
+                        if (result.ok && result.url) {
+                          window.open(result.url, "_blank");
+                        } else {
+                          console.error("Error getting directory URL:", result.error);
+                          toast({
+                            title: "Error",
+                            description: result.error || "No se pudo obtener acceso al directorio",
+                            variant: "destructive"
+                          });
+                        }
+                      } catch (error) {
+                        console.error("Error:", error);
+                        toast({
+                          title: "Error",
+                          description: "Error de conexión con el servidor",
+                          variant: "destructive"
+                        });
+                      }
                     }}
+                    data-testid="button-find-professionals"
                   >
                     Encontrar Profesionales Certificados
                   </Button>

@@ -3,6 +3,7 @@
 // Archivo nuevo - No modifica código existente
 
 import type { Express } from "express";
+import jwt from "jsonwebtoken";
 import { 
   searchLSOProfessionals, 
   createContact, 
@@ -10,6 +11,9 @@ import {
   updateContactStatus,
   testConnection
 } from "./lso-directory-client";
+import { db } from "./db";
+import { companies } from "@shared/schema"
+import { eq } from "drizzle-orm";
 
 // Identificador único para esta aplicación
 const COMPANY_CLIENT_ID = "sst-colombia-landing";
@@ -113,6 +117,53 @@ export function registerLsoDirectoryRoutes(app: Express) {
       return res.json(result);
     } catch (error: any) {
       console.error("[LSO Routes] Update contact error:", error);
+      return res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  // Generar URL autenticada para acceder al directorio externo
+  app.get("/api/lso/directory-url", async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (!user) {
+        return res.status(401).json({ ok: false, error: "No autenticado" });
+      }
+
+      const companyId = user.companyId;
+      if (!companyId) {
+        return res.status(400).json({ ok: false, error: "Usuario sin empresa asignada" });
+      }
+
+      // Obtener datos de la empresa
+      const [company] = await db.select().from(companies).where(eq(companies.id, companyId));
+      if (!company) {
+        return res.status(404).json({ ok: false, error: "Empresa no encontrada" });
+      }
+
+      const jwtSecret = process.env.JWT_SECRET;
+      if (!jwtSecret) {
+        console.error("[LSO Routes] JWT_SECRET not configured");
+        return res.status(500).json({ ok: false, error: "Configuración de seguridad faltante" });
+      }
+
+      // Generar token JWT para la empresa
+      const token = jwt.sign(
+        {
+          companyId: company.id,
+          companyName: company.name,
+          permissions: ["read"]
+        },
+        jwtSecret,
+        { expiresIn: "24h" }
+      );
+
+      const directoryUrl = `https://lso.sst-colombia.com.co/directorio?token=${token}`;
+      
+      console.log(`[LSO Routes] Generated directory URL for company ${company.id}`);
+      
+      return res.json({ ok: true, url: directoryUrl });
+    } catch (error: any) {
+      console.error("[LSO Routes] Directory URL error:", error);
       return res.status(500).json({ ok: false, error: error.message });
     }
   });
