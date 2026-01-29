@@ -6,14 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Phone, Mail, Award, Send, GraduationCap, Building2, CheckCircle, Loader2, Users, MapPin } from "lucide-react";
+import { Search, Phone, Mail, Award, Send, GraduationCap, Building2, CheckCircle, Loader2, Users } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface LicensedProfessional {
   id: string;
-  externalId?: number;
   fullName: string;
   sstProfessionType: string | null;
   sstLicenseNumber: string | null;
@@ -21,10 +20,7 @@ interface LicensedProfessional {
   sstLicenseStatus: string | null;
   sstPhone: string | null;
   email: string | null;
-  city?: string;
-  licenseExpiry?: string | null;
   alreadyAssigned: boolean;
-  isExternal?: boolean;
 }
 
 const SST_PROFESSION_LABELS: Record<string, string> = {
@@ -89,13 +85,10 @@ export default function DirectorioProfesionales() {
   });
 
   const profesionalesFiltrados = (professionals || []).filter((prof) => {
-    const searchLower = busqueda.toLowerCase();
     const coincideBusqueda = 
-      prof.fullName?.toLowerCase().includes(searchLower) ||
-      prof.sstLicenseNumber?.toLowerCase().includes(searchLower) ||
-      prof.sstLicenseIssuer?.toLowerCase().includes(searchLower) ||
-      prof.city?.toLowerCase().includes(searchLower) ||
-      prof.email?.toLowerCase().includes(searchLower);
+      prof.fullName?.toLowerCase().includes(busqueda.toLowerCase()) ||
+      prof.sstLicenseNumber?.toLowerCase().includes(busqueda.toLowerCase()) ||
+      prof.sstLicenseIssuer?.toLowerCase().includes(busqueda.toLowerCase());
     
     const coincideEspecialidad = especialidadFiltro === "all" || prof.sstProfessionType === especialidadFiltro;
     
@@ -242,12 +235,6 @@ export default function DirectorioProfesionales() {
                     <span className="truncate">{profesional.sstLicenseIssuer}</span>
                   </div>
                 )}
-                {profesional.city && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span>{profesional.city}</span>
-                  </div>
-                )}
                 {profesional.sstPhone && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Phone className="h-4 w-4" />
@@ -300,7 +287,7 @@ export default function DirectorioProfesionales() {
       <Card className="bg-muted/50">
         <CardContent className="pt-6">
           <p className="text-sm text-muted-foreground text-center">
-            <strong>Nota:</strong> Este directorio muestra profesionales del Directorio Nacional de LSO con licencia SST vigente confirmada. 
+            <strong>Nota:</strong> Este directorio muestra únicamente profesionales con licencia SST vigente registrados en nuestra plataforma. 
             Verifique siempre la vigencia de la licencia del profesional en el Registro Único Nacional del Talento Humano en Salud (ReTHUS) del Ministerio de Salud.
           </p>
         </CardContent>

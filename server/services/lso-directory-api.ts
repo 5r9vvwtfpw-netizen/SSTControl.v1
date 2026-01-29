@@ -8,9 +8,6 @@
  * - Consultar el directorio de profesionales LSO confirmados
  * - Obtener detalles de un LSO específico
  * - Sincronizar datos para asignación a empresas
- * 
- * Autenticación:
- * - Usa LSO_API_KEY directamente como Bearer token
  */
 
 const LSO_API_BASE_URL = process.env.LSO_API_BASE_URL || 'https://lso.sst-colombia.com.co';
@@ -25,6 +22,7 @@ export interface LsoRegistration {
   status: 'pending' | 'confirmed' | 'rejected' | 'email_failed';
   confirmedAt: string | null;
   createdAt: string;
+  // Campos de licencia (cuando estén disponibles en la API)
   licenseNumber?: string;
   licenseIssuer?: string;
   licenseExpiry?: string;
@@ -71,30 +69,24 @@ export class LsoDirectoryApiClient {
    */
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     if (!this.isConfigured()) {
-      throw new Error('LSO_API_KEY no está configurado. Configura la variable de entorno.');
+      throw new Error('LSO_API_KEY no está configurada. Configura la variable de entorno.');
     }
 
     const url = `${this.baseUrl}${endpoint}`;
-    
-    console.log('[LSO-API] Making request to:', url);
-    console.log('[LSO-API] Using API key:', this.apiKey.substring(0, 8) + '...');
     
     const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': this.apiKey,
+        'Authorization': `Bearer ${this.apiKey}`,
         ...options.headers,
       },
     });
 
     const data = await response.json();
-    console.log('[LSO-API] Response status:', response.status);
-    console.log('[LSO-API] Response ok:', data.ok);
 
     if (!data.ok) {
       const error = data as LsoApiError;
-      console.error('[LSO-API] Request failed:', error.error);
       throw new Error(error.error || 'Error en la API del Directorio LSO');
     }
 
