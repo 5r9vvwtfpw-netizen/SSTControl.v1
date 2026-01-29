@@ -62,6 +62,7 @@ export const routePermissions: Record<string, Permission[]> = {
   "/politicas-sst": ["sst_management:view"],
   "/asignacion-recursos": ["sst_management:view"],
   "/designacion-responsable": ["sst_management:view"],
+  "/asignar-lso-externo": ["sst_management:view"],  // Asignación de LSO desde directorio externo
   "/responsable-sst": ["sst_management:view"],
   "/programa-capacitacion-anual": ["trainings:view", "trainings:view_self"],
   "/programa-capacitacion": ["trainings:view", "trainings:view_self"],
