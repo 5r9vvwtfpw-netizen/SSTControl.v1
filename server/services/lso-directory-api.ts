@@ -9,15 +9,12 @@
  * - Obtener detalles de un LSO específico
  * - Sincronizar datos para asignación a empresas
  * 
- * Flujo de autenticación:
- * - Genera JWT token localmente usando el JWT_SECRET compartido
- * - Usa ese token para todas las consultas a la API
+ * Autenticación:
+ * - Usa LSO_API_KEY directamente como Bearer token
  */
 
-import jwt from 'jsonwebtoken';
-
 const LSO_API_BASE_URL = process.env.LSO_API_BASE_URL || 'https://lso.sst-colombia.com.co';
-const LSO_JWT_SECRET = process.env.LSO_JWT_SECRET || '';
+const LSO_API_KEY = process.env.LSO_API_KEY || '';
 
 export interface LsoRegistration {
   id: number;
@@ -55,46 +52,18 @@ export interface LsoApiError {
  */
 export class LsoDirectoryApiClient {
   private baseUrl: string;
-  private jwtSecret: string;
-  private jwtToken: string | null = null;
-  private tokenExpiresAt: Date | null = null;
+  private apiKey: string;
 
   constructor() {
     this.baseUrl = LSO_API_BASE_URL;
-    this.jwtSecret = LSO_JWT_SECRET;
+    this.apiKey = LSO_API_KEY;
   }
 
   /**
    * Verifica si la API está configurada correctamente
    */
   isConfigured(): boolean {
-    return !!this.jwtSecret && this.jwtSecret.length > 0;
-  }
-
-  /**
-   * Genera un JWT token localmente usando el secreto compartido
-   */
-  private generateJwtToken(): string {
-    if (this.jwtToken && this.tokenExpiresAt && new Date() < this.tokenExpiresAt) {
-      return this.jwtToken;
-    }
-
-    console.log('[LSO-API] Generating JWT token locally...');
-
-    const expiresIn = '30d';
-    const payload = {
-      clientId: 'sst-colombia',
-      permissions: ['read'],
-      iat: Math.floor(Date.now() / 1000),
-    };
-
-    this.jwtToken = jwt.sign(payload, this.jwtSecret, { expiresIn });
-    
-    // Calculate expiration date (30 days from now)
-    this.tokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-    console.log('[LSO-API] JWT token generated, expires at:', this.tokenExpiresAt.toISOString());
-    return this.jwtToken;
+    return !!this.apiKey && this.apiKey.length > 0;
   }
 
   /**
@@ -102,24 +71,26 @@ export class LsoDirectoryApiClient {
    */
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     if (!this.isConfigured()) {
-      throw new Error('LSO_JWT_SECRET no está configurado. Configura la variable de entorno.');
+      throw new Error('LSO_API_KEY no está configurado. Configura la variable de entorno.');
     }
 
-    const token = this.generateJwtToken()!;
     const url = `${this.baseUrl}${endpoint}`;
     
     console.log('[LSO-API] Making request to:', url);
+    console.log('[LSO-API] Using API key:', this.apiKey.substring(0, 8) + '...');
     
     const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        'X-API-Key': this.apiKey,
         ...options.headers,
       },
     });
 
     const data = await response.json();
+    console.log('[LSO-API] Response status:', response.status);
+    console.log('[LSO-API] Response ok:', data.ok);
 
     if (!data.ok) {
       const error = data as LsoApiError;
