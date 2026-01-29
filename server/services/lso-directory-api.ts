@@ -8,10 +8,14 @@
  * - Consultar el directorio de profesionales LSO confirmados
  * - Obtener detalles de un LSO específico
  * - Sincronizar datos para asignación a empresas
+ * 
+ * Flujo de autenticación:
+ * 1. Usar LANDING_PAGE_API_KEY para obtener un JWT token
+ * 2. Usar ese JWT token para todas las consultas subsiguientes
  */
 
 const LSO_API_BASE_URL = process.env.LSO_API_BASE_URL || 'https://lso.sst-colombia.com.co';
-const LSO_API_KEY = process.env.LSO_API_KEY || '';
+const LANDING_PAGE_API_KEY = process.env.LANDING_PAGE_API_KEY || '';
 
 export interface LsoRegistration {
   id: number;
@@ -22,7 +26,6 @@ export interface LsoRegistration {
   status: 'pending' | 'confirmed' | 'rejected' | 'email_failed';
   confirmedAt: string | null;
   createdAt: string;
-  // Campos de licencia (cuando estén disponibles en la API)
   licenseNumber?: string;
   licenseIssuer?: string;
   licenseExpiry?: string;
@@ -45,23 +48,71 @@ export interface LsoApiError {
   error: string;
 }
 
+interface TokenResponse {
+  ok: boolean;
+  data: {
+    token: string;
+    expiresAt: string;
+  };
+}
+
 /**
  * Cliente para la API del Directorio LSO
  */
 export class LsoDirectoryApiClient {
   private baseUrl: string;
-  private apiKey: string;
+  private landingApiKey: string;
+  private jwtToken: string | null = null;
+  private tokenExpiresAt: Date | null = null;
 
   constructor() {
     this.baseUrl = LSO_API_BASE_URL;
-    this.apiKey = LSO_API_KEY;
+    this.landingApiKey = LANDING_PAGE_API_KEY;
   }
 
   /**
    * Verifica si la API está configurada correctamente
    */
   isConfigured(): boolean {
-    return !!this.apiKey && this.apiKey.length > 0;
+    return !!this.landingApiKey && this.landingApiKey.length > 0;
+  }
+
+  /**
+   * Obtiene un JWT token para autenticación
+   */
+  private async getJwtToken(): Promise<string> {
+    if (this.jwtToken && this.tokenExpiresAt && new Date() < this.tokenExpiresAt) {
+      return this.jwtToken;
+    }
+
+    console.log('[LSO-API] Requesting new JWT token...');
+
+    const response = await fetch(`${this.baseUrl}/api/external/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.landingApiKey}`,
+      },
+      body: JSON.stringify({
+        clientId: 'sst-colombia',
+        permissions: ['read'],
+        expiresIn: '30d',
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!data.ok) {
+      console.error('[LSO-API] Failed to get JWT token:', data.error);
+      throw new Error(data.error || 'Error al obtener token JWT del Directorio LSO');
+    }
+
+    const tokenData = data as TokenResponse;
+    this.jwtToken = tokenData.data.token;
+    this.tokenExpiresAt = new Date(tokenData.data.expiresAt);
+
+    console.log('[LSO-API] JWT token obtained, expires at:', this.tokenExpiresAt.toISOString());
+    return this.jwtToken;
   }
 
   /**
@@ -69,16 +120,17 @@ export class LsoDirectoryApiClient {
    */
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     if (!this.isConfigured()) {
-      throw new Error('LSO_API_KEY no está configurada. Configura la variable de entorno.');
+      throw new Error('LANDING_PAGE_API_KEY no está configurada. Configura la variable de entorno.');
     }
 
+    const token = await this.getJwtToken();
     const url = `${this.baseUrl}${endpoint}`;
     
     const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`,
+        'Authorization': `Bearer ${token}`,
         ...options.headers,
       },
     });
