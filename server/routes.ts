@@ -27,6 +27,7 @@ import { registerBillingRoutes } from "./routes/billing";
 import { registerStripeRoutes } from "./routes/stripe";
 import { registerLicensedProfessionalsRoutes } from "./routes/licensed-professionals";
 import { registerLsoDirectoryExternalRoutes } from "./routes/lso-directory-external";
+import lsoDirectoryJwtRoutes from "./routes/lso-directory-jwt";
 import { legalDocsPdfService } from "./services/legal-docs-pdf";
 import { registerInduccionVirtualRoutes } from "./induccion-virtual-routes";
 import { checkWorkerLimit, checkUserLimit } from "./middleware/subscription-limits";
@@ -42027,6 +42028,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // LSO Directory External API routes
   registerLsoDirectoryExternalRoutes(app);
+  // LSO Directory JWT API routes (new authentication method)
+  app.use("/api/lso-directory-jwt", lsoDirectoryJwtRoutes);
 
   registerBillingRoutes(app);
 
