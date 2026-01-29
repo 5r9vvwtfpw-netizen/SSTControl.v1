@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Phone, Mail, Award, Send, GraduationCap, Building2, CheckCircle, Loader2, Users } from "lucide-react";
-import { useState } from "react";
+import { Search, Phone, Mail, Award, Send, GraduationCap, Building2, CheckCircle, Loader2, Users, ExternalLink, MapPin, Globe, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -21,6 +21,21 @@ interface LicensedProfessional {
   sstPhone: string | null;
   email: string | null;
   alreadyAssigned: boolean;
+  source?: 'internal' | 'external';
+  city?: string | null;
+}
+
+interface ExternalLsoRegistration {
+  id: number;
+  fullName: string;
+  email: string;
+  phone: string;
+  city: string;
+  status: string;
+  licenseNumber?: string;
+  licenseIssuer?: string;
+  licenseExpiry?: string;
+  professionType?: string;
 }
 
 const SST_PROFESSION_LABELS: Record<string, string> = {
@@ -51,13 +66,42 @@ const profesionTypes = [
 export default function DirectorioProfesionales() {
   const { toast } = useToast();
   const [busqueda, setBusqueda] = useState("");
+  const [debouncedBusqueda, setDebouncedBusqueda] = useState("");
   const [especialidadFiltro, setEspecialidadFiltro] = useState("all");
   const [selectedProfessional, setSelectedProfessional] = useState<LicensedProfessional | null>(null);
   const [requestMessage, setRequestMessage] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedExternalLso, setSelectedExternalLso] = useState<ExternalLsoRegistration | null>(null);
 
+  // Debounce search for external directory
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedBusqueda(busqueda);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [busqueda]);
+
+  // Query para profesionales internos
   const { data: professionals, isLoading, error } = useQuery<LicensedProfessional[]>({
     queryKey: ["/api/directory/licensed-professionals"],
+  });
+
+  // Query para verificar estado de integración externa
+  const { data: externalStatus } = useQuery<{ ok: boolean; configured: boolean; connected?: boolean }>({
+    queryKey: ["/api/lso-directory-jwt/status"],
+  });
+
+  // Query para directorio externo (solo si está configurado)
+  const { data: externalData, isLoading: externalLoading, refetch: refetchExternal } = useQuery<{ ok: boolean; data: ExternalLsoRegistration[]; total: number }>({
+    queryKey: ["/api/lso-directory-jwt/search", debouncedBusqueda],
+    enabled: externalStatus?.configured === true,
+  });
+
+  // Query para asignación actual
+  const { data: currentAssignment } = useQuery<{ ok: boolean; data: any | null }>({
+    queryKey: ["/api/lso-directory-jwt/current-assignment"],
+    enabled: externalStatus?.configured === true,
   });
 
   const requestMutation = useMutation({
@@ -84,16 +128,81 @@ export default function DirectorioProfesionales() {
     },
   });
 
-  const profesionalesFiltrados = (professionals || []).filter((prof) => {
+  // Mutation para asignar LSO externo
+  const assignExternalMutation = useMutation({
+    mutationFn: async (lso: ExternalLsoRegistration) => {
+      return apiRequest("POST", "/api/lso-directory-jwt/assign", {
+        externalLsoId: lso.id,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "LSO Asignado",
+        description: "El profesional ha sido asignado exitosamente a su empresa.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/lso-directory-jwt/current-assignment"] });
+      setSelectedExternalLso(null);
+      setAssignDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo asignar el LSO",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Combinar profesionales internos y externos
+  const externalProfessionals: LicensedProfessional[] = (externalData?.data || []).map((ext) => ({
+    id: `ext-${ext.id}`,
+    fullName: ext.fullName,
+    sstProfessionType: ext.professionType || null,
+    sstLicenseNumber: ext.licenseNumber || null,
+    sstLicenseIssuer: ext.licenseIssuer || null,
+    sstLicenseStatus: 'vigente',
+    sstPhone: ext.phone || null,
+    email: ext.email || null,
+    alreadyAssigned: currentAssignment?.data?.externalLsoId === String(ext.id),
+    source: 'external' as const,
+    city: ext.city || null,
+  }));
+
+  const internalProfessionals: LicensedProfessional[] = (professionals || []).map((p) => ({
+    ...p,
+    source: 'internal' as const,
+  }));
+
+  // Combinar ambas listas
+  const allProfessionals = [...internalProfessionals, ...externalProfessionals];
+
+  const profesionalesFiltrados = allProfessionals.filter((prof) => {
     const coincideBusqueda = 
       prof.fullName?.toLowerCase().includes(busqueda.toLowerCase()) ||
       prof.sstLicenseNumber?.toLowerCase().includes(busqueda.toLowerCase()) ||
-      prof.sstLicenseIssuer?.toLowerCase().includes(busqueda.toLowerCase());
+      prof.sstLicenseIssuer?.toLowerCase().includes(busqueda.toLowerCase()) ||
+      prof.city?.toLowerCase().includes(busqueda.toLowerCase());
     
     const coincideEspecialidad = especialidadFiltro === "all" || prof.sstProfessionType === especialidadFiltro;
     
     return coincideBusqueda && coincideEspecialidad;
   });
+
+  const handleSelectExternalLso = (prof: LicensedProfessional) => {
+    // Encontrar el profesional externo original
+    const extId = parseInt(prof.id.replace('ext-', ''));
+    const extLso = externalData?.data?.find((e) => e.id === extId);
+    if (extLso) {
+      setSelectedExternalLso(extLso);
+      setAssignDialogOpen(true);
+    }
+  };
+
+  const handleConfirmAssign = () => {
+    if (selectedExternalLso) {
+      assignExternalMutation.mutate(selectedExternalLso);
+    }
+  };
 
   const handleRequestContact = (professional: LicensedProfessional) => {
     setSelectedProfessional(professional);
@@ -215,12 +324,25 @@ export default function DirectorioProfesionales() {
                     {SST_PROFESSION_LABELS[profesional.sstProfessionType || ""] || profesional.sstProfessionType || "Sin especialidad"}
                   </CardDescription>
                 </div>
-                {profesional.alreadyAssigned && (
-                  <Badge variant="default" className="shrink-0 bg-primary">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Asignado
-                  </Badge>
-                )}
+                <div className="flex flex-col items-end gap-1">
+                  {profesional.source === 'external' ? (
+                    <Badge variant="outline" className="shrink-0 text-blue-600 border-blue-300">
+                      <Globe className="h-3 w-3 mr-1" />
+                      Externo
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="shrink-0 text-green-600 border-green-300">
+                      <Building2 className="h-3 w-3 mr-1" />
+                      Interno
+                    </Badge>
+                  )}
+                  {profesional.alreadyAssigned && (
+                    <Badge variant="default" className="shrink-0 bg-primary">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Asignado
+                    </Badge>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -233,6 +355,12 @@ export default function DirectorioProfesionales() {
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Building2 className="h-4 w-4" />
                     <span className="truncate">{profesional.sstLicenseIssuer}</span>
+                  </div>
+                )}
+                {profesional.city && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-4 w-4" />
+                    <span>{profesional.city}</span>
                   </div>
                 )}
                 {profesional.sstPhone && (
@@ -253,6 +381,17 @@ export default function DirectorioProfesionales() {
                 <Button variant="outline" className="w-full" size="sm" disabled>
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Ya asignado a tu empresa
+                </Button>
+              ) : profesional.source === 'external' ? (
+                <Button 
+                  variant="default" 
+                  className="w-full" 
+                  size="sm"
+                  onClick={() => handleSelectExternalLso(profesional)}
+                  data-testid={`btn-asignar-${profesional.id}`}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Asignar a mi Empresa
                 </Button>
               ) : (
                 <Button 
@@ -332,6 +471,61 @@ export default function DirectorioProfesionales() {
                   <Send className="h-4 w-4 mr-2" />
                   Enviar Solicitud
                 </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de confirmación para asignar LSO externo */}
+      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Asignación de LSO</DialogTitle>
+            <DialogDescription>
+              ¿Está seguro de que desea asignar este profesional como su Licenciado en SST?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedExternalLso && (
+            <div className="space-y-3 py-4">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{selectedExternalLso.fullName}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span>{selectedExternalLso.email}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <span>{selectedExternalLso.city}</span>
+              </div>
+              {selectedExternalLso.licenseNumber && (
+                <div className="flex items-center gap-2">
+                  <Award className="h-4 w-4 text-muted-foreground" />
+                  <span>Licencia: {selectedExternalLso.licenseNumber}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleConfirmAssign}
+              disabled={assignExternalMutation.isPending}
+              data-testid="button-confirm-assign"
+            >
+              {assignExternalMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Asignando...
+                </>
+              ) : (
+                "Confirmar Asignación"
               )}
             </Button>
           </DialogFooter>
