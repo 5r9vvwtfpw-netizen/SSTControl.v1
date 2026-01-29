@@ -14,7 +14,7 @@
 
 import logger from "../lib/logger";
 
-const LSO_API_BASE_URL = process.env.LSO_API_BASE_URL || 'https://lso.sst-colombia.com.co';
+const LSO_API_BASE_URL = process.env.LSO_API_BASE_URL || 'https://sst-colombia.com.co';
 // Usar LANDING_PAGE_API_KEY para la integración externa
 const LSO_API_KEY = process.env.LANDING_PAGE_API_KEY || '';
 const CLIENT_ID = 'sst-colombia';
