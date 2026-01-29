@@ -14,7 +14,7 @@
 
 import logger from "../lib/logger";
 
-const LSO_API_BASE_URL = process.env.LSO_API_BASE_URL || 'https://lso-directory-plugin.replit.app';
+const LSO_API_BASE_URL = process.env.LSO_API_BASE_URL || 'https://lso.sst-colombia.com.co';
 // Usar LANDING_PAGE_API_KEY para autenticación con Bearer token
 const LSO_API_KEY = process.env.LANDING_PAGE_API_KEY || '';
 const CLIENT_ID = 'sst-colombia';
@@ -194,7 +194,12 @@ class LsoDirectoryJwtClient {
   }
 
   /**
-   * Busca profesionales LSO en el directorio público
+   * Busca profesionales LSO en el directorio público EXTERNO
+   * IMPORTANTE: Esta función hace un fetch HTTP al servidor externo
+   * https://lso-directory-plugin.replit.app, NO a la base de datos local
+   * 
+   * Usa directamente el API key como Bearer token (no requiere flujo JWT)
+   * 
    * @param query Texto de búsqueda (nombre, licencia, ciudad)
    * @param specialty Filtro por especialidad (opcional)
    * @param limit Límite de resultados (default: 50)
@@ -203,30 +208,79 @@ class LsoDirectoryJwtClient {
   async searchLso(options: {
     query?: string;
     specialty?: string;
+    department?: string;
+    city?: string;
+    professionType?: string;
     limit?: number;
     offset?: number;
   } = {}): Promise<LsoSearchResponse> {
     if (!this.isConfigured()) {
-      logger.warn({}, '[LSO-JWT] Cliente no configurado, retornando lista vacía');
+      logger.warn({}, '[LSO-JWT] Cliente no configurado (LANDING_PAGE_API_KEY vacía), retornando lista vacía');
       return { ok: true, data: [], total: 0, limit: 50, offset: 0 };
     }
 
     const params = new URLSearchParams();
     
+    // Parámetros de búsqueda según la API externa
     if (options.query) {
-      params.append('q', options.query);
+      params.append('name', options.query);
     }
-    if (options.specialty) {
-      params.append('specialty', options.specialty);
+    if (options.department) {
+      params.append('department', options.department);
+    }
+    if (options.city) {
+      params.append('city', options.city);
+    }
+    if (options.professionType) {
+      params.append('professionType', options.professionType);
     }
     params.append('limit', (options.limit || 50).toString());
-    params.append('offset', (options.offset || 0).toString());
 
-    const endpoint = `/api/public/search?${params.toString()}`;
+    const externalUrl = `${this.baseUrl}/api/public/search?${params.toString()}`;
     
-    logger.info({ query: options.query, specialty: options.specialty }, '[LSO-JWT] Buscando profesionales LSO');
+    logger.info({ 
+      externalUrl,
+      query: options.query, 
+      department: options.department,
+      city: options.city
+    }, '[LSO-JWT] Buscando profesionales LSO en directorio EXTERNO');
 
-    return this.authenticatedRequest<LsoSearchResponse>(endpoint);
+    try {
+      // Usar directamente el API key como Bearer token para búsquedas públicas
+      const response = await fetch(externalUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      logger.info({ 
+        status: response.status,
+        statusText: response.statusText 
+      }, '[LSO-JWT] Respuesta del servidor externo');
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.error({ 
+          status: response.status, 
+          error: errorText,
+          url: externalUrl
+        }, '[LSO-JWT] Error en búsqueda externa');
+        return { ok: false, data: [], total: 0, limit: 50, offset: 0 };
+      }
+
+      const result = await response.json();
+      logger.info({ 
+        ok: result.ok,
+        total: result.data?.length || 0
+      }, '[LSO-JWT] Búsqueda externa exitosa');
+
+      return result as LsoSearchResponse;
+    } catch (error) {
+      logger.error({ error, url: externalUrl }, '[LSO-JWT] Error de conexión al directorio externo');
+      return { ok: false, data: [], total: 0, limit: 50, offset: 0 };
+    }
   }
 
   /**
