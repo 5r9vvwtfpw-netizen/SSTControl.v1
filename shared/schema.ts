@@ -133,6 +133,16 @@ export const licensedProfessionalAssignments = pgTable("licensed_professional_as
   assignedAt: timestamp("assigned_at").notNull().default(sql`now()`),
   assignedBy: varchar("assigned_by").references(() => users.id), // Quien hizo la asignación
   isActive: boolean("is_active").notNull().default(true),
+  // Campos para LSO externo (del directorio lso.sst-colombia.com.co)
+  externalLsoId: varchar("external_lso_id"), // ID en el directorio externo
+  externalLsoName: varchar("external_lso_name"), // Nombre completo del LSO
+  externalLsoEmail: varchar("external_lso_email"), // Email del LSO
+  externalLsoPhone: varchar("external_lso_phone"), // Teléfono del LSO
+  externalLsoCity: varchar("external_lso_city"), // Ciudad del LSO
+  externalLsoLicenseNumber: varchar("external_lso_license_number"), // Número de licencia SST
+  externalLsoLicenseIssuer: varchar("external_lso_license_issuer"), // Entidad emisora de licencia
+  externalLsoLicenseExpiry: timestamp("external_lso_license_expiry"), // Fecha de vencimiento licencia
+  externalLsoSignatureUrl: varchar("external_lso_signature_url"), // URL de la firma digitalizada
 });
 
 export const insertLicensedProfessionalAssignmentSchema = createInsertSchema(licensedProfessionalAssignments).omit({
