@@ -86,6 +86,8 @@ export class LsoDirectoryApiClient {
     }
 
     console.log('[LSO-API] Requesting new JWT token...');
+    console.log('[LSO-API] API Key configured:', this.landingApiKey ? `Yes (${this.landingApiKey.substring(0, 8)}...)` : 'No');
+    console.log('[LSO-API] Token endpoint:', `${this.baseUrl}/api/external/token`);
 
     const response = await fetch(`${this.baseUrl}/api/external/token`, {
       method: 'POST',
