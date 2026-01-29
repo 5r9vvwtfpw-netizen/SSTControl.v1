@@ -1080,6 +1080,30 @@ export default function ResponsibleDesignationPage() {
         </CardContent>
       </Card>
 
+      <Card className="border-primary/20">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <UserCheck className="h-5 w-5 text-primary" />
+            Profesional LSO Asignado
+          </CardTitle>
+          <CardDescription>
+            Licenciado en Seguridad y Salud en el Trabajo para firmar documentos
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Puede asignar un profesional LSO del directorio externo para que firme las investigaciones de accidentes
+            y otros documentos que requieren la validación de un licenciado en SST.
+          </p>
+          <Link href="/asignar-lso-externo">
+            <Button variant="outline" className="gap-2" data-testid="button-asignar-lso">
+              <UserCheck className="h-4 w-4" />
+              Asignar Profesional LSO
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+
       <Card className="bg-muted/50">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
