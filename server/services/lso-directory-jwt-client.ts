@@ -15,7 +15,8 @@
 import logger from "../lib/logger";
 
 const LSO_API_BASE_URL = process.env.LSO_API_BASE_URL || 'https://lso.sst-colombia.com.co';
-const LANDING_PAGE_API_KEY = process.env.LANDING_PAGE_API_KEY || '';
+// Usar JWT_SECRET como API key para la integración externa (según solicitud del usuario)
+const LSO_API_KEY = process.env.JWT_SECRET || process.env.LANDING_PAGE_API_KEY || '';
 const CLIENT_ID = 'sst-colombia';
 
 export interface LsoPublicProfile {
@@ -67,7 +68,7 @@ class LsoDirectoryJwtClient {
   
   constructor() {
     this.baseUrl = LSO_API_BASE_URL;
-    this.apiKey = LANDING_PAGE_API_KEY;
+    this.apiKey = LSO_API_KEY;
   }
 
   /**
