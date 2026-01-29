@@ -261,6 +261,7 @@ export default function ResponsibleDesignationPage() {
       responsibilities: [],
       signatureUrl: "",
       status: "activo",
+      licenciaSstTitular: "",
       licenciaSstNumero: "",
       licenciaSstVigencia: undefined,
       curso50Horas: false,
@@ -359,6 +360,7 @@ export default function ResponsibleDesignationPage() {
       responsibilities: designation.responsibilities,
       signatureUrl: designation.signatureUrl || "",
       status: designation.status,
+      licenciaSstTitular: designation.licenciaSstTitular || "",
       licenciaSstNumero: designation.licenciaSstNumero || "",
       licenciaSstVigencia: designation.licenciaSstVigencia || undefined,
       curso50Horas: designation.curso50Horas || false,
@@ -384,6 +386,7 @@ export default function ResponsibleDesignationPage() {
       responsibilities: [],
       signatureUrl: "",
       status: "activo",
+      licenciaSstTitular: "",
       licenciaSstNumero: "",
       licenciaSstVigencia: undefined,
       curso50Horas: false,
@@ -545,6 +548,9 @@ export default function ResponsibleDesignationPage() {
                                 const previousDesignation = designations.find(d => d.workerId === value);
                                 if (previousDesignation) {
                                   // Auto-rellenar información de Licencia SST del trabajador
+                                  if (previousDesignation.licenciaSstTitular) {
+                                    form.setValue("licenciaSstTitular", previousDesignation.licenciaSstTitular);
+                                  }
                                   if (previousDesignation.licenciaSstNumero) {
                                     form.setValue("licenciaSstNumero", previousDesignation.licenciaSstNumero);
                                   }
@@ -752,6 +758,28 @@ export default function ResponsibleDesignationPage() {
                       <h4 className="font-medium text-sm text-muted-foreground">
                         Información de Licencia SST (Resolución 0312/2019)
                       </h4>
+                      
+                      <FormField
+                        control={form.control}
+                        name="licenciaSstTitular"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nombre del Titular de la Licencia</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Nombre completo del profesional licenciado" 
+                                {...field} 
+                                value={field.value || ""}
+                                data-testid="input-licencia-sst-titular" 
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Nombre del profesional que posee la licencia SST
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField

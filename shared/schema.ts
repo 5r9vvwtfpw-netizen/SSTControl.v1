@@ -1285,6 +1285,7 @@ export const responsibleDesignations = pgTable("responsible_designations", {
   signatureUrl: text("signature_url"), // Documento de firma escaneado
   status: designationStatusEnum("status").notNull().default("activo"),
   // Campos adicionales para cumplimiento Resolución 0312/2019 - Estándar 1.1.1
+  licenciaSstTitular: text("licencia_sst_titular"), // Nombre del titular de la licencia SST
   licenciaSstNumero: text("licencia_sst_numero"), // Número de licencia SST
   licenciaSstVigencia: date("licencia_sst_vigencia"), // Fecha de vigencia de la licencia SST
   curso50Horas: boolean("curso_50_horas").default(false), // ¿Tiene certificado del curso de 50 horas?
