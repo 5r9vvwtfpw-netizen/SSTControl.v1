@@ -8,6 +8,7 @@ import type { Request } from "express";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
+import { lsoDirectoryApi } from "../services/lso-directory-api";
 
 // Multer configuration for LSO signature uploads
 const lsoSignatureStorage = multer.diskStorage({
@@ -633,6 +634,7 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
 
   // GET /api/directory/licensed-professionals - Public directory of available licensed professionals
   // For clients (admins) to view and invite LSOs to their company
+  // NOW USES EXTERNAL LSO DIRECTORY API (lso.sst-colombia.com.co)
   app.get("/api/directory/licensed-professionals", requireAuth, async (req, res) => {
     try {
       const user = req.user!;
@@ -649,44 +651,48 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         return res.status(403).json({ message: "Debes estar asociado a una empresa para ver el directorio" });
       }
 
-      // Get all LSOs with valid license status (vigente)
-      console.log('[GET /api/directory/licensed-professionals] Fetching LSOs with vigente license...');
-      const professionals = await db.select({
-        id: schema.users.id,
-        fullName: schema.users.fullName,
-        sstProfessionType: schema.users.sstProfessionType,
-        sstLicenseNumber: schema.users.sstLicenseNumber,
-        sstLicenseIssuer: schema.users.sstLicenseIssuer,
-        sstLicenseStatus: schema.users.sstLicenseStatus,
-        sstPhone: schema.users.sstPhone,
-        email: schema.users.email,
-      })
-      .from(schema.users)
-      .where(and(
-        eq(schema.users.role, 'lso'),
-        eq(schema.users.sstLicenseStatus, 'vigente')
-      ));
+      // Check if external API is configured
+      if (!lsoDirectoryApi.isConfigured()) {
+        console.log('[GET /api/directory/licensed-professionals] LSO API not configured, returning empty array');
+        return res.json([]);
+      }
 
-      console.log('[GET /api/directory/licensed-professionals] Found', professionals.length, 'LSOs with vigente license');
+      // Fetch all confirmed LSOs from the external directory API
+      console.log('[GET /api/directory/licensed-professionals] Fetching LSOs from external directory API...');
+      const externalLsos = await lsoDirectoryApi.getAllConfirmedRegistrations();
+      console.log('[GET /api/directory/licensed-professionals] Found', externalLsos.length, 'confirmed LSOs from external API');
 
-      // If user has a company, check which LSOs are already assigned
-      let assignedLsoIds: string[] = [];
+      // If user has a company, check which external LSOs are already assigned
+      let assignedExternalIds: string[] = [];
       if (user.companyId) {
         const assignments = await db.select({
-          userId: schema.licensedProfessionalAssignments.userId,
+          externalLsoId: schema.licensedProfessionalAssignments.externalLsoId,
         })
         .from(schema.licensedProfessionalAssignments)
         .where(and(
           eq(schema.licensedProfessionalAssignments.companyId, user.companyId),
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
-        assignedLsoIds = assignments.map(a => a.userId);
+        assignedExternalIds = assignments
+          .filter(a => a.externalLsoId !== null)
+          .map(a => a.externalLsoId as string);
       }
 
-      // Add flag indicating if already assigned to user's company
-      const professionalsWithStatus = professionals.map(prof => ({
-        ...prof,
-        alreadyAssigned: assignedLsoIds.includes(prof.id),
+      // Transform external LSO data to match the frontend interface
+      const professionalsWithStatus = externalLsos.map(lso => ({
+        id: `external-${lso.id}`, // Prefix to distinguish from internal users
+        externalId: lso.id,
+        fullName: lso.fullName,
+        sstProfessionType: lso.professionType || 'profesional_sst',
+        sstLicenseNumber: lso.licenseNumber || null,
+        sstLicenseIssuer: lso.licenseIssuer || null,
+        sstLicenseStatus: 'vigente', // All confirmed LSOs have valid license
+        sstPhone: lso.phone,
+        email: lso.email,
+        city: lso.city,
+        licenseExpiry: lso.licenseExpiry || null,
+        alreadyAssigned: assignedExternalIds.includes(String(lso.id)),
+        isExternal: true, // Flag to indicate this is from external directory
       }));
 
       res.json(professionalsWithStatus);
