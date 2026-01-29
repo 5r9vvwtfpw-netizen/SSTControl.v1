@@ -10,12 +10,14 @@
  * - Sincronizar datos para asignación a empresas
  * 
  * Flujo de autenticación:
- * 1. Usar LANDING_PAGE_API_KEY para obtener un JWT token
- * 2. Usar ese JWT token para todas las consultas subsiguientes
+ * - Genera JWT token localmente usando el JWT_SECRET compartido
+ * - Usa ese token para todas las consultas a la API
  */
 
+import jwt from 'jsonwebtoken';
+
 const LSO_API_BASE_URL = process.env.LSO_API_BASE_URL || 'https://lso.sst-colombia.com.co';
-const LANDING_PAGE_API_KEY = process.env.LANDING_PAGE_API_KEY || '';
+const LSO_JWT_SECRET = process.env.LSO_JWT_SECRET || '';
 
 export interface LsoRegistration {
   id: number;
@@ -48,72 +50,50 @@ export interface LsoApiError {
   error: string;
 }
 
-interface TokenResponse {
-  ok: boolean;
-  data: {
-    token: string;
-    expiresAt: string;
-  };
-}
-
 /**
  * Cliente para la API del Directorio LSO
  */
 export class LsoDirectoryApiClient {
   private baseUrl: string;
-  private landingApiKey: string;
+  private jwtSecret: string;
   private jwtToken: string | null = null;
   private tokenExpiresAt: Date | null = null;
 
   constructor() {
     this.baseUrl = LSO_API_BASE_URL;
-    this.landingApiKey = LANDING_PAGE_API_KEY;
+    this.jwtSecret = LSO_JWT_SECRET;
   }
 
   /**
    * Verifica si la API está configurada correctamente
    */
   isConfigured(): boolean {
-    return !!this.landingApiKey && this.landingApiKey.length > 0;
+    return !!this.jwtSecret && this.jwtSecret.length > 0;
   }
 
   /**
-   * Obtiene un JWT token para autenticación
+   * Genera un JWT token localmente usando el secreto compartido
    */
-  private async getJwtToken(): Promise<string> {
+  private generateJwtToken(): string {
     if (this.jwtToken && this.tokenExpiresAt && new Date() < this.tokenExpiresAt) {
       return this.jwtToken;
     }
 
-    console.log('[LSO-API] Requesting new JWT token...');
-    console.log('[LSO-API] API Key configured:', this.landingApiKey ? `Yes (${this.landingApiKey.substring(0, 8)}...)` : 'No');
-    console.log('[LSO-API] Token endpoint:', `${this.baseUrl}/api/external/token`);
+    console.log('[LSO-API] Generating JWT token locally...');
 
-    const response = await fetch(`${this.baseUrl}/api/external/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.landingApiKey}`,
-      },
-      body: JSON.stringify({
-        clientId: 'sst-colombia',
-        permissions: ['read'],
-        expiresIn: '30d',
-      }),
-    });
+    const expiresIn = '30d';
+    const payload = {
+      clientId: 'sst-colombia',
+      permissions: ['read'],
+      iat: Math.floor(Date.now() / 1000),
+    };
 
-    const data = await response.json();
+    this.jwtToken = jwt.sign(payload, this.jwtSecret, { expiresIn });
+    
+    // Calculate expiration date (30 days from now)
+    this.tokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-    if (!data.ok) {
-      console.error('[LSO-API] Failed to get JWT token:', data.error);
-      throw new Error(data.error || 'Error al obtener token JWT del Directorio LSO');
-    }
-
-    const tokenData = data as TokenResponse;
-    this.jwtToken = tokenData.data.token;
-    this.tokenExpiresAt = new Date(tokenData.data.expiresAt);
-
-    console.log('[LSO-API] JWT token obtained, expires at:', this.tokenExpiresAt.toISOString());
+    console.log('[LSO-API] JWT token generated, expires at:', this.tokenExpiresAt.toISOString());
     return this.jwtToken;
   }
 
@@ -122,11 +102,13 @@ export class LsoDirectoryApiClient {
    */
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     if (!this.isConfigured()) {
-      throw new Error('LANDING_PAGE_API_KEY no está configurada. Configura la variable de entorno.');
+      throw new Error('LSO_JWT_SECRET no está configurado. Configura la variable de entorno.');
     }
 
-    const token = await this.getJwtToken();
+    const token = this.generateJwtToken()!;
     const url = `${this.baseUrl}${endpoint}`;
+    
+    console.log('[LSO-API] Making request to:', url);
     
     const response = await fetch(url, {
       ...options,
@@ -141,6 +123,7 @@ export class LsoDirectoryApiClient {
 
     if (!data.ok) {
       const error = data as LsoApiError;
+      console.error('[LSO-API] Request failed:', error.error);
       throw new Error(error.error || 'Error en la API del Directorio LSO');
     }
 
