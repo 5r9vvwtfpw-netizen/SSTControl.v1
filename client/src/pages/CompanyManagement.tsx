@@ -500,7 +500,7 @@ export default function CompanyManagement() {
                     size="sm"
                     className="bg-warning text-warning-foreground hover:bg-warning/90 font-semibold"
                     onClick={() => {
-                      window.open("https://lso.sst-colombia.com.co/buscador", "_blank");
+                      window.open("https://lso.sst-colombia.com.co", "_blank");
                     }}
                   >
                     Encontrar Profesionales Certificados
