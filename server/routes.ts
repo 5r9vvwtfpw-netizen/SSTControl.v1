@@ -42095,6 +42095,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   const { registerInformesEjecutivosRoutes } = await import("./routes-informes-ejecutivos");
   registerInformesEjecutivosRoutes(app);
 
+  // ========== LSO DIRECTORY API ROUTES ==========
+  // Integración con directorio externo de profesionales LSO
+  const { registerLsoDirectoryRoutes } = await import("./routes-lso-directory");
+  registerLsoDirectoryRoutes(app);
+
   // ========== GLOBAL ERROR HANDLER ==========
   // Middleware global para interceptar errores no manejados y evitar exponer mensajes técnicos
   // Especialmente importante para errores de SSL/certificados en producción
