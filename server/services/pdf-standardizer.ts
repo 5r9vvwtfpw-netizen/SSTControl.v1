@@ -128,27 +128,39 @@ export async function getSignersForCompany(companyId: string, requiresLSO: boole
   
   if (requiresLSO) {
     const [assignment] = await db
-      .select({
-        userId: licensedProfessionalAssignments.userId,
-      })
+      .select()
       .from(licensedProfessionalAssignments)
-      .where(eq(licensedProfessionalAssignments.companyId, companyId))
+      .where(and(
+        eq(licensedProfessionalAssignments.companyId, companyId),
+        eq(licensedProfessionalAssignments.isActive, true)
+      ))
       .limit(1);
 
     if (assignment) {
-      const [lsoUser] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, assignment.userId))
-        .limit(1);
-
-      if (lsoUser && lsoUser.sstLicenseNumber) {
+      // Verificar si es LSO externo (del directorio lso.sst-colombia.com.co)
+      if (assignment.externalLsoId && assignment.externalLsoName) {
         lsoData = {
-          name: lsoUser.fullName || lsoUser.username,
-          licenseNumber: lsoUser.sstLicenseNumber,
-          licenseIssuer: lsoUser.sstLicenseIssuer || 'Secretaría de Salud',
-          signatureUrl: lsoUser.sstSignatureUrl || undefined,
+          name: assignment.externalLsoName,
+          licenseNumber: assignment.externalLsoLicenseNumber || 'Pendiente',
+          licenseIssuer: assignment.externalLsoLicenseIssuer || 'Secretaría de Salud',
+          signatureUrl: assignment.externalLsoSignatureUrl || undefined,
         };
+      } else {
+        // LSO interno (usuario en el sistema)
+        const [lsoUser] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, assignment.userId))
+          .limit(1);
+
+        if (lsoUser && lsoUser.sstLicenseNumber) {
+          lsoData = {
+            name: lsoUser.fullName || lsoUser.username,
+            licenseNumber: lsoUser.sstLicenseNumber,
+            licenseIssuer: lsoUser.sstLicenseIssuer || 'Secretaría de Salud',
+            signatureUrl: lsoUser.sstSignatureUrl || undefined,
+          };
+        }
       }
     }
   }

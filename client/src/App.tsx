@@ -56,6 +56,7 @@ import DetalleInvestigacionLSO from "@/pages/DetalleInvestigacionLSO";
 import PerfilesCargo from "@/pages/PerfilesCargo";
 import ExamenesMedicos from "@/pages/ExamenesMedicos";
 import ResponsibleDesignation from "@/pages/ResponsibleDesignation";
+import AsignarLsoExterno from "@/pages/AsignarLsoExterno";
 import ResourceAllocation from "@/pages/ResourceAllocation";
 import AfiliacionesSsss from "@/pages/AfiliacionesSsss";
 import TrabajadoresAltoRiesgo from "@/pages/TrabajadoresAltoRiesgo";
@@ -181,6 +182,7 @@ function Router() {
       <ProtectedRoute path="/perfiles-cargo" component={PerfilesCargo} />
       <ProtectedRoute path="/asignacion-recursos" component={ResourceAllocation} />
       <ProtectedRoute path="/designacion-responsable" component={ResponsibleDesignation} />
+      <ProtectedRoute path="/asignar-lso-externo" component={AsignarLsoExterno} />
       <ProtectedRoute path="/examenes-medicos" component={ExamenesMedicos} />
       <ProtectedRoute path="/afiliaciones-ssss" component={AfiliacionesSsss} />
       <ProtectedRoute path="/trabajadores-alto-riesgo" component={TrabajadoresAltoRiesgo} />
