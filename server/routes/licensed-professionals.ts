@@ -821,6 +821,52 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     }
   });
 
+  // PATCH /api/portal-licenciado/license - Update LSO license data
+  app.patch("/api/portal-licenciado/license", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      
+      if (user.role !== 'lso') {
+        return res.status(403).json({ message: "Solo los profesionales licenciados pueden actualizar su licencia" });
+      }
+      
+      const { 
+        fullName,
+        sstProfessionType,
+        sstLicenseNumber,
+        sstLicenseIssuer,
+        sstLicenseIssuedAt,
+        sstLicenseExpiresAt,
+        sstPhone
+      } = req.body;
+      
+      const updateData: any = {};
+      
+      if (fullName !== undefined) updateData.fullName = fullName;
+      if (sstProfessionType !== undefined) updateData.sstProfessionType = sstProfessionType;
+      if (sstLicenseNumber !== undefined) updateData.sstLicenseNumber = sstLicenseNumber;
+      if (sstLicenseIssuer !== undefined) updateData.sstLicenseIssuer = sstLicenseIssuer;
+      if (sstLicenseIssuedAt !== undefined) updateData.sstLicenseIssuedAt = sstLicenseIssuedAt ? new Date(sstLicenseIssuedAt) : null;
+      if (sstLicenseExpiresAt !== undefined) updateData.sstLicenseExpiresAt = sstLicenseExpiresAt ? new Date(sstLicenseExpiresAt) : null;
+      if (sstPhone !== undefined) updateData.sstPhone = sstPhone;
+      
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No hay datos para actualizar" });
+      }
+      
+      await db.update(schema.users)
+        .set(updateData)
+        .where(eq(schema.users.id, user.id));
+      
+      console.log(`[PATCH /api/portal-licenciado/license] LSO ${user.id} updated license data`);
+      
+      res.json({ message: "Datos de licencia actualizados exitosamente" });
+    } catch (error: any) {
+      console.error('[PATCH /api/portal-licenciado/license] Error:', error.message);
+      res.status(500).json({ message: "Error al actualizar datos de licencia", error: error.message });
+    }
+  });
+
   // POST /api/portal-licenciado/firma - Upload LSO signature
   app.post("/api/portal-licenciado/firma", requireAuth, uploadLsoSignature.single('signature'), async (req, res) => {
     try {

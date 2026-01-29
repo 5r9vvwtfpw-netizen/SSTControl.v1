@@ -6,6 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -37,7 +46,8 @@ import {
   CheckCircle2,
   XCircle,
   Upload,
-  Loader2
+  Loader2,
+  Pencil
 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -631,11 +641,7 @@ function LicenciaTab() {
           </div>
           
           <div className="pt-4 border-t">
-            <Link href="/mi-cuenta">
-              <Button variant="outline" data-testid="button-edit-license">
-                Actualizar Datos de Licencia
-              </Button>
-            </Link>
+            <LicenseEditDialog />
           </div>
         </CardContent>
       </Card>
@@ -706,6 +712,175 @@ function SlaStatusBadge({ status }: { status: string }) {
     <Badge className={config.className}>
       {config.label}
     </Badge>
+  );
+}
+
+function LicenseEditDialog() {
+  const { user } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
+  
+  const [formData, setFormData] = useState({
+    fullName: user?.fullName || '',
+    sstProfessionType: user?.sstProfessionType || '',
+    sstLicenseNumber: user?.sstLicenseNumber || '',
+    sstLicenseIssuer: user?.sstLicenseIssuer || '',
+    sstLicenseIssuedAt: user?.sstLicenseIssuedAt ? new Date(user.sstLicenseIssuedAt).toISOString().split('T')[0] : '',
+    sstLicenseExpiresAt: user?.sstLicenseExpiresAt ? new Date(user.sstLicenseExpiresAt).toISOString().split('T')[0] : '',
+    sstPhone: user?.sstPhone || '',
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      return await apiRequest('PATCH', '/api/portal-licenciado/license', data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Datos actualizados",
+        description: "Su información de licencia ha sido actualizada exitosamente.",
+      });
+      setIsOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudieron actualizar los datos",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateMutation.mutate(formData);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" data-testid="button-edit-license">
+          <Pencil className="h-4 w-4 mr-2" />
+          Actualizar Datos de Licencia
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Actualizar Datos de Licencia</DialogTitle>
+          <DialogDescription>
+            Actualice la información de su licencia profesional SST.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Nombre Completo</Label>
+              <Input
+                id="fullName"
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                data-testid="input-fullname"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="sstProfessionType">Tipo de Profesión</Label>
+              <Select
+                value={formData.sstProfessionType}
+                onValueChange={(value) => setFormData({ ...formData, sstProfessionType: value })}
+              >
+                <SelectTrigger data-testid="select-profession-type">
+                  <SelectValue placeholder="Seleccione tipo de profesión" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="medico_ocupacional">Médico Ocupacional</SelectItem>
+                  <SelectItem value="profesional_sst">Profesional SST</SelectItem>
+                  <SelectItem value="tecnologo_sst">Tecnólogo SST</SelectItem>
+                  <SelectItem value="tecnico_sst">Técnico SST</SelectItem>
+                  <SelectItem value="fisioterapeuta">Fisioterapeuta</SelectItem>
+                  <SelectItem value="psicologo_sst">Psicólogo SST</SelectItem>
+                  <SelectItem value="fonoaudiologo">Fonoaudiólogo</SelectItem>
+                  <SelectItem value="ingeniero_sst">Ingeniero SST</SelectItem>
+                  <SelectItem value="enfermero_sst">Enfermero SST</SelectItem>
+                  <SelectItem value="otro">Otro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="sstLicenseNumber">Número de Licencia</Label>
+              <Input
+                id="sstLicenseNumber"
+                value={formData.sstLicenseNumber}
+                onChange={(e) => setFormData({ ...formData, sstLicenseNumber: e.target.value })}
+                data-testid="input-license-number"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="sstLicenseIssuer">Entidad Emisora</Label>
+              <Input
+                id="sstLicenseIssuer"
+                value={formData.sstLicenseIssuer}
+                onChange={(e) => setFormData({ ...formData, sstLicenseIssuer: e.target.value })}
+                placeholder="Ej: POSITIVA, SURA, etc."
+                data-testid="input-license-issuer"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="sstLicenseIssuedAt">Fecha de Expedición</Label>
+                <Input
+                  id="sstLicenseIssuedAt"
+                  type="date"
+                  value={formData.sstLicenseIssuedAt}
+                  onChange={(e) => setFormData({ ...formData, sstLicenseIssuedAt: e.target.value })}
+                  data-testid="input-license-issued-at"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sstLicenseExpiresAt">Fecha de Vencimiento</Label>
+                <Input
+                  id="sstLicenseExpiresAt"
+                  type="date"
+                  value={formData.sstLicenseExpiresAt}
+                  onChange={(e) => setFormData({ ...formData, sstLicenseExpiresAt: e.target.value })}
+                  data-testid="input-license-expires-at"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="sstPhone">Teléfono de Contacto</Label>
+              <Input
+                id="sstPhone"
+                value={formData.sstPhone}
+                onChange={(e) => setFormData({ ...formData, sstPhone: e.target.value })}
+                placeholder="Ej: +57 300 1234567"
+                data-testid="input-phone"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                'Guardar Cambios'
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
