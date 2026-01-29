@@ -140,7 +140,6 @@ import EntregaEpp from "@/pages/EntregaEpp";
 import PartesInteresadas from "@/pages/PartesInteresadas";
 import AnalisisContexto from "@/pages/AnalisisContexto";
 import PlanMejoramientoContexto from "@/pages/PlanMejoramientoContexto";
-import DirectorioProfesionales from "@/pages/DirectorioProfesionales";
 import { ChapterGate } from "@/components/ChapterGate";
 import { TrialAlert } from "@/components/TrialAlert";
 
@@ -177,7 +176,6 @@ function Router() {
       <ProtectedRoute path="/profesionales-licenciados" component={ProfesionalesLicenciados} />
       <ProtectedRoute path="/portal-licenciado/investigacion/:id" component={DetalleInvestigacionLSO} />
       <ProtectedRoute path="/portal-licenciado" component={PortalLicenciado} />
-      <ProtectedRoute path="/directorio-profesionales" component={DirectorioProfesionales} />
       <ProtectedRoute path="/trabajadores" component={Trabajadores} />
       <ProtectedRoute path="/perfiles-cargo" component={PerfilesCargo} />
       <ProtectedRoute path="/asignacion-recursos" component={ResourceAllocation} />
