@@ -9331,3 +9331,192 @@ export const insertCompanyExtraSeatsSchema = createInsertSchema(companyExtraSeat
   .omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertCompanyExtraSeats = z.infer<typeof insertCompanyExtraSeatsSchema>;
 export type CompanyExtraSeats = typeof companyExtraSeats.$inferSelect;
+
+// ==========================================
+// EVALUACIONES PESV - Plan Estratégico de Seguridad Vial
+// Resolución 40595/2022 MinTransporte
+// ==========================================
+
+// Nivel de empresa para PESV según Resolución 40595/2022
+export const nivelPesvEnum = pgEnum("nivel_pesv", [
+  "basico",     // ≤10 vehículos o conductores
+  "estandar",   // 11-50 vehículos o conductores
+  "avanzado"    // >50 vehículos o conductores
+]);
+
+// Estado de evaluación PESV
+export const estadoEvaluacionPesvEnum = pgEnum("estado_evaluacion_pesv", [
+  "en-progreso",
+  "finalizada",
+  "aprobada",
+  "rechazada"
+]);
+
+// Fases PHVA del PESV
+export const fasePesvEnum = pgEnum("fase_pesv", [
+  "planear",    // 8 pasos
+  "hacer",      // 11 pasos
+  "verificar",  // 3 pasos
+  "actuar"      // 2 pasos
+]);
+
+// Tabla de evaluaciones PESV
+export const evaluacionesPesv = pgTable("evaluaciones_pesv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  
+  // Información de la evaluación
+  anio: integer("anio").notNull(),
+  mes: integer("mes").notNull().default(12),
+  nivelPesv: nivelPesvEnum("nivel_pesv").notNull(),
+  estado: estadoEvaluacionPesvEnum("estado").notNull().default("en-progreso"),
+  
+  // Responsable de la evaluación
+  responsableNombre: text("responsable_nombre").notNull(),
+  responsableCargo: text("responsable_cargo").notNull(),
+  
+  // Datos de la flota
+  numeroVehiculos: integer("numero_vehiculos").notNull().default(0),
+  numeroConductores: integer("numero_conductores").notNull().default(0),
+  
+  // Resultados calculados
+  puntajeTotal: integer("puntaje_total").notNull().default(0),
+  puntajeMaximo: integer("puntaje_maximo").notNull().default(100),
+  porcentajeCumplimiento: integer("porcentaje_cumplimiento").notNull().default(0),
+  
+  // Puntajes por fase PHVA (JSON)
+  puntajesPorFase: text("puntajes_por_fase"),
+  
+  // Fechas
+  fechaEvaluacion: date("fecha_evaluacion").notNull(),
+  fechaAprobacion: date("fecha_aprobacion"),
+  
+  // Trazabilidad SST (opcional)
+  evaluacionSstId: varchar("evaluacion_sst_id").references(() => evaluacionesSst.id),
+  
+  observaciones: text("observaciones"),
+  
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Pasos PESV - Los 24 pasos según Resolución 40595/2022
+export const pasosPesv = pgTable("pasos_pesv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Identificación del paso
+  codigo: text("codigo").notNull().unique(), // P01, H05, V02, A01, etc.
+  numero: integer("numero").notNull(),
+  nombre: text("nombre").notNull(),
+  descripcion: text("descripcion").notNull(),
+  
+  // Clasificación
+  fase: fasePesvEnum("fase").notNull(),
+  
+  // Niveles donde aplica
+  aplicaBasico: integer("aplica_basico").notNull().default(1),
+  aplicaEstandar: integer("aplica_estandar").notNull().default(1),
+  aplicaAvanzado: integer("aplica_avanzado").notNull().default(1),
+  
+  // Puntaje
+  puntajeMaximo: integer("puntaje_maximo").notNull().default(4),
+  
+  // Criterios de verificación
+  criteriosVerificacion: text("criterios_verificacion"),
+  evidenciasRequeridas: text("evidencias_requeridas"),
+  
+  // Trazabilidad SST (qué módulos SST se relacionan)
+  modulosSstRelacionados: text("modulos_sst_relacionados"), // JSON: ["accidentes", "capacitaciones", etc.]
+  
+  activo: integer("activo").notNull().default(1),
+});
+
+// Respuestas a pasos PESV
+export const respuestasPasosPesv = pgTable("respuestas_pasos_pesv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  evaluacionId: varchar("evaluacion_id").notNull().references(() => evaluacionesPesv.id, { onDelete: "cascade" }),
+  pasoId: varchar("paso_id").notNull().references(() => pasosPesv.id),
+  
+  // Calificación
+  cumple: integer("cumple").notNull(), // 0 = No cumple, 1 = Cumple
+  noAplica: integer("no_aplica").notNull().default(0),
+  justificacionNoAplica: text("justificacion_no_aplica"),
+  
+  puntajeObtenido: integer("puntaje_obtenido").notNull(),
+  puntajeMaximo: integer("puntaje_maximo").notNull(),
+  
+  // Evidencias y observaciones
+  evidencias: text("evidencias"),
+  modoVerificacion: text("modo_verificacion"),
+  observaciones: text("observaciones"),
+  
+  // Hallazgos si no cumple
+  hallazgo: text("hallazgo"),
+  
+  // Trazabilidad SST (IDs de registros relacionados)
+  accidenteSstId: varchar("accidente_sst_id"),
+  capacitacionSstId: varchar("capacitacion_sst_id"),
+  inspeccionSstId: varchar("inspeccion_sst_id"),
+  
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Acciones de mejora PESV
+export const accionesMejoraPesv = pgTable("acciones_mejora_pesv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  evaluacionId: varchar("evaluacion_id").notNull().references(() => evaluacionesPesv.id, { onDelete: "cascade" }),
+  respuestaPasoId: varchar("respuesta_paso_id").references(() => respuestasPasosPesv.id),
+  
+  descripcionAccion: text("descripcion_accion").notNull(),
+  objetivo: text("objetivo").notNull(),
+  tipoAccion: text("tipo_accion").notNull(), // "correctiva", "preventiva", "mejora"
+  prioridad: prioridadMejoraEnum("prioridad").notNull().default("media"),
+  
+  responsable: text("responsable").notNull(),
+  areaResponsable: text("area_responsable"),
+  
+  fechaInicio: date("fecha_inicio").notNull(),
+  fechaCompromiso: date("fecha_compromiso").notNull(),
+  fechaEjecucion: date("fecha_ejecucion"),
+  
+  estado: estadoAccionEnum("estado").notNull().default("pendiente"),
+  porcentajeAvance: integer("porcentaje_avance").notNull().default(0),
+  
+  // Trazabilidad con acción de mejora SST
+  accionMejoraSstId: varchar("accion_mejora_sst_id").references(() => accionesMejora.id),
+  
+  observaciones: text("observaciones"),
+  
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Zod schemas para PESV
+export const insertEvaluacionPesvSchema = createInsertSchema(evaluacionesPesv)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true })
+  .extend({
+    fechaEvaluacion: z.coerce.date(),
+    fechaAprobacion: z.coerce.date().optional().nullable(),
+  });
+export type InsertEvaluacionPesv = z.infer<typeof insertEvaluacionPesvSchema>;
+export type EvaluacionPesv = typeof evaluacionesPesv.$inferSelect;
+
+export const insertPasoPesvSchema = createInsertSchema(pasosPesv)
+  .omit({ id: true });
+export type InsertPasoPesv = z.infer<typeof insertPasoPesvSchema>;
+export type PasoPesv = typeof pasosPesv.$inferSelect;
+
+export const insertRespuestaPasoPesvSchema = createInsertSchema(respuestasPasosPesv)
+  .omit({ id: true, updatedAt: true });
+export type InsertRespuestaPasoPesv = z.infer<typeof insertRespuestaPasoPesvSchema>;
+export type RespuestaPasoPesv = typeof respuestasPasosPesv.$inferSelect;
+
+export const insertAccionMejoraPesvSchema = createInsertSchema(accionesMejoraPesv)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    fechaInicio: z.coerce.date(),
+    fechaCompromiso: z.coerce.date(),
+    fechaEjecucion: z.coerce.date().optional().nullable(),
+  });
+export type InsertAccionMejoraPesv = z.infer<typeof insertAccionMejoraPesvSchema>;
+export type AccionMejoraPesv = typeof accionesMejoraPesv.$inferSelect;
