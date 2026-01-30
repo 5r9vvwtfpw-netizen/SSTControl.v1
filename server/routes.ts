@@ -191,6 +191,13 @@ import {
   accionesMejoraContexto,
   insertFactorContextoSchema,
   insertAccionMejoraContextoSchema,
+  evaluacionesPesv,
+  pasosPesv,
+  respuestasPasosPesv,
+  accionesMejoraPesv,
+  insertEvaluacionPesvSchema,
+  insertRespuestaPasoPesvSchema,
+  insertAccionMejoraPesvSchema,
 } from "@shared/schema";
 import * as schema from "@shared/schema";
 import type { UserRole, User } from "@shared/schema";
@@ -42099,6 +42106,432 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // Integración con directorio externo de profesionales LSO
   const { registerLsoDirectoryRoutes } = await import("./routes-lso-directory");
   registerLsoDirectoryRoutes(app);
+
+  // ========== EVALUACIONES PESV ROUTES ==========
+  // Rutas para evaluaciones del Plan Estratégico de Seguridad Vial (Resolución 40595/2022)
+
+  // GET /api/evaluaciones-pesv - Lista todas las evaluaciones PESV de la empresa
+  app.get('/api/evaluaciones-pesv', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      let companyId: string;
+      if (isAdmin) {
+        const requestedCompanyId = req.query.companyId as string;
+        if (!requestedCompanyId) {
+          const allEvaluaciones = await db.select().from(evaluacionesPesv).orderBy(desc(evaluacionesPesv.createdAt));
+          return res.json(allEvaluaciones);
+        }
+        companyId = requestedCompanyId;
+      } else {
+        companyId = req.user!.companyId || "";
+        if (!companyId) {
+          return res.status(403).send("Usuario no asociado a una empresa");
+        }
+      }
+      
+      const evaluaciones = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.companyId, companyId))
+        .orderBy(desc(evaluacionesPesv.createdAt));
+      
+      res.json(evaluaciones);
+    } catch (error: any) {
+      console.error('Error fetching evaluaciones PESV:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/evaluaciones-pesv/:id - Obtiene una evaluación PESV por ID
+  app.get('/api/evaluaciones-pesv/:id', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, req.params.id));
+      
+      if (!evaluacion) {
+        return res.status(404).send('Evaluación PESV no encontrada');
+      }
+      
+      // Verificar acceso a la empresa
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send("No tienes acceso a esta evaluación");
+      }
+      
+      res.json(evaluacion);
+    } catch (error: any) {
+      console.error('Error fetching evaluación PESV:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/evaluaciones-pesv - Crea nueva evaluación PESV
+  app.post('/api/evaluaciones-pesv', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+    try {
+      const validatedData = insertEvaluacionPesvSchema.parse(req.body);
+      
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      let companyId: string;
+      if (isAdmin) {
+        const requestedCompanyId = req.body.companyId;
+        if (!requestedCompanyId) {
+          return res.status(400).send("Administrador debe especificar la empresa para crear la evaluación");
+        }
+        companyId = requestedCompanyId as string;
+      } else {
+        companyId = req.user!.companyId || "";
+        if (!companyId) {
+          return res.status(403).send("Usuario no asociado a una empresa");
+        }
+      }
+      
+      const [evaluacion] = await db.insert(evaluacionesPesv)
+        .values({
+          ...validatedData,
+          companyId,
+        })
+        .returning();
+      
+      res.status(201).json(evaluacion);
+    } catch (error: any) {
+      console.error('Error creating evaluación PESV:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/evaluaciones-pesv/:id - Actualiza evaluación PESV
+  app.patch('/api/evaluaciones-pesv/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+    try {
+      const validatedData = insertEvaluacionPesvSchema.partial().parse(req.body);
+      
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      // Verificar que existe y pertenece a la empresa
+      const [existing] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, req.params.id));
+      
+      if (!existing) {
+        return res.status(404).send("Evaluación PESV no encontrada");
+      }
+      
+      if (!isAdmin && req.user!.companyId !== existing.companyId) {
+        return res.status(403).send("No tienes acceso a esta evaluación");
+      }
+      
+      const [evaluacion] = await db.update(evaluacionesPesv)
+        .set({
+          ...validatedData,
+          updatedAt: new Date(),
+        })
+        .where(eq(evaluacionesPesv.id, req.params.id))
+        .returning();
+      
+      res.json(evaluacion);
+    } catch (error: any) {
+      console.error('Error updating evaluación PESV:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/evaluaciones-pesv/:id - Elimina evaluación PESV
+  app.delete('/api/evaluaciones-pesv/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      // Verificar que existe y pertenece a la empresa
+      const [existing] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, req.params.id));
+      
+      if (!existing) {
+        return res.status(404).send("Evaluación PESV no encontrada");
+      }
+      
+      if (!isAdmin && req.user!.companyId !== existing.companyId) {
+        return res.status(403).send("No tienes acceso a esta evaluación");
+      }
+      
+      await db.delete(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, req.params.id));
+      
+      res.status(204).send();
+    } catch (error: any) {
+      console.error('Error deleting evaluación PESV:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/evaluaciones-pesv/:id/respuestas - Lista respuestas de pasos de una evaluación
+  app.get('/api/evaluaciones-pesv/:id/respuestas', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      // Verificar acceso a la evaluación
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, req.params.id));
+      
+      if (!evaluacion) {
+        return res.status(404).send("Evaluación PESV no encontrada");
+      }
+      
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send("No tienes acceso a esta evaluación");
+      }
+      
+      const respuestas = await db.select()
+        .from(respuestasPasosPesv)
+        .where(eq(respuestasPasosPesv.evaluacionId, req.params.id));
+      
+      res.json(respuestas);
+    } catch (error: any) {
+      console.error('Error fetching respuestas PESV:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/evaluaciones-pesv/:id/respuestas - Guarda respuesta de paso PESV
+  app.post('/api/evaluaciones-pesv/:id/respuestas', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      // Verificar acceso a la evaluación
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, req.params.id));
+      
+      if (!evaluacion) {
+        return res.status(404).send("Evaluación PESV no encontrada");
+      }
+      
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send("No tienes acceso a esta evaluación");
+      }
+      
+      const validatedData = insertRespuestaPasoPesvSchema.parse({
+        ...req.body,
+        evaluacionId: req.params.id
+      });
+      
+      // Verificar si ya existe una respuesta para este paso
+      const [existingRespuesta] = await db.select()
+        .from(respuestasPasosPesv)
+        .where(and(
+          eq(respuestasPasosPesv.evaluacionId, req.params.id),
+          eq(respuestasPasosPesv.pasoId, validatedData.pasoId)
+        ));
+      
+      let respuesta;
+      if (existingRespuesta) {
+        // Actualizar respuesta existente
+        [respuesta] = await db.update(respuestasPasosPesv)
+          .set({
+            ...validatedData,
+            updatedAt: new Date(),
+          })
+          .where(eq(respuestasPasosPesv.id, existingRespuesta.id))
+          .returning();
+      } else {
+        // Crear nueva respuesta
+        [respuesta] = await db.insert(respuestasPasosPesv)
+          .values(validatedData)
+          .returning();
+      }
+      
+      res.status(201).json(respuesta);
+    } catch (error: any) {
+      console.error('Error saving respuesta PESV:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // GET /api/evaluaciones-pesv/:id/acciones - Lista acciones de mejora de una evaluación
+  app.get('/api/evaluaciones-pesv/:id/acciones', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      // Verificar acceso a la evaluación
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, req.params.id));
+      
+      if (!evaluacion) {
+        return res.status(404).send("Evaluación PESV no encontrada");
+      }
+      
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send("No tienes acceso a esta evaluación");
+      }
+      
+      const acciones = await db.select()
+        .from(accionesMejoraPesv)
+        .where(eq(accionesMejoraPesv.evaluacionId, req.params.id))
+        .orderBy(desc(accionesMejoraPesv.createdAt));
+      
+      res.json(acciones);
+    } catch (error: any) {
+      console.error('Error fetching acciones mejora PESV:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/evaluaciones-pesv/:id/acciones - Crea acción de mejora PESV
+  app.post('/api/evaluaciones-pesv/:id/acciones', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      // Verificar acceso a la evaluación
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, req.params.id));
+      
+      if (!evaluacion) {
+        return res.status(404).send("Evaluación PESV no encontrada");
+      }
+      
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send("No tienes acceso a esta evaluación");
+      }
+      
+      const validatedData = insertAccionMejoraPesvSchema.parse({
+        ...req.body,
+        evaluacionId: req.params.id
+      });
+      
+      const [accion] = await db.insert(accionesMejoraPesv)
+        .values(validatedData)
+        .returning();
+      
+      res.status(201).json(accion);
+    } catch (error: any) {
+      console.error('Error creating acción mejora PESV:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/evaluaciones-pesv/:id/recalcular - Recalcula puntajes de una evaluación PESV
+  app.post('/api/evaluaciones-pesv/:id/recalcular', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      // Verificar acceso a la evaluación
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, req.params.id));
+      
+      if (!evaluacion) {
+        return res.status(404).send("Evaluación PESV no encontrada");
+      }
+      
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send("No tienes acceso a esta evaluación");
+      }
+      
+      // Obtener todas las respuestas de la evaluación
+      const respuestas = await db.select()
+        .from(respuestasPasosPesv)
+        .where(eq(respuestasPasosPesv.evaluacionId, req.params.id));
+      
+      // Calcular puntajes
+      let puntajeTotal = 0;
+      let puntajeMaximo = 0;
+      const puntajesPorFase: Record<string, { obtenido: number; maximo: number }> = {
+        planear: { obtenido: 0, maximo: 0 },
+        hacer: { obtenido: 0, maximo: 0 },
+        verificar: { obtenido: 0, maximo: 0 },
+        actuar: { obtenido: 0, maximo: 0 }
+      };
+      
+      // Obtener los pasos para asociar con fases
+      const pasos = await db.select().from(pasosPesv);
+      const pasosMap = new Map(pasos.map(p => [p.id, p]));
+      
+      for (const respuesta of respuestas) {
+        const paso = pasosMap.get(respuesta.pasoId);
+        if (!paso) continue;
+        
+        // Si no aplica, no cuenta para el máximo
+        if (respuesta.noAplica === 1) continue;
+        
+        puntajeTotal += respuesta.puntajeObtenido;
+        puntajeMaximo += respuesta.puntajeMaximo;
+        
+        const fase = paso.fase as keyof typeof puntajesPorFase;
+        if (puntajesPorFase[fase]) {
+          puntajesPorFase[fase].obtenido += respuesta.puntajeObtenido;
+          puntajesPorFase[fase].maximo += respuesta.puntajeMaximo;
+        }
+      }
+      
+      const porcentajeCumplimiento = puntajeMaximo > 0 
+        ? Math.round((puntajeTotal / puntajeMaximo) * 100) 
+        : 0;
+      
+      // Actualizar evaluación con puntajes recalculados
+      const [evaluacionActualizada] = await db.update(evaluacionesPesv)
+        .set({
+          puntajeTotal,
+          puntajeMaximo,
+          porcentajeCumplimiento,
+          puntajesPorFase: JSON.stringify(puntajesPorFase),
+          updatedAt: new Date(),
+        })
+        .where(eq(evaluacionesPesv.id, req.params.id))
+        .returning();
+      
+      res.json(evaluacionActualizada);
+    } catch (error: any) {
+      console.error('Error recalculating evaluación PESV:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/pasos-pesv - Lista pasos PESV filtrados por nivel
+  app.get('/api/pasos-pesv', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const nivel = req.query.nivel as string; // basico, estandar, avanzado
+      
+      let pasosQuery = db.select().from(pasosPesv).where(eq(pasosPesv.activo, 1));
+      
+      const pasos = await pasosQuery.orderBy(pasosPesv.numero);
+      
+      // Filtrar por nivel si se especifica
+      let pasosFiltrados = pasos;
+      if (nivel) {
+        pasosFiltrados = pasos.filter(paso => {
+          switch (nivel) {
+            case 'basico':
+              return paso.aplicaBasico === 1;
+            case 'estandar':
+              return paso.aplicaEstandar === 1;
+            case 'avanzado':
+              return paso.aplicaAvanzado === 1;
+            default:
+              return true;
+          }
+        });
+      }
+      
+      res.json(pasosFiltrados);
+    } catch (error: any) {
+      console.error('Error fetching pasos PESV:', error);
+      res.status(500).send(error.message);
+    }
+  });
 
   // ========== GLOBAL ERROR HANDLER ==========
   // Middleware global para interceptar errores no manejados y evitar exponer mensajes técnicos
