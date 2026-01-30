@@ -24,8 +24,10 @@ const createFormSchema = (isAdmin: boolean) => {
     puntajeTotal: true,
     puntajeMaximo: true,
     porcentajeCumplimiento: true,
-    puntajesPorFase: true,
-    fechaAprobacion: true,
+    puntajePlanear: true,
+    puntajeHacer: true,
+    puntajeVerificar: true,
+    puntajeActuar: true,
     evaluacionSstId: true,
   });
   
@@ -58,8 +60,7 @@ export default function EvaluacionesPesv() {
     defaultValues: {
       anio: new Date().getFullYear(),
       mes: new Date().getMonth() + 1,
-      nivelPesv: "basico",
-      fechaEvaluacion: new Date(),
+      nivel: "basico",
       responsableNombre: user?.fullName || user?.username || "",
       responsableCargo: "Responsable PESV",
       numeroVehiculos: 0,
@@ -296,7 +297,7 @@ export default function EvaluacionesPesv() {
 
                 <FormField
                   control={form.control}
-                  name="nivelPesv"
+                  name="nivel"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Nivel PESV</FormLabel>
@@ -476,7 +477,7 @@ export default function EvaluacionesPesv() {
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <CardTitle className="text-xl">PESV {evaluacion.anio}</CardTitle>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {getNivelBadge(evaluacion.nivelPesv)}
+                    {getNivelBadge(evaluacion.nivel)}
                     {getEstadoBadge(evaluacion.estado)}
                   </div>
                 </div>
