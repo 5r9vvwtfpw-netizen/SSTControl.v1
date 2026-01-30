@@ -16,7 +16,8 @@ import {
   X,
   User,
   Send,
-  Building2
+  Building2,
+  Car
 } from "lucide-react";
 import safetyHelmetAvatar from "@assets/generated_images/safety_helmet_avatar_icon.png";
 import { Button } from "@/components/ui/button";
@@ -112,6 +113,18 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
       title: "Paneles Ejecutivos",
       items: [
         { label: "Panel HACER - Controles", path: "/dashboard-hacer" },
+      ],
+    },
+    {
+      title: "PESV - Seguridad Vial",
+      items: [
+        { label: "Dashboard PESV", path: "/pesv" },
+        { label: "Vehículos", path: "/pesv/vehiculos" },
+        { label: "Conductores", path: "/pesv/conductores" },
+        { label: "Inspecciones", path: "/pesv/inspecciones" },
+        { label: "Siniestros Viales", path: "/pesv/siniestros" },
+        { label: "Capacitaciones Viales", path: "/pesv/capacitaciones" },
+        { label: "Auditorías PESV (24 pasos)", path: "/pesv/auditorias" },
       ],
     },
   ],
