@@ -47,6 +47,8 @@ import PesvInspecciones from "@/pages/PesvInspecciones";
 import PesvSiniestros from "@/pages/PesvSiniestros";
 import PesvCapacitaciones from "@/pages/PesvCapacitaciones";
 import PesvAuditorias from "@/pages/PesvAuditorias";
+import DetalleEvaluacionPesv from "@/pages/DetalleEvaluacionPesv";
+import EvaluacionesPesv from "@/pages/EvaluacionesPesv";
 import CompanyManagement from "@/pages/CompanyManagement";
 import CompanyDetail from "@/pages/CompanyDetail";
 import GestionUsuarios from "@/pages/GestionUsuarios";
@@ -266,6 +268,8 @@ function Router() {
       <ProtectedRoute path="/pesv/siniestros" component={PesvSiniestros} />
       <ProtectedRoute path="/pesv/capacitaciones" component={PesvCapacitaciones} />
       <ProtectedRoute path="/pesv/auditorias" component={PesvAuditorias} />
+      <ProtectedRoute path="/pesv/evaluaciones" component={EvaluacionesPesv} />
+      <ProtectedRoute path="/pesv/evaluacion/:id" component={DetalleEvaluacionPesv} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/pricing-plugin/calculator" component={PricingPluginCalculator} />
       <Route path="/calculadora-precios" component={PricingCalculatorV2} />

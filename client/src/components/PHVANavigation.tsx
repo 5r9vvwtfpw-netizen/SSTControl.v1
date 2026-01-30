@@ -125,6 +125,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
         { label: "Siniestros Viales", path: "/pesv/siniestros" },
         { label: "Capacitaciones Viales", path: "/pesv/capacitaciones" },
         { label: "Auditorías PESV (24 pasos)", path: "/pesv/auditorias" },
+        { label: "Evaluaciones PESV (Trazabilidad SST)", path: "/pesv/evaluaciones" },
       ],
     },
   ],
