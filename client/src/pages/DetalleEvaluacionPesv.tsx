@@ -44,19 +44,19 @@ export default function DetalleEvaluacionPesv() {
   });
 
   const { data: pasosDb = [] } = useQuery<PasoPesv[]>({
-    queryKey: ["/api/pasos-pesv", evaluacion?.nivelPesv],
+    queryKey: ["/api/pasos-pesv", evaluacion?.nivel],
     queryFn: async () => {
-      if (!evaluacion?.nivelPesv) return [];
-      const res = await fetch(`/api/pasos-pesv?nivel=${evaluacion.nivelPesv}`);
+      if (!evaluacion?.nivel) return [];
+      const res = await fetch(`/api/pasos-pesv?nivel=${evaluacion.nivel}`);
       if (!res.ok) throw new Error("Error al cargar pasos");
       return res.json();
     },
-    enabled: !!evaluacion?.nivelPesv,
+    enabled: !!evaluacion?.nivel,
   });
 
   const getPasosParaNivel = (): PasoPesvData[] => {
-    if (!evaluacion?.nivelPesv) return [];
-    const nivel = evaluacion.nivelPesv;
+    if (!evaluacion?.nivel) return [];
+    const nivel = evaluacion.nivel;
     return PASOS_PESV.filter(paso => {
       if (nivel === 'basico') return paso.aplicaBasico;
       if (nivel === 'estandar') return paso.aplicaEstandar;
@@ -317,7 +317,7 @@ export default function DetalleEvaluacionPesv() {
               Evaluación PESV {evaluacion.anio}
             </h1>
             <p className="text-muted-foreground">
-              {NIVELES_PESV_LABELS[evaluacion.nivelPesv] || evaluacion.nivelPesv} • {evaluacion.responsableNombre}
+              {NIVELES_PESV_LABELS[evaluacion.nivel] || evaluacion.nivel} • {evaluacion.responsableNombre}
             </p>
           </div>
         </div>
@@ -540,7 +540,7 @@ export default function DetalleEvaluacionPesv() {
               {respuestaForm.watch("noAplica") === 1 && (
                 <FormField
                   control={respuestaForm.control}
-                  name="justificacionNoAplica"
+                  name="justificacionNa"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Justificación "No Aplica"</FormLabel>

@@ -203,6 +203,7 @@ import * as schema from "@shared/schema";
 import type { UserRole, User } from "@shared/schema";
 import { calculateChapter, getEmpresaTipoFromChapterAndRisk, getTrialStatus, getChapterDescription } from "@shared/utils";
 import { isStandardPersistent, getPersistentStandardCodes } from "../shared/sst-inheritance";
+import { PASOS_PESV } from "@shared/pasos-pesv";
 import { prepareCompanyWithCiiuAutomation, processCiiuAutomation } from "@shared/ciiu-company-automation";
 import { setupTrialWatermarkOnAllPages, addTrialFooter } from "./services/pdf-watermark";
 import { 
@@ -219,6 +220,7 @@ import {
   requiresLSOSignature,
   handlePdfError
 } from "./services/pdf-standardizer";
+import { validatePdfContext } from "./lib/pdf-context-validator";
 import {
   sendExamRenewalEmail,
   sendTrainingRenewalEmail, 
@@ -23624,7 +23626,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         documentTitle: 'EVALUACIÓN DEL SISTEMA DE GESTIÓN SST',
         documentCode: `SST-EVA-${evaluacion.anio}`,
         version: '1.0',
-        date: new Date(evaluacion.fechaEvaluacion),
+        date: new Date(evaluacion.anio, (evaluacion.mes || 12) - 1, 1),
         logoBuffer: logo
       });
 
@@ -23840,7 +23842,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         documentTitle: 'REPORTE MINISTERIO DEL TRABAJO - EVALUACIÓN SG-SST',
         documentCode: `SST-MIN-${evaluacion.anio}`,
         version: '1.0',
-        date: new Date(evaluacion.fechaEvaluacion),
+        date: new Date(evaluacion.anio, (evaluacion.mes || 12) - 1, 1),
         logoBuffer: logo
       });
 
@@ -23890,7 +23892,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY += 16;
 
       doc.font('Helvetica-Bold').text('Fecha de Evaluación:', labelX, currentY);
-      doc.font('Helvetica').text(new Date(evaluacion.fechaEvaluacion).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }), valueX, currentY);
+      doc.font('Helvetica').text(new Date(evaluacion.anio, (evaluacion.mes || 12) - 1, 1).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }), valueX, currentY);
       currentY += 16;
 
       doc.font('Helvetica-Bold').text('Responsable SG-SST:', labelX, currentY);
@@ -28467,7 +28469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const evalData = evaluaciones.slice(0, 1).map(evaluacion => [
           { label: 'Evaluador', value: evaluacion.evaluador },
-          { label: 'Fecha', value: new Date(evaluacion.fechaEvaluacion).toLocaleDateString('es-CO') },
+          { label: 'Fecha', value: new Date(evaluacion.anio, (evaluacion.mes || 12) - 1, 1).toLocaleDateString('es-CO') },
           { label: 'Nivel de Riesgo', value: impactoMap[evaluacion.nivelRiesgoResultante] || evaluacion.nivelRiesgoResultante },
           { label: 'Probabilidad', value: `${evaluacion.probabilidadOcurrencia}/5` },
           { label: 'Severidad', value: `${evaluacion.severidadConsecuencia}/5` },
@@ -28602,7 +28604,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         documentTitle: 'EVALUACIÓN DE IMPACTO DE CAMBIO',
         documentCode: `SST-GC-${cambio.codigo}`,
         version: '1.0',
-        date: new Date(evaluacion.fechaEvaluacion),
+        date: new Date(evaluacion.anio, (evaluacion.mes || 12) - 1, 1),
         logoBuffer: logo
       });
 
@@ -28631,7 +28633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.font('Helvetica').text(evaluacion.evaluador);
       
       doc.font('Helvetica-Bold').text('Fecha de Evaluación: ', { continued: true });
-      doc.font('Helvetica').text(new Date(evaluacion.fechaEvaluacion).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }));
+      doc.font('Helvetica').text(new Date(evaluacion.anio, (evaluacion.mes || 12) - 1, 1).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }));
       
       doc.moveDown();
       
@@ -42457,8 +42459,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       };
       
       // Obtener los pasos para asociar con fases
-      const pasos = await db.select().from(pasosPesv);
-      const pasosMap = new Map(pasos.map(p => [p.id, p]));
+      const pasos = PASOS_PESV;
+      const pasosMap = new Map(pasos.map(p => [p.codigo, p]));
       
       for (const respuesta of respuestas) {
         const paso = pasosMap.get(respuesta.pasoId);
@@ -42467,13 +42469,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         // Si no aplica, no cuenta para el máximo
         if (respuesta.noAplica === 1) continue;
         
-        puntajeTotal += respuesta.puntajeObtenido;
-        puntajeMaximo += respuesta.puntajeMaximo;
+        // Usar cumple y el puntajeMaximo del paso para calcular
+        const pasoMaximo = paso.puntajeMaximo;
+        const pasoObtenido = respuesta.cumple === 1 ? pasoMaximo : 0;
+        
+        puntajeTotal += pasoObtenido;
+        puntajeMaximo += pasoMaximo;
         
         const fase = paso.fase as keyof typeof puntajesPorFase;
         if (puntajesPorFase[fase]) {
-          puntajesPorFase[fase].obtenido += respuesta.puntajeObtenido;
-          puntajesPorFase[fase].maximo += respuesta.puntajeMaximo;
+          puntajesPorFase[fase].obtenido += pasoObtenido;
+          puntajesPorFase[fase].maximo += pasoMaximo;
         }
       }
       
@@ -42481,13 +42487,22 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         ? Math.round((puntajeTotal / puntajeMaximo) * 100) 
         : 0;
       
+      // Calcular porcentajes por fase
+      const puntajePlanear = puntajesPorFase.planear.maximo > 0 ? Math.round((puntajesPorFase.planear.obtenido / puntajesPorFase.planear.maximo) * 100) : 0;
+      const puntajeHacer = puntajesPorFase.hacer.maximo > 0 ? Math.round((puntajesPorFase.hacer.obtenido / puntajesPorFase.hacer.maximo) * 100) : 0;
+      const puntajeVerificar = puntajesPorFase.verificar.maximo > 0 ? Math.round((puntajesPorFase.verificar.obtenido / puntajesPorFase.verificar.maximo) * 100) : 0;
+      const puntajeActuar = puntajesPorFase.actuar.maximo > 0 ? Math.round((puntajesPorFase.actuar.obtenido / puntajesPorFase.actuar.maximo) * 100) : 0;
+      
       // Actualizar evaluación con puntajes recalculados
       const [evaluacionActualizada] = await db.update(evaluacionesPesv)
         .set({
-          puntajeTotal,
-          puntajeMaximo,
-          porcentajeCumplimiento,
-          puntajesPorFase: JSON.stringify(puntajesPorFase),
+          puntajeTotal: puntajeTotal.toString(),
+          puntajeMaximo: puntajeMaximo.toString(),
+          porcentajeCumplimiento: porcentajeCumplimiento.toString(),
+          puntajePlanear: puntajePlanear.toString(),
+          puntajeHacer: puntajeHacer.toString(),
+          puntajeVerificar: puntajeVerificar.toString(),
+          puntajeActuar: puntajeActuar.toString(),
           updatedAt: new Date(),
         })
         .where(eq(evaluacionesPesv.id, req.params.id))
@@ -42505,9 +42520,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     try {
       const nivel = req.query.nivel as string; // basico, estandar, avanzado
       
-      let pasosQuery = db.select().from(pasosPesv).where(eq(pasosPesv.activo, 1));
+      // Usar datos del archivo en lugar de consultar tabla que no existe
       
-      const pasos = await pasosQuery.orderBy(pasosPesv.numero);
+      const pasos = PASOS_PESV.sort((a, b) => a.numero - b.numero);
       
       // Filtrar por nivel si se especifica
       let pasosFiltrados = pasos;
@@ -42515,11 +42530,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         pasosFiltrados = pasos.filter(paso => {
           switch (nivel) {
             case 'basico':
-              return paso.aplicaBasico === 1;
+              return paso.aplicaBasico;
             case 'estandar':
-              return paso.aplicaEstandar === 1;
+              return paso.aplicaEstandar;
             case 'avanzado':
-              return paso.aplicaAvanzado === 1;
+              return paso.aplicaAvanzado;
             default:
               return true;
           }
@@ -42530,6 +42545,316 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     } catch (error: any) {
       console.error('Error fetching pasos PESV:', error);
       res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/evaluaciones-pesv/:id/pdf - Generar PDF de evaluación PESV
+  app.get('/api/evaluaciones-pesv/:id/pdf', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      let companyId: string;
+      
+      if (isAdmin) {
+        const [evaluacionAdmin] = await db
+          .select()
+          .from(evaluacionesPesv)
+          .where(eq(evaluacionesPesv.id, req.params.id));
+        
+        if (!evaluacionAdmin) {
+          return res.status(404).send("Evaluación PESV no encontrada");
+        }
+        companyId = evaluacionAdmin.companyId;
+      } else {
+        if (!req.user!.companyId) {
+          return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+        }
+        companyId = req.user!.companyId;
+      }
+
+      // Validar contexto
+      const validation = validatePdfContext(req, { companyId }, { contextName: 'Evaluación PESV PDF' });
+      if (!validation.isValid) {
+        return res.status(400).send(validation.error);
+      }
+
+      // Obtener evaluación
+      const [evaluacion] = await db
+        .select()
+        .from(evaluacionesPesv)
+        .where(and(
+          eq(evaluacionesPesv.id, req.params.id),
+          eq(evaluacionesPesv.companyId, companyId)
+        ));
+
+      if (!evaluacion) {
+        return res.status(404).send('Evaluación PESV no encontrada');
+      }
+
+      const company = await storage.getCompany(companyId);
+      if (!company) {
+        return res.status(404).send('Empresa no encontrada');
+      }
+
+      // Obtener pasos PESV y respuestas
+      const allPasos = PASOS_PESV.sort((a, b) => a.numero - b.numero);
+      const respuestas = await db
+        .select()
+        .from(respuestasPasosPesv)
+        .where(eq(respuestasPasosPesv.evaluacionId, req.params.id));
+
+      // Crear mapa de respuestas por pasoId
+      const respuestasMap = new Map(respuestas.map(r => [r.pasoId, r]));
+
+      // Load company logo and get signers
+      const logo = await loadCompanyLogo(company?.logoUrl);
+      const signers = await getSignersForCompany(companyId);
+
+      // Create PDF
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      // Add trial watermark if subscription is in trial period
+      const pesvPdfSubscription = await storage.getSubscriptionByCompany(companyId);
+      const pesvPdfTrialStatus = getTrialStatus(pesvPdfSubscription?.status || 'trial', pesvPdfSubscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pesvPdfTrialStatus.requiresWatermark);
+      
+      const margin = 35;
+      const pageWidth = doc.page.width;
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="evaluacion-pesv-${evaluacion.anio}.pdf"`);
+      doc.pipe(res);
+
+      const contentWidth = pageWidth - 2 * margin;
+
+      // Standard Header
+      let currentY = await addStandardHeader({
+        doc,
+        company: { id: companyId, name: company.name, nit: company.nit || '', logoUrl: company.logoUrl },
+        documentTitle: 'ACTA DE EVALUACIÓN PESV',
+        documentCode: `PESV-EVA-${evaluacion.anio}`,
+        version: '1.0',
+        date: new Date(evaluacion.anio, (evaluacion.mes || 12) - 1, 1),
+        logoBuffer: logo
+      });
+
+      currentY += 4;
+
+      // Marco normativo
+      doc.fontSize(7).font('Helvetica').fillColor('#666666')
+        .text('Marco Normativo: Resolución 40595/2022 | Ley 1503/2011 | Decreto 2851/2013', margin, currentY, { width: contentWidth, align: 'center' });
+      currentY = doc.y + 8;
+
+      // Título principal
+      doc.rect(margin, currentY, contentWidth, 20).fill('#1e7e34');
+      doc.fontSize(11).font('Helvetica-Bold').fillColor('#FFFFFF')
+        .text('PLAN ESTRATÉGICO DE SEGURIDAD VIAL', margin, currentY + 5, { width: contentWidth, align: 'center' });
+      currentY += 28;
+
+      // Datos generales
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e7e34').text('DATOS GENERALES', margin, currentY);
+      currentY = doc.y + 6;
+
+      const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      const nivelTexto = evaluacion.nivel === 'basico' ? 'Básico' : evaluacion.nivel === 'estandar' ? 'Estándar' : 'Avanzado';
+
+      doc.fontSize(8).font('Helvetica').fillColor('#000000');
+      doc.text(`Período: ${meses[evaluacion.mes] || evaluacion.mes} ${evaluacion.anio}`, margin, currentY);
+      currentY = doc.y + 3;
+      doc.text(`Nivel PESV: ${nivelTexto}`, margin, currentY);
+      currentY = doc.y + 3;
+      doc.text(`Responsable: ${evaluacion.responsableNombre} - ${evaluacion.responsableCargo}`, margin, currentY);
+      currentY = doc.y + 3;
+      doc.text(`Número de Vehículos: ${evaluacion.numeroVehiculos}`, margin, currentY);
+      currentY = doc.y + 3;
+      doc.text(`Número de Conductores: ${evaluacion.numeroConductores}`, margin, currentY);
+      currentY = doc.y + 10;
+
+      // Resumen de cumplimiento
+      doc.rect(margin, currentY, contentWidth, 18).fill('#1e7e34');
+      doc.fontSize(10).font('Helvetica-Bold').fillColor('#FFFFFF')
+        .text('RESUMEN DE CUMPLIMIENTO', margin + 8, currentY + 4);
+      currentY += 25;
+
+      const porcentaje = evaluacion.porcentajeCumplimiento || 0;
+      const nivelColor = porcentaje >= 80 ? '#28a745' : porcentaje >= 60 ? '#ffc107' : '#dc3545';
+      const nivelCumplimiento = porcentaje >= 80 ? 'SATISFACTORIO' : porcentaje >= 60 ? 'EN PROCESO' : 'REQUIERE MEJORA';
+
+      doc.fontSize(9).font('Helvetica-Bold').fillColor(nivelColor)
+        .text(`${porcentaje}% - ${nivelCumplimiento}`, margin, currentY);
+      currentY = doc.y + 3;
+      doc.fontSize(8).font('Helvetica').fillColor('#000000')
+        .text(`Puntaje: ${evaluacion.puntajeTotal} / ${evaluacion.puntajeMaximo} puntos`, margin, currentY);
+      currentY = doc.y + 10;
+
+      // Puntajes por fase PHVA - usar columnas individuales del schema actualizado
+      const puntajesPorFase = {
+        planear: Number(evaluacion.puntajePlanear) || 0,
+        hacer: Number(evaluacion.puntajeHacer) || 0,
+        verificar: Number(evaluacion.puntajeVerificar) || 0,
+        actuar: Number(evaluacion.puntajeActuar) || 0
+      };
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e7e34').text('CUMPLIMIENTO POR FASE PHVA:', margin, currentY);
+      currentY = doc.y + 5;
+      
+      const fases = [
+        { nombre: 'PLANEAR', valor: puntajesPorFase.planear || 0 },
+        { nombre: 'HACER', valor: puntajesPorFase.hacer || 0 },
+        { nombre: 'VERIFICAR', valor: puntajesPorFase.verificar || 0 },
+        { nombre: 'ACTUAR', valor: puntajesPorFase.actuar || 0 }
+      ];
+
+      fases.forEach((fase, idx) => {
+        const x = margin + (idx * (contentWidth / 4));
+        doc.fontSize(7).font('Helvetica').fillColor('#000000')
+          .text(`${fase.nombre}: ${fase.valor}%`, x, currentY, { width: contentWidth / 4, align: 'left' });
+      });
+      currentY = doc.y + 12;
+
+      // Tabla de pasos por fase
+      const fasesOrden: Array<'planear' | 'hacer' | 'verificar' | 'actuar'> = ['planear', 'hacer', 'verificar', 'actuar'];
+      const faseLabels: Record<string, string> = {
+        'planear': 'PLANEAR (8 pasos)',
+        'hacer': 'HACER (11 pasos)',
+        'verificar': 'VERIFICAR (3 pasos)',
+        'actuar': 'ACTUAR (2 pasos)'
+      };
+
+      for (const fase of fasesOrden) {
+        // Verificar espacio
+        if (currentY > doc.page.height - 150) {
+          doc.addPage();
+          currentY = 50;
+        }
+
+        // Encabezado de fase
+        doc.rect(margin, currentY, contentWidth, 16).fill('#1e7e34');
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#FFFFFF')
+          .text(faseLabels[fase], margin + 5, currentY + 4);
+        currentY += 20;
+
+        // Filtrar pasos de esta fase
+        const pasosEnFase = allPasos.filter(p => p.fase === fase);
+
+        // Encabezados de tabla
+        const colWidths = [45, 200, 70, contentWidth - 315];
+        doc.rect(margin, currentY, contentWidth, 14).fill('#f8f9fa');
+        doc.fontSize(7).font('Helvetica-Bold').fillColor('#000000');
+        doc.text('Código', margin + 3, currentY + 4, { width: colWidths[0] });
+        doc.text('Nombre del Paso', margin + colWidths[0] + 3, currentY + 4, { width: colWidths[1] });
+        doc.text('Valoración', margin + colWidths[0] + colWidths[1] + 3, currentY + 4, { width: colWidths[2], align: 'center' });
+        doc.text('Observaciones', margin + colWidths[0] + colWidths[1] + colWidths[2] + 3, currentY + 4, { width: colWidths[3] });
+        currentY += 16;
+
+        // Filas de pasos
+        for (const paso of pasosEnFase) {
+          if (currentY > doc.page.height - 80) {
+            doc.addPage();
+            currentY = 50;
+          }
+
+          const respuesta = respuestasMap.get(paso.id);
+          let valoracion = 'Pendiente';
+          let valoracionColor = '#666666';
+
+          if (respuesta) {
+            if (respuesta.noAplica === 1) {
+              valoracion = 'N/A';
+              valoracionColor = '#6c757d';
+            } else if (respuesta.cumple === 1) {
+              valoracion = 'Cumple';
+              valoracionColor = '#28a745';
+            } else {
+              valoracion = 'No Cumple';
+              valoracionColor = '#dc3545';
+            }
+          }
+
+          const observaciones = respuesta?.observaciones || '';
+          const rowHeight = Math.max(14, Math.ceil(doc.heightOfString(observaciones, { width: colWidths[3] - 6 }) / 10) * 10 + 6);
+
+          // Fondo alternado
+          const rowIdx = pasosEnFase.indexOf(paso);
+          if (rowIdx % 2 === 0) {
+            doc.rect(margin, currentY, contentWidth, rowHeight).fill('#ffffff');
+          } else {
+            doc.rect(margin, currentY, contentWidth, rowHeight).fill('#f8f9fa');
+          }
+
+          // Bordes
+          doc.rect(margin, currentY, contentWidth, rowHeight).stroke('#dee2e6');
+
+          doc.fontSize(7).font('Helvetica').fillColor('#000000');
+          doc.text(paso.codigo, margin + 3, currentY + 4, { width: colWidths[0] });
+          doc.text(paso.nombre.length > 50 ? paso.nombre.substring(0, 47) + '...' : paso.nombre, margin + colWidths[0] + 3, currentY + 4, { width: colWidths[1] });
+          
+          doc.font('Helvetica-Bold').fillColor(valoracionColor);
+          doc.text(valoracion, margin + colWidths[0] + colWidths[1] + 3, currentY + 4, { width: colWidths[2], align: 'center' });
+          
+          doc.font('Helvetica').fillColor('#000000');
+          doc.text(observaciones.length > 80 ? observaciones.substring(0, 77) + '...' : observaciones, margin + colWidths[0] + colWidths[1] + colWidths[2] + 3, currentY + 4, { width: colWidths[3] - 6 });
+
+          currentY += rowHeight;
+        }
+
+        currentY += 8;
+      }
+
+      // REMOVED - trazabilidadSst field does not exist in schema
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      //         doc.fontSize(10).font('Helvetica-Bold').fillColor('#FFFFFF')
+      // REMOVED - trazabilidadSst field does not exist in schema
+      //           .text('TRAZABILIDAD CON SG-SST', margin + 8, currentY + 4);
+      // REMOVED - trazabilidadSst field does not exist in schema
+      //         currentY += 25;
+      // REMOVED - trazabilidadSst field does not exist in schema
+      // 
+      // REMOVED - trazabilidadSst field does not exist in schema
+      //         doc.fontSize(8).font('Helvetica').fillColor('#000000')
+      // REMOVED - trazabilidadSst field does not exist in schema
+      //           .text(evaluacion.trazabilidadSst, margin, currentY, { width: contentWidth });
+      // REMOVED - trazabilidadSst field does not exist in schema
+      //         currentY = doc.y + 10;
+      // REMOVED - trazabilidadSst field does not exist in schema
+      //       }
+      // REMOVED - trazabilidadSst field does not exist in schema
+      // 
+      // Observaciones generales
+      if (evaluacion.observaciones) {
+        if (currentY > doc.page.height - 100) {
+          doc.addPage();
+          currentY = 50;
+        }
+
+        doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e7e34').text('OBSERVACIONES GENERALES:', margin, currentY);
+        currentY = doc.y + 5;
+        doc.fontSize(8).font('Helvetica').fillColor('#000000')
+          .text(evaluacion.observaciones, margin, currentY, { width: contentWidth });
+        currentY = doc.y + 10;
+      }
+
+      // Footer con firmantes
+      addSignatureFooter(doc, signers, false);
+
+      doc.end();
+    } catch (error: any) {
+      handlePdfError(error, res, 'evaluaciones-pesv-pdf');
     }
   });
 

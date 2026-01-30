@@ -86,3 +86,33 @@ The system uses a client-server architecture with a RESTful API. Data integrity 
 - [ ] ¿Se carga el logo con `loadCompanyLogoBuffer()`?
 - [ ] ¿Se obtienen los firmantes con `getSignersForCompany()`?
 - [ ] ¿Se usa `addStandardHeader()` y `addSignatureFooter()`?
+
+## Módulo PESV (Plan Estratégico de Seguridad Vial)
+
+### Implementación (Enero 2026)
+El módulo PESV permite gestionar evaluaciones del Plan Estratégico de Seguridad Vial según la Resolución 40595/2022.
+
+**Características:**
+- Evaluaciones con 24 pasos organizados por ciclo PHVA (Planear: 8, Hacer: 11, Verificar: 3, Actuar: 2)
+- Tres niveles de complejidad: Básico (≤10 vehículos), Estándar (11-50), Avanzado (>50)
+- Trazabilidad bidireccional con SST (accidentes, capacitaciones, inspecciones)
+- PDF con formato corporativo estándar (color verde #1e7e34)
+
+**Archivos clave:**
+- `shared/schema.ts` - Tablas: evaluaciones_pesv, respuestas_pasos_pesv, acciones_mejora_pesv
+- `shared/pasos-pesv.ts` - Datos de los 24 pasos por nivel
+- `client/src/pages/EvaluacionesPesv.tsx` - Lista de evaluaciones
+- `client/src/pages/DetalleEvaluacionPesv.tsx` - Detalle con respuestas por paso
+
+**Rutas:**
+- `/pesv/evaluaciones` - Lista de evaluaciones
+- `/pesv/evaluacion/:id` - Detalle de evaluación
+
+**API Endpoints:**
+- GET/POST /api/evaluaciones-pesv
+- GET/PATCH/DELETE /api/evaluaciones-pesv/:id
+- GET/POST /api/evaluaciones-pesv/:id/respuestas
+- GET/POST /api/evaluaciones-pesv/:id/acciones
+- POST /api/evaluaciones-pesv/:id/recalcular
+- GET /api/evaluaciones-pesv/:id/pdf
+- GET /api/pasos-pesv?nivel={basico|estandar|avanzado}
