@@ -23981,13 +23981,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create PDF
       const doc = new PDFDocument({ margin: 40, size: 'LETTER' });
       
-      // Add trial watermark if subscription is in trial period
+      // Add watermark based on subscription status
       const pdf22609_subscription = await storage.getSubscriptionByCompany(companyId);
       const pdf22609_trialStatus = getTrialStatus(pdf22609_subscription?.status || 'trial', pdf22609_subscription?.trialEnd || null, true, true);
-      setupTrialWatermarkOnAllPages(doc, pdf22609_trialStatus.requiresWatermark);
       
-      // Add LSO certification watermark to all pages
-      setupLsoWatermarkOnAllPages(doc, licensedProfessionalData);
+      // Si es trial, mostrar marca de agua de trial; si no, mostrar marca del LSO
+      if (pdf22609_trialStatus.requiresWatermark) {
+        setupTrialWatermarkOnAllPages(doc, true);
+      } else {
+        setupLsoWatermarkOnAllPages(doc, licensedProfessionalData);
+      }
       const margin = 40;
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - 2 * margin;
