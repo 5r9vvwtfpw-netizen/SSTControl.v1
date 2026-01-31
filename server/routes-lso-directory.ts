@@ -154,13 +154,12 @@ export function registerLsoDirectoryRoutes(app: Express) {
       }
 
       const requestBody = {
-        companyId: String(company.id),
+        clientId: String(company.id),
         companyName: company.name,
         email: company.contactEmail,
         city: company.city,
         employeeCount: company.numberOfWorkers,
         riskLevel: company.riskLevel,
-        activityCIIU: company.ciiuCode,
         permissions: ["read"]
       };
 
