@@ -1300,6 +1300,7 @@ export const responsibleDesignations = pgTable("responsible_designations", {
   // Soporte para LSO externo (profesional no trabajador de la empresa)
   isExternalLso: boolean("is_external_lso").default(false), // Indica si el responsable es un LSO externo
   externalLsoName: text("external_lso_name"), // Nombre del LSO externo cuando no hay workerId
+  externalLsoIdentificationNumber: text("external_lso_identification_number"), // Cédula del LSO externo
   // Campos adicionales para cumplimiento Resolución 0312/2019 - Estándar 1.1.1
   licenciaSstTitular: text("licencia_sst_titular"), // Nombre del titular de la licencia SST
   licenciaSstNumero: text("licencia_sst_numero"), // Número de licencia SST

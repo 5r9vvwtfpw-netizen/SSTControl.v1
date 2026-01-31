@@ -270,6 +270,7 @@ export default function ResponsibleDesignationPage() {
       status: "activo",
       isExternalLso: false,
       externalLsoName: undefined,
+      externalLsoIdentificationNumber: "",
       licenciaSstTitular: "",
       licenciaSstNumero: "",
       licenciaSstVigencia: undefined,
@@ -373,6 +374,7 @@ export default function ResponsibleDesignationPage() {
       status: designation.status,
       isExternalLso: isExternal,
       externalLsoName: designation.externalLsoName || undefined,
+      externalLsoIdentificationNumber: designation.externalLsoIdentificationNumber || "",
       licenciaSstTitular: designation.licenciaSstTitular || "",
       licenciaSstNumero: designation.licenciaSstNumero || "",
       licenciaSstVigencia: designation.licenciaSstVigencia || undefined,
@@ -405,6 +407,7 @@ export default function ResponsibleDesignationPage() {
       status: "activo",
       isExternalLso: false,
       externalLsoName: undefined,
+      externalLsoIdentificationNumber: "",
       licenciaSstTitular: "",
       licenciaSstNumero: "",
       licenciaSstVigencia: undefined,
@@ -679,7 +682,7 @@ export default function ResponsibleDesignationPage() {
                                 }
                               }
                             }} 
-                            value={field.value}
+                            value={field.value ?? undefined}
                           >
                             <FormControl>
                               <SelectTrigger data-testid="select-worker">
@@ -898,27 +901,51 @@ export default function ResponsibleDesignationPage() {
                         Información de Licencia SST (Resolución 0312/2019)
                       </h4>
                       
-                      <FormField
-                        control={form.control}
-                        name="licenciaSstTitular"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nombre del Titular de la Licencia</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Nombre completo del profesional licenciado" 
-                                {...field} 
-                                value={field.value || ""}
-                                data-testid="input-licencia-sst-titular" 
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Nombre del profesional que posee la licencia SST
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="licenciaSstTitular"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nombre del Titular de la Licencia</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="Nombre completo del profesional licenciado" 
+                                  {...field} 
+                                  value={field.value || ""}
+                                  data-testid="input-licencia-sst-titular" 
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Nombre del profesional que posee la licencia SST
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="externalLsoIdentificationNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Cédula de Ciudadanía</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="Número de documento de identidad" 
+                                  {...field} 
+                                  value={field.value || ""}
+                                  data-testid="input-external-lso-cedula" 
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Cédula del profesional en SST
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField

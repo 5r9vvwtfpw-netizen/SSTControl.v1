@@ -9563,7 +9563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Build designee info (works for both internal workers and external LSOs)
       const designeeInfo = {
         name: worker?.name || designation.externalLsoName || designation.licenciaSstTitular || 'LSO Externo',
-        identificationNumber: worker?.identificationNumber || 'No registrado',
+        identificationNumber: worker?.identificationNumber || designation.externalLsoIdentificationNumber || 'No registrado',
         position: worker?.position || designation.position,
       };
       

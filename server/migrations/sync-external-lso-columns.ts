@@ -29,6 +29,13 @@ export async function syncExternalLsoColumns(): Promise<void> {
     `);
     console.log('[Migration] ✅ Columna external_lso_name verificada/agregada');
 
+    console.log('[Migration] Ejecutando ALTER TABLE para external_lso_identification_number...');
+    await db.execute(sql`
+      ALTER TABLE responsible_designations 
+      ADD COLUMN IF NOT EXISTS external_lso_identification_number TEXT
+    `);
+    console.log('[Migration] ✅ Columna external_lso_identification_number verificada/agregada');
+
     // SST License columns (Resolución 0312/2019)
     console.log('[Migration] Ejecutando ALTER TABLE para licencia_sst_titular...');
     await db.execute(sql`
