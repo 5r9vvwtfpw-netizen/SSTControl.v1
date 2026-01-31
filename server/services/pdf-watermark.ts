@@ -127,8 +127,8 @@ interface LsoWatermarkOptions {
 }
 
 /**
- * Adds a subtle LSO certification watermark to the PDF
- * This watermark indicates the licensed professional responsible for the document
+ * Adds a LSO certification watermark to the PDF
+ * Same style as trial watermark but with LSO name
  * 
  * @param doc - PDFKit document instance
  * @param options - LSO information for the watermark
@@ -141,34 +141,25 @@ export function addLsoWatermark(doc: any, options: LsoWatermarkOptions): void {
   const pageWidth = doc.page.width;
   const pageHeight = doc.page.height;
   
-  // Create a subtle diagonal watermark with LSO info
   const centerX = pageWidth / 2;
   const centerY = pageHeight / 2;
   
-  // Light green color for certification watermark
-  doc.opacity(0.08)
+  // Same style as trial watermark - large diagonal text
+  doc.opacity(0.15)
      .font('Helvetica-Bold')
-     .fontSize(40)
+     .fontSize(60)
      .fillColor('#1e7e34');
   
   doc.rotate(-45, { origin: [centerX, centerY] });
   
-  const text = `CERTIFICADO POR: ${lsoName.toUpperCase()}`;
+  // Simple text with LSO name in large letters
+  const text = lsoName.toUpperCase();
   const textWidth = doc.widthOfString(text);
   const textX = centerX - textWidth / 2;
-  const textY = centerY - 20;
+  const textY = centerY - 30;
   
   doc.text(text, textX, textY, {
     width: textWidth + 100,
-    align: 'center'
-  });
-  
-  // Add license number below
-  const licenseText = `LIC. SST: ${licenseNumber}`;
-  doc.fontSize(25);
-  const licenseWidth = doc.widthOfString(licenseText);
-  doc.text(licenseText, centerX - licenseWidth / 2, textY + 45, {
-    width: licenseWidth + 50,
     align: 'center'
   });
   
