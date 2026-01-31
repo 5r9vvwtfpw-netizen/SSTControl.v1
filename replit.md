@@ -168,3 +168,41 @@ El módulo PESV ahora incluye gestión de riesgos viales según ISO 31000:2018 c
 - Alto: Naranja #FF9800
 - Muy Alto: Rojo #F44336
 - Crítico: Rojo Oscuro #B71C1C
+
+### Integración ISO 39001:2012 - Sistema de Gestión de Seguridad Vial (Enero 2026)
+El módulo PESV incluye gestión de desempeño de seguridad vial según ISO 39001:2012 con factores e indicadores de desempeño.
+
+**Nuevas Tablas:**
+- `factores_desempeno_sv` - Factores de desempeño de seguridad vial (SPF)
+- `indicadores_sv` - Indicadores de desempeño de seguridad vial (SPI)
+- `mediciones_indicador_sv` - Mediciones históricas de indicadores
+- `objetivos_sv` - Objetivos de seguridad vial anuales
+- `auditorias_pesv` - Auditorías del sistema PESV
+- `hallazgos_auditoria_pesv` - Hallazgos de auditorías PESV
+
+**Categorías SPF (Safety Performance Factors):**
+- exposicion_riesgo: Factores de exposición al riesgo vial
+- resultado_final: Factores de resultado final (accidentes, fatalidades)
+- resultado_intermedio: Factores de resultado intermedio (infracciones, velocidad)
+- intervencion: Factores de intervención (capacitaciones, inspecciones)
+
+**Frecuencias de Medición SPI:**
+- diaria, semanal, quincenal, mensual, trimestral, semestral, anual
+
+**Estados de Objetivos:**
+- definido, en_progreso, cumplido, no_cumplido, cancelado
+
+**Nuevas Páginas:**
+- `client/src/pages/FactoresDesempenoPesv.tsx` - Gestión de factores SPF
+- `client/src/pages/IndicadoresPesv.tsx` - Gestión de indicadores SPI
+
+**Nuevas Rutas:**
+- `/pesv/factores-desempeno` - Factores de desempeño de seguridad vial
+- `/pesv/indicadores` - Indicadores de desempeño de seguridad vial
+
+**Nuevos API Endpoints:**
+- GET/POST /api/factores-desempeno-sv - CRUD factores SPF
+- GET/PATCH/DELETE /api/factores-desempeno-sv/:id
+- GET/POST /api/indicadores-sv - CRUD indicadores SPI
+- GET/PATCH/DELETE /api/indicadores-sv/:id
+- GET/POST /api/indicadores-sv/:id/mediciones - Mediciones de indicador
