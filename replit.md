@@ -97,6 +97,13 @@ El módulo PESV permite gestionar evaluaciones del Plan Estratégico de Segurida
 - Tres niveles de complejidad: Básico (≤10 vehículos), Estándar (11-50), Avanzado (>50)
 - Trazabilidad bidireccional con SST (accidentes, capacitaciones, inspecciones)
 - PDF con formato corporativo estándar (color verde #1e7e34)
+- Esquema de colores PHVA consistente con evaluaciones SST:
+  - Planear: Azul #2196F3
+  - Hacer: Verde #4CAF50
+  - Verificar: Amarillo #FFEB3B (texto oscuro #333)
+  - Actuar: Rojo #D32F2F
+- Card "Trazabilidad Ciclo PHVA" con círculos de colores, formato "X / Y pts" y porcentajes
+- Tabs con badges de colores para cada fase PHVA
 
 **Archivos clave:**
 - `shared/schema.ts` - Tablas: evaluaciones_pesv, respuestas_pasos_pesv, acciones_mejora_pesv

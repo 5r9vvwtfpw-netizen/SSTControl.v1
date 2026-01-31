@@ -74,8 +74,6 @@ export default function DetalleEvaluacionPesv() {
       pasoId: "",
       cumple: 0,
       noAplica: 0,
-      puntajeObtenido: 0,
-      puntajeMaximo: 0,
       observaciones: "",
       evidencias: "",
       modoVerificacion: "",
@@ -155,8 +153,6 @@ export default function DetalleEvaluacionPesv() {
         pasoId: pasoDb?.id || "",
         cumple: existing.cumple,
         noAplica: existing.noAplica,
-        puntajeObtenido: existing.puntajeObtenido,
-        puntajeMaximo: existing.puntajeMaximo,
         observaciones: existing.observaciones || "",
         evidencias: existing.evidencias || "",
         modoVerificacion: existing.modoVerificacion || "",
@@ -171,8 +167,6 @@ export default function DetalleEvaluacionPesv() {
         pasoId: pasoDb?.id || "",
         cumple: 0,
         noAplica: 0,
-        puntajeObtenido: 0,
-        puntajeMaximo: paso.puntajeMaximo,
         observaciones: "",
         evidencias: "",
         modoVerificacion: "",
@@ -187,21 +181,7 @@ export default function DetalleEvaluacionPesv() {
 
   const onSubmitRespuesta = (values: z.infer<typeof insertRespuestaPasoPesvSchema>) => {
     if (!selectedPaso) return;
-    
-    let puntajeObtenido = 0;
-    if (values.noAplica === 1) {
-      puntajeObtenido = 0;
-    } else if (values.cumple === 1) {
-      puntajeObtenido = selectedPaso.puntajeMaximo;
-    }
-    
-    const dataToSave = {
-      ...values,
-      puntajeObtenido,
-      puntajeMaximo: selectedPaso.puntajeMaximo,
-    };
-    
-    saveRespuestaMutation.mutate(dataToSave);
+    saveRespuestaMutation.mutate(values);
   };
 
   const getRespuestaForPaso = (paso: PasoPesvData): RespuestaPasoPesv | undefined => {
@@ -358,47 +338,84 @@ export default function DetalleEvaluacionPesv() {
             </span>
           </div>
           <Progress 
-            value={evaluacion.porcentajeCumplimiento || progresoTotal.porcentaje} 
+            value={Number(evaluacion.porcentajeCumplimiento) || progresoTotal.porcentaje} 
             className="h-3" 
             data-testid="progress-total"
           />
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-            {(["planear", "hacer", "verificar", "actuar"] as FasePHVA[]).map((fase) => {
-              const progreso = calcularProgresoPorFase(fase);
-              const Icon = getFaseIcon(fase);
-              return (
-                <div 
-                  key={fase} 
-                  className="text-center p-3 rounded-lg border cursor-pointer hover-elevate"
-                  onClick={() => setSelectedFase(fase)}
-                  data-testid={`card-fase-${fase}`}
-                >
-                  <Icon className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                  <p className="text-xs font-medium uppercase text-muted-foreground">{FASES_PESV_LABELS[fase]}</p>
-                  <p className="text-lg font-bold">{progreso.porcentaje}%</p>
-                  <Progress value={progreso.porcentaje} className="h-1 mt-1" />
-                </div>
-              );
-            })}
-          </div>
+          <Card className="mt-4">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-primary"></div>
+                Trazabilidad Ciclo PHVA
+              </CardTitle>
+              <CardDescription>Puntajes agrupados según el ciclo de mejora continua</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {([
+                  { key: 'planear' as FasePHVA, nombre: 'Planear', bgColor: '#2196F3', icon: 'P' },
+                  { key: 'hacer' as FasePHVA, nombre: 'Hacer', bgColor: '#4CAF50', icon: 'H' },
+                  { key: 'verificar' as FasePHVA, nombre: 'Verificar', bgColor: '#FFEB3B', textColor: '#333', icon: 'V' },
+                  { key: 'actuar' as FasePHVA, nombre: 'Actuar', bgColor: '#D32F2F', icon: 'A' },
+                ]).map((ciclo) => {
+                  const progreso = calcularProgresoPorFase(ciclo.key);
+                  const porcentaje = progreso.porcentaje;
+                  const porcentajeColor = porcentaje >= 85 ? '#4CAF50' : porcentaje >= 60 ? '#FF9800' : '#D32F2F';
+                  return (
+                    <div 
+                      key={ciclo.key} 
+                      className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover-elevate"
+                      onClick={() => setSelectedFase(ciclo.key)}
+                      data-testid={`card-fase-${ciclo.key}`}
+                    >
+                      <div 
+                        className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shrink-0"
+                        style={{ backgroundColor: ciclo.bgColor, color: ciclo.textColor || 'white' }}
+                      >
+                        {ciclo.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium">{ciclo.nombre}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {progreso.puntaje} / {progreso.maximo} pts
+                        </div>
+                        <div className="text-xs font-medium" style={{ color: porcentajeColor }}>
+                          {porcentaje}%
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
         </CardContent>
       </Card>
 
       <Tabs value={selectedFase} onValueChange={(v) => setSelectedFase(v as FasePHVA)}>
         <TabsList className="grid w-full grid-cols-4" data-testid="tabs-fases">
-          {(["planear", "hacer", "verificar", "actuar"] as FasePHVA[]).map((fase) => {
-            const Icon = getFaseIcon(fase);
-            const progreso = calcularProgresoPorFase(fase);
+          {([
+            { key: 'planear' as FasePHVA, nombre: 'Planear', bgColor: '#2196F3', icon: 'P' },
+            { key: 'hacer' as FasePHVA, nombre: 'Hacer', bgColor: '#4CAF50', icon: 'H' },
+            { key: 'verificar' as FasePHVA, nombre: 'Verificar', bgColor: '#FFEB3B', textColor: '#333', icon: 'V' },
+            { key: 'actuar' as FasePHVA, nombre: 'Actuar', bgColor: '#D32F2F', icon: 'A' },
+          ]).map((ciclo) => {
+            const progreso = calcularProgresoPorFase(ciclo.key);
             return (
               <TabsTrigger 
-                key={fase} 
-                value={fase} 
+                key={ciclo.key} 
+                value={ciclo.key} 
                 className="flex items-center gap-2"
-                data-testid={`tab-${fase}`}
+                data-testid={`tab-${ciclo.key}`}
               >
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{FASES_PESV_LABELS[fase]}</span>
+                <div 
+                  className="w-5 h-5 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
+                  style={{ backgroundColor: ciclo.bgColor, color: ciclo.textColor || 'white' }}
+                >
+                  {ciclo.icon}
+                </div>
+                <span className="hidden sm:inline">{ciclo.nombre}</span>
                 <Badge variant="secondary" className="ml-1 hidden md:inline-flex">
                   {progreso.porcentaje}%
                 </Badge>
@@ -407,20 +424,32 @@ export default function DetalleEvaluacionPesv() {
           })}
         </TabsList>
 
-        {(["planear", "hacer", "verificar", "actuar"] as FasePHVA[]).map((fase) => (
-          <TabsContent key={fase} value={fase} className="space-y-4 mt-4">
+        {([
+          { key: 'planear' as FasePHVA, nombre: 'Planear', bgColor: '#2196F3', icon: 'P' },
+          { key: 'hacer' as FasePHVA, nombre: 'Hacer', bgColor: '#4CAF50', icon: 'H' },
+          { key: 'verificar' as FasePHVA, nombre: 'Verificar', bgColor: '#FFEB3B', textColor: '#333', icon: 'V' },
+          { key: 'actuar' as FasePHVA, nombre: 'Actuar', bgColor: '#D32F2F', icon: 'A' },
+        ]).map((ciclo) => {
+          const pasosFase = pasos.filter(p => p.fase === ciclo.key);
+          return (
+            <TabsContent key={ciclo.key} value={ciclo.key} className="space-y-4 mt-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
-                {(() => { const Icon = getFaseIcon(fase); return <Icon className="h-5 w-5" />; })()}
-                {FASES_PESV_LABELS[fase]}
+                <div 
+                  className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs"
+                  style={{ backgroundColor: ciclo.bgColor, color: ciclo.textColor || 'white' }}
+                >
+                  {ciclo.icon}
+                </div>
+                {ciclo.nombre}
               </h2>
-              <Badge className={FASES_PESV_COLORS[fase]}>
-                {pasosFiltrados.length} pasos
+              <Badge style={{ backgroundColor: ciclo.bgColor, color: ciclo.textColor || 'white' }}>
+                {pasosFase.length} pasos
               </Badge>
             </div>
 
             <div className="grid gap-4">
-              {pasosFiltrados.map((paso) => {
+              {pasosFase.map((paso) => {
                 const respuesta = getRespuestaForPaso(paso);
                 return (
                   <Card 
@@ -445,7 +474,7 @@ export default function DetalleEvaluacionPesv() {
                         <div className="flex items-center gap-2">
                           {getEstadoBadge(paso)}
                           <Badge variant="secondary" className="font-mono">
-                            {respuesta?.puntajeObtenido ?? 0}/{paso.puntajeMaximo}
+                            {respuesta?.cumple === 1 ? paso.puntajeMaximo : 0}/{paso.puntajeMaximo}
                           </Badge>
                         </div>
                       </div>
@@ -462,7 +491,8 @@ export default function DetalleEvaluacionPesv() {
               })}
             </div>
           </TabsContent>
-        ))}
+          );
+        })}
       </Tabs>
 
       <Dialog open={respuestaDialogOpen} onOpenChange={setRespuestaDialogOpen}>
