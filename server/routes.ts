@@ -9359,24 +9359,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let companyId: string;
       
-      if (isAdmin) {
-        // Admin: Get companyId from worker
-        const worker = await storage.getWorkerById(validatedData.workerId);
-        if (!worker) {
-          return res.status(400).send("Trabajador no encontrado");
-        }
-        companyId = worker.companyId;
-      } else {
-        // Non-admin: Use user's companyId
-        companyId = req.user!.companyId || "";
-        if (!companyId) {
-          return res.status(403).send("Usuario no asociado a una empresa");
+      // Verificar si es una designación de LSO externo
+      const isExternalLsoDesignation = validatedData.isExternalLso === true;
+      
+      if (isExternalLsoDesignation) {
+        // LSO Externo: No requiere workerId, solo externalLsoName
+        if (!validatedData.externalLsoName) {
+          return res.status(400).send("Se requiere el nombre del profesional LSO externo");
         }
         
-        // Verify worker belongs to company
-        const worker = await storage.getWorker(validatedData.workerId, companyId);
-        if (!worker) {
-          return res.status(400).send("Trabajador no encontrado o no pertenece a esta empresa");
+        // Obtener companyId del usuario
+        if (isAdmin) {
+          companyId = req.user!.companyId || "";
+          if (!companyId) {
+            return res.status(400).send("Admin debe estar asociado a una empresa para crear designaciones de LSO externo");
+          }
+        } else {
+          companyId = req.user!.companyId || "";
+          if (!companyId) {
+            return res.status(403).send("Usuario no asociado a una empresa");
+          }
+        }
+      } else {
+        // Designación de trabajador interno: requiere workerId
+        if (!validatedData.workerId) {
+          return res.status(400).send("Se requiere seleccionar un trabajador o usar un LSO externo");
+        }
+        
+        if (isAdmin) {
+          // Admin: Get companyId from worker
+          const worker = await storage.getWorkerById(validatedData.workerId);
+          if (!worker) {
+            return res.status(400).send("Trabajador no encontrado");
+          }
+          companyId = worker.companyId;
+        } else {
+          // Non-admin: Use user's companyId
+          companyId = req.user!.companyId || "";
+          if (!companyId) {
+            return res.status(403).send("Usuario no asociado a una empresa");
+          }
+          
+          // Verify worker belongs to company
+          const worker = await storage.getWorker(validatedData.workerId, companyId);
+          if (!worker) {
+            return res.status(400).send("Trabajador no encontrado o no pertenece a esta empresa");
+          }
         }
       }
       

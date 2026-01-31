@@ -238,6 +238,7 @@ export default function ResponsibleDesignationPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDesignation, setEditingDesignation] = useState<ResponsibleDesignation | null>(null);
   const [selectedPredefinido, setSelectedPredefinido] = useState("");
+  const [useExternalLso, setUseExternalLso] = useState(false);
 
   const { data: designations = [], isLoading: designationsLoading } = useQuery<ResponsibleDesignation[]>({
     queryKey: ["/api/responsible-designations"],
@@ -260,13 +261,15 @@ export default function ResponsibleDesignationPage() {
   const form = useForm<DesignationFormData>({
     resolver: zodResolver(insertResponsibleDesignationSchema),
     defaultValues: {
-      workerId: "",
+      workerId: undefined,
       jobProfileId: undefined,
       designationDate: getTodayDateString(),
       position: "",
       responsibilities: [],
       signatureUrl: "",
       status: "activo",
+      isExternalLso: false,
+      externalLsoName: undefined,
       licenciaSstTitular: "",
       licenciaSstNumero: "",
       licenciaSstVigencia: undefined,
@@ -358,14 +361,18 @@ export default function ResponsibleDesignationPage() {
 
   const handleEdit = (designation: ResponsibleDesignation) => {
     setEditingDesignation(designation);
+    const isExternal = designation.isExternalLso === true;
+    setUseExternalLso(isExternal);
     form.reset({
-      workerId: designation.workerId,
+      workerId: designation.workerId || undefined,
       jobProfileId: designation.jobProfileId || undefined,
       designationDate: designation.designationDate,
       position: designation.position,
       responsibilities: designation.responsibilities,
       signatureUrl: designation.signatureUrl || "",
       status: designation.status,
+      isExternalLso: isExternal,
+      externalLsoName: designation.externalLsoName || undefined,
       licenciaSstTitular: designation.licenciaSstTitular || "",
       licenciaSstNumero: designation.licenciaSstNumero || "",
       licenciaSstVigencia: designation.licenciaSstVigencia || undefined,
@@ -384,27 +391,41 @@ export default function ResponsibleDesignationPage() {
 
   const handleOpenDialog = () => {
     setEditingDesignation(null);
+    // Si hay LSO asignado, pre-seleccionar usar LSO externo
+    const shouldUseExternalLso = !!lsoAssignment;
+    setUseExternalLso(shouldUseExternalLso);
+    
     form.reset({
-      workerId: "",
+      workerId: undefined,
       jobProfileId: undefined,
       designationDate: getTodayDateString(),
       position: "",
       responsibilities: [],
       signatureUrl: "",
       status: "activo",
+      isExternalLso: shouldUseExternalLso,
+      externalLsoName: shouldUseExternalLso ? lsoAssignment?.name : undefined,
       licenciaSstTitular: lsoAssignment?.name || "",
       licenciaSstNumero: lsoAssignment?.licenseNumber || "",
       licenciaSstVigencia: lsoAssignment?.licenseExpiry || undefined,
       curso50Horas: false,
       curso50HorasFecha: undefined,
-      nivelFormacion: undefined,
+      nivelFormacion: "Profesional",
     });
     setDialogOpen(true);
   };
 
-  const getWorkerName = (workerId: string) => {
+  const getWorkerName = (workerId: string | null | undefined) => {
+    if (!workerId) return "Desconocido";
     const worker = workers.find((w) => w.id === workerId);
     return worker ? worker.name : "Desconocido";
+  };
+  
+  const getDesignationResponsibleName = (designation: ResponsibleDesignation) => {
+    if (designation.isExternalLso && designation.externalLsoName) {
+      return designation.externalLsoName;
+    }
+    return getWorkerName(designation.workerId);
   };
 
   // Obtener las responsabilidades disponibles según el cargo seleccionado
@@ -519,17 +540,57 @@ export default function ResponsibleDesignationPage() {
 
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="workerId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Trabajador *</FormLabel>
-                          <Select 
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                              // Auto-fill cargo específico basado en el cargo del trabajador
-                              const selectedWorker = workers.find(w => w.id === value);
+                    {/* Toggle para elegir entre trabajador interno o LSO externo */}
+                    {lsoAssignment && (
+                      <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <UserCheck className="h-5 w-5 text-green-600" />
+                          <div>
+                            <p className="text-sm font-medium">LSO Externo Asignado: {lsoAssignment.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {lsoAssignment.licenseNumber && `Licencia: ${lsoAssignment.licenseNumber}`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm text-muted-foreground">
+                            {useExternalLso ? "Usando LSO externo" : "Usando trabajador interno"}
+                          </label>
+                          <Checkbox
+                            checked={useExternalLso}
+                            onCheckedChange={(checked) => {
+                              setUseExternalLso(!!checked);
+                              if (checked) {
+                                form.setValue("isExternalLso", true);
+                                form.setValue("externalLsoName", lsoAssignment.name);
+                                form.setValue("workerId", undefined);
+                                form.setValue("licenciaSstTitular", lsoAssignment.name || "");
+                                form.setValue("licenciaSstNumero", lsoAssignment.licenseNumber || "");
+                                form.setValue("licenciaSstVigencia", lsoAssignment.licenseExpiry || undefined);
+                              } else {
+                                form.setValue("isExternalLso", false);
+                                form.setValue("externalLsoName", undefined);
+                              }
+                            }}
+                            data-testid="checkbox-use-external-lso"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Selector de trabajador - solo si NO usa LSO externo */}
+                    {!useExternalLso && (
+                      <FormField
+                        control={form.control}
+                        name="workerId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Trabajador *</FormLabel>
+                            <Select 
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                // Auto-fill cargo específico basado en el cargo del trabajador
+                                const selectedWorker = workers.find(w => w.id === value);
                               console.log("[ResponsibleDesignation] Worker selected:", {
                                 workerId: value,
                                 selectedWorker: selectedWorker,
@@ -620,6 +681,41 @@ export default function ResponsibleDesignationPage() {
                         </FormItem>
                       )}
                     />
+                    )}
+
+                    {/* Mostrar info del LSO externo si está seleccionado */}
+                    {useExternalLso && lsoAssignment && (
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Award className="h-5 w-5 text-green-600" />
+                          <span className="font-medium text-green-800">Profesional LSO Externo</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Nombre:</span>
+                            <span className="ml-2 font-medium">{lsoAssignment.name}</span>
+                          </div>
+                          {lsoAssignment.licenseNumber && (
+                            <div>
+                              <span className="text-muted-foreground">Licencia:</span>
+                              <span className="ml-2 font-medium">{lsoAssignment.licenseNumber}</span>
+                            </div>
+                          )}
+                          {lsoAssignment.licenseExpiry && (
+                            <div>
+                              <span className="text-muted-foreground">Vigencia:</span>
+                              <span className="ml-2 font-medium">{lsoAssignment.licenseExpiry}</span>
+                            </div>
+                          )}
+                          {lsoAssignment.city && (
+                            <div>
+                              <span className="text-muted-foreground">Ciudad:</span>
+                              <span className="ml-2 font-medium">{lsoAssignment.city}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     <FormField
                       control={form.control}
@@ -1013,7 +1109,14 @@ export default function ResponsibleDesignationPage() {
                   designations.map((designation) => (
                     <TableRow key={designation.id} data-testid={`row-designation-${designation.id}`}>
                       <TableCell data-testid={`text-worker-${designation.id}`}>
-                        <div className="font-medium">{getWorkerName(designation.workerId)}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{getDesignationResponsibleName(designation)}</span>
+                          {designation.isExternalLso && (
+                            <Badge variant="outline" className="text-xs text-green-600 border-green-300">
+                              LSO Externo
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell data-testid={`text-position-${designation.id}`}>
                         {designation.position}
