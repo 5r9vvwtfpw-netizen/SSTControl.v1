@@ -170,11 +170,21 @@ export function registerLsoDirectoryRoutes(app: Express) {
 
       const result = await tokenResponse.json();
 
-      if (!result.ok || !result.data?.token) {
+      if (!result.ok) {
         console.error("[LSO Routes] Error obteniendo token LSO:", result.error);
         return res.status(500).json({ 
           ok: false, 
-          error: "Error al conectar con el directorio de profesionales" 
+          error: result.error === "Invalid API key" 
+            ? "Credenciales de API no válidas. Contacte al administrador." 
+            : "Error al conectar con el directorio de profesionales"
+        });
+      }
+
+      if (!result.data?.token) {
+        console.error("[LSO Routes] Token no recibido de LSO");
+        return res.status(500).json({ 
+          ok: false, 
+          error: "No se recibió autorización del directorio"
         });
       }
 
