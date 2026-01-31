@@ -392,7 +392,7 @@ export default function FactoresDesempenoPesv() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Sin especificar</SelectItem>
+                          <SelectItem value="sin_especificar">Sin especificar</SelectItem>
                           {ELEMENTOS_SUGERIDOS.map((elemento) => (
                             <SelectItem key={elemento} value={elemento}>
                               {elemento}
@@ -497,7 +497,7 @@ export default function FactoresDesempenoPesv() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">Sin especificar</SelectItem>
+                            <SelectItem value="sin_especificar">Sin especificar</SelectItem>
                             {Object.entries(TENDENCIA_CONFIG).map(([key, config]) => (
                               <SelectItem key={key} value={key}>
                                 {config.label}

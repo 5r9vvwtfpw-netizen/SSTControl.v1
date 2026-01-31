@@ -43429,7 +43429,23 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
       
-      const validatedData = schema.insertFactorDesempenoSVSchema.parse(req.body);
+      // Sanitize numeric fields - convert empty strings to null
+      const sanitizedBody = { ...req.body };
+      const numericFields = ['valorBase', 'valorActual', 'metaAnual'];
+      numericFields.forEach(field => {
+        if (sanitizedBody[field] === '' || sanitizedBody[field] === undefined) {
+          sanitizedBody[field] = null;
+        }
+      });
+      // Sanitize select fields with "sin_especificar" value
+      if (sanitizedBody.elementoRelacionado === 'sin_especificar') {
+        sanitizedBody.elementoRelacionado = null;
+      }
+      if (sanitizedBody.tendencia === 'sin_especificar') {
+        sanitizedBody.tendencia = null;
+      }
+      
+      const validatedData = schema.insertFactorDesempenoSVSchema.parse(sanitizedBody);
       
       const [result] = await db.insert(schema.factoresDesempenoSV)
         .values({
@@ -43479,7 +43495,23 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
       
-      const validatedData = schema.insertFactorDesempenoSVSchema.partial().parse(req.body);
+      // Sanitize numeric fields - convert empty strings to null
+      const sanitizedBody = { ...req.body };
+      const numericFields = ['valorBase', 'valorActual', 'metaAnual'];
+      numericFields.forEach(field => {
+        if (sanitizedBody[field] === '' || sanitizedBody[field] === undefined) {
+          sanitizedBody[field] = null;
+        }
+      });
+      // Sanitize select fields with "sin_especificar" value
+      if (sanitizedBody.elementoRelacionado === 'sin_especificar') {
+        sanitizedBody.elementoRelacionado = null;
+      }
+      if (sanitizedBody.tendencia === 'sin_especificar') {
+        sanitizedBody.tendencia = null;
+      }
+      
+      const validatedData = schema.insertFactorDesempenoSVSchema.partial().parse(sanitizedBody);
       
       const [result] = await db.update(schema.factoresDesempenoSV)
         .set({
@@ -43559,7 +43591,16 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
       
-      const validatedData = schema.insertIndicadorSVSchema.parse(req.body);
+      // Sanitize numeric fields - convert empty strings to null
+      const sanitizedBody = { ...req.body };
+      const numericFields = ['valorMeta', 'valorMinimo', 'valorMaximo', 'valorActual'];
+      numericFields.forEach(field => {
+        if (sanitizedBody[field] === '' || sanitizedBody[field] === undefined) {
+          sanitizedBody[field] = null;
+        }
+      });
+      
+      const validatedData = schema.insertIndicadorSVSchema.parse(sanitizedBody);
       
       const [result] = await db.insert(schema.indicadoresSV)
         .values({
@@ -43609,7 +43650,16 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
       
-      const validatedData = schema.insertIndicadorSVSchema.partial().parse(req.body);
+      // Sanitize numeric fields - convert empty strings to null
+      const sanitizedBody = { ...req.body };
+      const numericFields = ['valorMeta', 'valorMinimo', 'valorMaximo', 'valorActual'];
+      numericFields.forEach(field => {
+        if (sanitizedBody[field] === '' || sanitizedBody[field] === undefined) {
+          sanitizedBody[field] = null;
+        }
+      });
+      
+      const validatedData = schema.insertIndicadorSVSchema.partial().parse(sanitizedBody);
       
       const [result] = await db.update(schema.indicadoresSV)
         .set({
