@@ -23925,6 +23925,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // 3. Fallback: buscar en responsible_designations (donde se guardan datos de designación con licencia)
+      if (!hasValidLicensedProfessional) {
+        const [responsibleDesignation] = await db.select()
+          .from(schema.responsibleDesignations)
+          .where(and(
+            eq(schema.responsibleDesignations.companyId, companyId),
+            eq(schema.responsibleDesignations.isExternalLso, true)
+          ))
+          .orderBy(desc(schema.responsibleDesignations.createdAt))
+          .limit(1);
+
+        if (responsibleDesignation && responsibleDesignation.externalLsoName) {
+          // Verificar licencia vigente si tiene fecha de vencimiento
+          const licenseExpiry = responsibleDesignation.licenciaSstVigencia;
+          const isLicenseValid = !licenseExpiry || new Date(licenseExpiry) > new Date();
+          
+          if (isLicenseValid) {
+            hasValidLicensedProfessional = true;
+            isExternalLso = true;
+            licensedProfessionalData = {
+              id: responsibleDesignation.id,
+              fullName: responsibleDesignation.externalLsoName || responsibleDesignation.licenciaSstTitular,
+              email: null,
+              phone: null,
+              city: null,
+              sstLicenseNumber: responsibleDesignation.licenciaSstNumero || 'Licenciado Externo',
+              sstLicenseIssuer: null,
+              sstLicenseExpiry: responsibleDesignation.licenciaSstVigencia,
+              signatureUrl: null,
+              isExternal: true
+            };
+          }
+        }
+      }
+
       if (!hasValidLicensedProfessional) {
         return res.status(400).json({
           error: 'LICENSED_PROFESSIONAL_REQUIRED',
