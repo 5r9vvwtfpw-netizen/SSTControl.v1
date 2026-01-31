@@ -557,14 +557,14 @@ export default function MatrizRiesgosViales() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Responsable</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <Select onValueChange={(val) => field.onChange(val === "none" ? null : val)} value={field.value || "none"}>
                           <FormControl>
                             <SelectTrigger data-testid="select-responsable">
                               <SelectValue placeholder="Seleccionar responsable" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">Sin asignar</SelectItem>
+                            <SelectItem value="none">Sin asignar</SelectItem>
                             {workers.map((worker) => (
                               <SelectItem key={worker.id} value={worker.id}>
                                 {worker.name}

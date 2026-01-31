@@ -42868,7 +42868,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   
   // Helper functions for risk calculation
   function getProbabilidadValue(probabilidad: string): number {
-    const values: Record<string, number> = { 'raro': 1, 'improbable': 2, 'posible': 3, 'probable': 4, 'casi_seguro': 5 };
+    const values: Record<string, number> = { 'muy_baja': 1, 'baja': 2, 'media': 3, 'alta': 4, 'muy_alta': 5 };
     return values[probabilidad] || 1;
   }
   

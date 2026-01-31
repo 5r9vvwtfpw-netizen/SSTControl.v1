@@ -578,8 +578,8 @@ export default function ContextoOrganizacionalPesv() {
                     <FormItem>
                       <FormLabel>Evaluación PESV Relacionada</FormLabel>
                       <Select 
-                        value={field.value || ""} 
-                        onValueChange={(value) => field.onChange(value || undefined)}
+                        value={field.value || "none"} 
+                        onValueChange={(value) => field.onChange(value === "none" ? undefined : value)}
                       >
                         <FormControl>
                           <SelectTrigger data-testid="select-evaluacion-pesv">
@@ -587,7 +587,7 @@ export default function ContextoOrganizacionalPesv() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Sin vincular</SelectItem>
+                          <SelectItem value="none">Sin vincular</SelectItem>
                           {evaluaciones.map((evaluacion) => (
                             <SelectItem key={evaluacion.id} value={evaluacion.id}>
                               {evaluacion.anio} - {evaluacion.nivel}

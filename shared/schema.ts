@@ -9517,7 +9517,14 @@ export const impactoRiesgoEnum = pgEnum("impacto_riesgo", [
   "catastrofico"     // 5 - Muerte
 ]);
 
-// NOTA: nivelRiesgoEnum ya definido arriba (línea ~4592) - reutilizado para riesgos viales
+// Nivel de riesgo específico para ISO 31000 (matriz 5x5)
+export const nivelRiesgoIso31000Enum = pgEnum("nivel_riesgo_iso31000", [
+  "bajo",       // 1-4 - Riesgo aceptable
+  "medio",      // 5-9 - Requiere atención
+  "alto",       // 10-14 - Requiere acción
+  "muy_alto",   // 15-19 - Acción prioritaria
+  "critico"     // 20-25 - Acción inmediata
+]);
 
 export const categoriaRiesgoVialEnum = pgEnum("categoria_riesgo_vial", [
   "conductor",      // Factor humano - conductores
@@ -9598,13 +9605,13 @@ export const riesgosViales = pgTable("riesgos_viales", {
   // Evaluación del riesgo (ISO 31000 - 6.4.4)
   // Nivel = Probabilidad × Impacto (calculado automáticamente)
   valorRiesgo: integer("valor_riesgo"), // 1-25
-  nivelRiesgo: nivelRiesgoEnum("nivel_riesgo"),
+  nivelRiesgo: nivelRiesgoIso31000Enum("nivel_riesgo"),
   
   // Riesgo residual después de controles existentes
   probabilidadResidual: probabilidadRiesgoEnum("probabilidad_residual"),
   impactoResidual: impactoRiesgoEnum("impacto_residual"),
   valorRiesgoResidual: integer("valor_riesgo_residual"),
-  nivelRiesgoResidual: nivelRiesgoEnum("nivel_riesgo_residual"),
+  nivelRiesgoResidual: nivelRiesgoIso31000Enum("nivel_riesgo_residual"),
   
   // Controles existentes
   controlesExistentes: text("controles_existentes"),
