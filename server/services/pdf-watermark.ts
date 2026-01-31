@@ -116,3 +116,88 @@ export function addTrialFooter(doc: any, isTrial: boolean): void {
      );
   doc.restore();
 }
+
+/**
+ * LSO Watermark Options for Ministry Reports
+ */
+interface LsoWatermarkOptions {
+  lsoName: string;
+  licenseNumber: string;
+  isExternal?: boolean;
+}
+
+/**
+ * Adds a subtle LSO certification watermark to the PDF
+ * This watermark indicates the licensed professional responsible for the document
+ * 
+ * @param doc - PDFKit document instance
+ * @param options - LSO information for the watermark
+ */
+export function addLsoWatermark(doc: any, options: LsoWatermarkOptions): void {
+  const { lsoName, licenseNumber, isExternal = false } = options;
+  
+  doc.save();
+  
+  const pageWidth = doc.page.width;
+  const pageHeight = doc.page.height;
+  
+  // Create a subtle diagonal watermark with LSO info
+  const centerX = pageWidth / 2;
+  const centerY = pageHeight / 2;
+  
+  // Light green color for certification watermark
+  doc.opacity(0.08)
+     .font('Helvetica-Bold')
+     .fontSize(40)
+     .fillColor('#1e7e34');
+  
+  doc.rotate(-45, { origin: [centerX, centerY] });
+  
+  const text = `CERTIFICADO POR: ${lsoName.toUpperCase()}`;
+  const textWidth = doc.widthOfString(text);
+  const textX = centerX - textWidth / 2;
+  const textY = centerY - 20;
+  
+  doc.text(text, textX, textY, {
+    width: textWidth + 100,
+    align: 'center'
+  });
+  
+  // Add license number below
+  const licenseText = `LIC. SST: ${licenseNumber}`;
+  doc.fontSize(25);
+  const licenseWidth = doc.widthOfString(licenseText);
+  doc.text(licenseText, centerX - licenseWidth / 2, textY + 45, {
+    width: licenseWidth + 50,
+    align: 'center'
+  });
+  
+  doc.restore();
+}
+
+/**
+ * Sets up LSO watermark on all pages of the PDF
+ * 
+ * @param doc - PDFKit document instance
+ * @param lsoData - LSO professional data (null if no LSO assigned)
+ */
+export function setupLsoWatermarkOnAllPages(
+  doc: any,
+  lsoData: { fullName: string; sstLicenseNumber: string; isExternal?: boolean } | null
+): void {
+  if (!lsoData) return;
+  
+  const options: LsoWatermarkOptions = {
+    lsoName: lsoData.fullName,
+    licenseNumber: lsoData.sstLicenseNumber,
+    isExternal: lsoData.isExternal
+  };
+  
+  // Add watermark to current page
+  addLsoWatermark(doc, options);
+  
+  // Add watermark to any new pages
+  doc.on('pageAdded', () => {
+    addLsoWatermark(doc, options);
+  });
+}

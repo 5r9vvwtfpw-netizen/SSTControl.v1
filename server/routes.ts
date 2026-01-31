@@ -210,7 +210,7 @@ import { calculateChapter, getEmpresaTipoFromChapterAndRisk, getTrialStatus, get
 import { isStandardPersistent, getPersistentStandardCodes } from "../shared/sst-inheritance";
 import { PASOS_PESV } from "@shared/pasos-pesv";
 import { prepareCompanyWithCiiuAutomation, processCiiuAutomation } from "@shared/ciiu-company-automation";
-import { setupTrialWatermarkOnAllPages, addTrialFooter } from "./services/pdf-watermark";
+import { setupTrialWatermarkOnAllPages, addTrialFooter, setupLsoWatermarkOnAllPages } from "./services/pdf-watermark";
 import { 
   addStandardHeader, 
   addSignatureFooter, 
@@ -23985,6 +23985,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pdf22609_subscription = await storage.getSubscriptionByCompany(companyId);
       const pdf22609_trialStatus = getTrialStatus(pdf22609_subscription?.status || 'trial', pdf22609_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf22609_trialStatus.requiresWatermark);
+      
+      // Add LSO certification watermark to all pages
+      setupLsoWatermarkOnAllPages(doc, licensedProfessionalData);
       const margin = 40;
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - 2 * margin;
