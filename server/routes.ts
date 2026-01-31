@@ -198,6 +198,12 @@ import {
   insertEvaluacionPesvSchema,
   insertRespuestaPasoPesvSchema,
   insertAccionMejoraPesvSchema,
+  contextoOrganizacionalPesv,
+  insertContextoOrganizacionalPesvSchema,
+  riesgosViales,
+  insertRiesgoVialSchema,
+  tratamientosRiesgoVial,
+  insertTratamientoRiesgoVialSchema,
 } from "@shared/schema";
 import * as schema from "@shared/schema";
 import type { UserRole, User } from "@shared/schema";
@@ -42855,6 +42861,539 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'evaluaciones-pesv-pdf');
+    }
+  });
+
+  // ==================== ISO 31000 - Gestión de Riesgos Viales PESV ====================
+  
+  // Helper functions for risk calculation
+  function getProbabilidadValue(probabilidad: string): number {
+    const values: Record<string, number> = { 'raro': 1, 'improbable': 2, 'posible': 3, 'probable': 4, 'casi_seguro': 5 };
+    return values[probabilidad] || 1;
+  }
+  
+  function getImpactoValue(impacto: string): number {
+    const values: Record<string, number> = { 'insignificante': 1, 'menor': 2, 'moderado': 3, 'mayor': 4, 'catastrofico': 5 };
+    return values[impacto] || 1;
+  }
+  
+  function calculateNivelRiesgo(valorRiesgo: number): string {
+    if (valorRiesgo <= 4) return 'bajo';
+    if (valorRiesgo <= 9) return 'medio';
+    if (valorRiesgo <= 14) return 'alto';
+    if (valorRiesgo <= 19) return 'muy_alto';
+    return 'critico';
+  }
+
+  // ===== Contexto Organizacional PESV Routes =====
+  
+  // GET /api/contexto-organizacional-pesv - List all context factors for company
+  app.get("/api/contexto-organizacional-pesv", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const results = await db.select()
+        .from(contextoOrganizacionalPesv)
+        .where(eq(contextoOrganizacionalPesv.companyId, effectiveCompanyId))
+        .orderBy(desc(contextoOrganizacionalPesv.createdAt));
+      
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error fetching contexto organizacional PESV:", error);
+      res.status(500).json({ error: "Error al obtener el contexto organizacional" });
+    }
+  });
+
+  // POST /api/contexto-organizacional-pesv - Create new context factor
+  app.post("/api/contexto-organizacional-pesv", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const validatedData = insertContextoOrganizacionalPesvSchema.parse(req.body);
+      
+      const [result] = await db.insert(contextoOrganizacionalPesv)
+        .values({
+          ...validatedData,
+          companyId: effectiveCompanyId,
+        })
+        .returning();
+      
+      res.status(201).json(result);
+    } catch (error: any) {
+      console.error("Error creating contexto organizacional PESV:", error);
+      res.status(400).json({ error: error.message || "Error al crear el factor de contexto" });
+    }
+  });
+
+  // GET /api/contexto-organizacional-pesv/:id - Get single context factor
+  app.get("/api/contexto-organizacional-pesv/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const [result] = await db.select()
+        .from(contextoOrganizacionalPesv)
+        .where(and(
+          eq(contextoOrganizacionalPesv.id, req.params.id),
+          eq(contextoOrganizacionalPesv.companyId, effectiveCompanyId)
+        ));
+      
+      if (!result) {
+        return res.status(404).json({ error: "Factor de contexto no encontrado" });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error fetching contexto organizacional PESV:", error);
+      res.status(500).json({ error: "Error al obtener el factor de contexto" });
+    }
+  });
+
+  // PATCH /api/contexto-organizacional-pesv/:id - Update context factor
+  app.patch("/api/contexto-organizacional-pesv/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const validatedData = insertContextoOrganizacionalPesvSchema.partial().parse(req.body);
+      
+      const [result] = await db.update(contextoOrganizacionalPesv)
+        .set({
+          ...validatedData,
+          updatedAt: sql`now()`,
+        })
+        .where(and(
+          eq(contextoOrganizacionalPesv.id, req.params.id),
+          eq(contextoOrganizacionalPesv.companyId, effectiveCompanyId)
+        ))
+        .returning();
+      
+      if (!result) {
+        return res.status(404).json({ error: "Factor de contexto no encontrado" });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error updating contexto organizacional PESV:", error);
+      res.status(400).json({ error: error.message || "Error al actualizar el factor de contexto" });
+    }
+  });
+
+  // DELETE /api/contexto-organizacional-pesv/:id - Delete context factor
+  app.delete("/api/contexto-organizacional-pesv/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const [result] = await db.delete(contextoOrganizacionalPesv)
+        .where(and(
+          eq(contextoOrganizacionalPesv.id, req.params.id),
+          eq(contextoOrganizacionalPesv.companyId, effectiveCompanyId)
+        ))
+        .returning();
+      
+      if (!result) {
+        return res.status(404).json({ error: "Factor de contexto no encontrado" });
+      }
+      
+      res.sendStatus(204);
+    } catch (error: any) {
+      console.error("Error deleting contexto organizacional PESV:", error);
+      res.status(500).json({ error: "Error al eliminar el factor de contexto" });
+    }
+  });
+
+  // ===== Riesgos Viales Routes =====
+  
+  // GET /api/riesgos-viales/estadisticas - Get risk statistics (must be before :id route)
+  app.get("/api/riesgos-viales/estadisticas", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const allRiesgos = await db.select()
+        .from(riesgosViales)
+        .where(and(
+          eq(riesgosViales.companyId, effectiveCompanyId),
+          eq(riesgosViales.activo, 1)
+        ));
+      
+      const estadisticas = {
+        total: allRiesgos.length,
+        porNivel: {
+          bajo: allRiesgos.filter(r => r.nivelRiesgo === 'bajo').length,
+          medio: allRiesgos.filter(r => r.nivelRiesgo === 'medio').length,
+          alto: allRiesgos.filter(r => r.nivelRiesgo === 'alto').length,
+          muy_alto: allRiesgos.filter(r => r.nivelRiesgo === 'muy_alto').length,
+          critico: allRiesgos.filter(r => r.nivelRiesgo === 'critico').length,
+        },
+        porCategoria: {
+          conductor: allRiesgos.filter(r => r.categoria === 'conductor').length,
+          vehiculo: allRiesgos.filter(r => r.categoria === 'vehiculo').length,
+          infraestructura: allRiesgos.filter(r => r.categoria === 'infraestructura').length,
+          organizacional: allRiesgos.filter(r => r.categoria === 'organizacional').length,
+          entorno: allRiesgos.filter(r => r.categoria === 'entorno').length,
+        },
+        porEstado: {
+          identificado: allRiesgos.filter(r => r.estado === 'identificado').length,
+          en_evaluacion: allRiesgos.filter(r => r.estado === 'en_evaluacion').length,
+          en_tratamiento: allRiesgos.filter(r => r.estado === 'en_tratamiento').length,
+          tratado: allRiesgos.filter(r => r.estado === 'tratado').length,
+          aceptado: allRiesgos.filter(r => r.estado === 'aceptado').length,
+          cerrado: allRiesgos.filter(r => r.estado === 'cerrado').length,
+        },
+      };
+      
+      res.json(estadisticas);
+    } catch (error: any) {
+      console.error("Error fetching riesgos viales estadísticas:", error);
+      res.status(500).json({ error: "Error al obtener estadísticas de riesgos" });
+    }
+  });
+
+  // GET /api/riesgos-viales - List all road risks for company
+  app.get("/api/riesgos-viales", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const results = await db.select()
+        .from(riesgosViales)
+        .where(eq(riesgosViales.companyId, effectiveCompanyId))
+        .orderBy(desc(riesgosViales.createdAt));
+      
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error fetching riesgos viales:", error);
+      res.status(500).json({ error: "Error al obtener los riesgos viales" });
+    }
+  });
+
+  // POST /api/riesgos-viales - Create new road risk
+  app.post("/api/riesgos-viales", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const validatedData = insertRiesgoVialSchema.parse(req.body);
+      
+      // Calculate valorRiesgo and nivelRiesgo automatically
+      const probabilidadValue = getProbabilidadValue(validatedData.probabilidad);
+      const impactoValue = getImpactoValue(validatedData.impacto);
+      const valorRiesgo = probabilidadValue * impactoValue;
+      const nivelRiesgo = calculateNivelRiesgo(valorRiesgo);
+      
+      // Calculate residual risk if provided
+      let valorRiesgoResidual: number | undefined;
+      let nivelRiesgoResidual: string | undefined;
+      if (validatedData.probabilidadResidual && validatedData.impactoResidual) {
+        const probResValue = getProbabilidadValue(validatedData.probabilidadResidual);
+        const impResValue = getImpactoValue(validatedData.impactoResidual);
+        valorRiesgoResidual = probResValue * impResValue;
+        nivelRiesgoResidual = calculateNivelRiesgo(valorRiesgoResidual);
+      }
+      
+      const [result] = await db.insert(riesgosViales)
+        .values({
+          ...validatedData,
+          companyId: effectiveCompanyId,
+          valorRiesgo,
+          nivelRiesgo: nivelRiesgo as any,
+          valorRiesgoResidual,
+          nivelRiesgoResidual: nivelRiesgoResidual as any,
+        })
+        .returning();
+      
+      res.status(201).json(result);
+    } catch (error: any) {
+      console.error("Error creating riesgo vial:", error);
+      res.status(400).json({ error: error.message || "Error al crear el riesgo vial" });
+    }
+  });
+
+  // GET /api/riesgos-viales/:id - Get single road risk
+  app.get("/api/riesgos-viales/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const [result] = await db.select()
+        .from(riesgosViales)
+        .where(and(
+          eq(riesgosViales.id, req.params.id),
+          eq(riesgosViales.companyId, effectiveCompanyId)
+        ));
+      
+      if (!result) {
+        return res.status(404).json({ error: "Riesgo vial no encontrado" });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error fetching riesgo vial:", error);
+      res.status(500).json({ error: "Error al obtener el riesgo vial" });
+    }
+  });
+
+  // PATCH /api/riesgos-viales/:id - Update road risk
+  app.patch("/api/riesgos-viales/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const validatedData = insertRiesgoVialSchema.partial().parse(req.body);
+      
+      // Recalculate risk values if probability or impact changed
+      let updateData: any = { ...validatedData, updatedAt: sql`now()` };
+      
+      if (validatedData.probabilidad || validatedData.impacto) {
+        // Get existing record to fill in missing values
+        const [existing] = await db.select()
+          .from(riesgosViales)
+          .where(and(
+            eq(riesgosViales.id, req.params.id),
+            eq(riesgosViales.companyId, effectiveCompanyId)
+          ));
+        
+        if (existing) {
+          const prob = validatedData.probabilidad || existing.probabilidad;
+          const imp = validatedData.impacto || existing.impacto;
+          const probabilidadValue = getProbabilidadValue(prob);
+          const impactoValue = getImpactoValue(imp);
+          const valorRiesgo = probabilidadValue * impactoValue;
+          updateData.valorRiesgo = valorRiesgo;
+          updateData.nivelRiesgo = calculateNivelRiesgo(valorRiesgo);
+        }
+      }
+      
+      // Recalculate residual risk if residual values changed
+      if (validatedData.probabilidadResidual || validatedData.impactoResidual) {
+        const [existing] = await db.select()
+          .from(riesgosViales)
+          .where(and(
+            eq(riesgosViales.id, req.params.id),
+            eq(riesgosViales.companyId, effectiveCompanyId)
+          ));
+        
+        if (existing) {
+          const probRes = validatedData.probabilidadResidual || existing.probabilidadResidual;
+          const impRes = validatedData.impactoResidual || existing.impactoResidual;
+          if (probRes && impRes) {
+            const probResValue = getProbabilidadValue(probRes);
+            const impResValue = getImpactoValue(impRes);
+            const valorRiesgoResidual = probResValue * impResValue;
+            updateData.valorRiesgoResidual = valorRiesgoResidual;
+            updateData.nivelRiesgoResidual = calculateNivelRiesgo(valorRiesgoResidual);
+          }
+        }
+      }
+      
+      const [result] = await db.update(riesgosViales)
+        .set(updateData)
+        .where(and(
+          eq(riesgosViales.id, req.params.id),
+          eq(riesgosViales.companyId, effectiveCompanyId)
+        ))
+        .returning();
+      
+      if (!result) {
+        return res.status(404).json({ error: "Riesgo vial no encontrado" });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error updating riesgo vial:", error);
+      res.status(400).json({ error: error.message || "Error al actualizar el riesgo vial" });
+    }
+  });
+
+  // DELETE /api/riesgos-viales/:id - Delete road risk
+  app.delete("/api/riesgos-viales/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const [result] = await db.delete(riesgosViales)
+        .where(and(
+          eq(riesgosViales.id, req.params.id),
+          eq(riesgosViales.companyId, effectiveCompanyId)
+        ))
+        .returning();
+      
+      if (!result) {
+        return res.status(404).json({ error: "Riesgo vial no encontrado" });
+      }
+      
+      res.sendStatus(204);
+    } catch (error: any) {
+      console.error("Error deleting riesgo vial:", error);
+      res.status(500).json({ error: "Error al eliminar el riesgo vial" });
+    }
+  });
+
+  // ===== Tratamientos de Riesgos Viales Routes =====
+  
+  // GET /api/tratamientos-riesgo-vial - List all treatments
+  app.get("/api/tratamientos-riesgo-vial", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const results = await db.select()
+        .from(tratamientosRiesgoVial)
+        .where(eq(tratamientosRiesgoVial.companyId, effectiveCompanyId))
+        .orderBy(desc(tratamientosRiesgoVial.createdAt));
+      
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error fetching tratamientos riesgo vial:", error);
+      res.status(500).json({ error: "Error al obtener los tratamientos" });
+    }
+  });
+
+  // POST /api/tratamientos-riesgo-vial - Create treatment
+  app.post("/api/tratamientos-riesgo-vial", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const validatedData = insertTratamientoRiesgoVialSchema.parse(req.body);
+      
+      // Verify the risk belongs to the same company
+      const [riesgo] = await db.select()
+        .from(riesgosViales)
+        .where(and(
+          eq(riesgosViales.id, validatedData.riesgoVialId),
+          eq(riesgosViales.companyId, effectiveCompanyId)
+        ));
+      
+      if (!riesgo) {
+        return res.status(404).json({ error: "Riesgo vial no encontrado" });
+      }
+      
+      const [result] = await db.insert(tratamientosRiesgoVial)
+        .values({
+          ...validatedData,
+          companyId: effectiveCompanyId,
+        })
+        .returning();
+      
+      res.status(201).json(result);
+    } catch (error: any) {
+      console.error("Error creating tratamiento riesgo vial:", error);
+      res.status(400).json({ error: error.message || "Error al crear el tratamiento" });
+    }
+  });
+
+  // GET /api/tratamientos-riesgo-vial/:id - Get treatment
+  app.get("/api/tratamientos-riesgo-vial/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const [result] = await db.select()
+        .from(tratamientosRiesgoVial)
+        .where(and(
+          eq(tratamientosRiesgoVial.id, req.params.id),
+          eq(tratamientosRiesgoVial.companyId, effectiveCompanyId)
+        ));
+      
+      if (!result) {
+        return res.status(404).json({ error: "Tratamiento no encontrado" });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error fetching tratamiento riesgo vial:", error);
+      res.status(500).json({ error: "Error al obtener el tratamiento" });
+    }
+  });
+
+  // PATCH /api/tratamientos-riesgo-vial/:id - Update treatment
+  app.patch("/api/tratamientos-riesgo-vial/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const validatedData = insertTratamientoRiesgoVialSchema.partial().parse(req.body);
+      
+      const [result] = await db.update(tratamientosRiesgoVial)
+        .set({
+          ...validatedData,
+          updatedAt: sql`now()`,
+        })
+        .where(and(
+          eq(tratamientosRiesgoVial.id, req.params.id),
+          eq(tratamientosRiesgoVial.companyId, effectiveCompanyId)
+        ))
+        .returning();
+      
+      if (!result) {
+        return res.status(404).json({ error: "Tratamiento no encontrado" });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error updating tratamiento riesgo vial:", error);
+      res.status(400).json({ error: error.message || "Error al actualizar el tratamiento" });
+    }
+  });
+
+  // DELETE /api/tratamientos-riesgo-vial/:id - Delete treatment
+  app.delete("/api/tratamientos-riesgo-vial/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const [result] = await db.delete(tratamientosRiesgoVial)
+        .where(and(
+          eq(tratamientosRiesgoVial.id, req.params.id),
+          eq(tratamientosRiesgoVial.companyId, effectiveCompanyId)
+        ))
+        .returning();
+      
+      if (!result) {
+        return res.status(404).json({ error: "Tratamiento no encontrado" });
+      }
+      
+      res.sendStatus(204);
+    } catch (error: any) {
+      console.error("Error deleting tratamiento riesgo vial:", error);
+      res.status(500).json({ error: "Error al eliminar el tratamiento" });
     }
   });
 
