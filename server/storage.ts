@@ -6,6 +6,7 @@ import * as schema from "@shared/schema";
 import { calculateChapter } from "@shared/utils";
 import { logAuditEvent, type AuditContext } from './lib/audit-logger';
 import logger from './lib/logger';
+import { validateInvoiceData, validateCompanyForBilling, validateSubscriptionForBilling } from './lib/billing-validator';
 import type {
   Company,
   InsertCompany,
@@ -12674,42 +12675,50 @@ export class DbStorage implements IStorage {
       throw new Error('Subscription not found');
     }
 
+    // BILLING SECURITY: Validate subscription data before generating invoice
+    validateSubscriptionForBilling(subscription);
+
     const company = await this.getCompany(params.companyId);
     if (!company) {
       throw new Error('Company not found');
     }
 
+    // BILLING SECURITY: Validate company data before generating invoice
+    validateCompanyForBilling(company);
+
     // Generate next invoice number
     const invoiceNumber = await this.getNextInvoiceNumber();
 
-    // Create invoice record
-    const [invoice] = await db.insert(schema.invoices).values({
+    // BILLING SECURITY: Prepare invoice data with validation
+    const invoiceData = {
       companyId: params.companyId,
       subscriptionId: params.subscriptionId,
       invoiceNumber,
-      status: 'draft',
-      subtotal: params.amount, // Amount in centavos COP
-      taxAmount: 0, // IVA (not applicable for most SST services)
-      total: params.amount, // Total = subtotal + taxAmount
+      status: 'draft' as const,
+      subtotal: params.amount,
+      taxAmount: 0,
+      total: params.amount,
       currency: 'COP',
       periodStart: params.periodStart,
       periodEnd: params.periodEnd,
-      dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
-      
-      // Customer details (denormalized for immutability)
+      dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
       customerName: company.name,
       customerNit: company.nit || '',
       customerEmail: company.contactEmail || '',
       customerAddress: `${company.address || ''}, ${company.city || ''}`,
-      
-      // Line items as JSON string
       lineItems: JSON.stringify([{
         description: params.description || `Plan de suscripción`,
         quantity: 1,
         unitPrice: params.amount,
         total: params.amount
       }]),
-    }).returning();
+    };
+
+    // Validate invoice data BEFORE inserting (prevents NOT NULL constraint errors)
+    validateInvoiceData(invoiceData);
+
+    // Create invoice record (data already validated)
+    const [invoice] = await db.insert(schema.invoices).values(invoiceData).returning();
 
     console.log(`Invoice ${invoiceNumber} generated for subscription ${params.subscriptionId}`);
 

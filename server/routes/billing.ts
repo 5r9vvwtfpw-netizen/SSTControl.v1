@@ -14,6 +14,7 @@ import {
 } from "../middleware/rate-limit";
 import { getCompanyFeatures } from "../middleware/subscription-limits";
 import { getUncachableStripeClient } from "../stripeClient";
+import { billingHealthCheck } from "../lib/billing-validator";
 
 /**
  * Billing & Subscriptions Routes (Bloque 4 - Sistema de Facturación Stripe)
@@ -22,6 +23,44 @@ import { getUncachableStripeClient } from "../stripeClient";
  * Integración con pasarela Stripe para pagos
  */
 export function registerBillingRoutes(app: Express) {
+  
+  // ============================================================================
+  // BILLING SYSTEM HEALTH CHECK - Verificación de salud del sistema
+  // ============================================================================
+  
+  /**
+   * GET /api/billing/health-check
+   * Verifica que el sistema de facturación esté funcionando correctamente
+   * Solo accesible por superadmin
+   */
+  app.get("/api/billing/health-check", requireAuth, requireSuperadmin, async (req, res) => {
+    try {
+      const healthResult = await billingHealthCheck();
+      
+      if (healthResult.success) {
+        res.json({
+          status: 'healthy',
+          message: healthResult.message,
+          details: healthResult.details,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({
+          status: 'unhealthy',
+          message: healthResult.message,
+          details: healthResult.details,
+          timestamp: new Date().toISOString()
+        });
+      }
+    } catch (error: any) {
+      console.error('[BILLING-HEALTH-CHECK] Error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
   
   // ============================================================================
   // SUBSCRIPTION PLANS - Planes de Suscripción
