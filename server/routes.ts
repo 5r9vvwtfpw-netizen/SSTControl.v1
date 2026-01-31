@@ -23869,32 +23869,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // ========== VALIDACIÓN LICENCIADO PROFESIONAL (Circular 009/2025) ==========
       // El reporte del Ministerio requiere la firma de un profesional licenciado
-      const licensedProfessionalAssignments = await db.select({
-        userId: schema.licensedProfessionalAssignments.userId,
-        isActive: schema.licensedProfessionalAssignments.isActive,
-      })
-      .from(schema.licensedProfessionalAssignments)
-      .where(and(
-        eq(schema.licensedProfessionalAssignments.companyId, companyId),
-        eq(schema.licensedProfessionalAssignments.isActive, true)
-      ));
-
+      // Puede ser un LSO interno (usuario local) o un LSO externo (del directorio API)
+      
       let hasValidLicensedProfessional = false;
       let licensedProfessionalData: any = null;
+      let isExternalLso = false;
 
-      for (const assignment of licensedProfessionalAssignments) {
-        const [user] = await db.select()
-          .from(schema.users)
-          .where(and(
-            eq(schema.users.id, assignment.userId),
-            eq(schema.users.role, 'lso'),
-            eq(schema.users.sstLicenseStatus, 'vigente')
-          ));
+      // 1. Verificar si hay un LSO externo asignado desde el directorio API con licencia vigente
+      if (company.externalLsoId && company.externalLsoName && company.externalLsoLicenseNumber) {
+        const licenseExpiry = company.externalLsoLicenseExpiry;
+        const isLicenseValid = !licenseExpiry || new Date(licenseExpiry) > new Date();
         
-        if (user) {
+        if (isLicenseValid) {
           hasValidLicensedProfessional = true;
-          licensedProfessionalData = user;
-          break;
+          isExternalLso = true;
+          licensedProfessionalData = {
+            id: company.externalLsoId,
+            fullName: company.externalLsoName,
+            email: company.externalLsoEmail,
+            phone: company.externalLsoPhone,
+            city: company.externalLsoCity,
+            sstLicenseNumber: company.externalLsoLicenseNumber,
+            sstLicenseIssuer: company.externalLsoLicenseIssuer,
+            sstLicenseExpiry: company.externalLsoLicenseExpiry,
+            signatureUrl: company.externalLsoSignatureUrl,
+            isExternal: true
+          };
+        }
+      }
+
+      // 2. Si no hay LSO externo válido, buscar LSO interno en licensedProfessionalAssignments
+      if (!hasValidLicensedProfessional) {
+        const licensedProfessionalAssignments = await db.select({
+          userId: schema.licensedProfessionalAssignments.userId,
+          isActive: schema.licensedProfessionalAssignments.isActive,
+        })
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.companyId, companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+
+        for (const assignment of licensedProfessionalAssignments) {
+          const [user] = await db.select()
+            .from(schema.users)
+            .where(and(
+              eq(schema.users.id, assignment.userId),
+              eq(schema.users.role, 'lso'),
+              eq(schema.users.sstLicenseStatus, 'vigente')
+            ));
+          
+          if (user) {
+            hasValidLicensedProfessional = true;
+            licensedProfessionalData = user;
+            break;
+          }
         }
       }
 
