@@ -43,6 +43,32 @@ The PESV pricing module (`pricing_plugin/calculate-pesv.ts`) calculates costs ba
 - `nivel_pesv` (text, nullable)
 - `costo_pesv_mensual` (decimal, default 0)
 
+### Centralized Document Traceability System (Enero 2026)
+The document traceability system provides centralized tracking of all system-generated PDFs following the "Add-Only Principle" (principio de código seguro). It uses a metadata-only approach, storing references to PDFs without duplicating file storage.
+
+**Database Columns Added to `sst_documents`:**
+- `sourceModule` (text, nullable) - Module that generated the document (e.g., designaciones, capacitaciones)
+- `sourceEndpoint` (text, nullable) - API endpoint to retrieve the PDF
+- `sourceRecordId` (text, nullable) - ID of the source record
+- `isSystemGenerated` (boolean, default false) - Flag for system-generated documents
+
+**Document Registry Service** (`server/services/document-registry.ts`):
+- `registerDocument()` - Registers a system-generated document with metadata
+- `getSystemDocuments()` - Retrieves all system-generated documents for a company
+- `getDocumentStats()` - Returns statistics by module and PHVA cycle
+
+**API Endpoints:**
+- `GET /api/system-documents` - Lists all system-generated documents
+- `GET /api/system-documents/stats` - Returns statistics by module
+
+**UI - Conservación de Documentos:**
+- Collapsible "Documentos del Sistema" section showing system-generated PDFs
+- Table with columns: Código, Título, Módulo, Ciclo PHVA, Fecha, Acciones
+- Download button redirects to source endpoint for PDF retrieval
+
+**Module Categories (30+ modules):**
+designaciones, capacitaciones, examenes_medicos, accidentes, inspecciones, investigaciones, presupuesto, recursos, politicas, trabajadores, evaluaciones, planes_trabajo, epp, contratos, afiliaciones, copasst, ausentismo, emergencias, pesv, auditorias, indicadores, comunicaciones, induccion, perfiles_cargo, cambios, adquisiciones, matriz_legal, vigilancia_epidemiologica, revisiones_direccion, otros
+
 ## External Dependencies
 
 -   **PostgreSQL (Neon/AWS RDS)**: Cloud-hosted relational database.
