@@ -144,34 +144,56 @@ export function registerLsoDirectoryRoutes(app: Express) {
       const LSO_API_KEY = process.env.LANDING_PAGE_API_KEY;
       const LSO_URL = process.env.LSO_DIRECTORY_URL || "https://lso.sst-colombia.com.co";
 
+      console.log("[LSO Routes] API Key exists:", !!LSO_API_KEY);
+      console.log("[LSO Routes] API Key length:", LSO_API_KEY?.length || 0);
+      console.log("[LSO Routes] LSO URL:", LSO_URL);
+
       if (!LSO_API_KEY) {
         console.error("[LSO Routes] LANDING_PAGE_API_KEY not configured");
         return res.status(500).json({ ok: false, error: "Error de configuración del servidor" });
       }
 
-      // Solicitar token JWT al directorio LSO externo
+      const requestBody = {
+        companyId: String(company.id),
+        companyName: company.name,
+        email: company.contactEmail,
+        city: company.city,
+        employeeCount: company.numberOfWorkers,
+        riskLevel: company.riskLevel,
+        activityCIIU: company.ciiuCode,
+        permissions: ["read"]
+      };
+
+      console.log("[LSO Routes] Request body:", JSON.stringify(requestBody, null, 2));
+      console.log("[LSO Routes] Calling:", `${LSO_URL}/api/external/token`);
+
       const tokenResponse = await fetch(`${LSO_URL}/api/external/token`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${LSO_API_KEY}`,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          companyId: String(company.id),
-          companyName: company.name,
-          email: company.contactEmail,
-          city: company.city,
-          employeeCount: company.numberOfWorkers,
-          riskLevel: company.riskLevel,
-          activityCIIU: company.ciiuCode,
-          permissions: ["read"]
-        })
+        body: JSON.stringify(requestBody)
       });
 
-      const result = await tokenResponse.json();
+      console.log("[LSO Routes] Response status:", tokenResponse.status);
+      
+      const responseText = await tokenResponse.text();
+      console.log("[LSO Routes] Response text:", responseText);
+      
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (e) {
+        console.error("[LSO Routes] Failed to parse response as JSON:", responseText);
+        return res.status(500).json({ 
+          ok: false, 
+          error: "Respuesta inválida del directorio de profesionales"
+        });
+      }
 
       if (!result.ok) {
-        console.error("[LSO Routes] Error obteniendo token LSO:", result.error);
+        console.error("[LSO Routes] Error obteniendo token LSO:", result.error, result);
         return res.status(500).json({ 
           ok: false, 
           error: result.error === "Invalid API key" 
