@@ -391,9 +391,9 @@ export default function ResponsibleDesignationPage() {
 
   const handleOpenDialog = () => {
     setEditingDesignation(null);
-    // Si hay LSO asignado, pre-seleccionar usar LSO externo
-    const shouldUseExternalLso = !!lsoAssignment;
-    setUseExternalLso(shouldUseExternalLso);
+    // NO pre-seleccionar LSO externo - el usuario debe primero elegir el cargo "Responsable del SG-SST"
+    setUseExternalLso(false);
+    setSelectedPredefinido("");
     
     form.reset({
       workerId: undefined,
@@ -403,11 +403,11 @@ export default function ResponsibleDesignationPage() {
       responsibilities: [],
       signatureUrl: "",
       status: "activo",
-      isExternalLso: shouldUseExternalLso,
-      externalLsoName: shouldUseExternalLso ? lsoAssignment?.name : undefined,
-      licenciaSstTitular: lsoAssignment?.name || "",
-      licenciaSstNumero: lsoAssignment?.licenseNumber || "",
-      licenciaSstVigencia: lsoAssignment?.licenseExpiry || undefined,
+      isExternalLso: false,
+      externalLsoName: undefined,
+      licenciaSstTitular: "",
+      licenciaSstNumero: "",
+      licenciaSstVigencia: undefined,
       curso50Horas: false,
       curso50HorasFecha: undefined,
       nivelFormacion: "Profesional",
@@ -459,6 +459,23 @@ export default function ResponsibleDesignationPage() {
     form.setValue("position", position);
     if (POSITION_RESPONSIBILITIES[position]) {
       form.setValue("responsibilities", POSITION_RESPONSIBILITIES[position]);
+    }
+    
+    // Manejar LSO externo según el cargo seleccionado
+    if (position === "Responsable del SG-SST" && lsoAssignment) {
+      // Si es Responsable del SG-SST y hay LSO asignado, pre-seleccionar usar LSO externo
+      setUseExternalLso(true);
+      form.setValue("isExternalLso", true);
+      form.setValue("externalLsoName", lsoAssignment.name);
+      form.setValue("workerId", undefined);
+      form.setValue("licenciaSstTitular", lsoAssignment.name || "");
+      form.setValue("licenciaSstNumero", lsoAssignment.licenseNumber || "");
+      form.setValue("licenciaSstVigencia", lsoAssignment.licenseExpiry || undefined);
+    } else {
+      // Para otros cargos, resetear LSO externo
+      setUseExternalLso(false);
+      form.setValue("isExternalLso", false);
+      form.setValue("externalLsoName", undefined);
     }
     
     toast({
@@ -540,8 +557,8 @@ export default function ResponsibleDesignationPage() {
 
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                    {/* Toggle para elegir entre trabajador interno o LSO externo */}
-                    {lsoAssignment && (
+                    {/* Toggle para elegir entre trabajador interno o LSO externo - SOLO para cargo Responsable del SG-SST */}
+                    {lsoAssignment && selectedPosition === "Responsable del SG-SST" && (
                       <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
                         <div className="flex items-center gap-2">
                           <UserCheck className="h-5 w-5 text-green-600" />
@@ -578,8 +595,8 @@ export default function ResponsibleDesignationPage() {
                       </div>
                     )}
 
-                    {/* Selector de trabajador - solo si NO usa LSO externo */}
-                    {!useExternalLso && (
+                    {/* Selector de trabajador - mostrar SIEMPRE excepto cuando es Responsable del SG-SST con LSO externo */}
+                    {!(selectedPosition === "Responsable del SG-SST" && useExternalLso) && (
                       <FormField
                         control={form.control}
                         name="workerId"
