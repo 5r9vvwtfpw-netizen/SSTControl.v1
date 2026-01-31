@@ -5952,6 +5952,12 @@ export const sstDocuments = pgTable("sst_documents", {
   externalReferences: text("external_references"), // External law/regulation references
   notes: text("notes"),
   
+  // Source tracking for system-generated documents (Trazabilidad centralizada)
+  sourceModule: text("source_module"), // Module that generated the document (e.g., "designaciones", "capacitaciones")
+  sourceEndpoint: text("source_endpoint"), // API endpoint for regenerating the PDF
+  sourceRecordId: text("source_record_id"), // ID of the source record
+  isSystemGenerated: boolean("is_system_generated").default(false), // Flag to distinguish system-generated docs
+  
   // Audit trail
   createdBy: varchar("created_by").references(() => users.id),
   updatedBy: varchar("updated_by").references(() => users.id),
