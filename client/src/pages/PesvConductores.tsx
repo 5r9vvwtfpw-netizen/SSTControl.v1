@@ -44,34 +44,17 @@ export default function PesvConductores() {
     queryKey: ["/api/drivers"],
   });
 
-  const { data: companies = [] } = useQuery<Company[]>({
-    queryKey: ["/api/companies"],
-    enabled: isAdmin,
-  });
-
-  // Query para obtener la empresa del usuario actual (para usuarios no-admin)
+  // Query para obtener la empresa del usuario (modelo single-company por suscripción)
   const { data: userCompany } = useQuery<Company>({
     queryKey: ["/api/company/current"],
-    enabled: !isAdmin && !!user?.companyId,
+    enabled: !!user?.companyId,
   });
 
   // Query para obtener trabajadores de la empresa (integración SST-PESV)
-  const effectiveCompanyId = isAdmin ? formData.companyId : user?.companyId;
+  // Modelo single-company: siempre usar companyId del usuario
   const { data: workers = [] } = useQuery<Worker[]>({
-    queryKey: ["/api/workers", effectiveCompanyId],
-    queryFn: async () => {
-      const headers: Record<string, string> = {};
-      if (isAdmin && effectiveCompanyId) {
-        headers["X-Company-Id"] = effectiveCompanyId;
-      }
-      const res = await fetch("/api/workers", {
-        credentials: "include",
-        headers,
-      });
-      if (!res.ok) throw new Error("Error al cargar trabajadores");
-      return res.json();
-    },
-    enabled: !!effectiveCompanyId,
+    queryKey: ["/api/workers"],
+    enabled: !!user?.companyId,
   });
 
   // Handler para seleccionar trabajador y auto-llenar datos
@@ -290,28 +273,8 @@ export default function PesvConductores() {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  {isAdmin && !editingDriver && (
-                    <div className="space-y-2 col-span-2">
-                      <Label htmlFor="companyId">Empresa *</Label>
-                      <Select
-                        value={formData.companyId}
-                        onValueChange={(value) => setFormData({ ...formData, companyId: value })}
-                      >
-                        <SelectTrigger id="companyId" data-testid="select-company">
-                          <SelectValue placeholder="Seleccione empresa" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {companies.map((company) => (
-                            <SelectItem key={company.id} value={company.id}>
-                              {company.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  {/* Mostrar nombre de empresa para usuarios no-admin */}
-                  {!isAdmin && userCompany && (
+                  {/* Mostrar nombre de empresa (modelo single-company por suscripción) */}
+                  {userCompany && (
                     <div className="space-y-2 col-span-2">
                       <Label>Empresa</Label>
                       <Input
