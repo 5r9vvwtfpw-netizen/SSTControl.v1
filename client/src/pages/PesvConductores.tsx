@@ -381,13 +381,24 @@ export default function PesvConductores() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="bloodType">Tipo de Sangre</Label>
-                    <Input
-                      id="bloodType"
+                    <Select
                       value={formData.bloodType}
-                      onChange={(e) => setFormData({ ...formData, bloodType: e.target.value })}
-                      placeholder="O+"
-                      data-testid="input-blood-type"
-                    />
+                      onValueChange={(value) => setFormData({ ...formData, bloodType: value })}
+                    >
+                      <SelectTrigger id="bloodType" data-testid="select-blood-type">
+                        <SelectValue placeholder="Seleccione tipo de sangre" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="O+">O+</SelectItem>
+                        <SelectItem value="O-">O-</SelectItem>
+                        <SelectItem value="A+">A+</SelectItem>
+                        <SelectItem value="A-">A-</SelectItem>
+                        <SelectItem value="B+">B+</SelectItem>
+                        <SelectItem value="B-">B-</SelectItem>
+                        <SelectItem value="AB+">AB+</SelectItem>
+                        <SelectItem value="AB-">AB-</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="emergencyContact">Contacto de Emergencia</Label>
