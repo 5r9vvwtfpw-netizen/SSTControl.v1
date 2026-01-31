@@ -34437,6 +34437,45 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+
+  // ============================================================================
+  // SYSTEM-GENERATED DOCUMENTS - Centralized Document Traceability
+  // ============================================================================
+
+  // GET /api/system-documents - Get all system-generated documents for company
+  app.get("/api/system-documents", requireAuth, requireAnyPermission(["documents:view", "documents:view_self"]), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      if (!userCompanyId) {
+        return res.status(403).send("Usuario no asociado a una empresa");
+      }
+      
+      const { getSystemDocuments } = await import('./services/document-registry');
+      const documents = await getSystemDocuments(userCompanyId);
+      res.json(documents);
+    } catch (error: any) {
+      console.error('Error fetching system documents:', error);
+      res.status(500).send('Error interno al obtener documentos del sistema');
+    }
+  });
+
+  // GET /api/system-documents/stats - Get statistics of system documents by module
+  app.get("/api/system-documents/stats", requireAuth, requireAnyPermission(["documents:view", "documents:view_self"]), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      if (!userCompanyId) {
+        return res.status(403).send("Usuario no asociado a una empresa");
+      }
+      
+      const { getSystemDocumentStats } = await import('./services/document-registry');
+      const stats = await getSystemDocumentStats(userCompanyId);
+      res.json(stats);
+    } catch (error: any) {
+      console.error('Error fetching system document stats:', error);
+      res.status(500).send('Error interno al obtener estadísticas');
+    }
+  });
+
   // PLAN DE EMERGENCIAS - Gestión de Amenazas (Res. 0312/2019, ISO 45001)
 
   // ------------------------------------------
