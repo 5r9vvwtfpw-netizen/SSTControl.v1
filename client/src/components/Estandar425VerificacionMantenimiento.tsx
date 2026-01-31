@@ -76,9 +76,9 @@ export function Estandar425VerificacionMantenimiento({ isVisible, evaluationId }
               data-testid="button-ver-mantenimiento-425"
               asChild
             >
-              <Link href={`/mantenimiento${fromParam}`}>
+              <Link href={`/inspecciones${fromParam}`}>
                 <Wrench className="h-4 w-4 mr-2" />
-                Ver Mantenimientos
+                Ver Inspecciones
               </Link>
             </Button>
             <Button 
