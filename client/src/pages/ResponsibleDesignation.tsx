@@ -541,13 +541,27 @@ export default function ResponsibleDesignationPage() {
                                   form.setValue("position", matchingPosition);
                                   form.setValue("responsibilities", POSITION_RESPONSIBILITIES[matchingPosition]);
                                 }
-                                // También vincular al perfil de cargo que coincida
-                                const matchingProfile = jobProfiles.find(
-                                  p => p.name.toLowerCase().includes(workerPosition.toLowerCase()) ||
-                                       workerPosition.toLowerCase().includes(p.name.toLowerCase())
-                                );
-                                if (matchingProfile) {
-                                  form.setValue("jobProfileId", matchingProfile.id);
+                                
+                                // PRIORIDAD 1: Si el trabajador tiene jobProfileId asignado, usarlo directamente
+                                if (selectedWorker.jobProfileId) {
+                                  form.setValue("jobProfileId", selectedWorker.jobProfileId);
+                                  const workerProfile = jobProfiles.find(p => p.id === selectedWorker.jobProfileId);
+                                  if (workerProfile) {
+                                    toast({
+                                      title: "Perfil de cargo vinculado",
+                                      description: `Se asignó el perfil: ${workerProfile.name}`,
+                                      className: "bg-blue-50 border-blue-200",
+                                    });
+                                  }
+                                } else {
+                                  // PRIORIDAD 2: Buscar coincidencia por nombre de cargo
+                                  const matchingProfile = jobProfiles.find(
+                                    p => p.name.toLowerCase().includes(workerPosition.toLowerCase()) ||
+                                         workerPosition.toLowerCase().includes(p.name.toLowerCase())
+                                  );
+                                  if (matchingProfile) {
+                                    form.setValue("jobProfileId", matchingProfile.id);
+                                  }
                                 }
                                 
                                 // AUTO-FILL: Buscar designaciones anteriores del trabajador para traer información de licencia SST
