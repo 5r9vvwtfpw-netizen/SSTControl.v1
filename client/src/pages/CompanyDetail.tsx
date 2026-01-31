@@ -139,17 +139,9 @@ export default function CompanyDetail() {
 
       {/* SST Standards */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold" data-testid="text-standards-title">Estándares Mínimos SST</h2>
-            <p className="text-muted-foreground">Resolución 0312/2019 - Ciclo PHVA</p>
-          </div>
-          <Link href="/evaluaciones-sst">
-            <Button data-testid="button-create-evaluation">
-              <FileText className="h-4 w-4 mr-2" />
-              Crear Evaluación
-            </Button>
-          </Link>
+        <div>
+          <h2 className="text-2xl font-bold" data-testid="text-standards-title">Estándares Mínimos SST</h2>
+          <p className="text-muted-foreground">Resolución 0312/2019 - Ciclo PHVA</p>
         </div>
 
         {standardsLoading ? (
