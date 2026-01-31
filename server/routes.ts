@@ -26,7 +26,6 @@ import { getAuditContext } from "./lib/audit-logger";
 import { registerBillingRoutes } from "./routes/billing";
 import { registerStripeRoutes } from "./routes/stripe";
 import { registerLicensedProfessionalsRoutes } from "./routes/licensed-professionals";
-import { registerLsoDirectoryExternalRoutes } from "./routes/lso-directory-external";
 import lsoDirectoryJwtRoutes from "./routes/lso-directory-jwt";
 import { legalDocsPdfService } from "./services/legal-docs-pdf";
 import { registerInduccionVirtualRoutes } from "./induccion-virtual-routes";
@@ -42041,8 +42040,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // Licensed Professionals routes
   registerLicensedProfessionalsRoutes(app);
 
-  // LSO Directory External API routes
-  registerLsoDirectoryExternalRoutes(app);
+// DEPRECATED:   // LSO Directory External API routes
+// DEPRECATED:   registerLsoDirectoryExternalRoutes(app);
   // LSO Directory JWT API routes (new authentication method)
   app.use("/api/lso-directory-jwt", lsoDirectoryJwtRoutes);
 
@@ -42110,10 +42109,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   const { registerInformesEjecutivosRoutes } = await import("./routes-informes-ejecutivos");
   registerInformesEjecutivosRoutes(app);
 
-  // ========== LSO DIRECTORY API ROUTES ==========
-  // Integración con directorio externo de profesionales LSO
-  const { registerLsoDirectoryRoutes } = await import("./routes-lso-directory");
-  registerLsoDirectoryRoutes(app);
+// DEPRECATED:   // ========== LSO DIRECTORY API ROUTES ==========
+// DEPRECATED:   // Integración con directorio externo de profesionales LSO
+// DEPRECATED:   const { registerLsoDirectoryRoutes } = await import("./routes-lso-directory");
+// DEPRECATED:   registerLsoDirectoryRoutes(app);
 
   // ========== EVALUACIONES PESV ROUTES ==========
   // Rutas para evaluaciones del Plan Estratégico de Seguridad Vial (Resolución 40595/2022)

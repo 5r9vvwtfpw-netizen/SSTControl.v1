@@ -12687,33 +12687,28 @@ export class DbStorage implements IStorage {
       companyId: params.companyId,
       subscriptionId: params.subscriptionId,
       invoiceNumber,
-      status: 'draft', // Will be 'issued' when PDF is generated
-      amount: params.amount,
+      status: 'draft',
+      subtotal: params.amount, // Amount in centavos COP
+      taxAmount: 0, // IVA (not applicable for most SST services)
+      total: params.amount, // Total = subtotal + taxAmount
       currency: 'COP',
-      billingPeriodStart: params.periodStart,
-      billingPeriodEnd: params.periodEnd,
+      periodStart: params.periodStart,
+      periodEnd: params.periodEnd,
       dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
       
       // Customer details (denormalized for immutability)
       customerName: company.name,
-      customerTaxId: company.nit,
+      customerNit: company.nit || '',
       customerEmail: company.contactEmail || '',
       customerAddress: `${company.address || ''}, ${company.city || ''}`,
       
-      // Invoice metadata
-      description: params.description || `Suscripción ${subscription.planId}`,
-      lineItems: [{
+      // Line items as JSON string
+      lineItems: JSON.stringify([{
         description: params.description || `Plan de suscripción`,
         quantity: 1,
         unitPrice: params.amount,
         total: params.amount
-      }] as any,
-      
-      // Payment tracking
-      paymentMethod: 'wompi',
-      
-      // Timestamps
-      issuedDate: new Date(),
+      }]),
     }).returning();
 
     console.log(`Invoice ${invoiceNumber} generated for subscription ${params.subscriptionId}`);
@@ -12721,7 +12716,7 @@ export class DbStorage implements IStorage {
     // TODO: Generate PDF using PDFKit (Tarea 9 - deferred to hardening)
     // TODO: Send email with invoice attached (Tarea 12 - deferred to hardening)
 
-    return invoice.id;
+    return invoice.invoiceNumber;
   }
 
   /**
