@@ -9696,3 +9696,256 @@ export const insertTratamientoRiesgoVialSchema = createInsertSchema(tratamientos
   .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
 export type InsertTratamientoRiesgoVial = z.infer<typeof insertTratamientoRiesgoVialSchema>;
 export type TratamientoRiesgoVial = typeof tratamientosRiesgoVial.$inferSelect;
+
+// ==================== ISO 39001:2012 - Sistema de Gestión de Seguridad Vial ====================
+
+// Categorías de Factores de Desempeño de Seguridad Vial (SPF)
+export const categoriaSPFEnum = pgEnum("categoria_spf", [
+  "exposicion_riesgo",      // Factores de exposición al riesgo
+  "resultado_final",        // Resultados finales de seguridad vial
+  "resultado_intermedio",   // Resultados intermedios
+  "intervencion"            // Medidas de intervención
+]);
+
+// Estado de objetivos de seguridad vial
+export const estadoObjetivoSVEnum = pgEnum("estado_objetivo_sv", [
+  "definido",
+  "en_progreso",
+  "cumplido",
+  "no_cumplido",
+  "cancelado"
+]);
+
+// Frecuencia de medición de indicadores
+export const frecuenciaMedicionEnum = pgEnum("frecuencia_medicion", [
+  "diaria",
+  "semanal",
+  "quincenal",
+  "mensual",
+  "trimestral",
+  "semestral",
+  "anual"
+]);
+
+// Factores de Desempeño de Seguridad Vial (SPF) según ISO 39001 (Cláusula 6.3)
+export const factoresDesempenoSV = pgTable("factores_desempeno_sv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  evaluacionPesvId: varchar("evaluacion_pesv_id").references(() => evaluacionesPesv.id),
+  
+  // Identificación del factor
+  codigo: varchar("codigo").notNull(), // Ej: SPF-001, SPF-002
+  nombre: text("nombre").notNull(),
+  descripcion: text("descripcion"),
+  categoria: categoriaSPFEnum("categoria").notNull(),
+  
+  // Relación con elementos de seguridad vial
+  elementoRelacionado: text("elemento_relacionado"), // Vehículo, Conductor, Vía, etc.
+  
+  // Valores y metas
+  valorBase: numeric("valor_base"), // Valor de línea base
+  valorActual: numeric("valor_actual"), // Valor actual medido
+  metaAnual: numeric("meta_anual"), // Meta para el año
+  unidadMedida: varchar("unidad_medida"), // %, número, tasa, etc.
+  
+  // Análisis
+  tendencia: varchar("tendencia"), // mejorando, estable, empeorando
+  observaciones: text("observaciones"),
+  
+  // Estado
+  activo: integer("activo").notNull().default(1),
+  
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+// Indicadores de Desempeño de Seguridad Vial (SPI) según ISO 39001 (Cláusula 9.1)
+export const indicadoresSV = pgTable("indicadores_sv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  evaluacionPesvId: varchar("evaluacion_pesv_id").references(() => evaluacionesPesv.id),
+  factorDesempenoId: varchar("factor_desempeno_id").references(() => factoresDesempenoSV.id),
+  
+  // Identificación del indicador
+  codigo: varchar("codigo").notNull(), // Ej: SPI-001, SPI-002
+  nombre: text("nombre").notNull(),
+  descripcion: text("descripcion"),
+  
+  // Fórmula y medición
+  formula: text("formula"), // Fórmula de cálculo
+  unidadMedida: varchar("unidad_medida").notNull(),
+  frecuenciaMedicion: frecuenciaMedicionEnum("frecuencia_medicion").notNull().default("mensual"),
+  fuenteDatos: text("fuente_datos"), // De dónde se obtienen los datos
+  
+  // Valores
+  valorMeta: numeric("valor_meta"), // Valor objetivo
+  valorMinimo: numeric("valor_minimo"), // Valor mínimo aceptable
+  valorMaximo: numeric("valor_maximo"), // Valor máximo aceptable
+  valorActual: numeric("valor_actual"), // Último valor medido
+  fechaUltimaMedicion: date("fecha_ultima_medicion"),
+  
+  // Responsabilidad
+  responsableId: varchar("responsable_id").references(() => workers.id),
+  
+  // Estado
+  activo: integer("activo").notNull().default(1),
+  
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+// Mediciones de Indicadores de Seguridad Vial
+export const medicionesIndicadorSV = pgTable("mediciones_indicador_sv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  indicadorId: varchar("indicador_id").notNull().references(() => indicadoresSV.id, { onDelete: "cascade" }),
+  
+  // Medición
+  fechaMedicion: date("fecha_medicion").notNull(),
+  valor: numeric("valor").notNull(),
+  observaciones: text("observaciones"),
+  
+  // Análisis
+  cumpleMeta: integer("cumple_meta"), // 1 = sí, 0 = no
+  desviacion: numeric("desviacion"), // Diferencia respecto a la meta
+  
+  // Registro
+  registradoPor: varchar("registrado_por").references(() => users.id),
+  
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+// Objetivos de Seguridad Vial según ISO 39001 (Cláusula 6.2)
+export const objetivosSV = pgTable("objetivos_sv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  evaluacionPesvId: varchar("evaluacion_pesv_id").references(() => evaluacionesPesv.id),
+  
+  // Identificación
+  codigo: varchar("codigo").notNull(), // Ej: OBJ-SV-001
+  titulo: text("titulo").notNull(),
+  descripcion: text("descripcion"),
+  
+  // Alcance y periodo
+  anio: integer("anio").notNull(),
+  fechaInicio: date("fecha_inicio"),
+  fechaFin: date("fecha_fin"),
+  
+  // Meta cuantificable
+  indicadorAsociado: varchar("indicador_asociado"), // Referencia al indicador
+  metaCuantitativa: text("meta_cuantitativa"), // Descripción de la meta
+  valorMeta: numeric("valor_meta"),
+  valorActual: numeric("valor_actual"),
+  porcentajeAvance: numeric("porcentaje_avance"),
+  
+  // Recursos y responsabilidad
+  recursosAsignados: text("recursos_asignados"),
+  responsableId: varchar("responsable_id").references(() => workers.id),
+  
+  // Vinculación con política de seguridad vial
+  alineadoPolitica: integer("alineado_politica").notNull().default(1),
+  
+  // Estado
+  estado: estadoObjetivoSVEnum("estado").notNull().default("definido"),
+  
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+// Auditorías Internas PESV según ISO 39001 (Cláusula 9.2)
+export const auditoriasPesv = pgTable("auditorias_pesv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  evaluacionPesvId: varchar("evaluacion_pesv_id").references(() => evaluacionesPesv.id),
+  
+  // Identificación
+  codigo: varchar("codigo").notNull(), // Ej: AUD-PESV-001
+  titulo: text("titulo").notNull(),
+  tipo: varchar("tipo").notNull().default("interna"), // interna, externa
+  
+  // Planificación
+  fechaProgramada: date("fecha_programada").notNull(),
+  fechaEjecucion: date("fecha_ejecucion"),
+  alcance: text("alcance"), // Procesos/áreas a auditar
+  criterios: text("criterios"), // Criterios de auditoría (ISO 39001, Res. 40595)
+  
+  // Equipo auditor
+  auditorLiderId: varchar("auditor_lider_id").references(() => workers.id),
+  equipoAuditor: text("equipo_auditor"), // Nombres de otros auditores
+  
+  // Resultados
+  hallazgosConformidades: integer("hallazgos_conformidades").default(0),
+  hallazgosNoConformidadesMenores: integer("hallazgos_nc_menores").default(0),
+  hallazgosNoConformidadesMayores: integer("hallazgos_nc_mayores").default(0),
+  hallazgosObservaciones: integer("hallazgos_observaciones").default(0),
+  hallazgosOportunidadesMejora: integer("hallazgos_om").default(0),
+  
+  // Conclusiones
+  conclusiones: text("conclusiones"),
+  recomendaciones: text("recomendaciones"),
+  
+  // Estado
+  estado: varchar("estado").notNull().default("programada"), // programada, en_ejecucion, completada, cancelada
+  
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+// Hallazgos de Auditoría PESV
+export const hallazgosAuditoriaPesv = pgTable("hallazgos_auditoria_pesv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  auditoriaId: varchar("auditoria_id").notNull().references(() => auditoriasPesv.id, { onDelete: "cascade" }),
+  
+  // Identificación
+  codigo: varchar("codigo").notNull(), // Ej: HAL-001
+  tipo: varchar("tipo").notNull(), // conformidad, nc_menor, nc_mayor, observacion, oportunidad_mejora
+  
+  // Descripción
+  clausulaReferencia: varchar("clausula_referencia"), // Ej: ISO 39001 - 6.2, Res. 40595 - Art. 5
+  descripcion: text("descripcion").notNull(),
+  evidencia: text("evidencia"),
+  
+  // Acción correctiva
+  requiereAccion: integer("requiere_accion").notNull().default(0),
+  accionPropuesta: text("accion_propuesta"),
+  responsableAccionId: varchar("responsable_accion_id").references(() => workers.id),
+  fechaLimite: date("fecha_limite"),
+  fechaCierre: date("fecha_cierre"),
+  
+  // Estado
+  estado: varchar("estado").notNull().default("abierto"), // abierto, en_proceso, cerrado
+  
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+// Schemas de inserción para ISO 39001
+export const insertFactorDesempenoSVSchema = createInsertSchema(factoresDesempenoSV)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
+export type InsertFactorDesempenoSV = z.infer<typeof insertFactorDesempenoSVSchema>;
+export type FactorDesempenoSV = typeof factoresDesempenoSV.$inferSelect;
+
+export const insertIndicadorSVSchema = createInsertSchema(indicadoresSV)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
+export type InsertIndicadorSV = z.infer<typeof insertIndicadorSVSchema>;
+export type IndicadorSV = typeof indicadoresSV.$inferSelect;
+
+export const insertMedicionIndicadorSVSchema = createInsertSchema(medicionesIndicadorSV)
+  .omit({ id: true, createdAt: true, companyId: true });
+export type InsertMedicionIndicadorSV = z.infer<typeof insertMedicionIndicadorSVSchema>;
+export type MedicionIndicadorSV = typeof medicionesIndicadorSV.$inferSelect;
+
+export const insertObjetivoSVSchema = createInsertSchema(objetivosSV)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
+export type InsertObjetivoSV = z.infer<typeof insertObjetivoSVSchema>;
+export type ObjetivoSV = typeof objetivosSV.$inferSelect;
+
+export const insertAuditoriaPesvSchema = createInsertSchema(auditoriasPesv)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
+export type InsertAuditoriaPesv = z.infer<typeof insertAuditoriaPesvSchema>;
+export type AuditoriaPesv = typeof auditoriasPesv.$inferSelect;
+
+export const insertHallazgoAuditoriaPesvSchema = createInsertSchema(hallazgosAuditoriaPesv)
+  .omit({ id: true, createdAt: true, companyId: true });
+export type InsertHallazgoAuditoriaPesv = z.infer<typeof insertHallazgoAuditoriaPesvSchema>;
+export type HallazgoAuditoriaPesv = typeof hallazgosAuditoriaPesv.$inferSelect;
