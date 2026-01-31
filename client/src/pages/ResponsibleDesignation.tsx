@@ -530,6 +530,12 @@ export default function ResponsibleDesignationPage() {
                               field.onChange(value);
                               // Auto-fill cargo específico basado en el cargo del trabajador
                               const selectedWorker = workers.find(w => w.id === value);
+                              console.log("[ResponsibleDesignation] Worker selected:", {
+                                workerId: value,
+                                selectedWorker: selectedWorker,
+                                hasJobProfileId: selectedWorker?.jobProfileId,
+                                jobProfileIdValue: selectedWorker?.jobProfileId || "NO TIENE"
+                              });
                               if (selectedWorker && !editingDesignation) {
                                 const workerPosition = selectedWorker.position;
                                 // Buscar si el cargo del trabajador coincide con algún cargo SST predefinido
