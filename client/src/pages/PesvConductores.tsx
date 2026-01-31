@@ -58,7 +58,19 @@ export default function PesvConductores() {
   // Query para obtener trabajadores de la empresa (integración SST-PESV)
   const effectiveCompanyId = isAdmin ? formData.companyId : user?.companyId;
   const { data: workers = [] } = useQuery<Worker[]>({
-    queryKey: ["/api/workers"],
+    queryKey: ["/api/workers", effectiveCompanyId],
+    queryFn: async () => {
+      const headers: Record<string, string> = {};
+      if (isAdmin && effectiveCompanyId) {
+        headers["X-Company-Id"] = effectiveCompanyId;
+      }
+      const res = await fetch("/api/workers", {
+        credentials: "include",
+        headers,
+      });
+      if (!res.ok) throw new Error("Error al cargar trabajadores");
+      return res.json();
+    },
     enabled: !!effectiveCompanyId,
   });
 
