@@ -9493,3 +9493,199 @@ export const insertAccionMejoraPesvSchema = createInsertSchema(accionesMejoraPes
   });
 export type InsertAccionMejoraPesv = z.infer<typeof insertAccionMejoraPesvSchema>;
 export type AccionMejoraPesv = typeof accionesMejoraPesv.$inferSelect;
+
+// ============================================================================
+// ISO 31000:2018 - GESTIÓN DE RIESGOS VIALES PARA PESV
+// Integración de metodología de gestión de riesgos según ISO 31000
+// NOTA: Tablas nuevas - requiere npm run db:push para crear en BD
+// ============================================================================
+
+// Enums para matriz de riesgos ISO 31000
+export const probabilidadRiesgoEnum = pgEnum("probabilidad_riesgo", [
+  "muy_baja",   // 1 - Raro/Improbable
+  "baja",       // 2 - Poco probable
+  "media",      // 3 - Posible
+  "alta",       // 4 - Probable
+  "muy_alta"    // 5 - Casi seguro
+]);
+
+export const impactoRiesgoEnum = pgEnum("impacto_riesgo", [
+  "insignificante",  // 1 - Sin lesiones
+  "menor",           // 2 - Lesiones leves
+  "moderado",        // 3 - Lesiones moderadas/incapacidad temporal
+  "mayor",           // 4 - Lesiones graves/incapacidad permanente
+  "catastrofico"     // 5 - Muerte
+]);
+
+// NOTA: nivelRiesgoEnum ya definido arriba (línea ~4592) - reutilizado para riesgos viales
+
+export const categoriaRiesgoVialEnum = pgEnum("categoria_riesgo_vial", [
+  "conductor",      // Factor humano - conductores
+  "vehiculo",       // Factor vehicular
+  "via",            // Factor vía/infraestructura
+  "entorno",        // Factor ambiental/entorno
+  "organizacional"  // Factor organizacional
+]);
+
+export const estadoTratamientoRiesgoEnum = pgEnum("estado_tratamiento_riesgo", [
+  "identificado",
+  "en_evaluacion",
+  "en_tratamiento",
+  "controlado",
+  "cerrado"
+]);
+
+export const tipoTratamientoRiesgoEnum = pgEnum("tipo_tratamiento_riesgo", [
+  "evitar",       // Eliminar la actividad que genera el riesgo
+  "reducir",      // Disminuir probabilidad o impacto
+  "compartir",    // Transferir (seguros, terceros)
+  "aceptar"       // Asumir el riesgo con monitoreo
+]);
+
+// NOTA: tipoFactorContextoEnum ya definido arriba (línea ~9144) - reutilizado para contexto PESV
+
+// Contexto Organizacional PESV según ISO 31000 (Cláusula 5.4)
+// Factores internos y externos que afectan la seguridad vial
+export const contextoOrganizacionalPesv = pgTable("contexto_organizacional_pesv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  evaluacionPesvId: varchar("evaluacion_pesv_id").references(() => evaluacionesPesv.id),
+  
+  // Tipo de factor
+  tipoFactor: tipoFactorContextoEnum("tipo_factor").notNull(),
+  
+  // Descripción del factor
+  nombre: text("nombre").notNull(),
+  descripcion: text("descripcion"),
+  
+  // Categoría específica
+  categoria: varchar("categoria"), // gobernanza, cultura, recursos, stakeholders, legal, tecnológico, etc.
+  
+  // Impacto en la seguridad vial
+  impactoSeguridad: text("impacto_seguridad"),
+  nivelImpacto: varchar("nivel_impacto"), // positivo, negativo, neutro
+  
+  // Vigencia
+  fechaIdentificacion: date("fecha_identificacion"),
+  fechaRevision: date("fecha_revision"),
+  activo: integer("activo").notNull().default(1),
+  
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+// Riesgos Viales según ISO 31000 (Cláusula 6 - Proceso de gestión)
+export const riesgosViales = pgTable("riesgos_viales", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  evaluacionPesvId: varchar("evaluacion_pesv_id").references(() => evaluacionesPesv.id),
+  
+  // Identificación del riesgo (ISO 31000 - 6.4.2)
+  codigo: varchar("codigo").notNull(), // Ej: RV-001, RV-002
+  nombre: text("nombre").notNull(),
+  descripcion: text("descripcion").notNull(),
+  categoria: categoriaRiesgoVialEnum("categoria").notNull(),
+  
+  // Fuente y causas del riesgo
+  fuenteRiesgo: text("fuente_riesgo"), // Origen del riesgo
+  causasRaiz: text("causas_raiz"),     // Análisis de causas
+  consecuencias: text("consecuencias"), // Posibles consecuencias
+  
+  // Análisis del riesgo (ISO 31000 - 6.4.3)
+  probabilidad: probabilidadRiesgoEnum("probabilidad").notNull(),
+  impacto: impactoRiesgoEnum("impacto").notNull(),
+  
+  // Evaluación del riesgo (ISO 31000 - 6.4.4)
+  // Nivel = Probabilidad × Impacto (calculado automáticamente)
+  valorRiesgo: integer("valor_riesgo"), // 1-25
+  nivelRiesgo: nivelRiesgoEnum("nivel_riesgo"),
+  
+  // Riesgo residual después de controles existentes
+  probabilidadResidual: probabilidadRiesgoEnum("probabilidad_residual"),
+  impactoResidual: impactoRiesgoEnum("impacto_residual"),
+  valorRiesgoResidual: integer("valor_riesgo_residual"),
+  nivelRiesgoResidual: nivelRiesgoEnum("nivel_riesgo_residual"),
+  
+  // Controles existentes
+  controlesExistentes: text("controles_existentes"),
+  eficaciaControles: varchar("eficacia_controles"), // alta, media, baja
+  
+  // Estado y seguimiento
+  estado: estadoTratamientoRiesgoEnum("estado").notNull().default("identificado"),
+  responsableId: varchar("responsable_id").references(() => workers.id),
+  fechaIdentificacion: date("fecha_identificacion"),
+  fechaUltimaEvaluacion: date("fecha_ultima_evaluacion"),
+  fechaProximaRevision: date("fecha_proxima_revision"),
+  
+  // Vinculación con pasos PESV
+  pasoPesvRelacionado: varchar("paso_pesv_relacionado"), // Código del paso: P01, H05, etc.
+  
+  // Trazabilidad SST
+  accidenteRelacionadoId: varchar("accidente_relacionado_id"),
+  inspeccionRelacionadaId: varchar("inspeccion_relacionada_id"),
+  
+  observaciones: text("observaciones"),
+  activo: integer("activo").notNull().default(1),
+  
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+// Tratamientos de Riesgos Viales (ISO 31000 - 6.5)
+export const tratamientosRiesgoVial = pgTable("tratamientos_riesgo_vial", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  riesgoVialId: varchar("riesgo_vial_id").notNull().references(() => riesgosViales.id, { onDelete: "cascade" }),
+  
+  // Tipo de tratamiento según ISO 31000
+  tipoTratamiento: tipoTratamientoRiesgoEnum("tipo_tratamiento").notNull(),
+  
+  // Descripción del tratamiento
+  descripcion: text("descripcion").notNull(),
+  justificacion: text("justificacion"), // Por qué se eligió este tratamiento
+  
+  // Planificación
+  accionesRequeridas: text("acciones_requeridas"),
+  recursosNecesarios: text("recursos_necesarios"),
+  presupuestoEstimado: numeric("presupuesto_estimado"),
+  
+  // Responsabilidad y plazos
+  responsableId: varchar("responsable_id").references(() => workers.id),
+  fechaInicio: date("fecha_inicio"),
+  fechaLimite: date("fecha_limite"),
+  fechaImplementacion: date("fecha_implementacion"),
+  
+  // Seguimiento
+  estado: varchar("estado").notNull().default("pendiente"),
+  porcentajeAvance: integer("porcentaje_avance").default(0),
+  resultadosObtenidos: text("resultados_obtenidos"),
+  
+  // Efectividad del tratamiento
+  reduccionProbabilidad: integer("reduccion_probabilidad"), // Niveles reducidos
+  reduccionImpacto: integer("reduccion_impacto"),           // Niveles reducidos
+  eficacia: varchar("eficacia"), // alta, media, baja
+  
+  // Vinculación con acciones de mejora PESV
+  accionMejoraPesvId: varchar("accion_mejora_pesv_id").references(() => accionesMejoraPesv.id),
+  
+  observaciones: text("observaciones"),
+  
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+// Zod schemas para ISO 31000 - Gestión de Riesgos Viales
+export const insertContextoOrganizacionalPesvSchema = createInsertSchema(contextoOrganizacionalPesv)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
+export type InsertContextoOrganizacionalPesv = z.infer<typeof insertContextoOrganizacionalPesvSchema>;
+export type ContextoOrganizacionalPesv = typeof contextoOrganizacionalPesv.$inferSelect;
+
+export const insertRiesgoVialSchema = createInsertSchema(riesgosViales)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
+export type InsertRiesgoVial = z.infer<typeof insertRiesgoVialSchema>;
+export type RiesgoVial = typeof riesgosViales.$inferSelect;
+
+export const insertTratamientoRiesgoVialSchema = createInsertSchema(tratamientosRiesgoVial)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
+export type InsertTratamientoRiesgoVial = z.infer<typeof insertTratamientoRiesgoVialSchema>;
+export type TratamientoRiesgoVial = typeof tratamientosRiesgoVial.$inferSelect;
