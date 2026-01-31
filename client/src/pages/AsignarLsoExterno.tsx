@@ -108,11 +108,24 @@ export default function AsignarLsoExterno() {
     enabled: statusData?.configured === true,
   });
 
-  // Mutation para asignar LSO (usando endpoint JWT - valida con directorio externo)
+  // Mutation para asignar LSO (usando endpoint JWT - envía datos completos)
   const assignMutation = useMutation({
     mutationFn: async (lso: LsoRegistration) => {
+      // Enviar datos completos del LSO para evitar llamada adicional al directorio
       return apiRequest("POST", "/api/lso-directory-jwt/assign", {
         externalLsoId: lso.id,
+        lsoData: {
+          fullName: lso.fullName,
+          email: lso.email,
+          phone: lso.phone,
+          city: lso.city,
+          status: lso.status,
+          licenseNumber: lso.licenseNumber,
+          licenseIssuer: lso.licenseIssuer,
+          licenseExpiry: lso.licenseExpiry,
+          professionType: lso.professionType,
+          signatureUrl: lso.signatureUrl,
+        }
       });
     },
     onSuccess: () => {

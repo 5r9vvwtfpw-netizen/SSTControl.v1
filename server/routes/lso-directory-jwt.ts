@@ -96,7 +96,7 @@ router.get("/lso/:id", requireAuth, async (req: Request, res: Response) => {
 /**
  * POST /api/lso-directory-jwt/assign
  * Asigna un profesional LSO externo a una empresa
- * Valida con el directorio externo antes de asignar
+ * Acepta datos completos del LSO del frontend (ya validados por la búsqueda)
  */
 router.post("/assign", requireAuth, async (req: Request, res: Response) => {
   try {
@@ -110,7 +110,7 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
       });
     }
 
-    const { externalLsoId } = req.body;
+    const { externalLsoId, lsoData } = req.body;
 
     if (!externalLsoId) {
       return res.status(400).json({ 
@@ -119,17 +119,59 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
       });
     }
 
-    // Validar que el LSO existe y está activo en el directorio externo
-    const validation = await lsoDirectoryJwtClient.validateLsoForAssignment(
-      parseInt(externalLsoId.toString())
-    );
+    // Usar datos del LSO enviados por el frontend (ya provienen de la búsqueda del directorio)
+    // Esto evita una llamada adicional al directorio externo que puede fallar
+    let lso: any;
     
-    if (!validation.valid) {
-      logger.warn({ externalLsoId, error: validation.error }, "[LSO-JWT-Routes] Validación fallida");
-      return res.status(400).json({ ok: false, error: validation.error });
-    }
+    if (lsoData && lsoData.fullName && lsoData.email) {
+      // Si tenemos datos completos del frontend, usarlos directamente
+      lso = {
+        id: parseInt(externalLsoId.toString()),
+        fullName: lsoData.fullName,
+        email: lsoData.email,
+        phone: lsoData.phone,
+        city: lsoData.city,
+        status: lsoData.status || 'confirmed',
+        licenseNumber: lsoData.licenseNumber,
+        licenseIssuer: lsoData.licenseIssuer,
+        licenseExpiry: lsoData.licenseExpiry,
+        professionType: lsoData.professionType,
+        signatureUrl: lsoData.signatureUrl,
+      };
+      
+      // Validar que el status sea 'confirmed' si está disponible
+      if (lsoData.status && lsoData.status !== 'confirmed') {
+        return res.status(400).json({ 
+          ok: false, 
+          error: "El profesional LSO no está confirmado en el directorio" 
+        });
+      }
 
-    const lso = validation.lso!;
+      // Validar que la licencia no esté expirada
+      if (lsoData.licenseExpiry) {
+        const expiryDate = new Date(lsoData.licenseExpiry);
+        if (expiryDate < new Date()) {
+          return res.status(400).json({ 
+            ok: false, 
+            error: "La licencia del profesional LSO ha expirado" 
+          });
+        }
+      }
+
+      logger.info({ externalLsoId, fullName: lso.fullName }, "[LSO-JWT-Routes] Usando datos del LSO del frontend");
+    } else {
+      // Fallback: intentar validar con el directorio externo
+      const validation = await lsoDirectoryJwtClient.validateLsoForAssignment(
+        parseInt(externalLsoId.toString())
+      );
+      
+      if (!validation.valid) {
+        logger.warn({ externalLsoId, error: validation.error }, "[LSO-JWT-Routes] Validación fallida");
+        return res.status(400).json({ ok: false, error: validation.error });
+      }
+      
+      lso = validation.lso!;
+    }
 
     // Verificar que la empresa existe
     const [company] = await db.select()
