@@ -42137,10 +42137,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   const { registerInformesEjecutivosRoutes } = await import("./routes-informes-ejecutivos");
   registerInformesEjecutivosRoutes(app);
 
-// DEPRECATED:   // ========== LSO DIRECTORY API ROUTES ==========
-// DEPRECATED:   // Integración con directorio externo de profesionales LSO
-// DEPRECATED:   const { registerLsoDirectoryRoutes } = await import("./routes-lso-directory");
-// DEPRECATED:   registerLsoDirectoryRoutes(app);
+  // ========== LSO DIRECTORY API ROUTES ==========
+  // Integración con directorio externo de profesionales LSO
+  const { registerLsoDirectoryRoutes } = await import("./routes-lso-directory");
+  registerLsoDirectoryRoutes(app);
 
   // ========== EVALUACIONES PESV ROUTES ==========
   // Rutas para evaluaciones del Plan Estratégico de Seguridad Vial (Resolución 40595/2022)
