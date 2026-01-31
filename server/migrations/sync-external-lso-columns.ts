@@ -143,6 +143,23 @@ export async function syncExternalLsoColumns(): Promise<void> {
   } catch (error: any) {
     console.error('[Migration] ✗ Error sincronizando columnas en licensed_professional_assignments:', error.message);
     console.error('[Migration] Stack:', error.stack);
-    // Don't throw - let the app continue and fail gracefully on queries if columns don't exist
+  }
+
+  // Make worker_id nullable in responsible_designations (required for external LSO support)
+  console.log('[Migration] Haciendo worker_id nullable en responsible_designations...');
+  
+  try {
+    await db.execute(sql`
+      ALTER TABLE responsible_designations 
+      ALTER COLUMN worker_id DROP NOT NULL
+    `);
+    console.log('[Migration] ✅ Columna worker_id ahora es nullable en responsible_designations');
+  } catch (error: any) {
+    // If column is already nullable, this will fail silently
+    if (error.message?.includes('does not have a default') || error.message?.includes('already nullable') || error.message?.includes('is not')) {
+      console.log('[Migration] ✅ Columna worker_id ya es nullable en responsible_designations');
+    } else {
+      console.error('[Migration] ⚠️ Error modificando worker_id:', error.message);
+    }
   }
 }
