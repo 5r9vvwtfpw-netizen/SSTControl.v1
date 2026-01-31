@@ -2,18 +2,18 @@ import { sql } from 'drizzle-orm';
 import { db } from '../db';
 
 /**
- * Migration: Add External LSO columns to responsible_designations
+ * Migration: Add all missing columns to responsible_designations
  * 
- * Adds support for external LSO professionals (non-employee professionals)
- * as responsible parties for "Responsable del SG-SST" position.
- * Required for Resolution 0312/2019 compliance.
+ * Adds support for:
+ * - External LSO professionals (non-employee professionals) for "Responsable del SG-SST" position
+ * - SST License information (Resolución 0312/2019, Estándar 1.1.1)
+ * - 50-hour course certification
  */
 export async function syncExternalLsoColumns(): Promise<void> {
-  console.log('[Migration] Sincronizando columnas is_external_lso y external_lso_name...');
+  console.log('[Migration] Sincronizando columnas en responsible_designations...');
   
   try {
-    // Directly add columns using IF NOT EXISTS - this is idempotent and safe
-    // This approach avoids potential issues with information_schema queries across different PostgreSQL providers
+    // External LSO columns
     console.log('[Migration] Ejecutando ALTER TABLE para is_external_lso...');
     await db.execute(sql`
       ALTER TABLE responsible_designations 
@@ -28,11 +28,47 @@ export async function syncExternalLsoColumns(): Promise<void> {
     `);
     console.log('[Migration] ✅ Columna external_lso_name verificada/agregada');
 
-    console.log('[Migration] ✅ Columnas LSO externo sincronizadas correctamente');
+    // SST License columns (Resolución 0312/2019)
+    console.log('[Migration] Ejecutando ALTER TABLE para licencia_sst_titular...');
+    await db.execute(sql`
+      ALTER TABLE responsible_designations 
+      ADD COLUMN IF NOT EXISTS licencia_sst_titular TEXT
+    `);
+    console.log('[Migration] ✅ Columna licencia_sst_titular verificada/agregada');
+
+    console.log('[Migration] Ejecutando ALTER TABLE para licencia_sst_numero...');
+    await db.execute(sql`
+      ALTER TABLE responsible_designations 
+      ADD COLUMN IF NOT EXISTS licencia_sst_numero TEXT
+    `);
+    console.log('[Migration] ✅ Columna licencia_sst_numero verificada/agregada');
+
+    console.log('[Migration] Ejecutando ALTER TABLE para licencia_sst_vigencia...');
+    await db.execute(sql`
+      ALTER TABLE responsible_designations 
+      ADD COLUMN IF NOT EXISTS licencia_sst_vigencia DATE
+    `);
+    console.log('[Migration] ✅ Columna licencia_sst_vigencia verificada/agregada');
+
+    // 50-hour course certification columns
+    console.log('[Migration] Ejecutando ALTER TABLE para curso_50_horas...');
+    await db.execute(sql`
+      ALTER TABLE responsible_designations 
+      ADD COLUMN IF NOT EXISTS curso_50_horas BOOLEAN DEFAULT FALSE
+    `);
+    console.log('[Migration] ✅ Columna curso_50_horas verificada/agregada');
+
+    console.log('[Migration] Ejecutando ALTER TABLE para curso_50_horas_fecha...');
+    await db.execute(sql`
+      ALTER TABLE responsible_designations 
+      ADD COLUMN IF NOT EXISTS curso_50_horas_fecha DATE
+    `);
+    console.log('[Migration] ✅ Columna curso_50_horas_fecha verificada/agregada');
+
+    console.log('[Migration] ✅ Todas las columnas sincronizadas correctamente en responsible_designations');
   } catch (error: any) {
-    console.error('[Migration] ✗ Error sincronizando columnas LSO externo:', error.message);
+    console.error('[Migration] ✗ Error sincronizando columnas:', error.message);
     console.error('[Migration] Stack:', error.stack);
     // Don't throw - let the app continue and fail gracefully on queries if columns don't exist
-    // This prevents the app from crashing completely
   }
 }
