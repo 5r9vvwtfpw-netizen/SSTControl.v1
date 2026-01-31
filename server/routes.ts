@@ -43397,6 +43397,666 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // ========== ISO 39001:2012 - Road Safety Management System Routes ==========
+  
+  // ===== Factores de Desempeño de Seguridad Vial (SPF) Routes =====
+  
+  // GET /api/factores-desempeno-sv - List all safety performance factors for company
+  app.get("/api/factores-desempeno-sv", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const results = await db.select()
+        .from(schema.factoresDesempenoSV)
+        .where(eq(schema.factoresDesempenoSV.companyId, effectiveCompanyId))
+        .orderBy(desc(schema.factoresDesempenoSV.createdAt));
+      
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error fetching factores desempeño SV:", error);
+      res.status(500).json({ error: "Error al obtener los factores de desempeño" });
+    }
+  });
+
+  // POST /api/factores-desempeno-sv - Create new safety performance factor
+  app.post("/api/factores-desempeno-sv", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const validatedData = schema.insertFactorDesempenoSVSchema.parse(req.body);
+      
+      const [result] = await db.insert(schema.factoresDesempenoSV)
+        .values({
+          ...validatedData,
+          companyId: effectiveCompanyId,
+        })
+        .returning();
+      
+      res.status(201).json(result);
+    } catch (error: any) {
+      console.error("Error creating factor desempeño SV:", error);
+      res.status(400).json({ error: error.message || "Error al crear el factor de desempeño" });
+    }
+  });
+
+  // GET /api/factores-desempeno-sv/:id - Get single safety performance factor
+  app.get("/api/factores-desempeno-sv/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const [result] = await db.select()
+        .from(schema.factoresDesempenoSV)
+        .where(and(
+          eq(schema.factoresDesempenoSV.id, req.params.id),
+          eq(schema.factoresDesempenoSV.companyId, effectiveCompanyId)
+        ));
+      
+      if (!result) {
+        return res.status(404).json({ error: "Factor de desempeño no encontrado" });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error fetching factor desempeño SV:", error);
+      res.status(500).json({ error: "Error al obtener el factor de desempeño" });
+    }
+  });
+
+  // PATCH /api/factores-desempeno-sv/:id - Update safety performance factor
+  app.patch("/api/factores-desempeno-sv/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const validatedData = schema.insertFactorDesempenoSVSchema.partial().parse(req.body);
+      
+      const [result] = await db.update(schema.factoresDesempenoSV)
+        .set({
+          ...validatedData,
+          updatedAt: sql`now()`,
+        })
+        .where(and(
+          eq(schema.factoresDesempenoSV.id, req.params.id),
+          eq(schema.factoresDesempenoSV.companyId, effectiveCompanyId)
+        ))
+        .returning();
+      
+      if (!result) {
+        return res.status(404).json({ error: "Factor de desempeño no encontrado" });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error updating factor desempeño SV:", error);
+      res.status(400).json({ error: error.message || "Error al actualizar el factor de desempeño" });
+    }
+  });
+
+  // DELETE /api/factores-desempeno-sv/:id - Delete safety performance factor
+  app.delete("/api/factores-desempeno-sv/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const [result] = await db.delete(schema.factoresDesempenoSV)
+        .where(and(
+          eq(schema.factoresDesempenoSV.id, req.params.id),
+          eq(schema.factoresDesempenoSV.companyId, effectiveCompanyId)
+        ))
+        .returning();
+      
+      if (!result) {
+        return res.status(404).json({ error: "Factor de desempeño no encontrado" });
+      }
+      
+      res.sendStatus(204);
+    } catch (error: any) {
+      console.error("Error deleting factor desempeño SV:", error);
+      res.status(500).json({ error: "Error al eliminar el factor de desempeño" });
+    }
+  });
+
+  // ===== Indicadores de Seguridad Vial (SPI) Routes =====
+  
+  // GET /api/indicadores-sv - List all safety performance indicators for company
+  app.get("/api/indicadores-sv", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const results = await db.select()
+        .from(schema.indicadoresSV)
+        .where(eq(schema.indicadoresSV.companyId, effectiveCompanyId))
+        .orderBy(desc(schema.indicadoresSV.createdAt));
+      
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error fetching indicadores SV:", error);
+      res.status(500).json({ error: "Error al obtener los indicadores de seguridad vial" });
+    }
+  });
+
+  // POST /api/indicadores-sv - Create new safety performance indicator
+  app.post("/api/indicadores-sv", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const validatedData = schema.insertIndicadorSVSchema.parse(req.body);
+      
+      const [result] = await db.insert(schema.indicadoresSV)
+        .values({
+          ...validatedData,
+          companyId: effectiveCompanyId,
+        })
+        .returning();
+      
+      res.status(201).json(result);
+    } catch (error: any) {
+      console.error("Error creating indicador SV:", error);
+      res.status(400).json({ error: error.message || "Error al crear el indicador" });
+    }
+  });
+
+  // GET /api/indicadores-sv/:id - Get single safety performance indicator
+  app.get("/api/indicadores-sv/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const [result] = await db.select()
+        .from(schema.indicadoresSV)
+        .where(and(
+          eq(schema.indicadoresSV.id, req.params.id),
+          eq(schema.indicadoresSV.companyId, effectiveCompanyId)
+        ));
+      
+      if (!result) {
+        return res.status(404).json({ error: "Indicador no encontrado" });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error fetching indicador SV:", error);
+      res.status(500).json({ error: "Error al obtener el indicador" });
+    }
+  });
+
+  // PATCH /api/indicadores-sv/:id - Update safety performance indicator
+  app.patch("/api/indicadores-sv/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const validatedData = schema.insertIndicadorSVSchema.partial().parse(req.body);
+      
+      const [result] = await db.update(schema.indicadoresSV)
+        .set({
+          ...validatedData,
+          updatedAt: sql`now()`,
+        })
+        .where(and(
+          eq(schema.indicadoresSV.id, req.params.id),
+          eq(schema.indicadoresSV.companyId, effectiveCompanyId)
+        ))
+        .returning();
+      
+      if (!result) {
+        return res.status(404).json({ error: "Indicador no encontrado" });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error updating indicador SV:", error);
+      res.status(400).json({ error: error.message || "Error al actualizar el indicador" });
+    }
+  });
+
+  // DELETE /api/indicadores-sv/:id - Delete safety performance indicator
+  app.delete("/api/indicadores-sv/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const [result] = await db.delete(schema.indicadoresSV)
+        .where(and(
+          eq(schema.indicadoresSV.id, req.params.id),
+          eq(schema.indicadoresSV.companyId, effectiveCompanyId)
+        ))
+        .returning();
+      
+      if (!result) {
+        return res.status(404).json({ error: "Indicador no encontrado" });
+      }
+      
+      res.sendStatus(204);
+    } catch (error: any) {
+      console.error("Error deleting indicador SV:", error);
+      res.status(500).json({ error: "Error al eliminar el indicador" });
+    }
+  });
+
+  // GET /api/indicadores-sv/:id/mediciones - Get measurements for indicator
+  app.get("/api/indicadores-sv/:id/mediciones", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      // First verify the indicator belongs to the company
+      const [indicator] = await db.select()
+        .from(schema.indicadoresSV)
+        .where(and(
+          eq(schema.indicadoresSV.id, req.params.id),
+          eq(schema.indicadoresSV.companyId, effectiveCompanyId)
+        ));
+      
+      if (!indicator) {
+        return res.status(404).json({ error: "Indicador no encontrado" });
+      }
+      
+      const results = await db.select()
+        .from(schema.medicionesIndicadorSV)
+        .where(eq(schema.medicionesIndicadorSV.indicadorId, req.params.id))
+        .orderBy(desc(schema.medicionesIndicadorSV.fechaMedicion));
+      
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error fetching mediciones indicador SV:", error);
+      res.status(500).json({ error: "Error al obtener las mediciones del indicador" });
+    }
+  });
+
+  // POST /api/indicadores-sv/:id/mediciones - Add measurement to indicator
+  app.post("/api/indicadores-sv/:id/mediciones", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      // First verify the indicator belongs to the company
+      const [indicator] = await db.select()
+        .from(schema.indicadoresSV)
+        .where(and(
+          eq(schema.indicadoresSV.id, req.params.id),
+          eq(schema.indicadoresSV.companyId, effectiveCompanyId)
+        ));
+      
+      if (!indicator) {
+        return res.status(404).json({ error: "Indicador no encontrado" });
+      }
+      
+      const validatedData = schema.insertMedicionIndicadorSVSchema.parse({
+        ...req.body,
+        indicadorId: req.params.id,
+        companyId: effectiveCompanyId,
+      });
+      
+      const [result] = await db.insert(schema.medicionesIndicadorSV)
+        .values(validatedData)
+        .returning();
+      
+      res.status(201).json(result);
+    } catch (error: any) {
+      console.error("Error creating medicion indicador SV:", error);
+      res.status(400).json({ error: error.message || "Error al crear la medición" });
+    }
+  });
+
+  // ===== Objetivos de Seguridad Vial Routes =====
+  
+  // GET /api/objetivos-sv - List all road safety objectives for company
+  app.get("/api/objetivos-sv", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const results = await db.select()
+        .from(schema.objetivosSV)
+        .where(eq(schema.objetivosSV.companyId, effectiveCompanyId))
+        .orderBy(desc(schema.objetivosSV.createdAt));
+      
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error fetching objetivos SV:", error);
+      res.status(500).json({ error: "Error al obtener los objetivos de seguridad vial" });
+    }
+  });
+
+  // POST /api/objetivos-sv - Create new road safety objective
+  app.post("/api/objetivos-sv", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const validatedData = schema.insertObjetivoSVSchema.parse(req.body);
+      
+      const [result] = await db.insert(schema.objetivosSV)
+        .values({
+          ...validatedData,
+          companyId: effectiveCompanyId,
+        })
+        .returning();
+      
+      res.status(201).json(result);
+    } catch (error: any) {
+      console.error("Error creating objetivo SV:", error);
+      res.status(400).json({ error: error.message || "Error al crear el objetivo" });
+    }
+  });
+
+  // GET /api/objetivos-sv/:id - Get single road safety objective
+  app.get("/api/objetivos-sv/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const [result] = await db.select()
+        .from(schema.objetivosSV)
+        .where(and(
+          eq(schema.objetivosSV.id, req.params.id),
+          eq(schema.objetivosSV.companyId, effectiveCompanyId)
+        ));
+      
+      if (!result) {
+        return res.status(404).json({ error: "Objetivo no encontrado" });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error fetching objetivo SV:", error);
+      res.status(500).json({ error: "Error al obtener el objetivo" });
+    }
+  });
+
+  // PATCH /api/objetivos-sv/:id - Update road safety objective
+  app.patch("/api/objetivos-sv/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const validatedData = schema.insertObjetivoSVSchema.partial().parse(req.body);
+      
+      const [result] = await db.update(schema.objetivosSV)
+        .set({
+          ...validatedData,
+          updatedAt: sql`now()`,
+        })
+        .where(and(
+          eq(schema.objetivosSV.id, req.params.id),
+          eq(schema.objetivosSV.companyId, effectiveCompanyId)
+        ))
+        .returning();
+      
+      if (!result) {
+        return res.status(404).json({ error: "Objetivo no encontrado" });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error updating objetivo SV:", error);
+      res.status(400).json({ error: error.message || "Error al actualizar el objetivo" });
+    }
+  });
+
+  // DELETE /api/objetivos-sv/:id - Delete road safety objective
+  app.delete("/api/objetivos-sv/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const [result] = await db.delete(schema.objetivosSV)
+        .where(and(
+          eq(schema.objetivosSV.id, req.params.id),
+          eq(schema.objetivosSV.companyId, effectiveCompanyId)
+        ))
+        .returning();
+      
+      if (!result) {
+        return res.status(404).json({ error: "Objetivo no encontrado" });
+      }
+      
+      res.sendStatus(204);
+    } catch (error: any) {
+      console.error("Error deleting objetivo SV:", error);
+      res.status(500).json({ error: "Error al eliminar el objetivo" });
+    }
+  });
+
+  // ===== Auditorías PESV Routes =====
+  
+  // GET /api/auditorias-pesv - List all PESV audits for company
+  app.get("/api/auditorias-pesv", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const results = await db.select()
+        .from(schema.auditoriasPesv)
+        .where(eq(schema.auditoriasPesv.companyId, effectiveCompanyId))
+        .orderBy(desc(schema.auditoriasPesv.fechaAuditoria));
+      
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error fetching auditorias PESV:", error);
+      res.status(500).json({ error: "Error al obtener las auditorías PESV" });
+    }
+  });
+
+  // POST /api/auditorias-pesv - Create new PESV audit
+  app.post("/api/auditorias-pesv", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const validatedData = schema.insertAuditoriaPesvSchema.parse(req.body);
+      
+      const [result] = await db.insert(schema.auditoriasPesv)
+        .values({
+          ...validatedData,
+          companyId: effectiveCompanyId,
+        })
+        .returning();
+      
+      res.status(201).json(result);
+    } catch (error: any) {
+      console.error("Error creating auditoria PESV:", error);
+      res.status(400).json({ error: error.message || "Error al crear la auditoría" });
+    }
+  });
+
+  // GET /api/auditorias-pesv/:id - Get single PESV audit
+  app.get("/api/auditorias-pesv/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const [result] = await db.select()
+        .from(schema.auditoriasPesv)
+        .where(and(
+          eq(schema.auditoriasPesv.id, req.params.id),
+          eq(schema.auditoriasPesv.companyId, effectiveCompanyId)
+        ));
+      
+      if (!result) {
+        return res.status(404).json({ error: "Auditoría no encontrada" });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error fetching auditoria PESV:", error);
+      res.status(500).json({ error: "Error al obtener la auditoría" });
+    }
+  });
+
+  // PATCH /api/auditorias-pesv/:id - Update PESV audit
+  app.patch("/api/auditorias-pesv/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const validatedData = schema.insertAuditoriaPesvSchema.partial().parse(req.body);
+      
+      const [result] = await db.update(schema.auditoriasPesv)
+        .set({
+          ...validatedData,
+          updatedAt: sql`now()`,
+        })
+        .where(and(
+          eq(schema.auditoriasPesv.id, req.params.id),
+          eq(schema.auditoriasPesv.companyId, effectiveCompanyId)
+        ))
+        .returning();
+      
+      if (!result) {
+        return res.status(404).json({ error: "Auditoría no encontrada" });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error updating auditoria PESV:", error);
+      res.status(400).json({ error: error.message || "Error al actualizar la auditoría" });
+    }
+  });
+
+  // DELETE /api/auditorias-pesv/:id - Delete PESV audit
+  app.delete("/api/auditorias-pesv/:id", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const [result] = await db.delete(schema.auditoriasPesv)
+        .where(and(
+          eq(schema.auditoriasPesv.id, req.params.id),
+          eq(schema.auditoriasPesv.companyId, effectiveCompanyId)
+        ))
+        .returning();
+      
+      if (!result) {
+        return res.status(404).json({ error: "Auditoría no encontrada" });
+      }
+      
+      res.sendStatus(204);
+    } catch (error: any) {
+      console.error("Error deleting auditoria PESV:", error);
+      res.status(500).json({ error: "Error al eliminar la auditoría" });
+    }
+  });
+
+  // GET /api/auditorias-pesv/:id/hallazgos - Get findings for audit
+  app.get("/api/auditorias-pesv/:id/hallazgos", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      // First verify the audit belongs to the company
+      const [audit] = await db.select()
+        .from(schema.auditoriasPesv)
+        .where(and(
+          eq(schema.auditoriasPesv.id, req.params.id),
+          eq(schema.auditoriasPesv.companyId, effectiveCompanyId)
+        ));
+      
+      if (!audit) {
+        return res.status(404).json({ error: "Auditoría no encontrada" });
+      }
+      
+      const results = await db.select()
+        .from(schema.hallazgosAuditoriaPesv)
+        .where(eq(schema.hallazgosAuditoriaPesv.auditoriaId, req.params.id))
+        .orderBy(desc(schema.hallazgosAuditoriaPesv.createdAt));
+      
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error fetching hallazgos auditoria PESV:", error);
+      res.status(500).json({ error: "Error al obtener los hallazgos de la auditoría" });
+    }
+  });
+
+  // POST /api/auditorias-pesv/:id/hallazgos - Add finding to audit
+  app.post("/api/auditorias-pesv/:id/hallazgos", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      // First verify the audit belongs to the company
+      const [audit] = await db.select()
+        .from(schema.auditoriasPesv)
+        .where(and(
+          eq(schema.auditoriasPesv.id, req.params.id),
+          eq(schema.auditoriasPesv.companyId, effectiveCompanyId)
+        ));
+      
+      if (!audit) {
+        return res.status(404).json({ error: "Auditoría no encontrada" });
+      }
+      
+      const validatedData = schema.insertHallazgoAuditoriaPesvSchema.parse({
+        ...req.body,
+        auditoriaId: req.params.id,
+        companyId: effectiveCompanyId,
+      });
+      
+      const [result] = await db.insert(schema.hallazgosAuditoriaPesv)
+        .values(validatedData)
+        .returning();
+      
+      res.status(201).json(result);
+    } catch (error: any) {
+      console.error("Error creating hallazgo auditoria PESV:", error);
+      res.status(400).json({ error: error.message || "Error al crear el hallazgo" });
+    }
+  });
+
   // ========== GLOBAL ERROR HANDLER ==========
   // Middleware global para interceptar errores no manejados y evitar exponer mensajes técnicos
   // Especialmente importante para errores de SSL/certificados en producción
