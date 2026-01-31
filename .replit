@@ -55,6 +55,7 @@ AWS_REGION = "us-east-1"
 AWS_S3_BUCKET_NAME = "sst-colombia-archivos-2026"
 LSO_DIRECTORY_API_URL = "https://lso.sst-colombia.com.co"
 LSO_DIRECTORY_URL = "https://lso.sst-colombia.com.co"
+LANDING_PAGE_API_KEY = "a3f94d1b0f6c4a2e9d8b1c5e7f3a6b0d9e2f4c7a8b5d6e0f1a9c3d4e7b2f5c6a1"
 
 [userenv.development]
 AUTO_VERIFY_EMAIL = "true"
