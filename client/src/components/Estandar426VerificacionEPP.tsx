@@ -75,7 +75,7 @@ export function Estandar426VerificacionEPP({ isVisible, evaluationId }: Estandar
               data-testid="button-ver-epp-426"
               asChild
             >
-              <Link href={`/epp${fromParam}`}>
+              <Link href={`/entrega-epp${fromParam}`}>
                 <HardHat className="h-4 w-4 mr-2" />
                 Ver Entregas EPP
               </Link>
