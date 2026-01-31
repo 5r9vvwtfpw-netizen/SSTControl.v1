@@ -2551,7 +2551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.createContract(contractData, companyId);
       } catch (contractError: any) {
         // Log contract creation error but don't fail the worker creation
-        console.warn(`[Create Worker] Worker ${worker.name} created but contract failed: ${contractError.message}`);
+        console.warn(`[Create Worker] Worker ${designeeInfo.name} created but contract failed: ${contractError.message}`);
       }
       
       // Auto-create affiliation for the new worker using company defaults
@@ -2575,15 +2575,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Warn if ARL is missing (required by Decreto 1295/1994)
           if (!afiliacionData.arlNombre) {
-            console.warn(`[Create Worker] ⚠️ COMPLIANCE WARNING: Worker ${worker.name} - ARL not configured for company. Configure ARL in company settings.`);
+            console.warn(`[Create Worker] ⚠️ COMPLIANCE WARNING: Worker ${designeeInfo.name} - ARL not configured for company. Configure ARL in company settings.`);
           }
           
           // Create affiliation record (even partial - allows completing later)
           await storage.createAfiliacionSsss(afiliacionData, companyId);
-          console.log(`[Create Worker] Affiliation created for worker ${worker.name}${!afiliacionData.arlNombre ? ' (ARL pending)' : ''}`);
+          console.log(`[Create Worker] Affiliation created for worker ${designeeInfo.name}${!afiliacionData.arlNombre ? ' (ARL pending)' : ''}`);
         }
       } catch (afiliacionError: any) {
-        console.warn(`[Create Worker] Worker ${worker.name} created but affiliation failed: ${afiliacionError.message}`);
+        console.warn(`[Create Worker] Worker ${designeeInfo.name} created but affiliation failed: ${afiliacionError.message}`);
       }
       
       res.status(201).json(worker);
@@ -2838,9 +2838,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           deleted++;
         } catch (error: any) {
           if (error.code === '23503') {
-            errors.push(`${worker.name}: Tiene registros asociados (contratos, capacitaciones, etc.)`);
+            errors.push(`${designeeInfo.name}: Tiene registros asociados (contratos, capacitaciones, etc.)`);
           } else {
-            errors.push(`${worker.name}: Error desconocido`);
+            errors.push(`${designeeInfo.name}: Error desconocido`);
           }
         }
       }
@@ -6489,21 +6489,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (evaluation.elaboradoPorId) {
         const worker = await storage.getWorker(evaluation.elaboradoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          elaboroName = `${worker.name} - ${worker.position}`;
+          elaboroName = `${designeeInfo.name} - ${worker.position}`;
         }
       }
 
       if (evaluation.autorizadoPorId) {
         const worker = await storage.getWorker(evaluation.autorizadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          autorizoName = `${worker.name} - ${worker.position}`;
+          autorizoName = `${designeeInfo.name} - ${worker.position}`;
         }
       }
 
       if (evaluation.aprobadoPorId) {
         const worker = await storage.getWorker(evaluation.aprobadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          aproboName = `${worker.name} - ${worker.position}`;
+          aproboName = `${designeeInfo.name} - ${worker.position}`;
         }
       }
       
@@ -7817,7 +7817,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Verify worker belongs to same company as profile
           if (worker.companyId !== profile.companyId) {
-            errors.push(`Trabajador ${worker.name} no pertenece a la misma empresa del perfil`);
+            errors.push(`Trabajador ${designeeInfo.name} no pertenece a la misma empresa del perfil`);
             continue;
           }
           
@@ -8022,7 +8022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.updateWorker(worker.id, { jobProfileId: matchingProfile.id }, companyId);
           totalAssigned++;
         } catch (err: any) {
-          errors.push(`Error vinculando ${worker.name}: ${err.message}`);
+          errors.push(`Error vinculando ${designeeInfo.name}: ${err.message}`);
         }
       }
       
@@ -8650,7 +8650,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const activeContract = workerContracts.find(c => c.status === "activo");
           if (activeContract) {
             results.failed++;
-            results.errors.push({ workerId, error: `${worker.name} ya tiene un contrato activo (${activeContract.contractNumber})` });
+            results.errors.push({ workerId, error: `${designeeInfo.name} ya tiene un contrato activo (${activeContract.contractNumber})` });
             continue;
           }
 
@@ -9551,21 +9551,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send("Designación no encontrada");
       }
       
-      // Get worker
-      const worker = await storage.getWorkerById(designation.workerId);
-      if (!worker) {
-        return res.status(404).send("Trabajador no encontrado");
+      // Get worker (optional - may be null for external LSO designations)
+      let worker: any = null;
+      if (designation.workerId) {
+        worker = await storage.getWorkerById(designation.workerId);
       }
       
+      // For external LSO, workerId is null - use designation data instead
+      const isExternalLso = designation.isExternalLso || !designation.workerId;
+      
+      // Build designee info (works for both internal workers and external LSOs)
+      const designeeInfo = {
+        name: worker?.name || designation.externalLsoName || designation.licenciaSstTitular || 'LSO Externo',
+        identificationNumber: worker?.identificationNumber || 'No registrado',
+        position: worker?.position || designation.position,
+      };
+      
       if (isAdmin) {
-        companyId = worker.companyId;
+        // For external LSO, get companyId from designation; for worker, from worker record
+        companyId = worker?.companyId || designation.companyId;
       } else {
         companyId = req.user!.companyId || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
         // Verify designation belongs to user's company
-        if (worker.companyId !== companyId) {
+        const designationCompanyId = worker?.companyId || designation.companyId;
+        if (designationCompanyId !== companyId) {
           return res.status(403).send("No tiene acceso a esta designación");
         }
       }
@@ -9672,13 +9684,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Worker data fields - use doc.y to track actual position
       doc.font('Helvetica');
-      doc.text(`Nombre Completo: ${worker.name}`, margin + workerBoxPadding, currentY);
+      doc.text(`Nombre Completo: ${designeeInfo.name}`, margin + workerBoxPadding, currentY);
       currentY = doc.y + 4;
       
-      doc.text(`Documento de Identidad: CC ${worker.identificationNumber}`, margin + workerBoxPadding, currentY);
+      doc.text(`Documento de Identidad: CC ${designeeInfo.identificationNumber}`, margin + workerBoxPadding, currentY);
       currentY = doc.y + 4;
       
-      doc.text(`Cargo: ${worker.position || designation.position}`, margin + workerBoxPadding, currentY);
+      doc.text(`Cargo: ${designeeInfo.position}`, margin + workerBoxPadding, currentY);
       currentY = doc.y + 4;
       
       // License info
@@ -9758,11 +9770,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const repLegalPosition = company.legalRepPosition || '__________________________';
       
       doc.text(`Nombre: ${repLegalName}`, margin, currentY, { lineBreak: false });
-      doc.text(`Nombre: ${worker.name}`, margin + signatureWidth + 40, currentY, { lineBreak: false });
+      doc.text(`Nombre: ${designeeInfo.name}`, margin + signatureWidth + 40, currentY, { lineBreak: false });
       currentY += 12;
       
       doc.text(`C.C.: ${repLegalId}`, margin, currentY, { lineBreak: false });
-      doc.text(`C.C.: ${worker.identificationNumber}`, margin + signatureWidth + 40, currentY, { lineBreak: false });
+      doc.text(`C.C.: ${designeeInfo.identificationNumber}`, margin + signatureWidth + 40, currentY, { lineBreak: false });
       currentY += 12;
       
       // Licencia SST del responsable designado
@@ -10084,21 +10096,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (allocation.elaboradoPorId) {
         const worker = await storage.getWorker(allocation.elaboradoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          elaboroName = `${worker.name} - ${worker.position}`;
+          elaboroName = `${designeeInfo.name} - ${worker.position}`;
         }
       }
 
       if (allocation.autorizadoPorId) {
         const worker = await storage.getWorker(allocation.autorizadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          autorizoName = `${worker.name} - ${worker.position}`;
+          autorizoName = `${designeeInfo.name} - ${worker.position}`;
         }
       }
 
       if (allocation.aprobadoPorId) {
         const worker = await storage.getWorker(allocation.aprobadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          aproboName = `${worker.name} - ${worker.position}`;
+          aproboName = `${designeeInfo.name} - ${worker.position}`;
         }
       }
 
@@ -15104,9 +15116,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ccfNombre: worker.ccfNombre || null,
             }, companyId);
             afiliacion = newAfiliacion;
-            console.log(`[Muestreo SGSS] Afiliacion creada para ${worker.name}`);
+            console.log(`[Muestreo SGSS] Afiliacion creada para ${designeeInfo.name}`);
           } catch (syncError: any) {
-            console.warn(`[Muestreo SGSS] Error creando afiliacion para ${worker.name}: ${syncError.message}`);
+            console.warn(`[Muestreo SGSS] Error creando afiliacion para ${designeeInfo.name}: ${syncError.message}`);
           }
         } else if (afiliacion) {
           // Actualizar afiliacion existente con campos faltantes del trabajador
@@ -15126,10 +15138,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }, companyId);
               if (updatedAfiliacion) {
                 afiliacion = updatedAfiliacion;
-                console.log(`[Muestreo SGSS] Afiliacion actualizada para ${worker.name}`);
+                console.log(`[Muestreo SGSS] Afiliacion actualizada para ${designeeInfo.name}`);
               }
             } catch (syncError: any) {
-              console.warn(`[Muestreo SGSS] Error actualizando afiliacion para ${worker.name}: ${syncError.message}`);
+              console.warn(`[Muestreo SGSS] Error actualizando afiliacion para ${designeeInfo.name}: ${syncError.message}`);
             }
           }
         }
@@ -16372,7 +16384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Worker Header
           doc.fontSize(9).font('Helvetica-Bold')
             .fillColor('#1e7e34')
-            .text(`${index + 1}. ${worker.name}`, margin, doc.y, { continued: true })
+            .text(`${index + 1}. ${designeeInfo.name}`, margin, doc.y, { continued: true })
             .fillColor('#000000')
             .font('Helvetica')
             .text(` (${worker.identificationNumber || 'Sin cédula'})`);
@@ -17256,7 +17268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Worker name and identification
           doc.fontSize(9).font('Helvetica-Bold')
             .fillColor('#1e7e34')
-            .text(`${i + 1}. ${worker.name}`, { underline: true });
+            .text(`${i + 1}. ${designeeInfo.name}`, { underline: true });
           doc.fillColor('#000000');
           doc.moveDown(0.2);
 
@@ -18742,7 +18754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       for (const { exam, worker } of upcomingExams) {
         if (!worker.email) {
-          console.log(`Worker ${worker.name} has no email, skipping exam notification`);
+          console.log(`Worker ${designeeInfo.name} has no email, skipping exam notification`);
           continue;
         }
 
@@ -18818,7 +18830,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const { training, attendees } of upcomingTrainings) {
         for (const { worker, completedDate } of attendees) {
           if (!worker.email) {
-            console.log(`Worker ${worker.name} has no email, skipping training notification`);
+            console.log(`Worker ${designeeInfo.name} has no email, skipping training notification`);
             continue;
           }
 
@@ -21115,21 +21127,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (politica.elaboradoPorId) {
         const worker = await storage.getWorker(politica.elaboradoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          elaboroName = `${worker.name} - ${worker.position}`;
+          elaboroName = `${designeeInfo.name} - ${worker.position}`;
         }
       }
 
       if (politica.autorizadoPorId) {
         const worker = await storage.getWorker(politica.autorizadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          autorizoName = `${worker.name} - ${worker.position}`;
+          autorizoName = `${designeeInfo.name} - ${worker.position}`;
         }
       }
 
       if (politica.aprobadoPorId) {
         const worker = await storage.getWorker(politica.aprobadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          aproboName = `${worker.name} - ${worker.position}`;
+          aproboName = `${designeeInfo.name} - ${worker.position}`;
         }
       }
 
