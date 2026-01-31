@@ -243,9 +243,9 @@ export default function ResponsibleDesignationPage() {
     queryKey: ["/api/responsible-designations"],
   });
 
-  // Query para obtener la asignación actual de LSO
+  // Query para obtener la asignación actual de LSO (usando endpoint JWT unificado)
   const { data: lsoAssignmentData } = useQuery<{ ok: boolean; data: { type: string; name: string; email?: string; phone?: string; city?: string; licenseNumber?: string; licenseIssuer?: string; licenseExpiry?: string; assignedAt: string; } | null }>({
-    queryKey: ["/api/lso-directory/company-assignment"],
+    queryKey: ["/api/lso-directory-jwt/current-assignment"],
   });
   const lsoAssignment = lsoAssignmentData?.data;
 
