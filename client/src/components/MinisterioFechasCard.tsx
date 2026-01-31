@@ -1,6 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, AlertCircle, Bell, Building2, Users, Clock } from "lucide-react";
+import { Calendar, AlertCircle, Bell, Building2, Users, Clock, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface FechaInforme {
   fecha: string;
@@ -69,6 +72,140 @@ const fechasMinisterio: FechaInforme[] = [
     urgente: false
   }
 ];
+
+// Función para verificar si estamos dentro del periodo de alerta
+function getActiveAlerts(): FechaInforme[] {
+  const now = new Date();
+  const month = now.getMonth(); // 0-11
+  const day = now.getDate();
+  
+  const activeAlerts: FechaInforme[] = [];
+  
+  // Verificar cada fecha
+  fechasMinisterio.forEach(fecha => {
+    let isActive = false;
+    
+    // 3 Feb - 28 Mar (Enero para recordatorio anticipado, Feb-Mar para periodo activo)
+    if (fecha.fecha === "3 Feb - 28 Mar") {
+      if ((month === 0 && day >= 15) || month === 1 || (month === 2 && day <= 28)) {
+        isActive = true;
+      }
+    }
+    
+    // Diciembre (Noviembre para recordatorio anticipado)
+    if (fecha.fecha === "Diciembre") {
+      if (month === 10 || month === 11) { // Noviembre o Diciembre
+        isActive = true;
+      }
+    }
+    
+    // Julio (Junio para recordatorio anticipado)
+    if (fecha.fecha === "Julio") {
+      if (month === 5 || month === 6) { // Junio o Julio
+        isActive = true;
+      }
+    }
+    
+    if (isActive) {
+      activeAlerts.push(fecha);
+    }
+  });
+  
+  return activeAlerts;
+}
+
+// Componente de Alerta Emergente
+export function ComplianceAlertPopup() {
+  const [open, setOpen] = useState(false);
+  const [activeAlerts, setActiveAlerts] = useState<FechaInforme[]>([]);
+  const [dismissed, setDismissed] = useState(false);
+  
+  useEffect(() => {
+    // Verificar si ya se descartó la alerta hoy
+    const dismissedDate = localStorage.getItem('compliance_alert_dismissed');
+    const today = new Date().toDateString();
+    
+    if (dismissedDate === today) {
+      setDismissed(true);
+      return;
+    }
+    
+    const alerts = getActiveAlerts();
+    if (alerts.length > 0 && !dismissed) {
+      setActiveAlerts(alerts);
+      setOpen(true);
+    }
+  }, [dismissed]);
+  
+  const handleDismiss = () => {
+    setOpen(false);
+    localStorage.setItem('compliance_alert_dismissed', new Date().toDateString());
+    setDismissed(true);
+  };
+  
+  if (activeAlerts.length === 0) return null;
+  
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="max-w-lg" data-testid="dialog-compliance-alert">
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+              <AlertCircle className="w-6 h-6 text-amber-600" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl text-amber-700 dark:text-amber-400">
+                ¡Alerta de Cumplimiento!
+              </DialogTitle>
+              <DialogDescription>
+                Tienes fechas límite próximas del Ministerio de Trabajo
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+        
+        <div className="space-y-3 my-4">
+          {activeAlerts.map((alert, index) => {
+            const Icon = alert.icono;
+            return (
+              <div 
+                key={index}
+                className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800"
+                data-testid={`alert-item-${index}`}
+              >
+                <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center shrink-0">
+                  <Icon className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="destructive" className="bg-amber-600">
+                      {alert.fecha}
+                    </Badge>
+                  </div>
+                  <h4 className="font-semibold text-amber-800 dark:text-amber-300">
+                    {alert.titulo}
+                  </h4>
+                  <p className="text-sm text-amber-700/80 dark:text-amber-400/70">
+                    {alert.descripcion}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={handleDismiss} data-testid="button-dismiss-alert">
+            Recordarme mañana
+          </Button>
+          <Button onClick={() => setOpen(false)} className="bg-amber-600 hover:bg-amber-700" data-testid="button-acknowledge-alert">
+            Entendido
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export function MinisterioFechasCard({ compact = false }: { compact?: boolean }) {
   if (compact) {

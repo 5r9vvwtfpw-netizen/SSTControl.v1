@@ -21,7 +21,7 @@ import { useLocation, useParams } from "wouter";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MinisterioFechasCard } from "@/components/MinisterioFechasCard";
+import { MinisterioFechasCard, ComplianceAlertPopup } from "@/components/MinisterioFechasCard";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { Estandar423VerificacionProcedimientos } from "@/components/Estandar423VerificacionProcedimientos";
@@ -989,6 +989,7 @@ export default function DetalleEvaluacionSst() {
 
       {/* Calendario del Ministerio de Trabajo */}
       <MinisterioFechasCard compact />
+      <ComplianceAlertPopup />
 
       {/* Diálogo de advertencia sobre licenciado de salud ocupacional */}
       <AlertDialog open={licenciadoDialogOpen} onOpenChange={setLicenciadoDialogOpen}>
