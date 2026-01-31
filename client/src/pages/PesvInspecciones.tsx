@@ -9,9 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Eye, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { VehicleInspection, Vehicle, Driver, Company, insertVehicleInspectionSchema } from "@shared/schema";
+import { VehicleInspection, Vehicle, Driver, insertVehicleInspectionSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
@@ -20,6 +21,7 @@ import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 export default function PesvInspecciones() {
   const { user } = useAuth();
+  const { selectedCompany: currentCompany } = useCompanyContext();
   const { toast } = useToast();
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
@@ -28,7 +30,6 @@ export default function PesvInspecciones() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedInspection, setSelectedInspection] = useState<VehicleInspection | null>(null);
   const [formData, setFormData] = useState({
-    companyId: "",
     vehicleId: "",
     driverId: "",
     inspectionDate: "",
@@ -66,17 +67,9 @@ export default function PesvInspecciones() {
     queryKey: ["/api/drivers"],
   });
 
-  const { data: companies = [] } = useQuery<Company[]>({
-    queryKey: ["/api/companies"],
-    enabled: isSuperadmin,
-  });
-
   const createInspectionMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertVehicleInspectionSchema>) => {
-      const payload = isSuperadmin && formData.companyId 
-        ? { ...data, companyId: formData.companyId }
-        : data;
-      const res = await apiRequest("POST", "/api/vehicle-inspections", payload);
+      const res = await apiRequest("POST", "/api/vehicle-inspections", data);
       return res.json();
     },
     onSuccess: () => {
@@ -123,15 +116,6 @@ export default function PesvInspecciones() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isSuperadmin && !formData.companyId) {
-      toast({
-        title: "Error",
-        description: "Debe seleccionar una empresa",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     const data = {
       ...formData,
       observations: formData.observations || undefined,
@@ -153,7 +137,6 @@ export default function PesvInspecciones() {
 
   const resetForm = () => {
     setFormData({
-      companyId: "",
       vehicleId: "",
       driverId: "",
       inspectionDate: "",
@@ -234,24 +217,12 @@ export default function PesvInspecciones() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                {isSuperadmin && (
+                {currentCompany && (
                   <div className="space-y-2 col-span-2">
-                    <Label htmlFor="companyId">Empresa *</Label>
-                    <Select
-                      value={formData.companyId}
-                      onValueChange={(value) => setFormData({ ...formData, companyId: value })}
-                    >
-                      <SelectTrigger id="companyId" data-testid="select-company">
-                        <SelectValue placeholder="Seleccione empresa" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {companies.map((company) => (
-                          <SelectItem key={company.id} value={company.id}>
-                            {company.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label>Empresa</Label>
+                    <div className="flex items-center h-10 px-3 rounded-md border bg-muted text-muted-foreground">
+                      {currentCompany.name}
+                    </div>
                   </div>
                 )}
                 <div className="space-y-2">

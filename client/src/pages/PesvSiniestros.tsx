@@ -10,9 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, Eye, Trash2, AlertTriangle, Users, Skull, DollarSign } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { RoadIncident, Vehicle, Driver, Company, insertRoadIncidentSchema } from "@shared/schema";
+import { RoadIncident, Vehicle, Driver, insertRoadIncidentSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
@@ -21,6 +22,7 @@ import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 export default function PesvSiniestros() {
   const { user } = useAuth();
+  const { selectedCompany: currentCompany } = useCompanyContext();
   const { toast } = useToast();
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
@@ -62,11 +64,6 @@ export default function PesvSiniestros() {
 
   const { data: drivers = [] } = useQuery<Driver[]>({
     queryKey: ["/api/drivers"],
-  });
-
-  const { data: companies = [] } = useQuery<Company[]>({
-    queryKey: ["/api/companies"],
-    enabled: isSuperadmin,
   });
 
   const createIncidentMutation = useMutation({
@@ -120,15 +117,6 @@ export default function PesvSiniestros() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (isSuperadmin && !formData.companyId) {
-      toast({
-        title: "Error",
-        description: "Debe seleccionar una empresa",
-        variant: "destructive",
-      });
-      return;
-    }
     
     const injuriesValue = formData.injuries === '' ? 0 : Number(formData.injuries);
     const fatalitiesValue = formData.fatalities === '' ? 0 : Number(formData.fatalities);
@@ -261,24 +249,12 @@ export default function PesvSiniestros() {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  {isSuperadmin && (
+                  {currentCompany && (
                     <div className="space-y-2 col-span-2">
-                      <Label htmlFor="companyId">Empresa *</Label>
-                      <Select
-                        value={formData.companyId}
-                        onValueChange={(value) => setFormData({ ...formData, companyId: value })}
-                      >
-                        <SelectTrigger id="companyId" data-testid="select-company">
-                          <SelectValue placeholder="Seleccione empresa" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {companies.map((company) => (
-                            <SelectItem key={company.id} value={company.id}>
-                              {company.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label>Empresa</Label>
+                      <div className="flex items-center h-10 px-3 rounded-md border bg-muted text-muted-foreground">
+                        {currentCompany.name}
+                      </div>
                     </div>
                   )}
                   <div className="space-y-2">

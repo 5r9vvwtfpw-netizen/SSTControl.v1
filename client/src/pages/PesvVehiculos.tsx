@@ -8,9 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Vehicle, Company, insertVehicleSchema } from "@shared/schema";
+import { Vehicle, insertVehicleSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { hasCompanyAdminAccess } from "@shared/permissions";
@@ -19,6 +20,7 @@ import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 export default function PesvVehiculos() {
   const { user } = useAuth();
+  const { selectedCompany: currentCompany } = useCompanyContext();
   const { toast } = useToast();
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
   const [searchTerm, setSearchTerm] = useState("");
@@ -48,10 +50,6 @@ export default function PesvVehiculos() {
     queryKey: ["/api/vehicles"],
   });
 
-  const { data: companies = [] } = useQuery<Company[]>({
-    queryKey: ["/api/companies"],
-    enabled: isAdmin,
-  });
 
   const createVehicleMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertVehicleSchema>) => {
@@ -128,15 +126,6 @@ export default function PesvVehiculos() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (isAdmin && !formData.companyId && !editingVehicle) {
-      toast({
-        title: "Error",
-        description: "Debe seleccionar una empresa",
-        variant: "destructive",
-      });
-      return;
-    }
     
     const capacityValue = formData.capacity === '' ? undefined : Number(formData.capacity);
     const mileageValue = formData.mileage === '' ? undefined : Number(formData.mileage);
@@ -273,24 +262,12 @@ export default function PesvVehiculos() {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  {isAdmin && !editingVehicle && (
+                  {currentCompany && (
                     <div className="space-y-2 col-span-2">
-                      <Label htmlFor="companyId">Empresa *</Label>
-                      <Select
-                        value={formData.companyId}
-                        onValueChange={(value) => setFormData({ ...formData, companyId: value })}
-                      >
-                        <SelectTrigger id="companyId" data-testid="select-company">
-                          <SelectValue placeholder="Seleccione empresa" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {companies.map((company) => (
-                            <SelectItem key={company.id} value={company.id}>
-                              {company.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label>Empresa</Label>
+                      <div className="flex items-center h-10 px-3 rounded-md border bg-muted text-muted-foreground">
+                        {currentCompany.name}
+                      </div>
                     </div>
                   )}
                   <div className="space-y-2">
