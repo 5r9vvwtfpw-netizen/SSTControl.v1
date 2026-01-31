@@ -122,11 +122,12 @@ export function registerLsoDirectoryRoutes(app: Express) {
   });
 
   // Generar URL autenticada para acceder al directorio externo
+  // Usando API externa del directorio LSO con LANDING_PAGE_API_KEY
   app.get("/api/lso/directory-url", async (req, res) => {
     try {
       const user = req.user as any;
       if (!user) {
-        return res.status(401).json({ ok: false, error: "No autenticado" });
+        return res.status(401).json({ ok: false, error: "Debe iniciar sesión para acceder al directorio" });
       }
 
       const companyId = user.companyId;
@@ -140,31 +141,52 @@ export function registerLsoDirectoryRoutes(app: Express) {
         return res.status(404).json({ ok: false, error: "Empresa no encontrada" });
       }
 
-      const jwtSecret = process.env.JWT_SECRET;
-      if (!jwtSecret) {
-        console.error("[LSO Routes] JWT_SECRET not configured");
-        return res.status(500).json({ ok: false, error: "Configuración de seguridad faltante" });
+      const LSO_API_KEY = process.env.LANDING_PAGE_API_KEY;
+      const LSO_URL = process.env.LSO_DIRECTORY_API_URL || "https://lso.sst-colombia.com.co";
+
+      if (!LSO_API_KEY) {
+        console.error("[LSO Routes] LANDING_PAGE_API_KEY not configured");
+        return res.status(500).json({ ok: false, error: "Error de configuración del servidor" });
       }
 
-      // Generar token JWT para la empresa
-      const token = jwt.sign(
-        {
-          companyId: company.id,
-          companyName: company.name,
-          permissions: ["read"]
+      // Solicitar token JWT al directorio LSO externo
+      const tokenResponse = await fetch(`${LSO_URL}/api/external/token`, {
+        method: "POST",
+        headers: {
+          "x-api-key": LSO_API_KEY,
+          "Content-Type": "application/json"
         },
-        jwtSecret,
-        { expiresIn: "24h" }
-      );
+        body: JSON.stringify({
+          companyId: String(company.id),
+          companyName: company.name,
+          email: company.contactEmail,
+          city: company.city,
+          employeeCount: company.numberOfWorkers,
+          riskLevel: company.riskLevel,
+          activityCIIU: company.ciiuCode,
+          permissions: ["read"]
+        })
+      });
 
-      const directoryUrl = `https://lso.sst-colombia.com.co/directorio?token=${token}`;
+      const result = await tokenResponse.json();
+
+      if (!result.ok || !result.data?.token) {
+        console.error("[LSO Routes] Error obteniendo token LSO:", result.error);
+        return res.status(500).json({ 
+          ok: false, 
+          error: "Error al conectar con el directorio de profesionales" 
+        });
+      }
+
+      // Construir URL completa con el token
+      const directoryUrl = `${LSO_URL}/directorio?token=${result.data.token}`;
       
-      console.log(`[LSO Routes] Generated directory URL for company ${company.id}`);
+      console.log(`[LSO Routes] Generated directory URL for company ${company.id} via external API`);
       
       return res.json({ ok: true, url: directoryUrl });
     } catch (error: any) {
       console.error("[LSO Routes] Directory URL error:", error);
-      return res.status(500).json({ ok: false, error: error.message });
+      return res.status(500).json({ ok: false, error: "Error de conexión con el directorio" });
     }
   });
 
