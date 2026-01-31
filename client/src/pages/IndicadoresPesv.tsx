@@ -1,0 +1,1112 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Progress } from "@/components/ui/progress";
+import { Plus, Search, Trash2, Edit, TrendingUp, Target, BarChart3, Activity, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useMemo } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { IndicadorSV, insertIndicadorSVSchema, MedicionIndicadorSV, FactorDesempenoSV, Worker } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const FRECUENCIA_CONFIG = {
+  diaria: { label: "Diaria", className: "bg-purple-500/10 text-purple-700 dark:text-purple-400" },
+  semanal: { label: "Semanal", className: "bg-blue-500/10 text-blue-700 dark:text-blue-400" },
+  quincenal: { label: "Quincenal", className: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400" },
+  mensual: { label: "Mensual", className: "bg-green-500/10 text-green-700 dark:text-green-400" },
+  trimestral: { label: "Trimestral", className: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400" },
+  semestral: { label: "Semestral", className: "bg-orange-500/10 text-orange-700 dark:text-orange-400" },
+  anual: { label: "Anual", className: "bg-red-500/10 text-red-700 dark:text-red-400" },
+};
+
+const formSchema = insertIndicadorSVSchema.extend({
+  codigo: z.string().min(1, "El código es requerido"),
+  nombre: z.string().min(1, "El nombre es requerido"),
+  unidadMedida: z.string().min(1, "La unidad de medida es requerida"),
+  frecuenciaMedicion: z.enum(["diaria", "semanal", "quincenal", "mensual", "trimestral", "semestral", "anual"]),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+const medicionFormSchema = z.object({
+  fechaMedicion: z.string().min(1, "La fecha de medición es requerida"),
+  valor: z.string().min(1, "El valor es requerido"),
+  observaciones: z.string().optional(),
+});
+
+type MedicionFormValues = z.infer<typeof medicionFormSchema>;
+
+interface IndicadorStatistics {
+  total: number;
+  cumplenMeta: number;
+  noCumplenMeta: number;
+  sinMedicion: number;
+}
+
+export default function IndicadoresPesv() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [indicadorToDelete, setIndicadorToDelete] = useState<IndicadorSV | null>(null);
+  const [editingIndicador, setEditingIndicador] = useState<IndicadorSV | null>(null);
+  const [expandedIndicador, setExpandedIndicador] = useState<string | null>(null);
+  const [medicionDialogOpen, setMedicionDialogOpen] = useState(false);
+  const [indicadorForMedicion, setIndicadorForMedicion] = useState<IndicadorSV | null>(null);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      codigo: "",
+      nombre: "",
+      descripcion: "",
+      factorDesempenoId: undefined,
+      formula: "",
+      unidadMedida: "",
+      frecuenciaMedicion: "mensual",
+      fuenteDatos: "",
+      valorMeta: undefined,
+      valorMinimo: undefined,
+      valorMaximo: undefined,
+      valorActual: undefined,
+      responsableId: undefined,
+      activo: 1,
+    },
+  });
+
+  const medicionForm = useForm<MedicionFormValues>({
+    resolver: zodResolver(medicionFormSchema),
+    defaultValues: {
+      fechaMedicion: new Date().toISOString().split("T")[0],
+      valor: "",
+      observaciones: "",
+    },
+  });
+
+  const { data: indicadores = [], isLoading } = useQuery<IndicadorSV[]>({
+    queryKey: ["/api/indicadores-sv"],
+  });
+
+  const { data: factores = [] } = useQuery<FactorDesempenoSV[]>({
+    queryKey: ["/api/factores-desempeno-sv"],
+  });
+
+  const { data: workers = [] } = useQuery<Worker[]>({
+    queryKey: ["/api/workers"],
+  });
+
+  const { data: mediciones = [], refetch: refetchMediciones } = useQuery<MedicionIndicadorSV[]>({
+    queryKey: ["/api/indicadores-sv", expandedIndicador, "mediciones"],
+    enabled: !!expandedIndicador,
+  });
+
+  const estadisticas = useMemo<IndicadorStatistics>(() => {
+    const total = indicadores.length;
+    let cumplenMeta = 0;
+    let noCumplenMeta = 0;
+    let sinMedicion = 0;
+
+    indicadores.forEach((ind) => {
+      if (!ind.valorActual) {
+        sinMedicion++;
+      } else if (ind.valorMeta) {
+        const actual = parseFloat(ind.valorActual);
+        const meta = parseFloat(ind.valorMeta);
+        if (actual >= meta) {
+          cumplenMeta++;
+        } else {
+          noCumplenMeta++;
+        }
+      } else {
+        sinMedicion++;
+      }
+    });
+
+    return { total, cumplenMeta, noCumplenMeta, sinMedicion };
+  }, [indicadores]);
+
+  const generateNextCode = () => {
+    const existingCodes = indicadores.map((i) => i.codigo);
+    let counter = 1;
+    let newCode = `SPI-${String(counter).padStart(3, "0")}`;
+    while (existingCodes.includes(newCode)) {
+      counter++;
+      newCode = `SPI-${String(counter).padStart(3, "0")}`;
+    }
+    return newCode;
+  };
+
+  const createMutation = useMutation({
+    mutationFn: async (data: FormValues) => {
+      const res = await apiRequest("POST", "/api/indicadores-sv", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/indicadores-sv"] });
+      setDialogOpen(false);
+      form.reset();
+      toast({
+        title: "Indicador creado",
+        description: "El indicador SPI se ha registrado exitosamente",
+        className: "bg-green-50 border-green-200",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: FormValues }) => {
+      const res = await apiRequest("PATCH", `/api/indicadores-sv/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/indicadores-sv"] });
+      setDialogOpen(false);
+      setEditingIndicador(null);
+      form.reset();
+      toast({
+        title: "Indicador actualizado",
+        description: "El indicador SPI se ha actualizado exitosamente",
+        className: "bg-green-50 border-green-200",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (indicadorId: string) => {
+      await apiRequest("DELETE", `/api/indicadores-sv/${indicadorId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/indicadores-sv"] });
+      setDeleteDialogOpen(false);
+      setIndicadorToDelete(null);
+      toast({
+        title: "Indicador eliminado",
+        description: "El indicador SPI se ha eliminado exitosamente",
+        className: "bg-green-50 border-green-200",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error al eliminar",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createMedicionMutation = useMutation({
+    mutationFn: async ({ indicadorId, data }: { indicadorId: string; data: MedicionFormValues }) => {
+      const res = await apiRequest("POST", `/api/indicadores-sv/${indicadorId}/mediciones`, {
+        ...data,
+        valor: data.valor,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/indicadores-sv"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/indicadores-sv", expandedIndicador, "mediciones"] });
+      setMedicionDialogOpen(false);
+      setIndicadorForMedicion(null);
+      medicionForm.reset({
+        fechaMedicion: new Date().toISOString().split("T")[0],
+        valor: "",
+        observaciones: "",
+      });
+      toast({
+        title: "Medición registrada",
+        description: "La medición del indicador se ha registrado exitosamente",
+        className: "bg-green-50 border-green-200",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (values: FormValues) => {
+    if (editingIndicador) {
+      updateMutation.mutate({ id: editingIndicador.id, data: values });
+    } else {
+      createMutation.mutate(values);
+    }
+  };
+
+  const onSubmitMedicion = (values: MedicionFormValues) => {
+    if (indicadorForMedicion) {
+      createMedicionMutation.mutate({ indicadorId: indicadorForMedicion.id, data: values });
+    }
+  };
+
+  const handleEditClick = (indicador: IndicadorSV) => {
+    setEditingIndicador(indicador);
+    form.reset({
+      codigo: indicador.codigo,
+      nombre: indicador.nombre,
+      descripcion: indicador.descripcion || "",
+      factorDesempenoId: indicador.factorDesempenoId || undefined,
+      formula: indicador.formula || "",
+      unidadMedida: indicador.unidadMedida,
+      frecuenciaMedicion: indicador.frecuenciaMedicion,
+      fuenteDatos: indicador.fuenteDatos || "",
+      valorMeta: indicador.valorMeta || undefined,
+      valorMinimo: indicador.valorMinimo || undefined,
+      valorMaximo: indicador.valorMaximo || undefined,
+      valorActual: indicador.valorActual || undefined,
+      responsableId: indicador.responsableId || undefined,
+      activo: indicador.activo,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, indicador: IndicadorSV) => {
+    e.stopPropagation();
+    setIndicadorToDelete(indicador);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (indicadorToDelete) {
+      deleteMutation.mutate(indicadorToDelete.id);
+    }
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    if (!open) {
+      setEditingIndicador(null);
+      form.reset();
+    }
+    setDialogOpen(open);
+  };
+
+  const handleAddIndicador = () => {
+    form.reset({
+      codigo: generateNextCode(),
+      nombre: "",
+      descripcion: "",
+      factorDesempenoId: undefined,
+      formula: "",
+      unidadMedida: "",
+      frecuenciaMedicion: "mensual",
+      fuenteDatos: "",
+      valorMeta: undefined,
+      valorMinimo: undefined,
+      valorMaximo: undefined,
+      valorActual: undefined,
+      responsableId: undefined,
+      activo: 1,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleAddMedicion = (indicador: IndicadorSV) => {
+    setIndicadorForMedicion(indicador);
+    medicionForm.reset({
+      fechaMedicion: new Date().toISOString().split("T")[0],
+      valor: "",
+      observaciones: "",
+    });
+    setMedicionDialogOpen(true);
+  };
+
+  const handleExpandIndicador = (indicadorId: string) => {
+    if (expandedIndicador === indicadorId) {
+      setExpandedIndicador(null);
+    } else {
+      setExpandedIndicador(indicadorId);
+    }
+  };
+
+  const filteredIndicadores = indicadores.filter((indicador) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      indicador.codigo.toLowerCase().includes(searchLower) ||
+      indicador.nombre.toLowerCase().includes(searchLower) ||
+      (indicador.descripcion?.toLowerCase().includes(searchLower) ?? false) ||
+      (indicador.fuenteDatos?.toLowerCase().includes(searchLower) ?? false)
+    );
+  });
+
+  const getFrecuenciaBadge = (frecuencia: string) => {
+    const config = FRECUENCIA_CONFIG[frecuencia as keyof typeof FRECUENCIA_CONFIG];
+    if (!config) return null;
+    return (
+      <Badge className={config.className} data-testid={`badge-frecuencia-${frecuencia}`}>
+        {config.label}
+      </Badge>
+    );
+  };
+
+  const getProgressPercentage = (indicador: IndicadorSV): number => {
+    if (!indicador.valorActual || !indicador.valorMeta) return 0;
+    const actual = parseFloat(indicador.valorActual);
+    const meta = parseFloat(indicador.valorMeta);
+    if (meta === 0) return 0;
+    return Math.min(100, Math.round((actual / meta) * 100));
+  };
+
+  const getProgressColor = (percentage: number): string => {
+    if (percentage >= 100) return "bg-green-500";
+    if (percentage >= 75) return "bg-yellow-500";
+    if (percentage >= 50) return "bg-orange-500";
+    return "bg-red-500";
+  };
+
+  const getStatusBadge = (indicador: IndicadorSV) => {
+    if (!indicador.valorActual) {
+      return (
+        <Badge className="bg-gray-500/10 text-gray-700 dark:text-gray-400" data-testid="badge-sin-medicion">
+          Sin medición
+        </Badge>
+      );
+    }
+    if (!indicador.valorMeta) {
+      return (
+        <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400" data-testid="badge-sin-meta">
+          Sin meta
+        </Badge>
+      );
+    }
+    const actual = parseFloat(indicador.valorActual);
+    const meta = parseFloat(indicador.valorMeta);
+    if (actual >= meta) {
+      return (
+        <Badge className="bg-green-500/10 text-green-700 dark:text-green-400" data-testid="badge-cumple-meta">
+          Cumple meta
+        </Badge>
+      );
+    }
+    return (
+      <Badge className="bg-red-500/10 text-red-700 dark:text-red-400" data-testid="badge-no-cumple-meta">
+        No cumple
+      </Badge>
+    );
+  };
+
+  const getFactorName = (factorId: string | null) => {
+    if (!factorId) return null;
+    const factor = factores.find((f) => f.id === factorId);
+    return factor ? factor.nombre : null;
+  };
+
+  const getWorkerName = (workerId: string | null) => {
+    if (!workerId) return null;
+    const worker = workers.find((w) => w.id === workerId);
+    return worker ? worker.name : null;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold" data-testid="text-page-title">Indicadores de Seguridad Vial (SPI)</h1>
+          <p className="text-muted-foreground">
+            ISO 39001:2012 - Cláusula 9.1 Seguimiento, medición, análisis y evaluación
+          </p>
+        </div>
+        <Button className="bg-green-600 hover:bg-green-700" onClick={handleAddIndicador} data-testid="button-agregar-indicador">
+          <Plus className="h-4 w-4 mr-2" />
+          Agregar Indicador
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar indicadores..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+            data-testid="input-search"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Total Indicadores
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold" data-testid="text-total-indicadores">{estadisticas.total}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Target className="h-4 w-4 text-green-500" />
+              Cumplen Meta
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-green-600" data-testid="text-cumplen-meta">{estadisticas.cumplenMeta}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-red-500" />
+              No Cumplen
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-red-600" data-testid="text-no-cumplen">{estadisticas.noCumplenMeta}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Activity className="h-4 w-4 text-gray-500" />
+              Sin Medición
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-gray-600" data-testid="text-sin-medicion">{estadisticas.sinMedicion}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold" data-testid="text-lista-indicadores">Lista de Indicadores SPI</h2>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+          </div>
+        ) : filteredIndicadores.length === 0 ? (
+          <Card className="p-8 text-center">
+            <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground" data-testid="text-no-indicadores">
+              {searchTerm ? "No se encontraron indicadores con ese criterio de búsqueda" : "No hay indicadores de seguridad vial registrados"}
+            </p>
+            {!searchTerm && (
+              <Button
+                className="mt-4 bg-green-600 hover:bg-green-700"
+                onClick={handleAddIndicador}
+                data-testid="button-crear-primer-indicador"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Crear primer indicador
+              </Button>
+            )}
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {filteredIndicadores.map((indicador) => {
+              const progressPercentage = getProgressPercentage(indicador);
+              const isExpanded = expandedIndicador === indicador.id;
+
+              return (
+                <Card key={indicador.id} className="hover-elevate" data-testid={`card-indicador-${indicador.id}`}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                      <div className="flex flex-wrap gap-1">
+                        {getFrecuenciaBadge(indicador.frecuenciaMedicion)}
+                        {getStatusBadge(indicador)}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleEditClick(indicador)}
+                          data-testid={`button-edit-${indicador.id}`}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={(e) => handleDeleteClick(e, indicador)}
+                          data-testid={`button-delete-${indicador.id}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                    <CardTitle className="text-lg mt-2">
+                      <span className="text-muted-foreground font-mono text-sm">{indicador.codigo}</span>{" "}
+                      {indicador.nombre}
+                    </CardTitle>
+                    {indicador.descripcion && (
+                      <CardDescription className="line-clamp-2">{indicador.descripcion}</CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Meta:</span>
+                        <span className="ml-2 font-medium">
+                          {indicador.valorMeta ? `${indicador.valorMeta} ${indicador.unidadMedida}` : "-"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Actual:</span>
+                        <span className="ml-2 font-medium">
+                          {indicador.valorActual ? `${indicador.valorActual} ${indicador.unidadMedida}` : "-"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Mín:</span>
+                        <span className="ml-2 font-medium">
+                          {indicador.valorMinimo ? `${indicador.valorMinimo}` : "-"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Máx:</span>
+                        <span className="ml-2 font-medium">
+                          {indicador.valorMaximo ? `${indicador.valorMaximo}` : "-"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {indicador.valorMeta && (
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Progreso hacia la meta</span>
+                          <span className="font-medium">{progressPercentage}%</span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${getProgressColor(progressPercentage)} transition-all duration-300`}
+                            style={{ width: `${progressPercentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {indicador.formula && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Fórmula:</span>
+                        <span className="ml-2 font-mono bg-muted px-2 py-1 rounded text-xs">{indicador.formula}</span>
+                      </div>
+                    )}
+
+                    {getFactorName(indicador.factorDesempenoId) && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Factor SPF:</span>
+                        <span className="ml-2">{getFactorName(indicador.factorDesempenoId)}</span>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleAddMedicion(indicador)}
+                        data-testid={`button-agregar-medicion-${indicador.id}`}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Agregar Medición
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleExpandIndicador(indicador.id)}
+                        data-testid={`button-ver-mediciones-${indicador.id}`}
+                      >
+                        <Calendar className="h-4 w-4 mr-1" />
+                        Ver Mediciones
+                        {isExpanded ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />}
+                      </Button>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="mt-4 border-t pt-4">
+                        <h4 className="font-medium mb-3" data-testid="text-historial-mediciones">Historial de Mediciones</h4>
+                        {mediciones.length === 0 ? (
+                          <p className="text-sm text-muted-foreground" data-testid="text-no-mediciones">
+                            No hay mediciones registradas para este indicador
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            {mediciones.map((medicion) => (
+                              <div
+                                key={medicion.id}
+                                className="flex items-center justify-between p-3 bg-muted/50 rounded-md"
+                                data-testid={`medicion-${medicion.id}`}
+                              >
+                                <div className="flex items-center gap-4">
+                                  <span className="text-sm font-medium">
+                                    {new Date(medicion.fechaMedicion).toLocaleDateString("es-CO")}
+                                  </span>
+                                  <span className="text-lg font-bold">
+                                    {medicion.valor} {indicador.unidadMedida}
+                                  </span>
+                                  {medicion.cumpleMeta === 1 ? (
+                                    <Badge className="bg-green-500/10 text-green-700 dark:text-green-400">Cumple</Badge>
+                                  ) : medicion.cumpleMeta === 0 ? (
+                                    <Badge className="bg-red-500/10 text-red-700 dark:text-red-400">No Cumple</Badge>
+                                  ) : null}
+                                </div>
+                                {medicion.observaciones && (
+                                  <span className="text-sm text-muted-foreground truncate max-w-[200px]">
+                                    {medicion.observaciones}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
+        <DialogContent className="w-[95vw] max-w-[700px] max-h-[90vh] overflow-y-auto mx-auto">
+          <DialogHeader>
+            <DialogTitle>{editingIndicador ? "Editar Indicador SPI" : "Nuevo Indicador SPI"}</DialogTitle>
+            <DialogDescription>
+              {editingIndicador
+                ? "Modifique los datos del indicador de seguridad vial según ISO 39001"
+                : "Registre un nuevo indicador de desempeño de seguridad vial según ISO 39001"
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="codigo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Código *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="SPI-001" {...field} data-testid="input-codigo" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="frecuenciaMedicion"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Frecuencia de Medición *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-frecuencia">
+                            <SelectValue placeholder="Seleccionar frecuencia" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.entries(FRECUENCIA_CONFIG).map(([key, config]) => (
+                            <SelectItem key={key} value={key}>
+                              {config.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="nombre"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nombre del Indicador *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nombre descriptivo del indicador" {...field} data-testid="input-nombre" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="descripcion"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descripción</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Descripción detallada del indicador"
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-descripcion"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="factorDesempenoId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Factor de Desempeño (SPF)</FormLabel>
+                    <Select onValueChange={(val) => field.onChange(val === "none" ? null : val)} value={field.value || "none"}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-factor-desempeno">
+                          <SelectValue placeholder="Seleccionar factor SPF" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">Sin asignar</SelectItem>
+                        {factores.map((factor) => (
+                          <SelectItem key={factor.id} value={factor.id}>
+                            {factor.codigo} - {factor.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>Vincule este indicador a un factor de desempeño SPF</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="formula"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fórmula de Cálculo</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Ej: (Número de incidentes / Total de viajes) x 100"
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-formula"
+                      />
+                    </FormControl>
+                    <FormDescription>Describa cómo se calcula el indicador</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="unidadMedida"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unidad de Medida *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="%, número, tasa, etc." {...field} data-testid="input-unidad-medida" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="fuenteDatos"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fuente de Datos</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="De dónde se obtienen los datos"
+                          {...field}
+                          value={field.value || ""}
+                          data-testid="input-fuente-datos"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <FormField
+                  control={form.control}
+                  name="valorMeta"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor Meta</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0"
+                          {...field}
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(e.target.value || undefined)}
+                          data-testid="input-valor-meta"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="valorMinimo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor Mínimo</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0"
+                          {...field}
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(e.target.value || undefined)}
+                          data-testid="input-valor-minimo"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="valorMaximo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor Máximo</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0"
+                          {...field}
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(e.target.value || undefined)}
+                          data-testid="input-valor-maximo"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="valorActual"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor Actual</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0"
+                          {...field}
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(e.target.value || undefined)}
+                          data-testid="input-valor-actual"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="responsableId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Responsable</FormLabel>
+                    <Select onValueChange={(val) => field.onChange(val === "none" ? null : val)} value={field.value || "none"}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-responsable">
+                          <SelectValue placeholder="Seleccionar responsable" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">Sin asignar</SelectItem>
+                        {workers.map((worker) => (
+                          <SelectItem key={worker.id} value={worker.id}>
+                            {worker.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleDialogClose(false)}
+                  data-testid="button-cancelar"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  data-testid="button-guardar"
+                >
+                  {createMutation.isPending || updateMutation.isPending
+                    ? "Guardando..."
+                    : editingIndicador ? "Actualizar" : "Guardar"
+                  }
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={medicionDialogOpen} onOpenChange={setMedicionDialogOpen}>
+        <DialogContent className="w-[95vw] max-w-[500px] mx-auto">
+          <DialogHeader>
+            <DialogTitle>Nueva Medición</DialogTitle>
+            <DialogDescription>
+              Registre una nueva medición para el indicador{" "}
+              <strong>{indicadorForMedicion?.codigo} - {indicadorForMedicion?.nombre}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...medicionForm}>
+            <form onSubmit={medicionForm.handleSubmit(onSubmitMedicion)} className="space-y-4">
+              <FormField
+                control={medicionForm.control}
+                name="fechaMedicion"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fecha de Medición *</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} data-testid="input-fecha-medicion" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={medicionForm.control}
+                name="valor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Valor *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder={`Valor en ${indicadorForMedicion?.unidadMedida || "unidades"}`}
+                        {...field}
+                        data-testid="input-valor-medicion"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Unidad: {indicadorForMedicion?.unidadMedida || "No especificada"}
+                      {indicadorForMedicion?.valorMeta && ` | Meta: ${indicadorForMedicion.valorMeta}`}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={medicionForm.control}
+                name="observaciones"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observaciones</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Observaciones sobre esta medición"
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-observaciones-medicion"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setMedicionDialogOpen(false)}
+                  data-testid="button-cancelar-medicion"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700"
+                  disabled={createMedicionMutation.isPending}
+                  data-testid="button-guardar-medicion"
+                >
+                  {createMedicionMutation.isPending ? "Guardando..." : "Registrar Medición"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar indicador SPI?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente el indicador{" "}
+              <strong>{indicadorToDelete?.codigo} - {indicadorToDelete?.nombre}</strong> y todas sus mediciones asociadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+              data-testid="button-confirm-delete"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
