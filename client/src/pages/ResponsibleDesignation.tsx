@@ -1011,7 +1011,7 @@ export default function ResponsibleDesignationPage() {
                               </FormControl>
                               <div className="space-y-1 leading-none">
                                 <FormLabel className="cursor-pointer">
-                                  ¿Tiene Curso de 50 horas en SST?
+                                  ¿Tiene Curso de 50 horas o 20 horas en SST?
                                 </FormLabel>
                                 <FormDescription>
                                   Requerido para empresas de menos de 10 trabajadores sin licencia SST
