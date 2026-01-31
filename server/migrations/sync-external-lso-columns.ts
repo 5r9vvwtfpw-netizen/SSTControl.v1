@@ -9,50 +9,30 @@ import { db } from '../db';
  * Required for Resolution 0312/2019 compliance.
  */
 export async function syncExternalLsoColumns(): Promise<void> {
-  console.log('  → Verificando columnas is_external_lso y external_lso_name...');
+  console.log('[Migration] Sincronizando columnas is_external_lso y external_lso_name...');
   
   try {
-    // Check if is_external_lso column exists
-    const checkColumn = await db.execute(sql`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'responsible_designations' 
-      AND column_name = 'is_external_lso'
+    // Directly add columns using IF NOT EXISTS - this is idempotent and safe
+    // This approach avoids potential issues with information_schema queries across different PostgreSQL providers
+    console.log('[Migration] Ejecutando ALTER TABLE para is_external_lso...');
+    await db.execute(sql`
+      ALTER TABLE responsible_designations 
+      ADD COLUMN IF NOT EXISTS is_external_lso BOOLEAN DEFAULT FALSE
     `);
-    
-    if (checkColumn.rows.length === 0) {
-      console.log('    - Agregando columna is_external_lso...');
-      await db.execute(sql`
-        ALTER TABLE responsible_designations 
-        ADD COLUMN IF NOT EXISTS is_external_lso BOOLEAN DEFAULT FALSE
-      `);
-      console.log('    ✓ Columna is_external_lso agregada');
-    } else {
-      console.log('    ✓ Columna is_external_lso ya existe');
-    }
+    console.log('[Migration] ✅ Columna is_external_lso verificada/agregada');
 
-    // Check if external_lso_name column exists
-    const checkNameColumn = await db.execute(sql`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'responsible_designations' 
-      AND column_name = 'external_lso_name'
+    console.log('[Migration] Ejecutando ALTER TABLE para external_lso_name...');
+    await db.execute(sql`
+      ALTER TABLE responsible_designations 
+      ADD COLUMN IF NOT EXISTS external_lso_name TEXT
     `);
-    
-    if (checkNameColumn.rows.length === 0) {
-      console.log('    - Agregando columna external_lso_name...');
-      await db.execute(sql`
-        ALTER TABLE responsible_designations 
-        ADD COLUMN IF NOT EXISTS external_lso_name TEXT
-      `);
-      console.log('    ✓ Columna external_lso_name agregada');
-    } else {
-      console.log('    ✓ Columna external_lso_name ya existe');
-    }
+    console.log('[Migration] ✅ Columna external_lso_name verificada/agregada');
 
-    console.log('  ✓ Columnas LSO externo sincronizadas correctamente');
+    console.log('[Migration] ✅ Columnas LSO externo sincronizadas correctamente');
   } catch (error: any) {
-    console.error('  ✗ Error sincronizando columnas LSO externo:', error.message);
-    throw error;
+    console.error('[Migration] ✗ Error sincronizando columnas LSO externo:', error.message);
+    console.error('[Migration] Stack:', error.stack);
+    // Don't throw - let the app continue and fail gracefully on queries if columns don't exist
+    // This prevents the app from crashing completely
   }
 }
