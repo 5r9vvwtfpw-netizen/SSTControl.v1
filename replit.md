@@ -19,6 +19,30 @@ The system uses a client-server architecture with a RESTful API. Data integrity 
 
 The PESV (Strategic Road Safety Plan) module manages evaluations according to Resolución 40595/2022, supporting three complexity levels (Basic, Standard, Advanced) and providing bidirectional traceability with SST. It incorporates ISO 31000:2018 for road risk management with a 5x5 probability/impact matrix and ISO 39001:2012 for road safety performance management, including Safety Performance Factors (SPF) and Safety Performance Indicators (SPI). The billing system includes a robust validator (`server/lib/billing-validator.ts`) to ensure data integrity before invoice generation and insertion, utilizing Zod schema validation, company validation, and subscription validation. It also provides a health check endpoint for monitoring billing system operations.
 
+### PESV Pricing Module (Enero 2026)
+The PESV pricing module (`pricing_plugin/calculate-pesv.ts`) calculates costs based on vehicle count following Resolución 40595/2022:
+
+**Formula:** `Costo PESV = Pasos Aplicables × $8,000`
+
+**PESV Levels by Vehicle Count:**
+- Básico (1-10 vehículos): 20 pasos → $160,000/mes
+- Estándar (11-50 vehículos): 24 pasos → $192,000/mes
+- Avanzado (50+ vehículos): 24 pasos → $192,000/mes
+
+**Combined SST + PESV Formula:**
+`Total = (Trabajadores × Tarifa Riesgo) + (Estándares SST × $8,000) + (Pasos PESV × $8,000)`
+
+**PESV API Endpoints:**
+- `POST /api/pricing-v2/pesv/calculate` - Calculate PESV pricing
+- `GET /api/pricing-v2/pesv/tarifas` - Get PESV rates
+- `POST /api/pricing-v2/calculate-combined` - Calculate SST + PESV combined
+- `GET /api/pricing-v2/simulador-completo/:companyId` - Simulate pricing for existing company
+
+**Database Columns Added to `pricing_plugin_subscriptions`:**
+- `vehiculos` (integer, default 0)
+- `nivel_pesv` (text, nullable)
+- `costo_pesv_mensual` (decimal, default 0)
+
 ## External Dependencies
 
 -   **PostgreSQL (Neon/AWS RDS)**: Cloud-hosted relational database.
