@@ -54,6 +54,7 @@ OBJECT_STORAGE_BUCKET_ID = "replit-objstore-1a32e428-68e0-4edd-a4f5-f7aa98c8512e
 AWS_REGION = "us-east-1"
 AWS_S3_BUCKET_NAME = "sst-colombia-archivos-2026"
 LSO_DIRECTORY_API_URL = "https://lso.sst-colombia.com.co"
+LSO_DIRECTORY_URL = "https://lso.sst-colombia.com.co"
 
 [userenv.development]
 AUTO_VERIFY_EMAIL = "true"

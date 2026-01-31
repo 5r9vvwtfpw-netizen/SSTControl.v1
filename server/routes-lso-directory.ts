@@ -142,7 +142,7 @@ export function registerLsoDirectoryRoutes(app: Express) {
       }
 
       const LSO_API_KEY = process.env.LANDING_PAGE_API_KEY;
-      const LSO_URL = process.env.LSO_DIRECTORY_API_URL || "https://lso.sst-colombia.com.co";
+      const LSO_URL = process.env.LSO_DIRECTORY_URL || "https://lso.sst-colombia.com.co";
 
       if (!LSO_API_KEY) {
         console.error("[LSO Routes] LANDING_PAGE_API_KEY not configured");
@@ -153,7 +153,7 @@ export function registerLsoDirectoryRoutes(app: Express) {
       const tokenResponse = await fetch(`${LSO_URL}/api/external/token`, {
         method: "POST",
         headers: {
-          "x-api-key": LSO_API_KEY,
+          "Authorization": `Bearer ${LSO_API_KEY}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
