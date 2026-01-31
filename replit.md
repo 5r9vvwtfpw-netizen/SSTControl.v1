@@ -123,3 +123,48 @@ El módulo PESV permite gestionar evaluaciones del Plan Estratégico de Segurida
 - POST /api/evaluaciones-pesv/:id/recalcular
 - GET /api/evaluaciones-pesv/:id/pdf
 - GET /api/pasos-pesv?nivel={basico|estandar|avanzado}
+
+### Integración ISO 31000:2018 - Gestión de Riesgos Viales (Enero 2026)
+El módulo PESV ahora incluye gestión de riesgos viales según ISO 31000:2018 con matriz de probabilidad/impacto.
+
+**Nuevas Tablas:**
+- `contexto_organizacional_pesv` - Factores internos/externos que afectan la seguridad vial
+- `riesgos_viales` - Identificación, análisis y valoración de riesgos viales
+- `tratamientos_riesgo_vial` - Acciones de tratamiento para riesgos identificados
+
+**Matriz de Riesgos 5x5:**
+- Probabilidad: muy_baja (1), baja (2), media (3), alta (4), muy_alta (5)
+- Impacto: insignificante (1), menor (2), moderado (3), mayor (4), catastrofico (5)
+- valorRiesgo = probabilidad × impacto (1-25)
+- nivelRiesgo: bajo (1-4), medio (5-9), alto (10-14), muy_alto (15-19), critico (20-25)
+
+**Categorías de Riesgo Vial:**
+- conductor: Factor humano - conductores
+- vehiculo: Factor vehicular
+- via: Factor vía/infraestructura
+- entorno: Factor ambiental/entorno
+- organizacional: Factor organizacional
+
+**Nuevas Páginas:**
+- `client/src/pages/MatrizRiesgosViales.tsx` - Matriz visual de riesgos con CRUD
+- `client/src/pages/ContextoOrganizacionalPesv.tsx` - Gestión de factores internos/externos
+
+**Nuevas Rutas:**
+- `/pesv/matriz-riesgos` - Matriz de riesgos viales
+- `/pesv/contexto-organizacional` - Contexto organizacional
+
+**Nuevos API Endpoints:**
+- GET/POST /api/riesgos-viales - CRUD riesgos viales
+- GET /api/riesgos-viales/estadisticas - Estadísticas de riesgos
+- GET/PATCH/DELETE /api/riesgos-viales/:id
+- GET/POST /api/contexto-organizacional-pesv - CRUD factores de contexto
+- GET/PATCH/DELETE /api/contexto-organizacional-pesv/:id
+- GET/POST /api/tratamientos-riesgo-vial - CRUD tratamientos
+- GET/PATCH/DELETE /api/tratamientos-riesgo-vial/:id
+
+**Esquema de Colores Riesgo:**
+- Bajo: Verde #4CAF50
+- Medio: Amarillo #FFEB3B
+- Alto: Naranja #FF9800
+- Muy Alto: Rojo #F44336
+- Crítico: Rojo Oscuro #B71C1C

@@ -9551,8 +9551,8 @@ export const contextoOrganizacionalPesv = pgTable("contexto_organizacional_pesv"
   companyId: varchar("company_id").notNull().references(() => companies.id),
   evaluacionPesvId: varchar("evaluacion_pesv_id").references(() => evaluacionesPesv.id),
   
-  // Tipo de factor
-  tipoFactor: tipoFactorContextoEnum("tipo_factor").notNull(),
+  // Tipo de factor: interno o externo (usa tipoAnalisisContextoEnum)
+  tipoFactor: tipoAnalisisContextoEnum("tipo_factor").notNull(),
   
   // Descripción del factor
   nombre: text("nombre").notNull(),

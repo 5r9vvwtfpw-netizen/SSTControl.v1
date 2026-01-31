@@ -7,7 +7,7 @@ import { Link } from "wouter";
 import { 
   Car, Users, ClipboardCheck, AlertTriangle, 
   GraduationCap, FileCheck, TrendingUp, TrendingDown,
-  Activity
+  Activity, ShieldAlert, Building
 } from "lucide-react";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
@@ -268,6 +268,44 @@ export default function Pesv() {
             <CardContent>
               <Button variant="outline" className="w-full" data-testid="button-goto-audits">
                 Gestionar Auditorías
+              </Button>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/pesv/matriz-riesgos">
+          <Card className="hover-elevate active-elevate-2 cursor-pointer border-green-200 dark:border-green-800" data-testid="card-link-risk-matrix">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="h-5 w-5 text-green-600" />
+                <CardTitle>Matriz de Riesgos Viales</CardTitle>
+              </div>
+              <CardDescription>
+                Identificación y valoración de riesgos según ISO 31000:2018
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full" data-testid="button-goto-risk-matrix">
+                Ver Matriz de Riesgos
+              </Button>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/pesv/contexto-organizacional">
+          <Card className="hover-elevate active-elevate-2 cursor-pointer border-green-200 dark:border-green-800" data-testid="card-link-org-context">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Building className="h-5 w-5 text-green-600" />
+                <CardTitle>Contexto Organizacional</CardTitle>
+              </div>
+              <CardDescription>
+                Análisis de factores internos y externos según ISO 31000:2018
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full" data-testid="button-goto-org-context">
+                Gestionar Contexto
               </Button>
             </CardContent>
           </Card>
