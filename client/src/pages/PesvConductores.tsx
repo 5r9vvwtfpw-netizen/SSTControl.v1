@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Driver, Company, insertDriverSchema } from "@shared/schema";
+import { Driver, Company, Worker, insertDriverSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +48,41 @@ export default function PesvConductores() {
     queryKey: ["/api/companies"],
     enabled: isAdmin,
   });
+
+  // Query para obtener la empresa del usuario actual (para usuarios no-admin)
+  const { data: userCompany } = useQuery<Company>({
+    queryKey: ["/api/company/current"],
+    enabled: !isAdmin && !!user?.companyId,
+  });
+
+  // Query para obtener trabajadores de la empresa (integración SST-PESV)
+  const effectiveCompanyId = isAdmin ? formData.companyId : user?.companyId;
+  const { data: workers = [] } = useQuery<Worker[]>({
+    queryKey: ["/api/workers"],
+    enabled: !!effectiveCompanyId,
+  });
+
+  // Handler para seleccionar trabajador y auto-llenar datos
+  const handleWorkerSelect = (workerId: string) => {
+    if (workerId === "manual") {
+      setFormData({
+        ...formData,
+        workerId: "",
+        name: "",
+        identificationNumber: "",
+      });
+      return;
+    }
+    const selectedWorker = workers.find(w => w.id === workerId);
+    if (selectedWorker) {
+      setFormData({
+        ...formData,
+        workerId: selectedWorker.id,
+        name: selectedWorker.name,
+        identificationNumber: selectedWorker.identificationNumber,
+      });
+    }
+  };
 
   const createDriverMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertDriverSchema>) => {
@@ -263,6 +298,43 @@ export default function PesvConductores() {
                       </Select>
                     </div>
                   )}
+                  {/* Mostrar nombre de empresa para usuarios no-admin */}
+                  {!isAdmin && userCompany && (
+                    <div className="space-y-2 col-span-2">
+                      <Label>Empresa</Label>
+                      <Input
+                        value={userCompany.name}
+                        disabled
+                        className="bg-muted"
+                        data-testid="input-company-name-readonly"
+                      />
+                    </div>
+                  )}
+                  {/* Selector de trabajador integrado con SST */}
+                  {!editingDriver && (
+                    <div className="space-y-2 col-span-2">
+                      <Label htmlFor="workerSelect">Seleccionar Trabajador (Integración SST)</Label>
+                      <Select
+                        value={formData.workerId || "manual"}
+                        onValueChange={handleWorkerSelect}
+                      >
+                        <SelectTrigger id="workerSelect" data-testid="select-worker">
+                          <SelectValue placeholder="Seleccione un trabajador o ingrese manualmente" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="manual">-- Ingresar datos manualmente --</SelectItem>
+                          {workers.map((worker) => (
+                            <SelectItem key={worker.id} value={worker.id}>
+                              {worker.name} - {worker.identificationNumber}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Seleccione un trabajador registrado en el SST para auto-completar sus datos
+                      </p>
+                    </div>
+                  )}
                   <div className="space-y-2 col-span-2">
                     <Label htmlFor="name">Nombre Completo *</Label>
                     <Input
@@ -272,6 +344,8 @@ export default function PesvConductores() {
                       required
                       placeholder="Juan Pérez García"
                       data-testid="input-name"
+                      className={formData.workerId ? "bg-muted" : ""}
+                      readOnly={!!formData.workerId}
                     />
                   </div>
                   <div className="space-y-2">
@@ -283,6 +357,8 @@ export default function PesvConductores() {
                       required
                       placeholder="1234567890"
                       data-testid="input-identification-number"
+                      className={formData.workerId ? "bg-muted" : ""}
+                      readOnly={!!formData.workerId}
                     />
                   </div>
                   <div className="space-y-2">
