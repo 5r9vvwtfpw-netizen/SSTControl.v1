@@ -429,17 +429,6 @@ export default function AsignarLsoExterno() {
             </div>
           )}
 
-          <div className="text-sm text-muted-foreground text-center pt-4 border-t">
-            <a 
-              href="https://lso.sst-colombia.com.co" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 hover:text-primary"
-            >
-              <ExternalLink className="h-3 w-3" />
-              Ver directorio completo en lso.sst-colombia.com.co
-            </a>
-          </div>
         </CardContent>
       </Card>
 
