@@ -6907,6 +6907,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedData = insertDriverSchema.parse(req.body);
       const driver = await storage.createDriver(validatedData, companyId);
+      
+      // Sincronizar examen médico con SST si hay workerId y fecha de vencimiento
+      if (driver.workerId && driver.medicalExamExpiry) {
+        try {
+          // Buscar si ya existe un examen médico PESV para este trabajador
+          const existingExams = await storage.getMedicalExamsByWorker(driver.workerId, companyId);
+          const pesvExam = existingExams.find(e =>
+            e.recommendations?.includes('[PESV-CONDUCTOR]')
+          );
+          
+          if (!pesvExam) {
+            // Crear nuevo examen médico vinculado a PESV
+            await storage.createMedicalExam({
+              workerId: driver.workerId,
+              examType: "periodico",
+              scheduledDate: driver.medicalExamExpiry,
+              status: "programado",
+              recommendations: "[PESV-CONDUCTOR] Examen médico ocupacional para conductor - Resolución 40595/2022",
+            }, companyId);
+            console.log(`[PESV-SST] Examen médico creado para conductor ${driver.name}`);
+          }
+        } catch (syncError) {
+          console.error('[PESV-SST] Error sincronizando examen médico:', syncError);
+          // No falla la creación del conductor si falla la sincronización
+        }
+      }
+      
       res.status(201).json(driver);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -6935,6 +6962,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!driver) {
           return res.status(404).send("Conductor no encontrado");
         }
+        
+        // Sincronizar examen médico con SST si hay workerId y fecha de vencimiento
+        if (driver.workerId && driver.medicalExamExpiry) {
+          try {
+            const existingExams = await storage.getMedicalExamsByWorker(driver.workerId, userCompanyId);
+            const pesvExam = existingExams.find(e =>
+              e.recommendations?.includes('[PESV-CONDUCTOR]')
+            );
+            
+            if (!pesvExam) {
+              await storage.createMedicalExam({
+                workerId: driver.workerId,
+                examType: "periodico",
+                scheduledDate: driver.medicalExamExpiry,
+                status: "programado",
+                recommendations: "[PESV-CONDUCTOR] Examen médico ocupacional para conductor - Resolución 40595/2022",
+              }, userCompanyId);
+              console.log(`[PESV-SST] Examen médico creado para conductor ${driver.name}`);
+            }
+          } catch (syncError) {
+            console.error('[PESV-SST] Error sincronizando examen médico:', syncError);
+          }
+        }
+        
         res.json(driver);
       }
     } catch (error: any) {
