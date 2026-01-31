@@ -91,6 +91,7 @@ const CHAPTER_1_MODULES = [
   
   // Recursos básicos (estándares 1.1.1 - 1.1.8)
   "/designacion-responsable",
+  "/asignar-lso-externo",  // Asignación de LSO desde directorio externo - disponible para todos
   "/asignacion-recursos",  // Estándar 1.1.3 - Recursos financieros para el SG-SST
   "/capacitaciones",
   "/registros-induccion",
