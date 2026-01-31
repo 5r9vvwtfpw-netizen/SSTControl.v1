@@ -380,25 +380,37 @@ const PostgresSessionStore = connectPg(session);
 const isProduction = process.env.NODE_ENV === 'production';
 const hasAwsRds = !!(process.env.AWS_RDS_HOST && process.env.AWS_RDS_PASSWORD);
 
+// Connection pool configuration to prevent "Too many connections" errors
+const poolConfig = {
+  max: 10, // Maximum connections in pool
+  idleTimeoutMillis: 30000, // Close idle connections after 30s
+  connectionTimeoutMillis: 10000, // Timeout after 10s when connecting
+};
+
 // Use 'any' type to avoid TypeScript conflicts between NeonPool and PgPool interfaces
 // Both drivers are functionally compatible at runtime
 let pool: any;
 let db: any;
 
 if (isProduction && hasAwsRds) {
-  // Production: Use AWS RDS PostgreSQL with pg driver (TCP connection)
-  const awsConnectionString = `postgresql://${process.env.AWS_RDS_USER || 'postgres'}:${process.env.AWS_RDS_PASSWORD}@${process.env.AWS_RDS_HOST}:${process.env.AWS_RDS_PORT || '5432'}/${process.env.AWS_RDS_DATABASE || 'postgres'}?sslmode=require`;
+  // Production: AWS RDS PostgreSQL - SSL configured in object, not in connection string
+  const awsConnectionString = `postgresql://${process.env.AWS_RDS_USER || 'postgres'}:${process.env.AWS_RDS_PASSWORD}@${process.env.AWS_RDS_HOST}:${process.env.AWS_RDS_PORT || '5432'}/${process.env.AWS_RDS_DATABASE || 'postgres'}`;
   pool = new PgPool({ 
     connectionString: awsConnectionString,
+    ...poolConfig,
     ssl: { rejectUnauthorized: false }
   });
   db = drizzlePg({ client: pool, schema });
-  console.log('[Storage] Connected to AWS RDS PostgreSQL (Production)');
+  console.log('[Storage] Connected to AWS RDS PostgreSQL (Production, max:', poolConfig.max, 'connections)');
 } else {
-  // Development: Use Neon PostgreSQL with WebSocket driver
-  pool = new NeonPool({ connectionString: process.env.DATABASE_URL });
+  // Development: Neon PostgreSQL with connection pool limits
+  pool = new NeonPool({ 
+    connectionString: process.env.DATABASE_URL,
+    ...poolConfig,
+    ssl: { rejectUnauthorized: false }
+  });
   db = drizzleNeon(pool, { schema });
-  console.log('[Storage] Connected to Neon PostgreSQL (Development)');
+  console.log('[Storage] Connected to Neon PostgreSQL (Development, max:', poolConfig.max, 'connections)');
 }
 
 export interface IStorage {
