@@ -24,7 +24,8 @@ export function BackToEvaluationButton({ className = "" }: BackToEvaluationButto
     const from = searchParams.get("from");
     const evalId = searchParams.get("evaluationId");
     return {
-      fromEvaluation: from === "evaluation",
+      // Support both English "evaluation" and Spanish "evaluacion"
+      fromEvaluation: from === "evaluation" || from === "evaluacion",
       evaluationId: evalId,
     };
   }, [searchParams]);

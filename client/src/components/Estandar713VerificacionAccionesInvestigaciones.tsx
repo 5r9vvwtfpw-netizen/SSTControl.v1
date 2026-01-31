@@ -59,7 +59,8 @@ export function Estandar713VerificacionAccionesInvestigaciones({ isVisible, eval
   
   const buildUrl = (path: string, tab?: string) => {
     const params = tab ? `tab=${tab}&${baseParams}` : baseParams;
-    return `${path}?${params}`;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}${params}`;
   };
 
   return (

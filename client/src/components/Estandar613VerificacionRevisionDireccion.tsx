@@ -27,7 +27,8 @@ export function Estandar613VerificacionRevisionDireccion({ isVisible, evaluation
   
   const buildUrl = (path: string, tab?: string) => {
     const params = tab ? `tab=${tab}&${baseParams}` : baseParams;
-    return `${path}?${params}`;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}${params}`;
   };
 
   return (

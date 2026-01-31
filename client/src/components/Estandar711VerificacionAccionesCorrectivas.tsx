@@ -57,7 +57,8 @@ export function Estandar711VerificacionAccionesCorrectivas({ isVisible, evaluati
   
   const buildUrl = (path: string, tab?: string) => {
     const params = tab ? `tab=${tab}&${baseParams}` : baseParams;
-    return `${path}?${params}`;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}${params}`;
   };
 
   return (

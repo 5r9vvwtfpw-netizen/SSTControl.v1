@@ -25,7 +25,9 @@ export function Estandar611VerificacionIndicadores({ isVisible, evaluationId }: 
   
   const buildUrl = (path: string, tab?: string) => {
     const params = tab ? `tab=${tab}&${baseParams}` : baseParams;
-    return `${path}?${params}`;
+    // Handle paths that already have query params
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}${params}`;
   };
 
   return (
