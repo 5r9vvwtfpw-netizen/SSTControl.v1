@@ -1158,12 +1158,6 @@ export default function ResponsibleDesignationPage() {
                   </div>
                 )}
               </div>
-              <Link href="/asignar-lso-externo">
-                <Button variant="outline" size="sm" className="gap-2 mt-2" data-testid="button-cambiar-lso">
-                  <UserCheck className="h-4 w-4" />
-                  Cambiar Profesional LSO
-                </Button>
-              </Link>
             </>
           ) : (
             <>
@@ -1171,12 +1165,6 @@ export default function ResponsibleDesignationPage() {
                 Puede asignar un profesional LSO del directorio externo para que firme las investigaciones de accidentes
                 y otros documentos que requieren la validación de un licenciado en SST.
               </p>
-              <Link href="/asignar-lso-externo">
-                <Button variant="outline" className="gap-2" data-testid="button-asignar-lso">
-                  <UserCheck className="h-4 w-4" />
-                  Asignar Profesional LSO
-                </Button>
-              </Link>
             </>
           )}
         </CardContent>
