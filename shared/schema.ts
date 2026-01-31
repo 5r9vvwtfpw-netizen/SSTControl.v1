@@ -1080,8 +1080,9 @@ export const pesvAudits = pgTable("pesv_audits", {
 });
 
 // Insert schemas and types for PESV tables
+// Modelo single-company: omitimos companyId porque el backend lo agrega desde la sesión del usuario
 export const insertVehicleSchema = createInsertSchema(vehicles)
-  .omit({ id: true, createdAt: true })
+  .omit({ id: true, createdAt: true, companyId: true })
   .extend({
     plate: z.string().min(1, "La placa del vehículo es obligatoria"),
     brand: z.string().min(1, "La marca del vehículo es obligatoria"),
@@ -1091,18 +1092,19 @@ export const insertVehicleSchema = createInsertSchema(vehicles)
 export type InsertVehicle = z.infer<typeof insertVehicleSchema>;
 export type Vehicle = typeof vehicles.$inferSelect;
 
+// Modelo single-company: omitimos companyId porque el backend lo agrega desde la sesión del usuario
 export const insertDriverSchema = createInsertSchema(drivers)
-  .omit({ id: true, createdAt: true })
+  .omit({ id: true, createdAt: true, companyId: true })
   .extend({
-    workerId: z.string().min(1, "Debe seleccionar un trabajador"),
+    workerId: z.string().optional(),
     licenseNumber: z.string().min(1, "El número de licencia es obligatorio"),
-    licenseCategory: z.string().min(1, "La categoría de licencia es obligatoria"),
   });
 export type InsertDriver = z.infer<typeof insertDriverSchema>;
 export type Driver = typeof drivers.$inferSelect;
 
+// Modelo single-company: omitimos companyId porque el backend lo agrega desde la sesión del usuario
 export const insertVehicleInspectionSchema = createInsertSchema(vehicleInspections)
-  .omit({ id: true, createdAt: true })
+  .omit({ id: true, createdAt: true, companyId: true })
   .extend({
     vehicleId: z.string().min(1, "Debe seleccionar un vehículo"),
     inspector: z.string().optional().default(""),
@@ -1110,8 +1112,9 @@ export const insertVehicleInspectionSchema = createInsertSchema(vehicleInspectio
 export type InsertVehicleInspection = z.infer<typeof insertVehicleInspectionSchema>;
 export type VehicleInspection = typeof vehicleInspections.$inferSelect;
 
+// Modelo single-company: omitimos companyId porque el backend lo agrega desde la sesión del usuario
 export const insertRoadIncidentSchema = createInsertSchema(roadIncidents)
-  .omit({ id: true, createdAt: true })
+  .omit({ id: true, createdAt: true, companyId: true })
   .extend({
     description: z.string().min(1, "La descripción del incidente es obligatoria"),
     location: z.string().min(1, "El lugar del incidente es obligatorio"),

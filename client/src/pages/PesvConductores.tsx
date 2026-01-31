@@ -24,19 +24,31 @@ export default function PesvConductores() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
-  const [formData, setFormData] = useState({
-    companyId: "",
+  const [formData, setFormData] = useState<{
+    workerId: string;
+    name: string;
+    identificationNumber: string;
+    licenseNumber: string;
+    licenseType: "A1" | "A2" | "B1" | "B2" | "B3" | "C1" | "C2" | "C3";
+    licenseExpiry: string;
+    bloodType: string;
+    emergencyContact: string;
+    emergencyPhone: string;
+    medicalExamExpiry: string;
+    status: "activo" | "inactivo" | "retirado" | "suspendido";
+    observations: string;
+  }>({
     workerId: "",
     name: "",
     identificationNumber: "",
     licenseNumber: "",
-    licenseType: "B1" as const,
+    licenseType: "B1",
     licenseExpiry: "",
     bloodType: "",
     emergencyContact: "",
     emergencyPhone: "",
     medicalExamExpiry: "",
-    status: "activo" as const,
+    status: "activo",
     observations: "",
   });
 
@@ -81,10 +93,7 @@ export default function PesvConductores() {
 
   const createDriverMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertDriverSchema>) => {
-      const payload = isAdmin && formData.companyId 
-        ? { ...data, companyId: formData.companyId }
-        : data;
-      const res = await apiRequest("POST", "/api/drivers", payload);
+      const res = await apiRequest("POST", "/api/drivers", data);
       return res.json();
     },
     onSuccess: () => {
@@ -155,15 +164,6 @@ export default function PesvConductores() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isAdmin && !formData.companyId && !editingDriver) {
-      toast({
-        title: "Error",
-        description: "Debe seleccionar una empresa",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     const data = {
       ...formData,
       workerId: formData.workerId || undefined,
@@ -209,7 +209,6 @@ export default function PesvConductores() {
   const resetForm = () => {
     setEditingDriver(null);
     setFormData({
-      companyId: "",
       workerId: "",
       name: "",
       identificationNumber: "",
