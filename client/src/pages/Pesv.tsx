@@ -7,7 +7,7 @@ import { Link } from "wouter";
 import { 
   Car, Users, ClipboardCheck, AlertTriangle, 
   GraduationCap, FileCheck, TrendingUp, TrendingDown,
-  Activity, ShieldAlert, Building
+  Activity, ShieldAlert, Building, Target, BarChart3
 } from "lucide-react";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
@@ -306,6 +306,44 @@ export default function Pesv() {
             <CardContent>
               <Button variant="outline" className="w-full" data-testid="button-goto-org-context">
                 Gestionar Contexto
+              </Button>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/pesv/factores-desempeno">
+          <Card className="hover-elevate active-elevate-2 cursor-pointer border-blue-200 dark:border-blue-800" data-testid="card-link-spf">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-blue-600" />
+                <CardTitle>Factores de Desempeño (SPF)</CardTitle>
+              </div>
+              <CardDescription>
+                Factores de desempeño de seguridad vial según ISO 39001:2012
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full" data-testid="button-goto-spf">
+                Gestionar SPF
+              </Button>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/pesv/indicadores">
+          <Card className="hover-elevate active-elevate-2 cursor-pointer border-blue-200 dark:border-blue-800" data-testid="card-link-spi">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-blue-600" />
+                <CardTitle>Indicadores (SPI)</CardTitle>
+              </div>
+              <CardDescription>
+                Indicadores de desempeño de seguridad vial según ISO 39001:2012
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full" data-testid="button-goto-spi">
+                Gestionar Indicadores
               </Button>
             </CardContent>
           </Card>
