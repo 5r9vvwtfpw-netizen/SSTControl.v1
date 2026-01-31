@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertSstDocumentSchema, type SstDocument, type InsertSstDocument, type SstDocumentVersion, type SstDocumentAccessLog, type CambioSst } from "@shared/schema";
-import { Plus, FileText, Search, Filter, Edit, Trash2, Eye, History, Clock, AlertCircle, CheckCircle2, FileWarning, Archive, XCircle, Calendar, Download, Wand2, FileCheck, Users, UserCheck, Upload, Loader2, File } from "lucide-react";
+import { Plus, FileText, Search, Filter, Edit, Trash2, Eye, History, Clock, AlertCircle, CheckCircle2, FileWarning, Archive, XCircle, Calendar, Download, Wand2, FileCheck, Users, UserCheck, Upload, Loader2, File, ChevronDown, ChevronRight, Server } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AutomationAssistant, type NormativaInfo, type PlantillaInfo } from "@/components/AutomationAssistant";
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
@@ -60,6 +61,54 @@ const phvaCycleLabels: Record<string, string> = {
   "ACTUAR": "Actuar",
 };
 
+const sourceModuleLabels: Record<string, string> = {
+  "designaciones": "Designaciones",
+  "capacitaciones": "Capacitaciones", 
+  "examenes_medicos": "Exámenes Médicos",
+  "accidentes": "Accidentes",
+  "inspecciones": "Inspecciones",
+  "investigaciones": "Investigaciones",
+  "presupuesto": "Presupuesto",
+  "recursos": "Recursos",
+  "politicas": "Políticas",
+  "trabajadores": "Trabajadores",
+  "evaluaciones": "Evaluaciones",
+  "planes_trabajo": "Planes de Trabajo",
+  "epp": "EPP",
+  "contratos": "Contratos",
+  "afiliaciones": "Afiliaciones",
+  "copasst": "COPASST",
+  "ausentismo": "Ausentismo",
+  "emergencias": "Emergencias",
+  "pesv": "PESV",
+  "auditorias": "Auditorías",
+  "indicadores": "Indicadores",
+  "comunicaciones": "Comunicaciones",
+  "induccion": "Inducción",
+  "perfiles_cargo": "Perfiles de Cargo",
+  "cambios": "Cambios",
+  "adquisiciones": "Adquisiciones",
+  "matriz_legal": "Matriz Legal",
+  "vigilancia_epidemiologica": "Vigilancia Epidemiológica",
+  "revisiones_direccion": "Revisiones de Dirección",
+  "otros": "Otros"
+};
+
+interface SystemDocument {
+  id: string;
+  code: string;
+  title: string;
+  description: string | null;
+  category: string;
+  sst_standards: string[];
+  phva_cycle: string;
+  status: string;
+  source_module: string;
+  source_endpoint: string;
+  source_record_id: string;
+  created_at: string;
+  updated_at: string;
+}
 
 // Document Acknowledgments Tab Component
 interface AcknowledgmentWorkerStatus {
@@ -416,6 +465,12 @@ export default function ConservacionDocumentos() {
   const { data: cambiosSst } = useQuery<CambioSst[]>({
     queryKey: ["/api/cambios-sst"],
   });
+
+  const { data: systemDocuments, isLoading: isLoadingSystemDocs } = useQuery<SystemDocument[]>({
+    queryKey: ["/api/system-documents"],
+  });
+
+  const [systemDocsOpen, setSystemDocsOpen] = useState(false);
 
   const { data: documentVersions } = useQuery<SstDocumentVersion[]>({
     queryKey: ["/api/sst-documents", selectedDocument?.id, "versions"],
@@ -1468,6 +1523,102 @@ export default function ConservacionDocumentos() {
         </CardContent>
       </Card>
 
+      {/* Documentos del Sistema Section */}
+      <Card className="mt-6">
+        <Collapsible open={systemDocsOpen} onOpenChange={setSystemDocsOpen}>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover-elevate">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {systemDocsOpen ? (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <Server className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Documentos del Sistema</CardTitle>
+                  <Badge variant="secondary" className="ml-2">
+                    {systemDocuments?.length || 0}
+                  </Badge>
+                </div>
+              </div>
+              <CardDescription className="ml-11">
+                PDFs generados automáticamente por los diferentes módulos del sistema
+              </CardDescription>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent>
+              {isLoadingSystemDocs ? (
+                <div className="space-y-2">
+                  <div className="h-8 bg-muted animate-pulse rounded" />
+                  <div className="h-8 bg-muted animate-pulse rounded" />
+                  <div className="h-8 bg-muted animate-pulse rounded" />
+                </div>
+              ) : !systemDocuments || systemDocuments.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Server className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No hay documentos del sistema registrados.</p>
+                  <p className="text-sm">Los PDFs generados en otros módulos aparecerán aquí automáticamente.</p>
+                </div>
+              ) : (
+                <div className="rounded-md border overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Código</TableHead>
+                        <TableHead>Título</TableHead>
+                        <TableHead>Módulo</TableHead>
+                        <TableHead>Ciclo PHVA</TableHead>
+                        <TableHead>Fecha</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {systemDocuments.map((doc) => (
+                        <TableRow key={doc.id} data-testid={`row-system-doc-${doc.id}`}>
+                          <TableCell className="font-mono text-sm">{doc.code}</TableCell>
+                          <TableCell className="font-medium max-w-[300px] truncate" title={doc.title}>
+                            {doc.title}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {sourceModuleLabels[doc.source_module] || doc.source_module}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {doc.phva_cycle ? (
+                              <Badge variant="outline">{phvaCycleLabels[doc.phva_cycle] || doc.phva_cycle}</Badge>
+                            ) : "-"}
+                          </TableCell>
+                          <TableCell>
+                            {doc.created_at 
+                              ? format(new Date(doc.created_at), "dd/MM/yyyy", { locale: es })
+                              : "-"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => window.open(doc.source_endpoint, "_blank")}
+                              data-testid={`button-download-system-doc-${doc.id}`}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Descargar PDF
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+
+      {/* Document Detail Dialog */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {selectedDocument && (
