@@ -30,6 +30,9 @@ export const pricingPluginSubscriptions = pgTable("pricing_plugin_subscriptions"
   status: text("status").notNull().default("active"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  vehiculos: integer("vehiculos").default(0),
+  nivelPesv: text("nivel_pesv"),
+  costoPesvMensual: decimal("costo_pesv_mensual", { precision: 10, scale: 2 }).default("0"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });

@@ -17,9 +17,20 @@ import {
   DEFAULT_PRICING_V2_CONFIG,
   getDescripcionClaseRiesgo,
   getEstandaresAplicablesPorClase,
+  getTarifaPorRiesgo,
   type RiskLevel,
   type PricingV2Config,
 } from "./calculate-v2";
+import {
+  calculatePesvPricing,
+  calculateCombinedPricing,
+  getNivelPesv,
+  getNivelPesvLabel,
+  getPasosAplicablesPorNivel,
+  getDesglosePorFase,
+  DEFAULT_PESV_PRICING_CONFIG,
+  type NivelPesv,
+} from "./calculate-pesv";
 
 const router = Router();
 
@@ -206,6 +217,236 @@ router.post("/cotizacion", async (req: Request, res: Response) => {
     };
 
     return res.json(cotizacion);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * ============================================================
+ * ENDPOINTS PESV - Plan Estratégico de Seguridad Vial
+ * Resolución 40595/2022
+ * PRINCIPIO DE CÓDIGO SEGURO: Solo agregar código nuevo
+ * ============================================================
+ */
+
+router.post("/pesv/calculate", async (req: Request, res: Response) => {
+  try {
+    const schema = z.object({
+      vehiculos: z.number().int().min(1, "Debe tener al menos 1 vehículo"),
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ 
+        error: "Datos inválidos", 
+        details: parsed.error.errors 
+      });
+    }
+
+    const { vehiculos } = parsed.data;
+    const result = calculatePesvPricing(
+      { vehiculos },
+      DEFAULT_PESV_PRICING_CONFIG
+    );
+
+    return res.json({
+      ...result,
+      formula: "Costo PESV = Pasos Aplicables × $8,000",
+      normativa: "Resolución 40595/2022 - Ministerio de Transporte",
+      mensaje: `Con ${vehiculos} vehículos (Nivel ${result.nivelPesvLabel}), su inversión mensual PESV es de ${new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(result.costoMensualPesv)}`,
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/pesv/tarifas", async (_req: Request, res: Response) => {
+  try {
+    const config = DEFAULT_PESV_PRICING_CONFIG;
+    
+    return res.json({
+      tarifaPorPasoPesv: config.tarifaPorPasoPesv,
+      currency: config.currency,
+      formula: "Costo PESV = Pasos Aplicables × $8,000",
+      nivelesPesv: {
+        basico: {
+          vehiculos: "1-10",
+          pasosAplicables: 20,
+          costoMensual: 20 * config.tarifaPorPasoPesv,
+          descripcion: getNivelPesvLabel("basico"),
+          desglosePorFase: getDesglosePorFase("basico"),
+        },
+        estandar: {
+          vehiculos: "11-50",
+          pasosAplicables: 24,
+          costoMensual: 24 * config.tarifaPorPasoPesv,
+          descripcion: getNivelPesvLabel("estandar"),
+          desglosePorFase: getDesglosePorFase("estandar"),
+        },
+        avanzado: {
+          vehiculos: "50+",
+          pasosAplicables: 24,
+          costoMensual: 24 * config.tarifaPorPasoPesv,
+          descripcion: getNivelPesvLabel("avanzado"),
+          desglosePorFase: getDesglosePorFase("avanzado"),
+        },
+      },
+      normativa: [
+        "Resolución 40595/2022 - Ministerio de Transporte",
+        "ISO 39001:2012 - Sistemas de gestión de seguridad vial",
+        "ISO 31000:2018 - Gestión del riesgo",
+      ],
+      pasosNoAplicanBasico: ["H07 - Gestión de velocidad", "H08 - Rutas seguras", "H09 - Fatiga y somnolencia", "V03 - Auditoría PESV"],
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/calculate-combined", async (req: Request, res: Response) => {
+  try {
+    const schema = z.object({
+      trabajadores: z.number().int().min(1, "Debe tener al menos 1 trabajador"),
+      claseRiesgo: RiskLevelSchema,
+      estandaresAplicables: z.number().int().min(1).optional(),
+      vehiculos: z.number().int().min(0).default(0),
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ 
+        error: "Datos inválidos", 
+        details: parsed.error.errors 
+      });
+    }
+
+    const { trabajadores, claseRiesgo, vehiculos } = parsed.data;
+    const estandaresAplicables = parsed.data.estandaresAplicables 
+      || getEstandaresAplicablesPorClase(claseRiesgo, trabajadores);
+
+    const tarifaPorTrabajador = getTarifaPorRiesgo(claseRiesgo, DEFAULT_PRICING_V2_CONFIG);
+
+    const result = calculateCombinedPricing(
+      { trabajadores, claseRiesgo, estandaresAplicables, vehiculos },
+      tarifaPorTrabajador,
+      DEFAULT_PRICING_V2_CONFIG.tarifaPorEstandar,
+      DEFAULT_PESV_PRICING_CONFIG.tarifaPorPasoPesv
+    );
+
+    const formatCurrency = (value: number) => 
+      new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(value);
+
+    return res.json({
+      empresa: {
+        trabajadores,
+        claseRiesgo,
+        descripcionRiesgo: getDescripcionClaseRiesgo(claseRiesgo),
+        vehiculos,
+      },
+      desgloseSst: {
+        tarifaPorTrabajador,
+        costoTrabajadores: result.costoTrabajadores,
+        estandaresAplicables,
+        tarifaPorEstandar: DEFAULT_PRICING_V2_CONFIG.tarifaPorEstandar,
+        costoEstandares: result.costoEstandaresSst,
+        subtotalSst: result.subtotalSst,
+      },
+      desglosePesv: result.tienePesv ? {
+        nivelPesv: result.nivelPesv,
+        descripcion: getNivelPesvLabel(result.nivelPesv!),
+        pasosAplicables: result.pasosAplicablesPesv,
+        tarifaPorPaso: DEFAULT_PESV_PRICING_CONFIG.tarifaPorPasoPesv,
+        costoPesv: result.costoPasosPesv,
+        desglosePorFase: getDesglosePorFase(result.nivelPesv!),
+      } : null,
+      totales: {
+        costoMensualTotal: result.costoMensualTotal,
+        costoAnualTotal: result.costoAnualTotal,
+        currency: result.currency,
+      },
+      formula: vehiculos > 0 
+        ? "(Trabajadores × Tarifa Riesgo) + (Estándares SST × $8,000) + (Pasos PESV × $8,000)"
+        : "(Trabajadores × Tarifa Riesgo) + (Estándares SST × $8,000)",
+      mensaje: `Su inversión mensual total es de ${formatCurrency(result.costoMensualTotal)}${result.tienePesv ? ' (incluye SST + PESV)' : ' (solo SST)'}`,
+      incluido: [
+        "Portal del Trabajador INCLUIDO",
+        "Portal del Licenciado SST INCLUIDO",
+        "Soporte técnico ilimitado",
+        "Actualizaciones automáticas",
+        "Cumplimiento Resolución 0312/2019 (SST)",
+        "Cumplimiento ISO 45001:2018 (SST)",
+        ...(result.tienePesv ? [
+          "Cumplimiento Resolución 40595/2022 (PESV)",
+          "Cumplimiento ISO 39001:2012 (PESV)",
+          "Cumplimiento ISO 31000:2018 (Riesgos)",
+        ] : []),
+      ],
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/simulador-completo/:companyId", async (req: Request, res: Response) => {
+  try {
+    const { companyId } = req.params;
+    const vehiculosParam = req.query.vehiculos;
+
+    const [company] = await db
+      .select()
+      .from(companies)
+      .where(eq(companies.id, companyId))
+      .limit(1);
+
+    if (!company) {
+      return res.status(404).json({ error: "Empresa no encontrada" });
+    }
+
+    const claseRiesgo = (company.riskLevel || "I") as RiskLevel;
+    const trabajadores = company.numberOfWorkers || 1;
+    const estandaresAplicables = getEstandaresAplicablesPorClase(claseRiesgo, trabajadores);
+    const vehiculos = vehiculosParam ? parseInt(vehiculosParam as string, 10) : 0;
+
+    const tarifaPorTrabajador = getTarifaPorRiesgo(claseRiesgo, DEFAULT_PRICING_V2_CONFIG);
+
+    const result = calculateCombinedPricing(
+      { trabajadores, claseRiesgo, estandaresAplicables, vehiculos },
+      tarifaPorTrabajador,
+      DEFAULT_PRICING_V2_CONFIG.tarifaPorEstandar,
+      DEFAULT_PESV_PRICING_CONFIG.tarifaPorPasoPesv
+    );
+
+    const formatCurrency = (value: number) => 
+      new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(value);
+
+    return res.json({
+      empresa: {
+        id: company.id,
+        nombre: company.name,
+        trabajadores,
+        claseRiesgo,
+        descripcionRiesgo: getDescripcionClaseRiesgo(claseRiesgo),
+        vehiculos,
+      },
+      pricing: {
+        sst: {
+          costoTrabajadores: result.costoTrabajadores,
+          costoEstandares: result.costoEstandaresSst,
+          subtotal: result.subtotalSst,
+        },
+        pesv: result.tienePesv ? {
+          nivelPesv: result.nivelPesv,
+          pasosAplicables: result.pasosAplicablesPesv,
+          costo: result.costoPasosPesv,
+        } : null,
+        total: {
+          mensual: result.costoMensualTotal,
+          anual: result.costoAnualTotal,
+        },
+      },
+      mensaje: `${company.name} - Inversión mensual: ${formatCurrency(result.costoMensualTotal)}`,
+    });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
