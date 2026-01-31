@@ -1287,13 +1287,16 @@ export const designationStatusEnum = pgEnum("designation_status", ["activo", "in
 export const responsibleDesignations = pgTable("responsible_designations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   companyId: varchar("company_id").notNull().references(() => companies.id),
-  workerId: varchar("worker_id").notNull().references(() => workers.id),
+  workerId: varchar("worker_id").references(() => workers.id), // Nullable: puede ser null cuando se usa LSO externo
   jobProfileId: varchar("job_profile_id").references(() => jobProfiles.id), // Vinculación con perfil de cargo (opcional)
   designationDate: date("designation_date").notNull(),
   position: text("position").notNull(), // Cargo específico (ej: Responsable del SG-SST, Coordinador SST)
   responsibilities: text("responsibilities").array().notNull(), // Array de responsabilidades seleccionables
   signatureUrl: text("signature_url"), // Documento de firma escaneado
   status: designationStatusEnum("status").notNull().default("activo"),
+  // Soporte para LSO externo (profesional no trabajador de la empresa)
+  isExternalLso: boolean("is_external_lso").default(false), // Indica si el responsable es un LSO externo
+  externalLsoName: text("external_lso_name"), // Nombre del LSO externo cuando no hay workerId
   // Campos adicionales para cumplimiento Resolución 0312/2019 - Estándar 1.1.1
   licenciaSstTitular: text("licencia_sst_titular"), // Nombre del titular de la licencia SST
   licenciaSstNumero: text("licencia_sst_numero"), // Número de licencia SST
