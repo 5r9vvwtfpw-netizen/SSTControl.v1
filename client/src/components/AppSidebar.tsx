@@ -26,6 +26,7 @@ import {
   UsersRound,
   Globe,
   Target,
+  Gift,
 } from "lucide-react";
 import {
   Sidebar,
@@ -51,10 +52,12 @@ const menuItems: Array<{
   icon: any;
   requiredPermissions?: Permission[];
   pesvOnly?: boolean;
+  superadminOnly?: boolean;
 }> = [
   { title: "Inicio", url: "/", icon: Home, requiredPermissions: ["dashboard:view"] },
   { title: "Mi Cuenta", url: "/mi-cuenta", icon: UserCircle },
   { title: "Empresas", url: "/empresas", icon: Building2, requiredPermissions: ["companies:view"] },
+  { title: "Promociones", url: "/admin-promociones", icon: Gift, superadminOnly: true },
   { title: "Usuarios", url: "/usuarios", icon: Users, requiredPermissions: ["users:view"] },
   { title: "Perfiles de Cargo", url: "/perfiles-cargo", icon: Briefcase, requiredPermissions: ["job_profiles:view"] },
   { title: "Exámenes Médicos", url: "/examenes-medicos", icon: Stethoscope, requiredPermissions: ["medical_exams:view"] },
@@ -100,6 +103,9 @@ export function AppSidebar() {
     : false;
 
   const visibleMenuItems = menuItems.filter(item => {
+    // Filter superadmin-only items
+    if (item.superadminOnly && user?.role !== "superadmin") return false;
+    
     // Filter by permissions
     if (item.requiredPermissions && user) {
       const hasPermission = hasAnyPermission(user.role, item.requiredPermissions);
