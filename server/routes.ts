@@ -1806,8 +1806,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (req.user as any).companyId = company.id;
       }
       
-      // Create trial subscription (14 days) - CRITICAL: Must succeed
-      const TRIAL_DAYS = 14;
+      // Create trial subscription (7 days) - CRITICAL: Must succeed
+      const TRIAL_DAYS = 7;
       
       // Map legacy plan names to current database plan names
       const planMapping: Record<string, string> = {
@@ -1899,7 +1899,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         company,
         user: userWithoutPassword,
-        message: "Empresa creada exitosamente. Tu período de prueba de 14 días ha comenzado."
+        message: "Empresa creada exitosamente. Tu período de prueba de 7 días ha comenzado."
       });
     } catch (error: any) {
       console.error("Error creating company (onboarding):", error);
