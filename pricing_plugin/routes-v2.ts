@@ -580,7 +580,7 @@ router.post("/calculate-combined-v2", async (req: Request, res: Response) => {
 router.post("/create-checkout-v2", async (req: Request, res: Response) => {
   try {
     const schema = z.object({
-      companyId: z.string().uuid(),
+      companyId: z.string().min(1),
       trabajadores: z.number().int().min(1),
       claseRiesgo: RiskLevelSchema,
       vehiculos: z.number().int().min(0).default(0),
