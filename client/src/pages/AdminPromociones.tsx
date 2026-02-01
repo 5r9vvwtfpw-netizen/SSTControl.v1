@@ -168,11 +168,7 @@ export default function AdminPromociones() {
   // Mutations
   const createCouponMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("/api/plugins/promotions/coupons", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" },
-      });
+      return await apiRequest("POST", "/api/plugins/promotions/coupons", data);
     },
     onSuccess: () => {
       toast({ title: "Cupón creado exitosamente" });
@@ -199,9 +195,7 @@ export default function AdminPromociones() {
 
   const deleteCouponMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/plugins/promotions/coupons/${id}`, {
-        method: "DELETE",
-      });
+      return await apiRequest("DELETE", `/api/plugins/promotions/coupons/${id}`);
     },
     onSuccess: () => {
       toast({ title: "Cupón eliminado" });
@@ -215,11 +209,7 @@ export default function AdminPromociones() {
 
   const toggleCouponMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
-      return await apiRequest(`/api/plugins/promotions/coupons/${id}/toggle`, {
-        method: "PATCH",
-        body: JSON.stringify({ isActive }),
-        headers: { "Content-Type": "application/json" },
-      });
+      return await apiRequest("PATCH", `/api/plugins/promotions/coupons/${id}/toggle`, { isActive });
     },
     onSuccess: () => {
       toast({ title: "Estado del cupón actualizado" });

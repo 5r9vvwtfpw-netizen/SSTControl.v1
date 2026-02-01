@@ -37,6 +37,9 @@ import { initializeMasterKey } from "./lib/crypto";
 import fs from "fs";
 import path from "path";
 
+// Plugin imports (Arquitectura Sidecar - Solo añadir, no modificar código existente)
+import { promotionsRouter } from "../plugins/promotions";
+
 const app = express();
 
 // CRITICAL: Register Stripe webhook route BEFORE express.json()
@@ -601,6 +604,14 @@ app.use(requireValidLicense);
   }
   
   const server = await registerRoutes(app);
+
+  // Mount plugin routes (Arquitectura Sidecar - Independiente del sistema principal)
+  try {
+    app.use("/api/plugins/promotions", promotionsRouter);
+    logger.info("✅ Plugin de Promociones montado en /api/plugins/promotions");
+  } catch (error) {
+    logger.warn({ err: error }, "⚠️ Plugin de Promociones no disponible (no crítico)");
+  }
 
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

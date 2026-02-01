@@ -122,6 +122,7 @@ import CrearEmpresaCiiuFirst from "@/pages/CrearEmpresaCiiuFirst";
 import TicketsSoporte from "@/pages/TicketsSoporte";
 import AdminTicketsSoporte from "@/pages/AdminTicketsSoporte";
 import AdminUsuariosSoporte from "@/pages/AdminUsuariosSoporte";
+import AdminPromociones from "@/pages/AdminPromociones";
 import RecuperarContrasena from "@/pages/RecuperarContrasena";
 import RestablecerContrasena from "@/pages/RestablecerContrasena";
 import LoginEmpresa from "@/pages/LoginEmpresa";
@@ -261,6 +262,7 @@ function Router() {
       <ProtectedRoute path="/tickets-soporte" component={TicketsSoporte} />
       <ProtectedRoute path="/admin-tickets" component={AdminTicketsSoporte} />
       <ProtectedRoute path="/admin-usuarios-soporte" component={AdminUsuariosSoporte} />
+      <ProtectedRoute path="/admin-promociones" component={AdminPromociones} />
       <ProtectedRoute path="/mensajes-internos" component={MensajesInternos} />
       <ProtectedRoute path="/accesos-soporte" component={AccesosSoporte} />
       <ProtectedRoute path="/planes-suscripcion" component={PlanesSuscripcion} />
