@@ -33,6 +33,10 @@ export const pricingPluginSubscriptions = pgTable("pricing_plugin_subscriptions"
   vehiculos: integer("vehiculos").default(0),
   nivelPesv: text("nivel_pesv"),
   costoPesvMensual: decimal("costo_pesv_mensual", { precision: 10, scale: 2 }).default("0"),
+  trialEndsAt: timestamp("trial_ends_at"),
+  subscriptionStatus: text("subscription_status").notNull().default("trial"),
+  blockedAt: timestamp("blocked_at"),
+  blockedReason: text("blocked_reason"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });

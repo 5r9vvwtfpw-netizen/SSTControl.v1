@@ -375,15 +375,26 @@ export function setupAuth(app: Express) {
     
     // Check company profile completeness
     let profileComplete = false;
+    let subscriptionStatus = null;
+    
     if (user.companyId) {
       const company = await storage.getCompany(user.companyId);
       profileComplete = !!(company?.name && company?.nit && company?.city && company?.address);
+      
+      // Get subscription status
+      try {
+        const { getSubscriptionStatus } = await import("./middleware/subscription-check");
+        subscriptionStatus = await getSubscriptionStatus(user.companyId);
+      } catch (error) {
+        logger.error({ error }, "Error getting subscription status");
+      }
     }
     
     res.json({
       ...userWithoutPassword,
       emailVerified,
       profileComplete,
+      subscriptionStatus,
     });
   });
 

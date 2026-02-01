@@ -22,6 +22,7 @@ import { runMigrations } from "./run-migrations";
 import { seedAdminUser } from "./seed-admin";
 import { seedSubscriptionPlans } from "./seed-subscription-plans";
 import logger from "./lib/logger";
+import { db } from "./db";
 import { requestLoggerMiddleware } from "./lib/request-logger-middleware";
 import { startTrialConversionJob } from "./jobs/trial-conversion";
 import { startMonthlyBillingJob } from "./jobs/monthly-billing";
@@ -249,10 +250,94 @@ app.post(
           break;
         case 'customer.subscription.created':
         case 'customer.subscription.updated':
-          logger.info({ subscriptionId: event.data.object.id }, 'Subscription updated');
+          const stripeSubscription = event.data.object;
+          logger.info({ 
+            subscriptionId: stripeSubscription.id,
+            status: stripeSubscription.status,
+            trialEnd: stripeSubscription.trial_end 
+          }, 'Subscription updated');
+          
+          // Update pricing_plugin_subscriptions with trial info
+          try {
+            const { pricingPluginSubscriptions } = await import('../pricing_plugin/schema');
+            const { eq } = await import('drizzle-orm');
+            
+            // Find subscription by Stripe subscription ID
+            const [existingPricingSub] = await db
+              .select()
+              .from(pricingPluginSubscriptions)
+              .where(eq(pricingPluginSubscriptions.stripeSubscriptionId, stripeSubscription.id))
+              .limit(1);
+            
+            if (existingPricingSub) {
+              const now = new Date();
+              let subscriptionStatus = 'active';
+              let trialEndsAt = null;
+              let blockedAt = null;
+              let blockedReason = null;
+              
+              // Map Stripe status to our status
+              if (stripeSubscription.status === 'trialing') {
+                subscriptionStatus = 'trial';
+                if (stripeSubscription.trial_end) {
+                  trialEndsAt = new Date(stripeSubscription.trial_end * 1000);
+                }
+              } else if (stripeSubscription.status === 'active') {
+                subscriptionStatus = 'active';
+              } else if (stripeSubscription.status === 'past_due') {
+                subscriptionStatus = 'past_due';
+                blockedAt = now;
+                blockedReason = 'Pago pendiente - Por favor actualice su método de pago';
+              } else if (stripeSubscription.status === 'canceled' || stripeSubscription.status === 'unpaid') {
+                subscriptionStatus = 'blocked';
+                blockedAt = now;
+                blockedReason = 'Suscripción cancelada por falta de pago';
+              }
+              
+              await db
+                .update(pricingPluginSubscriptions)
+                .set({
+                  subscriptionStatus,
+                  trialEndsAt,
+                  blockedAt,
+                  blockedReason,
+                  updatedAt: now,
+                })
+                .where(eq(pricingPluginSubscriptions.id, existingPricingSub.id));
+              
+              logger.info({ 
+                subscriptionId: existingPricingSub.id,
+                subscriptionStatus,
+                trialEndsAt
+              }, 'Pricing subscription status updated');
+            }
+          } catch (subError) {
+            logger.error({ err: subError }, 'Error updating pricing subscription status');
+          }
           break;
         case 'customer.subscription.deleted':
-          logger.info({ subscriptionId: event.data.object.id }, 'Subscription cancelled');
+          const deletedSub = event.data.object;
+          logger.info({ subscriptionId: deletedSub.id }, 'Subscription cancelled');
+          
+          // Block subscription access
+          try {
+            const { pricingPluginSubscriptions: pricingSubs } = await import('../pricing_plugin/schema');
+            const { eq: eqOp } = await import('drizzle-orm');
+            
+            await db
+              .update(pricingSubs)
+              .set({
+                subscriptionStatus: 'cancelled',
+                blockedAt: new Date(),
+                blockedReason: 'Suscripción cancelada',
+                updatedAt: new Date(),
+              })
+              .where(eqOp(pricingSubs.stripeSubscriptionId, deletedSub.id));
+            
+            logger.info({ subscriptionId: deletedSub.id }, 'Subscription blocked after cancellation');
+          } catch (cancelError) {
+            logger.error({ err: cancelError }, 'Error blocking cancelled subscription');
+          }
           break;
         case 'invoice.paid':
           logger.info({ invoiceId: event.data.object.id }, 'Invoice paid');

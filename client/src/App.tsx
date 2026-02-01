@@ -148,6 +148,8 @@ import AnalisisContexto from "@/pages/AnalisisContexto";
 import PlanMejoramientoContexto from "@/pages/PlanMejoramientoContexto";
 import { ChapterGate } from "@/components/ChapterGate";
 import { TrialAlert } from "@/components/TrialAlert";
+import { SubscriptionBlockedModal } from "@/components/SubscriptionBlockedModal";
+import { useSubscriptionCheck } from "@/hooks/useSubscriptionCheck";
 
 // Componente que decide si mostrar Welcome o Dashboard según autenticación
 function HomeGateway() {
@@ -365,14 +367,38 @@ function SupportRouter() {
   );
 }
 
+function SubscriptionGate({ children }: { children: React.ReactNode }) {
+  const { shouldBlock, subscriptionStatus, isLoading } = useSubscriptionCheck();
+  const [, navigate] = useLocation();
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (shouldBlock && subscriptionStatus) {
+    return (
+      <>
+        {children}
+        <SubscriptionBlockedModal
+          subscriptionStatus={subscriptionStatus.subscriptionStatus}
+          blockedReason={subscriptionStatus.blockedReason || "Su acceso está bloqueado"}
+          trialEndsAt={subscriptionStatus.trialEndsAt}
+          onActivateSubscription={() => navigate("/mi-suscripcion")}
+          onContactSupport={() => window.open("mailto:soporte@sst-colombia.com", "_blank")}
+        />
+      </>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 function AuthenticatedLayout() {
   const { user, isLoading } = useAuth();
   const [location] = useLocation();
   
   useWebSocketNotifications();
 
-  // Mostrar indicador de carga mientras se resuelve la autenticación
-  // Esto evita la página en blanco después del login
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -388,7 +414,6 @@ function AuthenticatedLayout() {
     return <Router />;
   }
 
-  // Support staff get dedicated support layout
   if (user.role === "soporte") {
     return (
       <SoporteLayout>
@@ -397,7 +422,6 @@ function AuthenticatedLayout() {
     );
   }
 
-  // Superadmin accessing support panel
   if (user.role === "superadmin" && location.startsWith("/soporte")) {
     return (
       <SoporteLayout>
@@ -406,13 +430,19 @@ function AuthenticatedLayout() {
     );
   }
 
-  // Workers get simplified layout without PHVA navigation
   if (user.role === "trabajador") {
-    return <WorkerLayout />;
+    return (
+      <SubscriptionGate>
+        <WorkerLayout />
+      </SubscriptionGate>
+    );
   }
 
-  // All other roles get full admin layout
-  return <AdminLayout />;
+  return (
+    <SubscriptionGate>
+      <AdminLayout />
+    </SubscriptionGate>
+  );
 }
 
 export default function App() {
