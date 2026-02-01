@@ -29,7 +29,7 @@ const EXCLUDED_PATHS = [
   "/checkout",
   "/pricing",
   "/landing",
-  "/",
+  "/mi-suscripcion",
 ];
 
 export function useSubscriptionCheck() {
