@@ -649,8 +649,11 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
     // Crear line items para Stripe
     const lineItems: any[] = [];
 
-    // NOTA: COP es moneda zero-decimal en Stripe - NO multiplicar por 100
+    // CRÍTICO: COP NO es moneda zero-decimal en Stripe - DEBE multiplicar por 100
+    // Monedas zero-decimal: JPY, KRW, VND (NO COP, USD, EUR)
     // https://stripe.com/docs/currencies#zero-decimal
+    // Ejemplo: $10,000 COP → unit_amount: 1,000,000
+    const COP_MULTIPLIER = 100;
     
     // Item 1: SST - Trabajadores
     if (result.costoTrabajadores > 0) {
@@ -661,7 +664,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
             name: 'SST - Licencia por Trabajadores',
             description: `${trabajadores} trabajadores × $${tarifaPorTrabajador.toLocaleString('es-CO')}/mes (Clase ${claseRiesgo})`,
           },
-          unit_amount: Math.round(result.costoTrabajadores), // COP = zero-decimal
+          unit_amount: Math.round(result.costoTrabajadores * COP_MULTIPLIER),
           recurring: { interval: 'month' },
         },
         quantity: 1,
@@ -677,7 +680,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
             name: 'SST - Estándares Aplicables',
             description: `${estandaresAplicables} estándares × $8,000/mes (Resolución 0312/2019)`,
           },
-          unit_amount: Math.round(result.costoEstandaresSst), // COP = zero-decimal
+          unit_amount: Math.round(result.costoEstandaresSst * COP_MULTIPLIER),
           recurring: { interval: 'month' },
         },
         quantity: 1,
@@ -694,7 +697,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
             name: 'PESV - Plan Estratégico de Seguridad Vial',
             description: `${result.pasosAplicablesPesv} pasos × $8,000/mes (${nivelLabel})`,
           },
-          unit_amount: Math.round(result.costoPasosPesv), // COP = zero-decimal
+          unit_amount: Math.round(result.costoPasosPesv * COP_MULTIPLIER),
           recurring: { interval: 'month' },
         },
         quantity: 1,
@@ -710,7 +713,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
             name: 'Usuarios Adicionales',
             description: `${usuariosAdicionales} usuarios × $10,000/mes`,
           },
-          unit_amount: Math.round(costoUsuariosAdicionales), // COP = zero-decimal
+          unit_amount: Math.round(costoUsuariosAdicionales * COP_MULTIPLIER),
           recurring: { interval: 'month' },
         },
         quantity: 1,

@@ -150,15 +150,34 @@ export function calculatePricingV2(
   };
 }
 
+/**
+ * Determina el número de estándares SST aplicables según Resolución 0312/2019
+ * 
+ * CLASIFICACIÓN POR TIPO DE EMPRESA:
+ * - Tipo 1: Microempresas (1-10 trabajadores) con Riesgo I, II o III → 7 estándares
+ * - Tipo 2: Pequeñas empresas (11-50 trabajadores) O Microempresas Riesgo IV-V → 21 estándares
+ * - Tipo 3: Medianas y grandes empresas (51+ trabajadores) → 60-61 estándares
+ * 
+ * NOTA: Las microempresas de Riesgo IV o V deben cumplir los mismos estándares
+ * que las pequeñas empresas debido al mayor nivel de peligrosidad.
+ */
 export function getEstandaresAplicablesPorClase(
   claseRiesgo: RiskLevel,
   trabajadores: number
 ): number {
   if (trabajadores <= 10) {
+    // Microempresa: depende del nivel de riesgo
+    if (claseRiesgo === "IV" || claseRiesgo === "V") {
+      // Riesgo Alto o Máximo → Tipo 2 (21 estándares)
+      return 21;
+    }
+    // Riesgo I, II, III → Tipo 1 (7 estándares)
     return 7;
   } else if (trabajadores <= 50) {
+    // Pequeña empresa → Tipo 2 (21 estándares)
     return 21;
   } else {
+    // Mediana/Grande empresa → Tipo 3 (61 estándares)
     return 61;
   }
 }
