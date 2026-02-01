@@ -39,6 +39,7 @@ import path from "path";
 
 // Plugin imports (Arquitectura Sidecar - Solo añadir, no modificar código existente)
 import { promotionsRouter } from "../plugins/promotions";
+import { handlePromotionsWebhook } from "../plugins/promotions/webhook-handler";
 
 const app = express();
 
@@ -453,6 +454,14 @@ app.post(
       res.status(400).json({ error: 'Webhook processing error' });
     }
   }
+);
+
+// Plugin Promotions Webhook - Also needs raw body for signature verification
+// CRITICAL: Must be BEFORE express.json()
+app.post(
+  '/api/plugins/promotions/webhook',
+  express.raw({ type: 'application/json' }),
+  handlePromotionsWebhook
 );
 
 // Now apply JSON middleware for all other routes

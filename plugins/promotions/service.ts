@@ -453,6 +453,72 @@ export async function handleInvoicePaid(
   }
 }
 
+// ==================== MES 2 GRATIS (Referral Benefit) ====================
+
+/**
+ * Aplica el beneficio de "Mes 2 gratis" al referido usando Stripe Subscription Schedule
+ * 
+ * Flujo:
+ * 1. Mes 1: El cliente paga precio normal
+ * 2. Mes 2: Descuento 100% (gratis)
+ * 3. Mes 3+: Precio normal
+ */
+export async function applySecondMonthFree(subscriptionId: string): Promise<void> {
+  if (!stripe) {
+    console.error("[PromotionsPlugin] Stripe not configured - cannot apply second month free");
+    return;
+  }
+  
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const currentItem = subscription.items.data[0];
+    
+    if (!currentItem) {
+      console.error("[PromotionsPlugin] No subscription item found");
+      return;
+    }
+    
+    // Check if second month free was already applied
+    if (subscription.metadata?.secondMonthFreeApplied === "true") {
+      console.log(`[PromotionsPlugin] Second month free already applied to subscription ${subscriptionId}`);
+      return;
+    }
+    
+    // Create a 100% discount coupon for 1 month
+    const coupon = await stripe.coupons.create({
+      percent_off: 100,
+      duration: "once",
+      name: "Mes 2 Gratis - Programa Aliados",
+      metadata: {
+        program: "aliados_2026",
+        benefit: "second_month_free",
+        subscriptionId,
+      },
+    });
+    
+    // Get existing discounts and merge with new coupon
+    const existingDiscounts = subscription.discount 
+      ? [{ coupon: subscription.discount.coupon?.id }].filter(d => d.coupon)
+      : [];
+    
+    // Apply the coupon to the subscription for the next billing cycle
+    // Merge with existing discounts to avoid clobbering
+    await stripe.subscriptions.update(subscriptionId, {
+      discounts: [...existingDiscounts, { coupon: coupon.id }],
+      proration_behavior: "none",
+      metadata: {
+        ...subscription.metadata,
+        secondMonthFreeApplied: "true",
+        secondMonthFreeCouponId: coupon.id,
+      },
+    });
+    
+    console.log(`[PromotionsPlugin] Applied second month free coupon ${coupon.id} to subscription ${subscriptionId}`);
+  } catch (error: any) {
+    console.error("[PromotionsPlugin] Error applying second month free:", error.message);
+  }
+}
+
 // ==================== STATISTICS ====================
 
 export async function getPromotionStats(): Promise<{
