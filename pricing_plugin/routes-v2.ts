@@ -12,6 +12,9 @@ import { db } from "../server/db";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { companies } from "../shared/schema";
+import { getUncachableStripeClient, getStripePublishableKey } from "../server/stripeClient";
+import { pricingPluginSubscriptions } from "./schema";
+import logger from "../server/lib/logger";
 import {
   calculatePricingV2,
   DEFAULT_PRICING_V2_CONFIG,
@@ -448,6 +451,328 @@ router.get("/simulador-completo/:companyId", async (req: Request, res: Response)
       mensaje: `${company.name} - Inversión mensual: ${formatCurrency(result.costoMensualTotal)}`,
     });
   } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * ============================================================
+ * ENDPOINT V2 COMBINADO - SST + PESV + USUARIOS ADICIONALES
+ * Integración completa con Stripe
+ * PRINCIPIO DE CÓDIGO SEGURO: Solo agregar código nuevo
+ * ============================================================
+ */
+
+const TARIFA_USUARIO_ADICIONAL = 10000; // $10,000 COP/mes por usuario adicional
+
+router.post("/calculate-combined-v2", async (req: Request, res: Response) => {
+  try {
+    const schema = z.object({
+      trabajadores: z.number().int().min(1, "Debe tener al menos 1 trabajador"),
+      claseRiesgo: RiskLevelSchema,
+      estandaresAplicables: z.number().int().min(1).optional(),
+      vehiculos: z.number().int().min(0).default(0),
+      usuariosAdicionales: z.number().int().min(0).default(0),
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ 
+        error: "Datos inválidos", 
+        details: parsed.error.errors 
+      });
+    }
+
+    const { trabajadores, claseRiesgo, vehiculos, usuariosAdicionales } = parsed.data;
+    const estandaresAplicables = parsed.data.estandaresAplicables 
+      || getEstandaresAplicablesPorClase(claseRiesgo, trabajadores);
+
+    const tarifaPorTrabajador = getTarifaPorRiesgo(claseRiesgo, DEFAULT_PRICING_V2_CONFIG);
+
+    const result = calculateCombinedPricing(
+      { trabajadores, claseRiesgo, estandaresAplicables, vehiculos },
+      tarifaPorTrabajador,
+      DEFAULT_PRICING_V2_CONFIG.tarifaPorEstandar,
+      DEFAULT_PESV_PRICING_CONFIG.tarifaPorPasoPesv
+    );
+
+    // Calcular costo de usuarios adicionales
+    const costoUsuariosAdicionales = usuariosAdicionales * TARIFA_USUARIO_ADICIONAL;
+    const costoMensualFinal = result.costoMensualTotal + costoUsuariosAdicionales;
+    const costoAnualFinal = costoMensualFinal * 12;
+
+    const formatCurrency = (value: number) => 
+      new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(value);
+
+    // Construir fórmula
+    let formula = "(Trabajadores × Tarifa Riesgo) + (Estándares SST × $8,000)";
+    if (vehiculos > 0) {
+      formula += " + (Pasos PESV × $8,000)";
+    }
+    if (usuariosAdicionales > 0) {
+      formula += " + (Usuarios × $10,000)";
+    }
+
+    return res.json({
+      empresa: {
+        trabajadores,
+        claseRiesgo,
+        descripcionRiesgo: getDescripcionClaseRiesgo(claseRiesgo),
+        vehiculos,
+      },
+      desgloseSst: {
+        tarifaPorTrabajador,
+        costoTrabajadores: result.costoTrabajadores,
+        estandaresAplicables,
+        tarifaPorEstandar: DEFAULT_PRICING_V2_CONFIG.tarifaPorEstandar,
+        costoEstandares: result.costoEstandaresSst,
+        subtotalSst: result.subtotalSst,
+      },
+      desglosePesv: result.tienePesv ? {
+        nivelPesv: result.nivelPesv,
+        descripcion: getNivelPesvLabel(result.nivelPesv!),
+        pasosAplicables: result.pasosAplicablesPesv,
+        tarifaPorPaso: DEFAULT_PESV_PRICING_CONFIG.tarifaPorPasoPesv,
+        costoPesv: result.costoPasosPesv,
+        desglosePorFase: getDesglosePorFase(result.nivelPesv!),
+      } : null,
+      usuariosAdicionales: usuariosAdicionales > 0 ? {
+        cantidad: usuariosAdicionales,
+        tarifaPorUsuario: TARIFA_USUARIO_ADICIONAL,
+        costoUsuarios: costoUsuariosAdicionales,
+      } : null,
+      totales: {
+        costoMensualTotal: costoMensualFinal,
+        costoAnualTotal: costoAnualFinal,
+        currency: "COP",
+      },
+      formula,
+      mensaje: `Su inversión mensual total es de ${formatCurrency(costoMensualFinal)}`,
+      incluido: [
+        "Portal del Trabajador INCLUIDO",
+        "Portal del Licenciado SST INCLUIDO",
+        "Soporte técnico ilimitado",
+        "Actualizaciones automáticas",
+        "Cumplimiento Resolución 0312/2019 (SST)",
+        "Cumplimiento ISO 45001:2018 (SST)",
+        ...(result.tienePesv ? [
+          "Cumplimiento Resolución 40595/2022 (PESV)",
+          "Cumplimiento ISO 39001:2012 (PESV)",
+          "Cumplimiento ISO 31000:2018 (Riesgos)",
+        ] : []),
+      ],
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * ============================================================
+ * CHECKOUT DINÁMICO V2 - STRIPE
+ * Crea sesión de checkout con precio calculado dinámicamente
+ * SST + PESV + Usuarios Adicionales
+ * PRINCIPIO DE CÓDIGO SEGURO: Solo agregar código nuevo
+ * ============================================================
+ */
+
+router.post("/create-checkout-v2", async (req: Request, res: Response) => {
+  try {
+    const schema = z.object({
+      companyId: z.string().uuid(),
+      trabajadores: z.number().int().min(1),
+      claseRiesgo: RiskLevelSchema,
+      vehiculos: z.number().int().min(0).default(0),
+      usuariosAdicionales: z.number().int().min(0).default(0),
+      customerEmail: z.string().email(),
+      customerName: z.string().min(2),
+      successUrl: z.string().url(),
+      cancelUrl: z.string().url(),
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ 
+        error: "Datos inválidos", 
+        details: parsed.error.errors 
+      });
+    }
+
+    const { 
+      companyId, trabajadores, claseRiesgo, vehiculos, 
+      usuariosAdicionales, customerEmail, customerName, 
+      successUrl, cancelUrl 
+    } = parsed.data;
+
+    // Calcular precios
+    const estandaresAplicables = getEstandaresAplicablesPorClase(claseRiesgo, trabajadores);
+    const tarifaPorTrabajador = getTarifaPorRiesgo(claseRiesgo, DEFAULT_PRICING_V2_CONFIG);
+    
+    const result = calculateCombinedPricing(
+      { trabajadores, claseRiesgo, estandaresAplicables, vehiculos },
+      tarifaPorTrabajador,
+      DEFAULT_PRICING_V2_CONFIG.tarifaPorEstandar,
+      DEFAULT_PESV_PRICING_CONFIG.tarifaPorPasoPesv
+    );
+
+    const costoUsuariosAdicionales = usuariosAdicionales * TARIFA_USUARIO_ADICIONAL;
+    const costoMensualTotal = result.costoMensualTotal + costoUsuariosAdicionales;
+
+    // Inicializar Stripe
+    const stripe = await getUncachableStripeClient();
+
+    // Buscar o crear cliente de Stripe
+    let stripeCustomerId: string | undefined;
+    const [existingSubscription] = await db
+      .select()
+      .from(pricingPluginSubscriptions)
+      .where(eq(pricingPluginSubscriptions.customerId, companyId))
+      .limit(1);
+
+    if (existingSubscription?.stripeCustomerId) {
+      stripeCustomerId = existingSubscription.stripeCustomerId;
+    } else {
+      const customer = await stripe.customers.create({
+        email: customerEmail,
+        name: customerName,
+        metadata: {
+          company_id: companyId,
+          trabajadores: trabajadores.toString(),
+          clase_riesgo: claseRiesgo,
+          vehiculos: vehiculos.toString(),
+          usuarios_adicionales: usuariosAdicionales.toString(),
+        },
+      });
+      stripeCustomerId = customer.id;
+    }
+
+    // Crear line items para Stripe
+    const lineItems: any[] = [];
+
+    // NOTA: COP es moneda zero-decimal en Stripe - NO multiplicar por 100
+    // https://stripe.com/docs/currencies#zero-decimal
+    
+    // Item 1: SST - Trabajadores
+    if (result.costoTrabajadores > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'cop',
+          product_data: {
+            name: 'SST - Licencia por Trabajadores',
+            description: `${trabajadores} trabajadores × $${tarifaPorTrabajador.toLocaleString('es-CO')}/mes (Clase ${claseRiesgo})`,
+          },
+          unit_amount: Math.round(result.costoTrabajadores), // COP = zero-decimal
+          recurring: { interval: 'month' },
+        },
+        quantity: 1,
+      });
+    }
+
+    // Item 2: SST - Estándares
+    if (result.costoEstandaresSst > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'cop',
+          product_data: {
+            name: 'SST - Estándares Aplicables',
+            description: `${estandaresAplicables} estándares × $8,000/mes (Resolución 0312/2019)`,
+          },
+          unit_amount: Math.round(result.costoEstandaresSst), // COP = zero-decimal
+          recurring: { interval: 'month' },
+        },
+        quantity: 1,
+      });
+    }
+
+    // Item 3: PESV - Pasos (si aplica)
+    if (result.tienePesv && result.costoPasosPesv > 0) {
+      const nivelLabel = getNivelPesvLabel(result.nivelPesv!);
+      lineItems.push({
+        price_data: {
+          currency: 'cop',
+          product_data: {
+            name: 'PESV - Plan Estratégico de Seguridad Vial',
+            description: `${result.pasosAplicablesPesv} pasos × $8,000/mes (${nivelLabel})`,
+          },
+          unit_amount: Math.round(result.costoPasosPesv), // COP = zero-decimal
+          recurring: { interval: 'month' },
+        },
+        quantity: 1,
+      });
+    }
+
+    // Item 4: Usuarios adicionales (si aplica)
+    if (usuariosAdicionales > 0 && costoUsuariosAdicionales > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'cop',
+          product_data: {
+            name: 'Usuarios Adicionales',
+            description: `${usuariosAdicionales} usuarios × $10,000/mes`,
+          },
+          unit_amount: Math.round(costoUsuariosAdicionales), // COP = zero-decimal
+          recurring: { interval: 'month' },
+        },
+        quantity: 1,
+      });
+    }
+
+    // Crear sesión de checkout
+    const session = await stripe.checkout.sessions.create({
+      customer: stripeCustomerId,
+      payment_method_types: ['card'],
+      line_items: lineItems,
+      mode: 'subscription',
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      allow_promotion_codes: true,
+      metadata: {
+        pricing_v2: 'true',
+        company_id: companyId,
+        trabajadores: trabajadores.toString(),
+        clase_riesgo: claseRiesgo,
+        estandares_aplicables: estandaresAplicables.toString(),
+        vehiculos: vehiculos.toString(),
+        nivel_pesv: result.nivelPesv || '',
+        pasos_pesv: (result.pasosAplicablesPesv || 0).toString(),
+        usuarios_adicionales: usuariosAdicionales.toString(),
+        costo_mensual_total: costoMensualTotal.toString(),
+      },
+    });
+
+    logger.info({
+      companyId,
+      trabajadores,
+      claseRiesgo,
+      estandaresAplicables,
+      vehiculos,
+      usuariosAdicionales,
+      costoMensualTotal,
+      sessionId: session.id,
+    }, 'Stripe checkout V2 session created');
+
+    return res.json({
+      sessionUrl: session.url,
+      sessionId: session.id,
+      pricing: {
+        trabajadores,
+        claseRiesgo,
+        estandaresAplicables,
+        vehiculos,
+        nivelPesv: result.nivelPesv,
+        pasosAplicables: result.pasosAplicablesPesv,
+        usuariosAdicionales,
+        costoTrabajadores: result.costoTrabajadores,
+        costoEstandares: result.costoEstandaresSst,
+        costoPesv: result.costoPasosPesv,
+        costoUsuarios: costoUsuariosAdicionales,
+        costoMensualTotal,
+        costoAnualTotal: costoMensualTotal * 12,
+        currency: 'COP',
+      },
+    });
+  } catch (error: any) {
+    logger.error({ err: error }, 'Error creating Stripe checkout V2 session');
     return res.status(500).json({ error: error.message });
   }
 });

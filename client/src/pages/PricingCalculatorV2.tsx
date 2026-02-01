@@ -7,32 +7,55 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calculator, Users, Shield, Check, TrendingDown, Building2, FileCheck, Gift, ArrowLeft } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Calculator, Users, Shield, Check, TrendingDown, Building2, FileCheck, Gift, ArrowLeft, Car, UserPlus, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
 type RiskLevel = "I" | "II" | "III" | "IV" | "V";
+type NivelPesv = "basico" | "estandar" | "avanzado";
 
-interface PricingV2Result {
-  claseRiesgo: RiskLevel;
-  trabajadores: number;
-  tarifaPorTrabajador: number;
-  costoTrabajadores: number;
-  estandaresAplicables: number;
-  tarifaPorEstandar: number;
-  costoEstandares: number;
-  costoMensualTotal: number;
-  costoAnualTotal: number;
-  costoPorTrabajador: number;
-  incluye: {
-    portalTrabajador: boolean;
-    portalLicenciado: boolean;
-    valorMercadoPortales: string;
+interface CombinedPricingResult {
+  empresa: {
+    trabajadores: number;
+    claseRiesgo: RiskLevel;
+    descripcionRiesgo: string;
+    vehiculos: number;
   };
-  ahorroEstimado: string;
-  currency: string;
-  descripcionRiesgo: string;
-  ventajaCompetitiva: string[];
+  desgloseSst: {
+    tarifaPorTrabajador: number;
+    costoTrabajadores: number;
+    estandaresAplicables: number;
+    tarifaPorEstandar: number;
+    costoEstandares: number;
+    subtotalSst: number;
+  };
+  desglosePesv: {
+    nivelPesv: NivelPesv;
+    descripcion: string;
+    pasosAplicables: number;
+    tarifaPorPaso: number;
+    costoPesv: number;
+    desglosePorFase: {
+      planear: number;
+      hacer: number;
+      verificar: number;
+      actuar: number;
+    };
+  } | null;
+  usuariosAdicionales?: {
+    cantidad: number;
+    tarifaPorUsuario: number;
+    costoUsuarios: number;
+  };
+  totales: {
+    costoMensualTotal: number;
+    costoAnualTotal: number;
+    currency: string;
+  };
+  formula: string;
+  mensaje: string;
+  incluido: string[];
 }
 
 interface TarifasResponse {
@@ -55,7 +78,10 @@ const riskLevelLabels: Record<RiskLevel, { label: string; color: string }> = {
 export default function PricingCalculatorV2() {
   const [trabajadores, setTrabajadores] = useState<string>("");
   const [claseRiesgo, setClaseRiesgo] = useState<RiskLevel>("I");
-  const [result, setResult] = useState<PricingV2Result | null>(null);
+  const [vehiculos, setVehiculos] = useState<string>("0");
+  const [incluyePesv, setIncluyePesv] = useState<boolean>(false);
+  const [usuariosAdicionales, setUsuariosAdicionales] = useState<string>("0");
+  const [result, setResult] = useState<CombinedPricingResult | null>(null);
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
@@ -64,9 +90,14 @@ export default function PricingCalculatorV2() {
   });
 
   const calculateMutation = useMutation({
-    mutationFn: async (params: { trabajadores: number; claseRiesgo: RiskLevel }) => {
-      const res = await apiRequest("POST", "/api/pricing-v2/calculate", params);
-      return res.json() as Promise<PricingV2Result>;
+    mutationFn: async (params: { 
+      trabajadores: number; 
+      claseRiesgo: RiskLevel;
+      vehiculos: number;
+      usuariosAdicionales: number;
+    }) => {
+      const res = await apiRequest("POST", "/api/pricing-v2/calculate-combined-v2", params);
+      return res.json() as Promise<CombinedPricingResult>;
     },
     onSuccess: (data) => {
       setResult(data);
@@ -90,7 +121,14 @@ export default function PricingCalculatorV2() {
       });
       return;
     }
-    calculateMutation.mutate({ trabajadores: count, claseRiesgo });
+    const vehiculosCount = incluyePesv ? Math.max(1, parseInt(vehiculos, 10) || 0) : 0;
+    const usuariosCount = Math.max(0, parseInt(usuariosAdicionales, 10) || 0);
+    calculateMutation.mutate({ 
+      trabajadores: count, 
+      claseRiesgo,
+      vehiculos: vehiculosCount,
+      usuariosAdicionales: usuariosCount,
+    });
   };
 
   const formatCurrency = (value: number) => {
@@ -192,6 +230,59 @@ export default function PricingCalculatorV2() {
                 </Select>
               </div>
 
+              <div className="space-y-4 p-4 border rounded-lg bg-violet-50 dark:bg-violet-900/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Car className="h-4 w-4 text-violet-600" />
+                    <Label htmlFor="pesv-switch" className="font-medium text-violet-700 dark:text-violet-300">
+                      Incluir módulo PESV
+                    </Label>
+                  </div>
+                  <Switch
+                    id="pesv-switch"
+                    checked={incluyePesv}
+                    onCheckedChange={setIncluyePesv}
+                    data-testid="switch-pesv"
+                  />
+                </div>
+                {incluyePesv && (
+                  <div className="space-y-2">
+                    <Label htmlFor="vehiculos">Número de vehículos</Label>
+                    <Input
+                      id="vehiculos"
+                      type="number"
+                      min="1"
+                      placeholder="Ej: 15"
+                      value={vehiculos}
+                      onChange={(e) => setVehiculos(e.target.value)}
+                      data-testid="input-vehiculos"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Básico (1-10): 20 pasos | Estándar (11-50): 24 pasos | Avanzado (50+): 24 pasos
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="usuarios-adicionales" className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  Usuarios adicionales
+                </Label>
+                <Input
+                  id="usuarios-adicionales"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={usuariosAdicionales}
+                  onChange={(e) => setUsuariosAdicionales(e.target.value)}
+                  data-testid="input-usuarios-adicionales"
+                />
+                <p className="text-xs text-muted-foreground">
+                  $10,000 COP/mes por usuario adicional
+                </p>
+              </div>
+
               <Button
                 className="w-full"
                 size="lg"
@@ -228,70 +319,130 @@ export default function PricingCalculatorV2() {
                   <Building2 className="h-5 w-5" />
                   Tu Inversión Mensual
                 </CardTitle>
-                <CardDescription>{result.descripcionRiesgo}</CardDescription>
+                <CardDescription>{result.empresa.descripcionRiesgo}</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="space-y-6">
                   <div className="text-center p-6 bg-primary/10 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-1">Costo mensual total</p>
                     <p className="text-4xl font-bold text-primary" data-testid="text-costo-mensual">
-                      {formatCurrency(result.costoMensualTotal)}
+                      {formatCurrency(result.totales.costoMensualTotal)}
                     </p>
-                    <Badge className={riskLevelLabels[result.claseRiesgo].color}>
-                      {riskLevelLabels[result.claseRiesgo].label}
+                    <Badge className={riskLevelLabels[result.empresa.claseRiesgo].color}>
+                      {riskLevelLabels[result.empresa.claseRiesgo].label}
                     </Badge>
                   </div>
 
-                  <div className="grid gap-3">
-                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Trabajadores</span>
+                  {/* Desglose SST */}
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-blue-600" />
+                      SST (Seguridad y Salud en el Trabajo)
+                    </h4>
+                    <div className="grid gap-2">
+                      <div className="flex items-center justify-between p-2 bg-muted rounded text-sm">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-3 w-3 text-muted-foreground" />
+                          <span>Trabajadores</span>
+                        </div>
+                        <span className="font-medium">
+                          {result.empresa.trabajadores} × {formatCurrency(result.desgloseSst.tarifaPorTrabajador)} = {formatCurrency(result.desgloseSst.costoTrabajadores)}
+                        </span>
                       </div>
-                      <span className="font-semibold">{result.trabajadores}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <span className="text-sm">Costo por trabajadores</span>
-                      <span className="font-semibold">
-                        {result.trabajadores} × {formatCurrency(result.tarifaPorTrabajador)} = {formatCurrency(result.costoTrabajadores)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <FileCheck className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Estándares aplicables</span>
+                      <div className="flex items-center justify-between p-2 bg-muted rounded text-sm">
+                        <div className="flex items-center gap-2">
+                          <FileCheck className="h-3 w-3 text-muted-foreground" />
+                          <span>Estándares ({result.desgloseSst.estandaresAplicables})</span>
+                        </div>
+                        <span className="font-medium">
+                          {result.desgloseSst.estandaresAplicables} × {formatCurrency(result.desgloseSst.tarifaPorEstandar)} = {formatCurrency(result.desgloseSst.costoEstandares)}
+                        </span>
                       </div>
-                      <span className="font-semibold">{result.estandaresAplicables}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <span className="text-sm">Costo por estándares</span>
-                      <span className="font-semibold">
-                        {result.estandaresAplicables} × {formatCurrency(result.tarifaPorEstandar)} = {formatCurrency(result.costoEstandares)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                      <div className="flex items-center gap-2">
-                        <TrendingDown className="h-4 w-4 text-green-600" />
-                        <span className="text-sm">Costo por trabajador</span>
+                      <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-sm border border-blue-200 dark:border-blue-800">
+                        <span className="font-medium">Subtotal SST</span>
+                        <span className="font-bold text-blue-600">{formatCurrency(result.desgloseSst.subtotalSst)}</span>
                       </div>
-                      <span className="font-semibold text-green-600" data-testid="text-costo-por-trabajador">
-                        {formatCurrency(result.costoPorTrabajador)}
-                      </span>
-                    </div>
-
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 text-center">
-                      <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                        {result.ahorroEstimado}
-                      </p>
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t text-center text-sm text-muted-foreground">
-                    <p>Costo anual: <strong>{formatCurrency(result.costoAnualTotal)}</strong></p>
+                  {/* Desglose PESV */}
+                  {result.desglosePesv && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm flex items-center gap-2">
+                        <Car className="h-4 w-4 text-violet-600" />
+                        PESV (Plan Estratégico de Seguridad Vial)
+                      </h4>
+                      <div className="grid gap-2">
+                        <div className="flex items-center justify-between p-2 bg-muted rounded text-sm">
+                          <span>Nivel PESV</span>
+                          <Badge variant="outline" className="bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                            {result.desglosePesv.descripcion}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-muted rounded text-sm">
+                          <span>Pasos aplicables</span>
+                          <span className="font-medium">
+                            {result.desglosePesv.pasosAplicables} × {formatCurrency(result.desglosePesv.tarifaPorPaso)} = {formatCurrency(result.desglosePesv.costoPesv)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-violet-50 dark:bg-violet-900/20 rounded text-sm border border-violet-200 dark:border-violet-800">
+                          <span className="font-medium">Subtotal PESV</span>
+                          <span className="font-bold text-violet-600">{formatCurrency(result.desglosePesv.costoPesv)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Usuarios adicionales */}
+                  {result.usuariosAdicionales && result.usuariosAdicionales.cantidad > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm flex items-center gap-2">
+                        <UserPlus className="h-4 w-4 text-amber-600" />
+                        Usuarios Adicionales
+                      </h4>
+                      <div className="flex items-center justify-between p-2 bg-amber-50 dark:bg-amber-900/20 rounded text-sm border border-amber-200 dark:border-amber-800">
+                        <span>{result.usuariosAdicionales.cantidad} usuarios</span>
+                        <span className="font-bold text-amber-600">
+                          {result.usuariosAdicionales.cantidad} × {formatCurrency(result.usuariosAdicionales.tarifaPorUsuario)} = {formatCurrency(result.usuariosAdicionales.costoUsuarios)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="flex items-center gap-2">
+                      <TrendingDown className="h-4 w-4 text-green-600" />
+                      <span className="text-sm">Costo por trabajador</span>
+                    </div>
+                    <span className="font-semibold text-green-600" data-testid="text-costo-por-trabajador">
+                      {formatCurrency(result.totales.costoMensualTotal / result.empresa.trabajadores)}
+                    </span>
+                  </div>
+
+                  <div className="pt-4 border-t space-y-4">
+                    <div className="text-center text-sm text-muted-foreground">
+                      <p>Costo anual: <strong>{formatCurrency(result.totales.costoAnualTotal)}</strong></p>
+                    </div>
+                    <p className="text-xs text-center text-muted-foreground">
+                      {result.formula}
+                    </p>
+                    <Button 
+                      className="w-full" 
+                      size="lg"
+                      onClick={() => {
+                        toast({
+                          title: "Próximamente",
+                          description: "La suscripción en línea estará disponible pronto. Contacta a ventas para suscribirte ahora.",
+                        });
+                      }}
+                      data-testid="button-subscribe"
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Suscribirse Ahora
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground">
+                      Pago seguro con Stripe • Cancela cuando quieras
+                    </p>
                   </div>
                 </div>
               </CardContent>

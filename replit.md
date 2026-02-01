@@ -38,6 +38,37 @@ The PESV pricing module (`pricing_plugin/calculate-pesv.ts`) calculates costs ba
 - `POST /api/pricing-v2/calculate-combined` - Calculate SST + PESV combined
 - `GET /api/pricing-v2/simulador-completo/:companyId` - Simulate pricing for existing company
 
+### Pricing Calculator V2 with Stripe Integration (Febrero 2026)
+The pricing calculator V2 (`client/src/pages/PricingCalculatorV2.tsx`) provides a complete pricing simulation with Stripe checkout integration.
+
+**Calculator Features:**
+- Workers count input (determines SST cost based on risk class)
+- Risk class selector (I-V, affects per-worker rate)
+- Vehicles input (enables PESV module calculation)
+- Additional users input ($10,000 COP/month per user)
+- Real-time cost breakdown by component
+
+**Pricing Formula V2:**
+```
+Total = (Trabajadores × Tarifa Riesgo) + (Estándares × $8,000) + (Pasos PESV × $8,000) + (Usuarios × $10,000)
+```
+
+**Risk Class Rates:**
+- Clase I: $26,000/worker/month
+- Clase II: $24,000/worker/month
+- Clase III: $22,000/worker/month
+- Clase IV-V: $20,000/worker/month
+
+**API Endpoints V2:**
+- `POST /api/pricing-v2/calculate-combined-v2` - Calculate complete pricing (SST + PESV + users)
+- `POST /api/pricing-v2/create-checkout-v2` - Create dynamic Stripe checkout session
+
+**Stripe Checkout Integration:**
+- Separate line items for: workers, standards, PESV steps, additional users
+- Zero-decimal currency handling for COP
+- Promotion codes enabled
+- Metadata includes full pricing breakdown for tracking
+
 **Database Columns Added to `pricing_plugin_subscriptions`:**
 - `vehiculos` (integer, default 0)
 - `nivel_pesv` (text, nullable)
