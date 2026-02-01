@@ -43,3 +43,102 @@ The Promotions Plugin (`plugins/promotions/`) follows a Sidecar Architecture pat
 -   **Shadcn UI**: UI component library.
 -   **Amazon S3**: Cloud object storage.
 -   **AWS SDK v3**: For S3 operations.
+
+## Promotions Plugin (Sidecar Architecture)
+
+### Overview
+The Promotions Plugin (`plugins/promotions/`) is a completely independent module that handles promotional pricing, coupons, digital contracts (JWT validation), and the referral program "Aliados 2026" (Net-Zero Risk). It follows a **Sidecar Architecture** pattern, meaning it can be entirely removed without affecting the main system.
+
+### Plugin Structure
+```
+plugins/promotions/
+├── index.ts          # Plugin initialization and export
+├── schema.ts         # Drizzle ORM schema (4 independent tables)
+├── service.ts        # Business logic (JWT, coupons, referrals, Stripe)
+├── routes.ts         # API routes mounted at /api/plugins/promotions/*
+├── email-service.ts  # Referral invitation emails
+└── migrate.ts        # Database migration script
+```
+
+### Database Tables (Independent)
+- `plugin_promotion_coupons`: Discount coupons with usage limits
+- `plugin_referral_ledger`: Referral credits ledger (Padrino → Nuevo)
+- `plugin_digital_contracts`: JWT-based price lock audit trail
+- `plugin_credit_usage_history`: Credit consumption history
+
+### API Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/plugins/promotions/lobby` | Validate JWT from landing page |
+| POST | `/api/plugins/promotions/generate-token` | Admin: generate test JWT |
+| GET | `/api/plugins/promotions/coupons` | List all coupons (admin) |
+| POST | `/api/plugins/promotions/coupons` | Create coupon (admin) |
+| GET | `/api/plugins/promotions/coupons/validate/:code` | Validate coupon (public) |
+| DELETE | `/api/plugins/promotions/coupons/:id` | Delete coupon (admin) |
+| GET | `/api/plugins/promotions/contracts` | List digital contracts (admin) |
+| GET | `/api/plugins/promotions/referrals` | List referral ledger (admin) |
+| GET | `/api/plugins/promotions/referrals/credits/:referrerId` | Get referrer credits |
+| POST | `/api/plugins/promotions/checkout` | Create promotional checkout |
+| POST | `/api/plugins/promotions/invite` | Send referral invitation email |
+| GET | `/api/plugins/promotions/my-referrals/:companyId` | Get company's referrals |
+| POST | `/api/plugins/promotions/webhook` | Dedicated Stripe webhook |
+| GET | `/api/plugins/promotions/stats` | Plugin statistics (admin) |
+
+### Environment Variables Required
+- `LANDING_PAGE_API_KEY` or `JWT_SECRET`: **MANDATORY** - For JWT validation (fail-closed security)
+- `STRIPE_SECRET_KEY`: For Stripe integration
+- `STRIPE_PROMOTIONS_WEBHOOK_SECRET`: For dedicated plugin webhook
+- `RESEND_API_KEY`: For referral invitation emails
+- `LANDING_PAGE_URL`: Base URL for referral links (default: https://sst-colombia.com.co)
+
+### Frontend Pages
+- `/admin-promociones`: Admin panel with 3 tabs (Cupones, Ledger Aliados, Contratos Digitales)
+- `/recomendar`: Public page for clients to invite other companies (Padrino flow)
+
+### Referral Program "Net-Zero Risk"
+1. **Padrino (Referrer)** invites a company via `/recomendar` page
+2. **Nuevo (Referee)** registers with referral token in URL
+3. When **Nuevo** pays first invoice:
+   - Referral credit activated for **Padrino** (1 month of Nuevo's plan value)
+   - Credit valid for 12 months
+   - Can be applied to **Padrino's** future invoices
+4. **Nuevo** receives 2nd month free (configured via `discount_duration_months`)
+
+### Kill-Switch Protocol (Complete Removal)
+To completely remove this plugin without affecting the main system:
+
+1. **Delete the plugin folder:**
+   ```bash
+   rm -rf plugins/promotions/
+   ```
+
+2. **Remove the import from server/index.ts:**
+   Remove the line: `import promotionsPlugin from "../plugins/promotions";`
+   Remove the line: `app.use("/api/plugins/promotions", promotionsPlugin);`
+
+3. **Remove frontend routes from App.tsx:**
+   - Remove import: `import AdminPromociones from "@/pages/AdminPromociones";`
+   - Remove import: `import Recomendar from "@/pages/Recomendar";`
+   - Remove routes for `/admin-promociones` and `/recomendar`
+
+4. **Remove frontend pages:**
+   ```bash
+   rm client/src/pages/AdminPromociones.tsx
+   rm client/src/pages/Recomendar.tsx
+   ```
+
+5. **Remove Stripe webhook from Dashboard:**
+   Delete the webhook endpoint `/api/plugins/promotions/webhook` from Stripe Dashboard
+
+6. **Optional - Remove database tables:**
+   ```sql
+   DROP TABLE IF EXISTS plugin_credit_usage_history;
+   DROP TABLE IF EXISTS plugin_digital_contracts;
+   DROP TABLE IF EXISTS plugin_referral_ledger;
+   DROP TABLE IF EXISTS plugin_promotion_coupons;
+   ```
+
+**Result:** The main system returns to its original state immediately. No changes to core billing, subscriptions, or checkout flow required.
+
+### COP Currency Handling
+All prices are multiplied by 100 when sending to Stripe API (COP is a zero-decimal currency in real terms but Stripe requires ×100 for all amounts).

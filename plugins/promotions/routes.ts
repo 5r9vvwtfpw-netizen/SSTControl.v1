@@ -403,4 +403,189 @@ router.post("/webhook/invoice-paid", async (req: Request, res: Response) => {
   }
 });
 
+// ==================== STRIPE WEBHOOK DEDICADO (Receptor Directo) ====================
+
+import Stripe from "stripe";
+
+const stripeWebhook = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2025-04-30.basil" as any })
+  : null;
+
+/**
+ * POST /api/plugins/promotions/webhook
+ * Webhook directo de Stripe para el plugin de referidos
+ * Escucha eventos: invoice.paid, customer.subscription.created
+ * 
+ * ARQUITECTURA SIDECAR: Este webhook es completamente independiente
+ * del webhook principal del sistema. Debe configurarse en Stripe Dashboard
+ * con su propia signing secret (STRIPE_PROMOTIONS_WEBHOOK_SECRET).
+ */
+router.post("/webhook", async (req: Request, res: Response) => {
+  const sig = req.headers["stripe-signature"] as string;
+  const webhookSecret = process.env.STRIPE_PROMOTIONS_WEBHOOK_SECRET;
+  
+  if (!stripeWebhook) {
+    console.error("[PromotionsPlugin] Stripe not configured");
+    return res.status(500).json({ error: "Stripe not configured" });
+  }
+  
+  if (!webhookSecret) {
+    console.error("[PromotionsPlugin] STRIPE_PROMOTIONS_WEBHOOK_SECRET not configured");
+    return res.status(500).json({ error: "Webhook secret not configured" });
+  }
+  
+  let event: Stripe.Event;
+  
+  try {
+    // Validate webhook signature
+    const rawBody = (req as any).rawBody || req.body;
+    event = stripeWebhook.webhooks.constructEvent(
+      typeof rawBody === "string" ? rawBody : JSON.stringify(rawBody),
+      sig,
+      webhookSecret
+    );
+  } catch (err: any) {
+    console.error("[PromotionsPlugin] Webhook signature verification failed:", err.message);
+    return res.status(400).json({ error: `Webhook Error: ${err.message}` });
+  }
+  
+  console.log(`[PromotionsPlugin] Received webhook event: ${event.type}`);
+  
+  try {
+    switch (event.type) {
+      case "invoice.paid": {
+        const invoice = event.data.object as any;
+        const subscriptionId = typeof invoice.subscription === "string" 
+          ? invoice.subscription 
+          : invoice.subscription?.id;
+        
+        if (subscriptionId) {
+          await handleInvoicePaid(
+            invoice.id,
+            subscriptionId,
+            typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id || ""
+          );
+        }
+        break;
+      }
+      
+      case "customer.subscription.created": {
+        const subscription = event.data.object as Stripe.Subscription;
+        console.log(`[PromotionsPlugin] New subscription created: ${subscription.id}`);
+        // Log for audit purposes
+        break;
+      }
+      
+      default:
+        console.log(`[PromotionsPlugin] Unhandled event type: ${event.type}`);
+    }
+    
+    res.json({ received: true });
+  } catch (error: any) {
+    console.error(`[PromotionsPlugin] Error processing webhook:`, error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== SISTEMA DE INVITACIÓN (PADRINO) ====================
+
+import { sendReferralInvitation, type ReferralInvitationData } from "./email-service";
+
+/**
+ * POST /api/plugins/promotions/invite
+ * Permite a un cliente (Padrino) invitar a otra empresa
+ * 
+ * Recibe: source_id, source_email, friend_name, friend_email, friend_company
+ */
+router.post("/invite", async (req: Request, res: Response) => {
+  try {
+    const { 
+      sourceId, 
+      sourceEmail, 
+      sourceName,
+      sourceCompany,
+      friendName, 
+      friendEmail, 
+      friendCompany 
+    } = req.body;
+    
+    if (!sourceId || !sourceEmail || !friendName || !friendEmail) {
+      return res.status(400).json({ 
+        error: "Campos requeridos: sourceId, sourceEmail, friendName, friendEmail" 
+      });
+    }
+    
+    // Generate referral link with tracking
+    const referralToken = Buffer.from(JSON.stringify({
+      referrerId: sourceId,
+      referrerEmail: sourceEmail,
+      timestamp: Date.now(),
+    })).toString("base64url");
+    
+    const referralLink = `${process.env.LANDING_PAGE_URL || "https://sst-colombia.com.co"}/registro?ref=${referralToken}`;
+    
+    // Send invitation email
+    const invitationData: ReferralInvitationData = {
+      referrerName: sourceName || "Un cliente de SST-Colombia",
+      referrerEmail: sourceEmail,
+      referrerCompany: sourceCompany,
+      friendName,
+      friendEmail,
+      friendCompany,
+      referralLink,
+      benefitDescription: "tu segundo mes es gratis",
+    };
+    
+    const emailResult = await sendReferralInvitation(invitationData);
+    
+    if (!emailResult.success) {
+      return res.status(500).json({ error: emailResult.error || "Error enviando invitación" });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: "Invitación enviada exitosamente",
+      referralLink,
+    });
+  } catch (error: any) {
+    console.error("[PromotionsPlugin] Invite error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/plugins/promotions/my-referrals/:companyId
+ * Obtiene los referidos de una empresa (para mostrar en el panel del Padrino)
+ */
+router.get("/my-referrals/:companyId", async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    if (!user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    
+    const { companyId } = req.params;
+    const referrals = await getReferrerCredits(companyId);
+    const totalCredit = await getTotalRemainingCredit(companyId);
+    
+    res.json({
+      companyId,
+      totalReferrals: referrals.length,
+      activeReferrals: referrals.filter(r => r.status === "active").length,
+      totalRemainingCredit: totalCredit,
+      referrals: referrals.map(r => ({
+        id: r.id,
+        refereeId: r.refereeId,
+        creditAmount: parseFloat(r.creditPoolTotal || "0"),
+        remainingBalance: parseFloat(r.remainingBalance || "0"),
+        status: r.status,
+        activatedAt: r.activatedAt,
+        expiresAt: r.expiresAt,
+      })),
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

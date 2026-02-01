@@ -123,6 +123,7 @@ import TicketsSoporte from "@/pages/TicketsSoporte";
 import AdminTicketsSoporte from "@/pages/AdminTicketsSoporte";
 import AdminUsuariosSoporte from "@/pages/AdminUsuariosSoporte";
 import AdminPromociones from "@/pages/AdminPromociones";
+import Recomendar from "@/pages/Recomendar";
 import RecuperarContrasena from "@/pages/RecuperarContrasena";
 import RestablecerContrasena from "@/pages/RestablecerContrasena";
 import LoginEmpresa from "@/pages/LoginEmpresa";
@@ -298,6 +299,7 @@ function Router() {
       <Route path="/recuperar-contrasena" component={RecuperarContrasena} />
       <Route path="/induccion-virtual/:token" component={InduccionVirtualPublica} />
       <Route path="/restablecer-contrasena" component={RestablecerContrasena} />
+      <Route path="/recomendar" component={Recomendar} />
       <Route component={NotFound} />
     </Switch>
   );
