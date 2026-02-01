@@ -183,6 +183,29 @@ app.post(
                     attempt 
                   }, 'Subscription activated after successful payment');
                   
+                  // Update pricing_plugin_subscriptions to active status
+                  try {
+                    const { pricingPluginSubscriptions } = await import('../pricing_plugin/schema');
+                    const { eq } = await import('drizzle-orm');
+                    
+                    await db
+                      .update(pricingPluginSubscriptions)
+                      .set({
+                        subscriptionStatus: 'active',
+                        trialEndsAt: null,
+                        blockedAt: null,
+                        blockedReason: null,
+                        stripeSubscriptionId: session.subscription as string || null,
+                        stripeCustomerId: session.customer as string || null,
+                        updatedAt: now,
+                      })
+                      .where(eq(pricingPluginSubscriptions.customerId, companyId));
+                    
+                    logger.info({ companyId }, 'Pricing subscription activated after successful payment');
+                  } catch (pricingError) {
+                    logger.error({ err: pricingError, companyId }, 'Error updating pricing subscription (non-critical)');
+                  }
+                  
                   // Create invoice for this payment
                   try {
                     const company = await storage.getCompany(companyId);

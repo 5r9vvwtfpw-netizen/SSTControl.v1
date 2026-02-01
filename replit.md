@@ -122,6 +122,41 @@ unit_amount: 10000 * 100  // = 1,000,000
 - `vehiculos` (integer, default 0)
 - `nivel_pesv` (text, nullable)
 - `costo_pesv_mensual` (decimal, default 0)
+- `subscription_status` (text, default 'trial') - Status: trial, active, past_due, blocked, cancelled
+- `trial_ends_at` (timestamp, nullable) - Trial period end date
+- `blocked_at` (timestamp, nullable) - When subscription was blocked
+- `blocked_reason` (text, nullable) - Reason for blocking
+
+### Subscription Blocking System (Febrero 2026)
+The system blocks access for users whose subscriptions are expired, past_due, or blocked.
+
+**Subscription Statuses:**
+- `trial`: Active trial period (7 days free)
+- `active`: Paid and current subscription
+- `past_due`: Payment failed, requires payment update
+- `blocked`: Access blocked (manual or automated)
+- `cancelled`: Subscription cancelled
+- `no_subscription`: No subscription exists
+- `trial_expired`: Trial period ended without payment
+
+**Backend Components:**
+- `server/middleware/subscription-check.ts`: Middleware for subscription verification
+  - `getSubscriptionStatus()`: Returns subscription status for a company
+  - `requireActiveSubscription()`: Express middleware to block routes
+- `server/auth.ts`: Includes subscription status in `/api/user` response
+
+**Frontend Components:**
+- `client/src/hooks/useSubscriptionCheck.ts`: Hook to check subscription status
+- `client/src/components/SubscriptionBlockedModal.tsx`: Modal blocking access
+- `client/src/App.tsx`: SubscriptionGate wrapper component
+
+**Stripe Webhook Integration:**
+- `checkout.session.completed`: Creates subscription with 7-day trial
+- `customer.subscription.created/updated`: Updates subscription status
+- `customer.subscription.deleted`: Blocks subscription access
+
+**Excluded Paths (no blocking):**
+/login, /register, /pricing, /checkout, /landing, /mi-suscripcion, /forgot-password, /reset-password, /verify-email
 
 ### Centralized Document Traceability System (Enero 2026)
 The document traceability system provides centralized tracking of all system-generated PDFs following the "Add-Only Principle" (principio de código seguro). It uses a metadata-only approach, storing references to PDFs without duplicating file storage.
