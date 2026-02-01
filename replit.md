@@ -73,9 +73,40 @@ Note: Additional users are NOT calculated in the initial subscription - they are
 
 **Stripe Checkout Integration:**
 - Separate line items for: workers, standards, PESV steps, additional users
-- Zero-decimal currency handling for COP
 - Promotion codes enabled
 - Metadata includes full pricing breakdown for tracking
+
+### CRITICAL: Stripe COP Currency Handling (Febrero 2026)
+**COP (Colombian Peso) is NOT a zero-decimal currency in Stripe.**
+
+This means ALL prices must be multiplied by 100 when creating prices in Stripe API:
+
+| Precio Real | Valor en Stripe API | Ejemplo |
+|-------------|---------------------|---------|
+| $10,000 COP | 1,000,000 | Usuario Adicional |
+| $60,000 COP | 6,000,000 | Plan Microempresa |
+| $160,000 COP | 16,000,000 | PESV Básico |
+| $192,000 COP | 19,200,000 | PESV Estándar |
+
+**Zero-decimal currencies (NO multiplier needed):** JPY, KRW, VND, etc.
+**Non-zero-decimal currencies (multiply by 100):** COP, USD, EUR, etc.
+
+**Code Pattern:**
+```typescript
+// WRONG - Creates $100 COP instead of $10,000 COP
+unit_amount: 10000
+
+// CORRECT - Creates $10,000 COP
+unit_amount: 10000 * 100  // = 1,000,000
+```
+
+**Stripe Products Active (Febrero 2026):**
+- prod_TjIHMkMpTGFGSq: Microempresa ($60,000/mes)
+- prod_TjIHy0oxEo4W3h: Pequeña Empresa ($264,000/mes)
+- prod_TjIHXR4XX5bCUf: Mediana Empresa ($1,100,000/mes)
+- prod_TjIH2xE3jvxFwf: Gran Empresa ($4,000,000/mes)
+- prod_TtjQa1Nv5mfLu0: PESV (Básico $160k, Estándar $192k)
+- prod_TtjQHVri7U8hJS: Usuarios Adicionales ($10,000/mes)
 
 **Database Columns Added to `pricing_plugin_subscriptions`:**
 - `vehiculos` (integer, default 0)
