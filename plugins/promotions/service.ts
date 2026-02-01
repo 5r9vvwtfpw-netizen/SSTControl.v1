@@ -26,9 +26,9 @@ import Stripe from "stripe";
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.LANDING_PAGE_API_KEY || "promo-secret-key";
 
-// Initialize Stripe if available
+// Initialize Stripe if available (use same API version as main system)
 const stripe = process.env.STRIPE_SECRET_KEY 
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-11-20.acacia" })
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2025-04-30.basil" as any })
   : null;
 
 // ==================== JWT VALIDATION (LOBBY DIGITAL) ====================
