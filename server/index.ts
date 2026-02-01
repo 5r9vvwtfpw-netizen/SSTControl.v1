@@ -363,10 +363,82 @@ app.post(
           }
           break;
         case 'invoice.paid':
-          logger.info({ invoiceId: event.data.object.id }, 'Invoice paid');
+          const paidInvoice = event.data.object;
+          logger.info({ 
+            invoiceId: paidInvoice.id,
+            subscriptionId: paidInvoice.subscription,
+            customerId: paidInvoice.customer
+          }, 'Invoice paid - reactivating subscription');
+          
+          // Reactivate subscription after successful payment (for past_due recovery)
+          if (paidInvoice.subscription) {
+            try {
+              const { pricingPluginSubscriptions: pricingSubsPaid } = await import('../pricing_plugin/schema');
+              const { eq: eqPaid } = await import('drizzle-orm');
+              
+              await db
+                .update(pricingSubsPaid)
+                .set({
+                  subscriptionStatus: 'active',
+                  blockedAt: null,
+                  blockedReason: null,
+                  updatedAt: new Date(),
+                })
+                .where(eqPaid(pricingSubsPaid.stripeSubscriptionId, paidInvoice.subscription as string));
+              
+              logger.info({ subscriptionId: paidInvoice.subscription }, 'Subscription reactivated after payment recovery');
+            } catch (reactivateError) {
+              logger.error({ err: reactivateError }, 'Error reactivating subscription after payment');
+            }
+          }
           break;
+          
         case 'invoice.payment_failed':
-          logger.warn({ invoiceId: event.data.object.id }, 'Invoice payment failed');
+          const failedInvoice = event.data.object;
+          const attemptCount = failedInvoice.attempt_count || 1;
+          
+          logger.warn({ 
+            invoiceId: failedInvoice.id,
+            subscriptionId: failedInvoice.subscription,
+            attemptCount,
+            nextPaymentAttempt: failedInvoice.next_payment_attempt
+          }, 'Invoice payment failed');
+          
+          // Block subscription after payment failure
+          if (failedInvoice.subscription) {
+            try {
+              const { pricingPluginSubscriptions: pricingSubsFailed } = await import('../pricing_plugin/schema');
+              const { eq: eqFailed } = await import('drizzle-orm');
+              
+              const now = new Date();
+              let subscriptionStatus = 'past_due';
+              let blockedReason = `Pago fallido (intento ${attemptCount}). Por favor actualice su método de pago.`;
+              
+              // After 3 failed attempts, mark as blocked completely
+              if (attemptCount >= 3) {
+                subscriptionStatus = 'blocked';
+                blockedReason = 'Suscripción bloqueada por múltiples pagos fallidos. Contacte a soporte.';
+              }
+              
+              await db
+                .update(pricingSubsFailed)
+                .set({
+                  subscriptionStatus,
+                  blockedAt: now,
+                  blockedReason,
+                  updatedAt: now,
+                })
+                .where(eqFailed(pricingSubsFailed.stripeSubscriptionId, failedInvoice.subscription as string));
+              
+              logger.info({ 
+                subscriptionId: failedInvoice.subscription,
+                attemptCount,
+                subscriptionStatus 
+              }, 'Subscription marked as past_due/blocked after payment failure');
+            } catch (failError) {
+              logger.error({ err: failError }, 'Error blocking subscription after payment failure');
+            }
+          }
           break;
         default:
           logger.info({ eventType: event.type }, 'Unhandled Stripe event type');
