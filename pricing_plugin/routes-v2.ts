@@ -721,7 +721,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
       });
     }
 
-    // Crear sesión de checkout
+    // Crear sesión de checkout con 7 días de prueba gratis
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       payment_method_types: ['card'],
@@ -730,6 +730,10 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
       success_url: successUrl,
       cancel_url: cancelUrl,
       allow_promotion_codes: true,
+      subscription_data: {
+        trial_period_days: 7,
+        description: 'SST Colombia - Prueba gratis de 7 días',
+      },
       metadata: {
         pricing_v2: 'true',
         company_id: companyId,
