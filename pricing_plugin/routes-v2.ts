@@ -409,7 +409,8 @@ router.get("/simulador-completo/:companyId", async (req: Request, res: Response)
     const claseRiesgo = (company.riskLevel || "I") as RiskLevel;
     const trabajadores = company.numberOfWorkers || 1;
     const estandaresAplicables = getEstandaresAplicablesPorClase(claseRiesgo, trabajadores);
-    const vehiculos = vehiculosParam ? parseInt(vehiculosParam as string, 10) : 0;
+    // Usar vehículos de la BD o del parámetro query (BD tiene prioridad si existe)
+    const vehiculos = (company as any).numberOfVehicles || (vehiculosParam ? parseInt(vehiculosParam as string, 10) : 0);
 
     const tarifaPorTrabajador = getTarifaPorRiesgo(claseRiesgo, DEFAULT_PRICING_V2_CONFIG);
 
