@@ -569,20 +569,14 @@ router.post("/calculate-combined-v2", async (req: Request, res: Response) => {
 
 /**
  * ============================================================
- * CHECKOUT DINÁMICO V2 - STRIPE (DESACTIVADO)
+ * CHECKOUT DINÁMICO V2 - STRIPE
  * Crea sesión de checkout con precio calculado dinámicamente
  * SST + PESV + Usuarios Adicionales
  * PRINCIPIO DE CÓDIGO SEGURO: Solo agregar código nuevo
- * 
- * NOTA: Desactivado para evitar conflictos con productos/precios
- * ya configurados manualmente en Stripe Dashboard.
- * Los planes fijos (Microempresa, Pequeña, Mediana, Grande) 
- * ya tienen precios correctos en Stripe.
  * ============================================================
  */
 
-// ENDPOINT DESACTIVADO - Usar los productos/precios existentes en Stripe
-router.post("/create-checkout-v2-DISABLED", async (req: Request, res: Response) => {
+router.post("/create-checkout-v2", async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       companyId: z.string().uuid(),
