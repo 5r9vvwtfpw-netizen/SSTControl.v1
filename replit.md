@@ -67,6 +67,16 @@ Note: Additional users are NOT calculated in the initial subscription - they are
 - Clase III: $22,000/worker/month
 - Clase IV-V: $20,000/worker/month
 
+**SST Standards by Company Type (Resolución 0312/2019, fixed Febrero 2026):**
+| Tipo | Trabajadores | Riesgo | Estándares |
+|------|--------------|--------|------------|
+| Tipo 1 | 1-10 | I, II, III | 7 |
+| Tipo 2 | 1-10 | IV, V | 21 |
+| Tipo 2 | 11-50 | Cualquiera | 21 |
+| Tipo 3 | 51+ | Cualquiera | 61 |
+
+Implementation: `pricing_plugin/calculate-v2.ts` → `getEstandaresAplicablesPorClase()`
+
 **API Endpoints V2:**
 - `POST /api/pricing-v2/calculate-combined-v2` - Calculate complete pricing (SST + PESV + users)
 - `POST /api/pricing-v2/create-checkout-v2` - Create dynamic Stripe checkout session
