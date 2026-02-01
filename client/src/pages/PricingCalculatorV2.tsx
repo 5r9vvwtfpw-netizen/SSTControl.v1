@@ -426,20 +426,6 @@ export default function PricingCalculatorV2() {
                     <p className="text-xs text-center text-muted-foreground">
                       {result.formula}
                     </p>
-                    <Button 
-                      className="w-full" 
-                      size="lg"
-                      onClick={() => {
-                        window.location.href = '/mi-cuenta';
-                      }}
-                      data-testid="button-subscribe"
-                    >
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Iniciar Prueba Gratuita de 14 Días
-                    </Button>
-                    <p className="text-xs text-center text-muted-foreground">
-                      Sin tarjeta de crédito • Activa tu plan en Mi Cuenta
-                    </p>
                   </div>
                 </div>
               </CardContent>
