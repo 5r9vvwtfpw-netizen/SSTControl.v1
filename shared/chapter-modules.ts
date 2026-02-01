@@ -59,6 +59,7 @@ const CHAPTER_1_MODULES = [
   "/accesos-soporte",
   "/admin-tickets",
   "/admin-usuarios-soporte",
+  "/admin-promociones",
   "/mensajes-internos",
   
   // Suscripciones y facturación (siempre disponible)

@@ -24,7 +24,17 @@ import {
 import jwt from "jsonwebtoken";
 import Stripe from "stripe";
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.LANDING_PAGE_API_KEY || "promo-secret-key";
+const JWT_SECRET = process.env.LANDING_PAGE_API_KEY || process.env.JWT_SECRET;
+const isProduction = process.env.NODE_ENV === "production";
+
+if (!JWT_SECRET) {
+  const message = "[PromotionsPlugin] CRITICAL: JWT_SECRET or LANDING_PAGE_API_KEY not configured. JWT validation will fail.";
+  if (isProduction) {
+    throw new Error(message);
+  } else {
+    console.warn(message);
+  }
+}
 
 // Initialize Stripe if available (use same API version as main system)
 const stripe = process.env.STRIPE_SECRET_KEY 
@@ -34,6 +44,10 @@ const stripe = process.env.STRIPE_SECRET_KEY
 // ==================== JWT VALIDATION (LOBBY DIGITAL) ====================
 
 export async function validatePromotionJwt(token: string): Promise<{ valid: boolean; payload?: JwtPromotionPayload; error?: string }> {
+  if (!JWT_SECRET) {
+    return { valid: false, error: "JWT secret not configured - contact administrator" };
+  }
+  
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     const parsed = jwtPromotionPayloadSchema.safeParse(decoded);
@@ -55,6 +69,9 @@ export async function validatePromotionJwt(token: string): Promise<{ valid: bool
 }
 
 export function generatePromotionJwt(payload: Omit<JwtPromotionPayload, 'exp'>, expiresInMinutes: number = 30): string {
+  if (!JWT_SECRET) {
+    throw new Error("JWT secret not configured - cannot generate token");
+  }
   const exp = Math.floor(Date.now() / 1000) + (expiresInMinutes * 60);
   return jwt.sign({ ...payload, exp }, JWT_SECRET);
 }
