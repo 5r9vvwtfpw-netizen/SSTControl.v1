@@ -45,13 +45,21 @@ The pricing calculator V2 (`client/src/pages/PricingCalculatorV2.tsx`) provides 
 - Workers count input (determines SST cost based on risk class)
 - Risk class selector (I-V, affects per-worker rate)
 - Vehicles input (enables PESV module calculation)
-- Additional users input ($10,000 COP/month per user)
 - Real-time cost breakdown by component
+
+**User Licensing Model (Febrero 2026):**
+- Each company includes 1 user per role at no additional cost (11 administrative roles)
+- 'trabajador' role is unlimited (Portal del Trabajador)
+- Additional users of the same role: $10,000 COP/month each
+- When limit is reached, modal appears with Stripe checkout for extra seat purchase
+- Backend middleware: `server/middleware/subscription-limits.ts` (checkUserLimit)
+- Frontend modal: `client/src/pages/GestionUsuarios.tsx` (extraSeatPurchaseInfo)
 
 **Pricing Formula V2:**
 ```
-Total = (Trabajadores × Tarifa Riesgo) + (Estándares × $8,000) + (Pasos PESV × $8,000) + (Usuarios × $10,000)
+Total = (Trabajadores × Tarifa Riesgo) + (Estándares × $8,000) + (Pasos PESV × $8,000)
 ```
+Note: Additional users are NOT calculated in the initial subscription - they are purchased on-demand when needed.
 
 **Risk Class Rates:**
 - Clase I: $26,000/worker/month

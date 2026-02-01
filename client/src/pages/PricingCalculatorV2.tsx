@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Calculator, Users, Shield, Check, TrendingDown, Building2, FileCheck, Gift, ArrowLeft, Car, UserPlus, CreditCard } from "lucide-react";
+import { Calculator, Users, Shield, Check, TrendingDown, Building2, FileCheck, Gift, ArrowLeft, Car, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
@@ -80,7 +80,6 @@ export default function PricingCalculatorV2() {
   const [claseRiesgo, setClaseRiesgo] = useState<RiskLevel>("I");
   const [vehiculos, setVehiculos] = useState<string>("0");
   const [incluyePesv, setIncluyePesv] = useState<boolean>(false);
-  const [usuariosAdicionales, setUsuariosAdicionales] = useState<string>("0");
   const [result, setResult] = useState<CombinedPricingResult | null>(null);
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -122,12 +121,11 @@ export default function PricingCalculatorV2() {
       return;
     }
     const vehiculosCount = incluyePesv ? Math.max(1, parseInt(vehiculos, 10) || 0) : 0;
-    const usuariosCount = Math.max(0, parseInt(usuariosAdicionales, 10) || 0);
     calculateMutation.mutate({ 
       trabajadores: count, 
       claseRiesgo,
       vehiculos: vehiculosCount,
-      usuariosAdicionales: usuariosCount,
+      usuariosAdicionales: 0,
     });
   };
 
@@ -264,25 +262,6 @@ export default function PricingCalculatorV2() {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="usuarios-adicionales" className="flex items-center gap-2">
-                  <UserPlus className="h-4 w-4" />
-                  Usuarios adicionales
-                </Label>
-                <Input
-                  id="usuarios-adicionales"
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                  value={usuariosAdicionales}
-                  onChange={(e) => setUsuariosAdicionales(e.target.value)}
-                  data-testid="input-usuarios-adicionales"
-                />
-                <p className="text-xs text-muted-foreground">
-                  $10,000 COP/mes por usuario adicional
-                </p>
-              </div>
-
               <Button
                 className="w-full"
                 size="lg"
@@ -301,13 +280,20 @@ export default function PricingCalculatorV2() {
                 <ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-400">
                   <li className="flex items-center gap-2">
                     <Check className="h-3 w-3" />
-                    Portal del Trabajador (valor $3k-$5k/usuario/mes)
+                    1 usuario por cada rol del sistema (11 roles)
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-3 w-3" />
-                    Portal del Licenciado SST (valor $150k-$300k/mes)
+                    Portal del Trabajador ilimitado
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-3 w-3" />
+                    Portal del Licenciado SST
                   </li>
                 </ul>
+                <p className="mt-2 text-xs text-green-600/80 dark:text-green-400/80">
+                  Usuarios adicionales del mismo rol: $10,000/mes c/u
+                </p>
               </div>
             </CardContent>
           </Card>
