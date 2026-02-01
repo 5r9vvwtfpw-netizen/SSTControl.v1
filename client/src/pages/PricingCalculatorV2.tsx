@@ -430,18 +430,15 @@ export default function PricingCalculatorV2() {
                       className="w-full" 
                       size="lg"
                       onClick={() => {
-                        toast({
-                          title: "Próximamente",
-                          description: "La suscripción en línea estará disponible pronto. Contacta a ventas para suscribirte ahora.",
-                        });
+                        window.location.href = '/mi-cuenta';
                       }}
                       data-testid="button-subscribe"
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
-                      Suscribirse Ahora
+                      Iniciar Prueba Gratuita de 14 Días
                     </Button>
                     <p className="text-xs text-center text-muted-foreground">
-                      Pago seguro con Stripe • Cancela cuando quieras
+                      Sin tarjeta de crédito • Activa tu plan en Mi Cuenta
                     </p>
                   </div>
                 </div>
