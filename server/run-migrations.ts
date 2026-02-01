@@ -6,6 +6,7 @@ import { fixEvaluacionesPuntajes } from './migrations/fix-evaluaciones-puntajes'
 import { syncMedicalExamsDocumentUrl } from './migrations/sync-medical-exams-document-url';
 import { syncExternalLsoColumns } from './migrations/sync-external-lso-columns';
 import { syncDocumentSourceColumns } from './migrations/sync-document-source-columns';
+import { syncCompanyVehiclesColumn } from './migrations/sync-company-vehicles-column';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -23,6 +24,7 @@ export async function runMigrations() {
     await syncMedicalExamsDocumentUrl();
     await syncExternalLsoColumns();
     await syncDocumentSourceColumns();
+    await syncCompanyVehiclesColumn();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

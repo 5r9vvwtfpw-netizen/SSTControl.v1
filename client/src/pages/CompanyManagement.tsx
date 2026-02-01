@@ -70,7 +70,20 @@ type CompanyFormData = {
   legalRepId: string;
   legalRepPosition: string;
   numberOfWorkers: number;
+  numberOfVehicles: number;
   riskLevel: "I" | "II" | "III" | "IV" | "V";
+};
+
+const getPesvLevel = (vehicles: number): { level: string; description: string; color: string } => {
+  if (vehicles === 0) {
+    return { level: "N/A", description: "Sin vehículos - PESV no requerido", color: "text-muted-foreground" };
+  } else if (vehicles >= 1 && vehicles <= 10) {
+    return { level: "Básico", description: "1-10 vehículos - PESV Nivel Básico", color: "text-blue-600" };
+  } else if (vehicles >= 11 && vehicles <= 50) {
+    return { level: "Estándar", description: "11-50 vehículos - PESV Nivel Estándar", color: "text-amber-600" };
+  } else {
+    return { level: "Avanzado", description: "50+ vehículos - PESV Nivel Avanzado", color: "text-red-600" };
+  }
 };
 
 const initialFormData: CompanyFormData = {
@@ -85,6 +98,7 @@ const initialFormData: CompanyFormData = {
   legalRepId: "",
   legalRepPosition: "",
   numberOfWorkers: 1,
+  numberOfVehicles: 0,
   riskLevel: "I",
 };
 
@@ -366,6 +380,7 @@ export default function CompanyManagement() {
       legalRepId: company.legalRepId || "",
       legalRepPosition: company.legalRepPosition || "",
       numberOfWorkers: company.numberOfWorkers,
+      numberOfVehicles: company.numberOfVehicles || 0,
       riskLevel: company.riskLevel,
     });
     setLogoPreview(company.logoUrl || null);
@@ -747,6 +762,36 @@ export default function CompanyManagement() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">{getRiskLevelExamples(formData.riskLevel)}</p>
+                </div>
+                
+                <div className="col-span-2 border-t pt-4 mt-2">
+                  <p className="text-sm font-medium text-muted-foreground mb-3">Plan Estratégico de Seguridad Vial (PESV)</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="numberOfVehicles">Número de Vehículos (PESV)</Label>
+                  <Input
+                    id="numberOfVehicles"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={formData.numberOfVehicles === 0 ? "" : formData.numberOfVehicles}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "" || /^\d+$/.test(val)) {
+                        setFormData({ ...formData, numberOfVehicles: val === "" ? 0 : parseInt(val, 10) });
+                      }
+                    }}
+                    placeholder="0"
+                    data-testid="input-number-of-vehicles"
+                  />
+                  <p className="text-xs text-muted-foreground">Cantidad de vehículos propios o en uso (Resolución 40595/2022)</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Nivel PESV Asignado</Label>
+                  <div className={`flex items-center h-10 px-3 rounded-md border bg-muted ${getPesvLevel(formData.numberOfVehicles).color}`}>
+                    <span className="font-medium">{getPesvLevel(formData.numberOfVehicles).level}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{getPesvLevel(formData.numberOfVehicles).description}</p>
                 </div>
               </div>
 

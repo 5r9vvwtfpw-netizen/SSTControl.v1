@@ -80,6 +80,7 @@ export const companies = pgTable("companies", {
   legalRepId: text("legal_rep_id"), // Cédula del representante legal
   legalRepPosition: text("legal_rep_position"), // Cargo del representante legal
   numberOfWorkers: integer("number_of_workers").notNull().default(1),
+  numberOfVehicles: integer("number_of_vehicles").default(0),
   riskLevel: riskLevelEnum("risk_level").notNull().default("I"),
   calculatedChapter: chapterEnum("calculated_chapter").notNull().default("1"),
   // Configuración de afiliaciones por defecto (SST-2025-0038)
