@@ -44537,6 +44537,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // Calculate and apply progress to the objective
   app.post("/api/objetivos-estandares-vinculacion/aplicar-avance/:objetivoId/:evaluacionId", requireAuth, async (req, res) => {
     try {
+      const companyId = req.user!.companyId;
+      if (!companyId) {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      
       // Calculate progress based on linked standards
       const avance = await storage.calcularAvanceObjetivoDesdeEstandares(
         req.params.objetivoId,
@@ -44546,7 +44551,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // Update the objective with the calculated progress
       const updated = await storage.updateObjetivoSst(req.params.objetivoId, {
         porcentajeAvance: avance
-      });
+      }, companyId);
       
       if (!updated) {
         return res.status(404).json({ error: "Objetivo no encontrado" });
