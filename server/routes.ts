@@ -33733,6 +33733,126 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // ========== DECISIONES DE REVISIÓN POR DIRECCIÓN ==========
+  
+  // GET /api/revisiones-direccion/:revisionId/decisiones - Listar decisiones de una revisión
+  app.get('/api/revisiones-direccion/:revisionId/decisiones', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
+      
+      const decisiones = await storage.getDecisionesRevision(req.params.revisionId, companyId);
+      res.json(decisiones);
+    } catch (error: any) {
+      console.error('Error fetching decisiones:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/revisiones-direccion/:revisionId/decisiones - Crear decisión
+  app.post('/api/revisiones-direccion/:revisionId/decisiones', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
+      
+      const data = { ...req.body, revisionId: req.params.revisionId };
+      const decision = await storage.createDecisionRevision(data, companyId);
+      res.status(201).json(decision);
+    } catch (error: any) {
+      console.error('Error creating decisión:', error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // PUT /api/decisiones-revision/:id - Actualizar decisión
+  app.put('/api/decisiones-revision/:id', requireAuth, requirePermission('sst_management:update'), async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
+      
+      const decision = await storage.updateDecisionRevision(req.params.id, req.body, companyId);
+      if (!decision) return res.status(404).json({ error: "Decisión no encontrada" });
+      res.json(decision);
+    } catch (error: any) {
+      console.error('Error updating decisión:', error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // DELETE /api/decisiones-revision/:id - Eliminar decisión
+  app.delete('/api/decisiones-revision/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
+      
+      await storage.deleteDecisionRevision(req.params.id, companyId);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error('Error deleting decisión:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ========== ACCIONES DE DECISIONES DE REVISIÓN ==========
+  
+  // GET /api/decisiones-revision/:decisionId/acciones - Listar acciones de una decisión
+  app.get('/api/decisiones-revision/:decisionId/acciones', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
+      
+      const acciones = await storage.getAccionesRevision(req.params.decisionId, companyId);
+      res.json(acciones);
+    } catch (error: any) {
+      console.error('Error fetching acciones:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/decisiones-revision/:decisionId/acciones - Crear acción
+  app.post('/api/decisiones-revision/:decisionId/acciones', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
+      
+      const data = { ...req.body, decisionId: req.params.decisionId };
+      const accion = await storage.createAccionRevision(data, companyId);
+      res.status(201).json(accion);
+    } catch (error: any) {
+      console.error('Error creating acción:', error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // PUT /api/acciones-revision/:id - Actualizar acción
+  app.put('/api/acciones-revision/:id', requireAuth, requirePermission('sst_management:update'), async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
+      
+      const accion = await storage.updateAccionRevision(req.params.id, req.body, companyId);
+      if (!accion) return res.status(404).json({ error: "Acción no encontrada" });
+      res.json(accion);
+    } catch (error: any) {
+      console.error('Error updating acción:', error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // DELETE /api/acciones-revision/:id - Eliminar acción
+  app.delete('/api/acciones-revision/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
+      
+      await storage.deleteAccionRevision(req.params.id, companyId);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error('Error deleting acción:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // CONSENT RECORDS - Habeas Data (Ley 1581/2012 + GDPR Art. 7) - Bloque 3
 
   // GET /api/consent-records - Listar registros de consentimiento
