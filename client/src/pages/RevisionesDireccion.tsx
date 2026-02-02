@@ -6,8 +6,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ClipboardCheck, Calendar, Clock, CheckCircle2, Shield, PlayCircle, Building2, CalendarDays } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Plus, Search, ClipboardCheck, Calendar, Clock, CheckCircle2, Shield, PlayCircle, Building2, CalendarDays, Sparkles, Wand2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -61,6 +62,7 @@ export default function RevisionesDireccion() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [autoFilledFields, setAutoFilledFields] = useState<Set<string>>(new Set());
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
 
@@ -81,6 +83,49 @@ export default function RevisionesDireccion() {
     },
   });
 
+  const generateSmartCode = (existingRevisiones: RevisionDireccion[], periodicidad: string) => {
+    const year = new Date().getFullYear();
+    const prefix = "RD";
+    const existingCodesThisYear = existingRevisiones.filter(r => 
+      r.codigo.startsWith(`${prefix}-${year}`)
+    );
+    const nextNumber = existingCodesThisYear.length + 1;
+    return `${prefix}-${year}-${String(nextNumber).padStart(2, '0')}`;
+  };
+
+  const generateSmartTitle = (periodicidad: string) => {
+    const year = new Date().getFullYear();
+    const month = new Date().getMonth();
+    const periodicidadLabels: Record<string, string> = {
+      mensual: `Revisión Mensual SG-SST - ${new Date().toLocaleDateString('es-CO', { month: 'long' })} ${year}`,
+      trimestral: `Revisión Trimestral SG-SST - Q${Math.floor(month / 3) + 1} ${year}`,
+      semestral: `Revisión Semestral SG-SST - ${month < 6 ? 'Primer' : 'Segundo'} Semestre ${year}`,
+      anual: `Revisión Anual SG-SST - ${year}`,
+    };
+    return periodicidadLabels[periodicidad] || `Revisión del SG-SST - ${year}`;
+  };
+
+  const getSmartDuration = (periodicidad: string) => {
+    const durations: Record<string, number> = {
+      mensual: 60,
+      trimestral: 90,
+      semestral: 120,
+      anual: 180,
+    };
+    return durations[periodicidad] || 120;
+  };
+
+  const getSmartAntecedentes = (periodicidad: string) => {
+    const year = new Date().getFullYear();
+    const templates: Record<string, string> = {
+      mensual: `Revisión mensual del Sistema de Gestión de Seguridad y Salud en el Trabajo conforme a ISO 45001:2018 y Decreto 1072/2015.`,
+      trimestral: `Revisión trimestral del SG-SST para evaluación del avance en objetivos, cumplimiento normativo y oportunidades de mejora del periodo.`,
+      semestral: `Revisión semestral integral del SG-SST conforme a ISO 45001:2018 (Numeral 9.3) y Decreto 1072/2015 (Art. 2.2.4.6.31). Se evalúa el cumplimiento de la política, objetivos, resultados de auditorías y acciones de mejora.`,
+      anual: `Revisión anual integral del Sistema de Gestión de Seguridad y Salud en el Trabajo correspondiente al año ${year}, en cumplimiento de ISO 45001:2018 y la normativa colombiana aplicable (Resolución 0312/2019, Decreto 1072/2015).`,
+    };
+    return templates[periodicidad] || templates.semestral;
+  };
+
   const { data: revisiones = [], isLoading } = useQuery<RevisionDireccion[]>({
     queryKey: ["/api/revisiones-direccion"],
   });
@@ -89,6 +134,67 @@ export default function RevisionesDireccion() {
     queryKey: ["/api/companies"],
     enabled: isSuperadmin,
   });
+
+  const applySmartDefaults = () => {
+    const periodicidad = form.getValues("periodicidad") || "semestral";
+    const newAutoFilled = new Set<string>();
+    
+    if (!form.getValues("codigo")) {
+      form.setValue("codigo", generateSmartCode(revisiones, periodicidad));
+      newAutoFilled.add("codigo");
+    }
+    if (!form.getValues("titulo")) {
+      form.setValue("titulo", generateSmartTitle(periodicidad));
+      newAutoFilled.add("titulo");
+    }
+    if (!form.getValues("duracion")) {
+      form.setValue("duracion", getSmartDuration(periodicidad));
+      newAutoFilled.add("duracion");
+    }
+    if (!form.getValues("lugar")) {
+      form.setValue("lugar", "Sala de Reuniones Virtual");
+      newAutoFilled.add("lugar");
+    }
+    if (!form.getValues("antecedentes")) {
+      form.setValue("antecedentes", getSmartAntecedentes(periodicidad));
+      newAutoFilled.add("antecedentes");
+    }
+    
+    setAutoFilledFields(newAutoFilled);
+  };
+
+  useEffect(() => {
+    if (dialogOpen) {
+      form.reset();
+      setTimeout(() => applySmartDefaults(), 50);
+    } else {
+      setAutoFilledFields(new Set());
+    }
+  }, [dialogOpen]);
+
+  const watchPeriodicidad = form.watch("periodicidad");
+  
+  useEffect(() => {
+    if (dialogOpen && watchPeriodicidad) {
+      const currentCodigo = form.getValues("codigo");
+      const currentTitulo = form.getValues("titulo");
+      const currentDuracion = form.getValues("duracion");
+      const currentAntecedentes = form.getValues("antecedentes");
+      
+      if (autoFilledFields.has("codigo") || !currentCodigo) {
+        form.setValue("codigo", generateSmartCode(revisiones, watchPeriodicidad));
+      }
+      if (autoFilledFields.has("titulo") || !currentTitulo) {
+        form.setValue("titulo", generateSmartTitle(watchPeriodicidad));
+      }
+      if (autoFilledFields.has("duracion") || !currentDuracion) {
+        form.setValue("duracion", getSmartDuration(watchPeriodicidad));
+      }
+      if (autoFilledFields.has("antecedentes") || !currentAntecedentes) {
+        form.setValue("antecedentes", getSmartAntecedentes(watchPeriodicidad));
+      }
+    }
+  }, [watchPeriodicidad]);
 
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
@@ -193,9 +299,16 @@ export default function RevisionesDireccion() {
           </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Nueva Revisión por Dirección</DialogTitle>
-              <DialogDescription>
-                Registre una nueva revisión gerencial del Sistema de Gestión SST
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Nueva Revisión por Dirección
+              </DialogTitle>
+              <DialogDescription className="flex items-center gap-2">
+                <span>Formulario inteligente con auto-llenado</span>
+                <Badge variant="secondary" className="text-xs">
+                  <Wand2 className="h-3 w-3 mr-1" />
+                  Smart Form
+                </Badge>
               </DialogDescription>
             </DialogHeader>
 
@@ -234,12 +347,25 @@ export default function RevisionesDireccion() {
                     name="codigo"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Código</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Código
+                          {autoFilledFields.has("codigo") && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Auto-generado secuencialmente</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </FormLabel>
                         <FormControl>
                           <Input
                             {...field}
                             placeholder="Ej: RD-2025-01"
                             data-testid="input-codigo"
+                            className={autoFilledFields.has("codigo") ? "border-primary/50 bg-primary/5" : ""}
                           />
                         </FormControl>
                         <FormMessage />
@@ -277,12 +403,25 @@ export default function RevisionesDireccion() {
                   name="titulo"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Título</FormLabel>
+                      <FormLabel className="flex items-center gap-2">
+                        Título
+                        {autoFilledFields.has("titulo") && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Generado según periodicidad</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </FormLabel>
                       <FormControl>
                         <Input
                           {...field}
                           placeholder="Título descriptivo de la revisión"
                           data-testid="input-titulo"
+                          className={autoFilledFields.has("titulo") ? "border-primary/50 bg-primary/5" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -315,13 +454,26 @@ export default function RevisionesDireccion() {
                     name="lugar"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Lugar</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Lugar
+                          {autoFilledFields.has("lugar") && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Valor sugerido por defecto</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </FormLabel>
                         <FormControl>
                           <Input
                             {...field}
                             value={field.value || ""}
                             placeholder="Sala de juntas, virtual..."
                             data-testid="input-lugar"
+                            className={autoFilledFields.has("lugar") ? "border-primary/50 bg-primary/5" : ""}
                           />
                         </FormControl>
                         <FormMessage />
@@ -334,7 +486,19 @@ export default function RevisionesDireccion() {
                     name="duracion"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Duración (minutos)</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Duración (minutos)
+                          {autoFilledFields.has("duracion") && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Duración típica según periodicidad</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -343,6 +507,7 @@ export default function RevisionesDireccion() {
                             onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                             placeholder="120"
                             data-testid="input-duracion"
+                            className={autoFilledFields.has("duracion") ? "border-primary/50 bg-primary/5" : ""}
                           />
                         </FormControl>
                         <FormMessage />
@@ -381,7 +546,19 @@ export default function RevisionesDireccion() {
                   name="antecedentes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Antecedentes</FormLabel>
+                      <FormLabel className="flex items-center gap-2">
+                        Antecedentes
+                        {autoFilledFields.has("antecedentes") && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Texto base según normativa y periodicidad</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
@@ -389,6 +566,7 @@ export default function RevisionesDireccion() {
                           placeholder="Contexto y antecedentes de la revisión..."
                           rows={3}
                           data-testid="textarea-antecedentes"
+                          className={autoFilledFields.has("antecedentes") ? "border-primary/50 bg-primary/5" : ""}
                         />
                       </FormControl>
                       <FormMessage />
