@@ -3075,6 +3075,10 @@ export const objetivosSst = pgTable("objetivos_sst", {
   observaciones: text("observaciones"),
   planesAccion: text("planes_accion"), // Planes de acción si no se cumple
   
+  // Seguimiento de avance (Decreto 1072/2015 Art. 2.2.4.6.19)
+  // Campo agregado para tracking de progreso sin modificar estado
+  porcentajeAvance: integer("porcentaje_avance").default(0), // 0-100%
+  
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
@@ -3089,6 +3093,7 @@ export const insertObjetivoSstSchema = createInsertSchema(objetivosSst)
     fechaFin: z.coerce.date(),
     fechaUltimaRevision: z.coerce.date().optional().nullable(),
     valorMeta: z.number().optional().nullable(),
+    porcentajeAvance: z.number().min(0).max(100).optional().nullable(),
   });
 export type InsertObjetivoSst = z.infer<typeof insertObjetivoSstSchema>;
 export type ObjetivoSst = typeof objetivosSst.$inferSelect;

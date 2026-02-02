@@ -1136,6 +1136,9 @@ export interface IStorage {
       cumplidos: number;
       noCumplidos: number;
       porcentajeCumplimiento: number;
+      // Campos adicionales (Add-Only - Decreto 1072/2015)
+      promedioAvance: number;
+      completadosPorAvance: number;
     };
     indicadores: {
       total: number;
@@ -8825,6 +8828,9 @@ export class DbStorage implements IStorage {
       cumplidos: number;
       noCumplidos: number;
       porcentajeCumplimiento: number;
+      // Campos adicionales (Add-Only - Decreto 1072/2015)
+      promedioAvance: number;
+      completadosPorAvance: number;
     };
     indicadores: {
       total: number;
@@ -8884,7 +8890,14 @@ export class DbStorage implements IStorage {
       noCumplidos: allObjetivos.filter(o => o.estado === 'no-cumplido').length,
       porcentajeCumplimiento: allObjetivos.length > 0
         ? Math.round((allObjetivos.filter(o => o.estado === 'cumplido').length / allObjetivos.length) * 100)
-        : 0
+        : 0,
+      // ========== CAMPOS ADICIONALES (Add-Only - Decreto 1072/2015) ==========
+      // Promedio de avance basado en porcentajeAvance de cada objetivo
+      promedioAvance: allObjetivos.length > 0
+        ? Math.round(allObjetivos.reduce((sum, o) => sum + (o.porcentajeAvance || 0), 0) / allObjetivos.length)
+        : 0,
+      // Objetivos con avance >= 100% (completados por avance)
+      completadosPorAvance: allObjetivos.filter(o => (o.porcentajeAvance || 0) >= 100).length
     };
 
     // ========== INDICADORES SST ==========
