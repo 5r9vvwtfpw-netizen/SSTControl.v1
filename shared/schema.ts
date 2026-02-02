@@ -9968,3 +9968,35 @@ export const insertHallazgoAuditoriaPesvSchema = createInsertSchema(hallazgosAud
   .omit({ id: true, createdAt: true, companyId: true });
 export type InsertHallazgoAuditoriaPesv = z.infer<typeof insertHallazgoAuditoriaPesvSchema>;
 export type HallazgoAuditoriaPesv = typeof hallazgosAuditoriaPesv.$inferSelect;
+
+// ============================================================================
+// TRAZABILIDAD OBJETIVOS-ESTÁNDARES SST
+// Vinculación entre Objetivos SST (Decreto 1072/2015) y Estándares (Resolución 0312/2019)
+// Permite calcular automáticamente el avance de objetivos basado en cumplimiento de estándares
+// Principio Add-Only: Nueva tabla sin modificar estructuras existentes
+// ============================================================================
+
+export const objetivosEstandaresVinculacion = pgTable("objetivos_estandares_vinculacion", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  
+  // Relaciones
+  objetivoId: varchar("objetivo_id").notNull().references(() => objetivosSst.id, { onDelete: "cascade" }),
+  estandarId: varchar("estandar_id").notNull().references(() => estandaresSst.id, { onDelete: "cascade" }),
+  
+  // Peso del estándar en el objetivo (para cálculo ponderado)
+  pesoRelativo: integer("peso_relativo").notNull().default(1), // 1-10, default 1 (igual peso)
+  
+  // Auditoría
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  createdBy: varchar("created_by").references(() => users.id),
+});
+
+// Nota: Las relaciones se manejan mediante JOINs en las consultas
+// para mantener compatibilidad con el patrón existente del proyecto
+
+// Schema de inserción para vinculación
+export const insertObjetivoEstandarVinculacionSchema = createInsertSchema(objetivosEstandaresVinculacion)
+  .omit({ id: true, createdAt: true, companyId: true });
+export type InsertObjetivoEstandarVinculacion = z.infer<typeof insertObjetivoEstandarVinculacionSchema>;
+export type ObjetivoEstandarVinculacion = typeof objetivosEstandaresVinculacion.$inferSelect;
