@@ -8966,22 +8966,22 @@ export class DbStorage implements IStorage {
     const auditoriasCompletadas = allAuditorias.filter(a => 
       a.estado === 'completada' || a.estado === 'aprobada'
     );
-    const totalConformidades = auditoriasCompletadas.reduce((sum, a) => 
-      sum + (a.numeroConformidades || 0), 0
+    
+    // Promedio del porcentaje de cumplimiento de auditorías completadas
+    const totalPorcentaje = auditoriasCompletadas.reduce((sum, a) => 
+      sum + (a.porcentajeCumplimiento || 0), 0
     );
-    const totalHallazgos = auditoriasCompletadas.reduce((sum, a) => 
-      sum + (a.numeroHallazgos || 0), 0
-    );
+    const promedioCumplimiento = auditoriasCompletadas.length > 0
+      ? Math.round(totalPorcentaje / auditoriasCompletadas.length)
+      : 0;
 
     const auditorias = {
       totalAnio: allAuditorias.length,
-      completadas: allAuditorias.filter(a => a.estado === 'completada' || a.estado === 'aprobada').length,
+      completadas: auditoriasCompletadas.length,
       enCurso: allAuditorias.filter(a => a.estado === 'en_progreso').length,
       programadas: allAuditorias.filter(a => a.estado === 'programada').length,
       hallazgosPorSeveridad,
-      porcentajeConformidad: totalHallazgos > 0
-        ? Math.round((totalConformidades / totalHallazgos) * 100)
-        : 0
+      porcentajeConformidad: promedioCumplimiento
     };
 
     // ========== REVISIONES POR DIRECCIÓN ==========
