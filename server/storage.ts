@@ -7152,8 +7152,21 @@ export class DbStorage implements IStorage {
   }
 
   async updateObjetivoSst(id: string, objetivo: Partial<InsertObjetivoSst>, companyId: string): Promise<ObjetivoSst | undefined> {
+    // Auto-update estado based on porcentajeAvance (Decreto 1072/2015, Art. 2.2.4.6.19)
+    const updateData: any = { ...objetivo };
+    
+    // If porcentajeAvance is being updated to 100 or more, auto-set estado to 'cumplido'
+    if (typeof objetivo.porcentajeAvance === 'number') {
+      if (objetivo.porcentajeAvance >= 100) {
+        updateData.estado = 'cumplido';
+      } else if (objetivo.porcentajeAvance > 0 && !objetivo.estado) {
+        // If avance > 0 but < 100 and estado wasn't explicitly set, ensure it's 'activo'
+        updateData.estado = 'activo';
+      }
+    }
+    
     const [updated] = await db.update(schema.objetivosSst)
-      .set(objetivo as any)
+      .set(updateData)
       .where(and(
         eq(schema.objetivosSst.id, id),
         eq(schema.objetivosSst.companyId, companyId)
