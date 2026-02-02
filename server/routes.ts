@@ -1801,10 +1801,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId: company.id,
       });
       
-      // Update session with new companyId so Dashboard works immediately
-      if (req.user) {
-        (req.user as any).companyId = company.id;
-      }
+      // NOTE: Session update moved AFTER subscription creation for security
+      // If subscription fails, rollback will revert DB and session stays clean
       
       // Create trial subscription (7 days) - CRITICAL: Must succeed
       const TRIAL_DAYS = 7;
@@ -1883,6 +1881,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ 
           error: `No se pudo completar el registro: ${subscriptionError}. Por favor, contacta a soporte.`
         });
+      }
+      
+      // Update session with new companyId ONLY after subscription succeeds (security fix)
+      if (req.user) {
+        (req.user as any).companyId = company.id;
       }
       
       // Update user's trial end date
