@@ -16355,6 +16355,160 @@ export class DbStorage implements IStorage {
       return false;
     }
   }
+
+  // ============================================================================
+  // TRAZABILIDAD OBJETIVOS-ESTÁNDARES SST
+  // Vinculación entre Objetivos SST (Decreto 1072/2015) y Estándares (Resolución 0312/2019)
+  // Principio Add-Only: Solo nuevos métodos, sin modificar existentes
+  // ============================================================================
+
+  /**
+   * Get all linkages between objectives and standards for a company
+   */
+  async getObjetivosEstandaresVinculacion(companyId: string): Promise<schema.ObjetivoEstandarVinculacion[]> {
+    return await db.select()
+      .from(schema.objetivosEstandaresVinculacion)
+      .where(eq(schema.objetivosEstandaresVinculacion.companyId, companyId));
+  }
+
+  /**
+   * Get linkages for a specific objective
+   */
+  async getVinculacionesByObjetivo(objetivoId: string): Promise<schema.ObjetivoEstandarVinculacion[]> {
+    return await db.select()
+      .from(schema.objetivosEstandaresVinculacion)
+      .where(eq(schema.objetivosEstandaresVinculacion.objetivoId, objetivoId));
+  }
+
+  /**
+   * Get linkages for a specific standard
+   */
+  async getVinculacionesByEstandar(estandarId: string): Promise<schema.ObjetivoEstandarVinculacion[]> {
+    return await db.select()
+      .from(schema.objetivosEstandaresVinculacion)
+      .where(eq(schema.objetivosEstandaresVinculacion.estandarId, estandarId));
+  }
+
+  /**
+   * Create a new linkage between objective and standard
+   */
+  async createObjetivoEstandarVinculacion(
+    data: schema.InsertObjetivoEstandarVinculacion & { companyId: string }
+  ): Promise<schema.ObjetivoEstandarVinculacion> {
+    const [created] = await db.insert(schema.objetivosEstandaresVinculacion)
+      .values(data)
+      .returning();
+    return created;
+  }
+
+  /**
+   * Update linkage weight
+   */
+  async updateObjetivoEstandarVinculacion(
+    id: string, 
+    data: { pesoRelativo?: number }
+  ): Promise<schema.ObjetivoEstandarVinculacion | undefined> {
+    const [updated] = await db.update(schema.objetivosEstandaresVinculacion)
+      .set(data)
+      .where(eq(schema.objetivosEstandaresVinculacion.id, id))
+      .returning();
+    return updated;
+  }
+
+  /**
+   * Delete a linkage
+   */
+  async deleteObjetivoEstandarVinculacion(id: string): Promise<boolean> {
+    const result = await db.delete(schema.objetivosEstandaresVinculacion)
+      .where(eq(schema.objetivosEstandaresVinculacion.id, id));
+    return true;
+  }
+
+  /**
+   * Calculate objective progress based on linked standards compliance
+   * Uses weighted average if standards have different weights
+   * Returns percentage (0-100)
+   */
+  async calcularAvanceObjetivoDesdeEstandares(
+    objetivoId: string,
+    evaluacionId: string
+  ): Promise<number> {
+    // Get all standards linked to this objective
+    const vinculaciones = await this.getVinculacionesByObjetivo(objetivoId);
+    
+    if (vinculaciones.length === 0) {
+      return 0; // No linked standards, return 0
+    }
+
+    // Get compliance status for each linked standard in the given evaluation
+    let totalPeso = 0;
+    let sumaCumplimiento = 0;
+
+    for (const vinculacion of vinculaciones) {
+      // Get the response for this standard in the evaluation
+      const respuestas = await db.select()
+        .from(schema.respuestasEstandares)
+        .where(and(
+          eq(schema.respuestasEstandares.evaluacionId, evaluacionId),
+          eq(schema.respuestasEstandares.estandarId, vinculacion.estandarId)
+        ));
+
+      if (respuestas.length > 0) {
+        const respuesta = respuestas[0];
+        const peso = vinculacion.pesoRelativo || 1;
+        totalPeso += peso;
+        
+        // cumple is 0 or 1, multiply by 100 and by weight
+        sumaCumplimiento += (respuesta.cumple || 0) * 100 * peso;
+      }
+    }
+
+    if (totalPeso === 0) {
+      return 0;
+    }
+
+    // Calculate weighted average
+    return Math.round(sumaCumplimiento / totalPeso);
+  }
+
+  /**
+   * Get linked standards with their compliance status for an objective
+   * Used to display traceability in the UI
+   */
+  async getVinculacionesConCumplimiento(
+    objetivoId: string,
+    evaluacionId: string
+  ): Promise<Array<{
+    vinculacion: schema.ObjetivoEstandarVinculacion;
+    estandar: schema.EstandarSst | null;
+    cumple: number | null;
+  }>> {
+    const vinculaciones = await this.getVinculacionesByObjetivo(objetivoId);
+    const result = [];
+
+    for (const vinculacion of vinculaciones) {
+      // Get the standard details
+      const estandares = await db.select()
+        .from(schema.estandaresSst)
+        .where(eq(schema.estandaresSst.id, vinculacion.estandarId));
+      
+      // Get compliance status
+      const respuestas = await db.select()
+        .from(schema.respuestasEstandares)
+        .where(and(
+          eq(schema.respuestasEstandares.evaluacionId, evaluacionId),
+          eq(schema.respuestasEstandares.estandarId, vinculacion.estandarId)
+        ));
+
+      result.push({
+        vinculacion,
+        estandar: estandares[0] || null,
+        cumple: respuestas.length > 0 ? respuestas[0].cumple : null
+      });
+    }
+
+    return result;
+  }
 }
 
 export const storage = new DbStorage();
