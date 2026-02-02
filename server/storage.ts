@@ -1112,7 +1112,7 @@ export interface IStorage {
   // ========================================
   // Dashboard HACER - Controles Operacionales (PHVA cycle)
   // ========================================
-  getDashboardHacer(companyId: string): Promise<{
+  getDashboardHacer(companyId: string, year?: number): Promise<{
     totalInspecciones: number;
     peligrosVinculados: number;
     controlState: {
@@ -1129,7 +1129,7 @@ export interface IStorage {
   // ========================================
   // Dashboard VERIFICAR - Indicadores SG-SST (PHVA cycle)
   // ========================================
-  getDashboardVerificar(companyId: string): Promise<{
+  getDashboardVerificar(companyId: string, year?: number): Promise<{
     objetivos: {
       total: number;
       activos: number;
@@ -1184,7 +1184,7 @@ export interface IStorage {
   // ========================================
   // Dashboard ACTUAR - Eficacia de Acciones Correctivas/Preventivas (PHVA cycle)
   // ========================================
-  getDashboardActuar(companyId: string): Promise<{
+  getDashboardActuar(companyId: string, year?: number): Promise<{
     accionesMejora: {
       total: number;
       completadas: number;
@@ -8762,7 +8762,7 @@ export class DbStorage implements IStorage {
   // ========================================
   // Dashboard HACER - Controles Operacionales
   // ========================================
-  async getDashboardHacer(companyId: string): Promise<{
+  async getDashboardHacer(companyId: string, year: number = new Date().getFullYear()): Promise<{
     totalInspecciones: number;
     peligrosVinculados: number;
     controlState: {
@@ -8834,7 +8834,7 @@ export class DbStorage implements IStorage {
   // ========================================
   // Dashboard VERIFICAR - Indicadores SG-SST
   // ========================================
-  async getDashboardVerificar(companyId: string): Promise<{
+  async getDashboardVerificar(companyId: string, year: number = new Date().getFullYear()): Promise<{
     objetivos: {
       total: number;
       activos: number;
@@ -8885,7 +8885,7 @@ export class DbStorage implements IStorage {
       tendenciaMensual: Array<{ mes: string; cantidad: number }>;
     };
   }> {
-    const currentYear = new Date().getFullYear();
+    const currentYear = year;
     const currentMonth = new Date().getMonth();
 
     // ========== OBJETIVOS SST ==========
@@ -9097,7 +9097,7 @@ export class DbStorage implements IStorage {
   // ========================================
   // Dashboard ACTUAR - Eficacia de Acciones Correctivas/Preventivas
   // ========================================
-  async getDashboardActuar(companyId: string): Promise<{
+  async getDashboardActuar(companyId: string, year: number = new Date().getFullYear()): Promise<{
     accionesMejora: {
       total: number;
       completadas: number;
@@ -9300,7 +9300,7 @@ export class DbStorage implements IStorage {
     };
 
     // ========== PLAN DE TRABAJO ANUAL ==========
-    const currentYear = new Date().getFullYear();
+    const currentYear = year;
     const [planTrabajo] = await db.select()
       .from(schema.planesTrabajoAnual)
       .where(and(

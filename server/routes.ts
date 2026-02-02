@@ -29635,7 +29635,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const companyId = req.user?.companyId;
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
-      const dashboard = await storage.getDashboardHacer(companyId);
+      const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
+      const dashboard = await storage.getDashboardHacer(companyId, year);
       res.json(dashboard);
     } catch (error: any) {
       console.error('Error fetching dashboard HACER:', error);
@@ -29649,7 +29650,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const companyId = req.user?.companyId;
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
-      const dashboard = await storage.getDashboardVerificar(companyId);
+      const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
+      const dashboard = await storage.getDashboardVerificar(companyId, year);
       res.json(dashboard);
     } catch (error: any) {
       console.error('Error fetching dashboard VERIFICAR:', error);
@@ -29663,7 +29665,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const companyId = req.user?.companyId;
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
-      const dashboard = await storage.getDashboardActuar(companyId);
+      const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
+      const dashboard = await storage.getDashboardActuar(companyId, year);
       res.json(dashboard);
     } catch (error: any) {
       console.error('Error fetching dashboard ACTUAR:', error);
