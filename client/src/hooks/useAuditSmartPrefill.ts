@@ -104,8 +104,8 @@ export function useAuditSmartPrefill(
       .slice(0, 3)
       .map((o) => o.id);
 
-    const estandarAuditoria = estandares.find((e) => e.codigo === "3.1.1");
-    const estandarCopasst = estandares.find((e) => e.codigo === "6.1.4");
+    const estandarAuditoria = estandares.find((e) => e.numeroEstandar === "3.1.1");
+    const estandarCopasst = estandares.find((e) => e.numeroEstandar === "6.1.4");
 
     return {
       codigo,
@@ -115,7 +115,7 @@ export function useAuditSmartPrefill(
       auditoristaLider,
       fechaProgramada: new Date(),
       trazabilidad: {
-        estandarSst: estandarAuditoria?.codigo || "3.1.1",
+        estandarSst: estandarAuditoria?.numeroEstandar || "3.1.1",
         objetivosSstRelacionados: objetivosRelacionados,
         copasst: !!estandarCopasst
       }
@@ -138,7 +138,7 @@ export function useAuditSmartPrefill(
   }, [prefillData]);
 
   const trazabilidadInfo = useMemo(() => {
-    const estandarAuditoria = estandares.find((e) => e.codigo === "3.1.1");
+    const estandarAuditoria = estandares.find((e) => e.numeroEstandar === "3.1.1");
     if (!estandarAuditoria) return null;
 
     const objetivosActivos = objetivos

@@ -251,6 +251,17 @@ export default function AuditoriasInternas() {
                 Crear una nueva auditoría interna del sistema de gestión SST
               </DialogDescription>
             </DialogHeader>
+            
+            {!smartPrefillDismissed && detectedFields.length > 0 && (
+              <AuditSmartPrefillBanner
+                detectedFields={detectedFields}
+                trazabilidadInfo={trazabilidadInfo}
+                onApply={applySmartPrefill}
+                onDismiss={() => setSmartPrefillDismissed(true)}
+                isApplied={smartPrefillApplied}
+              />
+            )}
+            
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 {hasGlobalAccessUser && (
