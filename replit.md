@@ -56,3 +56,11 @@ The Promotions Plugin (`plugins/promotions/`) operates as an independent Sidecar
 -   **Shadcn UI**: UI component library.
 -   **Amazon S3**: Cloud object storage.
 -   **AWS SDK v3**: For S3 operations.
+### JWT Quote Verification (Landing Page Integration)
+The system includes secure JWT verification for pricing quotes from sst-colombia.com.co landing page:
+- **Module**: `server/jwt-quote-verifier.ts` - Verifies cryptographically signed JWTs
+- **Endpoint**: `POST /api/verify-quote` - Validates quote tokens from landing page
+- **Security**: Uses HMAC-SHA256 with `LANDING_PAGE_API_KEY` shared secret
+- **Expiration**: Quotes expire after 30 minutes
+- **Fallback**: Supports legacy base64 format during transition period
+- **Payload includes**: pricing data, employee count, risk level, vehicles, coupon codes, and referral info
