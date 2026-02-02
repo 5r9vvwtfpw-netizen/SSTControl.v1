@@ -29625,6 +29625,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/dashboard-planear - Dashboard de planificación SST (Fase PLANEAR)
+  app.get("/api/dashboard-planear", requireAuth, requirePermission("sst_management:view"), async (req, res) => {
+    try {
+      const companyId = req.user?.companyId;
+      if (!companyId) return res.status(401).json({ error: "No autorizado" });
+      
+      const dashboard = await storage.getDashboardPlanear(companyId);
+      res.json(dashboard);
+    } catch (error: any) {
+      console.error('Error fetching dashboard PLANEAR:', error);
+      res.status(500).json({ error: error.message || "Error al obtener dashboard PLANEAR" });
+    }
+  });
+
   // ========== CONSOLIDATED REPORTS (VERIFICAR PHASE - AUDITABLE TRACEABILITY) ==========
 
   // GET /api/reportes/evaluaciones-sst-consolidado/pdf - Reporte Consolidado Estándares Mínimos

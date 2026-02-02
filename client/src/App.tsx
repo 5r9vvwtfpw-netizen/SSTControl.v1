@@ -100,6 +100,7 @@ import RecomendacionesArl from "@/pages/RecomendacionesArl";
 import DashboardHacer from "@/pages/DashboardHacer";
 import DashboardVerificar from "@/pages/DashboardVerificar";
 import DashboardActuar from "@/pages/DashboardActuar";
+import DashboardPlanear from "@/pages/DashboardPlanear";
 import TerminosServicio from "@/pages/TerminosServicio";
 import PoliticaPrivacidad from "@/pages/PoliticaPrivacidad";
 import AcuerdoProcesamientoDatos from "@/pages/AcuerdoProcesamientoDatos";
@@ -246,6 +247,7 @@ function Router() {
       <ProtectedRoute path="/dashboard-hacer" component={DashboardHacer} />
       <ProtectedRoute path="/dashboard-verificar" component={DashboardVerificar} />
       <ProtectedRoute path="/dashboard-actuar" component={DashboardActuar} />
+      <ProtectedRoute path="/dashboard-planear" component={DashboardPlanear} />
       <ProtectedRoute path="/matriz-legal" component={MatrizLegal} />
       <ProtectedRoute path="/conservacion-documentos" component={ConservacionDocumentos} />
       <ProtectedRoute path="/objetivos-sst" component={ObjetivosSst} />
