@@ -17,7 +17,6 @@ import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
-import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 export default function PesvSiniestros() {
@@ -224,7 +223,7 @@ export default function PesvSiniestros() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <BackToEvaluationButton />
-        <BackToCronogramaButton />
+        
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
