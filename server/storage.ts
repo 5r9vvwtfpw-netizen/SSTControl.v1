@@ -9402,12 +9402,12 @@ export class DbStorage implements IStorage {
     
     const estandaresCriticos = ultimaEvaluacion 
       ? await db.select({ count: sql<number>`count(*)::int` })
-          .from(schema.respuestasEstandar)
+          .from(schema.respuestasEstandares)
           .where(and(
-            eq(schema.respuestasEstandar.evaluacionId, ultimaEvaluacion.id),
-            eq(schema.respuestasEstandar.cumple, false)
+            eq(schema.respuestasEstandares.evaluacionId, ultimaEvaluacion.id),
+            eq(schema.respuestasEstandares.cumple, false)
           ))
-          .then(res => res[0]?.count ?? 0)
+          .then((res: Array<{count: number}>) => res[0]?.count ?? 0)
       : 0;
     
     const tendenciaMejora = ultimaEvaluacion && penultimaEvaluacion
@@ -9431,11 +9431,11 @@ export class DbStorage implements IStorage {
     if (planActivo) {
       const actividades = await db.select()
         .from(schema.actividadesPlanTrabajo)
-        .where(eq(schema.actividadesPlanTrabajo.planId, planActivo.id));
+        .where(eq(schema.actividadesPlanTrabajo.planTrabajoId, planActivo.id));
       
-      actividadesCompletadas = actividades.filter(a => a.estado === 'completada').length;
-      actividadesPendientes = actividades.filter(a => a.estado === 'pendiente' || a.estado === 'en-proceso').length;
-      actividadesVencidas = actividades.filter(a => 
+      actividadesCompletadas = actividades.filter((a: schema.ActividadPlanTrabajo) => a.estado === 'completada').length;
+      actividadesPendientes = actividades.filter((a: schema.ActividadPlanTrabajo) => a.estado === 'pendiente' || a.estado === 'en-proceso').length;
+      actividadesVencidas = actividades.filter((a: schema.ActividadPlanTrabajo) => 
         a.estado !== 'completada' && 
         a.fechaFin !== null && 
         a.fechaFin < todayStr
@@ -9448,9 +9448,9 @@ export class DbStorage implements IStorage {
       .where(eq(schema.objetivosSst.companyId, companyId));
     
     const totalObjetivos = allObjetivos.length;
-    const objetivosActivos = allObjetivos.filter(o => o.estado === 'activo').length;
-    const objetivosCumplidos = allObjetivos.filter(o => o.estado === 'cumplido').length;
-    const objetivosPorVencer = allObjetivos.filter(o => 
+    const objetivosActivos = allObjetivos.filter((o: schema.ObjetivoSst) => o.estado === 'activo').length;
+    const objetivosCumplidos = allObjetivos.filter((o: schema.ObjetivoSst) => o.estado === 'cumplido').length;
+    const objetivosPorVencer = allObjetivos.filter((o: schema.ObjetivoSst) => 
       o.estado === 'activo' && 
       o.fechaMeta !== null && 
       o.fechaMeta <= thirtyDaysLater &&
@@ -9464,7 +9464,7 @@ export class DbStorage implements IStorage {
     
     const requisitosIdentificados = allRequisitos.length;
     const startOfYear = `${currentYear}-01-01`;
-    const actualizadosEsteAnio = allRequisitos.filter(r => 
+    const actualizadosEsteAnio = allRequisitos.filter((r: schema.MatrizLegal) => 
       r.updatedAt !== null && 
       r.updatedAt.toISOString().split('T')[0] >= startOfYear
     ).length;
@@ -9474,23 +9474,23 @@ export class DbStorage implements IStorage {
       .from(schema.matricesIperc)
       .where(eq(schema.matricesIperc.companyId, companyId));
     
-    const matrizIds = matricesIperc.map(m => m.id);
+    const matrizIds = matricesIperc.map((m: schema.MatrizIperc) => m.id);
     
     const allPeligros = matrizIds.length > 0
       ? await db.select()
           .from(schema.peligrosIperc)
-          .where(sql`${schema.peligrosIperc.matrizId} IN ${sql.raw(`(${matrizIds.map(id => `'${id}'`).join(',')})`)}`
+          .where(sql`${schema.peligrosIperc.matrizId} IN ${sql.raw(`(${matrizIds.map((id: string) => `'${id}'`).join(',')})`)}`
           )
       : [];
     
     const peligrosIdentificados = allPeligros.length;
-    const peligrosAltoRiesgo = allPeligros.filter(p => 
+    const peligrosAltoRiesgo = allPeligros.filter((p: schema.PeligroIperc) => 
       p.nivelRiesgoResidual === 'alto' || 
       p.nivelRiesgoResidual === 'muy_alto' ||
       p.nivelRiesgoInicial === 'alto' ||
       p.nivelRiesgoInicial === 'muy_alto'
     ).length;
-    const peligrosControlados = allPeligros.filter(p => 
+    const peligrosControlados = allPeligros.filter((p: schema.PeligroIperc) => 
       p.nivelRiesgoResidual === 'bajo' || 
       p.nivelRiesgoResidual === 'aceptable'
     ).length;
@@ -9500,8 +9500,8 @@ export class DbStorage implements IStorage {
       .from(schema.politicasSst)
       .where(eq(schema.politicasSst.companyId, companyId));
     
-    const politicasVigentes = allPoliticas.filter(p => p.estado === 'vigente').length;
-    const politicasPorActualizar = allPoliticas.filter(p => 
+    const politicasVigentes = allPoliticas.filter((p: schema.PoliticaSst) => p.estado === 'vigente').length;
+    const politicasPorActualizar = allPoliticas.filter((p: schema.PoliticaSst) => 
       p.fechaActualizacion !== null && 
       new Date(p.fechaActualizacion).getTime() < today.getTime() - 365 * 24 * 60 * 60 * 1000
     ).length;
