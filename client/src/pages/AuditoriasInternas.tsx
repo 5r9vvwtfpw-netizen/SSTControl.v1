@@ -22,6 +22,8 @@ import { hasGlobalAccess } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { useAuditSmartPrefill } from "@/hooks/useAuditSmartPrefill";
+import { AuditSmartPrefillBanner } from "@/components/auditorias/AuditSmartPrefillBanner";
 
 const normativaAuditorias = [
   {
@@ -112,6 +114,41 @@ export default function AuditoriasInternas() {
   });
 
   const planificadaConCopasst = form.watch("planificadaConCopasst");
+  const tipoWatch = form.watch("tipo") as "interna" | "externa" | "seguimiento";
+  const normaReferenciaWatch = form.watch("normaReferencia") as "ISO_45001" | "res_0312_2019" | "ambas";
+
+  const [smartPrefillApplied, setSmartPrefillApplied] = useState(false);
+  const [smartPrefillDismissed, setSmartPrefillDismissed] = useState(false);
+
+  const { prefillData, detectedFields, trazabilidadInfo } = useAuditSmartPrefill(
+    tipoWatch || "interna",
+    normaReferenciaWatch || "ISO_45001"
+  );
+
+  const applySmartPrefill = () => {
+    if (prefillData) {
+      form.setValue("codigo", prefillData.codigo);
+      form.setValue("titulo", prefillData.titulo);
+      form.setValue("objetivo", prefillData.objetivo);
+      form.setValue("alcance", prefillData.alcance);
+      if (prefillData.auditoristaLider) {
+        form.setValue("auditoristaLider", prefillData.auditoristaLider);
+      }
+      setSmartPrefillApplied(true);
+      toast({
+        title: "Smart Form aplicado",
+        description: `${detectedFields.length} campos auto-completados con trazabilidad SST`,
+        className: "bg-emerald-50 border-emerald-200",
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (dialogOpen) {
+      setSmartPrefillApplied(false);
+      setSmartPrefillDismissed(false);
+    }
+  }, [dialogOpen]);
 
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
