@@ -25,6 +25,16 @@ A subscription blocking system is in place to manage user access based on subscr
 
 A centralized Document Traceability System provides tracking of all system-generated PDFs using a metadata-only approach. It registers documents with metadata like source module, endpoint, and record ID, and provides API endpoints for retrieval and statistics.
 
+### PHVA Cycle Consolidated Dashboard
+The main Dashboard (`client/src/pages/Dashboard.tsx`) includes a consolidated PHVA cycle view through the `PHVASummary` component (`client/src/components/PHVASummary.tsx`). This component provides:
+- **4 Phase Cards**: PLANEAR, HACER, VERIFICAR, ACTUAR with 2 key metrics each
+- **Traceability Links**: Direct navigation to each phase's detailed panel
+- **Additional KPIs**: Peligros Identificados, Objetivos SST, Plan de Trabajo
+- **Alerts**: Warning banner for overdue actions requiring immediate attention
+- **API Integration**: Consumes `/api/dashboard-hacer`, `/api/dashboard-verificar`, `/api/dashboard-actuar`
+
+The component follows the "Add-Only" principle and uses the same visual patterns as the existing PESV dashboard (border-l-4 with gradient backgrounds).
+
 The Promotions Plugin (`plugins/promotions/`) follows a Sidecar Architecture pattern, operating independently with its own database tables and API routes. It features a coupon system, digital contracts with JWT-validated price locking, and a net-zero risk referral program. It communicates with the main system via the database and requires specific environment variables for functionality.
 
 ## External Dependencies
