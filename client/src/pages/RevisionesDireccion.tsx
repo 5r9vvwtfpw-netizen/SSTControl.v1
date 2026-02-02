@@ -365,9 +365,11 @@ export default function RevisionesDireccion() {
                             {...field}
                             placeholder="Ej: RD-2025-01"
                             data-testid="input-codigo"
-                            className={autoFilledFields.has("codigo") ? "border-primary/50 bg-primary/5" : ""}
+                            readOnly
+                            className="border-primary/50 bg-muted cursor-not-allowed"
                           />
                         </FormControl>
+                        <p className="text-xs text-muted-foreground">Código generado automáticamente (no editable)</p>
                         <FormMessage />
                       </FormItem>
                     )}
