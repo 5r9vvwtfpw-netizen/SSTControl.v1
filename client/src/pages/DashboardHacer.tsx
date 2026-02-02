@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { YearSelector } from "@/components/dashboard/YearSelector";
 import { 
   ClipboardCheck, 
   AlertTriangle, 
@@ -29,8 +31,15 @@ interface DashboardHacerStats {
 }
 
 export default function DashboardHacer() {
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  
   const { data: stats, isLoading } = useQuery<DashboardHacerStats>({
-    queryKey: ["/api/dashboard-hacer"],
+    queryKey: ["/api/dashboard-hacer", selectedYear],
+    queryFn: async () => {
+      const response = await fetch(`/api/dashboard-hacer?year=${selectedYear}`);
+      if (!response.ok) throw new Error("Error al cargar dashboard");
+      return response.json();
+    },
   });
 
   if (isLoading) {
@@ -61,11 +70,16 @@ export default function DashboardHacer() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
         <div>
           <h1 className="text-4xl font-black" data-testid="text-dashboard-hacer-title">Panel HACER</h1>
           <p className="text-muted-foreground">Métricas de Controles Operacionales - Fase HACER del Ciclo PHVA</p>
         </div>
+        <YearSelector 
+          selectedYear={selectedYear} 
+          onYearChange={setSelectedYear}
+          minYear={2020}
+        />
       </div>
 
       {/* Summary Cards */}

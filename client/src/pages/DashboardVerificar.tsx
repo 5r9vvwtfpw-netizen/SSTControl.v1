@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { YearSelector } from "@/components/dashboard/YearSelector";
 import { 
   Target,
   TrendingUp,
@@ -69,8 +71,15 @@ interface DashboardVerificarStats {
 }
 
 export default function DashboardVerificar() {
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  
   const { data: stats, isLoading } = useQuery<DashboardVerificarStats>({
-    queryKey: ["/api/dashboard-verificar"],
+    queryKey: ["/api/dashboard-verificar", selectedYear],
+    queryFn: async () => {
+      const response = await fetch(`/api/dashboard-verificar?year=${selectedYear}`);
+      if (!response.ok) throw new Error("Error al cargar dashboard");
+      return response.json();
+    },
   });
 
   if (isLoading) {
@@ -92,11 +101,16 @@ export default function DashboardVerificar() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
         <div>
           <h1 className="text-4xl font-black" data-testid="text-dashboard-verificar-title">Panel VERIFICAR</h1>
           <p className="text-muted-foreground">Indicadores SG-SST en Tiempo Real - Fase VERIFICAR del Ciclo PHVA</p>
         </div>
+        <YearSelector 
+          selectedYear={selectedYear} 
+          onYearChange={setSelectedYear}
+          minYear={2020}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

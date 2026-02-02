@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { YearSelector } from "@/components/dashboard/YearSelector";
 import { 
   CheckCircle2,
   Clock,
@@ -69,8 +71,15 @@ interface DashboardActuarStats {
 }
 
 export default function DashboardActuar() {
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  
   const { data: stats, isLoading } = useQuery<DashboardActuarStats>({
-    queryKey: ["/api/dashboard-actuar"],
+    queryKey: ["/api/dashboard-actuar", selectedYear],
+    queryFn: async () => {
+      const response = await fetch(`/api/dashboard-actuar?year=${selectedYear}`);
+      if (!response.ok) throw new Error("Error al cargar dashboard");
+      return response.json();
+    },
   });
 
   if (isLoading) {
@@ -101,11 +110,16 @@ export default function DashboardActuar() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
         <div>
           <h1 className="text-4xl font-black" data-testid="text-dashboard-actuar-title">Panel ACTUAR</h1>
           <p className="text-muted-foreground">Eficacia de Acciones Correctivas y Preventivas - Fase ACTUAR del Ciclo PHVA</p>
         </div>
+        <YearSelector 
+          selectedYear={selectedYear} 
+          onYearChange={setSelectedYear}
+          minYear={2020}
+        />
       </div>
 
       {hasVencidasCriticas && (
