@@ -3,6 +3,7 @@ import { AccidentCard } from "@/components/AccidentCard";
 import { TrainingCard } from "@/components/TrainingCard";
 import { DashboardPrintLayout } from "@/components/DashboardPrintLayout";
 import { PrintDashboardButton } from "@/components/PrintDashboardButton";
+import { PHVASummary } from "@/components/PHVASummary";
 import { AlertTriangle, GraduationCap, ClipboardCheck, TrendingUp, Building2, ArrowRight, Users, AlertCircle, RefreshCw, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -184,6 +185,9 @@ export default function Dashboard() {
               variant="success"
             />
           </div>
+
+          {/* PHVA Cycle Summary - Consolidated View with Traceability */}
+          <PHVASummary companyId={user?.companyId} />
 
           {/* Main Content Grid */}
           <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
