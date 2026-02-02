@@ -7,13 +7,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Search, ClipboardCheck, Calendar, Clock, CheckCircle2, Shield, PlayCircle, Building2, CalendarDays, Sparkles, Wand2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Plus, Search, ClipboardCheck, Calendar, Clock, CheckCircle2, Shield, PlayCircle, Building2, CalendarDays, Sparkles, Wand2, Eye, ChevronDown, ChevronRight, FileText, AlertCircle, Loader2, X } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { RevisionDireccion, Company, insertRevisionDireccionSchema } from "@shared/schema";
+import { RevisionDireccion, Company, DecisionRevision, AccionRevision, insertRevisionDireccionSchema, insertDecisionRevisionSchema, insertAccionRevisionSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -57,12 +59,217 @@ const formSchema = insertRevisionDireccionSchema.extend({
   companyId: z.string().optional(),
 });
 
+const decisionFormSchema = insertDecisionRevisionSchema.omit({ revisionId: true });
+const accionFormSchema = insertAccionRevisionSchema.omit({ decisionId: true });
+
+const tipoDecisionLabels: Record<string, string> = {
+  mejora_continua: "Mejora Continua",
+  cambio_politica: "Cambio de Política",
+  asignacion_recursos: "Asignación de Recursos",
+  cambio_objetivos: "Cambio de Objetivos",
+  nueva_accion: "Nueva Acción",
+  mantener: "Mantener",
+  otro: "Otro",
+};
+
+const prioridadLabels: Record<string, { label: string; className: string }> = {
+  baja: { label: "Baja", className: "bg-gray-500/10 text-gray-700 dark:text-gray-400" },
+  media: { label: "Media", className: "bg-blue-500/10 text-blue-700 dark:text-blue-400" },
+  alta: { label: "Alta", className: "bg-orange-500/10 text-orange-700 dark:text-orange-400" },
+  critica: { label: "Crítica", className: "bg-red-500/10 text-red-700 dark:text-red-400" },
+};
+
+const estadoAccionLabels: Record<string, { label: string; className: string }> = {
+  pendiente: { label: "Pendiente", className: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400" },
+  "en-proceso": { label: "En Proceso", className: "bg-blue-500/10 text-blue-700 dark:text-blue-400" },
+  completada: { label: "Completada", className: "bg-green-500/10 text-green-700 dark:text-green-400" },
+  vencida: { label: "Vencida", className: "bg-red-500/10 text-red-700 dark:text-red-400" },
+};
+
+function DecisionItem({ decision, revisionId }: { decision: DecisionRevision; revisionId: string }) {
+  const { toast } = useToast();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showAccionForm, setShowAccionForm] = useState(false);
+
+  const { data: acciones = [], isLoading: accionesLoading } = useQuery<AccionRevision[]>({
+    queryKey: ["/api/decisiones-revision", decision.id, "acciones"],
+    queryFn: async () => {
+      const res = await fetch(`/api/decisiones-revision/${decision.id}/acciones`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error al cargar acciones");
+      return res.json();
+    },
+    enabled: isExpanded,
+  });
+
+  const accionForm = useForm<z.infer<typeof accionFormSchema>>({
+    resolver: zodResolver(accionFormSchema),
+    defaultValues: {
+      descripcion: "",
+      responsableNombre: "",
+      fechaCompromiso: new Date(),
+      prioridad: "media",
+      estado: "pendiente",
+    },
+  });
+
+  const createAccionMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof accionFormSchema>) => {
+      const res = await apiRequest("POST", `/api/decisiones-revision/${decision.id}/acciones`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/decisiones-revision", decision.id, "acciones"] });
+      setShowAccionForm(false);
+      accionForm.reset();
+      toast({
+        title: "Acción creada",
+        description: "La acción se ha agregado exitosamente",
+        className: "bg-green-50 border-green-200",
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  return (
+    <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="border rounded-md p-3">
+      <CollapsibleTrigger asChild>
+        <div className="flex items-center justify-between cursor-pointer hover-elevate rounded-md p-2 -m-2">
+          <div className="flex items-center gap-2 flex-1">
+            {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            <Badge variant="outline" className="text-xs">{tipoDecisionLabels[decision.tipo] || decision.tipo}</Badge>
+            <span className="text-sm font-medium line-clamp-1">{decision.descripcion}</span>
+          </div>
+          {decision.requiereAccion === 1 && (
+            <Badge className="bg-purple-500/10 text-purple-700 dark:text-purple-400 text-xs">Requiere Acción</Badge>
+          )}
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-3 space-y-3">
+        {decision.justificacion && (
+          <div className="text-sm"><span className="text-muted-foreground">Justificación:</span> {decision.justificacion}</div>
+        )}
+        {decision.alcance && (
+          <div className="text-sm"><span className="text-muted-foreground">Alcance:</span> {decision.alcance}</div>
+        )}
+        
+        <div className="border-t pt-3">
+          <div className="flex items-center justify-between mb-2">
+            <h5 className="text-sm font-semibold">Acciones</h5>
+            <Button size="sm" variant="outline" onClick={() => setShowAccionForm(!showAccionForm)} data-testid={`button-new-accion-${decision.id}`}>
+              <Plus className="h-3 w-3 mr-1" />Nueva Acción
+            </Button>
+          </div>
+
+          {showAccionForm && (
+            <Form {...accionForm}>
+              <form onSubmit={accionForm.handleSubmit((v) => createAccionMutation.mutate(v))} className="space-y-3 p-3 bg-muted/50 rounded-md mb-3">
+                <FormField control={accionForm.control} name="descripcion" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descripción</FormLabel>
+                    <FormControl><Textarea {...field} rows={2} placeholder="Descripción de la acción..." data-testid="textarea-accion-descripcion" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField control={accionForm.control} name="responsableNombre" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Responsable</FormLabel>
+                      <FormControl><Input {...field} placeholder="Nombre del responsable" data-testid="input-accion-responsable" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={accionForm.control} name="fechaCompromiso" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fecha Compromiso</FormLabel>
+                      <FormControl>
+                        <Input type="date" value={field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(new Date(e.target.value))} data-testid="input-accion-fecha" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField control={accionForm.control} name="prioridad" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Prioridad</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger data-testid="select-accion-prioridad"><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="baja">Baja</SelectItem>
+                          <SelectItem value="media">Media</SelectItem>
+                          <SelectItem value="alta">Alta</SelectItem>
+                          <SelectItem value="critica">Crítica</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={accionForm.control} name="estado" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estado</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger data-testid="select-accion-estado"><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="pendiente">Pendiente</SelectItem>
+                          <SelectItem value="en-proceso">En Proceso</SelectItem>
+                          <SelectItem value="completada">Completada</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setShowAccionForm(false)}>Cancelar</Button>
+                  <Button type="submit" size="sm" disabled={createAccionMutation.isPending} data-testid="button-submit-accion">
+                    {createAccionMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                    Guardar
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          )}
+
+          {accionesLoading ? (
+            <div className="text-sm text-muted-foreground">Cargando acciones...</div>
+          ) : acciones.length === 0 ? (
+            <div className="text-sm text-muted-foreground py-2">No hay acciones registradas</div>
+          ) : (
+            <div className="space-y-2">
+              {acciones.map((accion) => (
+                <div key={accion.id} className="p-2 bg-muted/30 rounded-md text-sm space-y-1" data-testid={`accion-item-${accion.id}`}>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="font-medium">{accion.descripcion}</span>
+                    <div className="flex gap-1">
+                      <Badge className={prioridadLabels[accion.prioridad]?.className || ""}>{prioridadLabels[accion.prioridad]?.label || accion.prioridad}</Badge>
+                      <Badge className={estadoAccionLabels[accion.estado]?.className || ""}>{estadoAccionLabels[accion.estado]?.label || accion.estado}</Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 text-muted-foreground">
+                    <span>Responsable: {accion.responsableNombre}</span>
+                    <span>Fecha: {format(new Date(accion.fechaCompromiso), 'dd/MM/yyyy')}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 export default function RevisionesDireccion() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [autoFilledFields, setAutoFilledFields] = useState<Set<string>>(new Set());
+  const [selectedRevision, setSelectedRevision] = useState<RevisionDireccion | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [showDecisionForm, setShowDecisionForm] = useState(false);
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
 
@@ -134,6 +341,59 @@ export default function RevisionesDireccion() {
     queryKey: ["/api/companies"],
     enabled: isSuperadmin,
   });
+
+  const { data: decisiones = [], isLoading: decisionesLoading } = useQuery<DecisionRevision[]>({
+    queryKey: ["/api/revisiones-direccion", selectedRevision?.id, "decisiones"],
+    queryFn: async () => {
+      const res = await fetch(`/api/revisiones-direccion/${selectedRevision?.id}/decisiones`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error al cargar decisiones");
+      return res.json();
+    },
+    enabled: !!selectedRevision?.id && detailDialogOpen,
+  });
+
+  const decisionForm = useForm<z.infer<typeof decisionFormSchema>>({
+    resolver: zodResolver(decisionFormSchema),
+    defaultValues: {
+      tipo: "mejora_continua",
+      descripcion: "",
+      justificacion: "",
+      alcance: "",
+      requiereAccion: 1,
+    },
+  });
+
+  const createDecisionMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof decisionFormSchema>) => {
+      const res = await apiRequest("POST", `/api/revisiones-direccion/${selectedRevision?.id}/decisiones`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/revisiones-direccion", selectedRevision?.id, "decisiones"] });
+      setShowDecisionForm(false);
+      decisionForm.reset();
+      toast({
+        title: "Decisión creada",
+        description: "La decisión se ha agregado exitosamente",
+        className: "bg-green-50 border-green-200",
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleOpenDetailDialog = (revision: RevisionDireccion) => {
+    setSelectedRevision(revision);
+    setDetailDialogOpen(true);
+    setShowDecisionForm(false);
+  };
+
+  const handleCloseDetailDialog = () => {
+    setDetailDialogOpen(false);
+    setSelectedRevision(null);
+    setShowDecisionForm(false);
+  };
 
   const applySmartDefaults = () => {
     const periodicidad = form.getValues("periodicidad") || "semestral";
@@ -692,6 +952,7 @@ export default function RevisionesDireccion() {
               key={revision.id}
               className="hover-elevate cursor-pointer"
               data-testid={`card-revision-${revision.id}`}
+              onClick={() => handleOpenDetailDialog(revision)}
             >
               <CardHeader>
                 <div className="flex items-start justify-between gap-2 flex-wrap">
@@ -735,11 +996,198 @@ export default function RevisionesDireccion() {
                     {revision.resumenEjecutivo}
                   </div>
                 )}
+
+                <div className="pt-2 border-t flex justify-end">
+                  <Button variant="ghost" size="sm" className="text-primary" data-testid={`button-detail-${revision.id}`}>
+                    <Eye className="h-4 w-4 mr-1" />
+                    Ver Detalle
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      <Dialog open={detailDialogOpen} onOpenChange={(open) => !open && handleCloseDetailDialog()}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="flex items-center gap-2">
+                  <ClipboardCheck className="h-5 w-5 text-primary" />
+                  {selectedRevision?.codigo}
+                </DialogTitle>
+                <DialogDescription className="mt-1">
+                  {selectedRevision?.titulo}
+                </DialogDescription>
+              </div>
+              <div className="flex gap-2">
+                {selectedRevision && getEstadoBadge(selectedRevision.estado)}
+                {selectedRevision && getPeriodicidadBadge(selectedRevision.periodicidad)}
+              </div>
+            </div>
+          </DialogHeader>
+
+          <Tabs defaultValue="informacion" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="informacion" data-testid="tab-informacion">
+                <FileText className="h-4 w-4 mr-1" />
+                Información
+              </TabsTrigger>
+              <TabsTrigger value="decisiones" data-testid="tab-decisiones">
+                <AlertCircle className="h-4 w-4 mr-1" />
+                Decisiones
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="informacion" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <span className="text-sm text-muted-foreground">Fecha de Revisión</span>
+                  <p className="font-medium">{selectedRevision?.fechaRevision ? format(new Date(selectedRevision.fechaRevision), 'dd/MM/yyyy') : '-'}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-sm text-muted-foreground">Lugar</span>
+                  <p className="font-medium">{selectedRevision?.lugar || '-'}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-sm text-muted-foreground">Duración</span>
+                  <p className="font-medium">{selectedRevision?.duracion ? `${selectedRevision.duracion} minutos` : '-'}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-sm text-muted-foreground">Periodicidad</span>
+                  <p className="font-medium capitalize">{selectedRevision?.periodicidad || '-'}</p>
+                </div>
+              </div>
+
+              {selectedRevision?.antecedentes && (
+                <div className="space-y-1">
+                  <span className="text-sm text-muted-foreground">Antecedentes</span>
+                  <p className="text-sm">{selectedRevision.antecedentes}</p>
+                </div>
+              )}
+
+              {selectedRevision?.resumenEjecutivo && (
+                <div className="space-y-1">
+                  <span className="text-sm text-muted-foreground">Resumen Ejecutivo</span>
+                  <p className="text-sm">{selectedRevision.resumenEjecutivo}</p>
+                </div>
+              )}
+
+              {selectedRevision?.conclusiones && (
+                <div className="space-y-1">
+                  <span className="text-sm text-muted-foreground">Conclusiones</span>
+                  <p className="text-sm">{selectedRevision.conclusiones}</p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="decisiones" className="space-y-4 mt-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold">Decisiones de la Revisión</h4>
+                <Button size="sm" onClick={() => setShowDecisionForm(!showDecisionForm)} data-testid="button-new-decision">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Nueva Decisión
+                </Button>
+              </div>
+
+              {showDecisionForm && (
+                <Form {...decisionForm}>
+                  <form onSubmit={decisionForm.handleSubmit((v) => createDecisionMutation.mutate(v))} className="space-y-4 p-4 border rounded-md bg-muted/30">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField control={decisionForm.control} name="tipo" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo de Decisión</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger data-testid="select-decision-tipo"><SelectValue /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              <SelectItem value="mejora_continua">Mejora Continua</SelectItem>
+                              <SelectItem value="cambio_politica">Cambio de Política</SelectItem>
+                              <SelectItem value="asignacion_recursos">Asignación de Recursos</SelectItem>
+                              <SelectItem value="cambio_objetivos">Cambio de Objetivos</SelectItem>
+                              <SelectItem value="nueva_accion">Nueva Acción</SelectItem>
+                              <SelectItem value="mantener">Mantener</SelectItem>
+                              <SelectItem value="otro">Otro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={decisionForm.control} name="requiereAccion" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>¿Requiere Acción?</FormLabel>
+                          <Select onValueChange={(v) => field.onChange(parseInt(v))} value={String(field.value)}>
+                            <FormControl><SelectTrigger data-testid="select-decision-requiere"><SelectValue /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              <SelectItem value="1">Sí</SelectItem>
+                              <SelectItem value="0">No</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                    <FormField control={decisionForm.control} name="descripcion" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descripción</FormLabel>
+                        <FormControl><Textarea {...field} rows={2} placeholder="Descripción de la decisión..." data-testid="textarea-decision-descripcion" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={decisionForm.control} name="justificacion" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Justificación (opcional)</FormLabel>
+                        <FormControl><Textarea {...field} value={field.value || ""} rows={2} placeholder="Por qué se tomó esta decisión..." data-testid="textarea-decision-justificacion" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={decisionForm.control} name="alcance" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Alcance (opcional)</FormLabel>
+                        <FormControl><Input {...field} value={field.value || ""} placeholder="Áreas/procesos afectados..." data-testid="input-decision-alcance" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <div className="flex gap-2 justify-end">
+                      <Button type="button" variant="outline" onClick={() => setShowDecisionForm(false)}>Cancelar</Button>
+                      <Button type="submit" disabled={createDecisionMutation.isPending} data-testid="button-submit-decision">
+                        {createDecisionMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                        Guardar Decisión
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              )}
+
+              {decisionesLoading ? (
+                <div className="flex items-center gap-2 py-4 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Cargando decisiones...
+                </div>
+              ) : decisiones.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No hay decisiones registradas para esta revisión</p>
+                  <p className="text-sm">Haz clic en "Nueva Decisión" para agregar una</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {decisiones.map((decision) => (
+                    <DecisionItem key={decision.id} decision={decision} revisionId={selectedRevision?.id || ""} />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={handleCloseDetailDialog} data-testid="button-close-detail">
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
