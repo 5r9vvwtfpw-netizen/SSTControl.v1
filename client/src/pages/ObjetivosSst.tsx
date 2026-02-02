@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Target, CheckCircle2, Clock, XCircle, Trash2, Edit, TrendingUp, BarChart3, Activity, Zap, History, Calendar, Bot, Lightbulb, AlertTriangle, Bell, LineChart, CalendarDays, Percent, Save } from "lucide-react";
+import { Plus, Search, Target, CheckCircle2, Clock, XCircle, Trash2, Edit, TrendingUp, BarChart3, Activity, Zap, History, Calendar, Bot, Lightbulb, AlertTriangle, Bell, LineChart, CalendarDays, Percent, Save, Link2, Calculator, Check, X, RefreshCw } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Link } from "wouter";
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
@@ -1422,6 +1422,14 @@ function ObjetivosTab() {
                     companyId: objetivo.companyId
                   })}
                   isPending={updateAvanceMutation.isPending}
+                />
+
+                {/* Trazabilidad Estándares-Objetivos (Add-Only - Resolución 0312/2019) */}
+                <EstandardesVinculadosControl
+                  objetivo={objetivo}
+                  onAvanceUpdate={(avance) => {
+                    queryClient.invalidateQueries({ queryKey: ['/api/objetivos-sst'] });
+                  }}
                 />
 
                 <div className="flex gap-2 pt-2">
@@ -3080,6 +3088,421 @@ function AvanceControl({
         <span>50%</span>
         <span>100%</span>
       </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// TRAZABILIDAD OBJETIVOS-ESTÁNDARES SST
+// Componente para vincular estándares con objetivos (Add-Only - Principio de No Modificación)
+// Decreto 1072/2015 + Resolución 0312/2019
+// ============================================================================
+
+interface EstandarSst {
+  id: string;
+  codigo: string;
+  nombre: string;
+  descripcion?: string;
+  capitulo?: string;
+  valor?: number;
+}
+
+interface Vinculacion {
+  id: string;
+  objetivoId: string;
+  estandarId: string;
+  pesoRelativo: number;
+  createdAt?: string;
+}
+
+interface VinculacionConCumplimiento {
+  vinculacion: Vinculacion;
+  estandar: EstandarSst | null;
+  cumple: number | null;
+}
+
+function EstandardesVinculadosControl({
+  objetivo,
+  evaluacionId: propEvaluacionId,
+  onAvanceUpdate
+}: {
+  objetivo: ObjetivoSst;
+  evaluacionId?: string;
+  onAvanceUpdate?: (avance: number) => void;
+}) {
+  const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedEstandarId, setSelectedEstandarId] = useState<string>("");
+  const [pesoRelativo, setPesoRelativo] = useState<number>(1);
+
+  // Query para obtener la última evaluación de la empresa si no se proporciona una
+  const { data: evaluaciones = [] } = useQuery<Array<{ id: string; fechaEvaluacion?: string; createdAt?: string }>>({
+    queryKey: ['/api/evaluaciones-sst'],
+    enabled: !propEvaluacionId,
+  });
+  
+  // Ordenar por fecha (más reciente primero) y usar la primera
+  const sortedEvaluaciones = [...evaluaciones].sort((a, b) => {
+    const dateA = new Date(a.fechaEvaluacion || a.createdAt || 0).getTime();
+    const dateB = new Date(b.fechaEvaluacion || b.createdAt || 0).getTime();
+    return dateB - dateA;
+  });
+  const evaluacionId = propEvaluacionId || (sortedEvaluaciones.length > 0 ? sortedEvaluaciones[0]?.id : undefined);
+
+  // Query para obtener vinculaciones del objetivo
+  const { data: vinculaciones = [], isLoading: isLoadingVinculaciones, refetch: refetchVinculaciones } = useQuery<Vinculacion[]>({
+    queryKey: ['/api/objetivos-estandares-vinculacion/objetivo', objetivo.id],
+    enabled: true,
+  });
+
+  // Query para obtener vinculaciones con cumplimiento (si hay evaluación)
+  const { data: vinculacionesConCumplimiento = [], refetch: refetchConCumplimiento } = useQuery<VinculacionConCumplimiento[]>({
+    queryKey: ['/api/objetivos-estandares-vinculacion/objetivo', objetivo.id, 'cumplimiento', evaluacionId],
+    enabled: !!evaluacionId && vinculaciones.length > 0,
+  });
+
+  // Query para obtener todos los estándares disponibles
+  const { data: estandares = [] } = useQuery<EstandarSst[]>({
+    queryKey: ['/api/estandares-sst'],
+  });
+
+  // Mutation para crear vinculación
+  const createVinculacion = useMutation({
+    mutationFn: async (data: { objetivoId: string; estandarId: string; pesoRelativo: number }) => {
+      const res = await apiRequest("POST", '/api/objetivos-estandares-vinculacion', data);
+      return res.json();
+    },
+    onSuccess: async () => {
+      toast({ title: "Éxito", description: "Estándar vinculado correctamente" });
+      await queryClient.invalidateQueries({ queryKey: ['/api/objetivos-estandares-vinculacion/objetivo', objetivo.id] });
+      setSelectedEstandarId("");
+      setPesoRelativo(1);
+      // Actualizar avance automáticamente
+      if (evaluacionId) {
+        setTimeout(() => aplicarAvanceAutomatico(), 500);
+      }
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Error al vincular estándar", variant: "destructive" });
+    }
+  });
+
+  // Mutation para eliminar vinculación
+  const deleteVinculacion = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/objetivos-estandares-vinculacion/${id}`);
+    },
+    onSuccess: async () => {
+      toast({ title: "Éxito", description: "Vinculación eliminada" });
+      await queryClient.invalidateQueries({ queryKey: ['/api/objetivos-estandares-vinculacion/objetivo', objetivo.id] });
+      // Actualizar avance automáticamente
+      if (evaluacionId) {
+        setTimeout(() => aplicarAvanceAutomatico(), 500);
+      }
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Error al eliminar vinculación", variant: "destructive" });
+    }
+  });
+
+  // Función para aplicar avance automáticamente (sin toast para uso automático)
+  const aplicarAvanceAutomatico = async () => {
+    if (!evaluacionId) return;
+    try {
+      const res = await apiRequest("POST", `/api/objetivos-estandares-vinculacion/aplicar-avance/${objetivo.id}/${evaluacionId}`);
+      const data = await res.json();
+      if (onAvanceUpdate) {
+        onAvanceUpdate(data.avance);
+      }
+      queryClient.invalidateQueries({ queryKey: ['/api/objetivos-sst'] });
+    } catch (error) {
+      console.error("Error auto-updating avance:", error);
+    }
+  };
+
+  // Mutation para calcular y aplicar avance (manual)
+  const aplicarAvance = useMutation({
+    mutationFn: async (): Promise<{ avance: number }> => {
+      if (!evaluacionId) throw new Error("Se requiere una evaluación para calcular el avance");
+      const res = await apiRequest("POST", `/api/objetivos-estandares-vinculacion/aplicar-avance/${objetivo.id}/${evaluacionId}`);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({ 
+        title: "Avance Actualizado", 
+        description: `El avance se ha calculado automáticamente: ${data.avance}%` 
+      });
+      if (onAvanceUpdate) {
+        onAvanceUpdate(data.avance);
+      }
+      queryClient.invalidateQueries({ queryKey: ['/api/objetivos-sst'] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Error al calcular avance", variant: "destructive" });
+    }
+  });
+
+  // Estándares ya vinculados (para filtrar del selector)
+  const estandaresVinculadosIds = vinculaciones.map(v => v.estandarId);
+  const estandaresDisponibles = estandares.filter(e => !estandaresVinculadosIds.includes(e.id));
+
+  const handleAddVinculacion = () => {
+    if (!selectedEstandarId) return;
+    createVinculacion.mutate({
+      objetivoId: objetivo.id,
+      estandarId: selectedEstandarId,
+      pesoRelativo: pesoRelativo
+    });
+  };
+
+  // Calcular cumplimiento promedio para mostrar indicador
+  const calcularCumplimientoPromedio = () => {
+    if (vinculacionesConCumplimiento.length === 0) return null;
+    let totalPeso = 0;
+    let sumaCumplimiento = 0;
+    for (const vc of vinculacionesConCumplimiento) {
+      if (vc.cumple !== null) {
+        const peso = vc.vinculacion.pesoRelativo || 1;
+        totalPeso += peso;
+        sumaCumplimiento += (vc.cumple * 100) * peso;
+      }
+    }
+    if (totalPeso === 0) return null;
+    return Math.round(sumaCumplimiento / totalPeso);
+  };
+
+  const cumplimientoPromedio = calcularCumplimientoPromedio();
+
+  return (
+    <div className="space-y-2 pt-2 border-t border-dashed border-blue-200" data-testid={`estandares-control-${objetivo.id}`}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Link2 className="h-4 w-4 text-blue-600" />
+          <span className="text-sm font-medium">Estándares Vinculados:</span>
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+            {vinculaciones.length}
+          </Badge>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsDialogOpen(true)}
+          className="h-7 text-blue-600 border-blue-300 hover:bg-blue-50"
+          data-testid={`button-vincular-estandares-${objetivo.id}`}
+        >
+          <Link2 className="h-3 w-3 mr-1" />
+          Vincular
+        </Button>
+      </div>
+
+      {/* Indicador de cumplimiento si hay evaluación */}
+      {evaluacionId && cumplimientoPromedio !== null && (
+        <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200">
+          <div className="flex items-center gap-2">
+            <Calculator className="h-4 w-4 text-blue-600" />
+            <span className="text-sm">Cumplimiento estándares:</span>
+            <span className={`font-bold ${cumplimientoPromedio >= 80 ? 'text-green-600' : cumplimientoPromedio >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+              {cumplimientoPromedio}%
+            </span>
+          </div>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => aplicarAvance.mutate()}
+            disabled={aplicarAvance.isPending}
+            data-testid={`button-aplicar-avance-${objetivo.id}`}
+          >
+            <RefreshCw className={`h-3 w-3 mr-1 ${aplicarAvance.isPending ? 'animate-spin' : ''}`} />
+            Aplicar Avance
+          </Button>
+        </div>
+      )}
+
+      {/* Lista de estándares vinculados (compacta) */}
+      {vinculaciones.length > 0 && (
+        <div className="space-y-1">
+          {vinculacionesConCumplimiento.length > 0 ? (
+            vinculacionesConCumplimiento.slice(0, 3).map((vc) => (
+              <div key={vc.vinculacion.id} className="flex items-center justify-between text-xs p-1 bg-gray-50 rounded">
+                <div className="flex items-center gap-1 flex-1 min-w-0">
+                  {vc.cumple === 1 ? (
+                    <Check className="h-3 w-3 text-green-600 flex-shrink-0" />
+                  ) : vc.cumple === 0 ? (
+                    <X className="h-3 w-3 text-red-600 flex-shrink-0" />
+                  ) : (
+                    <Clock className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                  )}
+                  <span className="truncate text-muted-foreground">
+                    {vc.estandar?.codigo || 'N/A'} - {vc.estandar?.nombre?.substring(0, 40)}...
+                  </span>
+                </div>
+                <Badge variant="outline" className="text-[10px] ml-1">
+                  Peso: {vc.vinculacion.pesoRelativo}
+                </Badge>
+              </div>
+            ))
+          ) : (
+            vinculaciones.slice(0, 3).map((v) => {
+              const estandar = estandares.find(e => e.id === v.estandarId);
+              return (
+                <div key={v.id} className="flex items-center justify-between text-xs p-1 bg-gray-50 rounded">
+                  <span className="truncate text-muted-foreground flex-1">
+                    {estandar?.codigo || 'N/A'} - {estandar?.nombre?.substring(0, 40) || 'Cargando...'}
+                  </span>
+                  <Badge variant="outline" className="text-[10px]">
+                    Peso: {v.pesoRelativo}
+                  </Badge>
+                </div>
+              );
+            })
+          )}
+          {vinculaciones.length > 3 && (
+            <div className="text-xs text-muted-foreground text-center">
+              +{vinculaciones.length - 3} más...
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Dialog para gestionar vinculaciones */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="h-5 w-5 text-blue-600" />
+              Vincular Estándares con Objetivo
+            </DialogTitle>
+            <DialogDescription>
+              Vincule estándares de la Resolución 0312/2019 para calcular automáticamente el avance del objetivo.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Formulario para agregar vinculación */}
+            <div className="p-4 border rounded-lg bg-blue-50 border-blue-200">
+              <h4 className="font-medium mb-3 flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Agregar Vinculación
+              </h4>
+              <div className="grid grid-cols-12 gap-2">
+                <div className="col-span-7">
+                  <Select value={selectedEstandarId} onValueChange={setSelectedEstandarId}>
+                    <SelectTrigger data-testid="select-estandar">
+                      <SelectValue placeholder="Seleccionar estándar..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {estandaresDisponibles.map((e) => (
+                        <SelectItem key={e.id} value={e.id}>
+                          <span className="text-xs">{e.codigo} - {e.nombre?.substring(0, 50)}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2">
+                  <Select value={String(pesoRelativo)} onValueChange={(v) => setPesoRelativo(Number(v))}>
+                    <SelectTrigger data-testid="select-peso">
+                      <SelectValue placeholder="Peso" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((p) => (
+                        <SelectItem key={p} value={String(p)}>
+                          Peso {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-3">
+                  <Button
+                    variant="default"
+                    onClick={handleAddVinculacion}
+                    disabled={!selectedEstandarId || createVinculacion.isPending}
+                    className="w-full"
+                    data-testid="button-agregar-vinculacion"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Agregar
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Lista de vinculaciones existentes */}
+            {vinculaciones.length > 0 && (
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Código</TableHead>
+                      <TableHead>Estándar</TableHead>
+                      <TableHead className="text-center">Peso</TableHead>
+                      {evaluacionId && <TableHead className="text-center">Cumple</TableHead>}
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {vinculaciones.map((v) => {
+                      const estandar = estandares.find(e => e.id === v.estandarId);
+                      const vc = vinculacionesConCumplimiento.find(vcc => vcc.vinculacion.id === v.id);
+                      return (
+                        <TableRow key={v.id}>
+                          <TableCell className="font-mono text-xs">
+                            {estandar?.codigo || 'N/A'}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {estandar?.nombre || 'Cargando...'}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline">{v.pesoRelativo}</Badge>
+                          </TableCell>
+                          {evaluacionId && (
+                            <TableCell className="text-center">
+                              {vc?.cumple === 1 ? (
+                                <Badge className="bg-green-100 text-green-700">Sí</Badge>
+                              ) : vc?.cumple === 0 ? (
+                                <Badge className="bg-red-100 text-red-700">No</Badge>
+                              ) : (
+                                <Badge variant="outline">N/E</Badge>
+                              )}
+                            </TableCell>
+                          )}
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deleteVinculacion.mutate(v.id)}
+                              disabled={deleteVinculacion.isPending}
+                              className="text-destructive"
+                              data-testid={`button-delete-vinculacion-${v.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            {vinculaciones.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Link2 className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                <p>No hay estándares vinculados a este objetivo.</p>
+                <p className="text-sm">Agregue estándares para calcular el avance automáticamente.</p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
