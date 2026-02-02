@@ -16,7 +16,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { hasCompanyAdminAccess } from "@shared/permissions";
-import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 export default function PesvCapacitaciones() {
@@ -187,7 +186,7 @@ export default function PesvCapacitaciones() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <BackToEvaluationButton />
-        <BackToCronogramaButton />
+        
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
