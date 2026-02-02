@@ -223,8 +223,8 @@ export function registerBillingRoutes(app: Express) {
       const trialRequestSchema = z.object({
         planId: z.string().min(1, "Plan ID es requerido"),
         trialDays: z.number().refine(
-          (val) => [14, 30].includes(val),
-          "Trial debe ser de 14 o 30 días"
+          (val) => [7, 14, 30].includes(val),
+          "Trial debe ser de 7, 14 o 30 días"
         )
       });
 

@@ -11641,9 +11641,9 @@ export class DbStorage implements IStorage {
     planId: string,
     trialDays: number
   ): Promise<Subscription> {
-    // Hardening: Enforce 14 or 30 day trial limit at storage layer (Architect feedback)
-    if (![14, 30].includes(trialDays)) {
-      throw new Error('Trial period must be exactly 14 or 30 days');
+    // Hardening: Enforce 7, 14 or 30 day trial limit at storage layer (Architect feedback)
+    if (![7, 14, 30].includes(trialDays)) {
+      throw new Error('Trial period must be exactly 7, 14 or 30 days');
     }
 
     // Anti-abuse: Verify company has NO subscriptions at all (any status) - Architect feedback
