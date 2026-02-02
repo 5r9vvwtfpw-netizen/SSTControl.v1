@@ -194,8 +194,8 @@ export function PHVASummary({ companyId }: PHVASummaryProps) {
       iconBg: "bg-blue-100 dark:bg-blue-900",
       iconColor: "text-blue-600 dark:text-blue-400",
       textColor: "text-blue-700 dark:text-blue-300",
-      link: "/dashboard-planear",
-      linkLabel: "Ver Panel PLANEAR",
+      link: "/evaluaciones-sst",
+      linkLabel: "Ver Evaluaciones",
       metrics: [
         { 
           label: "Cumplimiento 0312", 
