@@ -25,6 +25,13 @@ A subscription blocking system is in place to manage user access based on subscr
 
 A centralized Document Traceability System provides tracking of all system-generated PDFs using a metadata-only approach. It registers documents with metadata like source module, endpoint, and record ID, and provides API endpoints for retrieval and statistics.
 
+### Seguimiento de Avance de Objetivos SST (Decreto 1072/2015)
+El sistema incluye un campo `porcentaje_avance` en la tabla `objetivos_sst` que permite trackear el progreso de cada objetivo independientemente del estado formal (activo, cumplido, etc.). El Dashboard VERIFICAR muestra dos métricas complementarias:
+- **Cumplimiento Objetivos**: Basado en el estado formal (`estado = 'cumplido'`)
+- **Avance Objetivos**: Basado en el promedio de `porcentaje_avance` de todos los objetivos
+
+Esto cumple con el Art. 2.2.4.6.19 del Decreto 1072/2015 que requiere seguimiento y medición de objetivos SST.
+
 ### PHVA Cycle Consolidated Dashboard
 The main Dashboard (`client/src/pages/Dashboard.tsx`) includes a consolidated PHVA cycle view through the `PHVASummary` component (`client/src/components/PHVASummary.tsx`). This component provides:
 - **4 Phase Cards**: PLANEAR, HACER, VERIFICAR, ACTUAR with 2 key metrics each
