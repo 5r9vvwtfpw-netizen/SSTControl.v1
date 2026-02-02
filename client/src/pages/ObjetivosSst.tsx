@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Target, CheckCircle2, Clock, XCircle, Trash2, Edit, TrendingUp, BarChart3, Activity, Zap, History, Calendar, Bot, Lightbulb, AlertTriangle, Bell, LineChart, CalendarDays } from "lucide-react";
+import { Plus, Search, Target, CheckCircle2, Clock, XCircle, Trash2, Edit, TrendingUp, BarChart3, Activity, Zap, History, Calendar, Bot, Lightbulb, AlertTriangle, Bell, LineChart, CalendarDays, Percent, Save } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import { Link } from "wouter";
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -317,6 +318,36 @@ function ObjetivosTab() {
         title: "Objetivo eliminado",
         description: "El objetivo SST se ha eliminado exitosamente",
         className: "bg-yellow-50 border-yellow-200",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation para actualizar solo el porcentaje de avance (Add-Only - Decreto 1072/2015)
+  const updateAvanceMutation = useMutation({
+    mutationFn: async ({ id, porcentajeAvance, companyId }: { id: string; porcentajeAvance: number; companyId?: string }) => {
+      const payload = isAdmin && companyId
+        ? { porcentajeAvance, companyId }
+        : { porcentajeAvance };
+      const res = await apiRequest("PATCH", `/api/objetivos-sst/${id}`, payload);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/objetivos-sst"] });
+      if (isAdmin && selectedCompanyId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/objetivos-sst", selectedCompanyId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard-verificar"] });
+      toast({
+        title: "Avance actualizado",
+        description: "El porcentaje de avance se ha guardado exitosamente",
+        className: "bg-purple-50 border-purple-200",
       });
     },
     onError: (error: Error) => {
@@ -1381,6 +1412,17 @@ function ObjetivosTab() {
                     </div>
                   )}
                 </div>
+
+                {/* Control de Avance (Add-Only - Decreto 1072/2015 Art. 2.2.4.6.19) */}
+                <AvanceControl
+                  objetivo={objetivo}
+                  onSave={(porcentaje) => updateAvanceMutation.mutate({
+                    id: objetivo.id,
+                    porcentajeAvance: porcentaje,
+                    companyId: objetivo.companyId
+                  })}
+                  isPending={updateAvanceMutation.isPending}
+                />
 
                 <div className="flex gap-2 pt-2">
                   <Button
@@ -2959,5 +3001,85 @@ function MedicionesDialog({ indicador, open, onOpenChange }: MedicionesDialogPro
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Componente para control de avance inline (Add-Only - Decreto 1072/2015 Art. 2.2.4.6.19)
+function AvanceControl({ 
+  objetivo, 
+  onSave, 
+  isPending 
+}: { 
+  objetivo: ObjetivoSst; 
+  onSave: (porcentaje: number) => void;
+  isPending: boolean;
+}) {
+  const [localValue, setLocalValue] = useState<number>(objetivo.porcentajeAvance ?? 0);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Sincronizar cuando el valor del objetivo cambie externamente
+  useEffect(() => {
+    setLocalValue(objetivo.porcentajeAvance ?? 0);
+    setHasChanges(false);
+  }, [objetivo.porcentajeAvance]);
+
+  const handleSliderChange = (value: number[]) => {
+    setLocalValue(value[0]);
+    setHasChanges(value[0] !== (objetivo.porcentajeAvance ?? 0));
+  };
+
+  const handleSave = () => {
+    onSave(localValue);
+    setHasChanges(false);
+  };
+
+  // Color dinámico basado en el porcentaje
+  const getProgressColor = (value: number) => {
+    if (value >= 100) return "text-green-600";
+    if (value >= 75) return "text-blue-600";
+    if (value >= 50) return "text-yellow-600";
+    if (value >= 25) return "text-orange-600";
+    return "text-red-600";
+  };
+
+  return (
+    <div className="space-y-2 pt-2 border-t border-dashed" data-testid={`avance-control-${objetivo.id}`}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Percent className="h-4 w-4 text-purple-600" />
+          <span className="text-sm font-medium">Avance:</span>
+          <span className={`text-lg font-bold ${getProgressColor(localValue)}`}>
+            {localValue}%
+          </span>
+        </div>
+        {hasChanges && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSave}
+            disabled={isPending}
+            className="h-7 text-purple-600 border-purple-300 hover:bg-purple-50"
+            data-testid={`button-save-avance-${objetivo.id}`}
+          >
+            <Save className="h-3 w-3 mr-1" />
+            {isPending ? "..." : "Guardar"}
+          </Button>
+        )}
+      </div>
+      <Slider
+        value={[localValue]}
+        onValueChange={handleSliderChange}
+        min={0}
+        max={100}
+        step={5}
+        className="w-full"
+        data-testid={`slider-avance-${objetivo.id}`}
+      />
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>0%</span>
+        <span>50%</span>
+        <span>100%</span>
+      </div>
+    </div>
   );
 }
