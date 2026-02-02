@@ -273,9 +273,9 @@ export function registerBillingRoutes(app: Express) {
         companyId: z.string().uuid("Company ID inválido"),
         planId: z.string().uuid("Plan ID inválido"),
         trialDays: z.number().refine(
-          (val) => [14, 30].includes(val),
-          "Trial debe ser de 14 o 30 días"
-        ).default(14)
+          (val) => [7, 14, 30].includes(val),
+          "Trial debe ser de 7, 14 o 30 días"
+        ).default(7)
       });
 
       const validatedData = assignTrialSchema.parse(req.body);
