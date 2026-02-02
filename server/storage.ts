@@ -8964,7 +8964,7 @@ export class DbStorage implements IStorage {
     };
 
     const auditoriasCompletadas = allAuditorias.filter(a => 
-      a.estado === 'cerrada'
+      a.estado === 'completada' || a.estado === 'aprobada'
     );
     const totalConformidades = auditoriasCompletadas.reduce((sum, a) => 
       sum + (a.numeroConformidades || 0), 0
@@ -8975,8 +8975,8 @@ export class DbStorage implements IStorage {
 
     const auditorias = {
       totalAnio: allAuditorias.length,
-      completadas: allAuditorias.filter(a => a.estado === 'cerrada').length,
-      enCurso: allAuditorias.filter(a => a.estado === 'en_ejecucion').length,
+      completadas: allAuditorias.filter(a => a.estado === 'completada' || a.estado === 'aprobada').length,
+      enCurso: allAuditorias.filter(a => a.estado === 'en_progreso').length,
       programadas: allAuditorias.filter(a => a.estado === 'programada').length,
       hallazgosPorSeveridad,
       porcentajeConformidad: totalHallazgos > 0
