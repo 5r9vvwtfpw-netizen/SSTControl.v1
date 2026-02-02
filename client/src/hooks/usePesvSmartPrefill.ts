@@ -1,32 +1,43 @@
 import { useQuery } from "@tanstack/react-query";
-import { Company, Vehicle, Driver, Worker } from "@shared/schema";
+import { Company, Vehicle, Driver, Worker, ObjetivoSst } from "@shared/schema";
 
-interface CompanyData {
+export interface CompanyData {
   name: string;
   nit: string;
   arl: string | null;
   numWorkers: number;
   numVehicles: number;
   numDrivers: number;
+  actividadEconomica: string | null;
+  responsableSst: string | null;
+  representanteLegal: string | null;
 }
 
-interface VehicleStats {
+export interface VehicleStats {
   total: number;
   active: number;
   byType: Record<string, number>;
 }
 
-interface DriverStats {
+export interface DriverStats {
   total: number;
   active: number;
   withLicenseExpiring: number;
 }
 
-interface PesvSmartPrefillData {
+export interface SstObjectiveData {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  porcentajeAvance: number;
+}
+
+export interface PesvSmartPrefillData {
   companyData: CompanyData | null;
   vehicleStats: VehicleStats | null;
   driverStats: DriverStats | null;
   workersList: Worker[];
+  sstObjectives: SstObjectiveData[];
   isLoading: boolean;
   error: Error | null;
 }
@@ -54,8 +65,8 @@ export function usePesvSmartPrefill(): PesvSmartPrefillData {
     queryKey: ["/api/workers"],
   });
 
-  // Fetch SST objectives (for potential use in future enhancements)
-  const { isLoading: isLoadingObjectives, error: objectivesError } = useQuery({
+  // Fetch SST objectives
+  const { data: objetivos = [], isLoading: isLoadingObjectives, error: objectivesError } = useQuery<ObjetivoSst[]>({
     queryKey: ["/api/objetivos-sst"],
   });
 
@@ -65,7 +76,7 @@ export function usePesvSmartPrefill(): PesvSmartPrefillData {
   // Determine error state (return first non-null error)
   const error = companyError || vehiclesError || driversError || workersError || objectivesError || null;
 
-  // Process company data
+  // Process company data with all fields needed for PESV forms
   const companyData: CompanyData | null = company ? {
     name: company.name,
     nit: company.nit,
@@ -73,7 +84,18 @@ export function usePesvSmartPrefill(): PesvSmartPrefillData {
     numWorkers: company.numberOfWorkers,
     numVehicles: company.numberOfVehicles || vehicles.length,
     numDrivers: drivers.length,
+    actividadEconomica: company.actividadPrincipal || null,
+    responsableSst: company.responsableSstNombre || null,
+    representanteLegal: company.representanteLegal || null,
   } : null;
+
+  // Process SST objectives
+  const sstObjectives: SstObjectiveData[] = objetivos.map(obj => ({
+    id: obj.id,
+    nombre: obj.nombre,
+    descripcion: obj.descripcion || null,
+    porcentajeAvance: obj.porcentajeAvance || 0,
+  }));
 
   // Process vehicle stats
   const vehicleStats: VehicleStats | null = vehicles.length > 0 ? {
@@ -103,6 +125,7 @@ export function usePesvSmartPrefill(): PesvSmartPrefillData {
     vehicleStats,
     driverStats,
     workersList: workers,
+    sstObjectives,
     isLoading,
     error: error as Error | null,
   };
