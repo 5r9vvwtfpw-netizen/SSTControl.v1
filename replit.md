@@ -29,6 +29,15 @@ The system tracks SST objective progress (`porcentaje_avance`) and formal compli
 
 The main Dashboard includes a consolidated PHVA cycle view through the `PHVASummary` component, providing 4-phase cards with key metrics, traceability links, additional KPIs, and alerts for overdue actions, integrating with `/api/dashboard-hacer`, `/api/dashboard-verificar`, and `/api/dashboard-actuar`.
 
+**PESV Smart Forms System**: The system includes an intelligent auto-fill capability for PESV cycle forms (Planear, Hacer, Verificar, Actuar) that minimizes manual data entry. Key files:
+- `client/src/hooks/usePesvSmartPrefill.ts`: Central hook that consolidates data from company, vehicles, drivers, workers, and SST objectives APIs.
+- `client/src/hooks/usePesvStepPrefill.ts`: Resolver hook that maps step codes (P01, H02, etc.) to field-level auto-fill values.
+- `client/src/data/pesv-smart-prefill-map.ts`: Prefill mapping configuration covering all 24 PESV steps.
+- `client/src/components/pesv/SmartPrefillBanner.tsx`: UI component showing detected fields and apply/clear actions.
+- `client/src/components/pesv/PesvSmartFormExample.tsx`: Reference implementation with zodResolver validation.
+
+Integration pattern: Import `usePesvStepPrefill(stepCode)` → render `SmartPrefillBanner` → apply `defaultValues` via `useEffect` with `form.setValue()`.
+
 The Promotions Plugin (`plugins/promotions/`) operates as an independent Sidecar Architecture module, handling promotional pricing, coupons, digital contracts with JWT-validated price locking, and a net-zero risk referral program ("Aliados 2026"). It communicates with the main system via the database and has dedicated API routes mounted at `/api/plugins/promotions/*`. It features its own database tables (`plugin_promotion_coupons`, `plugin_referral_ledger`, `plugin_digital_contracts`, `plugin_credit_usage_history`) and environment variables for functionality. A kill-switch protocol allows for its complete removal without affecting the main system.
 
 ## External Dependencies
