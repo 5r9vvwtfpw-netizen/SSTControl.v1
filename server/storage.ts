@@ -8896,13 +8896,15 @@ export class DbStorage implements IStorage {
         eq(schema.objetivosSst.anio, currentYear)
       ));
 
+    const cumplidos = allObjetivos.filter(o => o.estado === 'cumplido').length;
     const objetivos = {
       total: allObjetivos.length,
       activos: allObjetivos.filter(o => o.estado === 'activo').length,
-      cumplidos: allObjetivos.filter(o => o.estado === 'cumplido').length,
-      noCumplidos: allObjetivos.filter(o => o.estado === 'no-cumplido').length,
+      cumplidos: cumplidos,
+      // No Cumplidos = Total - Cumplidos (objetivos que aún no alcanzan el 100%)
+      noCumplidos: allObjetivos.length - cumplidos,
       porcentajeCumplimiento: allObjetivos.length > 0
-        ? Math.round((allObjetivos.filter(o => o.estado === 'cumplido').length / allObjetivos.length) * 100)
+        ? Math.round((cumplidos / allObjetivos.length) * 100)
         : 0,
       // ========== CAMPOS ADICIONALES (Add-Only - Decreto 1072/2015) ==========
       // Promedio de avance basado en porcentajeAvance de cada objetivo
