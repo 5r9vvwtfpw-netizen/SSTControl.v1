@@ -6750,6 +6750,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return accidentDate.getMonth() === currentMonth && accidentDate.getFullYear() === currentYear;
     });
 
+    // Calculate previous month accidents for trend comparison
+    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const prevMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+    const prevMonthAccidents = accidents.filter(a => {
+      const accidentDate = new Date(a.date);
+      return accidentDate.getMonth() === prevMonth && accidentDate.getFullYear() === prevMonthYear;
+    });
+
+    // Calculate days without accidents
+    let diasSinAccidentes = 0;
+    if (accidents.length > 0) {
+      const sortedAccidents = [...accidents].sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+      const lastAccidentDate = new Date(sortedAccidents[0].date);
+      const timeDiff = now.getTime() - lastAccidentDate.getTime();
+      diasSinAccidentes = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+    } else {
+      // If no accidents ever, count from start of current year
+      const startOfYear = new Date(currentYear, 0, 1);
+      const timeDiff = now.getTime() - startOfYear.getTime();
+      diasSinAccidentes = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+    }
+
     // Get compliance from the latest SST evaluation
     let avgCompliance = 0;
     if (evaluaciones.length > 0) {
@@ -6763,6 +6787,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     res.json({
       monthlyAccidents: monthlyAccidents.length,
+      prevMonthAccidents: prevMonthAccidents.length,
+      diasSinAccidentes,
       totalTrainings: trainings.length,
       totalInspections: inspections.length,
       avgCompliance,

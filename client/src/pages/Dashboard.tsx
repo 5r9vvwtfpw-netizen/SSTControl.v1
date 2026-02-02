@@ -16,6 +16,8 @@ import { useEffect } from "react";
 
 interface StatsData {
   monthlyAccidents: number;
+  prevMonthAccidents: number;
+  diasSinAccidentes: number;
   totalTrainings: number;
   totalInspections: number;
   avgCompliance: number;
@@ -160,12 +162,26 @@ export default function Dashboard() {
               icon={Users} 
               variant="default"
             />
-            <StatCard 
-              title="Accidentes del Mes" 
-              value={stats?.monthlyAccidents ?? 0} 
-              icon={AlertTriangle} 
-              variant="danger"
-            />
+            <Card data-testid="card-stat-accidentes-del-mes">
+              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                <p className="text-sm font-medium text-muted-foreground">Accidentes del Mes</p>
+                <AlertTriangle className="h-4 w-4 text-chart-4" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold" data-testid="text-stat-value-accidentes">{stats?.monthlyAccidents ?? 0}</div>
+                <div className="flex items-center gap-2 mt-1">
+                  {stats && stats.prevMonthAccidents > 0 && (
+                    <span className={`text-xs ${stats.monthlyAccidents < stats.prevMonthAccidents ? 'text-chart-2' : stats.monthlyAccidents > stats.prevMonthAccidents ? 'text-chart-4' : 'text-muted-foreground'}`}>
+                      {stats.monthlyAccidents < stats.prevMonthAccidents ? '↓' : stats.monthlyAccidents > stats.prevMonthAccidents ? '↑' : '='} vs mes anterior ({stats.prevMonthAccidents})
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 mt-2 text-xs text-chart-2 font-medium" data-testid="text-dias-sin-accidentes">
+                  <CheckCircle2 className="h-3 w-3" />
+                  {stats?.diasSinAccidentes ?? 0} días sin accidentes
+                </div>
+              </CardContent>
+            </Card>
             <StatCard 
               title="Capacitaciones" 
               value={stats?.totalTrainings ?? 0} 
