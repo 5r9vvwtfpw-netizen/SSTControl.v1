@@ -9159,8 +9159,13 @@ export class DbStorage implements IStorage {
     const altaP = accionesMejoraData.filter(a => a.prioridad === 'alta').length;
     const criticaP = accionesMejoraData.filter(a => a.prioridad === 'critica').length;
     
+    // FIX: Calculate avance based on estado - completada=100%, en-proceso=porcentajeAvance, pendiente=0%
     const promedioAvanceMejora = totalAccionesMejora > 0
-      ? Math.round(accionesMejoraData.reduce((sum, a) => sum + (a.porcentajeAvance ?? 0), 0) / totalAccionesMejora)
+      ? Math.round(accionesMejoraData.reduce((sum, a) => {
+          if (a.estado === 'completada') return sum + 100;
+          if (a.estado === 'en-proceso') return sum + (a.porcentajeAvance ?? 0);
+          return sum; // pendiente = 0
+        }, 0) / totalAccionesMejora)
       : 0;
     
     const accionesMejora = {
@@ -9231,8 +9236,13 @@ export class DbStorage implements IStorage {
     const altaPR = accionesRevisionData.filter(a => a.prioridad === 'alta').length;
     const criticaPR = accionesRevisionData.filter(a => a.prioridad === 'critica').length;
     
+    // FIX: Calculate avance based on estado - completada=100%, en-proceso=porcentajeAvance, pendiente=0%
     const promedioAvanceRevision = totalAccionesRevision > 0
-      ? Math.round(accionesRevisionData.reduce((sum, a) => sum + (a.porcentajeAvance ?? 0), 0) / totalAccionesRevision)
+      ? Math.round(accionesRevisionData.reduce((sum, a) => {
+          if (a.estado === 'completada') return sum + 100;
+          if (a.estado === 'en-proceso') return sum + (a.porcentajeAvance ?? 0);
+          return sum; // pendiente = 0
+        }, 0) / totalAccionesRevision)
       : 0;
     
     const accionesRevision = {
