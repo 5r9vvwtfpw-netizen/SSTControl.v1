@@ -44416,6 +44416,149 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // ============================================================================
+  // TRAZABILIDAD OBJETIVOS-ESTÁNDARES SST
+  // Vinculación entre Objetivos SST (Decreto 1072/2015) y Estándares (Resolución 0312/2019)
+  // Principio Add-Only: Solo nuevas rutas, sin modificar existentes
+  // ============================================================================
+
+  // GET /api/objetivos-estandares-vinculacion - Get all linkages for company
+  app.get("/api/objetivos-estandares-vinculacion", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      const vinculaciones = await storage.getObjetivosEstandaresVinculacion(effectiveCompanyId);
+      res.json(vinculaciones);
+    } catch (error: any) {
+      console.error("Error getting vinculaciones:", error);
+      res.status(500).json({ error: error.message || "Error al obtener vinculaciones" });
+    }
+  });
+
+  // GET /api/objetivos-estandares-vinculacion/objetivo/:objetivoId - Get linkages for specific objective
+  app.get("/api/objetivos-estandares-vinculacion/objetivo/:objetivoId", requireAuth, async (req, res) => {
+    try {
+      const vinculaciones = await storage.getVinculacionesByObjetivo(req.params.objetivoId);
+      res.json(vinculaciones);
+    } catch (error: any) {
+      console.error("Error getting vinculaciones por objetivo:", error);
+      res.status(500).json({ error: error.message || "Error al obtener vinculaciones" });
+    }
+  });
+
+  // GET /api/objetivos-estandares-vinculacion/objetivo/:objetivoId/cumplimiento/:evaluacionId
+  // Get linkages with compliance status for display
+  app.get("/api/objetivos-estandares-vinculacion/objetivo/:objetivoId/cumplimiento/:evaluacionId", requireAuth, async (req, res) => {
+    try {
+      const result = await storage.getVinculacionesConCumplimiento(
+        req.params.objetivoId,
+        req.params.evaluacionId
+      );
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error getting vinculaciones con cumplimiento:", error);
+      res.status(500).json({ error: error.message || "Error al obtener vinculaciones" });
+    }
+  });
+
+  // POST /api/objetivos-estandares-vinculacion - Create new linkage
+  app.post("/api/objetivos-estandares-vinculacion", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      
+      const validatedData = schema.insertObjetivoEstandarVinculacionSchema.parse(req.body);
+      const created = await storage.createObjetivoEstandarVinculacion({
+        ...validatedData,
+        companyId: effectiveCompanyId,
+        createdBy: req.user?.id
+      });
+      res.status(201).json(created);
+    } catch (error: any) {
+      console.error("Error creating vinculacion:", error);
+      // Check for unique constraint violation
+      if (error.code === '23505') {
+        return res.status(400).json({ error: "Este estándar ya está vinculado a este objetivo" });
+      }
+      res.status(400).json({ error: error.message || "Error al crear vinculación" });
+    }
+  });
+
+  // PATCH /api/objetivos-estandares-vinculacion/:id - Update linkage weight
+  app.patch("/api/objetivos-estandares-vinculacion/:id", requireAuth, async (req, res) => {
+    try {
+      const { pesoRelativo } = req.body;
+      if (pesoRelativo !== undefined && (pesoRelativo < 1 || pesoRelativo > 10)) {
+        return res.status(400).json({ error: "El peso relativo debe estar entre 1 y 10" });
+      }
+      
+      const updated = await storage.updateObjetivoEstandarVinculacion(req.params.id, { pesoRelativo });
+      if (!updated) {
+        return res.status(404).json({ error: "Vinculación no encontrada" });
+      }
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating vinculacion:", error);
+      res.status(400).json({ error: error.message || "Error al actualizar vinculación" });
+    }
+  });
+
+  // DELETE /api/objetivos-estandares-vinculacion/:id - Delete linkage
+  app.delete("/api/objetivos-estandares-vinculacion/:id", requireAuth, async (req, res) => {
+    try {
+      await storage.deleteObjetivoEstandarVinculacion(req.params.id);
+      res.status(204).end();
+    } catch (error: any) {
+      console.error("Error deleting vinculacion:", error);
+      res.status(400).json({ error: error.message || "Error al eliminar vinculación" });
+    }
+  });
+
+  // GET /api/objetivos-estandares-vinculacion/calcular-avance/:objetivoId/:evaluacionId
+  // Calculate progress for objective based on linked standards compliance
+  app.get("/api/objetivos-estandares-vinculacion/calcular-avance/:objetivoId/:evaluacionId", requireAuth, async (req, res) => {
+    try {
+      const avance = await storage.calcularAvanceObjetivoDesdeEstandares(
+        req.params.objetivoId,
+        req.params.evaluacionId
+      );
+      res.json({ avance });
+    } catch (error: any) {
+      console.error("Error calculating avance:", error);
+      res.status(500).json({ error: error.message || "Error al calcular avance" });
+    }
+  });
+
+  // POST /api/objetivos-estandares-vinculacion/aplicar-avance/:objetivoId/:evaluacionId
+  // Calculate and apply progress to the objective
+  app.post("/api/objetivos-estandares-vinculacion/aplicar-avance/:objetivoId/:evaluacionId", requireAuth, async (req, res) => {
+    try {
+      // Calculate progress based on linked standards
+      const avance = await storage.calcularAvanceObjetivoDesdeEstandares(
+        req.params.objetivoId,
+        req.params.evaluacionId
+      );
+      
+      // Update the objective with the calculated progress
+      const updated = await storage.updateObjetivoSst(req.params.objetivoId, {
+        porcentajeAvance: avance
+      });
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Objetivo no encontrado" });
+      }
+      
+      res.json({ avance, objetivo: updated });
+    } catch (error: any) {
+      console.error("Error applying avance:", error);
+      res.status(500).json({ error: error.message || "Error al aplicar avance" });
+    }
+  });
+
   // ========== GLOBAL ERROR HANDLER ==========
   // Middleware global para interceptar errores no manejados y evitar exponer mensajes técnicos
   // Especialmente importante para errores de SSL/certificados en producción
