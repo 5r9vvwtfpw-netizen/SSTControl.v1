@@ -1,72 +1,0 @@
-📊 ESTRUCTURA DEL NUEVO PLAN (47 tareas)
-🎯 BLOQUE 1: COMPLETAR EL CICLO PHVA ⏱️ 3-4 semanas
-El corazón del Sistema de Gestión SST
-📋 PLANEAR (5 tareas)
-Módulo IPERC completo con metodología GTC-45  Matriz de riesgos con valoración (Probabilidad × Severidad)  Generación automática de mapa de riesgos visual  Integración IPERC → Planes de Trabajo Anual  Validación vs Estándar 1.1.2 Res. 0312/2019
-Resultado: Base científica del SG-SST completada
-
-🔨 HACER (3 tareas)
- Validar trazabilidad módulos existentes con matriz IPERC  Vincular Inspecciones con riesgos identificados  Dashboard ejecutivo HACER (métricas de controles operacionales)
-Resultado: Ejecución de controles verificable
-
-✓ VERIFICAR (5 tareas)
- Módulo Auditorías Internas SST (checklist 0312/2019 + ISO 45001)  Módulo Revisión por la Dirección (actas + compromisos)  PDFs alineados con formatos oficiales MinTrabajo (AT-1, AT-2)  Dashboard VERIFICAR (indicadores SG-SST en tiempo real)  Validación reportes auditables
-Resultado: Sistema medible y auditable
-
-🔄 ACTUAR (5 tareas)
- Módulo Seguimiento de Planes de Mejora (estados + alertas)  Sistema de alertas automáticas para acciones próximas a vencer  Análisis de causas raíz (5 Porqués, Espina de Pescado)  Dashboard ACTUAR (eficacia de acciones correctivas)  Validación flujo completo: PLANEAR → HACER → VERIFICAR → ACTUAR → PLANEAR
-Resultado: Mejora continua documentada y medible
-
-💻 BLOQUE 2: INFRAESTRUCTURA OPERACIONAL ⏱️ 1-2 semanas
-Garantizar confiabilidad para clientes reales
- Backups automáticos nocturnos (30 días retención)  Plan de Recuperación ante Desastres  Monitoreo + alertas automáticas  Logs centralizados y auditoría
-Resultado: Plataforma enterprise-grade
-
-⚖️ BLOQUE 3: MARCO LEGAL ⏱️ 1-2 semanas
-Protección legal y cumplimiento normativo
- Términos de Servicio (legislación colombiana)  Política de Privacidad (GDPR + Ley 1581/2012)  Flujo consentimiento Habeas Data  Acuerdo Procesamiento de Datos (GDPR Art. 28)  Gestión derechos ARCO (Acceso, Rectificación, Cancelación, Oposición)
-Resultado: Cumplimiento legal total
-
-💰 BLOQUE 4: SISTEMA DE FACTURACIÓN ⏱️ 2-3 semanas
-Monetización y gestión de suscripciones
- Integración pasarela de pagos Colombia  Planes de suscripción (Basic/Pro/Enterprise)  Facturación electrónica automática  Panel admin suscripciones  Sistema trials gratuitos (14-30 días)
-Resultado: Modelo de negocio SaaS operativo
-
-🧪 BLOQUE 5: VALIDACIÓN INTEGRAL ⏱️ 2 semanas
-Certificar calidad profesional
- Auditoría cumplimiento Resolución 0312/2019 (7 estándares)  Auditoría cumplimiento ISO 45001:2018 (cláusulas 4-10)  Testing e2e ciclo PHVA completo  Pruebas de carga (50+ empresas)  Security audit (OWASP Top 10)
-Resultado: Sistema certificable
-
-📢 BLOQUE 6: MATERIALES COMERCIALES ⏱️ 2 semanas
-Captación de clientes
- Landing page "Ciclo PHVA Completo ISO 45001"  Videos demo (1 por fase PHVA)  Documentación usuario (Manual ciclo PHVA)  Material onboarding (Checklist implementación)  Kit de ventas (comparativas, ROI calculator)
-Resultado: Propuesta de valor diferenciada
-
-🚀 BLOQUE 7: LANZAMIENTO ⏱️ 1 semana
-Go-live profesional
- Dominio personalizado + SSL  Plan Replit producción con SLA  Analytics (Google Analytics 4)  Soft launch (3-5 clientes beta)  Lanzamiento comercial público
-Resultado: Sistema en producción
-
-⏰ TIMELINE OPTIMIZADO
-Semana	Bloques	Objetivo
-1-2	PHVA-PLANEAR + PHVA-HACER	Completar identificación y ejecución
-3-4	PHVA-VERIFICAR + PHVA-ACTUAR	Cerrar ciclo de mejora continua
-5	INFRAESTRUCTURA + LEGAL	Preparar plataforma comercial
-6-7	FACTURACIÓN	Monetización
-8	VALIDACIÓN	Auditorías y testing
-9	MARKETING	Materiales comerciales
-10	LANZAMIENTO	Go-live
-Total: 8-10 semanas
-
-🎯 VENTAJAS DEL NUEVO ENFOQUE
-Para el Desarrollo:
- Prioridades más claras (primero el PHVA, luego el soporte)  Cada fase entrega valor tangible al SG-SST  Testing más fácil (validar ciclo completo)
-Para la Comercialización:
- USP poderoso: "El único sistema con ciclo PHVA completo certificable"  Narrativa clara para ventas: "4 fases integradas, no módulos sueltos"  Fácil de explicar a clientes: "Planee, Ejecute, Verifique, Mejore - todo automatizado"
-Para el Cumplimiento:
- Alineación directa con ISO 45001 (clausula 4.4 - Sistema de gestión)  Cubre los 7 estándares mínimos de Res. 0312/2019  Auditorías externas más sencillas (estructura clara)
-
-📈 PROPUESTA DE VALOR COMERCIAL
-Con este enfoque puedes posicionar el producto como:
-"SST Colombia: El primer sistema colombiano con Ciclo PHVA Completo certificable según ISO 45001:2018"
-No más módulos desconectados. Un sistema integrado que planea sus riesgos, ejecuta los controles, verifica el cumplimiento y mejora continuamente. Todo automatizado, todo auditable.
