@@ -119,13 +119,6 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
     {
       title: "PESV - Seguridad Vial",
       items: [
-        { label: "Dashboard PESV", path: "/pesv" },
-        { label: "Vehículos", path: "/pesv/vehiculos" },
-        { label: "Conductores", path: "/pesv/conductores" },
-        { label: "Inspecciones", path: "/pesv/inspecciones" },
-        { label: "Siniestros Viales", path: "/pesv/siniestros" },
-        { label: "Capacitaciones Viales", path: "/pesv/capacitaciones" },
-        { label: "Auditorías PESV (24 pasos)", path: "/pesv/auditorias" },
         { label: "Evaluaciones PESV (Trazabilidad SST)", path: "/pesv/evaluaciones" },
       ],
     },
