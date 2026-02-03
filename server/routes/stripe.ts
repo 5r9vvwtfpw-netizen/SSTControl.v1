@@ -245,12 +245,60 @@ export function registerStripeRoutes(app: Express) {
 
       // Extraer datos del JWT verificado (NO confiar en datos del cliente)
       // El JWT tiene estructura: { sub_data, metadata, referral }
-      const baseMonthlyPrice = quoteData.sub_data.base_monthly_price || 0;
-      const currentPeriodPrice = quoteData.sub_data.current_period_price || 0;
+      let baseMonthlyPrice = quoteData.sub_data.base_monthly_price || 0;
+      let currentPeriodPrice = quoteData.sub_data.current_period_price || 0;
       const discountDurationMonths = quoteData.sub_data.discount_duration_months || 0;
       const couponCode = quoteData.metadata.coupon_code;
       const referrerId = quoteData.referral?.referrer_id || null;
       const employees = quoteData.metadata.employees;
+
+      // LOGGING: Ver qué valores llegan del JWT para debug
+      logger.info({
+        companyId,
+        baseMonthlyPrice,
+        currentPeriodPrice,
+        discountDurationMonths,
+        couponCode,
+        employees
+      }, '[Quote-Checkout] JWT prices received');
+
+      // VALIDACIÓN: Los precios en COP deben ser razonables (mínimo ~50,000 COP)
+      // Si el precio es sospechosamente bajo, probablemente vino en centavos o mal calculado
+      const MIN_VALID_PRICE_COP = 50000; // $50,000 COP mínimo razonable
+      const MIN_SUBSCRIPTION_PRICE = 116000; // $116,000 COP (base + estándares mínimos)
+      
+      // Si el precio base es menor que el mínimo válido pero mayor que 0, 
+      // probablemente los precios vinieron en un formato incorrecto (dividido por 100)
+      if (baseMonthlyPrice > 0 && baseMonthlyPrice < MIN_VALID_PRICE_COP) {
+        logger.warn({
+          companyId,
+          receivedPrice: baseMonthlyPrice,
+          correctedPrice: baseMonthlyPrice * 100
+        }, '[Quote-Checkout] Price suspiciously low, may be in wrong format. Multiplying by 100.');
+        
+        // Multiplicar por 100 para corregir el formato
+        baseMonthlyPrice = baseMonthlyPrice * 100;
+        if (currentPeriodPrice > 0) {
+          currentPeriodPrice = currentPeriodPrice * 100;
+        }
+      }
+
+      // Asegurar que el precio base cumpla con el mínimo del sistema
+      if (baseMonthlyPrice > 0 && baseMonthlyPrice < MIN_SUBSCRIPTION_PRICE) {
+        logger.warn({
+          companyId,
+          receivedPrice: baseMonthlyPrice,
+          enforcedMinimum: MIN_SUBSCRIPTION_PRICE
+        }, '[Quote-Checkout] Price below system minimum, enforcing minimum');
+        
+        baseMonthlyPrice = MIN_SUBSCRIPTION_PRICE;
+      }
+
+      logger.info({
+        companyId,
+        finalBasePrice: baseMonthlyPrice,
+        finalCurrentPrice: currentPeriodPrice
+      }, '[Quote-Checkout] Final prices after validation');
 
       const company = await storage.getCompany(companyId);
       if (!company) {
