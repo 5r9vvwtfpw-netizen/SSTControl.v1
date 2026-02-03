@@ -343,7 +343,28 @@ export function registerStripeRoutes(app: Express) {
       const hasPartialDiscount = currentPeriodPrice > 0 && currentPeriodPrice < baseMonthlyPrice;
 
       // NOTA: COP es moneda de cero decimales en Stripe, NO multiplicar por 100
-      const priceToCharge = hasPartialDiscount ? currentPeriodPrice : baseMonthlyPrice;
+      let priceToCharge = hasPartialDiscount ? currentPeriodPrice : baseMonthlyPrice;
+      
+      // VALIDACIÓN: El precio a cobrar debe cumplir con el mínimo de Stripe
+      // Stripe requiere ~€0.50 mínimo, que en COP es aproximadamente 2,500 COP
+      // Usamos 5,000 COP como mínimo de seguridad (margen para fluctuaciones de cambio)
+      const STRIPE_MIN_CHARGE_COP = 5000; // $5,000 COP mínimo para Stripe (~€1.15)
+      
+      // Si el precio con descuento es muy bajo pero mayor que 0, tenemos opciones:
+      // 1. Si es menos del 10% del mínimo del sistema, convertir a trial (gratis primer mes)
+      // 2. Si está entre 10% y 100% del mínimo, aplicar el mínimo de Stripe
+      if (hasPartialDiscount && priceToCharge > 0 && priceToCharge < STRIPE_MIN_CHARGE_COP) {
+        // El descuento resulta en un precio muy bajo - convertir a trial
+        logger.warn({
+          companyId,
+          originalPrice: priceToCharge,
+          threshold: STRIPE_MIN_CHARGE_COP,
+          action: 'converting_to_trial'
+        }, '[Quote-Checkout] Discounted price too low for Stripe, converting to 30-day trial');
+        
+        // Convertir a descuento del 100% (trial)
+        priceToCharge = 0;
+      }
       const productName = `SST Colombia - ${company.name} (${employees || 'N/A'} empleados)`;
 
       // Preparar metadata de suscripción
@@ -360,12 +381,17 @@ export function registerStripeRoutes(app: Express) {
 
       let session;
       
-      // Opción A: 100% descuento = Trial period (30 días gratis)
-      if (isFullDiscount) {
+      // Determinar si es efectivamente gratis (100% descuento o precio muy bajo convertido a trial)
+      const effectivelyFree = priceToCharge === 0;
+      
+      // Opción A: 100% descuento (o convertido a trial) = Trial period (30 días gratis)
+      if (effectivelyFree) {
         logger.info({ 
           companyId, 
           couponCode,
           trialDays: 30,
+          originallyFree: isFullDiscount,
+          convertedToTrial: !isFullDiscount && priceToCharge === 0,
           jwtVerified: true
         }, 'Creating checkout with 100% discount (trial period)');
 
