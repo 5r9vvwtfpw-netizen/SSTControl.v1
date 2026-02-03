@@ -6,7 +6,8 @@ import { Link } from "wouter";
 import { 
   Car, Users, ClipboardCheck, AlertTriangle, 
   GraduationCap, FileCheck, TrendingUp, TrendingDown,
-  Activity, ShieldAlert, Building, Target, BarChart3
+  Activity, ShieldAlert, Building, Target, BarChart3,
+  ArrowLeft
 } from "lucide-react";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
@@ -43,9 +44,14 @@ export default function Pesv() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center gap-2 mb-4">
+        <Link href="/pesv/evaluaciones">
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver al Plan Estratégico de Seguridad Vial
+          </Button>
+        </Link>
         <BackToEvaluationButton />
-        
       </div>
       <div>
         <h1 className="text-3xl font-bold" data-testid="text-pesv-title">Plan Estratégico de Seguridad Vial (PESV)</h1>

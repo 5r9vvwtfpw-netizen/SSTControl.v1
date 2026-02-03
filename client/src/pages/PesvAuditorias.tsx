@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Plus, Search, Eye, Trash2 } from "lucide-react";
+import { Plus, Search, Eye, Trash2, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { PesvAudit, insertPesvAuditSchema } from "@shared/schema";
@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { hasCompanyAdminAccess } from "@shared/permissions";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { Link } from "wouter";
 
 type AuditFormData = {
   auditDate: string;
@@ -303,9 +304,14 @@ export default function PesvAuditorias() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2 mb-4">
+        <Link href="/pesv/evaluaciones">
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver al Plan Estratégico de Seguridad Vial
+          </Button>
+        </Link>
         <BackToEvaluationButton />
-        
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
