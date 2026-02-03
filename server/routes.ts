@@ -1772,9 +1772,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json({
         valid: true,
         data: {
+          // Datos de empresa (para pre-llenar Paso 2)
+          companyName: quoteData.metadata.company_name || null,
           employees: quoteData.metadata.employees,
           riskLevel: quoteData.metadata.risk_level,
           vehicles: quoteData.metadata.vehicles,
+          ciiuCode: quoteData.metadata.ciiu_code || null,
+          standardsCount: quoteData.metadata.standards_count || null,
+          // Datos de facturación (para Stripe checkout)
           couponCode: quoteData.metadata.coupon_code,
           baseMonthlyPrice: quoteData.sub_data.base_monthly_price,
           currentPeriodPrice: quoteData.sub_data.current_period_price,

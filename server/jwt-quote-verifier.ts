@@ -26,10 +26,13 @@ export interface QuotePayload {
     currency: "COP";
   };
   metadata: {
+    company_name?: string;            // Nombre de empresa (pre-llenar en Paso 2)
     employees: number;                // Número de empleados
     risk_level: "I" | "II" | "III" | "IV" | "V";
     vehicles: number;                 // Vehículos para PESV
     coupon_code: string | null;       // Código del cupón aplicado
+    ciiu_code?: string;               // Código CIIU (opcional)
+    standards_count?: number;         // Cantidad de estándares aplicables
   };
   referral: {
     referrer_id: string;              // ID de la empresa que refirió
