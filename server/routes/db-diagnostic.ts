@@ -14,14 +14,19 @@ export function registerDbDiagnosticRoutes(app: Express) {
     // Query real data from the database
     let companyCount = 0;
     let recentCompanies: any[] = [];
+    let subscriptionPlans: any[] = [];
     try {
       const countResult = await db.execute(sql`SELECT COUNT(*) as count FROM companies`);
       companyCount = Number(countResult.rows?.[0]?.count || 0);
       
       const recentResult = await db.execute(sql`SELECT id, name, nit, created_at FROM companies ORDER BY created_at DESC LIMIT 5`);
       recentCompanies = recentResult.rows || [];
+      
+      // Get subscription plans with prices
+      const plansResult = await db.execute(sql`SELECT id, name, display_name, price_monthly FROM subscription_plans ORDER BY price_monthly`);
+      subscriptionPlans = plansResult.rows || [];
     } catch (error: any) {
-      console.error('[DB-Diagnostic] Error querying companies:', error.message);
+      console.error('[DB-Diagnostic] Error querying:', error.message);
     }
     
     res.json({
@@ -41,6 +46,7 @@ export function registerDbDiagnosticRoutes(app: Express) {
       realData: {
         companyCount,
         recentCompanies,
+        subscriptionPlans,
       },
       decision: usingAwsRds 
         ? 'Production mode with AWS RDS credentials → Using AWS RDS' 
