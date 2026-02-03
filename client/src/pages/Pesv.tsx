@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PrintDashboardButton } from "@/components/PrintDashboardButton";
 import { Link } from "wouter";
 import { 
   Car, Users, ClipboardCheck, AlertTriangle, 
@@ -48,14 +47,11 @@ export default function Pesv() {
         <BackToEvaluationButton />
         
       </div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold" data-testid="text-pesv-title">Plan Estratégico de Seguridad Vial (PESV)</h1>
-          <p className="text-muted-foreground mt-1">
-            Gestión integral de seguridad vial según Decreto 1252/2021 y Resolución 40595/2022
-          </p>
-        </div>
-        <PrintDashboardButton title="Imprimir Panel PESV" />
+      <div>
+        <h1 className="text-3xl font-bold" data-testid="text-pesv-title">Plan Estratégico de Seguridad Vial (PESV)</h1>
+        <p className="text-muted-foreground mt-1">
+          Gestión integral de seguridad vial según Decreto 1252/2021 y Resolución 40595/2022
+        </p>
       </div>
       
       <div className="print-date" style={{ display: 'none' }}>
