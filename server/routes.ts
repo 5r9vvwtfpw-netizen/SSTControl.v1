@@ -25,6 +25,7 @@ import { users } from "@shared/schema";
 import { getAuditContext } from "./lib/audit-logger";
 import { registerBillingRoutes } from "./routes/billing";
 import { registerStripeRoutes } from "./routes/stripe";
+import { registerDbDiagnosticRoutes } from "./routes/db-diagnostic";
 import { registerLicensedProfessionalsRoutes } from "./routes/licensed-professionals";
 import lsoDirectoryJwtRoutes from "./routes/lso-directory-jwt";
 import { legalDocsPdfService } from "./services/legal-docs-pdf";
@@ -42435,6 +42436,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // LSO Directory JWT API routes (new authentication method)
   app.use("/api/lso-directory-jwt", lsoDirectoryJwtRoutes);
 
+  registerDbDiagnosticRoutes(app);
   registerBillingRoutes(app);
 
   // Inducción Virtual routes
