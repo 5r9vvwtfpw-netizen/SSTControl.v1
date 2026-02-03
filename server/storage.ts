@@ -11643,41 +11643,56 @@ export class DbStorage implements IStorage {
     planId: string,
     trialDays: number
   ): Promise<Subscription> {
+    console.log(`🔍 [TRIAL-DB] createTrialSubscription: companyId=${companyId}, planId=${planId}, trialDays=${trialDays}`);
+    
     // Hardening: Enforce 7, 14 or 30 day trial limit at storage layer (Architect feedback)
     if (![7, 14, 30].includes(trialDays)) {
+      console.error(`❌ [TRIAL-DB] Trial period inválido: ${trialDays}`);
       throw new Error('Trial period must be exactly 7, 14 or 30 days');
     }
 
     // Anti-abuse: Verify company has NO subscriptions at all (any status) - Architect feedback
+    console.log(`🔍 [TRIAL-DB] Verificando suscripciones existentes para empresa ${companyId}...`);
     const anyExisting = await db.select().from(schema.subscriptions)
       .where(eq(schema.subscriptions.companyId, companyId))
       .limit(1);
     
     if (anyExisting.length > 0) {
+      console.error(`❌ [TRIAL-DB] Empresa ${companyId} ya tiene suscripción: ${JSON.stringify(anyExisting[0])}`);
       throw new Error('Esta empresa ya tiene una suscripción. Solo se permite un período de prueba por empresa.');
     }
+    console.log(`✅ [TRIAL-DB] No hay suscripciones previas para empresa ${companyId}`);
 
     const now = new Date();
     const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
     const periodEnd = new Date(trialEnd);
 
-    const [subscription] = await db
-      .insert(schema.subscriptions)
-      .values({
-        // Let database generate UUID automatically
-        companyId,
-        planId,
-        status: 'trial',
-        trialStart: now,
-        trialEnd: trialEnd,
-        currentPeriodStart: now,
-        currentPeriodEnd: periodEnd,
-        createdAt: now,
-        updatedAt: now
-      })
-      .returning();
+    console.log(`🔍 [TRIAL-DB] Insertando suscripción trial en DB...`);
+    try {
+      const [subscription] = await db
+        .insert(schema.subscriptions)
+        .values({
+          // Let database generate UUID automatically
+          companyId,
+          planId,
+          status: 'trial',
+          trialStart: now,
+          trialEnd: trialEnd,
+          currentPeriodStart: now,
+          currentPeriodEnd: periodEnd,
+          createdAt: now,
+          updatedAt: now
+        })
+        .returning();
 
-    return subscription;
+      console.log(`✅ [TRIAL-DB] Suscripción trial creada: id=${subscription.id}`);
+      return subscription;
+    } catch (dbError: any) {
+      console.error(`❌ [TRIAL-DB] Error de base de datos:`, dbError);
+      console.error(`❌ [TRIAL-DB] Error message: ${dbError.message}`);
+      console.error(`❌ [TRIAL-DB] Error code: ${dbError.code || 'N/A'}`);
+      throw dbError;
+    }
   }
 
   async getExpiredTrials(): Promise<Subscription[]> {

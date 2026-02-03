@@ -265,7 +265,52 @@ app.post(
                   logger.info({ companyId, attempt, maxRetries }, 'Subscription not found, retrying...');
                   await new Promise(resolve => setTimeout(resolve, retryDelay));
                 } else {
-                  logger.warn({ companyId }, 'Subscription not found after max retries');
+                  // FIX: Si no existe suscripción pero hay pago, crear suscripción
+                  logger.warn({ companyId }, 'Subscription not found after max retries - attempting recovery');
+                  
+                  try {
+                    // Verificar si la empresa existe
+                    const company = await storage.getCompany(companyId);
+                    if (company) {
+                      // Obtener el plan por defecto
+                      const defaultPlan = await storage.getSubscriptionPlanByName('microempresa');
+                      if (defaultPlan) {
+                        const now = new Date();
+                        const periodEnd = new Date(now);
+                        periodEnd.setMonth(periodEnd.getMonth() + 1);
+                        
+                        // Crear suscripción activa (ya pagada)
+                        const newSubscription = await storage.createSubscription({
+                          companyId,
+                          planId: defaultPlan.id,
+                          status: 'active',
+                          currentPeriodStart: now,
+                          currentPeriodEnd: periodEnd,
+                          lastPaymentDate: now,
+                          nextPaymentDate: periodEnd,
+                          metadata: {
+                            stripeCustomerId: session.customer as string,
+                            stripeSessionId: session.id,
+                            recoveredFromWebhook: true,
+                            lastPaymentAmount: session.amount_total ? session.amount_total / 100 : 0
+                          }
+                        });
+                        
+                        logger.info({ 
+                          subscriptionId: newSubscription.id, 
+                          companyId,
+                          planName: defaultPlan.name,
+                          recoveredFromWebhook: true
+                        }, 'RECOVERY: Created subscription from webhook after payment');
+                      } else {
+                        logger.error({ companyId }, 'RECOVERY FAILED: No default subscription plan found');
+                      }
+                    } else {
+                      logger.error({ companyId }, 'RECOVERY FAILED: Company does not exist');
+                    }
+                  } catch (recoveryError) {
+                    logger.error({ err: recoveryError, companyId }, 'RECOVERY FAILED: Error creating subscription');
+                  }
                 }
               } catch (updateError) {
                 logger.error({ err: updateError, companyId, attempt }, 'Error activating subscription');
