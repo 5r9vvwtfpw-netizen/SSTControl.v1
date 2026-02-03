@@ -200,23 +200,15 @@ export function registerStripeRoutes(app: Express) {
   /**
    * POST /api/stripe/create-quote-checkout
    * Crea un checkout dinámico usando datos del JWT quote de la landing page
+   * SEGURIDAD: Verifica el JWT server-side antes de usar los precios
    * Implementa: COP como moneda (Problema 2), cupones/descuentos (Problema 3)
-   * 
-   * REGLA CRÍTICA: Confiar en current_period_price como "Precio Acordado"
-   * NO recalcular precios - los datos vienen firmados del JWT
    */
   app.post("/api/stripe/create-quote-checkout", subscriptionMutationLimiter, requireAuth, async (req, res) => {
     try {
       const quoteCheckoutSchema = z.object({
-        // Datos de facturación del JWT
-        baseMonthlyPrice: z.number().min(0),
-        currentPeriodPrice: z.number().min(0),
-        discountDurationMonths: z.number().min(0).max(24).default(0),
-        currency: z.string().default("COP"),
-        couponCode: z.string().nullable().optional(),
-        referrerId: z.string().nullable().optional(),
-        // Datos adicionales
-        employees: z.number().min(1).optional(),
+        // JWT token de la landing page (REQUERIDO para verificación server-side)
+        quoteToken: z.string().min(1, "Token de cotización requerido"),
+        // URLs opcionales
         successUrl: z.string().url().optional(),
         cancelUrl: z.string().url().optional(),
         // Contract acceptance
@@ -232,14 +224,38 @@ export function registerStripeRoutes(app: Express) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
 
+      // ========================================
+      // VERIFICAR JWT SERVER-SIDE (Seguridad)
+      // ========================================
+      const { verifyQuoteToken } = await import('../jwt-quote-verifier');
+      const jwtResult = verifyQuoteToken(validatedData.quoteToken);
+      
+      if (!jwtResult.valid || !jwtResult.data) {
+        logger.warn({ 
+          companyId, 
+          reason: jwtResult.error 
+        }, 'Invalid or expired quote token for checkout');
+        return res.status(400).json({ 
+          error: "Cotización inválida o expirada", 
+          details: jwtResult.error 
+        });
+      }
+
+      // Extraer datos del JWT verificado (NO confiar en datos del cliente)
+      const quoteData = jwtResult.data;
+      const baseMonthlyPrice = quoteData.baseMonthlyPrice || 0;
+      const currentPeriodPrice = quoteData.currentPeriodPrice || 0;
+      const discountDurationMonths = quoteData.discountDurationMonths || 0;
+      const couponCode = quoteData.couponCode;
+      const referrerId = quoteData.referrerId;
+      const employees = quoteData.employees;
+
       const company = await storage.getCompany(companyId);
       if (!company) {
         return res.status(404).json({ error: "Empresa no encontrada" });
       }
-
-      const stripe = await stripeService['getClient']();
       
-      // Obtener o crear cliente
+      // Obtener o crear cliente Stripe
       const customer = await stripeService.findOrCreateCustomer({
         email: user.email || '',
         name: company.name || user.fullName || user.username,
@@ -255,12 +271,13 @@ export function registerStripeRoutes(app: Express) {
       const metadata: Record<string, string> = {
         companyId,
         userId: user.id.toString(),
-        source: 'landing_page_jwt',
-        baseMonthlyPriceCOP: validatedData.baseMonthlyPrice.toString(),
-        agreedPriceCOP: validatedData.currentPeriodPrice.toString(),
-        discountMonths: validatedData.discountDurationMonths.toString(),
-        couponCode: validatedData.couponCode || 'none',
-        referrerId: validatedData.referrerId || 'none'
+        source: 'landing_page_jwt_verified',
+        baseMonthlyPriceCOP: baseMonthlyPrice.toString(),
+        agreedPriceCOP: currentPeriodPrice.toString(),
+        discountMonths: discountDurationMonths.toString(),
+        couponCode: couponCode || 'none',
+        referrerId: referrerId || 'none',
+        jwtVerified: 'true'
       };
 
       if (validatedData.contractAccepted) {
@@ -271,126 +288,88 @@ export function registerStripeRoutes(app: Express) {
       // ========================================
       // LÓGICA DE DESCUENTO (Problema 3)
       // ========================================
-      const isFullDiscount = validatedData.currentPeriodPrice === 0;
-      const hasPartialDiscount = validatedData.currentPeriodPrice > 0 && 
-                                  validatedData.currentPeriodPrice < validatedData.baseMonthlyPrice;
+      const isFullDiscount = currentPeriodPrice === 0;
+      const hasPartialDiscount = currentPeriodPrice > 0 && currentPeriodPrice < baseMonthlyPrice;
 
-      // Determinar precio a usar
       // NOTA: COP es moneda de cero decimales en Stripe, NO multiplicar por 100
-      const priceInCOP = validatedData.baseMonthlyPrice;
+      const priceToCharge = hasPartialDiscount ? currentPeriodPrice : baseMonthlyPrice;
+      const productName = `SST Colombia - ${company.name} (${employees || 'N/A'} empleados)`;
 
-      // Crear producto dinámico para esta suscripción
-      const productName = `SST Colombia - ${company.name} (${validatedData.employees || 'N/A'} empleados)`;
-      
-      let sessionParams: any = {
-        customer: customer.id,
-        mode: 'subscription',
-        payment_method_types: ['card'],
-        success_url: validatedData.successUrl || `${baseUrl}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: validatedData.cancelUrl || `${baseUrl}/mi-suscripcion?payment=cancelled`,
-        metadata,
-        locale: 'es'
+      // Preparar metadata de suscripción
+      const subscriptionMetadata: Record<string, string> = {
+        coupon_code: couponCode || 'none',
+        original_price_cop: baseMonthlyPrice.toString(),
+        source: 'landing_jwt_verified'
       };
 
-      // Opción A: 100% descuento = Trial period (primer mes gratis)
+      if (hasPartialDiscount) {
+        subscriptionMetadata.discounted_price_cop = currentPeriodPrice.toString();
+        subscriptionMetadata.discount_ends_after_months = discountDurationMonths.toString();
+      }
+
+      let session;
+      
+      // Opción A: 100% descuento = Trial period (30 días gratis)
       if (isFullDiscount) {
         logger.info({ 
           companyId, 
-          couponCode: validatedData.couponCode,
-          trialDays: 30 
+          couponCode,
+          trialDays: 30,
+          jwtVerified: true
         }, 'Creating checkout with 100% discount (trial period)');
 
-        sessionParams.line_items = [{
-          price_data: {
-            currency: 'cop',
-            product_data: {
-              name: productName,
-              description: `Suscripción mensual SST Colombia - Nivel de riesgo incluido`
-            },
-            unit_amount: priceInCOP, // COP sin decimales
-            recurring: { interval: 'month' }
-          },
-          quantity: 1
-        }];
-        sessionParams.subscription_data = {
-          trial_period_days: 30,
-          metadata: {
-            coupon_code: validatedData.couponCode || 'TRIAL_100_OFF',
-            original_price_cop: validatedData.baseMonthlyPrice.toString(),
-            source: 'landing_jwt'
-          }
-        };
+        session = await stripeService.createDynamicCheckoutSession({
+          customerId: customer.id,
+          currency: 'cop',
+          productName,
+          productDescription: 'Suscripción mensual SST Colombia - Primer mes gratis',
+          unitAmount: baseMonthlyPrice,
+          successUrl: validatedData.successUrl || `${baseUrl}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: validatedData.cancelUrl || `${baseUrl}/mi-suscripcion?payment=cancelled`,
+          metadata,
+          subscriptionMetadata,
+          trialPeriodDays: 30
+        });
       }
-      // Opción B: Descuento parcial - usar precio acordado
-      else if (hasPartialDiscount) {
-        logger.info({ 
-          companyId, 
-          couponCode: validatedData.couponCode,
-          discountedPrice: validatedData.currentPeriodPrice,
-          regularPrice: validatedData.baseMonthlyPrice,
-          discountMonths: validatedData.discountDurationMonths
-        }, 'Creating checkout with partial discount');
-
-        // Para descuentos parciales, usamos el precio con descuento directamente
-        // El webhook debe manejar la transición al precio regular después de N meses
-        sessionParams.line_items = [{
-          price_data: {
-            currency: 'cop',
-            product_data: {
-              name: productName,
-              description: `Suscripción mensual SST Colombia - Precio promocional por ${validatedData.discountDurationMonths} mes(es)`
-            },
-            unit_amount: validatedData.currentPeriodPrice, // Precio acordado con descuento
-            recurring: { interval: 'month' }
-          },
-          quantity: 1
-        }];
-        sessionParams.subscription_data = {
-          metadata: {
-            coupon_code: validatedData.couponCode || 'PARTIAL_DISCOUNT',
-            original_price_cop: validatedData.baseMonthlyPrice.toString(),
-            discounted_price_cop: validatedData.currentPeriodPrice.toString(),
-            discount_ends_after_months: validatedData.discountDurationMonths.toString(),
-            source: 'landing_jwt'
-          }
-        };
-      }
-      // Sin descuento - precio completo
+      // Opción B: Descuento parcial o sin descuento
       else {
         logger.info({ 
           companyId, 
-          price: validatedData.baseMonthlyPrice 
-        }, 'Creating checkout with full price');
+          couponCode,
+          priceApplied: priceToCharge,
+          hasDiscount: hasPartialDiscount,
+          jwtVerified: true
+        }, 'Creating checkout with JWT-verified price');
 
-        sessionParams.line_items = [{
-          price_data: {
-            currency: 'cop',
-            product_data: {
-              name: productName,
-              description: `Suscripción mensual SST Colombia`
-            },
-            unit_amount: priceInCOP,
-            recurring: { interval: 'month' }
-          },
-          quantity: 1
-        }];
+        session = await stripeService.createDynamicCheckoutSession({
+          customerId: customer.id,
+          currency: 'cop',
+          productName,
+          productDescription: hasPartialDiscount 
+            ? `Suscripción mensual SST Colombia - Precio promocional por ${discountDurationMonths} mes(es)`
+            : 'Suscripción mensual SST Colombia',
+          unitAmount: priceToCharge,
+          successUrl: validatedData.successUrl || `${baseUrl}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: validatedData.cancelUrl || `${baseUrl}/mi-suscripcion?payment=cancelled`,
+          metadata,
+          subscriptionMetadata
+        });
       }
 
-      const session = await stripe.checkout.sessions.create(sessionParams);
-
       logger.info({ 
-        sessionId: session.id, 
+        sessionId: session.sessionId, 
         companyId,
         customerId: customer.id,
         currency: 'COP',
-        appliedDiscount: isFullDiscount ? '100%' : hasPartialDiscount ? 'partial' : 'none'
-      }, 'Quote-based Stripe checkout session created');
+        appliedDiscount: isFullDiscount ? '100%' : hasPartialDiscount ? 'partial' : 'none',
+        jwtVerified: true
+      }, 'Quote-based Stripe checkout session created (JWT verified)');
 
       res.json({
-        sessionId: session.id,
+        sessionId: session.sessionId,
         url: session.url,
         currency: 'COP',
-        priceApplied: isFullDiscount ? 0 : (hasPartialDiscount ? validatedData.currentPeriodPrice : validatedData.baseMonthlyPrice),
+        priceApplied: isFullDiscount ? 0 : priceToCharge,
         discountApplied: isFullDiscount || hasPartialDiscount
       });
     } catch (error: any) {

@@ -152,6 +152,74 @@ export class StripeService {
     });
   }
 
+  /**
+   * Crea un checkout con precio dinámico (price_data) en COP
+   * Usado para checkouts desde landing page con precios del JWT
+   */
+  async createDynamicCheckoutSession(data: {
+    customerId: string;
+    currency: string;
+    productName: string;
+    productDescription?: string;
+    unitAmount: number; // COP es zero-decimal, no multiplicar por 100
+    successUrl: string;
+    cancelUrl: string;
+    metadata?: Record<string, string>;
+    subscriptionMetadata?: Record<string, string>;
+    trialPeriodDays?: number;
+  }): Promise<StripeCheckoutSession> {
+    return await retryWithBackoff(async () => {
+      const stripe = await this.getClient();
+
+      const sessionParams: Stripe.Checkout.SessionCreateParams = {
+        customer: data.customerId,
+        mode: 'subscription',
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: data.currency.toLowerCase(),
+            product_data: {
+              name: data.productName,
+              description: data.productDescription || undefined
+            },
+            unit_amount: data.unitAmount,
+            recurring: { interval: 'month' }
+          },
+          quantity: 1
+        }],
+        success_url: data.successUrl,
+        cancel_url: data.cancelUrl,
+        metadata: data.metadata,
+        locale: 'es'
+      };
+
+      if (data.trialPeriodDays || data.subscriptionMetadata) {
+        sessionParams.subscription_data = {
+          ...(data.trialPeriodDays && { trial_period_days: data.trialPeriodDays }),
+          ...(data.subscriptionMetadata && { metadata: data.subscriptionMetadata })
+        };
+      }
+
+      const session = await stripe.checkout.sessions.create(sessionParams);
+
+      logger.info({ 
+        sessionId: session.id, 
+        currency: data.currency,
+        unitAmount: data.unitAmount 
+      }, 'Dynamic Stripe checkout session created');
+
+      return {
+        sessionId: session.id,
+        url: session.url!
+      };
+    }, {
+      maxAttempts: 3,
+      initialDelayMs: 1000
+    }, {
+      operation: 'createDynamicCheckoutSession'
+    });
+  }
+
   async createBillingPortalSession(data: {
     customerId: string;
     returnUrl: string;
