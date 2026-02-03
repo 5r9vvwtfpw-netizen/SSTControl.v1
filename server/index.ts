@@ -19,6 +19,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedSstCatalog } from "./sst-seed";
 import { runMigrations } from "./run-migrations";
+import { ensureSchemaSync } from "./migrations/ensure-schema-sync";
 import { seedAdminUser } from "./seed-admin";
 import { seedSubscriptionPlans } from "./seed-subscription-plans";
 import logger from "./lib/logger";
@@ -511,6 +512,13 @@ app.use(requireValidLicense);
     await runMigrations();
   } catch (error) {
     logger.error({ err: error }, "⚠️ Migraciones fallaron");
+  }
+
+  // Sincronizar esquema con base de datos (AWS RDS en producción)
+  try {
+    await ensureSchemaSync();
+  } catch (error) {
+    logger.error({ err: error }, "⚠️ Sincronización de esquema falló");
   }
 
   // Crear usuario admin si no existe (crítico para primer acceso)
