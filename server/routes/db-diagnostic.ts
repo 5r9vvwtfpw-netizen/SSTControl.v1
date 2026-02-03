@@ -1,4 +1,7 @@
 import type { Express } from "express";
+import { db } from "../db";
+import { companies } from "@shared/schema";
+import { sql } from "drizzle-orm";
 
 export function registerDbDiagnosticRoutes(app: Express) {
   app.get("/api/db-diagnostic", async (req, res) => {
@@ -7,6 +10,19 @@ export function registerDbDiagnosticRoutes(app: Express) {
     const hasAwsRdsPassword = !!process.env.AWS_RDS_PASSWORD;
     const hasAwsRds = hasAwsRdsHost && hasAwsRdsPassword;
     const usingAwsRds = isProduction && hasAwsRds;
+    
+    // Query real data from the database
+    let companyCount = 0;
+    let recentCompanies: any[] = [];
+    try {
+      const countResult = await db.execute(sql`SELECT COUNT(*) as count FROM companies`);
+      companyCount = Number(countResult.rows?.[0]?.count || 0);
+      
+      const recentResult = await db.execute(sql`SELECT id, name, nit, created_at FROM companies ORDER BY created_at DESC LIMIT 5`);
+      recentCompanies = recentResult.rows || [];
+    } catch (error: any) {
+      console.error('[DB-Diagnostic] Error querying companies:', error.message);
+    }
     
     res.json({
       timestamp: new Date().toISOString(),
@@ -21,6 +37,10 @@ export function registerDbDiagnosticRoutes(app: Express) {
         usingDatabase: usingAwsRds ? 'AWS RDS' : 'Neon (DATABASE_URL)',
         awsRdsHost: process.env.AWS_RDS_HOST ? `${process.env.AWS_RDS_HOST.substring(0, 15)}...` : 'not set',
         databaseUrlSet: !!process.env.DATABASE_URL,
+      },
+      realData: {
+        companyCount,
+        recentCompanies,
       },
       decision: usingAwsRds 
         ? 'Production mode with AWS RDS credentials → Using AWS RDS' 
