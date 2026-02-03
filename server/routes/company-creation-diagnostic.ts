@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import * as schema from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 const router = Router();
 
@@ -14,13 +14,33 @@ router.get('/api/company-creation-diagnostic', async (req, res) => {
   };
 
   try {
-    // 1. Test database connection
+    // 0. Database Environment Info
+    const isProduction = process.env.NODE_ENV === 'production';
+    const hasAwsRds = !!(process.env.AWS_RDS_HOST && process.env.AWS_RDS_PASSWORD);
+    
+    diagnostics.checks.databaseEnvironment = {
+      nodeEnv: process.env.NODE_ENV || 'not set',
+      isProduction,
+      hasAwsRds,
+      awsRdsHost: process.env.AWS_RDS_HOST ? process.env.AWS_RDS_HOST.substring(0, 20) + '...' : 'not set',
+      expectedDatabase: isProduction && hasAwsRds ? 'AWS RDS' : 'Neon',
+      databaseUrlSet: !!process.env.DATABASE_URL
+    };
+
+    // 1. Test database connection and get actual database info
     diagnostics.checks.databaseConnection = { status: 'testing' };
     try {
-      const result = await db.execute('SELECT 1 as test');
+      // Get database version and connection info
+      const versionResult = await db.execute(sql`SELECT version() as db_version`);
+      const dbNameResult = await db.execute(sql`SELECT current_database() as db_name`);
+      const hostResult = await db.execute(sql`SELECT inet_server_addr() as host`);
+      
       diagnostics.checks.databaseConnection = { 
         status: 'success', 
-        message: 'Database connection working' 
+        message: 'Database connection working',
+        databaseVersion: (versionResult as any).rows?.[0]?.db_version || 'unknown',
+        currentDatabase: (dbNameResult as any).rows?.[0]?.db_name || 'unknown',
+        serverHost: (hostResult as any).rows?.[0]?.host || 'unknown'
       };
     } catch (err: any) {
       diagnostics.checks.databaseConnection = { 
@@ -28,6 +48,28 @@ router.get('/api/company-creation-diagnostic', async (req, res) => {
         error: err.message 
       };
       diagnostics.errors.push('Database connection failed');
+    }
+    
+    // 1.5 List ALL companies in current database
+    try {
+      const allCompanies = await db.select({
+        id: schema.companies.id,
+        name: schema.companies.name,
+        nit: schema.companies.nit,
+        createdAt: schema.companies.createdAt
+      }).from(schema.companies).orderBy(schema.companies.createdAt);
+      
+      diagnostics.checks.allCompanies = {
+        count: allCompanies.length,
+        companies: allCompanies.map(c => ({
+          id: c.id?.substring(0, 8) + '...',
+          name: c.name,
+          nit: c.nit,
+          createdAt: c.createdAt
+        }))
+      };
+    } catch (err: any) {
+      diagnostics.checks.allCompanies = { error: err.message };
     }
 
     // 2. Check subscription_plans table
