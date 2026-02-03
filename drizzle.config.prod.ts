@@ -10,7 +10,8 @@ if (!host || !password) {
   throw new Error("AWS_RDS_HOST and AWS_RDS_PASSWORD are required for production migrations");
 }
 
-const connectionString = `postgresql://${user}:${password}@${host}:${port}/${database}`;
+// Include SSL mode for AWS RDS
+const connectionString = `postgresql://${user}:${password}@${host}:${port}/${database}?sslmode=require`;
 
 export default defineConfig({
   out: "./migrations",
