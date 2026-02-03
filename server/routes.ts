@@ -7642,7 +7642,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================================================
   app.get("/api/admin/subscription-plans-status", requireRole(["superadmin"]), async (req, res) => {
     try {
-      const plans = await db.select().from(subscriptionPlans);
+      const plans = await db.select().from(schema.subscriptionPlans);
       const isProduction = process.env.NODE_ENV === 'production';
       const hasAwsRds = !!(process.env.AWS_RDS_HOST && process.env.AWS_RDS_PASSWORD);
       
@@ -7673,7 +7673,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { seedSubscriptionPlans } = await import("./seed-subscription-plans");
       await seedSubscriptionPlans();
       
-      const plans = await db.select().from(subscriptionPlans);
+      const plans = await db.select().from(schema.subscriptionPlans);
       const isProduction = process.env.NODE_ENV === 'production';
       const hasAwsRds = !!(process.env.AWS_RDS_HOST && process.env.AWS_RDS_PASSWORD);
       
