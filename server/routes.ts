@@ -26,6 +26,8 @@ import { getAuditContext } from "./lib/audit-logger";
 import { registerBillingRoutes } from "./routes/billing";
 import { registerStripeRoutes } from "./routes/stripe";
 import { registerDbDiagnosticRoutes } from "./routes/db-diagnostic";
+import companyCreationDiagnosticRoutes from "./routes/company-creation-diagnostic";
+import writeTestDiagnosticRoutes from "./routes/write-test-diagnostic";
 import { registerSubscriptionCheckRoutes } from "./routes/subscription-check";
 import { registerLicensedProfessionalsRoutes } from "./routes/licensed-professionals";
 import lsoDirectoryJwtRoutes from "./routes/lso-directory-jwt";
@@ -42438,6 +42440,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.use("/api/lso-directory-jwt", lsoDirectoryJwtRoutes);
 
   registerDbDiagnosticRoutes(app);
+  app.use(companyCreationDiagnosticRoutes);
+  app.use(writeTestDiagnosticRoutes);
   registerBillingRoutes(app);
   registerSubscriptionCheckRoutes(app);
 
