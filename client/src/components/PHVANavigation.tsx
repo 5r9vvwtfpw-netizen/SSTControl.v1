@@ -119,6 +119,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
     {
       title: "PESV - Seguridad Vial",
       items: [
+        { label: "Dashboard PESV", path: "/pesv" },
         { label: "Evaluaciones PESV (Trazabilidad SST)", path: "/pesv/evaluaciones" },
       ],
     },
