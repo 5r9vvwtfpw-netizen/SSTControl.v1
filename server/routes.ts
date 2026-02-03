@@ -26,6 +26,7 @@ import { getAuditContext } from "./lib/audit-logger";
 import { registerBillingRoutes } from "./routes/billing";
 import { registerStripeRoutes } from "./routes/stripe";
 import { registerDbDiagnosticRoutes } from "./routes/db-diagnostic";
+import { registerSubscriptionCheckRoutes } from "./routes/subscription-check";
 import { registerLicensedProfessionalsRoutes } from "./routes/licensed-professionals";
 import lsoDirectoryJwtRoutes from "./routes/lso-directory-jwt";
 import { legalDocsPdfService } from "./services/legal-docs-pdf";
@@ -42438,6 +42439,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   registerDbDiagnosticRoutes(app);
   registerBillingRoutes(app);
+  registerSubscriptionCheckRoutes(app);
 
   // Inducción Virtual routes
   registerInduccionVirtualRoutes(app);
