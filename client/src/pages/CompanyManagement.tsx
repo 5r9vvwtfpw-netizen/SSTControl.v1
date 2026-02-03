@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info } from "lucide-react";
+import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation, useRouter } from "wouter";
@@ -44,6 +44,13 @@ type CompanyStats = {
     accidentsCount: number;
     inspectionsCount: number;
   };
+  subscription?: {
+    status: string;
+    planId: string;
+    couponCode: string | null;
+    couponUsed: boolean;
+    source: string;
+  } | null;
 };
 
 // Lista de ciudades principales de Colombia para documentos oficiales
@@ -136,6 +143,12 @@ export default function CompanyManagement() {
   const getCompanyStats = (companyId: string): CompanyStats["stats"] | null => {
     const found = companyStats.find((s: CompanyStats) => s.companyId === companyId);
     return found?.stats || null;
+  };
+
+  // Helper para obtener info de suscripción/cupón
+  const getCompanySubscription = (companyId: string): CompanyStats["subscription"] | null => {
+    const found = companyStats.find((s: CompanyStats) => s.companyId === companyId);
+    return found?.subscription || null;
   };
 
   const createCompanyMutation = useMutation({
@@ -827,19 +840,27 @@ export default function CompanyManagement() {
                   </div>
                 </TableHead>
               )}
+              {isSuperAdmin && (
+                <TableHead data-testid="header-subscription" className="min-w-[140px]">
+                  <div className="flex items-center gap-1">
+                    <CreditCard className="h-4 w-4" />
+                    Suscripción
+                  </div>
+                </TableHead>
+              )}
               <TableHead data-testid="header-actions">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {companiesLoading ? (
               <TableRow>
-                <TableCell colSpan={isSuperAdmin ? 7 : 6} className="text-center" data-testid="text-loading">
+                <TableCell colSpan={isSuperAdmin ? 8 : 6} className="text-center" data-testid="text-loading">
                   Cargando empresas...
                 </TableCell>
               </TableRow>
             ) : companies.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isSuperAdmin ? 7 : 6} className="text-center" data-testid="text-no-companies">
+                <TableCell colSpan={isSuperAdmin ? 8 : 6} className="text-center" data-testid="text-no-companies">
                   No hay empresas registradas. Cree la primera empresa para comenzar.
                 </TableCell>
               </TableRow>
@@ -929,6 +950,42 @@ export default function CompanyManagement() {
                         ) : (
                           <span className="text-xs text-muted-foreground">Cargando...</span>
                         )}
+                      </TableCell>
+                    )}
+                    {isSuperAdmin && (
+                      <TableCell data-testid={`subscription-${company.id}`}>
+                        {(() => {
+                          const sub = getCompanySubscription(company.id);
+                          if (!sub) return <span className="text-xs text-muted-foreground">Sin suscripción</span>;
+                          const statusColors: Record<string, string> = {
+                            active: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+                            trial: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+                            past_due: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+                            blocked: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+                            cancelled: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
+                          };
+                          return (
+                            <div className="flex flex-col gap-1">
+                              <Badge className={`text-xs ${statusColors[sub.status] || ''}`}>
+                                {sub.status}
+                              </Badge>
+                              {sub.couponCode && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="outline" className="text-xs cursor-help">
+                                      <Tag className="h-3 w-3 mr-1" />
+                                      {sub.couponCode}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Cupón aplicado: {sub.couponCode}</p>
+                                    <p>Fuente: {sub.source === 'landing_page' ? 'Landing Page' : 'Registro directo'}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </TableCell>
                     )}
                     <TableCell>

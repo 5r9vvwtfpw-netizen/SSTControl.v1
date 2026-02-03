@@ -2029,6 +2029,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allTrainings = await storage.getAllTrainings();
       const allAccidents = await storage.getAllAccidents();
       const allInspections = await storage.getAllInspections();
+      const allSubscriptions = await storage.getAllSubscriptionsWithDetails();
+
+      // Create subscriptions map indexed by companyId for efficient lookup
+      const subscriptionsMap = new Map(
+        allSubscriptions.map(sub => [sub.companyId, sub])
+      );
 
       // Crear mapa de estadísticas por empresa
       const stats = companies.map(company => {
@@ -2037,6 +2043,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const companyTrainings = allTrainings.filter(t => t.companyId === company.id);
         const companyAccidents = allAccidents.filter(a => a.companyId === company.id);
         const companyInspections = allInspections.filter(i => i.companyId === company.id);
+
+        // Get subscription details and extract coupon info
+        const subscription = subscriptionsMap.get(company.id);
+        const metadata = subscription?.metadata as any || {};
+        const couponCode = metadata.coupon_code || metadata.couponCode || null;
+        const couponUsed = !!couponCode;
+        const paymentSource = subscription?.paymentSource || null;
 
         return {
           companyId: company.id,
@@ -2051,7 +2064,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             trainingsCount: companyTrainings.length,
             accidentsCount: companyAccidents.length,
             inspectionsCount: companyInspections.length,
-          }
+          },
+          subscription: subscription ? {
+            status: subscription.status,
+            planId: subscription.planId,
+            couponCode: couponCode,
+            couponUsed: couponUsed,
+            source: paymentSource
+          } : null
         };
       });
 
