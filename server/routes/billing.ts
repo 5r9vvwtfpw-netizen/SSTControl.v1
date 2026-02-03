@@ -493,9 +493,8 @@ export function registerBillingRoutes(app: Express) {
               ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
               : 'http://localhost:5000');
           
-          // Convert COP to USD cents
-          const COP_TO_USD_RATE = 4000;
-          const amountInUSDCents = Math.max(50, Math.round((quote.amountToCharge / COP_TO_USD_RATE) * 100));
+          // COP es moneda de cero decimales en Stripe - NO multiplicar por 100
+          const amountInCOP = Math.max(1000, Math.round(quote.amountToCharge)); // Mínimo 1000 COP
           
           const session = await stripe.checkout.sessions.create({
             mode: 'payment',
@@ -503,12 +502,12 @@ export function registerBillingRoutes(app: Express) {
             line_items: [
               {
                 price_data: {
-                  currency: 'usd',
+                  currency: 'cop',
                   product_data: {
                     name: `Upgrade a ${quote.newPlan.displayName}`,
                     description: `Cambio de plan: ${quote.oldPlan.displayName} → ${quote.newPlan.displayName}`,
                   },
-                  unit_amount: amountInUSDCents,
+                  unit_amount: amountInCOP,
                 },
                 quantity: 1,
               },
@@ -521,8 +520,7 @@ export function registerBillingRoutes(app: Express) {
               companyId: subscription.companyId,
               companyName: company?.name || 'Unknown',
               userId: req.user!.id,
-              amountToChargeCOP: quote.amountToCharge.toString(),
-              amountToChargeUSD: amountInUSDCents.toString(),
+              amountToChargeCOP: amountInCOP.toString(),
               proratedCredit: quote.proratedCredit.toString(),
             },
             success_url: `${baseUrl}/mi-cuenta?upgrade=success&session_id={CHECKOUT_SESSION_ID}`,
@@ -639,13 +637,10 @@ export function registerBillingRoutes(app: Express) {
           ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
           : 'http://localhost:5000');
       
-      // Calculate the amount - convert COP to USD cents
-      // Rate: 1 USD ≈ 4000 COP (approximate)
-      const COP_TO_USD_RATE = 4000;
-      const amountInCOP = plan.priceMonthly;
-      const amountInUSDCents = Math.max(50, Math.round((amountInCOP / COP_TO_USD_RATE) * 100)); // Minimum 50 cents
+      // COP es moneda de cero decimales en Stripe - NO multiplicar por 100
+      const amountInCOP = Math.max(1000, Math.round(plan.priceMonthly)); // Mínimo 1000 COP
       
-      console.log('[Billing] Creating Stripe session. Amount:', amountInUSDCents, 'cents USD, baseUrl:', baseUrl);
+      console.log('[Billing] Creating Stripe session. Amount:', amountInCOP, 'COP, baseUrl:', baseUrl);
       
       try {
         const session = await stripe.checkout.sessions.create({
@@ -654,12 +649,12 @@ export function registerBillingRoutes(app: Express) {
           line_items: [
             {
               price_data: {
-                currency: 'usd',
+                currency: 'cop',
                 product_data: {
                   name: `Suscripción ${plan.displayName || plan.name}`,
                   description: `Plan ${plan.displayName || plan.name} - Primer mes`,
                 },
-                unit_amount: amountInUSDCents,
+                unit_amount: amountInCOP,
               },
               quantity: 1,
             },
@@ -672,7 +667,6 @@ export function registerBillingRoutes(app: Express) {
             companyName: company?.name || 'Unknown',
             userId: req.user!.id,
             amountChargedCOP: amountInCOP.toString(),
-            amountChargedUSD: amountInUSDCents.toString(),
           },
           success_url: `${baseUrl}/mi-cuenta?activation=success&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${baseUrl}/mi-cuenta?activation=cancelled`,
@@ -685,8 +679,8 @@ export function registerBillingRoutes(app: Express) {
           success: true,
           paymentUrl: session.url,
           sessionId: session.id,
-          amount: amountInUSDCents,
-          amountCOP: amountInCOP,
+          amount: amountInCOP,
+          currency: 'COP',
           planName: plan.displayName || plan.name,
           message: 'Redirigiendo a pasarela de pago...',
         });

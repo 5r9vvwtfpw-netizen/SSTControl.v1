@@ -182,7 +182,7 @@ app.post(
                     planName: plan?.name,
                     status: 'active',
                     amountPaid,
-                    currency: 'USD',
+                    currency: 'COP',
                     stripeSessionId: session.id,
                     stripeCustomerId: session.customer,
                     attempt 
