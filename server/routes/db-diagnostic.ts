@@ -15,6 +15,8 @@ export function registerDbDiagnosticRoutes(app: Express) {
     let companyCount = 0;
     let recentCompanies: any[] = [];
     let subscriptionPlans: any[] = [];
+    let subscriptions: any[] = [];
+    
     try {
       const countResult = await db.execute(sql`SELECT COUNT(*) as count FROM companies`);
       companyCount = Number(countResult.rows?.[0]?.count || 0);
@@ -25,6 +27,22 @@ export function registerDbDiagnosticRoutes(app: Express) {
       // Get subscription plans with prices
       const plansResult = await db.execute(sql`SELECT id, name, display_name, price_monthly FROM subscription_plans ORDER BY price_monthly`);
       subscriptionPlans = plansResult.rows || [];
+      
+      // Get subscriptions with coupon info
+      const subscriptionsResult = await db.execute(sql`
+        SELECT s.id, s.company_id, s.plan_id, s.status, s.metadata, c.name as company_name
+        FROM subscriptions s
+        LEFT JOIN companies c ON s.company_id = c.id
+        ORDER BY s.created_at DESC
+        LIMIT 20
+      `);
+      subscriptions = (subscriptionsResult.rows || []).map((s: any) => ({
+        companyName: s.company_name,
+        planId: s.plan_id,
+        status: s.status,
+        couponCode: s.metadata?.coupon_code || s.metadata?.couponCode || null,
+        source: s.metadata?.source || 'direct'
+      }));
     } catch (error: any) {
       console.error('[DB-Diagnostic] Error querying:', error.message);
     }
@@ -47,6 +65,7 @@ export function registerDbDiagnosticRoutes(app: Express) {
         companyCount,
         recentCompanies,
         subscriptionPlans,
+        subscriptions,
       },
       decision: usingAwsRds 
         ? 'Production mode with AWS RDS credentials → Using AWS RDS' 
