@@ -486,12 +486,12 @@ export function registerBillingRoutes(app: Express) {
           // Get company info for metadata
           const company = await storage.getCompany(subscription.companyId);
           
-          // Build Stripe Checkout session
-          const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+          // Build Stripe Checkout session - use APP_URL for production
+          const baseUrl = process.env.APP_URL || (process.env.REPLIT_DEV_DOMAIN 
             ? `https://${process.env.REPLIT_DEV_DOMAIN}`
             : process.env.REPLIT_DOMAINS 
               ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
-              : 'http://localhost:5000';
+              : 'http://localhost:5000');
           
           // Convert COP to USD cents
           const COP_TO_USD_RATE = 4000;
@@ -632,12 +632,12 @@ export function registerBillingRoutes(app: Express) {
       const stripe = await getUncachableStripeClient();
       console.log('[Billing] Stripe client obtained');
       
-      // Build Stripe Checkout session
-      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+      // Build Stripe Checkout session - use APP_URL for production
+      const baseUrl = process.env.APP_URL || (process.env.REPLIT_DEV_DOMAIN 
         ? `https://${process.env.REPLIT_DEV_DOMAIN}`
         : process.env.REPLIT_DOMAINS 
           ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
-          : 'http://localhost:5000';
+          : 'http://localhost:5000');
       
       // Calculate the amount - convert COP to USD cents
       // Rate: 1 USD ≈ 4000 COP (approximate)

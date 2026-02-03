@@ -144,10 +144,11 @@ export function registerStripeRoutes(app: Express) {
         companyId
       });
 
+      // Use APP_URL for production, fallback to REPLIT_DOMAINS for development
       const replitDomains = process.env.REPLIT_DOMAINS;
-      const baseUrl = replitDomains 
+      const baseUrl = process.env.APP_URL || (replitDomains 
         ? `https://${replitDomains.split(',')[0]}`
-        : 'http://localhost:5000';
+        : 'http://localhost:5000');
 
       // Build metadata with contract data if present
       const metadata: Record<string, string> = {
@@ -227,28 +228,29 @@ export function registerStripeRoutes(app: Express) {
       // ========================================
       // VERIFICAR JWT SERVER-SIDE (Seguridad)
       // ========================================
-      const { verifyQuoteToken } = await import('../jwt-quote-verifier');
-      const jwtResult = verifyQuoteToken(validatedData.quoteToken);
-      
-      if (!jwtResult.valid || !jwtResult.data) {
+      let quoteData: import('../jwt-quote-verifier').QuotePayload;
+      try {
+        const { decodeQuoteWithFallback } = await import('../jwt-quote-verifier');
+        quoteData = decodeQuoteWithFallback(validatedData.quoteToken);
+      } catch (jwtError: any) {
         logger.warn({ 
           companyId, 
-          reason: jwtResult.error 
+          reason: jwtError.message 
         }, 'Invalid or expired quote token for checkout');
         return res.status(400).json({ 
           error: "Cotización inválida o expirada", 
-          details: jwtResult.error 
+          details: jwtError.message 
         });
       }
 
       // Extraer datos del JWT verificado (NO confiar en datos del cliente)
-      const quoteData = jwtResult.data;
-      const baseMonthlyPrice = quoteData.baseMonthlyPrice || 0;
-      const currentPeriodPrice = quoteData.currentPeriodPrice || 0;
-      const discountDurationMonths = quoteData.discountDurationMonths || 0;
-      const couponCode = quoteData.couponCode;
-      const referrerId = quoteData.referrerId;
-      const employees = quoteData.employees;
+      // El JWT tiene estructura: { sub_data, metadata, referral }
+      const baseMonthlyPrice = quoteData.sub_data.base_monthly_price || 0;
+      const currentPeriodPrice = quoteData.sub_data.current_period_price || 0;
+      const discountDurationMonths = quoteData.sub_data.discount_duration_months || 0;
+      const couponCode = quoteData.metadata.coupon_code;
+      const referrerId = quoteData.referral?.referrer_id || null;
+      const employees = quoteData.metadata.employees;
 
       const company = await storage.getCompany(companyId);
       if (!company) {
@@ -262,10 +264,11 @@ export function registerStripeRoutes(app: Express) {
         companyId
       });
 
+      // Use APP_URL for production, fallback to REPLIT_DOMAINS for development
       const replitDomains = process.env.REPLIT_DOMAINS;
-      const baseUrl = replitDomains 
+      const baseUrl = process.env.APP_URL || (replitDomains 
         ? `https://${replitDomains.split(',')[0]}`
-        : 'http://localhost:5000';
+        : 'http://localhost:5000');
 
       // Metadata para auditoría
       const metadata: Record<string, string> = {
@@ -401,10 +404,11 @@ export function registerStripeRoutes(app: Express) {
         companyId
       });
 
+      // Use APP_URL for production, fallback to REPLIT_DOMAINS for development
       const replitDomains = process.env.REPLIT_DOMAINS;
-      const baseUrl = replitDomains 
+      const baseUrl = process.env.APP_URL || (replitDomains 
         ? `https://${replitDomains.split(',')[0]}`
-        : 'http://localhost:5000';
+        : 'http://localhost:5000');
 
       const url = await stripeService.createBillingPortalSession({
         customerId: customer.id,
@@ -588,10 +592,11 @@ export function registerStripeRoutes(app: Express) {
         companyId
       });
 
+      // Use APP_URL for production, fallback to REPLIT_DOMAINS for development
       const replitDomains = process.env.REPLIT_DOMAINS;
-      const baseUrl = replitDomains 
+      const baseUrl = process.env.APP_URL || (replitDomains 
         ? `https://${replitDomains.split(',')[0]}`
-        : 'http://localhost:5000';
+        : 'http://localhost:5000');
 
       // Metadata para procesar en webhook
       const metadata: Record<string, string> = {
