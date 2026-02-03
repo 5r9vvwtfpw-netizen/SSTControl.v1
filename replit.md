@@ -63,4 +63,32 @@ The system includes secure JWT verification for pricing quotes from sst-colombia
 - **Security**: Uses HMAC-SHA256 with `LANDING_PAGE_API_KEY` shared secret
 - **Expiration**: Quotes expire after 30 minutes
 - **Fallback**: Supports legacy base64 format during transition period
-- **Payload includes**: pricing data, employee count, risk level, vehicles, coupon codes, and referral info
+- **Payload includes**: pricing data, employee count, risk level, vehicles, coupon codes, referral info, company name, and CIIU code
+
+### Landing Page Registration Flow
+Complete flow for users coming from sst-colombia.com.co with a quote JWT:
+
+1. **AuthPage.tsx**: Detects `?quote=JWT` parameter, calls `/api/verify-quote` and stores verified data in `sessionStorage.sst_quote_data`
+2. **CrearEmpresaCiiuFirst.tsx**: Reads `sst_quote_data` from sessionStorage to pre-fill form fields (company name, CIIU code, employees, risk level)
+3. **Checkout**: Uses `/api/stripe/create-quote-checkout` with JWT token for server-side verification
+
+**Key endpoints:**
+- `POST /api/verify-quote` - Verifies JWT and returns company/pricing data
+- `POST /api/stripe/create-quote-checkout` - Creates Stripe checkout with:
+  - COP currency (zero-decimal, no *100 multiplication)
+  - Coupon support (100% discount = 30-day trial, partial = discounted price)
+  - Server-side JWT verification (prevents price tampering)
+
+**Data flow:**
+```
+Landing Page JWT → /api/verify-quote → sessionStorage → Form pre-fill
+                                    ↓
+                              /api/stripe/create-quote-checkout (JWT re-verified)
+```
+
+**Key files:**
+- `server/jwt-quote-verifier.ts`: JWT verification logic
+- `server/routes/stripe.ts`: Dynamic checkout endpoint
+- `server/services/stripe.ts`: `createDynamicCheckoutSession()` for COP pricing
+- `client/src/pages/AuthPage.tsx`: Quote token handling on registration
+- `client/src/pages/CrearEmpresaCiiuFirst.tsx`: Form pre-filling from quote
