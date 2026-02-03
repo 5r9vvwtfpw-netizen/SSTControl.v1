@@ -2049,7 +2049,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const metadata = subscription?.metadata as any || {};
         const couponCode = metadata.coupon_code || metadata.couponCode || null;
         const couponUsed = !!couponCode;
-        const paymentSource = subscription?.paymentSource || null;
+        const paymentSource = metadata.source || 'direct';
 
         return {
           companyId: company.id,
