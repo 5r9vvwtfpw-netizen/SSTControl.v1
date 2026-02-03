@@ -7637,6 +7637,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============================================================================
+  // ADMIN: Subscription Plans Status & Seed (Para resolver planes vacíos en producción)
+  // ============================================================================
+  app.get("/api/admin/subscription-plans-status", requireRole(["superadmin"]), async (req, res) => {
+    try {
+      const plans = await db.select().from(subscriptionPlans);
+      const isProduction = process.env.NODE_ENV === 'production';
+      const hasAwsRds = !!(process.env.AWS_RDS_HOST && process.env.AWS_RDS_PASSWORD);
+      
+      res.json({
+        success: true,
+        database: isProduction && hasAwsRds ? 'AWS_RDS' : 'Neon',
+        environment: process.env.NODE_ENV || 'development',
+        planCount: plans.length,
+        plans: plans.map(p => ({
+          id: p.id,
+          name: p.name,
+          displayName: p.displayName,
+          priceMonthly: p.priceMonthly,
+          status: p.status
+        }))
+      });
+    } catch (error: any) {
+      console.error("Error checking subscription plans:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  });
+
+  app.post("/api/admin/seed-subscription-plans", requireRole(["superadmin"]), async (req, res) => {
+    try {
+      const { seedSubscriptionPlans } = await import("./seed-subscription-plans");
+      await seedSubscriptionPlans();
+      
+      const plans = await db.select().from(subscriptionPlans);
+      const isProduction = process.env.NODE_ENV === 'production';
+      const hasAwsRds = !!(process.env.AWS_RDS_HOST && process.env.AWS_RDS_PASSWORD);
+      
+      res.json({
+        success: true,
+        message: "Planes de suscripción creados/verificados correctamente",
+        database: isProduction && hasAwsRds ? 'AWS_RDS' : 'Neon',
+        planCount: plans.length,
+        plans: plans.map(p => ({
+          id: p.id,
+          displayName: p.displayName,
+          priceMonthly: p.priceMonthly
+        }))
+      });
+    } catch (error: any) {
+      console.error("Error seeding subscription plans:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  });
+
   // JOB PROFILES ROUTES - Perfiles de Cargo
   
   app.get("/api/job-profiles", requireAnyPermission(["job_profiles:view", "job_profiles:view_self"]), async (req, res) => {
