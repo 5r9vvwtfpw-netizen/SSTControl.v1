@@ -33,8 +33,37 @@ export default function AuthPage() {
   const searchParams = new URLSearchParams(window.location.search);
   const urlPlan = searchParams.get("plan");
   const urlWorkers = searchParams.get("workers");
+  const urlQuote = searchParams.get("quote");
   const verified = searchParams.get("verified");
   const error = searchParams.get("error");
+
+  // Verificar y guardar datos del quote JWT desde landing page
+  useEffect(() => {
+    const verifyAndStoreQuote = async () => {
+      if (!urlQuote) return;
+      
+      try {
+        const response = await fetch('/api/verify-quote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: urlQuote })
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.valid && result.data) {
+            // Guardar todos los datos del quote para pre-llenar formularios
+            sessionStorage.setItem('sst_quote_data', JSON.stringify(result.data));
+            console.log('[Quote] Datos guardados:', result.data);
+          }
+        }
+      } catch (err) {
+        console.error('[Quote] Error al verificar:', err);
+      }
+    };
+    
+    verifyAndStoreQuote();
+  }, [urlQuote]);
 
   // Guardar workers en sessionStorage para uso en crear-empresa
   useEffect(() => {

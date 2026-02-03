@@ -95,6 +95,10 @@ export default function CrearEmpresaCiiuFirst() {
   const workersParam = urlWorkers || storedWorkers;
   const initialWorkers = workersParam ? parseInt(workersParam, 10) : 1;
 
+  // Leer datos del quote JWT desde landing page (si existen)
+  const storedQuote = typeof window !== 'undefined' ? sessionStorage.getItem('sst_quote_data') : null;
+  const quoteData = storedQuote ? JSON.parse(storedQuote) : null;
+
   useEffect(() => {
     sessionStorage.removeItem('sst_new_registration');
   }, []);
@@ -102,15 +106,19 @@ export default function CrearEmpresaCiiuFirst() {
   const form = useForm<CreateCompanyForm>({
     resolver: zodResolver(createCompanySchema),
     defaultValues: {
-      name: "",
+      // Pre-llenar nombre de empresa desde quote JWT (Problema 1 del documento)
+      name: quoteData?.companyName || "",
       nit: "",
       city: "",
-      ciiuCode: "",
+      // Pre-llenar código CIIU si viene del quote
+      ciiuCode: quoteData?.ciiuCode || "",
       address: "",
       contactPhone: "",
       contactEmail: "",
-      numberOfWorkers: isNaN(initialWorkers) || initialWorkers < 1 ? 1 : initialWorkers,
-      riskLevel: "I",
+      // Pre-llenar número de trabajadores desde quote o URL
+      numberOfWorkers: quoteData?.employees || (isNaN(initialWorkers) || initialWorkers < 1 ? 1 : initialWorkers),
+      // Pre-llenar nivel de riesgo si viene del quote
+      riskLevel: quoteData?.riskLevel || "I",
     },
   });
 
