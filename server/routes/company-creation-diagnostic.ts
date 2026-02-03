@@ -116,13 +116,31 @@ router.get('/api/company-creation-diagnostic', async (req, res) => {
       diagnostics.errors.push(`Companies table error: ${err.message}`);
     }
 
-    // 4. Check subscriptions table structure
+    // 4. Check subscriptions table structure AND list all subscriptions
     diagnostics.checks.subscriptionsTable = { status: 'testing' };
     try {
-      const subCount = await db.select().from(schema.subscriptions).limit(1);
+      const allSubscriptions = await db.select({
+        id: schema.subscriptions.id,
+        companyId: schema.subscriptions.companyId,
+        planId: schema.subscriptions.planId,
+        status: schema.subscriptions.status,
+        trialStart: schema.subscriptions.trialStart,
+        trialEnd: schema.subscriptions.trialEnd,
+        createdAt: schema.subscriptions.createdAt
+      }).from(schema.subscriptions).orderBy(schema.subscriptions.createdAt);
+      
       diagnostics.checks.subscriptionsTable = {
         status: 'success',
-        message: 'Subscriptions table accessible'
+        message: 'Subscriptions table accessible',
+        totalSubscriptions: allSubscriptions.length,
+        subscriptions: allSubscriptions.map(s => ({
+          id: s.id?.substring(0, 8) + '...',
+          companyId: s.companyId?.substring(0, 8) + '...',
+          status: s.status,
+          trialStart: s.trialStart,
+          trialEnd: s.trialEnd,
+          createdAt: s.createdAt
+        }))
       };
     } catch (err: any) {
       diagnostics.checks.subscriptionsTable = { 
@@ -132,13 +150,32 @@ router.get('/api/company-creation-diagnostic', async (req, res) => {
       diagnostics.errors.push(`Subscriptions table error: ${err.message}`);
     }
 
-    // 5. Check users table structure
+    // 5. Check users table AND list all users with companies
     diagnostics.checks.usersTable = { status: 'testing' };
     try {
-      const userCount = await db.select().from(schema.users).limit(1);
+      const allUsers = await db.select({
+        id: schema.users.id,
+        username: schema.users.username,
+        email: schema.users.email,
+        role: schema.users.role,
+        companyId: schema.users.companyId,
+        createdAt: schema.users.createdAt
+      }).from(schema.users).orderBy(schema.users.createdAt);
+      
       diagnostics.checks.usersTable = {
         status: 'success',
-        message: 'Users table accessible'
+        message: 'Users table accessible',
+        totalUsers: allUsers.length,
+        usersWithCompany: allUsers.filter(u => u.companyId).length,
+        usersWithoutCompany: allUsers.filter(u => !u.companyId).length,
+        users: allUsers.map(u => ({
+          id: u.id?.substring(0, 8) + '...',
+          username: u.username,
+          email: u.email?.substring(0, 15) + '...',
+          role: u.role,
+          hasCompany: !!u.companyId,
+          createdAt: u.createdAt
+        }))
       };
     } catch (err: any) {
       diagnostics.checks.usersTable = { 
