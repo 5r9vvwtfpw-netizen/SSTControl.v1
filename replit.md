@@ -38,6 +38,13 @@ The main Dashboard includes a consolidated PHVA cycle view through the `PHVASumm
 
 Integration pattern: Import `usePesvStepPrefill(stepCode)` → render `SmartPrefillBanner` → apply `defaultValues` via `useEffect` with `form.setValue()`.
 
+**PESV Committee Traceability in Worker Portal**: Workers can view their PESV Road Safety Committee membership in the Portal de Empleados. Per Resolución 40595/2022, committee members are NOMINATED (not elected like COPASST). Key features:
+- **Endpoint**: `GET /api/portal/worker/pesv-comite` - Returns worker's committee membership and approved meeting minutes
+- **Component**: `MiComitePesvTab` in PortalEmpleados.tsx - Displays membership details (role, position, designation date, status) and actas list
+- **Navigation**: PESV group → "Comité de Seguridad Vial" in worker portal horizontal menu
+- **Data source**: Table `pesv_comite_integrantes` with `worker_id` foreign key for traceability
+- **Normative banner**: Shows Resolución 40595/2022 Art. 5 compliance reference
+
 The Promotions Plugin (`plugins/promotions/`) operates as an independent Sidecar Architecture module, handling promotional pricing, coupons, digital contracts with JWT-validated price locking, and a net-zero risk referral program ("Aliados 2026"). It communicates with the main system via the database and has dedicated API routes mounted at `/api/plugins/promotions/*`. It features its own database tables (`plugin_promotion_coupons`, `plugin_referral_ledger`, `plugin_digital_contracts`, `plugin_credit_usage_history`) and environment variables for functionality. A kill-switch protocol allows for its complete removal without affecting the main system.
 
 ## External Dependencies
