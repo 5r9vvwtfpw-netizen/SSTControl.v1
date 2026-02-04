@@ -30,6 +30,7 @@ import companyCreationDiagnosticRoutes from "./routes/company-creation-diagnosti
 import writeTestDiagnosticRoutes from "./routes/write-test-diagnostic";
 import { registerSubscriptionCheckRoutes } from "./routes/subscription-check";
 import { registerLicensedProfessionalsRoutes } from "./routes/licensed-professionals";
+import { registerRiesgosVinculacionRoutes } from "./routes/riesgos-vinculacion";
 import lsoDirectoryJwtRoutes from "./routes/lso-directory-jwt";
 import { legalDocsPdfService } from "./services/legal-docs-pdf";
 import { decodeQuoteWithFallback, getQuoteSummary, QuotePayload } from "./jwt-quote-verifier";
@@ -42644,6 +42645,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   
   // Licensed Professionals routes
   registerLicensedProfessionalsRoutes(app);
+  registerRiesgosVinculacionRoutes(app, requireAuth);
 
 // DEPRECATED:   // LSO Directory External API routes
 // DEPRECATED:   registerLsoDirectoryExternalRoutes(app);
