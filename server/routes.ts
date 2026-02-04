@@ -37094,6 +37094,89 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // ==================== TRAZABILIDAD COMITÉ PESV EN PORTAL DE EMPLEADOS (Resolución 40595/2022) ====================
+  
+  // GET /api/portal/worker/pesv-comite - Obtener membresía del trabajador en el Comité PESV y actas
+  app.get("/api/portal/worker/pesv-comite", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as schema.User;
+      const companyId = user.companyId;
+      
+      if (!companyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
+      let workerId = user.workerId;
+
+      // Fallback: buscar worker por email si workerId es null
+      if (!workerId && user.email) {
+        const worker = await storage.getWorkerByEmail(user.email, companyId);
+        if (worker) {
+          workerId = worker.id;
+        }
+      }
+
+      // Buscar membresía del trabajador en el Comité PESV
+      let membresia = null;
+      if (workerId) {
+        const [miembro] = await db
+          .select()
+          .from(pesvComiteIntegrantes)
+          .where(
+            and(
+              eq(pesvComiteIntegrantes.companyId, companyId),
+              eq(pesvComiteIntegrantes.workerId, workerId)
+            )
+          )
+          .limit(1);
+        
+        if (miembro) {
+          membresia = {
+            id: miembro.id,
+            rol: miembro.rol,
+            cargo: miembro.cargo,
+            fechaIngreso: miembro.fechaIngreso,
+            fechaRetiro: miembro.fechaRetiro,
+            estado: miembro.activo === 1 ? "activo" : "inactivo",
+            observaciones: miembro.observaciones,
+          };
+        }
+      }
+
+      // Obtener actas del comité de la empresa (solo aprobadas para trabajadores)
+      const actasData = await db
+        .select()
+        .from(pesvComiteActas)
+        .where(
+          and(
+            eq(pesvComiteActas.companyId, companyId),
+            eq(pesvComiteActas.estado, "aprobada")
+          )
+        )
+        .orderBy(desc(pesvComiteActas.fechaReunion));
+
+      const actas = actasData.map(acta => ({
+        id: acta.id,
+        numeroActa: acta.numeroActa,
+        fecha: acta.fechaReunion,
+        horaInicio: acta.horaInicio,
+        horaFin: acta.horaFin,
+        lugar: acta.lugar,
+        modalidad: acta.modalidad,
+        temasDiscutidos: acta.temasOrdenDia,
+        desarrolloReunion: acta.desarrolloReunion,
+        compromisos: acta.compromisos,
+        proximaReunion: acta.proximaReunion,
+        estado: acta.estado,
+      }));
+
+      res.json({ membresia, actas });
+    } catch (error: any) {
+      console.error('Error getting PESV committee membership:', error);
+      res.status(500).json({ error: error.message || "Error al obtener información del comité PESV" });
+    }
+  });
+
   // GET /api/document-acknowledgments/:documentId - Admin: Get acknowledgment status for a document
   app.get("/api/document-acknowledgments/:documentId", requireAuth, requirePermission("sst_management:view"), async (req, res) => {
     try {

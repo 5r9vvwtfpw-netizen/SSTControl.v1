@@ -33,7 +33,7 @@ import {
   MessageSquare, AlertCircle, Send, CheckCircle2, FileText, User, Briefcase, FileCheck,
   GraduationCap, Calendar, Clock, MapPin, UserCheck, Users, Mail, KeyRound, Eye, EyeOff, Vote,
   Building2, BarChart3, Shield, UserCog, BookOpen, Award, Play, Trophy, Star, FolderOpen, Inbox, Download, Bell, ChevronDown,
-  History, Monitor, Smartphone, Tablet, Video, Heart, ClipboardList, Camera, Upload, Trash2, Loader2, Headphones
+  History, Monitor, Smartphone, Tablet, Video, Heart, ClipboardList, Camera, Upload, Trash2, Loader2, Headphones, Car
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
@@ -850,6 +850,14 @@ const portalNavGroups = [
       { id: "mis-audiometrias", label: "Mis Audiometrías", icon: Headphones },
     ]
   },
+  {
+    id: "pesv",
+    label: "PESV",
+    icon: Car,
+    items: [
+      { id: "comite-pesv", label: "Comité de Seguridad Vial", icon: Shield },
+    ]
+  },
 ];
 
 function WorkerPortal() {
@@ -1078,6 +1086,7 @@ function WorkerPortal() {
         {activeSection === "elecciones-convivencia" && <EleccionesConvivenciaTab />}
         {activeSection === "mis-examenes-medicos" && <MisExamenesMedicosTab />}
         {activeSection === "mis-audiometrias" && <MisAudiometriasTab />}
+        {activeSection === "comite-pesv" && <MiComitePesvTab />}
       </div>
     </div>
   );
@@ -4974,6 +4983,246 @@ function MisAudiometriasTab() {
                             </div>
                           )}
                         </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ==================== MI COMITÉ PESV TAB (Resolución 40595/2022) ====================
+
+interface PesvComiteMembresia {
+  id: string;
+  rol: string;
+  cargo: string;
+  fechaIngreso: string;
+  fechaRetiro?: string | null;
+  estado: string;
+  observaciones?: string | null;
+}
+
+interface PesvComiteActa {
+  id: string;
+  numeroActa: number;
+  fecha: string;
+  horaInicio?: string | null;
+  horaFin?: string | null;
+  lugar?: string | null;
+  modalidad?: string | null;
+  temasDiscutidos: string;
+  desarrolloReunion?: string | null;
+  compromisos?: string | null;
+  proximaReunion?: string | null;
+  estado: string;
+}
+
+interface PesvComiteData {
+  membresia: PesvComiteMembresia | null;
+  actas: PesvComiteActa[];
+}
+
+const rolPesvLabels: Record<string, string> = {
+  lider_pesv: "Líder PESV",
+  miembro: "Miembro",
+  representante_trabajadores: "Representante de Trabajadores",
+  representante_alta_direccion: "Representante de Alta Dirección",
+  asesor_externo: "Asesor Externo",
+};
+
+function MiComitePesvTab() {
+  const { data, isLoading } = useQuery<PesvComiteData>({
+    queryKey: ["/api/portal/worker/pesv-comite"],
+  });
+
+  if (isLoading) {
+    return <CardSkeletonLoading rows={5} />;
+  }
+
+  const membresia = data?.membresia;
+  const actas = data?.actas || [];
+
+  return (
+    <div className="space-y-6">
+      <TrazabilidadPesvBanner codigoPaso="P01" compacto={false} />
+
+      {membresia ? (
+        <Card data-testid="card-mi-membresia-pesv">
+          <CardHeader>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 dark:bg-green-950 rounded-full">
+                  <Shield className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg" data-testid="text-titulo-membresia">
+                    Integrante del Comité de Seguridad Vial
+                  </CardTitle>
+                  <CardDescription>
+                    Designado según Resolución 40595 de 2022
+                  </CardDescription>
+                </div>
+              </div>
+              <Badge 
+                className={membresia.estado === "activo" ? "bg-green-600 text-white" : "bg-gray-500 text-white"} 
+                data-testid="badge-estado-membresia"
+              >
+                {membresia.estado === "activo" ? "Activo" : "Inactivo"}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div data-testid="text-rol-pesv">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Rol en el Comité</p>
+                  <p className="font-semibold">{rolPesvLabels[membresia.rol] || membresia.rol}</p>
+                </div>
+                <div data-testid="text-cargo-pesv">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Cargo</p>
+                  <p className="font-semibold">{membresia.cargo}</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div data-testid="text-fecha-ingreso-pesv">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Fecha de Designación</p>
+                  <p className="font-semibold flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    {format(new Date(membresia.fechaIngreso), "d 'de' MMMM, yyyy", { locale: es })}
+                  </p>
+                </div>
+                {membresia.fechaRetiro && (
+                  <div data-testid="text-fecha-retiro-pesv">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Fecha de Retiro</p>
+                    <p className="font-semibold">
+                      {format(new Date(membresia.fechaRetiro), "d 'de' MMMM, yyyy", { locale: es })}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+            {membresia.observaciones && (
+              <div className="mt-4 p-3 bg-muted/50 rounded-lg" data-testid="text-observaciones-pesv">
+                <p className="text-xs font-medium text-muted-foreground mb-1">Observaciones</p>
+                <p className="text-sm">{membresia.observaciones}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card data-testid="card-no-membresia-pesv">
+          <CardContent className="py-8">
+            <div className="text-center">
+              <div className="mx-auto w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                <Car className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="font-medium text-lg mb-2">No es integrante del Comité PESV</h3>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                Actualmente no está designado como integrante del Comité de Seguridad Vial de su empresa.
+                El nombramiento se realiza mediante acto administrativo según la Resolución 40595 de 2022.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card data-testid="card-actas-comite-pesv">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Actas de Reuniones del Comité PESV
+          </CardTitle>
+          <CardDescription>
+            Historial de reuniones del Comité de Seguridad Vial de su empresa
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {actas.length === 0 ? (
+            <div className="text-center py-8">
+              <FileCheck className="h-12 w-12 mx-auto mb-4 opacity-50 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                No hay actas de reuniones aprobadas disponibles
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {actas.map((acta) => {
+                const fechaReunion = new Date(acta.fecha);
+                
+                return (
+                  <Card key={acta.id} className="bg-muted/30" data-testid={`card-acta-pesv-${acta.id}`}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-blue-100 dark:bg-blue-950 rounded-full flex-shrink-0">
+                            <FileText className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-base" data-testid={`text-acta-numero-${acta.id}`}>
+                              Acta N° {acta.numeroActa}
+                            </CardTitle>
+                            <CardDescription className="flex items-center gap-2 mt-1 flex-wrap">
+                              <span className="flex items-center gap-1" data-testid={`text-fecha-acta-${acta.id}`}>
+                                <Calendar className="h-3 w-3" />
+                                {format(fechaReunion, "EEEE d 'de' MMMM, yyyy", { locale: es })}
+                              </span>
+                              {acta.horaInicio && (
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {acta.horaInicio}{acta.horaFin ? ` - ${acta.horaFin}` : ""}
+                                </span>
+                              )}
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <Badge className="bg-green-600 text-white" data-testid={`badge-estado-acta-${acta.id}`}>
+                          Aprobada
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-2">
+                      <div className="space-y-3">
+                        {acta.lugar && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <MapPin className="h-4 w-4" />
+                            <span>{acta.lugar}</span>
+                            {acta.modalidad && (
+                              <Badge variant="outline" className="ml-2">
+                                {acta.modalidad}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                        <div data-testid={`text-temas-acta-${acta.id}`}>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Temas del Orden del Día</p>
+                          <p className="text-sm whitespace-pre-line">{acta.temasDiscutidos}</p>
+                        </div>
+                        {acta.desarrolloReunion && (
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-1">Desarrollo de la Reunión</p>
+                            <p className="text-sm whitespace-pre-line">{acta.desarrolloReunion}</p>
+                          </div>
+                        )}
+                        {acta.compromisos && (
+                          <div className="p-3 bg-yellow-50 dark:bg-yellow-950/50 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                            <p className="text-xs font-medium text-yellow-800 dark:text-yellow-200 mb-1">Compromisos</p>
+                            <p className="text-sm text-yellow-700 dark:text-yellow-300 whitespace-pre-line">{acta.compromisos}</p>
+                          </div>
+                        )}
+                        {acta.proximaReunion && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground border-t pt-3">
+                            <Calendar className="h-4 w-4" />
+                            <span>
+                              Próxima reunión: {format(new Date(acta.proximaReunion), "d 'de' MMMM, yyyy", { locale: es })}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
