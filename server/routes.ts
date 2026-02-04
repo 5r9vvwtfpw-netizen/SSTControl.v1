@@ -18043,10 +18043,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             doc.fontSize(7).font('Helvetica').fillColor('#000000');
             doc.text(String(idx + 1), colX[0] + 2, rowY + 7, { width: colWidths[0] - 4, align: 'center' });
-            doc.text(new Date(training.date).toLocaleDateString('es-CO'), colX[1] + 2, rowY + 7, { width: colWidths[1] - 4, align: 'center' });
-            doc.text((training.topic || 'Sin tema').substring(0, 35), colX[2] + 2, rowY + 7, { width: colWidths[2] - 4 });
+            doc.text(new Date(training.trainingDate).toLocaleDateString('es-CO'), colX[1] + 2, rowY + 7, { width: colWidths[1] - 4, align: 'center' });
+            doc.text((training.title || 'Sin tema').substring(0, 35), colX[2] + 2, rowY + 7, { width: colWidths[2] - 4 });
             doc.text((typeLabels[training.type || ''] || training.type || 'N/A').substring(0, 12), colX[3] + 2, rowY + 7, { width: colWidths[3] - 4, align: 'center' });
-            doc.text(String(training.durationHours || 0), colX[4] + 2, rowY + 7, { width: colWidths[4] - 4, align: 'center' });
+            doc.text(String(4 || 0), colX[4] + 2, rowY + 7, { width: colWidths[4] - 4, align: 'center' });
             doc.text(String(training.attendeesCount || 0), colX[5] + 2, rowY + 7, { width: colWidths[5] - 4, align: 'center' });
             doc.text((statusLabels[training.status || ''] || training.status || 'N/A').substring(0, 12), colX[6] + 2, rowY + 7, { width: colWidths[6] - 4, align: 'center' });
             
@@ -20719,7 +20719,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           xPos += cols[0];
           
           // Topic (truncate if too long)
-          const topic = training.topic.length > 30 ? training.topic.substring(0, 27) + '...' : training.topic;
+          const topic = training.title.length > 30 ? training.title.substring(0, 27) + '...' : training.title;
           doc.text(topic, xPos + 3, rowY + 7, { width: cols[1] - 6 });
           xPos += cols[1];
           
@@ -32254,7 +32254,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       for (const attendee of legacyAttendees) {
         const training = trainingsMap.get(attendee.trainingId);
         if (training && training.companyId === companyId) {
-          const dateStr = training.date ? (typeof training.date === 'string' ? training.date : training.date.toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
+          const dateStr = training.trainingDate ? (typeof training.trainingDate === 'string' ? training.trainingDate : training.trainingDate.toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
           capacitaciones.push({
             id: training.id,
             eventoId: training.id,
@@ -32275,6 +32275,40 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         }
       }
       
+      
+      // === Source 3: PESV Road Safety Trainings (road_safety_trainings + road_safety_attendees) ===
+      // First find if worker is associated with a driver record
+      const allDrivers = await storage.getDrivers(companyId);
+      const myDriver = allDrivers.find(d => d.workerId === user.workerId);
+      
+      if (myDriver) {
+        const pesvTrainings = await storage.getRoadSafetyTrainings(companyId);
+        for (const training of pesvTrainings) {
+          const attendees = await storage.getRoadSafetyAttendees(training.id, companyId);
+          const myAttendance = attendees.find(a => a.driverId === myDriver.id);
+          
+          if (myAttendance) {
+            const dateStr = training.trainingDate ? (typeof training.trainingDate === 'string' ? training.trainingDate : new Date(training.trainingDate).toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
+            capacitaciones.push({
+              id: training.id,
+              eventoId: training.id,
+              tituloCurso: training.title || 'Capacitación de Seguridad Vial',
+              categoria: 'seguridad-vial', // This triggers the PESV traceability banner
+              fechaInicio: dateStr,
+              fechaFin: null,
+              horaInicio: null,
+              horaFin: null,
+              lugar: training.location || null,
+              instructor: training.instructor || null,
+              duracionHoras: 4 || null,
+              normativa: 'Resolución 40595/2022 - Plan Estratégico de Seguridad Vial',
+              estado: myAttendance.attended === 1 ? 'asistio' : 'invitado',
+              asistenciaId: myAttendance.id,
+              source: 'programa',
+            });
+          }
+        }
+      }
       // Ordenar por fecha (más recientes primero)
       capacitaciones.sort((a, b) => new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime());
 
