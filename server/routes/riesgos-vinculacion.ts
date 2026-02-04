@@ -4,7 +4,8 @@ import { eq, and, desc } from "drizzle-orm";
 import { 
   riesgosSstPesvVinculacion, 
   riesgosViales, 
-  peligrosIperc
+  peligrosIperc,
+  matricesIperc
 } from "@shared/schema";
 
 function getEffectiveCompanyId(req: any): string | null {
@@ -148,17 +149,53 @@ export function registerRiesgosVinculacionRoutes(app: Express, requireAuth: any)
   
   // POST /api/riesgos-vinculacion/sincronizar-pesv-a-sst - Sync PESV risk to SST matrix
   app.post("/api/riesgos-vinculacion/sincronizar-pesv-a-sst", requireAuth, async (req: any, res: Response) => {
+    console.log("[SYNC-PESV-SST] Starting sync request:", JSON.stringify(req.body));
     try {
       const effectiveCompanyId = getEffectiveCompanyId(req);
+      console.log("[SYNC-PESV-SST] Company ID:", effectiveCompanyId);
       if (!effectiveCompanyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
       
-      const { riesgoVialId, matrizIpercId } = req.body;
+      const { riesgoVialId, matrizIpercId: rawMatrizIpercId } = req.body;
+      console.log("[SYNC-PESV-SST] riesgoVialId:", riesgoVialId, "rawMatrizIpercId:", rawMatrizIpercId);
       
-      if (!riesgoVialId || !matrizIpercId) {
-        return res.status(400).json({ error: "Debe proporcionar riesgoVialId y matrizIpercId" });
+      if (!riesgoVialId) {
+        return res.status(400).json({ error: "Debe proporcionar riesgoVialId" });
       }
+      
+      // Handle "default" matrizIpercId - find or create a matriz for the company
+      let matrizIpercId = rawMatrizIpercId;
+      if (!matrizIpercId || matrizIpercId === "default") {
+        // Try to find an existing matriz for this company
+        const [existingMatriz] = await db
+          .select()
+          .from(matricesIperc)
+          .where(eq(matricesIperc.companyId, effectiveCompanyId))
+          .orderBy(desc(matricesIperc.createdAt))
+          .limit(1);
+        
+        if (existingMatriz) {
+          matrizIpercId = existingMatriz.id;
+        } else {
+          // Create a default matriz for PESV sync
+          const [nuevaMatriz] = await db.insert(matricesIperc)
+            .values({
+              companyId: effectiveCompanyId,
+              codigo: "IPERC-PESV-001",
+              nombre: "Matriz IPERC - Riesgos PESV Sincronizados",
+              estado: "activa",
+              version: 1,
+              fechaElaboracion: new Date().toISOString().split("T")[0],
+              alcance: "Riesgos viales sincronizados desde módulo PESV",
+              responsableSstId: req.user?.id,
+            })
+            .returning();
+          matrizIpercId = nuevaMatriz.id;
+        }
+      }
+      
+      console.log("[SYNC-PESV-SST] Using matrizIpercId:", matrizIpercId);
       
       // Get the PESV risk
       const [riesgoVial] = await db
@@ -169,42 +206,44 @@ export function registerRiesgosVinculacionRoutes(app: Express, requireAuth: any)
           eq(riesgosViales.companyId, effectiveCompanyId)
         ));
       
+      console.log("[SYNC-PESV-SST] Found riesgoVial:", riesgoVial?.id, riesgoVial?.nombre);
+      
       if (!riesgoVial) {
         return res.status(404).json({ error: "Riesgo vial no encontrado" });
       }
       
-      // Map ISO 31000 (5x5) to GTC-45 (4x4) probability
+      // Map ISO 31000 (5x5) to GTC-45 probability: baja, media, alta, muy_alta
       const mapProbabilidad = (prob: string | null): any => {
         const map: Record<string, string> = {
-          "muy_baja": "remota",
-          "baja": "remota",
-          "media": "ocasional",
-          "alta": "frecuente",
-          "muy_alta": "continua"
+          "muy_baja": "baja",
+          "baja": "baja",
+          "media": "media",
+          "alta": "alta",
+          "muy_alta": "muy_alta"
         };
-        return map[prob || "media"] || "ocasional";
+        return map[prob || "media"] || "media";
       };
       
-      // Map ISO 31000 (5x5) to GTC-45 (4x4) severity
+      // Map ISO 31000 (5x5) to GTC-45 severity: ligeramente_danino, danino, extremadamente_danino
       const mapSeveridad = (imp: string | null): any => {
         const map: Record<string, string> = {
-          "insignificante": "leve",
-          "menor": "leve",
-          "moderado": "moderado",
-          "mayor": "grave",
-          "catastrofico": "muy_grave"
+          "insignificante": "ligeramente_danino",
+          "menor": "ligeramente_danino",
+          "moderado": "danino",
+          "mayor": "extremadamente_danino",
+          "catastrofico": "extremadamente_danino"
         };
-        return map[imp || "moderado"] || "moderado";
+        return map[imp || "moderado"] || "danino";
       };
       
-      // Map ISO 31000 nivel to GTC-45 nivel
+      // Map ISO 31000 nivel to GTC-45 nivel: trivial, tolerable, moderado, importante, intolerable
       const mapNivelRiesgo = (nivel: string | null): any => {
         const map: Record<string, string> = {
-          "bajo": "aceptable",
+          "bajo": "tolerable",
           "medio": "moderado",
-          "alto": "alto",
-          "muy_alto": "muy_alto",
-          "critico": "muy_alto"
+          "alto": "importante",
+          "muy_alto": "intolerable",
+          "critico": "intolerable"
         };
         return map[nivel || "medio"] || "moderado";
       };
@@ -258,8 +297,10 @@ export function registerRiesgosVinculacionRoutes(app: Express, requireAuth: any)
         vinculacion
       });
     } catch (error: any) {
-      console.error("Error syncing PESV to SST:", error);
-      res.status(500).json({ error: "Error al sincronizar riesgo PESV a SST" });
+      console.error("[SYNC-PESV-SST] Error syncing PESV to SST:", error);
+      console.error("[SYNC-PESV-SST] Error message:", error.message);
+      console.error("[SYNC-PESV-SST] Error stack:", error.stack);
+      res.status(500).json({ error: "Error al sincronizar riesgo PESV a SST", details: error.message });
     }
   });
   
