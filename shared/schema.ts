@@ -10168,3 +10168,63 @@ export const insertActaComitePesvSchema = createInsertSchema(actasComitePesv)
   .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
 export type InsertActaComitePesv = z.infer<typeof insertActaComitePesvSchema>;
 export type ActaComitePesv = typeof actasComitePesv.$inferSelect;
+
+// ==================== Vinculación Bidireccional Riesgos SST-PESV ====================
+// Decreto 1072/2015 Art. 2.2.4.6.15 y Resolución 40595/2022 - Articulación PESV con SG-SST
+
+// Estado de sincronización del riesgo
+export const estadoSincronizacionRiesgoEnum = pgEnum("estado_sincronizacion_riesgo", [
+  "sincronizado",      // El riesgo está reflejado en ambas matrices
+  "pendiente_sst",     // Pendiente de agregar a matriz SST
+  "pendiente_pesv",    // Pendiente de agregar a matriz PESV
+  "desvinculado"       // Desvinculado por el usuario
+]);
+
+// Tipo de origen del riesgo
+export const origenRiesgoVinculadoEnum = pgEnum("origen_riesgo_vinculado", [
+  "pesv",              // El riesgo se creó originalmente en PESV
+  "sst",               // El riesgo se creó originalmente en SST
+  "manual"             // Vinculación manual entre riesgos existentes
+]);
+
+// Tabla de Vinculación Bidireccional entre Riesgos PESV y Peligros SST (IPERC)
+// Permite la trazabilidad normativa exigida por Decreto 1072/2015 y Resolución 40595/2022
+export const riesgosSstPesvVinculacion = pgTable("riesgos_sst_pesv_vinculacion", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  
+  // Referencias a ambas matrices
+  riesgoVialId: varchar("riesgo_vial_id").references(() => riesgosViales.id, { onDelete: "cascade" }),
+  peligroIpercId: varchar("peligro_iperc_id").references(() => peligrosIperc.id, { onDelete: "cascade" }),
+  
+  // Metadatos de vinculación
+  origen: origenRiesgoVinculadoEnum("origen").notNull(),
+  estadoSincronizacion: estadoSincronizacionRiesgoEnum("estado_sincronizacion").notNull().default("sincronizado"),
+  
+  // Mapeo de campos entre sistemas (para facilitar sincronización)
+  // PESV usa ISO 31000 (5x5), SST usa GTC-45 (4x4) - requiere conversión
+  nivelRiesgoPesv: text("nivel_riesgo_pesv"),        // bajo, medio, alto, muy_alto, critico
+  nivelRiesgoSst: text("nivel_riesgo_sst"),          // aceptable, moderado, alto, muy_alto
+  
+  // Trazabilidad normativa
+  fundamentoNormativo: text("fundamento_normativo").default("Decreto 1072/2015 Art. 2.2.4.6.15 y Resolución 40595/2022"),
+  justificacionVinculacion: text("justificacion_vinculacion"),
+  
+  // Auditoría
+  vinculadoPor: varchar("vinculado_por").references(() => users.id),
+  fechaVinculacion: timestamp("fecha_vinculacion").notNull().default(sql`now()`),
+  fechaUltimaSync: timestamp("fecha_ultima_sync").default(sql`now()`),
+  
+  // Estado
+  activo: integer("activo").notNull().default(1),
+  observaciones: text("observaciones"),
+  
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Zod schemas para vinculación SST-PESV
+export const insertRiesgoSstPesvVinculacionSchema = createInsertSchema(riesgosSstPesvVinculacion)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true, fechaVinculacion: true, fechaUltimaSync: true });
+export type InsertRiesgoSstPesvVinculacion = z.infer<typeof insertRiesgoSstPesvVinculacionSchema>;
+export type RiesgoSstPesvVinculacion = typeof riesgosSstPesvVinculacion.$inferSelect;
