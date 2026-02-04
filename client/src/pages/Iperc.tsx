@@ -39,6 +39,7 @@ import {
 } from "@/data/iperc-automatizacion";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { OrigenPesvBanner } from "@/components/OrigenPesvBanner";
 
 const normativaIperc = [
   {
@@ -864,6 +865,8 @@ export default function Iperc() {
           />
         </div>
       </div>
+
+      <OrigenPesvBanner compacto={true} />
 
       {isLoading ? (
         <div className="text-center py-8">
