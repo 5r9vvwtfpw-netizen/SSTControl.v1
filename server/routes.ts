@@ -7603,8 +7603,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(attendees.map(a => ({
         id: a.id,
         workerId: a.workerId,
-        workerName: `${a.worker.firstName} ${a.worker.lastName}`,
-        workerDocument: a.worker.documentNumber,
+        workerName: a.worker.name,
+        workerDocument: a.worker.identificationNumber,
         invited: a.invited === 1,
         attended: a.attended === 1,
         notifiedAt: a.notifiedAt,
@@ -32701,9 +32701,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             ...c,
             worker: worker ? {
               id: worker.id,
-              firstName: worker.firstName,
-              lastName: worker.lastName,
-              documentNumber: worker.documentNumber,
+              name: worker.name,
+              identificationNumber: worker.identificationNumber,
               position: worker.position,
               department: worker.department,
             } : null
@@ -32888,8 +32887,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             ...c,
             worker: worker ? {
               id: worker.id,
-              firstName: worker.firstName,
-              lastName: worker.lastName,
+              name: worker.name,
               position: worker.position,
               department: worker.department,
             } : null
@@ -33009,9 +33007,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             ...c,
             worker: worker ? {
               id: worker.id,
-              firstName: worker.firstName,
-              lastName: worker.lastName,
-              documentNumber: worker.documentNumber,
+              name: worker.name,
+              identificationNumber: worker.identificationNumber,
               position: worker.position,
               department: worker.department,
             } : null
@@ -33197,8 +33194,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             votosObtenidos: c.votosRecibidos || 0,
             worker: worker ? {
               id: worker.id,
-              firstName: worker.firstName,
-              lastName: worker.lastName,
+              name: worker.name,
               position: worker.position,
               department: worker.department,
             } : null
@@ -37384,8 +37380,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           
           return {
             workerId: assignment.workerId,
-            workerName: worker ? `${worker.firstName} ${worker.lastName}` : 'Trabajador desconocido',
-            workerDocument: worker?.documentNumber || '',
+            workerName: worker ? worker.name : 'Trabajador desconocido',
+            workerDocument: worker?.identificationNumber || '',
             assignedAt: assignment.assignedAt,
             dueDate: assignment.dueDate,
             isRequired: assignment.isRequired,
