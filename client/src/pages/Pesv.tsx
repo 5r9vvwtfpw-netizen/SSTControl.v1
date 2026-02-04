@@ -268,7 +268,7 @@ export default function Pesv() {
           </Card>
         </Link>
 
-        <Link href="/programa-capacitacion">
+        <Link href="/programa-capacitacion-anual">
           <Card className="hover-elevate active-elevate-2 cursor-pointer border-t-4 border-t-purple-500" data-testid="card-link-trainings">
             <CardHeader>
               <div className="flex items-center gap-3">

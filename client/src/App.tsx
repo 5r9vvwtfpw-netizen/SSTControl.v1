@@ -73,7 +73,6 @@ import CapacitacionCopasst from "@/pages/CapacitacionCopasst";
 import CopasstCms from "@/pages/CopasstCms";
 import CopasstEvaluaciones from "@/pages/CopasstEvaluaciones";
 import ComiteConvivenciaActas from "@/pages/ComiteConvivenciaActas";
-import ProgramaCapacitacion from "@/pages/ProgramaCapacitacion";
 import ProgramaCapacitacionAnual from "@/pages/ProgramaCapacitacionAnual";
 import Curso50Horas from "@/pages/Curso50Horas";
 import RegistrosInduccion from "@/pages/RegistrosInduccion";
@@ -202,7 +201,6 @@ function Router() {
       <ProtectedRoute path="/copasst-cms" component={CopasstCms} />
       <ProtectedRoute path="/copasst-evaluaciones" component={CopasstEvaluaciones} />
       <ProtectedRoute path="/comite-convivencia-actas" component={ComiteConvivenciaActas} />
-      <ProtectedRoute path="/programa-capacitacion" component={ProgramaCapacitacion} />
       <ProtectedRoute path="/programa-capacitacion-anual" component={ProgramaCapacitacionAnual} />
       <ProtectedRoute path="/curso-50-horas" component={Curso50Horas} />
       <ProtectedRoute path="/registros-induccion" component={RegistrosInduccion} />
