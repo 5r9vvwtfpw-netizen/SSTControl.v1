@@ -19,6 +19,7 @@ import { z } from "zod";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { Link } from "wouter";
+import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 
 export default function PesvSiniestros() {
   const { user } = useAuth();
@@ -236,6 +237,11 @@ export default function PesvSiniestros() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Siniestros Viales</h1>
           <p className="text-muted-foreground">Registro e investigación de accidentes de tránsito</p>
         </div>
+      </div>
+      
+      <TrazabilidadPesvBanner codigoPaso="H05" compacto />
+      
+      <div className="flex flex-wrap items-center justify-between gap-4">
         {user?.role && hasCompanyAdminAccess(user.role) && (
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);

@@ -17,6 +17,7 @@ import { z } from "zod";
 import { hasCompanyAdminAccess } from "@shared/permissions";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { Link } from "wouter";
+import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 
 type AuditFormData = {
   auditDate: string;
@@ -320,6 +321,11 @@ export default function PesvAuditorias() {
             Auditorías anuales obligatorias según Resolución 40595/2022 - Evaluación 24 pasos PHVA
           </p>
         </div>
+      </div>
+      
+      <TrazabilidadPesvBanner codigoPaso="V01" compacto />
+      
+      <div className="flex flex-wrap items-center justify-between gap-4">
         {user?.role && hasCompanyAdminAccess(user.role) && (
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);

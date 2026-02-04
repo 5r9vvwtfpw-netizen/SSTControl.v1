@@ -16,6 +16,7 @@ import { z } from "zod";
 import { hasCompanyAdminAccess } from "@shared/permissions";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { Link } from "wouter";
+import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 
 export default function PesvConductores() {
   const { user } = useAuth();
@@ -259,6 +260,11 @@ export default function PesvConductores() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Conductores PESV</h1>
           <p className="text-muted-foreground">Gestión de conductores y licencias</p>
         </div>
+      </div>
+      
+      <TrazabilidadPesvBanner codigoPaso="H07" compacto />
+      
+      <div className="flex flex-wrap items-center justify-between gap-4">
         {user?.role && hasCompanyAdminAccess(user.role) && (
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);

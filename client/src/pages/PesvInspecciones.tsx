@@ -18,6 +18,7 @@ import { z } from "zod";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { Link } from "wouter";
+import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 
 export default function PesvInspecciones() {
   const { user } = useAuth();
@@ -205,6 +206,11 @@ export default function PesvInspecciones() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Inspecciones Preoperacionales</h1>
           <p className="text-muted-foreground">Revisiones diarias de vehículos antes de operar</p>
         </div>
+      </div>
+      
+      <TrazabilidadPesvBanner codigoPaso="H08" compacto />
+      
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) resetForm();

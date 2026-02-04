@@ -18,6 +18,7 @@ import { z } from "zod";
 import { hasCompanyAdminAccess } from "@shared/permissions";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { Link } from "wouter";
+import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 
 export default function PesvCapacitaciones() {
   const { user } = useAuth();
@@ -199,6 +200,11 @@ export default function PesvCapacitaciones() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Capacitaciones de Seguridad Vial</h1>
           <p className="text-muted-foreground">Formación en seguridad vial y conducción defensiva</p>
         </div>
+      </div>
+      
+      <TrazabilidadPesvBanner codigoPaso="H02" compacto />
+      
+      <div className="flex flex-wrap items-center justify-between gap-4">
         {user?.role && hasCompanyAdminAccess(user.role) && (
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);
