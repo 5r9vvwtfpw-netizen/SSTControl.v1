@@ -268,7 +268,7 @@ export default function Pesv() {
           </Card>
         </Link>
 
-        <Link href="/pesv/capacitaciones">
+        <Link href="/programa-capacitacion">
           <Card className="hover-elevate active-elevate-2 cursor-pointer border-t-4 border-t-purple-500" data-testid="card-link-trainings">
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -278,12 +278,12 @@ export default function Pesv() {
                 <CardTitle className="text-purple-700 dark:text-purple-300">Capacitaciones</CardTitle>
               </div>
               <CardDescription>
-                Formación en seguridad vial y conducción defensiva
+                Formación en seguridad vial y conducción defensiva (Paso 10 - H02)
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button variant="outline" className="w-full border-purple-200 text-purple-700 hover:bg-purple-50 dark:border-purple-800 dark:text-purple-300 dark:hover:bg-purple-950" data-testid="button-goto-trainings">
-                Ver Capacitaciones
+                Ver Capacitaciones SST/PESV
               </Button>
             </CardContent>
           </Card>
