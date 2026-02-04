@@ -47,6 +47,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useAuth } from "@/hooks/use-auth";
 import type { UserRole } from "@shared/schema";
+import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 
 // Roles administrativos que ven el dashboard de gestión
 const ADMIN_ROLES: UserRole[] = [
@@ -2529,6 +2530,13 @@ function MisCapacitacionesTab() {
                           </p>
                         </div>
                       )}
+                      
+                      {/* Banner de trazabilidad PESV para capacitaciones de seguridad vial */}
+                      {cap.categoria === 'seguridad-vial' && (
+                        <div className="mt-4 pt-3 border-t">
+                          <TrazabilidadPesvBanner codigoPaso="H02" compacto={true} />
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );
@@ -2548,22 +2556,35 @@ function MisCapacitacionesTab() {
             <div className="space-y-3">
               {historial.map((cap) => {
                 const estadoInfo = estadoLabels[cap.estado] || { label: cap.estado, color: "bg-gray-600" };
+                const esPesv = cap.categoria === 'seguridad-vial';
                 return (
                   <div 
                     key={cap.asistenciaId} 
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-muted/30 rounded-lg"
+                    className="p-3 bg-muted/30 rounded-lg space-y-2"
                     data-testid={`historial-capacitacion-${cap.asistenciaId}`}
                   >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{cap.tituloCurso}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(cap.fechaInicio), "d MMM yyyy", { locale: es })}
-                        {cap.duracionHoras && ` - ${cap.duracionHoras}h`}
-                      </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{cap.tituloCurso}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(cap.fechaInicio), "d MMM yyyy", { locale: es })}
+                          {cap.duracionHoras && ` - ${cap.duracionHoras}h`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {esPesv && (
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                            PESV
+                          </Badge>
+                        )}
+                        <Badge className={`${estadoInfo.color} text-white`} data-testid={`badge-historial-estado-${cap.asistenciaId}`}>
+                          {estadoInfo.label}
+                        </Badge>
+                      </div>
                     </div>
-                    <Badge className={`${estadoInfo.color} text-white self-start sm:self-center flex-shrink-0`} data-testid={`badge-historial-estado-${cap.asistenciaId}`}>
-                      {estadoInfo.label}
-                    </Badge>
+                    {esPesv && (
+                      <TrazabilidadPesvBanner codigoPaso="H02" compacto={true} />
+                    )}
                   </div>
                 );
               })}
