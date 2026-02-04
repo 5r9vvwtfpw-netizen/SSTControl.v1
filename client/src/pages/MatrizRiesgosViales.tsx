@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Search, Trash2, Edit, User, Car, Building, Cloud, AlertTriangle, ShieldPlus } from "lucide-react";
+import { Plus, Search, Trash2, Edit, User, Car, Building, Cloud, AlertTriangle, ShieldPlus, Link2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -16,6 +16,7 @@ import { RiesgoVial, Worker, insertRiesgoVialSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { VinculacionRiesgosSstPesvBanner } from "@/components/pesv/VinculacionRiesgosSstPesvBanner";
 import { z } from "zod";
 
 const PROBABILIDAD_VALUES = {
@@ -223,6 +224,32 @@ export default function MatrizRiesgosViales() {
     onError: (error: Error) => {
       toast({
         title: "Error al eliminar",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const syncToSstMutation = useMutation({
+    mutationFn: async (riesgoId: string) => {
+      const res = await apiRequest("POST", "/api/riesgos-vinculacion/sincronizar-pesv-a-sst", {
+        riesgoVialId: riesgoId,
+        matrizIpercId: "default",
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/riesgos-viales"] });
+      queryClient.invalidateQueries({ queryKey: ["riesgo-vinculacion"] });
+      toast({
+        title: "Éxito",
+        description: "Riesgo sincronizado a matriz SST",
+        className: "bg-green-50 border-green-200",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -895,6 +922,17 @@ export default function MatrizRiesgosViales() {
                     >
                       <ShieldPlus className="h-4 w-4 mr-1" />
                       Tratamiento
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => syncToSstMutation.mutate(riesgo.id)}
+                      disabled={syncToSstMutation.isPending}
+                      data-testid={`button-sync-sst-${riesgo.id}`}
+                    >
+                      <Link2 className="h-4 w-4 mr-1" />
+                      Sincronizar SST
                     </Button>
                   </div>
                 </CardContent>
