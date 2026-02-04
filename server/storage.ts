@@ -423,7 +423,7 @@ export interface IStorage {
   createCompany(company: InsertCompany): Promise<Company>;
   updateCompany(id: string, company: Partial<InsertCompany>): Promise<Company | undefined>;
   deleteCompany(id: string): Promise<void>;
-  deleteCompanyWithAllData(id: string): Promise<{ deletedTables: string[], totalDeleted: number }>;
+  deleteCompanyWithAllData(id: string): Promise<{ deletedTables: string[], totalDeleted: number, failedTables?: string[] }>;
   
   // User methods
   getUser(id: string): Promise<User | undefined>;
@@ -2344,6 +2344,8 @@ export class DbStorage implements IStorage {
         tableColumns.get(row.table_name)!.add(row.column_name);
       }
       
+      const failedTables: string[] = [];
+      
       for (const tableConfig of tablesToDelete) {
         const { table, column, subquery } = tableConfig as { table: string; column: string; subquery?: string };
         
@@ -2358,55 +2360,86 @@ export class DbStorage implements IStorage {
           continue; // Saltar si la columna no existe en la tabla
         }
         
-        let result;
-        
-        if (subquery) {
-          // Para subqueries, verificar primero si la tabla referenciada existe
-          const subqueryMatch = subquery.match(/FROM\s+(\w+)/i);
-          const parentTable = subqueryMatch ? subqueryMatch[1] : null;
-          if (parentTable && !existingTables.has(parentTable)) {
-            continue; // Saltar si la tabla padre no existe
-          }
+        try {
+          // Usar SAVEPOINT para permitir continuar aunque falle una tabla
+          await client.query(`SAVEPOINT delete_${table.replace(/[^a-z0-9_]/gi, '_')}`);
           
-          // Verificar columnas en la subquery también
-          const subqueryColMatch = subquery.match(/WHERE\s+(\w+)/i);
-          const subqueryCol = subqueryColMatch ? subqueryColMatch[1] : null;
-          if (parentTable && subqueryCol) {
-            const parentCols = tableColumns.get(parentTable);
-            if (!parentCols || !parentCols.has(subqueryCol)) {
-              continue; // Saltar si la columna de la subquery no existe
+          let result;
+          
+          if (subquery) {
+            // Para subqueries, verificar primero si la tabla referenciada existe
+            const subqueryMatch = subquery.match(/FROM\s+(\w+)/i);
+            const parentTable = subqueryMatch ? subqueryMatch[1] : null;
+            if (parentTable && !existingTables.has(parentTable)) {
+              await client.query(`RELEASE SAVEPOINT delete_${table.replace(/[^a-z0-9_]/gi, '_')}`);
+              continue; // Saltar si la tabla padre no existe
             }
+            
+            // Verificar columnas en la subquery también
+            const subqueryColMatch = subquery.match(/WHERE\s+(\w+)/i);
+            const subqueryCol = subqueryColMatch ? subqueryColMatch[1] : null;
+            if (parentTable && subqueryCol) {
+              const parentCols = tableColumns.get(parentTable);
+              if (!parentCols || !parentCols.has(subqueryCol)) {
+                await client.query(`RELEASE SAVEPOINT delete_${table.replace(/[^a-z0-9_]/gi, '_')}`);
+                continue; // Saltar si la columna de la subquery no existe
+              }
+            }
+            
+            // Handle tables that need subquery (e.g., ticket_status_history via support_tickets)
+            result = await client.query(
+              `DELETE FROM ${table} WHERE ${column} IN (${subquery})`,
+              [id]
+            );
+          } else {
+            result = await client.query(
+              `DELETE FROM ${table} WHERE ${column} = $1`,
+              [id]
+            );
           }
           
-          // Handle tables that need subquery (e.g., ticket_status_history via support_tickets)
-          result = await client.query(
-            `DELETE FROM ${table} WHERE ${column} IN (${subquery})`,
-            [id]
-          );
-        } else {
-          result = await client.query(
-            `DELETE FROM ${table} WHERE ${column} = $1`,
-            [id]
-          );
-        }
-        
-        if (result.rowCount && result.rowCount > 0) {
-          deletedTables.push(table);
-          totalDeleted += result.rowCount;
+          await client.query(`RELEASE SAVEPOINT delete_${table.replace(/[^a-z0-9_]/gi, '_')}`);
+          
+          if (result.rowCount && result.rowCount > 0) {
+            deletedTables.push(table);
+            totalDeleted += result.rowCount;
+          }
+        } catch (tableError: any) {
+          // Rollback solo este savepoint para continuar con la siguiente tabla
+          try {
+            await client.query(`ROLLBACK TO SAVEPOINT delete_${table.replace(/[^a-z0-9_]/gi, '_')}`);
+          } catch (e) {
+            // Ignorar si el savepoint no existe
+          }
+          // Log pero continuar - algunas tablas pueden tener restricciones FK que impiden eliminación
+          console.error(`[DeleteCompany] Error eliminando de ${table}:`, tableError.message);
+          failedTables.push(`${table}: ${tableError.message}`);
+          // Continuar con la siguiente tabla en lugar de abortar toda la operación
         }
       }
       
       // Finalmente eliminar la empresa
-      const companyResult = await client.query(
-        'DELETE FROM companies WHERE id = $1',
-        [id]
-      );
-      if (companyResult.rowCount && companyResult.rowCount > 0) {
-        deletedTables.push('companies');
-        totalDeleted += companyResult.rowCount;
+      try {
+        const companyResult = await client.query(
+          'DELETE FROM companies WHERE id = $1',
+          [id]
+        );
+        if (companyResult.rowCount && companyResult.rowCount > 0) {
+          deletedTables.push('companies');
+          totalDeleted += companyResult.rowCount;
+        }
+      } catch (companyError: any) {
+        console.error('[DeleteCompany] Error eliminando la empresa:', companyError.message);
+        failedTables.push(`companies: ${companyError.message}`);
+        // Continuar con el commit de las demás eliminaciones
       }
       
       await client.query('COMMIT');
+      
+      // Si hubo errores en algunas tablas, loguearlos pero no fallar
+      if (failedTables.length > 0) {
+        console.warn('[DeleteCompany] Algunas tablas no pudieron eliminarse:', failedTables);
+      }
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
@@ -2415,7 +2448,7 @@ export class DbStorage implements IStorage {
       client.release();
     }
 
-    return { deletedTables, totalDeleted };
+    return { deletedTables, totalDeleted, failedTables };
   }
 
   // User methods

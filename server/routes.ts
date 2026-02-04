@@ -2209,13 +2209,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Ejecutar eliminación en cascada
+      // Ejecutar eliminación en cascada
       const result = await storage.deleteCompanyWithAllData(companyId);
 
+      // Verificar si hubo errores parciales
+      const hasFailures = result.failedTables && result.failedTables.length > 0;
+      const wasCompanyDeleted = result.deletedTables.includes('companies');
+      
       res.json({
-        success: true,
-        message: `Empresa "${company.name}" eliminada exitosamente con todos sus datos`,
+        success: wasCompanyDeleted,
+        message: wasCompanyDeleted 
+          ? `Empresa "${company.name}" eliminada exitosamente con todos sus datos`
+          : `No se pudo eliminar la empresa "${company.name}" debido a restricciones de integridad`,
         deletedTables: result.deletedTables,
-        totalRecordsDeleted: result.totalDeleted
+        totalRecordsDeleted: result.totalDeleted,
+        failedTables: result.failedTables || [],
+        warnings: hasFailures ? 'Algunas tablas no pudieron eliminarse. Ver failedTables para detalles.' : undefined
       });
     } catch (error: any) {
       console.error('Error al eliminar empresa con todos sus datos:', error);
