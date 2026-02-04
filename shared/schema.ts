@@ -1018,6 +1018,23 @@ export const roadSafetyAttendees = pgTable("road_safety_attendees", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
+// Training attendees for road safety (many-to-many with workers - for non-driver employees)
+export const roadSafetyWorkerAttendees = pgTable("road_safety_worker_attendees", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  trainingId: varchar("training_id").notNull().references(() => roadSafetyTrainings.id, { onDelete: "cascade" }),
+  workerId: varchar("worker_id").notNull().references(() => workers.id, { onDelete: "cascade" }),
+  invited: integer("invited").notNull().default(1), // 1 = invited
+  attended: integer("attended").notNull().default(0), // 0 = not attended, 1 = attended
+  notifiedAt: timestamp("notified_at"), // When notification was sent
+  confirmedAt: timestamp("confirmed_at"), // When worker confirmed attendance
+  score: integer("score"), // Training evaluation score
+  certificate: text("certificate"), // Certificate URL
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export type RoadSafetyWorkerAttendee = typeof roadSafetyWorkerAttendees.$inferSelect;
+export type InsertRoadSafetyWorkerAttendee = typeof roadSafetyWorkerAttendees.$inferInsert;
+
 // PESV Audit status
 export const auditStatusEnum = pgEnum("audit_status", ["programada", "en-curso", "completada"]);
 export const auditResultEnum = pgEnum("audit_result", ["cumple", "cumple-parcialmente", "no-cumple"]);

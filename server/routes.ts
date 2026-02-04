@@ -214,6 +214,9 @@ import {
   insertRiesgoVialSchema,
   tratamientosRiesgoVial,
   insertTratamientoRiesgoVialSchema,
+  roadSafetyWorkerAttendees,
+  roadSafetyTrainings,
+  workers,
 } from "@shared/schema";
 import * as schema from "@shared/schema";
 import type { UserRole, User } from "@shared/schema";
@@ -7505,6 +7508,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     await storage.deleteRoadSafetyTraining(req.params.id, companyId);
     res.sendStatus(204);
+  });
+
+  // POST /api/road-safety-trainings/:id/invite-workers - Invitar trabajadores a una capacitación PESV
+  app.post("/api/road-safety-trainings/:id/invite-workers", requirePermission("road_safety_trainings:edit"), async (req, res) => {
+    try {
+      const user = req.user as schema.User;
+      const companyId = user.companyId;
+      const { id } = req.params;
+      const { workerIds } = req.body;
+
+      if (!companyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
+      if (!Array.isArray(workerIds) || workerIds.length === 0) {
+        return res.status(400).json({ error: "Debe proporcionar al menos un trabajador" });
+      }
+
+      // Verificar que la capacitación existe y pertenece a la empresa
+      const [training] = await db
+        .select()
+        .from(roadSafetyTrainings)
+        .where(and(eq(roadSafetyTrainings.id, id), eq(roadSafetyTrainings.companyId, companyId)))
+        .limit(1);
+
+      if (!training) {
+        return res.status(404).json({ error: "Capacitación no encontrada" });
+      }
+
+      // Invitar trabajadores
+      const invitations = [];
+      for (const workerId of workerIds) {
+        // Verificar si ya está invitado
+        const [existing] = await db
+          .select()
+          .from(roadSafetyWorkerAttendees)
+          .where(
+            and(
+              eq(roadSafetyWorkerAttendees.trainingId, id),
+              eq(roadSafetyWorkerAttendees.workerId, workerId)
+            )
+          )
+          .limit(1);
+
+        if (!existing) {
+          const [invitation] = await db
+            .insert(roadSafetyWorkerAttendees)
+            .values({
+              trainingId: id,
+              workerId,
+              notifiedAt: new Date(),
+            })
+            .returning();
+          invitations.push(invitation);
+        }
+      }
+
+      res.json({ 
+        message: `${invitations.length} trabajadores invitados exitosamente`,
+        invitations 
+      });
+    } catch (error: any) {
+      console.error('Error inviting workers to training:', error);
+      res.status(500).json({ error: error.message || "Error al invitar trabajadores" });
+    }
+  });
+
+  // GET /api/road-safety-trainings/:id/worker-attendees - Obtener trabajadores invitados a una capacitación
+  app.get("/api/road-safety-trainings/:id/worker-attendees", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as schema.User;
+      const companyId = user.companyId;
+      const { id } = req.params;
+
+      if (!companyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
+      const attendees = await db
+        .select({
+          id: roadSafetyWorkerAttendees.id,
+          workerId: roadSafetyWorkerAttendees.workerId,
+          invited: roadSafetyWorkerAttendees.invited,
+          attended: roadSafetyWorkerAttendees.attended,
+          notifiedAt: roadSafetyWorkerAttendees.notifiedAt,
+          confirmedAt: roadSafetyWorkerAttendees.confirmedAt,
+          worker: workers,
+        })
+        .from(roadSafetyWorkerAttendees)
+        .innerJoin(workers, eq(roadSafetyWorkerAttendees.workerId, workers.id))
+        .where(eq(roadSafetyWorkerAttendees.trainingId, id));
+
+      res.json(attendees.map(a => ({
+        id: a.id,
+        workerId: a.workerId,
+        workerName: `${a.worker.firstName} ${a.worker.lastName}`,
+        workerDocument: a.worker.documentNumber,
+        invited: a.invited === 1,
+        attended: a.attended === 1,
+        notifiedAt: a.notifiedAt,
+        confirmedAt: a.confirmedAt,
+      })));
+    } catch (error: any) {
+      console.error('Error getting worker attendees:', error);
+      res.status(500).json({ error: error.message || "Error al obtener asistentes" });
+    }
   });
 
   // Road Safety Attendees routes
@@ -37176,6 +37285,76 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     } catch (error: any) {
       console.error('Error getting PESV committee membership:', error);
       res.status(500).json({ error: error.message || "Error al obtener información del comité PESV" });
+    }
+  });
+
+  // GET /api/portal/worker/pesv-capacitaciones - Obtener capacitaciones PESV del trabajador
+  app.get("/api/portal/worker/pesv-capacitaciones", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as schema.User;
+      const companyId = user.companyId;
+      
+      if (!companyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
+      let workerId = user.workerId;
+
+      // Fallback: buscar worker por email si workerId es null
+      if (!workerId && user.email) {
+        const worker = await storage.getWorkerByEmail(user.email, companyId);
+        if (worker) {
+          workerId = worker.id;
+        }
+      }
+
+      if (!workerId) {
+        return res.json({ capacitaciones: [] });
+      }
+
+      // Buscar capacitaciones PESV donde el trabajador está invitado
+      const invitaciones = await db
+        .select({
+          id: roadSafetyWorkerAttendees.id,
+          trainingId: roadSafetyWorkerAttendees.trainingId,
+          invited: roadSafetyWorkerAttendees.invited,
+          attended: roadSafetyWorkerAttendees.attended,
+          notifiedAt: roadSafetyWorkerAttendees.notifiedAt,
+          confirmedAt: roadSafetyWorkerAttendees.confirmedAt,
+          training: roadSafetyTrainings,
+        })
+        .from(roadSafetyWorkerAttendees)
+        .innerJoin(roadSafetyTrainings, eq(roadSafetyWorkerAttendees.trainingId, roadSafetyTrainings.id))
+        .where(
+          and(
+            eq(roadSafetyWorkerAttendees.workerId, workerId),
+            eq(roadSafetyTrainings.companyId, companyId)
+          )
+        )
+        .orderBy(desc(roadSafetyTrainings.trainingDate));
+
+      const capacitaciones = invitaciones.map(inv => ({
+        id: inv.id,
+        trainingId: inv.training.id,
+        titulo: inv.training.title,
+        descripcion: inv.training.description,
+        fecha: inv.training.trainingDate,
+        horaInicio: inv.training.startTime,
+        horaFin: inv.training.endTime,
+        lugar: inv.training.location,
+        instructor: inv.training.instructor,
+        temas: inv.training.topics,
+        estado: inv.training.status,
+        invitado: inv.invited === 1,
+        asistio: inv.attended === 1,
+        notificadoEn: inv.notifiedAt,
+        confirmadoEn: inv.confirmedAt,
+      }));
+
+      res.json({ capacitaciones });
+    } catch (error: any) {
+      console.error('Error getting PESV trainings for worker:', error);
+      res.status(500).json({ error: error.message || "Error al obtener capacitaciones PESV" });
     }
   });
 
