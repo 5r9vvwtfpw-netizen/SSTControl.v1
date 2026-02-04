@@ -53,6 +53,8 @@ import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { CAPACITACIONES_OBLIGATORIAS } from "@/data/catalogos-sst";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { TrazabilidadCapacitacionesSstPesvBanner } from "@/components/pesv/TrazabilidadCapacitacionesSstPesvBanner";
+import { CapacitacionesPesvResumen } from "@/components/CapacitacionesPesvResumen";
 
 type TrainingProgram = {
   id: string;
@@ -261,6 +263,12 @@ export default function ProgramaCapacitacionAnual() {
         normativaAplicable={normativaAplicable}
         compact={true}
       />
+
+      {/* Trazabilidad PESV - Capacitaciones de Seguridad Vial */}
+      <TrazabilidadCapacitacionesSstPesvBanner direccion="sst-to-pesv" />
+      
+      {/* Resumen de Capacitaciones PESV */}
+      <CapacitacionesPesvResumen />
 
       {/* Programs List */}
       <Card>

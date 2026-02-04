@@ -19,6 +19,7 @@ import { hasCompanyAdminAccess } from "@shared/permissions";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
+import { TrazabilidadCapacitacionesSstPesvBanner } from "@/components/pesv/TrazabilidadCapacitacionesSstPesvBanner";
 
 export default function PesvCapacitaciones() {
   const { user } = useAuth();
@@ -203,6 +204,8 @@ export default function PesvCapacitaciones() {
       </div>
       
       <TrazabilidadPesvBanner codigoPaso="H02" compacto />
+      
+      <TrazabilidadCapacitacionesSstPesvBanner direccion="pesv-to-sst" />
       
       <div className="flex flex-wrap items-center justify-between gap-4">
         {user?.role && hasCompanyAdminAccess(user.role) && (
