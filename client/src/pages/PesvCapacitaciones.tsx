@@ -10,7 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Plus, Search, Users, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { RoadSafetyTraining, Driver, insertRoadSafetyTrainingSchema } from "@shared/schema";
+import { RoadSafetyTraining, Driver, Worker, insertRoadSafetyTrainingSchema } from "@shared/schema";
+import { Badge } from "@/components/ui/badge";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +30,8 @@ export default function PesvCapacitaciones() {
   const [attendanceDialogOpen, setAttendanceDialogOpen] = useState(false);
   const [selectedTraining, setSelectedTraining] = useState<RoadSafetyTraining | null>(null);
   const [attendanceData, setAttendanceData] = useState<Record<string, boolean>>({});
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [selectedWorkerIds, setSelectedWorkerIds] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -50,6 +53,10 @@ export default function PesvCapacitaciones() {
     queryKey: ["/api/drivers"],
   });
 
+  const { data: workers = [] } = useQuery<Worker[]>({
+    queryKey: ["/api/workers"],
+  });
+
   const { data: attendees = [] } = useQuery({
     queryKey: ["/api/road-safety-attendees", selectedTraining?.id],
     queryFn: async () => {
@@ -58,6 +65,19 @@ export default function PesvCapacitaciones() {
         credentials: "include",
       });
       if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
+    enabled: !!selectedTraining,
+  });
+
+  const { data: invitedWorkers = [] } = useQuery({
+    queryKey: ["/api/road-safety-trainings", selectedTraining?.id, "worker-attendees"],
+    queryFn: async () => {
+      if (!selectedTraining?.id) return [];
+      const res = await fetch(`/api/road-safety-trainings/${selectedTraining.id}/worker-attendees`, {
+        credentials: "include",
+      });
+      if (!res.ok) return [];
       return res.json();
     },
     enabled: !!selectedTraining,
@@ -110,6 +130,30 @@ export default function PesvCapacitaciones() {
     },
   });
 
+  const inviteWorkersMutation = useMutation({
+    mutationFn: async (data: { trainingId: string; workerIds: string[] }) => {
+      const res = await apiRequest("POST", `/api/road-safety-trainings/${data.trainingId}/invite-workers`, { workerIds: data.workerIds });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/road-safety-trainings", selectedTraining?.id, "worker-attendees"] });
+      setInviteDialogOpen(false);
+      setSelectedWorkerIds([]);
+      toast({
+        title: "Trabajadores invitados",
+        description: "Los trabajadores han sido notificados de la capacitación",
+        className: "bg-yellow-50 border-yellow-200",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
     if (selectedTraining && attendees.length >= 0) {
       const existingAttendance: Record<string, boolean> = {};
@@ -150,6 +194,19 @@ export default function PesvCapacitaciones() {
       attendance,
     });
   };
+
+  const handleInviteWorkers = () => {
+    if (!selectedTraining || selectedWorkerIds.length === 0) return;
+    inviteWorkersMutation.mutate({
+      trainingId: selectedTraining.id,
+      workerIds: selectedWorkerIds,
+    });
+  };
+
+  const availableWorkers = workers.filter(w => 
+    w.status === "activo" && 
+    !invitedWorkers.some((inv: any) => inv.workerId === w.id)
+  );
 
   const resetForm = () => {
     setFormData({
@@ -457,6 +514,34 @@ export default function PesvCapacitaciones() {
                 </div>
               ))}
             </div>
+            <div className="border-t pt-4 mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-semibold">Trabajadores invitados (no conductores):</p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setInviteDialogOpen(true)}
+                  data-testid="button-invite-workers"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Invitar Trabajadores
+                </Button>
+              </div>
+              {invitedWorkers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No hay trabajadores invitados</p>
+              ) : (
+                <div className="space-y-2">
+                  {invitedWorkers.map((inv: any) => (
+                    <div key={inv.id} className="flex items-center justify-between p-2 bg-muted/50 rounded" data-testid={`invited-worker-${inv.workerId}`}>
+                      <span>{inv.workerName}</span>
+                      <Badge variant={inv.attended ? "default" : "secondary"} className="no-default-active-elevate">
+                        {inv.attended ? "Asistió" : "Pendiente"}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -465,6 +550,60 @@ export default function PesvCapacitaciones() {
               data-testid="button-save-attendance"
             >
               {saveAttendanceMutation.isPending ? "Guardando..." : "Guardar Asistencia"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Invitar Trabajadores</DialogTitle>
+            <DialogDescription>
+              Seleccione los trabajadores que desea invitar a la capacitación PESV.
+              Estos trabajadores podrán ver la capacitación en su Portal de Empleados.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {availableWorkers.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                No hay trabajadores disponibles para invitar
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {availableWorkers.map((worker) => (
+                  <div key={worker.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`worker-${worker.id}`}
+                      checked={selectedWorkerIds.includes(worker.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedWorkerIds([...selectedWorkerIds, worker.id]);
+                        } else {
+                          setSelectedWorkerIds(selectedWorkerIds.filter(id => id !== worker.id));
+                        }
+                      }}
+                      data-testid={`checkbox-worker-${worker.id}`}
+                    />
+                    <Label htmlFor={`worker-${worker.id}`}>
+                      {worker.name}
+                      <span className="text-muted-foreground ml-2 text-sm">({worker.position || 'Sin cargo'})</span>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInviteDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleInviteWorkers}
+              disabled={inviteWorkersMutation.isPending || selectedWorkerIds.length === 0}
+              data-testid="button-confirm-invite"
+            >
+              {inviteWorkersMutation.isPending ? "Invitando..." : `Invitar (${selectedWorkerIds.length})`}
             </Button>
           </DialogFooter>
         </DialogContent>
