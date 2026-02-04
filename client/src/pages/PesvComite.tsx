@@ -116,7 +116,7 @@ export default function PesvComite() {
 
   const handleWorkerSelect = (workerId: string) => {
     if (workerId === "manual") {
-      setIntegranteForm({ ...integranteForm, workerId: "", nombre: "" });
+      setIntegranteForm({ ...integranteForm, workerId: "", nombre: "", cargo: "" });
       return;
     }
     const selectedWorker = workers.find(w => w.id === workerId);
@@ -125,7 +125,8 @@ export default function PesvComite() {
         ...integranteForm,
         workerId: selectedWorker.id,
         nombre: selectedWorker.name,
-        email: selectedWorker.email || ""
+        email: selectedWorker.email || "",
+        cargo: selectedWorker.position || ""
       });
     }
   };
