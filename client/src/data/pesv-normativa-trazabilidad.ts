@@ -205,7 +205,7 @@ export const TRAZABILIDAD_PASOS_PESV: TrazabilidadPasoPesv[] = [
     descripcion: 'Demostración del compromiso de la alta dirección con la seguridad vial',
     normativaAplicable: {
       resolucion40595: 'Artículo 5 - Paso 4',
-      decreto1072: 'Artículo 2.2.4.6.8.1 - Obligaciones del empleador',
+      decreto1072: 'Artículo 2.2.4.6.5 - Obligaciones de los empleadores, Artículo 2.2.4.6.31 - Revisión por la alta dirección',
       iso39001: 'Cláusula 5.1 - Liderazgo y compromiso'
     },
     requisitosEspecificos: [
