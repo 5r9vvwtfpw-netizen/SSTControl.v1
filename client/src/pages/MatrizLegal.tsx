@@ -21,6 +21,16 @@ import { AutomationAssistant, type NormativaInfo, type PlantillaInfo } from "@/c
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { todasLasPlantillasPesv, type PlantillaPesvMatrizLegal } from "@/data/matriz-legal-pesv";
+
+// Convertir plantillas PESV al formato PlantillaInfo
+const plantillasPesvConvertidas: PlantillaInfo[] = todasLasPlantillasPesv.map((p: PlantillaPesvMatrizLegal) => ({
+  id: p.id,
+  nombre: `[PESV ${p.codigoPaso}] ${p.nombre}`,
+  descripcion: p.descripcion,
+  campos: p.campos,
+  normativaBase: p.normativaBase
+}));
 
 const plantillasMatrizLegal: PlantillaInfo[] = [
   {
@@ -132,7 +142,9 @@ const plantillasMatrizLegal: PlantillaInfo[] = [
       normativa: "Resolución 2646/2008, Resolución 2764/2022"
     },
     normativaBase: "RES-2646-2008"
-  }
+  },
+  // Plantillas PESV (24 pasos según Resolución 40595/2022)
+  ...plantillasPesvConvertidas
 ];
 
 const categoriaLabels: Record<string, string> = {
