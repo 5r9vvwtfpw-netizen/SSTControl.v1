@@ -54,6 +54,7 @@ import ContextoOrganizacionalPesv from "@/pages/ContextoOrganizacionalPesv";
 import IndicadoresPesv from "@/pages/IndicadoresPesv";
 import FactoresDesempenoPesv from "@/pages/FactoresDesempenoPesv";
 import PesvComite from "@/pages/PesvComite";
+import PesvLiderazgo from "@/pages/PesvLiderazgo";
 import CompanyManagement from "@/pages/CompanyManagement";
 import CompanyDetail from "@/pages/CompanyDetail";
 import GestionUsuarios from "@/pages/GestionUsuarios";
@@ -285,6 +286,7 @@ function Router() {
       <ProtectedRoute path="/pesv/indicadores" component={IndicadoresPesv} />
       <ProtectedRoute path="/pesv/factores-desempeno" component={FactoresDesempenoPesv} />
       <ProtectedRoute path="/pesv/comite" component={PesvComite} />
+      <ProtectedRoute path="/pesv/liderazgo" component={PesvLiderazgo} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/pricing-plugin/calculator" component={PricingPluginCalculator} />
       <Route path="/calculadora-precios" component={PricingCalculatorV2} />
