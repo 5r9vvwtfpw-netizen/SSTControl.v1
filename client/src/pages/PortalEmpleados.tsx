@@ -5046,7 +5046,6 @@ function MiComitePesvTab() {
   }
 
   const membresia = data?.membresia;
-  const actas = data?.actas || [];
 
   return (
     <div className="space-y-6">
@@ -5131,107 +5130,6 @@ function MiComitePesvTab() {
           </CardContent>
         </Card>
       )}
-
-      <Card data-testid="card-actas-comite-pesv">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Actas de Reuniones del Comité PESV
-          </CardTitle>
-          <CardDescription>
-            Historial de reuniones del Comité de Seguridad Vial de su empresa
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {actas.length === 0 ? (
-            <div className="text-center py-8">
-              <FileCheck className="h-12 w-12 mx-auto mb-4 opacity-50 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                No hay actas de reuniones aprobadas disponibles
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {actas.map((acta) => {
-                const fechaReunion = new Date(acta.fecha);
-                
-                return (
-                  <Card key={acta.id} className="bg-muted/30" data-testid={`card-acta-pesv-${acta.id}`}>
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-100 dark:bg-blue-950 rounded-full flex-shrink-0">
-                            <FileText className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-base" data-testid={`text-acta-numero-${acta.id}`}>
-                              Acta N° {acta.numeroActa}
-                            </CardTitle>
-                            <CardDescription className="flex items-center gap-2 mt-1 flex-wrap">
-                              <span className="flex items-center gap-1" data-testid={`text-fecha-acta-${acta.id}`}>
-                                <Calendar className="h-3 w-3" />
-                                {format(fechaReunion, "EEEE d 'de' MMMM, yyyy", { locale: es })}
-                              </span>
-                              {acta.horaInicio && (
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {acta.horaInicio}{acta.horaFin ? ` - ${acta.horaFin}` : ""}
-                                </span>
-                              )}
-                            </CardDescription>
-                          </div>
-                        </div>
-                        <Badge className="bg-green-600 text-white" data-testid={`badge-estado-acta-${acta.id}`}>
-                          Aprobada
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-2">
-                      <div className="space-y-3">
-                        {acta.lugar && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
-                            <span>{acta.lugar}</span>
-                            {acta.modalidad && (
-                              <Badge variant="outline" className="ml-2">
-                                {acta.modalidad}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                        <div data-testid={`text-temas-acta-${acta.id}`}>
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Temas del Orden del Día</p>
-                          <p className="text-sm whitespace-pre-line">{acta.temasDiscutidos}</p>
-                        </div>
-                        {acta.desarrolloReunion && (
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground mb-1">Desarrollo de la Reunión</p>
-                            <p className="text-sm whitespace-pre-line">{acta.desarrolloReunion}</p>
-                          </div>
-                        )}
-                        {acta.compromisos && (
-                          <div className="p-3 bg-yellow-50 dark:bg-yellow-950/50 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                            <p className="text-xs font-medium text-yellow-800 dark:text-yellow-200 mb-1">Compromisos</p>
-                            <p className="text-sm text-yellow-700 dark:text-yellow-300 whitespace-pre-line">{acta.compromisos}</p>
-                          </div>
-                        )}
-                        {acta.proximaReunion && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground border-t pt-3">
-                            <Calendar className="h-4 w-4" />
-                            <span>
-                              Próxima reunión: {format(new Date(acta.proximaReunion), "d 'de' MMMM, yyyy", { locale: es })}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
