@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { 
-  Car, Users, ClipboardCheck, AlertTriangle, 
+  Car, Users, UsersRound, ClipboardCheck, AlertTriangle, 
   GraduationCap, FileCheck, TrendingUp, TrendingDown,
   Activity, ShieldAlert, Building, Target, BarChart3
 } from "lucide-react";
@@ -163,6 +163,27 @@ export default function Pesv() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Link href="/pesv/comite">
+          <Card className="hover-elevate active-elevate-2 cursor-pointer border-t-4 border-t-amber-500" data-testid="card-link-comite">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-amber-100 p-2 dark:bg-amber-900">
+                  <UsersRound className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <CardTitle className="text-amber-700 dark:text-amber-300">Comité de Seguridad Vial</CardTitle>
+              </div>
+              <CardDescription>
+                Paso 2 - Conformación y gestión del comité multidisciplinario
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-950" data-testid="button-goto-comite">
+                Gestionar Comité
+              </Button>
+            </CardContent>
+          </Card>
+        </Link>
+
         <Link href="/pesv/vehiculos">
           <Card className="hover-elevate active-elevate-2 cursor-pointer border-t-4 border-t-blue-500" data-testid="card-link-vehicles">
             <CardHeader>

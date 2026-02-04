@@ -13,7 +13,7 @@
  */
 
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, bigint, date, pgEnum, jsonb, boolean, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, bigint, date, pgEnum, jsonb, boolean, numeric, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -1138,6 +1138,81 @@ export type RoadSafetyAttendee = typeof roadSafetyAttendees.$inferSelect;
 export const insertPesvAuditSchema = createInsertSchema(pesvAudits).omit({ id: true, createdAt: true });
 export type InsertPesvAudit = z.infer<typeof insertPesvAuditSchema>;
 export type PesvAudit = typeof pesvAudits.$inferSelect;
+
+// ============================================================================
+// COMITÉ DE SEGURIDAD VIAL - PESV PASO 2 (Resolución 40595/2022)
+// Trazabilidad: Decreto 1072/2015 Art. 2.2.4.6.8, ISO 39001:2012 Cláusula 5.3
+// ============================================================================
+
+export const pesvComiteRolEnum = pgEnum("pesv_comite_rol", [
+  "presidente",
+  "secretario", 
+  "miembro",
+  "representante_trabajadores",
+  "representante_alta_direccion",
+  "asesor_externo"
+]);
+
+export const pesvComiteIntegrantes = pgTable("pesv_comite_integrantes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  workerId: varchar("worker_id").references(() => workers.id),
+  nombre: text("nombre").notNull(),
+  cargo: text("cargo").notNull(),
+  rol: pesvComiteRolEnum("rol").notNull(),
+  email: text("email"),
+  telefono: text("telefono"),
+  fechaIngreso: date("fecha_ingreso").notNull(),
+  fechaRetiro: date("fecha_retiro"),
+  activo: integer("activo").notNull().default(1),
+  observaciones: text("observaciones"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const insertPesvComiteIntegranteSchema = createInsertSchema(pesvComiteIntegrantes)
+  .omit({ id: true, createdAt: true, companyId: true })
+  .extend({
+    nombre: z.string().min(1, "El nombre es obligatorio"),
+    cargo: z.string().min(1, "El cargo es obligatorio"),
+  });
+export type InsertPesvComiteIntegrante = z.infer<typeof insertPesvComiteIntegranteSchema>;
+export type PesvComiteIntegrante = typeof pesvComiteIntegrantes.$inferSelect;
+
+export const pesvComiteActaEstadoEnum = pgEnum("pesv_comite_acta_estado", [
+  "borrador",
+  "aprobada",
+  "anulada"
+]);
+
+export const pesvComiteActas = pgTable("pesv_comite_actas", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  numeroActa: serial("numero_acta"),
+  fechaReunion: date("fecha_reunion").notNull(),
+  horaInicio: text("hora_inicio"),
+  horaFin: text("hora_fin"),
+  lugar: text("lugar"),
+  modalidad: text("modalidad"), // presencial, virtual, hibrida
+  temasOrdenDia: text("temas_orden_dia").notNull(),
+  desarrolloReunion: text("desarrollo_reunion"),
+  compromisos: text("compromisos"),
+  asistentes: text("asistentes").array(), // IDs de integrantes que asistieron
+  invitados: text("invitados"), // Otros invitados externos
+  proximaReunion: date("proxima_reunion"),
+  observaciones: text("observaciones"),
+  estado: pesvComiteActaEstadoEnum("estado").notNull().default("borrador"),
+  creadoPor: varchar("creado_por").references(() => users.id),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const insertPesvComiteActaSchema = createInsertSchema(pesvComiteActas)
+  .omit({ id: true, createdAt: true, companyId: true, numeroActa: true })
+  .extend({
+    fechaReunion: z.string().min(1, "La fecha de reunión es obligatoria"),
+    temasOrdenDia: z.string().min(1, "Los temas del orden del día son obligatorios"),
+  });
+export type InsertPesvComiteActa = z.infer<typeof insertPesvComiteActaSchema>;
+export type PesvComiteActa = typeof pesvComiteActas.$inferSelect;
 
 // ============================================================================
 // MÓDULO DE CONTRATOS Y PERFILES DE CARGO - LEGISLACIÓN COLOMBIANA 2025
@@ -10000,3 +10075,96 @@ export const insertObjetivoEstandarVinculacionSchema = createInsertSchema(objeti
   .omit({ id: true, createdAt: true, companyId: true });
 export type InsertObjetivoEstandarVinculacion = z.infer<typeof insertObjetivoEstandarVinculacionSchema>;
 export type ObjetivoEstandarVinculacion = typeof objetivosEstandaresVinculacion.$inferSelect;
+
+// ============================================================================
+// COMITÉ DE SEGURIDAD VIAL (PESV - PASO 2)
+// Resolución 40595/2022 - Artículo 5 - Paso 2
+// Conformación del comité responsable de liderar la implementación del PESV
+// ============================================================================
+
+// Enum para roles del comité de seguridad vial
+export const rolComiteEnum = pgEnum("rol_comite_sv", [
+  "presidente",
+  "secretario",
+  "representante_direccion",
+  "representante_trabajadores",
+  "lider_pesv",
+  "coordinador_sst",
+  "otro"
+]);
+
+// Enum para estado de integrante
+export const estadoIntegranteComiteEnum = pgEnum("estado_integrante_comite", [
+  "activo",
+  "inactivo"
+]);
+
+// Enum para estado de acta
+export const estadoActaComiteEnum = pgEnum("estado_acta_comite", [
+  "borrador",
+  "aprobada",
+  "anulada"
+]);
+
+// Enum para modalidad de reunión
+export const modalidadReunionEnum = pgEnum("modalidad_reunion", [
+  "presencial",
+  "virtual",
+  "mixta"
+]);
+
+// Integrantes del Comité de Seguridad Vial
+export const comiteIntegrantesPesv = pgTable("comite_integrantes_pesv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  workerId: varchar("worker_id").references(() => workers.id),
+  
+  nombre: text("nombre").notNull(),
+  cargo: text("cargo").notNull(),
+  rol: rolComiteEnum("rol").notNull(),
+  email: text("email"),
+  telefono: text("telefono"),
+  fechaIngreso: date("fecha_ingreso").notNull(),
+  estado: estadoIntegranteComiteEnum("estado").notNull().default("activo"),
+  observaciones: text("observaciones"),
+  
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Actas de Reuniones del Comité de Seguridad Vial
+export const actasComitePesv = pgTable("actas_comite_pesv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  
+  numeroActa: integer("numero_acta").notNull(),
+  fechaReunion: date("fecha_reunion").notNull(),
+  horaInicio: text("hora_inicio"),
+  horaFin: text("hora_fin"),
+  lugar: text("lugar"),
+  modalidad: modalidadReunionEnum("modalidad").notNull().default("presencial"),
+  
+  temasOrdenDia: text("temas_orden_dia").notNull(),
+  desarrolloReunion: text("desarrollo_reunion"),
+  compromisos: text("compromisos"),
+  asistentesIds: text("asistentes_ids").array().default(sql`'{}'`),
+  invitados: text("invitados"),
+  proximaReunion: date("proxima_reunion"),
+  
+  estado: estadoActaComiteEnum("estado").notNull().default("borrador"),
+  observaciones: text("observaciones"),
+  
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Schemas de inserción para Comité PESV
+export const insertComiteIntegrantePesvSchema = createInsertSchema(comiteIntegrantesPesv)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
+export type InsertComiteIntegrantePesv = z.infer<typeof insertComiteIntegrantePesvSchema>;
+export type ComiteIntegrantePesv = typeof comiteIntegrantesPesv.$inferSelect;
+
+export const insertActaComitePesvSchema = createInsertSchema(actasComitePesv)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
+export type InsertActaComitePesv = z.infer<typeof insertActaComitePesvSchema>;
+export type ActaComitePesv = typeof actasComitePesv.$inferSelect;

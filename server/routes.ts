@@ -64,6 +64,10 @@ import {
   insertRoadSafetyTrainingSchema,
   insertRoadSafetyAttendeeSchema,
   insertPesvAuditSchema,
+  pesvComiteIntegrantes,
+  pesvComiteActas,
+  insertPesvComiteIntegranteSchema,
+  insertPesvComiteActaSchema,
   insertJobProfileSchema,
   insertContractSchema,
   insertMedicalExamSchema,
@@ -44772,6 +44776,138 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     } catch (error: any) {
       console.error("Error applying avance:", error);
       res.status(500).json({ error: error.message || "Error al aplicar avance" });
+    }
+  });
+
+  // ========== PESV - Comité de Seguridad Vial (Paso 2 - Res. 40595/2022) ==========
+  
+  // GET /api/pesv/comite/integrantes - Get all committee members
+  app.get("/api/pesv/comite/integrantes", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      const integrantes = await storage.getComiteIntegrantesPesv(companyId);
+      res.json(integrantes);
+    } catch (error: any) {
+      console.error("Error getting comite integrantes:", error);
+      res.status(500).json({ error: error.message || "Error al obtener integrantes del comité" });
+    }
+  });
+
+  // POST /api/pesv/comite/integrantes - Create new committee member
+  app.post("/api/pesv/comite/integrantes", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      const validated = schema.insertComiteIntegrantePesvSchema.parse(req.body);
+      const integrante = await storage.createComiteIntegrantePesv(validated, companyId);
+      res.status(201).json(integrante);
+    } catch (error: any) {
+      console.error("Error creating comite integrante:", error);
+      res.status(400).json({ error: error.message || "Error al crear integrante del comité" });
+    }
+  });
+
+  // PATCH /api/pesv/comite/integrantes/:id - Update committee member
+  app.patch("/api/pesv/comite/integrantes/:id", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      const validated = schema.insertComiteIntegrantePesvSchema.partial().parse(req.body);
+      const integrante = await storage.updateComiteIntegrantePesv(req.params.id, validated, companyId);
+      if (!integrante) {
+        return res.status(404).json({ error: "Integrante no encontrado" });
+      }
+      res.json(integrante);
+    } catch (error: any) {
+      console.error("Error updating comite integrante:", error);
+      res.status(400).json({ error: error.message || "Error al actualizar integrante del comité" });
+    }
+  });
+
+  // DELETE /api/pesv/comite/integrantes/:id - Delete committee member
+  app.delete("/api/pesv/comite/integrantes/:id", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      await storage.deleteComiteIntegrantePesv(req.params.id, companyId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting comite integrante:", error);
+      res.status(400).json({ error: error.message || "Error al eliminar integrante del comité" });
+    }
+  });
+
+  // GET /api/pesv/comite/actas - Get all committee meeting minutes
+  app.get("/api/pesv/comite/actas", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      const actas = await storage.getActasComitePesv(companyId);
+      res.json(actas);
+    } catch (error: any) {
+      console.error("Error getting comite actas:", error);
+      res.status(500).json({ error: error.message || "Error al obtener actas del comité" });
+    }
+  });
+
+  // POST /api/pesv/comite/actas - Create new meeting minutes
+  app.post("/api/pesv/comite/actas", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      const validated = schema.insertActaComitePesvSchema.parse(req.body);
+      const acta = await storage.createActaComitePesv(validated, companyId);
+      res.status(201).json(acta);
+    } catch (error: any) {
+      console.error("Error creating comite acta:", error);
+      res.status(400).json({ error: error.message || "Error al crear acta del comité" });
+    }
+  });
+
+  // PATCH /api/pesv/comite/actas/:id - Update meeting minutes
+  app.patch("/api/pesv/comite/actas/:id", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      const validated = schema.insertActaComitePesvSchema.partial().parse(req.body);
+      const acta = await storage.updateActaComitePesv(req.params.id, validated, companyId);
+      if (!acta) {
+        return res.status(404).json({ error: "Acta no encontrada" });
+      }
+      res.json(acta);
+    } catch (error: any) {
+      console.error("Error updating comite acta:", error);
+      res.status(400).json({ error: error.message || "Error al actualizar acta del comité" });
+    }
+  });
+
+  // DELETE /api/pesv/comite/actas/:id - Delete meeting minutes
+  app.delete("/api/pesv/comite/actas/:id", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      await storage.deleteActaComitePesv(req.params.id, companyId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting comite acta:", error);
+      res.status(400).json({ error: error.message || "Error al eliminar acta del comité" });
     }
   });
 

@@ -154,7 +154,7 @@ export const TRAZABILIDAD_PASOS_PESV: TrazabilidadPasoPesv[] = [
     descripcion: 'Conformación del comité responsable de liderar y apoyar la implementación del PESV',
     normativaAplicable: {
       resolucion40595: 'Artículo 5 - Paso 2',
-      decreto1072: 'Artículo 2.2.4.6.8.8 - Responsabilidades en SST',
+      decreto1072: 'Artículo 2.2.4.6.8 - Obligaciones de los empleadores',
       iso39001: 'Cláusula 5.3 - Roles organizacionales'
     },
     requisitosEspecificos: [

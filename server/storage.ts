@@ -628,6 +628,20 @@ export interface IStorage {
   createPesvAudit(audit: InsertPesvAudit, companyId: string): Promise<PesvAudit>;
   updatePesvAudit(id: string, audit: Partial<InsertPesvAudit>, companyId: string): Promise<PesvAudit | undefined>;
   deletePesvAudit(id: string, companyId: string): Promise<void>;
+
+  // PESV - Comité de Seguridad Vial (Paso 2 - Res. 40595/2022)
+  getComiteIntegrantesPesv(companyId: string): Promise<schema.ComiteIntegrantePesv[]>;
+  getComiteIntegrantePesv(id: string, companyId: string): Promise<schema.ComiteIntegrantePesv | undefined>;
+  createComiteIntegrantePesv(integrante: schema.InsertComiteIntegrantePesv, companyId: string): Promise<schema.ComiteIntegrantePesv>;
+  updateComiteIntegrantePesv(id: string, integrante: Partial<schema.InsertComiteIntegrantePesv>, companyId: string): Promise<schema.ComiteIntegrantePesv | undefined>;
+  deleteComiteIntegrantePesv(id: string, companyId: string): Promise<void>;
+
+  // PESV - Actas Comité Seguridad Vial (Paso 2)
+  getActasComitePesv(companyId: string): Promise<schema.ActaComitePesv[]>;
+  getActaComitePesv(id: string, companyId: string): Promise<schema.ActaComitePesv | undefined>;
+  createActaComitePesv(acta: schema.InsertActaComitePesv, companyId: string): Promise<schema.ActaComitePesv>;
+  updateActaComitePesv(id: string, acta: Partial<schema.InsertActaComitePesv>, companyId: string): Promise<schema.ActaComitePesv | undefined>;
+  deleteActaComitePesv(id: string, companyId: string): Promise<void>;
   
   // Job Profile methods (company-scoped)
   getJobProfiles(companyId: string): Promise<JobProfile[]>;
@@ -16571,6 +16585,97 @@ export class DbStorage implements IStorage {
     }
 
     return result;
+  }
+
+  // ============================================================================
+  // PESV - Comité de Seguridad Vial (Paso 2 - Res. 40595/2022)
+  // ============================================================================
+
+  async getComiteIntegrantesPesv(companyId: string): Promise<schema.ComiteIntegrantePesv[]> {
+    return await db.select()
+      .from(schema.comiteIntegrantesPesv)
+      .where(eq(schema.comiteIntegrantesPesv.companyId, companyId))
+      .orderBy(desc(schema.comiteIntegrantesPesv.createdAt));
+  }
+
+  async getComiteIntegrantePesv(id: string, companyId: string): Promise<schema.ComiteIntegrantePesv | undefined> {
+    const [integrante] = await db.select()
+      .from(schema.comiteIntegrantesPesv)
+      .where(and(
+        eq(schema.comiteIntegrantesPesv.id, id),
+        eq(schema.comiteIntegrantesPesv.companyId, companyId)
+      ));
+    return integrante;
+  }
+
+  async createComiteIntegrantePesv(integrante: schema.InsertComiteIntegrantePesv, companyId: string): Promise<schema.ComiteIntegrantePesv> {
+    const [created] = await db.insert(schema.comiteIntegrantesPesv)
+      .values({ ...integrante, companyId })
+      .returning();
+    return created;
+  }
+
+  async updateComiteIntegrantePesv(id: string, integrante: Partial<schema.InsertComiteIntegrantePesv>, companyId: string): Promise<schema.ComiteIntegrantePesv | undefined> {
+    const [updated] = await db.update(schema.comiteIntegrantesPesv)
+      .set({ ...integrante, updatedAt: new Date() })
+      .where(and(
+        eq(schema.comiteIntegrantesPesv.id, id),
+        eq(schema.comiteIntegrantesPesv.companyId, companyId)
+      ))
+      .returning();
+    return updated;
+  }
+
+  async deleteComiteIntegrantePesv(id: string, companyId: string): Promise<void> {
+    await db.delete(schema.comiteIntegrantesPesv)
+      .where(and(
+        eq(schema.comiteIntegrantesPesv.id, id),
+        eq(schema.comiteIntegrantesPesv.companyId, companyId)
+      ));
+  }
+
+  // PESV - Actas Comité Seguridad Vial
+  async getActasComitePesv(companyId: string): Promise<schema.ActaComitePesv[]> {
+    return await db.select()
+      .from(schema.actasComitePesv)
+      .where(eq(schema.actasComitePesv.companyId, companyId))
+      .orderBy(desc(schema.actasComitePesv.fechaReunion));
+  }
+
+  async getActaComitePesv(id: string, companyId: string): Promise<schema.ActaComitePesv | undefined> {
+    const [acta] = await db.select()
+      .from(schema.actasComitePesv)
+      .where(and(
+        eq(schema.actasComitePesv.id, id),
+        eq(schema.actasComitePesv.companyId, companyId)
+      ));
+    return acta;
+  }
+
+  async createActaComitePesv(acta: schema.InsertActaComitePesv, companyId: string): Promise<schema.ActaComitePesv> {
+    const [created] = await db.insert(schema.actasComitePesv)
+      .values({ ...acta, companyId })
+      .returning();
+    return created;
+  }
+
+  async updateActaComitePesv(id: string, acta: Partial<schema.InsertActaComitePesv>, companyId: string): Promise<schema.ActaComitePesv | undefined> {
+    const [updated] = await db.update(schema.actasComitePesv)
+      .set({ ...acta, updatedAt: new Date() })
+      .where(and(
+        eq(schema.actasComitePesv.id, id),
+        eq(schema.actasComitePesv.companyId, companyId)
+      ))
+      .returning();
+    return updated;
+  }
+
+  async deleteActaComitePesv(id: string, companyId: string): Promise<void> {
+    await db.delete(schema.actasComitePesv)
+      .where(and(
+        eq(schema.actasComitePesv.id, id),
+        eq(schema.actasComitePesv.companyId, companyId)
+      ));
   }
 }
 
