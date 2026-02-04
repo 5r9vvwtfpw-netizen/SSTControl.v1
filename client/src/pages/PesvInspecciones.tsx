@@ -192,7 +192,7 @@ export default function PesvInspecciones() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-4">
-        <Link href="/pesv/evaluaciones">
+        <Link href="/pesv">
           <Button variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver al Plan Estratégico de Seguridad Vial
