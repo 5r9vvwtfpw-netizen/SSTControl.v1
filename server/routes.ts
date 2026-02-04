@@ -66,6 +66,7 @@ import {
   insertPesvAuditSchema,
   pesvComiteIntegrantes,
   pesvComiteActas,
+  comiteIntegrantesPesv,
   insertPesvComiteIntegranteSchema,
   insertPesvComiteActaSchema,
   insertJobProfileSchema,
@@ -37121,11 +37122,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (workerId) {
         const [miembro] = await db
           .select()
-          .from(pesvComiteIntegrantes)
+          .from(comiteIntegrantesPesv)
           .where(
             and(
-              eq(pesvComiteIntegrantes.companyId, companyId),
-              eq(pesvComiteIntegrantes.workerId, workerId)
+              eq(comiteIntegrantesPesv.companyId, companyId),
+              eq(comiteIntegrantesPesv.workerId, workerId)
             )
           )
           .limit(1);
@@ -37136,8 +37137,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             rol: miembro.rol,
             cargo: miembro.cargo,
             fechaIngreso: miembro.fechaIngreso,
-            fechaRetiro: miembro.fechaRetiro,
-            estado: miembro.activo === 1 ? "activo" : "inactivo",
+            // fechaRetiro no existe en esta tabla
+            estado: miembro.estado,
             observaciones: miembro.observaciones,
           };
         }
