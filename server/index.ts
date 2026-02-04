@@ -188,6 +188,41 @@ app.post(
                     attempt 
                   }, 'Subscription activated after successful payment');
                   
+                  // Notificar a landing page sobre cupón redimido (SST-COLOMBIA-AGENT-INSTRUCTIONS2 Sección 3)
+                  const couponCode = session.metadata?.couponCode || session.metadata?.coupon_code;
+                  if (couponCode && couponCode !== 'none') {
+                    try {
+                      const webhookUrl = process.env.LANDING_PAGE_WEBHOOK_URL || 'https://sst-colombia.com.co/api/webhooks/coupon-redeemed';
+                      const webhookSecret = process.env.LANDING_PAGE_API_KEY;
+                      
+                      if (webhookSecret) {
+                        const webhookResponse = await fetch(webhookUrl, {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'X-Webhook-Secret': webhookSecret
+                          },
+                          body: JSON.stringify({
+                            coupon_code: couponCode,
+                            company_id: companyId,
+                            status: 'success',
+                            redeemed_at: new Date().toISOString()
+                          })
+                        });
+                        
+                        if (webhookResponse.ok) {
+                          logger.info({ couponCode, companyId }, '[Coupon-Webhook] Landing page notified of coupon redemption');
+                        } else {
+                          logger.warn({ couponCode, companyId, status: webhookResponse.status }, '[Coupon-Webhook] Failed to notify landing page');
+                        }
+                      } else {
+                        logger.warn({ couponCode, companyId }, '[Coupon-Webhook] No LANDING_PAGE_API_KEY configured, skipping notification');
+                      }
+                    } catch (couponWebhookError) {
+                      logger.error({ err: couponWebhookError, couponCode, companyId }, '[Coupon-Webhook] Error notifying landing page (non-critical)');
+                    }
+                  }
+                  
                   // Update pricing_plugin_subscriptions to active status
                   try {
                     const { pricingPluginSubscriptions } = await import('../pricing_plugin/schema');

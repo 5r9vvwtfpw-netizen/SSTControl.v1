@@ -109,3 +109,22 @@ Landing Page JWT → /api/verify-quote → sessionStorage → Form pre-fill
 - `server/services/stripe.ts`: `createDynamicCheckoutSession()` for COP pricing
 - `client/src/pages/AuthPage.tsx`: Quote token handling on registration
 - `client/src/pages/CrearEmpresaCiiuFirst.tsx`: Form pre-filling from quote
+
+### Coupon Redemption Webhook (Landing Page Sync)
+When a checkout with a coupon is completed, the system notifies the landing page to update coupon usage:
+- **Webhook Endpoint**: `POST https://sst-colombia.com.co/api/webhooks/coupon-redeemed`
+- **Trigger**: Called in `server/index.ts` after `checkout.session.completed` webhook event
+- **Authentication**: Uses `X-Webhook-Secret` header with `LANDING_PAGE_API_KEY` secret
+- **Payload**: `{ coupon_code, company_id, status: 'success', redeemed_at }`
+- **Environment Variable**: `LANDING_PAGE_WEBHOOK_URL` (optional, defaults to production URL)
+
+**COP Currency Handling:**
+- COP is a zero-decimal currency in Stripe (no centavos)
+- Never divide prices by 100 when displaying
+- Use `Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })`
+- Example: `1160000` displays as `$1.160.000` (not `$1,160.00`)
+
+**100% Discount Coupon Handling:**
+- When `current_period_price === 0`, system creates a 30-day trial instead of charging $0
+- Uses `trial_period_days: 30` in Stripe checkout session
+- No credit card charge required for trial period

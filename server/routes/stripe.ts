@@ -11,6 +11,50 @@ import {
   subscriptionMutationLimiter
 } from "../middleware/rate-limit";
 
+/**
+ * Notifica a la landing page (sst-colombia.com.co) cuando un cupón es redimido
+ * Implementa: SST-COLOMBIA-AGENT-INSTRUCTIONS2 - Sección 3
+ */
+async function notifyCouponRedeemed(couponCode: string, companyId: string): Promise<void> {
+  const webhookUrl = process.env.LANDING_PAGE_WEBHOOK_URL || 'https://sst-colombia.com.co/api/webhooks/coupon-redeemed';
+  const webhookSecret = process.env.LANDING_PAGE_API_KEY;
+  
+  if (!webhookSecret) {
+    logger.warn({ couponCode, companyId }, '[Coupon-Webhook] No LANDING_PAGE_API_KEY configured, skipping notification');
+    return;
+  }
+  
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Webhook-Secret': webhookSecret
+      },
+      body: JSON.stringify({
+        coupon_code: couponCode,
+        company_id: companyId,
+        status: 'success',
+        redeemed_at: new Date().toISOString()
+      })
+    });
+    
+    if (response.ok) {
+      logger.info({ couponCode, companyId }, '[Coupon-Webhook] Landing page notified of coupon redemption');
+    } else {
+      logger.warn({ 
+        couponCode, 
+        companyId, 
+        status: response.status,
+        statusText: response.statusText 
+      }, '[Coupon-Webhook] Failed to notify landing page');
+    }
+  } catch (error: any) {
+    // No bloquear el flujo principal si falla la notificación
+    logger.error({ err: error, couponCode, companyId }, '[Coupon-Webhook] Error notifying landing page');
+  }
+}
+
 export function registerStripeRoutes(app: Express) {
   
   app.get("/api/stripe/products", billingRateLimiter, requireAuth, async (req, res) => {
