@@ -856,6 +856,7 @@ const portalNavGroups = [
     icon: Car,
     items: [
       { id: "comite-pesv", label: "Comité de Seguridad Vial", icon: Shield },
+      { id: "capacitaciones-pesv", label: "Capacitaciones PESV", icon: GraduationCap },
     ]
   },
 ];
@@ -1087,6 +1088,7 @@ function WorkerPortal() {
         {activeSection === "mis-examenes-medicos" && <MisExamenesMedicosTab />}
         {activeSection === "mis-audiometrias" && <MisAudiometriasTab />}
         {activeSection === "comite-pesv" && <MiComitePesvTab />}
+        {activeSection === "capacitaciones-pesv" && <MisCapacitacionesPesvTab />}
       </div>
     </div>
   );
@@ -5126,6 +5128,177 @@ function MiComitePesvTab() {
                 Actualmente no está designado como integrante del Comité de Seguridad Vial de su empresa.
                 El nombramiento se realiza mediante acto administrativo según la Resolución 40595 de 2022.
               </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ==================== CAPACITACIONES PESV TAB ====================
+
+interface PesvCapacitacion {
+  id: string;
+  trainingId: string;
+  titulo: string;
+  descripcion: string | null;
+  fecha: string;
+  horaInicio: string | null;
+  horaFin: string | null;
+  lugar: string | null;
+  instructor: string | null;
+  temas: string[] | null;
+  estado: string;
+  invitado: boolean;
+  asistio: boolean;
+  notificadoEn: string | null;
+  confirmadoEn: string | null;
+}
+
+function MisCapacitacionesPesvTab() {
+  const { data, isLoading } = useQuery<{ capacitaciones: PesvCapacitacion[] }>({
+    queryKey: ["/api/portal/worker/pesv-capacitaciones"],
+  });
+
+  if (isLoading) {
+    return <CardSkeletonLoading rows={5} />;
+  }
+
+  const capacitaciones = data?.capacitaciones || [];
+  const pendientes = capacitaciones.filter(c => c.estado === "programada" || c.estado === "scheduled");
+  const completadas = capacitaciones.filter(c => c.estado === "completada" || c.estado === "completed");
+
+  return (
+    <div className="space-y-6">
+      <TrazabilidadPesvBanner codigoPaso="H02" compacto={false} />
+
+      <Card data-testid="card-capacitaciones-pesv-pendientes">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-100 dark:bg-amber-950 rounded-full">
+              <GraduationCap className="h-5 w-5 text-amber-600" />
+            </div>
+            <div>
+              <CardTitle className="text-lg" data-testid="text-titulo-capacitaciones-pesv">
+                Capacitaciones PESV Programadas
+              </CardTitle>
+              <CardDescription>
+                Capacitaciones de seguridad vial a las que ha sido invitado(a) según Resolución 40595/2022, Paso 10
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {pendientes.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="mx-auto w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mb-3">
+                <Calendar className="h-7 w-7 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground">No tiene capacitaciones PESV pendientes</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pendientes.map((cap) => (
+                <div 
+                  key={cap.id} 
+                  className="border rounded-lg p-4"
+                  data-testid={`card-capacitacion-pesv-${cap.id}`}
+                >
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold" data-testid={`text-titulo-${cap.id}`}>
+                        {cap.titulo}
+                      </h4>
+                      {cap.descripcion && (
+                        <p className="text-sm text-muted-foreground">{cap.descripcion}</p>
+                      )}
+                      <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          {format(new Date(cap.fecha), "d 'de' MMMM, yyyy", { locale: es })}
+                        </span>
+                        {cap.horaInicio && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {cap.horaInicio} {cap.horaFin && `- ${cap.horaFin}`}
+                          </span>
+                        )}
+                        {cap.lugar && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-4 w-4" />
+                            {cap.lugar}
+                          </span>
+                        )}
+                      </div>
+                      {cap.instructor && (
+                        <p className="text-sm">
+                          <span className="text-muted-foreground">Instructor:</span> {cap.instructor}
+                        </p>
+                      )}
+                      {cap.temas && cap.temas.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {cap.temas.map((tema, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">
+                              {tema}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      {cap.invitado && (
+                        <Badge className="bg-blue-600 text-white" data-testid={`badge-invitado-${cap.id}`}>
+                          <Bell className="h-3 w-3 mr-1" />
+                          Invitado
+                        </Badge>
+                      )}
+                      {cap.confirmadoEn && (
+                        <Badge className="bg-green-600 text-white" data-testid={`badge-confirmado-${cap.id}`}>
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Confirmado
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {completadas.length > 0 && (
+        <Card data-testid="card-capacitaciones-pesv-historial">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Historial de Capacitaciones PESV
+            </CardTitle>
+            <CardDescription>Capacitaciones completadas o pasadas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {completadas.map((cap) => (
+                <div 
+                  key={cap.id} 
+                  className="flex items-center justify-between border rounded-lg p-3"
+                  data-testid={`card-capacitacion-pesv-historial-${cap.id}`}
+                >
+                  <div>
+                    <p className="font-medium">{cap.titulo}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(cap.fecha), "d MMM yyyy", { locale: es })}
+                    </p>
+                  </div>
+                  <Badge 
+                    className={cap.asistio ? "bg-green-600 text-white" : "bg-red-600 text-white"}
+                    data-testid={`badge-asistencia-${cap.id}`}
+                  >
+                    {cap.asistio ? "Asistió" : "No asistió"}
+                  </Badge>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
