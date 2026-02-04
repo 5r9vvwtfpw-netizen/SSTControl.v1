@@ -55,6 +55,15 @@ Integration pattern: Import `usePesvStepPrefill(stepCode)` → render `SmartPref
 - **Hub pattern**: Links to related SST modules (Políticas, Designación Responsables, Asignación Recursos, Comité PESV)
 - **Implementation**: Add-Only principle followed (new file + new route, no modifications to existing code)
 
+**Bidirectional Traceability for Capacitaciones SST ↔ PESV**: Per Decreto 1072/2015 Art. 2.2.4.6.11, the system provides visual traceability between SST training programs and PESV road safety training. Key features:
+- **PESV → SST Direction**: `TrazabilidadCapacitacionesSstPesvBanner` with `direccion="pesv-to-sst"` (amber banner) in `/pesv/capacitaciones` links to `/programa-capacitacion-anual`
+- **SST → PESV Direction**: Same banner with `direccion="sst-to-pesv"` (green banner) in `/programa-capacitacion-anual` links to `/pesv/capacitaciones`
+- **PESV Summary in SST**: `CapacitacionesPesvResumen` component shows recent PESV trainings in SST page with "Origen: PESV" badges
+- **Data-testids**: `link-sst-capacitacion` (PESV→SST), `link-pesv-capacitacion` (SST→PESV), `link-ver-todas-pesv` (view all PESV)
+- **Normative references**: Dec. 1072/2015 Art. 2.2.4.6.11 (SST), Res. 40595/2022 Paso 10 (PESV), ISO 39001:2012 §7.2 (Competence)
+- **Design choice**: Visual traceability via banners and links (not database foreign keys) - training tables remain independent
+- **Implementation**: Add-Only principle followed (new components, minimal imports added to existing pages)
+
 The Promotions Plugin (`plugins/promotions/`) operates as an independent Sidecar Architecture module, handling promotional pricing, coupons, digital contracts with JWT-validated price locking, and a net-zero risk referral program ("Aliados 2026"). It communicates with the main system via the database and has dedicated API routes mounted at `/api/plugins/promotions/*`. It features its own database tables (`plugin_promotion_coupons`, `plugin_referral_ledger`, `plugin_digital_contracts`, `plugin_credit_usage_history`) and environment variables for functionality. A kill-switch protocol allows for its complete removal without affecting the main system.
 
 ## External Dependencies
