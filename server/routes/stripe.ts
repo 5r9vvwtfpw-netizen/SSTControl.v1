@@ -307,28 +307,30 @@ export function registerStripeRoutes(app: Express) {
         employees
       }, '[Quote-Checkout] JWT prices received');
 
-      // VALIDACIÓN: Los precios en COP deben ser razonables (mínimo ~50,000 COP)
-      // Si el precio es sospechosamente bajo, probablemente vino en centavos o mal calculado
-      const MIN_VALID_PRICE_COP = 50000; // $50,000 COP mínimo razonable
-      const MIN_SUBSCRIPTION_PRICE = 116000; // $116,000 COP (base + estándares mínimos)
+      // VALIDACIÓN: Los precios en COP deben ser razonables
+      // Precio mínimo de suscripción SST es ~116,000 COP
+      // Si el precio es < 50,000, probablemente vino dividido por 1000 (landing page bug)
+      // Si el precio está entre 50,000 y 116,000, probablemente vino dividido por 10
+      const MIN_VALID_PRICE_COP = 100000; // $100,000 COP - umbral para detectar formato incorrecto
+      const MIN_SUBSCRIPTION_PRICE = 116000; // $116,000 COP (base mínimo del sistema)
       
-      // Si el precio base es menor que el mínimo válido pero mayor que 0, 
-      // probablemente los precios vinieron en un formato incorrecto (dividido por 100)
+      // Detectar si el precio vino en formato incorrecto (dividido por 1000)
+      // Ejemplo: 1160 en lugar de 1,160,000
       if (baseMonthlyPrice > 0 && baseMonthlyPrice < MIN_VALID_PRICE_COP) {
         logger.warn({
           companyId,
           receivedPrice: baseMonthlyPrice,
-          correctedPrice: baseMonthlyPrice * 100
-        }, '[Quote-Checkout] Price suspiciously low, may be in wrong format. Multiplying by 100.');
+          correctedPrice: baseMonthlyPrice * 1000
+        }, '[Quote-Checkout] Price suspiciously low (< 100k COP), likely divided by 1000. Correcting...');
         
-        // Multiplicar por 100 para corregir el formato
-        baseMonthlyPrice = baseMonthlyPrice * 100;
+        // Multiplicar por 1000 para corregir el formato
+        baseMonthlyPrice = baseMonthlyPrice * 1000;
         if (currentPeriodPrice > 0) {
-          currentPeriodPrice = currentPeriodPrice * 100;
+          currentPeriodPrice = currentPeriodPrice * 1000;
         }
       }
 
-      // Asegurar que el precio base cumpla con el mínimo del sistema
+      // Validación secundaria: si después de corregir sigue bajo el mínimo, forzar mínimo
       if (baseMonthlyPrice > 0 && baseMonthlyPrice < MIN_SUBSCRIPTION_PRICE) {
         logger.warn({
           companyId,
