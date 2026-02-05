@@ -359,7 +359,9 @@ export const PASOS_PESV: PasoPesvData[] = [
     modulosSstUrls: [
       { nombre: 'Mantenimiento Preventivo', url: '/mantenimiento', icono: 'Settings' },
       { nombre: 'Equipos y Herramientas', url: '/equipos', icono: 'Wrench' }
-    ]
+    ],
+    moduloPesvUrl: '/pesv/mantenimiento',
+    moduloPesvNombre: 'Mantenimiento Vehicular'
   },
   {
     codigo: 'H06',
@@ -408,7 +410,9 @@ export const PASOS_PESV: PasoPesvData[] = [
     modulosSstRelacionados: ['indicadores'],
     modulosSstUrls: [
       { nombre: 'Indicadores SST', url: '/indicadores', icono: 'BarChart3' }
-    ]
+    ],
+    moduloPesvUrl: '/pesv/monitoreo-gps',
+    moduloPesvNombre: 'Monitoreo GPS/Velocidad'
   },
   {
     codigo: 'H08',
@@ -433,7 +437,9 @@ export const PASOS_PESV: PasoPesvData[] = [
     modulosSstRelacionados: ['iperc'],
     modulosSstUrls: [
       { nombre: 'Matriz IPERC', url: '/iperc', icono: 'AlertTriangle' }
-    ]
+    ],
+    moduloPesvUrl: '/pesv/rutas-seguras',
+    moduloPesvNombre: 'Rutas Seguras'
   },
   {
     codigo: 'H09',
