@@ -39,7 +39,15 @@ The system allows for PESV Training Notifications for Workers (Non-Drivers), ena
 
 The Promotions Plugin (`plugins/promotions/`) operates as an independent Sidecar Architecture module, handling promotional pricing, coupons, digital contracts with JWT-validated price locking, and a net-zero risk referral program. It communicates via the database, has dedicated API routes, its own database tables, and environment variables, with a kill-switch protocol for removal.
 
-Secure JWT verification is implemented for pricing quotes from the landing page (`sst-colombia.com.co`), ensuring data integrity and preventing tampering during the registration and checkout flow. This includes a robust mechanism for handling `?quote=JWT` parameters, pre-filling forms, and server-side verification before Stripe checkout. A coupon redemption webhook notifies the landing page upon successful coupon usage. COP currency is handled as a zero-decimal currency for Stripe transactions, and 100% discount coupons are converted into 30-day trials.
+The Landing Page Integration Plugin (`plugins/landing-page-integration/`) provides secure JWT verification for pricing quotes from the external landing page (`sst-colombia.com.co`). This plugin is encapsulated following Sidecar Architecture principles to isolate any changes from the main application. Key features:
+- **Stable Facade Interface**: Main app only imports from `facade.ts` (`verifyQuote`, `getQuoteSummary`) - internal changes don't break the app
+- **Kill Switch**: Call `disablePlugin()` to immediately disable all quote verifications without code changes
+- **Type-safe Contracts**: `NormalizedQuoteData` provides a consistent interface for the main app
+- **Backward Compatible**: Supports legacy base64 tokens during migration period
+- **Health Endpoint**: `/api/plugins/landing-page/health` for monitoring
+- **Environment**: Requires `LANDING_PAGE_API_KEY` secret for JWT verification
+
+The quote verification flow ensures data integrity during registration and checkout by using HMAC-SHA256 signed JWTs. Prices are NOT recalculated - the app trusts the signed JWT to prevent tampering. COP currency is handled as a zero-decimal currency for Stripe transactions, and 100% discount coupons are converted into 30-day trials.
 
 ## External Dependencies
 
