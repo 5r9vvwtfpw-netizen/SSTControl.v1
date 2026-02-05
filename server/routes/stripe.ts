@@ -271,11 +271,12 @@ export function registerStripeRoutes(app: Express) {
 
       // ========================================
       // VERIFICAR JWT SERVER-SIDE (Seguridad)
+      // Usa el plugin landing-page-integration para verificación
       // ========================================
-      let quoteData: import('../jwt-quote-verifier').QuotePayload;
+      let quoteData: import('../../plugins/landing-page-integration').QuotePayload;
       try {
-        const { decodeQuoteWithFallback } = await import('../jwt-quote-verifier');
-        quoteData = decodeQuoteWithFallback(validatedData.quoteToken);
+        const { getRawQuotePayload } = await import('../../plugins/landing-page-integration');
+        quoteData = getRawQuotePayload(validatedData.quoteToken);
       } catch (jwtError: any) {
         logger.warn({ 
           companyId, 

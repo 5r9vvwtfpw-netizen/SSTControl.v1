@@ -33,7 +33,7 @@ import { registerLicensedProfessionalsRoutes } from "./routes/licensed-professio
 import { registerRiesgosVinculacionRoutes } from "./routes/riesgos-vinculacion";
 import lsoDirectoryJwtRoutes from "./routes/lso-directory-jwt";
 import { legalDocsPdfService } from "./services/legal-docs-pdf";
-import { decodeQuoteWithFallback, getQuoteSummary, QuotePayload } from "./jwt-quote-verifier";
+import { verifyQuote, getQuoteSummary, type NormalizedQuoteData } from "../plugins/landing-page-integration";
 import { registerInduccionVirtualRoutes } from "./induccion-virtual-routes";
 import { checkWorkerLimit, checkUserLimit } from "./middleware/subscription-limits";
 import { calcularIndicador, parsePeriodoToDateRange } from "./indicadores-calculators";
@@ -1768,46 +1768,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // QUOTE JWT VERIFICATION - Verifica cotizaciones firmadas desde landing page
   // ============================================================================
   app.post("/api/verify-quote", async (req, res) => {
-    try {
-      const { token } = req.body;
-      
-      if (!token || typeof token !== 'string') {
-        return res.status(400).json({ 
-          error: "Token de cotización requerido",
-          valid: false 
-        });
-      }
-      
-      const quoteData = decodeQuoteWithFallback(token);
-      
-      console.log(`[Quote] ✅ Verified: ${getQuoteSummary(quoteData)}`);
-      
-      return res.json({
-        valid: true,
-        data: {
-          // Datos de empresa (para pre-llenar Paso 2)
-          companyName: quoteData.metadata.company_name || null,
-          employees: quoteData.metadata.employees,
-          riskLevel: quoteData.metadata.risk_level,
-          vehicles: quoteData.metadata.vehicles,
-          ciiuCode: quoteData.metadata.ciiu_code || null,
-          standardsCount: quoteData.metadata.standards_count || null,
-          // Datos de facturación (para Stripe checkout)
-          couponCode: quoteData.metadata.coupon_code,
-          baseMonthlyPrice: quoteData.sub_data.base_monthly_price,
-          currentPeriodPrice: quoteData.sub_data.current_period_price,
-          discountDurationMonths: quoteData.sub_data.discount_duration_months,
-          referrerId: quoteData.referral?.referrer_id || null,
-          currency: quoteData.sub_data.currency
-        }
-      });
-    } catch (error) {
-      console.error("[Quote] ❌ Verification failed:", error);
-      return res.status(400).json({
-        valid: false,
-        error: error instanceof Error ? error.message : "Error al verificar cotización"
+    const { token } = req.body;
+    
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ 
+        error: "Token de cotización requerido",
+        valid: false 
       });
     }
+    
+    const result = verifyQuote(token);
+    
+    if (!result.valid) {
+      console.error("[Quote] ❌ Verification failed:", result.error);
+      return res.status(400).json(result);
+    }
+    
+    console.log(`[Quote] ✅ Verified: ${getQuoteSummary(result.data!)}`);
+    
+    return res.json({
+      valid: true,
+      data: result.data
+    });
   });
 
   app.post("/api/my-company", requireAuth, async (req, res) => {

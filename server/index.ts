@@ -41,6 +41,7 @@ import path from "path";
 // Plugin imports (Arquitectura Sidecar - Solo añadir, no modificar código existente)
 import { promotionsRouter } from "../plugins/promotions";
 import { handlePromotionsWebhook } from "../plugins/promotions/webhook-handler";
+import { landingPageRouter } from "../plugins/landing-page-integration";
 
 const app = express();
 
@@ -708,6 +709,13 @@ app.use(requireValidLicense);
     logger.info("✅ Plugin de Promociones montado en /api/plugins/promotions");
   } catch (error) {
     logger.warn({ err: error }, "⚠️ Plugin de Promociones no disponible (no crítico)");
+  }
+  
+  try {
+    app.use("/api/plugins/landing-page", landingPageRouter);
+    logger.info("✅ Plugin Landing Page Integration montado en /api/plugins/landing-page");
+  } catch (error) {
+    logger.warn({ err: error }, "⚠️ Plugin Landing Page no disponible (no crítico)");
   }
 
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
