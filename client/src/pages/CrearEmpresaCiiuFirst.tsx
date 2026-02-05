@@ -114,6 +114,7 @@ export default function CrearEmpresaCiiuFirst() {
       ciiuCode: quoteData?.ciiuCode || "",
       address: "",
       contactPhone: "",
+      // Pre-llenar email de contacto desde el usuario registrado
       contactEmail: "",
       // Pre-llenar número de trabajadores desde quote o URL
       numberOfWorkers: quoteData?.employees || (isNaN(initialWorkers) || initialWorkers < 1 ? 1 : initialWorkers),
@@ -121,6 +122,13 @@ export default function CrearEmpresaCiiuFirst() {
       riskLevel: quoteData?.riskLevel || "I",
     },
   });
+
+  // Pre-llenar email de contacto cuando el usuario esté disponible
+  useEffect(() => {
+    if (user?.email && !form.getValues("contactEmail")) {
+      form.setValue("contactEmail", user.email);
+    }
+  }, [user, form]);
 
   const watchedWorkers = form.watch("numberOfWorkers");
   const watchedCiiu = form.watch("ciiuCode");
