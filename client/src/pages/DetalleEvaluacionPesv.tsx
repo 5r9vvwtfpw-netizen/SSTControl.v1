@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Check, X, MinusCircle, RefreshCcw, FileText, Car, ClipboardList, Hammer, CheckSquare, AlertCircle, ClipboardCheck, AlertTriangle, GraduationCap, ExternalLink } from "lucide-react";
+import { ArrowLeft, Save, Check, X, MinusCircle, RefreshCcw, FileText, Car, ClipboardList, Hammer, CheckSquare, AlertCircle, ClipboardCheck, AlertTriangle, GraduationCap, ExternalLink, Users, Stethoscope, Wrench, Settings, BarChart3, Activity, Siren, AlertOctagon, LucideIcon } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -20,9 +20,23 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation, useParams } from "wouter";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
-import { NIVELES_PESV_LABELS, FASES_PESV_LABELS, FASES_PESV_COLORS, PASOS_PESV, PasoPesvData } from "@/data/pasos-pesv";
+import { NIVELES_PESV_LABELS, FASES_PESV_LABELS, FASES_PESV_COLORS, PASOS_PESV, PasoPesvData, ModuloSstUrl } from "@/data/pasos-pesv";
 
 type FasePHVA = "planear" | "hacer" | "verificar" | "actuar";
+
+// ADD-ONLY: Helper para mapear nombres de iconos a componentes Lucide
+const ICONO_MAP: Record<string, LucideIcon> = {
+  Users,
+  Stethoscope,
+  Wrench,
+  ClipboardCheck,
+  Settings,
+  BarChart3,
+  AlertTriangle,
+  Activity,
+  Siren,
+  AlertOctagon,
+};
 
 export default function DetalleEvaluacionPesv() {
   const { id } = useParams();
@@ -769,6 +783,33 @@ export default function DetalleEvaluacionPesv() {
                       Ir a {selectedPaso.moduloPesvNombre}
                     </Button>
                   </Link>
+                </div>
+              )}
+
+              {/* ADD-ONLY: Botones para ir a módulos SST relacionados */}
+              {selectedPaso?.modulosSstUrls && selectedPaso.modulosSstUrls.length > 0 && (
+                <div className="border-t pt-4">
+                  <p className="text-sm font-medium text-muted-foreground mb-3">
+                    Trazabilidad con SST (Decreto 1072/2015)
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {selectedPaso.modulosSstUrls.map((modulo: ModuloSstUrl) => {
+                      const IconComponent = modulo.icono ? ICONO_MAP[modulo.icono] : ExternalLink;
+                      return (
+                        <Link key={modulo.url} href={modulo.url}>
+                          <Button 
+                            type="button" 
+                            variant="outline"
+                            className="w-full gap-2 border-blue-300 text-blue-700 font-medium"
+                            data-testid={`button-ir-sst-${modulo.url.replace('/', '')}`}
+                          >
+                            {IconComponent && <IconComponent className="h-4 w-4" />}
+                            Ir a {modulo.nombre}
+                          </Button>
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
