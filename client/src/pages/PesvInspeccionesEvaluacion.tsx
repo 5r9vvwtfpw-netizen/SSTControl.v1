@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, ArrowLeft, Eye, ClipboardCheck, Calendar, Car, User } from "lucide-react";
+import { Plus, ArrowLeft, Eye, ClipboardCheck, Calendar, Car, User, Target } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -140,6 +140,15 @@ export default function PesvInspeccionesEvaluacion() {
         currentPhase="hacer"
         isLoading={evaluacionLoading}
       />
+
+      <div className="flex justify-end mb-4">
+        <Link href="/pesv/evaluaciones">
+          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
+            <Target className="h-4 w-4 mr-2" />
+            Ir a Evaluación PESV
+          </Button>
+        </Link>
+      </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
