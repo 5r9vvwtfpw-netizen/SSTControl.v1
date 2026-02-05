@@ -194,7 +194,7 @@ export default function PesvMonitoreoGps() {
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-4">
         <Link href="/pesv">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" data-testid="button-back-pesv">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver al Plan Estratégico de Seguridad Vial
           </Button>
@@ -249,12 +249,12 @@ export default function PesvMonitoreoGps() {
                 Nuevo Registro GPS
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="dialog-tracking">
               <DialogHeader>
                 <DialogTitle>Registrar Monitoreo GPS</DialogTitle>
                 <DialogDescription>Complete los datos del registro de monitoreo GPS/Velocidad</DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4" data-testid="form-gps-tracking">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="vehicleId">Vehículo *</Label>

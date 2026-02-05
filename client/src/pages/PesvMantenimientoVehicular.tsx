@@ -281,12 +281,12 @@ export default function PesvMantenimientoVehicular() {
                 Nuevo Mantenimiento
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="dialog-maintenance">
               <DialogHeader>
                 <DialogTitle>{editingMaintenance ? "Editar Mantenimiento" : "Registrar Nuevo Mantenimiento"}</DialogTitle>
                 <DialogDescription>Complete los datos del mantenimiento vehicular</DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4" data-testid="form-maintenance">
                 <div className="grid grid-cols-2 gap-4">
                   {currentCompany && (
                     <div className="space-y-2 col-span-2">

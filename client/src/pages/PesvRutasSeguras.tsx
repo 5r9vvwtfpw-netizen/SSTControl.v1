@@ -286,12 +286,12 @@ export default function PesvRutasSeguras() {
                 Nueva Ruta Segura
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="dialog-route">
               <DialogHeader>
                 <DialogTitle>{editingRoute ? "Editar Ruta Segura" : "Registrar Nueva Ruta Segura"}</DialogTitle>
                 <DialogDescription>Complete los datos de la ruta segura</DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4" data-testid="form-route">
                 <div className="grid grid-cols-2 gap-4">
                   {currentCompany && (
                     <div className="space-y-2 col-span-2">
