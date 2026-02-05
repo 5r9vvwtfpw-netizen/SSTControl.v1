@@ -9,6 +9,13 @@
  * - Actuar: 2 pasos
  */
 
+// ADD-ONLY: Interfaz para URLs de módulos SST relacionados
+export interface ModuloSstUrl {
+  nombre: string;
+  url: string;
+  icono?: string; // Nombre del icono de Lucide
+}
+
 export interface PasoPesvData {
   codigo: string;
   numero: number;
@@ -25,6 +32,8 @@ export interface PasoPesvData {
   // ADD-ONLY: Navegación a módulos PESV desde la evaluación
   moduloPesvUrl?: string;
   moduloPesvNombre?: string;
+  // ADD-ONLY: Navegación bidireccional a módulos SST
+  modulosSstUrls?: ModuloSstUrl[];
 }
 
 export const PASOS_PESV: PasoPesvData[] = [
@@ -243,7 +252,11 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Certificados de aptitud',
       'Matriz de documentos de conductores'
     ],
-    modulosSstRelacionados: ['trabajadores', 'examenes-medicos']
+    modulosSstRelacionados: ['trabajadores', 'examenes-medicos'],
+    modulosSstUrls: [
+      { nombre: 'Gestión de Trabajadores', url: '/trabajadores', icono: 'Users' },
+      { nombre: 'Exámenes Médicos', url: '/examenes-medicos', icono: 'Stethoscope' }
+    ]
   },
   {
     codigo: 'H02',
@@ -290,7 +303,10 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Reportes de consulta SIMIT',
       'Certificados de antecedentes'
     ],
-    modulosSstRelacionados: ['trabajadores']
+    modulosSstRelacionados: ['trabajadores'],
+    modulosSstUrls: [
+      { nombre: 'Gestión de Trabajadores', url: '/trabajadores', icono: 'Users' }
+    ]
   },
   {
     codigo: 'H04',
@@ -313,7 +329,11 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Pólizas SOAT',
       'Tarjetas de propiedad'
     ],
-    modulosSstRelacionados: ['equipos', 'inspecciones']
+    modulosSstRelacionados: ['equipos', 'inspecciones'],
+    modulosSstUrls: [
+      { nombre: 'Equipos y Herramientas', url: '/equipos', icono: 'Wrench' },
+      { nombre: 'Inspecciones SST', url: '/inspecciones', icono: 'ClipboardCheck' }
+    ]
   },
   {
     codigo: 'H05',
@@ -335,7 +355,11 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Hojas de vida de vehículos',
       'Órdenes de trabajo'
     ],
-    modulosSstRelacionados: ['mantenimiento', 'equipos']
+    modulosSstRelacionados: ['mantenimiento', 'equipos'],
+    modulosSstUrls: [
+      { nombre: 'Mantenimiento Preventivo', url: '/mantenimiento', icono: 'Settings' },
+      { nombre: 'Equipos y Herramientas', url: '/equipos', icono: 'Wrench' }
+    ]
   },
   {
     codigo: 'H06',
@@ -381,7 +405,10 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Reportes de monitoreo',
       'Estadísticas de excesos'
     ],
-    modulosSstRelacionados: ['indicadores']
+    modulosSstRelacionados: ['indicadores'],
+    modulosSstUrls: [
+      { nombre: 'Indicadores SST', url: '/indicadores', icono: 'BarChart3' }
+    ]
   },
   {
     codigo: 'H08',
@@ -403,7 +430,10 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Mapa de puntos críticos',
       'Plan de rutas alternas'
     ],
-    modulosSstRelacionados: ['iperc']
+    modulosSstRelacionados: ['iperc'],
+    modulosSstUrls: [
+      { nombre: 'Matriz IPERC', url: '/iperc', icono: 'AlertTriangle' }
+    ]
   },
   {
     codigo: 'H09',
@@ -425,7 +455,11 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Registros de horas de conducción',
       'Capacitaciones sobre fatiga'
     ],
-    modulosSstRelacionados: ['sve', 'examenes-medicos']
+    modulosSstRelacionados: ['sve', 'examenes-medicos'],
+    modulosSstUrls: [
+      { nombre: 'Sistema de Vigilancia Epidemiológica', url: '/sve', icono: 'Activity' },
+      { nombre: 'Exámenes Médicos', url: '/examenes-medicos', icono: 'Stethoscope' }
+    ]
   },
   {
     codigo: 'H10',
@@ -447,7 +481,11 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Registros de pruebas',
       'Capacitaciones de prevención'
     ],
-    modulosSstRelacionados: ['sve', 'examenes-medicos']
+    modulosSstRelacionados: ['sve', 'examenes-medicos'],
+    modulosSstUrls: [
+      { nombre: 'Sistema de Vigilancia Epidemiológica', url: '/sve', icono: 'Activity' },
+      { nombre: 'Exámenes Médicos', url: '/examenes-medicos', icono: 'Stethoscope' }
+    ]
   },
   {
     codigo: 'H11',
@@ -469,7 +507,11 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Directorio de emergencias',
       'Convenios con IPS'
     ],
-    modulosSstRelacionados: ['emergencias', 'accidentes']
+    modulosSstRelacionados: ['emergencias', 'accidentes'],
+    modulosSstUrls: [
+      { nombre: 'Plan de Emergencias', url: '/emergencias', icono: 'Siren' },
+      { nombre: 'Accidentes de Trabajo', url: '/accidentes', icono: 'AlertOctagon' }
+    ]
   },
 
   // ==================== VERIFICAR (3 pasos) ====================
