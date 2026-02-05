@@ -43726,6 +43726,194 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // ==================== Evaluation-Scoped PESV Module Endpoints ====================
+
+  // GET /api/evaluaciones-pesv/:evaluacionId/inspecciones - Get vehicle inspections for a specific PESV evaluation
+  app.get('/api/evaluaciones-pesv/:evaluacionId/inspecciones', requireAuth, async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      const evaluacionId = req.params.evaluacionId;
+
+      // Get evaluation to verify access
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, evaluacionId));
+
+      if (!evaluacion) {
+        return res.status(404).send('Evaluación PESV no encontrada');
+      }
+
+      // Verify user has access to the company
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send('No tienes acceso a esta evaluación');
+      }
+
+      const inspecciones = await storage.getVehicleInspectionsByEvaluacion(evaluacion.companyId, evaluacionId);
+      res.json(inspecciones);
+    } catch (error: any) {
+      console.error('Error fetching inspecciones for evaluación PESV:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/evaluaciones-pesv/:evaluacionId/siniestros - Get road incidents for a specific PESV evaluation
+  app.get('/api/evaluaciones-pesv/:evaluacionId/siniestros', requireAuth, async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      const evaluacionId = req.params.evaluacionId;
+
+      // Get evaluation to verify access
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, evaluacionId));
+
+      if (!evaluacion) {
+        return res.status(404).send('Evaluación PESV no encontrada');
+      }
+
+      // Verify user has access to the company
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send('No tienes acceso a esta evaluación');
+      }
+
+      const siniestros = await storage.getRoadIncidentsByEvaluacion(evaluacion.companyId, evaluacionId);
+      res.json(siniestros);
+    } catch (error: any) {
+      console.error('Error fetching siniestros for evaluación PESV:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/evaluaciones-pesv/:evaluacionId/capacitaciones - Get road safety trainings for a specific PESV evaluation
+  app.get('/api/evaluaciones-pesv/:evaluacionId/capacitaciones', requireAuth, async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      const evaluacionId = req.params.evaluacionId;
+
+      // Get evaluation to verify access
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, evaluacionId));
+
+      if (!evaluacion) {
+        return res.status(404).send('Evaluación PESV no encontrada');
+      }
+
+      // Verify user has access to the company
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send('No tienes acceso a esta evaluación');
+      }
+
+      const capacitaciones = await storage.getRoadSafetyTrainingsByEvaluacion(evaluacion.companyId, evaluacionId);
+      res.json(capacitaciones);
+    } catch (error: any) {
+      console.error('Error fetching capacitaciones for evaluación PESV:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/evaluaciones-pesv/:evaluacionId/inspecciones - Create vehicle inspection linked to PESV evaluation
+  app.post('/api/evaluaciones-pesv/:evaluacionId/inspecciones', requireAuth, async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      const evaluacionId = req.params.evaluacionId;
+
+      // Get evaluation to verify access
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, evaluacionId));
+
+      if (!evaluacion) {
+        return res.status(404).send('Evaluación PESV no encontrada');
+      }
+
+      // Verify user has access to the company
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send('No tienes acceso a esta evaluación');
+      }
+
+      const validatedData = insertVehicleInspectionSchema.parse(req.body);
+      const inspection = await storage.createVehicleInspection({
+        ...validatedData,
+        evaluacionPesvId: evaluacionId,
+      }, evaluacion.companyId);
+      res.status(201).json(inspection);
+    } catch (error: any) {
+      console.error('Error creating inspección for evaluación PESV:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/evaluaciones-pesv/:evaluacionId/siniestros - Create road incident linked to PESV evaluation
+  app.post('/api/evaluaciones-pesv/:evaluacionId/siniestros', requireAuth, async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      const evaluacionId = req.params.evaluacionId;
+
+      // Get evaluation to verify access
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, evaluacionId));
+
+      if (!evaluacion) {
+        return res.status(404).send('Evaluación PESV no encontrada');
+      }
+
+      // Verify user has access to the company
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send('No tienes acceso a esta evaluación');
+      }
+
+      const validatedData = insertRoadIncidentSchema.parse(req.body);
+      const incident = await storage.createRoadIncident({
+        ...validatedData,
+        evaluacionPesvId: evaluacionId,
+      }, evaluacion.companyId);
+      res.status(201).json(incident);
+    } catch (error: any) {
+      console.error('Error creating siniestro for evaluación PESV:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/evaluaciones-pesv/:evaluacionId/capacitaciones - Create road safety training linked to PESV evaluation
+  app.post('/api/evaluaciones-pesv/:evaluacionId/capacitaciones', requireAuth, async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      const evaluacionId = req.params.evaluacionId;
+
+      // Get evaluation to verify access
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, evaluacionId));
+
+      if (!evaluacion) {
+        return res.status(404).send('Evaluación PESV no encontrada');
+      }
+
+      // Verify user has access to the company
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send('No tienes acceso a esta evaluación');
+      }
+
+      const validatedData = insertRoadSafetyTrainingSchema.parse(req.body);
+      const training = await storage.createRoadSafetyTraining({
+        ...validatedData,
+        evaluacionPesvId: evaluacionId,
+      }, evaluacion.companyId);
+      res.status(201).json(training);
+    } catch (error: any) {
+      console.error('Error creating capacitación for evaluación PESV:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
   // ==================== ISO 31000 - Gestión de Riesgos Viales PESV ====================
   
   // Helper functions for risk calculation

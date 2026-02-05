@@ -617,6 +617,11 @@ export interface IStorage {
   updateRoadSafetyTraining(id: string, training: Partial<InsertRoadSafetyTraining>, companyId: string): Promise<RoadSafetyTraining | undefined>;
   deleteRoadSafetyTraining(id: string, companyId: string): Promise<void>;
 
+  // PESV - Evaluation-scoped query methods (for filtering by evaluacionPesvId)
+  getVehicleInspectionsByEvaluacion(companyId: string, evaluacionPesvId: string): Promise<VehicleInspection[]>;
+  getRoadIncidentsByEvaluacion(companyId: string, evaluacionPesvId: string): Promise<RoadIncident[]>;
+  getRoadSafetyTrainingsByEvaluacion(companyId: string, evaluacionPesvId: string): Promise<RoadSafetyTraining[]>;
+
   // PESV - Road Safety Attendee methods (company-scoped via training)
   getRoadSafetyAttendees(trainingId: string, companyId: string): Promise<RoadSafetyAttendee[]>;
   addRoadSafetyAttendee(attendee: InsertRoadSafetyAttendee, companyId: string): Promise<RoadSafetyAttendee>;
@@ -4213,6 +4218,34 @@ export class DbStorage implements IStorage {
         eq(schema.roadSafetyTrainings.id, id),
         eq(schema.roadSafetyTrainings.companyId, companyId)
       ));
+  }
+
+  // Evaluation-scoped query methods (for filtering by evaluacionPesvId)
+  async getVehicleInspectionsByEvaluacion(companyId: string, evaluacionPesvId: string): Promise<VehicleInspection[]> {
+    return await db.select().from(schema.vehicleInspections)
+      .where(and(
+        eq(schema.vehicleInspections.companyId, companyId),
+        eq(schema.vehicleInspections.evaluacionPesvId, evaluacionPesvId)
+      ))
+      .orderBy(desc(schema.vehicleInspections.createdAt));
+  }
+
+  async getRoadIncidentsByEvaluacion(companyId: string, evaluacionPesvId: string): Promise<RoadIncident[]> {
+    return await db.select().from(schema.roadIncidents)
+      .where(and(
+        eq(schema.roadIncidents.companyId, companyId),
+        eq(schema.roadIncidents.evaluacionPesvId, evaluacionPesvId)
+      ))
+      .orderBy(desc(schema.roadIncidents.createdAt));
+  }
+
+  async getRoadSafetyTrainingsByEvaluacion(companyId: string, evaluacionPesvId: string): Promise<RoadSafetyTraining[]> {
+    return await db.select().from(schema.roadSafetyTrainings)
+      .where(and(
+        eq(schema.roadSafetyTrainings.companyId, companyId),
+        eq(schema.roadSafetyTrainings.evaluacionPesvId, evaluacionPesvId)
+      ))
+      .orderBy(desc(schema.roadSafetyTrainings.createdAt));
   }
 
   // Road Safety Attendee methods (company-scoped via training)
