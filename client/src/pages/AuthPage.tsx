@@ -77,11 +77,11 @@ export default function AuthPage() {
     if (mode === "register") {
       setActiveTab("register");
     }
-    // Si viene desde página de marketing con parámetros, mostrar registro
-    if (urlPlan || urlWorkers) {
+    // Si viene desde página de marketing o landing page con parámetros, mostrar registro
+    if (urlPlan || urlWorkers || urlQuote) {
       setActiveTab("register");
     }
-  }, [urlPlan, urlWorkers]);
+  }, [urlPlan, urlWorkers, urlQuote]);
 
   useEffect(() => {
     if (verified === "true") {
