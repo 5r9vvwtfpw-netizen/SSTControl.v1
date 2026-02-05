@@ -10,10 +10,18 @@
  * - Prices are NOT recalculated - we trust the signed JWT
  * 
  * @module plugins/landing-page-integration/verifier
+ * @version 1.0.0
  */
 
 import jwt from "jsonwebtoken";
 import type { QuotePayload, PluginConfig } from "./types";
+
+const VALID_RISK_LEVELS = ['I', 'II', 'III', 'IV', 'V'] as const;
+const MAX_TOKEN_LENGTH = 5000;
+const MAX_PRICE = 100_000_000;
+const MAX_EMPLOYEES = 10_000;
+const MAX_VEHICLES = 1_000;
+const MAX_DISCOUNT_MONTHS = 24;
 
 /**
  * Validates the structure of a decoded JWT payload
@@ -26,20 +34,33 @@ function validatePayloadStructure(payload: unknown): payload is QuotePayload {
   
   if (!p.sub_data || typeof p.sub_data !== 'object') return false;
   const subData = p.sub_data as Record<string, unknown>;
-  if (typeof subData.base_monthly_price !== 'number') return false;
-  if (typeof subData.current_period_price !== 'number') return false;
-  if (typeof subData.discount_duration_months !== 'number') return false;
-  if (subData.currency !== 'COP') return false;
   
-  if (subData.base_monthly_price < 0 || subData.base_monthly_price > 100000000) return false;
-  if (subData.current_period_price < 0 || subData.current_period_price > 100000000) return false;
-  if (subData.discount_duration_months < 0 || subData.discount_duration_months > 24) return false;
+  if (typeof subData.base_monthly_price !== 'number' ||
+      subData.base_monthly_price < 0 || 
+      subData.base_monthly_price > MAX_PRICE) return false;
+  
+  if (typeof subData.current_period_price !== 'number' ||
+      subData.current_period_price < 0 || 
+      subData.current_period_price > MAX_PRICE) return false;
+  
+  if (typeof subData.discount_duration_months !== 'number' ||
+      subData.discount_duration_months < 0 || 
+      subData.discount_duration_months > MAX_DISCOUNT_MONTHS) return false;
+  
+  if (subData.currency !== 'COP') return false;
   
   if (!p.metadata || typeof p.metadata !== 'object') return false;
   const metadata = p.metadata as Record<string, unknown>;
-  if (typeof metadata.employees !== 'number' || metadata.employees < 1 || metadata.employees > 10000) return false;
-  if (!['I', 'II', 'III', 'IV', 'V'].includes(metadata.risk_level as string)) return false;
-  if (typeof metadata.vehicles !== 'number' || metadata.vehicles < 0 || metadata.vehicles > 1000) return false;
+  
+  if (typeof metadata.employees !== 'number' || 
+      metadata.employees < 1 || 
+      metadata.employees > MAX_EMPLOYEES) return false;
+  
+  if (!VALID_RISK_LEVELS.includes(metadata.risk_level as typeof VALID_RISK_LEVELS[number])) return false;
+  
+  if (typeof metadata.vehicles !== 'number' || 
+      metadata.vehicles < 0 || 
+      metadata.vehicles > MAX_VEHICLES) return false;
   
   if (metadata.coupon_code !== null && typeof metadata.coupon_code !== 'string') return false;
   
@@ -58,11 +79,10 @@ function validatePayloadStructure(payload: unknown): payload is QuotePayload {
  */
 export function verifyJWT(token: string, config: PluginConfig): QuotePayload {
   if (!config.jwtSecret) {
-    console.error("[LandingPagePlugin] JWT secret not configured");
     throw new Error("Configuración de seguridad incompleta");
   }
   
-  if (!token || typeof token !== 'string' || token.length > 5000) {
+  if (!token || typeof token !== 'string' || token.length > MAX_TOKEN_LENGTH) {
     throw new Error("Token de cotización inválido");
   }
   
@@ -73,25 +93,15 @@ export function verifyJWT(token: string, config: PluginConfig): QuotePayload {
     });
     
     if (!validatePayloadStructure(decoded)) {
-      console.error("[LandingPagePlugin] Payload structure validation failed");
       throw new Error("Estructura de cotización inválida");
     }
-    
-    console.log("[LandingPagePlugin] ✅ JWT verified successfully", {
-      employees: (decoded as QuotePayload).metadata.employees,
-      riskLevel: (decoded as QuotePayload).metadata.risk_level,
-      coupon: (decoded as QuotePayload).metadata.coupon_code || 'none',
-      hasReferral: !!(decoded as QuotePayload).referral
-    });
     
     return decoded as QuotePayload;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      console.warn("[LandingPagePlugin] Token expired");
       throw new Error("La cotización ha expirado. Por favor, genera una nueva desde la página principal.");
     }
     if (error instanceof jwt.JsonWebTokenError) {
-      console.warn("[LandingPagePlugin] Invalid token:", error.message);
       throw new Error("Cotización inválida o manipulada.");
     }
     throw error;
@@ -99,8 +109,7 @@ export function verifyJWT(token: string, config: PluginConfig): QuotePayload {
 }
 
 /**
- * Decodes a token with fallback to legacy base64 format
- * For backward compatibility during migration period
+ * Decodes a token (JWT format only)
  */
 export function decodeWithFallback(token: string, config: PluginConfig): QuotePayload {
   if (!token || typeof token !== 'string') {
@@ -109,25 +118,9 @@ export function decodeWithFallback(token: string, config: PluginConfig): QuotePa
   
   const jwtPattern = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
   
-  if (jwtPattern.test(token)) {
-    return verifyJWT(token, config);
-  }
-  
-  if (!config.allowLegacyBase64) {
+  if (!jwtPattern.test(token)) {
     throw new Error("Formato de token no soportado");
   }
   
-  try {
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString('utf-8'));
-    
-    if (!validatePayloadStructure(decoded)) {
-      throw new Error("Estructura de cotización legacy inválida");
-    }
-    
-    console.warn("[LandingPagePlugin] ⚠️ WARNING: Received legacy base64 quote. Landing page needs update.");
-    return decoded as QuotePayload;
-  } catch (base64Error) {
-    console.error("[LandingPagePlugin] Failed to decode as base64:", base64Error);
-    throw new Error("Formato de cotización no reconocido");
-  }
+  return verifyJWT(token, config);
 }

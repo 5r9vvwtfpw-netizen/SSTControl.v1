@@ -13,6 +13,7 @@
  * - New fields may be added but existing fields will not be removed
  * 
  * @module plugins/landing-page-integration/facade
+ * @version 1.0.0
  */
 
 import type { 
@@ -24,11 +25,11 @@ import type {
 import { decodeWithFallback } from "./verifier";
 
 let pluginEnabled = true;
-let pluginConfig: PluginConfig = {
+const pluginConfig: PluginConfig = {
   enabled: true,
   jwtSecret: process.env.LANDING_PAGE_API_KEY || null,
   tokenMaxAge: '30m',
-  allowLegacyBase64: true,
+  allowLegacyBase64: false,
 };
 
 /**
@@ -37,7 +38,7 @@ let pluginConfig: PluginConfig = {
  */
 export function disablePlugin(): void {
   pluginEnabled = false;
-  console.log("[LandingPagePlugin] 🔴 Plugin DISABLED via kill switch");
+  console.warn("[LandingPagePlugin] Plugin DISABLED via kill switch");
 }
 
 /**
@@ -45,7 +46,7 @@ export function disablePlugin(): void {
  */
 export function enablePlugin(): void {
   pluginEnabled = true;
-  console.log("[LandingPagePlugin] 🟢 Plugin ENABLED");
+  console.info("[LandingPagePlugin] Plugin ENABLED");
 }
 
 /**
@@ -56,26 +57,16 @@ export function isPluginEnabled(): boolean {
 }
 
 /**
- * Update plugin configuration
+ * Check if plugin is properly configured
  */
-export function updateConfig(config: Partial<PluginConfig>): void {
-  pluginConfig = { ...pluginConfig, ...config };
-  console.log("[LandingPagePlugin] Configuration updated");
-}
-
-/**
- * Refresh configuration from environment
- * Call this if environment variables change at runtime
- */
-export function refreshConfig(): void {
-  pluginConfig.jwtSecret = process.env.LANDING_PAGE_API_KEY || null;
-  console.log("[LandingPagePlugin] Configuration refreshed from environment");
+export function isPluginConfigured(): boolean {
+  return !!pluginConfig.jwtSecret;
 }
 
 /**
  * STABLE INTERFACE: Verify a quote token from the landing page
  * 
- * @param token - The JWT or base64 token from ?quote= parameter
+ * @param token - The JWT token from ?quote= parameter
  * @returns QuoteVerificationResult with normalized data or error
  */
 export function verifyQuote(token: string): QuoteVerificationResult {
@@ -96,6 +87,14 @@ export function verifyQuote(token: string): QuoteVerificationResult {
     };
   }
 
+  if (!token || typeof token !== 'string') {
+    return {
+      valid: false,
+      data: null,
+      error: "Token de cotización requerido"
+    };
+  }
+
   try {
     const quoteData = decodeWithFallback(token, pluginConfig);
     const normalized = normalizeQuoteData(quoteData);
@@ -105,20 +104,22 @@ export function verifyQuote(token: string): QuoteVerificationResult {
       data: normalized,
       error: null
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Error al verificar cotización";
     return {
       valid: false,
       data: null,
-      error: error.message || "Error al verificar cotización"
+      error: message
     };
   }
 }
 
 /**
- * STABLE INTERFACE: Get raw quote payload (for advanced use cases)
+ * STABLE INTERFACE: Get raw quote payload (for Stripe checkout)
  * 
- * @param token - The JWT or base64 token
- * @returns The raw QuotePayload or throws an error
+ * @param token - The JWT token
+ * @returns The raw QuotePayload
+ * @throws Error if verification fails
  */
 export function getRawQuotePayload(token: string): QuotePayload {
   if (!pluginEnabled) {
@@ -129,19 +130,7 @@ export function getRawQuotePayload(token: string): QuotePayload {
     throw new Error("Configuración de integración incompleta");
   }
 
-  const payload = decodeWithFallback(token, pluginConfig);
-  
-  // DETAILED LOGGING: Para diagnosticar problema de precios
-  console.log("[LandingPagePlugin] 🔍 RAW JWT PRICES:", {
-    base_monthly_price: payload.sub_data.base_monthly_price,
-    current_period_price: payload.sub_data.current_period_price,
-    discount_duration_months: payload.sub_data.discount_duration_months,
-    currency: payload.sub_data.currency,
-    employees: payload.metadata.employees,
-    coupon: payload.metadata.coupon_code
-  });
-  
-  return payload;
+  return decodeWithFallback(token, pluginConfig);
 }
 
 /**
@@ -149,11 +138,34 @@ export function getRawQuotePayload(token: string): QuotePayload {
  * Does not expose sensitive information
  */
 export function getQuoteSummary(data: NormalizedQuoteData): string {
-  return `${data.employees} empleados, Riesgo ${data.riskLevel}, ` +
-         `${data.vehicles} vehículos, ` +
-         `Precio: ${data.currentPeriodPrice} COP` +
-         (data.couponCode ? `, Cupón: ${data.couponCode}` : '') +
-         (data.referrerId ? `, Referido por: ${data.referrerId}` : '');
+  const parts = [
+    `${data.employees} empleados`,
+    `Riesgo ${data.riskLevel}`,
+    `${data.vehicles} vehículos`,
+    `${formatCOP(data.baseMonthlyPrice)}/mes`
+  ];
+  
+  if (data.couponCode) {
+    parts.push(`Cupón: ${data.couponCode}`);
+  }
+  
+  if (data.referrerId) {
+    parts.push(`Ref: ${data.referrerId.substring(0, 8)}...`);
+  }
+  
+  return parts.join(', ');
+}
+
+/**
+ * Format COP currency for display
+ */
+function formatCOP(amount: number): string {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount);
 }
 
 /**

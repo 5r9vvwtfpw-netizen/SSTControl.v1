@@ -1,28 +1,30 @@
 /**
  * Landing Page Integration Plugin
  * 
- * ARQUITECTURA SIDECAR:
- * - Este plugin es independiente del sistema principal
- * - Si se deshabilita, la app sigue funcionando (sin integración landing page)
- * - Comunicación a través de una facade estable
- * - Principio de código seguro: Solo añadir, no modificar
+ * Secure JWT-based integration with sst-colombia.com.co landing page.
+ * Handles quote verification, price validation, and referral tracking.
  * 
- * KILL SWITCH:
- * - Importar { disablePlugin } y llamarlo para deshabilitar inmediatamente
- * - Todas las verificaciones de quotes fallarán gracefully
+ * ARCHITECTURE:
+ * - Sidecar pattern: Independent module that can be disabled without affecting main app
+ * - Stable facade: Main app only imports from this index file
+ * - Kill switch: Call disablePlugin() to disable all quote verifications
  * 
- * Ubicación: /plugins/landing-page-integration/
- * Rutas expuestas: /api/plugins/landing-page/*
- * 
- * USO DESDE LA APP PRINCIPAL:
+ * USAGE:
  * ```typescript
- * import { verifyQuote, getQuoteSummary } from "../plugins/landing-page-integration";
+ * import { verifyQuote, getRawQuotePayload } from "../plugins/landing-page-integration";
  * 
+ * // For registration form pre-fill
  * const result = verifyQuote(token);
  * if (result.valid) {
- *   console.log(getQuoteSummary(result.data!));
+ *   // Use result.data for form pre-fill
  * }
+ * 
+ * // For Stripe checkout (raw payload needed)
+ * const payload = getRawQuotePayload(token);
  * ```
+ * 
+ * @module plugins/landing-page-integration
+ * @version 1.0.0
  */
 
 export { default as landingPageRouter } from "./routes";
@@ -34,8 +36,7 @@ export {
   disablePlugin,
   enablePlugin,
   isPluginEnabled,
-  updateConfig,
-  refreshConfig,
+  isPluginConfigured,
 } from "./facade";
 
 export type {
@@ -44,19 +45,3 @@ export type {
   QuoteVerificationResult,
   PluginConfig,
 } from "./types";
-
-export const PLUGIN_INFO = {
-  name: "landing-page-integration",
-  version: "1.0.0",
-  description: "Integración segura con landing page sst-colombia.com.co vía JWT",
-  author: "SST Colombia",
-  mountPath: "/api/plugins/landing-page",
-  killSwitch: {
-    import: "import { disablePlugin } from '../plugins/landing-page-integration'",
-    usage: "disablePlugin() // Deshabilita inmediatamente todas las verificaciones",
-  },
-  stableInterface: {
-    verifyQuote: "Verificar y normalizar token de cotización",
-    getQuoteSummary: "Obtener resumen legible para logs",
-  },
-};

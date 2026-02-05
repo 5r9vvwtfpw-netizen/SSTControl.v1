@@ -7,6 +7,7 @@
  * backward compatible to avoid breaking the integration.
  * 
  * @module plugins/landing-page-integration/types
+ * @version 1.0.0
  */
 
 /**
