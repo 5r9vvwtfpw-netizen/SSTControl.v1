@@ -46,6 +46,9 @@ import PesvConductores from "@/pages/PesvConductores";
 import PesvInspecciones from "@/pages/PesvInspecciones";
 import PesvSiniestros from "@/pages/PesvSiniestros";
 import PesvCapacitaciones from "@/pages/PesvCapacitaciones";
+import PesvInspeccionesEvaluacion from "@/pages/PesvInspeccionesEvaluacion";
+import PesvSiniestrosEvaluacion from "@/pages/PesvSiniestrosEvaluacion";
+import PesvCapacitacionesEvaluacion from "@/pages/PesvCapacitacionesEvaluacion";
 import PesvAuditorias from "@/pages/PesvAuditorias";
 import DetalleEvaluacionPesv from "@/pages/DetalleEvaluacionPesv";
 import EvaluacionesPesv from "@/pages/EvaluacionesPesv";
@@ -281,9 +284,9 @@ function Router() {
       <ProtectedRoute path="/pesv/evaluacion/:id" component={DetalleEvaluacionPesv} />
       <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/vehiculos" component={PesvVehiculos} />
       <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/conductores" component={PesvConductores} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/inspecciones" component={PesvInspecciones} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/siniestros" component={PesvSiniestros} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/capacitaciones" component={PesvCapacitaciones} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/inspecciones" component={PesvInspeccionesEvaluacion} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/siniestros" component={PesvSiniestrosEvaluacion} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/capacitaciones" component={PesvCapacitacionesEvaluacion} />
       <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/auditorias" component={PesvAuditorias} />
       <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/comite" component={PesvComite} />
       <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/matriz-riesgos" component={MatrizRiesgosViales} />
