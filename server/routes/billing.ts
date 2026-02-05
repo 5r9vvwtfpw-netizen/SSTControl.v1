@@ -493,9 +493,9 @@ export function registerBillingRoutes(app: Express) {
               ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
               : 'http://localhost:5000');
           
-          // El precio en BD está en centavos (×100), dividir por 100 para obtener COP reales
-          // COP es moneda zero-decimal en Stripe, enviar valor sin decimales
-          const amountInCOP = Math.max(116000, Math.round(quote.amountToCharge / 100)); // Mínimo 116,000 COP (base + estándares)
+          // COP es moneda zero-decimal en Stripe - NO dividir
+          // El precio ya está en COP reales (ej: 116000 = $116,000 COP)
+          const amountInCOP = Math.max(116000, Math.round(quote.amountToCharge)); // Mínimo 116,000 COP
           
           const session = await stripe.checkout.sessions.create({
             mode: 'payment',
@@ -638,9 +638,9 @@ export function registerBillingRoutes(app: Express) {
           ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
           : 'http://localhost:5000');
       
-      // El precio en BD está en centavos (×100), dividir por 100 para obtener COP reales
-      // COP es moneda zero-decimal en Stripe, enviar valor sin decimales
-      const amountInCOP = Math.max(116000, Math.round(plan.priceMonthly / 100)); // Mínimo 116,000 COP (base + estándares)
+      // COP es moneda zero-decimal en Stripe - NO dividir
+      // El precio en BD ya está en COP reales (ej: 116000 = $116,000 COP)
+      const amountInCOP = Math.max(116000, Math.round(plan.priceMonthly)); // Mínimo 116,000 COP
       
       console.log('[Billing] Creating Stripe session. priceMonthly from DB:', plan.priceMonthly, '-> Amount to charge:', amountInCOP, 'COP, baseUrl:', baseUrl);
       
