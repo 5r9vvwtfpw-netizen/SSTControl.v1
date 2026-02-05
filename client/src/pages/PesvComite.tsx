@@ -352,11 +352,17 @@ export default function PesvComite() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         <Link href="/pesv">
           <Button variant="outline" size="sm" data-testid="button-back-pesv">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver al Plan Estratégico de Seguridad Vial
+            Volver al Panel PESV
+          </Button>
+        </Link>
+        <Link href="/pesv/evaluaciones">
+          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
+            <FileText className="h-4 w-4 mr-2" />
+            Ir a Evaluación PESV
           </Button>
         </Link>
       </div>
