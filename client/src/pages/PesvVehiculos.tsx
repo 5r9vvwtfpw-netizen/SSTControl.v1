@@ -244,6 +244,12 @@ export default function PesvVehiculos() {
           </Button>
         </Link>
         <BackToEvaluationButton />
+        <Link href="/pesv/evaluaciones">
+          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
+            <Search className="h-4 w-4 mr-2" />
+            Ir a Evaluación PESV
+          </Button>
+        </Link>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
