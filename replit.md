@@ -17,7 +17,19 @@ The system is built with a React 18, TypeScript, Vite frontend and an Express.js
 ### System Design Choices
 The system uses a client-server architecture with a RESTful API. Data integrity is ensured through Zod validations. Security features include hashed passwords, secure session management, and restricted privilege escalation. It is designed for scalability and maintainability, incorporating health checks, structured JSON logging, automated database backups, and audit logging. Form validation includes required fields, field-specific error messages, and converts empty strings to null for optional fields. A robust data encryption system compliant with Ley 1581/2012 uses AES-256-GCM with per-field key derivation for sensitive data. Companies are automatically classified by ARL risk level based on their CIIU code, using official Colombian decrees.
 
-The PESV module manages evaluations according to Resolución 40595/2022, supporting three complexity levels and providing bidirectional traceability with SST. It incorporates ISO 31000:2018 for road risk management and ISO 39001:2012 for road safety performance management. The billing system includes a robust validator (`server/lib/billing-validator.ts`) for data integrity before invoice generation, utilizing Zod schema validation, company validation, and subscription validation, and provides a health check endpoint.
+The PESV module manages evaluations according to Resolución 40595/2022, supporting three complexity levels and providing bidirectional traceability with SST. It incorporates ISO 31000:2018 for road risk management and ISO 39001:2012 for road safety performance management.
+
+### PESV Evaluation-Centric Architecture (In Progress)
+The PESV module is being restructured to be evaluation-centric, where all modules are managed within annual evaluations instead of a separate control panel. Key design decisions:
+- **Master data** (vehicles, drivers) remain global across evaluations
+- **Annual data** (inspections, trainings, incidents) are scoped by `evaluacion_pesv_id`
+- **Evaluation inheritance**: New evaluations can inherit from previous years via `parent_evaluacion_id`, copying documentary responses (P01-P11) to reduce data entry
+- **UI approach**: Filtered pages with `EvaluacionPesvContextHeader` showing year, phase, module, and compliance percentage
+- **Endpoint**: `POST /api/evaluaciones-pesv/:id/heredar` creates year+1 evaluation with inherited documentary responses
+- **Routes**: Evaluation-scoped at `/pesv/evaluacion/:evaluacionId/[module]`
+- **Database columns**: `parent_evaluacion_id` in `evaluaciones_pesv`, `evaluacion_pesv_id` in `vehicle_inspections`, `road_incidents`, `road_safety_trainings`
+
+The billing system includes a robust validator (`server/lib/billing-validator.ts`) for data integrity before invoice generation, utilizing Zod schema validation, company validation, and subscription validation, and provides a health check endpoint.
 
 The system incorporates a comprehensive pricing calculator (V2) integrating SST, PESV, and user licensing, with real-time cost breakdowns and Stripe checkout. The user licensing model includes one user per administrative role at no additional cost, with additional users charged monthly. Stripe integration handles COP as a non-zero-decimal currency.
 

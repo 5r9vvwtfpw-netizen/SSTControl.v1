@@ -279,6 +279,14 @@ function Router() {
       <ProtectedRoute path="/pesv/auditorias" component={PesvAuditorias} />
       <ProtectedRoute path="/pesv/evaluaciones" component={EvaluacionesPesv} />
       <ProtectedRoute path="/pesv/evaluacion/:id" component={DetalleEvaluacionPesv} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/vehiculos" component={PesvVehiculos} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/conductores" component={PesvConductores} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/inspecciones" component={PesvInspecciones} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/siniestros" component={PesvSiniestros} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/capacitaciones" component={PesvCapacitaciones} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/auditorias" component={PesvAuditorias} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/comite" component={PesvComite} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/matriz-riesgos" component={MatrizRiesgosViales} />
       <ProtectedRoute path="/pesv/matriz-riesgos" component={MatrizRiesgosViales} />
       <ProtectedRoute path="/pesv/contexto-organizacional" component={ContextoOrganizacionalPesv} />
       <ProtectedRoute path="/pesv/indicadores" component={IndicadoresPesv} />

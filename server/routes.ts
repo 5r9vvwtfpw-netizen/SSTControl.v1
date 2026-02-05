@@ -43288,6 +43288,101 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // POST /api/evaluaciones-pesv/:id/heredar - Crea nueva evaluación PESV heredando de una anterior
+  // Soporta la arquitectura centrada en evaluación anual según Resolución 40595/2022
+  app.post('/api/evaluaciones-pesv/:id/heredar', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      // Obtener evaluación padre
+      const [evaluacionPadre] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, req.params.id));
+      
+      if (!evaluacionPadre) {
+        return res.status(404).send("Evaluación PESV padre no encontrada");
+      }
+      
+      if (!isAdmin && req.user!.companyId !== evaluacionPadre.companyId) {
+        return res.status(403).send("No tienes acceso a esta evaluación");
+      }
+      
+      // Determinar año de la nueva evaluación
+      const nuevoAnio = req.body.anio || (evaluacionPadre.anio + 1);
+      
+      // Verificar que no exista ya una evaluación para ese año
+      const [evaluacionExistente] = await db.select()
+        .from(evaluacionesPesv)
+        .where(and(
+          eq(evaluacionesPesv.companyId, evaluacionPadre.companyId),
+          eq(evaluacionesPesv.anio, nuevoAnio)
+        ));
+      
+      if (evaluacionExistente) {
+        return res.status(400).send(`Ya existe una evaluación PESV para el año \${nuevoAnio}`);
+      }
+      
+      // Crear nueva evaluación con referencia al padre
+      const [nuevaEvaluacion] = await db.insert(evaluacionesPesv)
+        .values({
+          companyId: evaluacionPadre.companyId,
+          anio: nuevoAnio,
+          mes: new Date().getMonth() + 1,
+          nivel: evaluacionPadre.nivel,
+          estado: "en-progreso",
+          numeroVehiculos: evaluacionPadre.numeroVehiculos,
+          numeroConductores: evaluacionPadre.numeroConductores,
+          responsableNombre: evaluacionPadre.responsableNombre,
+          responsableCargo: evaluacionPadre.responsableCargo,
+          parentEvaluacionId: evaluacionPadre.id,
+          observaciones: `Heredada de evaluación \${evaluacionPadre.anio}`,
+        })
+        .returning();
+      
+      // Opcionalmente heredar respuestas base (pasos documentales/políticas)
+      const heredarRespuestas = req.body.heredarRespuestas !== false;
+      let respuestasHeredadas = 0;
+      
+      if (heredarRespuestas) {
+        // Obtener respuestas de la evaluación padre
+        const respuestasPadre = await db.select()
+          .from(respuestasPasosPesv)
+          .where(eq(respuestasPasosPesv.evaluacionId, evaluacionPadre.id));
+        
+        // Heredar solo respuestas de pasos documentales/políticas (P01-P04, etc.)
+        const pasosDocumentales = ['P01', 'P02', 'P03', 'P04', 'P05', 'P06', 'P07', 'P08', 'P09', 'P10', 'P11'];
+        const respuestasAHeredar = respuestasPadre.filter(r => 
+          pasosDocumentales.some(codigo => r.pasoId.startsWith(codigo))
+        );
+        
+        for (const respuesta of respuestasAHeredar) {
+          await db.insert(respuestasPasosPesv)
+            .values({
+              evaluacionId: nuevaEvaluacion.id,
+              pasoId: respuesta.pasoId,
+              cumple: respuesta.cumple,
+              noAplica: respuesta.noAplica,
+              justificacionNa: respuesta.justificacionNa,
+              modoVerificacion: respuesta.modoVerificacion,
+              evidencias: respuesta.evidencias,
+              observaciones: `Heredado de \${evaluacionPadre.anio}: \${respuesta.observaciones || ''}`,
+            });
+          respuestasHeredadas++;
+        }
+      }
+      
+      res.json({
+        evaluacion: nuevaEvaluacion,
+        respuestasHeredadas,
+        mensaje: `Evaluación \${nuevoAnio} creada exitosamente desde \${evaluacionPadre.anio}`
+      });
+    } catch (error: any) {
+      console.error('Error heredando evaluación PESV:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // GET /api/pasos-pesv - Lista pasos PESV filtrados por nivel
   app.get('/api/pasos-pesv', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {

@@ -956,6 +956,10 @@ export const vehicleInspections = pgTable("vehicle_inspections", {
   result: inspectionResultEnum("result").notNull(),
   observations: text("observations"),
   correctiveActions: text("corrective_actions"),
+  
+  // Vinculación a evaluación PESV anual (opcional para datos existentes)
+  evaluacionPesvId: varchar("evaluacion_pesv_id"),
+  
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
@@ -987,6 +991,10 @@ export const roadIncidents = pgTable("road_incidents", {
   rootCause: text("root_cause"),
   correctiveActions: text("corrective_actions"),
   preventiveActions: text("preventive_actions"),
+  
+  // Vinculación a evaluación PESV anual (opcional para datos existentes)
+  evaluacionPesvId: varchar("evaluacion_pesv_id"),
+  
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
@@ -1004,6 +1012,10 @@ export const roadSafetyTrainings = pgTable("road_safety_trainings", {
   topics: text("topics"), // Comma-separated topics
   totalAttendees: integer("total_attendees").notNull().default(0),
   status: trainingStatusEnum("status").notNull().default("programada"),
+  
+  // Vinculación a evaluación PESV anual (opcional para datos existentes)
+  evaluacionPesvId: varchar("evaluacion_pesv_id"),
+  
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
@@ -9506,6 +9518,9 @@ export const evaluacionesPesv = pgTable("evaluaciones_pesv", {
   
   // Trazabilidad SST (opcional)
   evaluacionSstId: varchar("evaluacion_sst_id").references(() => evaluacionesSst.id),
+  
+  // Herencia de evaluaciones (para crear evaluación anual desde anterior)
+  parentEvaluacionId: varchar("parent_evaluacion_id"),
   
   createdAt: timestamp("created_at").default(sql`now()`),
   updatedAt: timestamp("updated_at").default(sql`now()`),

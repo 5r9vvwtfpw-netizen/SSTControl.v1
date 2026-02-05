@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, FileText, CheckCircle2, FileCheck, Trash2, Car, Users } from "lucide-react";
+import { Plus, Search, FileText, CheckCircle2, FileCheck, Trash2, Car, Users, Copy } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -141,6 +141,39 @@ export default function EvaluacionesPesv() {
       });
     },
   });
+
+
+  const heredarMutation = useMutation({
+    mutationFn: async (evaluacionId: string) => {
+      const res = await apiRequest("POST", `/api/evaluaciones-pesv/${evaluacionId}/heredar`, {
+        heredarRespuestas: true
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv"] });
+      toast({
+        title: "Evaluación creada",
+        description: data.mensaje || `Nueva evaluación creada exitosamente`,
+        className: "bg-green-50 border-green-200",
+      });
+      setLocation(`/pesv/evaluacion/${data.evaluacion.id}`);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error al crear evaluación",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleHeredarClick = (e: React.MouseEvent, evaluacion: EvaluacionPesv) => {
+    e.stopPropagation();
+    if (confirm(`¿Crear nueva evaluación ${evaluacion.anio + 1} basada en ${evaluacion.anio}?`)) {
+      heredarMutation.mutate(evaluacion.id);
+    }
+  };
 
   const handleDeleteClick = (e: React.MouseEvent, evaluacion: EvaluacionPesv) => {
     e.stopPropagation();
@@ -521,8 +554,18 @@ export default function EvaluacionesPesv() {
                       <span data-testid={`text-conductores-${evaluacion.id}`}>{evaluacion.numeroConductores} conductores</span>
                     </div>
                   </div>
-                  {isSuperAdmin && (
-                    <div className="pt-2 border-t">
+                  <div className="pt-2 border-t flex items-center gap-2 flex-wrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => handleHeredarClick(e, evaluacion)}
+                      disabled={heredarMutation.isPending}
+                      data-testid={`button-heredar-${evaluacion.id}`}
+                    >
+                      <Copy className="h-4 w-4 mr-1" />
+                      Crear {evaluacion.anio + 1}
+                    </Button>
+                    {isSuperAdmin && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -533,8 +576,8 @@ export default function EvaluacionesPesv() {
                         <Trash2 className="h-4 w-4 mr-1" />
                         Eliminar
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
