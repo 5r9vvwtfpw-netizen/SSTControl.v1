@@ -48,7 +48,7 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { Plus, Pencil, Trash2, UserCheck, FileText, CheckCircle, Bot, Download, Award, MapPin, Mail, Phone, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, UserCheck, FileText, CheckCircle, Bot, Download, Award, MapPin, Mail, Phone, Calendar, Target } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ResponsibleDesignation, Worker, JobProfile } from "@shared/schema";
@@ -492,9 +492,17 @@ export default function ResponsibleDesignationPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <BackToEvaluationButton />
-        <BackToCronogramaButton />
+        <div className="flex items-center gap-2">
+          <Link href="/pesv/evaluaciones">
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
+              <Target className="h-4 w-4 mr-2" />
+              Ir a Evaluación PESV
+            </Button>
+          </Link>
+          <BackToCronogramaButton />
+        </div>
       </div>
       <Card>
         <CardHeader>
