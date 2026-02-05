@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Search, Trash2, Edit, User, Car, Building, Cloud, AlertTriangle, ShieldPlus, Link2 } from "lucide-react";
+import { Plus, Search, Trash2, Edit, User, Car, Building, Cloud, AlertTriangle, ShieldPlus, Link2, Target } from "lucide-react";
+import { Link } from "wouter";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -359,13 +360,20 @@ export default function MatrizRiesgosViales() {
             ISO 31000:2018 - PESV Resolución 40595/2022
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
-          <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700" data-testid="button-agregar-riesgo">
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar Riesgo
+        <div className="flex flex-wrap gap-2">
+          <Link href="/pesv/evaluaciones">
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
+              <Target className="h-4 w-4 mr-2" />
+              Ir a Evaluación PESV
             </Button>
-          </DialogTrigger>
+          </Link>
+          <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
+            <DialogTrigger asChild>
+              <Button className="bg-green-600 hover:bg-green-700" data-testid="button-agregar-riesgo">
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Riesgo
+              </Button>
+            </DialogTrigger>
           <DialogContent className="w-[95vw] max-w-[700px] max-h-[90vh] overflow-y-auto mx-auto">
             <DialogHeader>
               <DialogTitle>{editingRiesgo ? "Editar Riesgo Vial" : "Nuevo Riesgo Vial"}</DialogTitle>
@@ -693,6 +701,7 @@ export default function MatrizRiesgosViales() {
             </Form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
