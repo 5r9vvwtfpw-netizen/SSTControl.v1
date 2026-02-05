@@ -55,6 +55,11 @@ export default function AuthPage() {
             // Guardar todos los datos del quote para pre-llenar formularios
             sessionStorage.setItem('sst_quote_data', JSON.stringify(result.data));
             console.log('[Quote] Datos guardados:', result.data);
+            
+            // Pre-llenar nombre de empresa desde el JWT
+            if (result.data.companyName) {
+              setRegisterData(prev => ({ ...prev, fullName: result.data.companyName }));
+            }
           }
         }
       } catch (err) {
