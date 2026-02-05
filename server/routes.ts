@@ -215,6 +215,9 @@ import {
   tratamientosRiesgoVial,
   insertTratamientoRiesgoVialSchema,
   roadSafetyWorkerAttendees,
+  insertVehicleMaintenanceSchema,
+  insertVehicleGpsTrackingSchema,
+  insertSafeRouteSchema,
   roadSafetyTrainings,
   workers,
 } from "@shared/schema";
@@ -45437,6 +45440,244 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+
+  // ========== PESV - Vehicle Maintenances Routes (Res. 40595/2022 - H06) ==========
+
+  // GET /api/vehicle-maintenances - List all vehicle maintenances
+  app.get("/api/vehicle-maintenances", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      
+      let companyId: string;
+      if (isAdmin && req.query.companyId) {
+        companyId = req.query.companyId as string;
+      } else if (userCompanyId) {
+        companyId = userCompanyId;
+      } else {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      
+      const maintenances = await storage.getVehicleMaintenances(companyId);
+      res.json(maintenances);
+    } catch (error: any) {
+      console.error("Error fetching vehicle maintenances:", error);
+      res.status(500).json({ error: error.message || "Error al obtener mantenimientos de vehículos" });
+    }
+  });
+
+  // GET /api/vehicle-maintenances/:id - Get a specific vehicle maintenance
+  app.get("/api/vehicle-maintenances/:id", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const maintenance = await storage.getVehicleMaintenance(req.params.id);
+      if (!maintenance) {
+        return res.status(404).json({ error: "Mantenimiento no encontrado" });
+      }
+      res.json(maintenance);
+    } catch (error: any) {
+      console.error("Error fetching vehicle maintenance:", error);
+      res.status(500).json({ error: error.message || "Error al obtener mantenimiento" });
+    }
+  });
+
+  // POST /api/vehicle-maintenances - Create a new vehicle maintenance
+  app.post("/api/vehicle-maintenances", requirePermission("vehicles:create"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      
+      let companyId: string;
+      if (isAdmin && req.body.companyId) {
+        companyId = req.body.companyId;
+      } else if (userCompanyId) {
+        companyId = userCompanyId;
+      } else {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      
+      const validated = insertVehicleMaintenanceSchema.parse(req.body);
+      const maintenance = await storage.createVehicleMaintenance(validated, companyId);
+      res.status(201).json(maintenance);
+    } catch (error: any) {
+      console.error("Error creating vehicle maintenance:", error);
+      res.status(400).json({ error: error.message || "Error al crear mantenimiento" });
+    }
+  });
+
+  // PATCH /api/vehicle-maintenances/:id - Update a vehicle maintenance
+  app.patch("/api/vehicle-maintenances/:id", requirePermission("vehicles:edit"), async (req, res) => {
+    try {
+      const validated = insertVehicleMaintenanceSchema.partial().parse(req.body);
+      const maintenance = await storage.updateVehicleMaintenance(req.params.id, validated);
+      if (!maintenance) {
+        return res.status(404).json({ error: "Mantenimiento no encontrado" });
+      }
+      res.json(maintenance);
+    } catch (error: any) {
+      console.error("Error updating vehicle maintenance:", error);
+      res.status(400).json({ error: error.message || "Error al actualizar mantenimiento" });
+    }
+  });
+
+  // DELETE /api/vehicle-maintenances/:id - Delete a vehicle maintenance
+  app.delete("/api/vehicle-maintenances/:id", requirePermission("vehicles:delete"), async (req, res) => {
+    try {
+      await storage.deleteVehicleMaintenance(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting vehicle maintenance:", error);
+      res.status(400).json({ error: error.message || "Error al eliminar mantenimiento" });
+    }
+  });
+
+  // ========== PESV - Vehicle GPS Tracking Routes (Res. 40595/2022 - H07) ==========
+
+  // GET /api/vehicle-gps-tracking - List all GPS tracking records
+  app.get("/api/vehicle-gps-tracking", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      
+      let companyId: string;
+      if (isAdmin && req.query.companyId) {
+        companyId = req.query.companyId as string;
+      } else if (userCompanyId) {
+        companyId = userCompanyId;
+      } else {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      
+      const trackings = await storage.getVehicleGpsTrackings(companyId);
+      res.json(trackings);
+    } catch (error: any) {
+      console.error("Error fetching GPS tracking records:", error);
+      res.status(500).json({ error: error.message || "Error al obtener registros GPS" });
+    }
+  });
+
+  // POST /api/vehicle-gps-tracking - Create a new GPS tracking record
+  app.post("/api/vehicle-gps-tracking", requirePermission("vehicles:create"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      
+      let companyId: string;
+      if (isAdmin && req.body.companyId) {
+        companyId = req.body.companyId;
+      } else if (userCompanyId) {
+        companyId = userCompanyId;
+      } else {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      
+      const validated = insertVehicleGpsTrackingSchema.parse(req.body);
+      const tracking = await storage.createVehicleGpsTracking(validated, companyId);
+      res.status(201).json(tracking);
+    } catch (error: any) {
+      console.error("Error creating GPS tracking record:", error);
+      res.status(400).json({ error: error.message || "Error al crear registro GPS" });
+    }
+  });
+
+  // DELETE /api/vehicle-gps-tracking/:id - Delete a GPS tracking record
+  app.delete("/api/vehicle-gps-tracking/:id", requirePermission("vehicles:delete"), async (req, res) => {
+    try {
+      await storage.deleteVehicleGpsTracking(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting GPS tracking record:", error);
+      res.status(400).json({ error: error.message || "Error al eliminar registro GPS" });
+    }
+  });
+
+  // ========== PESV - Safe Routes (Res. 40595/2022 - H08) ==========
+
+  // GET /api/safe-routes - List all safe routes
+  app.get("/api/safe-routes", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      
+      let companyId: string;
+      if (isAdmin && req.query.companyId) {
+        companyId = req.query.companyId as string;
+      } else if (userCompanyId) {
+        companyId = userCompanyId;
+      } else {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      
+      const routes = await storage.getSafeRoutes(companyId);
+      res.json(routes);
+    } catch (error: any) {
+      console.error("Error fetching safe routes:", error);
+      res.status(500).json({ error: error.message || "Error al obtener rutas seguras" });
+    }
+  });
+
+  // GET /api/safe-routes/:id - Get a specific safe route
+  app.get("/api/safe-routes/:id", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const route = await storage.getSafeRoute(req.params.id);
+      if (!route) {
+        return res.status(404).json({ error: "Ruta no encontrada" });
+      }
+      res.json(route);
+    } catch (error: any) {
+      console.error("Error fetching safe route:", error);
+      res.status(500).json({ error: error.message || "Error al obtener ruta" });
+    }
+  });
+
+  // POST /api/safe-routes - Create a new safe route
+  app.post("/api/safe-routes", requirePermission("vehicles:create"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      
+      let companyId: string;
+      if (isAdmin && req.body.companyId) {
+        companyId = req.body.companyId;
+      } else if (userCompanyId) {
+        companyId = userCompanyId;
+      } else {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      
+      const validated = insertSafeRouteSchema.parse(req.body);
+      const route = await storage.createSafeRoute(validated, companyId);
+      res.status(201).json(route);
+    } catch (error: any) {
+      console.error("Error creating safe route:", error);
+      res.status(400).json({ error: error.message || "Error al crear ruta segura" });
+    }
+  });
+
+  // PATCH /api/safe-routes/:id - Update a safe route
+  app.patch("/api/safe-routes/:id", requirePermission("vehicles:edit"), async (req, res) => {
+    try {
+      const validated = insertSafeRouteSchema.partial().parse(req.body);
+      const route = await storage.updateSafeRoute(req.params.id, validated);
+      if (!route) {
+        return res.status(404).json({ error: "Ruta no encontrada" });
+      }
+      res.json(route);
+    } catch (error: any) {
+      console.error("Error updating safe route:", error);
+      res.status(400).json({ error: error.message || "Error al actualizar ruta" });
+    }
+  });
+
+  // DELETE /api/safe-routes/:id - Delete a safe route
+  app.delete("/api/safe-routes/:id", requirePermission("vehicles:delete"), async (req, res) => {
+    try {
+      await storage.deleteSafeRoute(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting safe route:", error);
+      res.status(400).json({ error: error.message || "Error al eliminar ruta" });
+    }
+  });
   // ========== GLOBAL ERROR HANDLER ==========
   // Middleware global para interceptar errores no manejados y evitar exponer mensajes técnicos
   // Especialmente importante para errores de SSL/certificados en producción

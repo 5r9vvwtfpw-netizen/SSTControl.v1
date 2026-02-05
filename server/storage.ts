@@ -647,6 +647,26 @@ export interface IStorage {
   createActaComitePesv(acta: schema.InsertActaComitePesv, companyId: string): Promise<schema.ActaComitePesv>;
   updateActaComitePesv(id: string, acta: Partial<schema.InsertActaComitePesv>, companyId: string): Promise<schema.ActaComitePesv | undefined>;
   deleteActaComitePesv(id: string, companyId: string): Promise<void>;
+
+  // PESV - Vehicle Maintenances (Res. 40595/2022 - H06)
+  getVehicleMaintenances(companyId: string): Promise<schema.VehicleMaintenance[]>;
+  getVehicleMaintenance(id: string): Promise<schema.VehicleMaintenance | undefined>;
+  createVehicleMaintenance(data: schema.InsertVehicleMaintenance, companyId: string): Promise<schema.VehicleMaintenance>;
+  updateVehicleMaintenance(id: string, data: Partial<schema.InsertVehicleMaintenance>): Promise<schema.VehicleMaintenance>;
+  deleteVehicleMaintenance(id: string): Promise<void>;
+
+  // PESV - Vehicle GPS Tracking (Res. 40595/2022 - H07)
+  getVehicleGpsTrackings(companyId: string): Promise<schema.VehicleGpsTracking[]>;
+  getVehicleGpsTracking(id: string): Promise<schema.VehicleGpsTracking | undefined>;
+  createVehicleGpsTracking(data: schema.InsertVehicleGpsTracking, companyId: string): Promise<schema.VehicleGpsTracking>;
+  deleteVehicleGpsTracking(id: string): Promise<void>;
+
+  // PESV - Safe Routes (Res. 40595/2022 - H08)
+  getSafeRoutes(companyId: string): Promise<schema.SafeRoute[]>;
+  getSafeRoute(id: string): Promise<schema.SafeRoute | undefined>;
+  createSafeRoute(data: schema.InsertSafeRoute, companyId: string): Promise<schema.SafeRoute>;
+  updateSafeRoute(id: string, data: Partial<schema.InsertSafeRoute>): Promise<schema.SafeRoute>;
+  deleteSafeRoute(id: string): Promise<void>;
   
   // Job Profile methods (company-scoped)
   getJobProfiles(companyId: string): Promise<JobProfile[]>;
@@ -16709,6 +16729,106 @@ export class DbStorage implements IStorage {
         eq(schema.actasComitePesv.id, id),
         eq(schema.actasComitePesv.companyId, companyId)
       ));
+  }
+
+  // ==================== PESV - Vehicle Maintenances (Res. 40595/2022 - H06) ====================
+
+  async getVehicleMaintenances(companyId: string): Promise<schema.VehicleMaintenance[]> {
+    return await db.select()
+      .from(schema.vehicleMaintenances)
+      .where(eq(schema.vehicleMaintenances.companyId, companyId))
+      .orderBy(desc(schema.vehicleMaintenances.createdAt));
+  }
+
+  async getVehicleMaintenance(id: string): Promise<schema.VehicleMaintenance | undefined> {
+    const [maintenance] = await db.select()
+      .from(schema.vehicleMaintenances)
+      .where(eq(schema.vehicleMaintenances.id, id));
+    return maintenance;
+  }
+
+  async createVehicleMaintenance(data: schema.InsertVehicleMaintenance, companyId: string): Promise<schema.VehicleMaintenance> {
+    const [created] = await db.insert(schema.vehicleMaintenances)
+      .values({ ...data, companyId })
+      .returning();
+    return created;
+  }
+
+  async updateVehicleMaintenance(id: string, data: Partial<schema.InsertVehicleMaintenance>): Promise<schema.VehicleMaintenance> {
+    const [updated] = await db.update(schema.vehicleMaintenances)
+      .set(data)
+      .where(eq(schema.vehicleMaintenances.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteVehicleMaintenance(id: string): Promise<void> {
+    await db.delete(schema.vehicleMaintenances)
+      .where(eq(schema.vehicleMaintenances.id, id));
+  }
+
+  // ==================== PESV - Vehicle GPS Tracking (Res. 40595/2022 - H07) ====================
+
+  async getVehicleGpsTrackings(companyId: string): Promise<schema.VehicleGpsTracking[]> {
+    return await db.select()
+      .from(schema.vehicleGpsTracking)
+      .where(eq(schema.vehicleGpsTracking.companyId, companyId))
+      .orderBy(desc(schema.vehicleGpsTracking.createdAt));
+  }
+
+  async getVehicleGpsTracking(id: string): Promise<schema.VehicleGpsTracking | undefined> {
+    const [tracking] = await db.select()
+      .from(schema.vehicleGpsTracking)
+      .where(eq(schema.vehicleGpsTracking.id, id));
+    return tracking;
+  }
+
+  async createVehicleGpsTracking(data: schema.InsertVehicleGpsTracking, companyId: string): Promise<schema.VehicleGpsTracking> {
+    const [created] = await db.insert(schema.vehicleGpsTracking)
+      .values({ ...data, companyId })
+      .returning();
+    return created;
+  }
+
+  async deleteVehicleGpsTracking(id: string): Promise<void> {
+    await db.delete(schema.vehicleGpsTracking)
+      .where(eq(schema.vehicleGpsTracking.id, id));
+  }
+
+  // ==================== PESV - Safe Routes (Res. 40595/2022 - H08) ====================
+
+  async getSafeRoutes(companyId: string): Promise<schema.SafeRoute[]> {
+    return await db.select()
+      .from(schema.safeRoutes)
+      .where(eq(schema.safeRoutes.companyId, companyId))
+      .orderBy(desc(schema.safeRoutes.createdAt));
+  }
+
+  async getSafeRoute(id: string): Promise<schema.SafeRoute | undefined> {
+    const [route] = await db.select()
+      .from(schema.safeRoutes)
+      .where(eq(schema.safeRoutes.id, id));
+    return route;
+  }
+
+  async createSafeRoute(data: schema.InsertSafeRoute, companyId: string): Promise<schema.SafeRoute> {
+    const [created] = await db.insert(schema.safeRoutes)
+      .values({ ...data, companyId })
+      .returning();
+    return created;
+  }
+
+  async updateSafeRoute(id: string, data: Partial<schema.InsertSafeRoute>): Promise<schema.SafeRoute> {
+    const [updated] = await db.update(schema.safeRoutes)
+      .set(data)
+      .where(eq(schema.safeRoutes.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSafeRoute(id: string): Promise<void> {
+    await db.delete(schema.safeRoutes)
+      .where(eq(schema.safeRoutes.id, id));
   }
 }
 
