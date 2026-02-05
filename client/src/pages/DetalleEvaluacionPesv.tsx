@@ -812,6 +812,23 @@ export default function DetalleEvaluacionPesv() {
                 </div>
               )}
 
+              {/* ADD-ONLY: Botón para ir al módulo PESV relacionado */}
+              {selectedPaso?.moduloPesvUrl && (
+                <div className="border-t pt-4">
+                  <Link href={selectedPaso.moduloPesvUrl}>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full gap-2"
+                      data-testid={`button-ir-modulo-${selectedPaso.codigo.toLowerCase()}`}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Ir a {selectedPaso.moduloPesvNombre}
+                    </Button>
+                  </Link>
+                </div>
+              )}
+
               <DialogFooter>
                 <Button 
                   type="button" 

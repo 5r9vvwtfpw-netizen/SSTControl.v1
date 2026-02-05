@@ -22,6 +22,9 @@ export interface PasoPesvData {
   criteriosVerificacion: string[];
   evidenciasRequeridas: string[];
   modulosSstRelacionados: string[];
+  // ADD-ONLY: Navegación a módulos PESV desde la evaluación
+  moduloPesvUrl?: string;
+  moduloPesvNombre?: string;
 }
 
 export const PASOS_PESV: PasoPesvData[] = [
@@ -46,7 +49,9 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Documento con funciones y responsabilidades',
       'Actas de reuniones'
     ],
-    modulosSstRelacionados: ['copasst', 'politicas']
+    modulosSstRelacionados: ['copasst', 'politicas'],
+    moduloPesvUrl: '/pesv/comite',
+    moduloPesvNombre: 'Comité PESV'
   },
   {
     codigo: 'P02',
@@ -68,7 +73,9 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Registros de divulgación',
       'Firma de la alta dirección'
     ],
-    modulosSstRelacionados: ['politicas']
+    modulosSstRelacionados: ['politicas'],
+    moduloPesvUrl: '/pesv/liderazgo',
+    moduloPesvNombre: 'Liderazgo y Compromiso'
   },
   {
     codigo: 'P03',
@@ -90,7 +97,9 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Matriz de vehículos',
       'Base de datos de conductores'
     ],
-    modulosSstRelacionados: ['trabajadores', 'perfiles-cargo']
+    modulosSstRelacionados: ['trabajadores', 'perfiles-cargo'],
+    moduloPesvUrl: '/pesv/contexto-organizacional',
+    moduloPesvNombre: 'Contexto Organizacional'
   },
   {
     codigo: 'P04',
@@ -112,7 +121,9 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Documento de evaluación de riesgos',
       'Plan de intervención priorizado'
     ],
-    modulosSstRelacionados: ['iperc', 'matriz-peligros']
+    modulosSstRelacionados: ['iperc', 'matriz-peligros'],
+    moduloPesvUrl: '/pesv/matriz-riesgos',
+    moduloPesvNombre: 'Matriz de Riesgos Viales'
   },
   {
     codigo: 'P05',
@@ -134,7 +145,9 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Tablero de indicadores',
       'Línea base establecida'
     ],
-    modulosSstRelacionados: ['indicadores', 'objetivos-sst']
+    modulosSstRelacionados: ['indicadores', 'objetivos-sst'],
+    moduloPesvUrl: '/pesv/indicadores',
+    moduloPesvNombre: 'Indicadores PESV'
   },
   {
     codigo: 'P06',
@@ -156,7 +169,9 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Cronograma anual PESV',
       'Presupuesto PESV'
     ],
-    modulosSstRelacionados: ['programas-sst', 'cronogramas']
+    modulosSstRelacionados: ['programas-sst', 'cronogramas'],
+    moduloPesvUrl: '/pesv/factores-desempeno',
+    moduloPesvNombre: 'Factores de Desempeño'
   },
   {
     codigo: 'P07',
@@ -178,7 +193,9 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Perfiles de cargo actualizados',
       'Actas de divulgación'
     ],
-    modulosSstRelacionados: ['perfiles-cargo', 'responsabilidades-sst']
+    modulosSstRelacionados: ['perfiles-cargo', 'responsabilidades-sst'],
+    moduloPesvUrl: '/pesv/liderazgo',
+    moduloPesvNombre: 'Liderazgo y Compromiso'
   },
   {
     codigo: 'P08',
@@ -200,7 +217,9 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Acta de aprobación de recursos',
       'Inventario de recursos disponibles'
     ],
-    modulosSstRelacionados: ['presupuesto-sst']
+    modulosSstRelacionados: ['presupuesto-sst'],
+    moduloPesvUrl: '/pesv/liderazgo',
+    moduloPesvNombre: 'Liderazgo y Compromiso'
   },
 
   // ==================== HACER (11 pasos) ====================
