@@ -818,8 +818,7 @@ export default function DetalleEvaluacionPesv() {
                   <Link href={selectedPaso.moduloPesvUrl}>
                     <Button 
                       type="button" 
-                      variant="outline" 
-                      className="w-full gap-2"
+                      className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md"
                       data-testid={`button-ir-modulo-${selectedPaso.codigo.toLowerCase()}`}
                     >
                       <ExternalLink className="h-4 w-4" />
