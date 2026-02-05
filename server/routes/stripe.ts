@@ -307,38 +307,21 @@ export function registerStripeRoutes(app: Express) {
         employees
       }, '[Quote-Checkout] JWT prices received');
 
-      // VALIDACIÓN: Los precios en COP deben ser razonables
-      // Precio mínimo de suscripción SST es ~116,000 COP
-      // Si el precio es < 50,000, probablemente vino dividido por 1000 (landing page bug)
-      // Si el precio está entre 50,000 y 116,000, probablemente vino dividido por 10
-      const MIN_VALID_PRICE_COP = 100000; // $100,000 COP - umbral para detectar formato incorrecto
-      const MIN_SUBSCRIPTION_PRICE = 116000; // $116,000 COP (base mínimo del sistema)
+      // CONFIAMOS EN EL JWT: La landing page calcula el precio exacto
+      // Solo validamos que no sea un valor absurdamente bajo (posible error)
+      const STRIPE_MIN_COP = 2000; // ~$0.50 USD - mínimo técnico de Stripe
       
-      // Detectar si el precio vino en formato incorrecto (dividido por 1000)
-      // Ejemplo: 1160 en lugar de 1,160,000
-      if (baseMonthlyPrice > 0 && baseMonthlyPrice < MIN_VALID_PRICE_COP) {
-        logger.warn({
+      if (baseMonthlyPrice > 0 && baseMonthlyPrice < STRIPE_MIN_COP) {
+        logger.error({
           companyId,
           receivedPrice: baseMonthlyPrice,
-          correctedPrice: baseMonthlyPrice * 1000
-        }, '[Quote-Checkout] Price suspiciously low (< 100k COP), likely divided by 1000. Correcting...');
+          minimumRequired: STRIPE_MIN_COP
+        }, '[Quote-Checkout] Price too low for Stripe minimum');
         
-        // Multiplicar por 1000 para corregir el formato
-        baseMonthlyPrice = baseMonthlyPrice * 1000;
-        if (currentPeriodPrice > 0) {
-          currentPeriodPrice = currentPeriodPrice * 1000;
-        }
-      }
-
-      // Validación secundaria: si después de corregir sigue bajo el mínimo, forzar mínimo
-      if (baseMonthlyPrice > 0 && baseMonthlyPrice < MIN_SUBSCRIPTION_PRICE) {
-        logger.warn({
-          companyId,
-          receivedPrice: baseMonthlyPrice,
-          enforcedMinimum: MIN_SUBSCRIPTION_PRICE
-        }, '[Quote-Checkout] Price below system minimum, enforcing minimum');
-        
-        baseMonthlyPrice = MIN_SUBSCRIPTION_PRICE;
+        return res.status(400).json({ 
+          error: "El precio de la cotización es demasiado bajo para procesar",
+          details: `Mínimo requerido: ${STRIPE_MIN_COP} COP`
+        });
       }
 
       logger.info({
