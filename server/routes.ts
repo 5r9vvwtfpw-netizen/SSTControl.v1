@@ -37339,7 +37339,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         horaFin: inv.training.endTime,
         lugar: inv.training.location,
         instructor: inv.training.instructor,
-        temas: inv.training.topics,
+        temas: inv.training.topics ? inv.training.topics.split(",").map(t => t.trim()) : [],
         estado: inv.training.status,
         invitado: inv.invited === 1,
         asistio: inv.attended === 1,
