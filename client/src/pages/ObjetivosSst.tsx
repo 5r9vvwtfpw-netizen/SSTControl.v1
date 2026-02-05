@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Target, CheckCircle2, Clock, XCircle, Trash2, Edit, TrendingUp, BarChart3, Activity, Zap, History, Calendar, Bot, Lightbulb, AlertTriangle, Bell, LineChart, CalendarDays, Percent, Save, Link2, Calculator, Check, X, RefreshCw } from "lucide-react";
+import { Plus, Search, Target as TargetIcon, CheckCircle2, Clock, XCircle, Trash2, Edit, TrendingUp, BarChart3, Activity, Zap, History, Calendar, Bot, Lightbulb, AlertTriangle, Bell, LineChart, CalendarDays, Percent, Save, Link2, Calculator, Check, X, RefreshCw, Target } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Link } from "wouter";
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
@@ -81,9 +81,17 @@ export default function ObjetivosSst() {
   
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <BackToEvaluationButton />
-        <BackToCronogramaButton />
+        <div className="flex items-center gap-2">
+          <Link href="/pesv/evaluaciones">
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
+              <Target className="h-4 w-4 mr-2" />
+              Ir a Evaluación PESV
+            </Button>
+          </Link>
+          <BackToCronogramaButton />
+        </div>
       </div>
       <div>
         <h1 className="text-3xl font-bold" data-testid="text-page-title">Objetivos e Indicadores SST</h1>

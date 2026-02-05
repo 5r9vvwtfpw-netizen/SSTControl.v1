@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Search, Download, AlertCircle, CheckCircle2, Eye, CreditCard, FileText, Upload, User, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Search, Download, AlertCircle, CheckCircle2, Eye, CreditCard, FileText, Upload, User, Trash2, AlertTriangle, Target } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Worker, insertWorkerSchema, Company, Contract, insertContractSchema, JobProfile } from "@shared/schema";
@@ -1002,9 +1002,17 @@ export default function Trabajadores() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <BackToEvaluationButton />
-        <BackToCronogramaButton />
+        <div className="flex items-center gap-2">
+          <Link href="/pesv/evaluaciones">
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
+              <Target className="h-4 w-4 mr-2" />
+              Ir a Evaluación PESV
+            </Button>
+          </Link>
+          <BackToCronogramaButton />
+        </div>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>

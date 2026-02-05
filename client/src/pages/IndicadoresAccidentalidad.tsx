@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { BarChart3, Plus, Edit, Trash2, TrendingUp, ArrowLeft, Calculator, FileText, Save, Calendar, Sparkles, CalendarDays } from "lucide-react";
+import { BarChart3, Plus, Edit, Trash2, TrendingUp, ArrowLeft, Calculator, FileText, Save, Calendar, Sparkles, CalendarDays, Target } from "lucide-react";
 import type { AccidentStatistics } from "@shared/schema";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
@@ -279,9 +279,17 @@ export default function IndicadoresAccidentalidad() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <BackToEvaluationButton />
-        <BackToCronogramaButton />
+        <div className="flex items-center gap-2">
+          <Link href="/pesv/evaluaciones">
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
+              <Target className="h-4 w-4 mr-2" />
+              Ir a Evaluación PESV
+            </Button>
+          </Link>
+          <BackToCronogramaButton />
+        </div>
       </div>
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">

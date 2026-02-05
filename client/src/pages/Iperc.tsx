@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, AlertTriangle, CheckCircle2, Clock, FileText, Shield, X, Bot, Sparkles } from "lucide-react";
+import { Plus, Search, AlertTriangle, CheckCircle2, Clock, FileText, Shield, X, Bot, Sparkles, Target } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -469,9 +469,17 @@ export default function Iperc() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <BackToEvaluationButton />
-        <BackToCronogramaButton />
+        <div className="flex items-center gap-2">
+          <Link href="/pesv/evaluaciones">
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
+              <Target className="h-4 w-4 mr-2" />
+              Ir a Evaluación PESV
+            </Button>
+          </Link>
+          <BackToCronogramaButton />
+        </div>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>

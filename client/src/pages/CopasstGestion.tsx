@@ -47,7 +47,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Plus, Calendar, Users, Vote, FileText, AlertTriangle,
   CheckCircle, Clock, User, Crown, Pencil, ChevronRight, Download,
-  Trash2, Search, Printer, Upload, X, Eye, EyeOff, CalendarDays
+  Trash2, Search, Printer, Upload, X, Eye, EyeOff, CalendarDays, Target
 } from "lucide-react";
 import { Link } from "wouter";
 import { format, addYears, differenceInDays, parseISO } from "date-fns";
@@ -843,9 +843,17 @@ export default function CopasstGestion() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <BackToEvaluationButton />
-        <BackToCronogramaButton />
+        <div className="flex items-center gap-2">
+          <Link href="/pesv/evaluaciones">
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
+              <Target className="h-4 w-4 mr-2" />
+              Ir a Evaluación PESV
+            </Button>
+          </Link>
+          <BackToCronogramaButton />
+        </div>
       </div>
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
