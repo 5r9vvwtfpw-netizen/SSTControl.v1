@@ -266,7 +266,9 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Evaluaciones aplicadas',
       'Material didáctico'
     ],
-    modulosSstRelacionados: ['capacitaciones', 'induccion']
+    modulosSstRelacionados: ['capacitaciones', 'induccion'],
+    moduloPesvUrl: '/pesv/capacitaciones',
+    moduloPesvNombre: 'Capacitaciones PESV'
   },
   {
     codigo: 'H03',
@@ -355,7 +357,9 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Registros de inspección',
       'Acciones correctivas'
     ],
-    modulosSstRelacionados: ['inspecciones']
+    modulosSstRelacionados: ['inspecciones'],
+    moduloPesvUrl: '/pesv/inspecciones',
+    moduloPesvNombre: 'Inspecciones Preoperacionales'
   },
   {
     codigo: 'H07',
@@ -511,7 +515,9 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Informes de investigación',
       'Análisis de causalidad'
     ],
-    modulosSstRelacionados: ['accidentes', 'investigaciones']
+    modulosSstRelacionados: ['accidentes', 'investigaciones'],
+    moduloPesvUrl: '/pesv/siniestros',
+    moduloPesvNombre: 'Siniestros Viales'
   },
   {
     codigo: 'V03',

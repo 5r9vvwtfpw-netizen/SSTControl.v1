@@ -393,62 +393,6 @@ export default function DetalleEvaluacionPesv() {
         </CardContent>
       </Card>
 
-      {/* Acceso Rápido a Módulos de la Evaluación - ADD ONLY */}
-      <Card data-testid="card-modulos-evaluacion">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <ExternalLink className="h-4 w-4" />
-            Módulos de Esta Evaluación
-          </CardTitle>
-          <CardDescription>
-            Acceda a los registros específicos de esta evaluación {evaluacion.anio}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Link href={`/pesv/evaluacion/${id}/inspecciones`}>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start gap-2 h-auto py-3"
-                data-testid="link-inspecciones-evaluacion"
-              >
-                <ClipboardCheck className="h-5 w-5 text-blue-500" />
-                <div className="text-left">
-                  <div className="font-medium">Inspecciones</div>
-                  <div className="text-xs text-muted-foreground">Inspecciones vehiculares {evaluacion.anio}</div>
-                </div>
-              </Button>
-            </Link>
-            <Link href={`/pesv/evaluacion/${id}/siniestros`}>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start gap-2 h-auto py-3"
-                data-testid="link-siniestros-evaluacion"
-              >
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-                <div className="text-left">
-                  <div className="font-medium">Siniestros Viales</div>
-                  <div className="text-xs text-muted-foreground">Incidentes registrados {evaluacion.anio}</div>
-                </div>
-              </Button>
-            </Link>
-            <Link href={`/pesv/evaluacion/${id}/capacitaciones`}>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start gap-2 h-auto py-3"
-                data-testid="link-capacitaciones-evaluacion"
-              >
-                <GraduationCap className="h-5 w-5 text-green-500" />
-                <div className="text-left">
-                  <div className="font-medium">Capacitaciones</div>
-                  <div className="text-xs text-muted-foreground">Formación vial {evaluacion.anio}</div>
-                </div>
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-
       <Tabs value={selectedFase} onValueChange={(v) => setSelectedFase(v as FasePHVA)}>
         <TabsList className="grid w-full grid-cols-4" data-testid="tabs-fases">
           {([
@@ -815,7 +759,7 @@ export default function DetalleEvaluacionPesv() {
               {/* ADD-ONLY: Botón para ir al módulo PESV relacionado */}
               {selectedPaso?.moduloPesvUrl && (
                 <div className="border-t pt-4">
-                  <Link href={selectedPaso.moduloPesvUrl}>
+                  <Link href={`/pesv/evaluacion/${id}${selectedPaso.moduloPesvUrl.replace('/pesv', '')}`}>
                     <Button 
                       type="button" 
                       className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md"
