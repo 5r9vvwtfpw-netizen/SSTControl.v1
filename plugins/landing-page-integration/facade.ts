@@ -129,7 +129,19 @@ export function getRawQuotePayload(token: string): QuotePayload {
     throw new Error("Configuración de integración incompleta");
   }
 
-  return decodeWithFallback(token, pluginConfig);
+  const payload = decodeWithFallback(token, pluginConfig);
+  
+  // DETAILED LOGGING: Para diagnosticar problema de precios
+  console.log("[LandingPagePlugin] 🔍 RAW JWT PRICES:", {
+    base_monthly_price: payload.sub_data.base_monthly_price,
+    current_period_price: payload.sub_data.current_period_price,
+    discount_duration_months: payload.sub_data.discount_duration_months,
+    currency: payload.sub_data.currency,
+    employees: payload.metadata.employees,
+    coupon: payload.metadata.coupon_code
+  });
+  
+  return payload;
 }
 
 /**
