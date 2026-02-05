@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Check, X, MinusCircle, RefreshCcw, FileText, Car, ClipboardList, Hammer, CheckSquare, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, Check, X, MinusCircle, RefreshCcw, FileText, Car, ClipboardList, Hammer, CheckSquare, AlertCircle, ClipboardCheck, AlertTriangle, GraduationCap, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -390,6 +390,62 @@ export default function DetalleEvaluacionPesv() {
               </div>
             </CardContent>
           </Card>
+        </CardContent>
+      </Card>
+
+      {/* Acceso Rápido a Módulos de la Evaluación - ADD ONLY */}
+      <Card data-testid="card-modulos-evaluacion">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <ExternalLink className="h-4 w-4" />
+            Módulos de Esta Evaluación
+          </CardTitle>
+          <CardDescription>
+            Acceda a los registros específicos de esta evaluación {evaluacion.anio}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Link href={`/pesv/evaluacion/${id}/inspecciones`}>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start gap-2 h-auto py-3"
+                data-testid="link-inspecciones-evaluacion"
+              >
+                <ClipboardCheck className="h-5 w-5 text-blue-500" />
+                <div className="text-left">
+                  <div className="font-medium">Inspecciones</div>
+                  <div className="text-xs text-muted-foreground">Inspecciones vehiculares {evaluacion.anio}</div>
+                </div>
+              </Button>
+            </Link>
+            <Link href={`/pesv/evaluacion/${id}/siniestros`}>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start gap-2 h-auto py-3"
+                data-testid="link-siniestros-evaluacion"
+              >
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                <div className="text-left">
+                  <div className="font-medium">Siniestros Viales</div>
+                  <div className="text-xs text-muted-foreground">Incidentes registrados {evaluacion.anio}</div>
+                </div>
+              </Button>
+            </Link>
+            <Link href={`/pesv/evaluacion/${id}/capacitaciones`}>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start gap-2 h-auto py-3"
+                data-testid="link-capacitaciones-evaluacion"
+              >
+                <GraduationCap className="h-5 w-5 text-green-500" />
+                <div className="text-left">
+                  <div className="font-medium">Capacitaciones</div>
+                  <div className="text-xs text-muted-foreground">Formación vial {evaluacion.anio}</div>
+                </div>
+              </Button>
+            </Link>
+          </div>
         </CardContent>
       </Card>
 
