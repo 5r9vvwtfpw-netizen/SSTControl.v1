@@ -10260,3 +10260,125 @@ export const insertRiesgoSstPesvVinculacionSchema = createInsertSchema(riesgosSs
   .omit({ id: true, createdAt: true, updatedAt: true, companyId: true, fechaVinculacion: true, fechaUltimaSync: true });
 export type InsertRiesgoSstPesvVinculacion = z.infer<typeof insertRiesgoSstPesvVinculacionSchema>;
 export type RiesgoSstPesvVinculacion = typeof riesgosSstPesvVinculacion.$inferSelect;
+
+// ==================== Mantenimiento Vehicular - H05 ====================
+// Resolución 40595/2022 - Mantenimiento preventivo, correctivo y predictivo
+
+export const maintenanceTypeEnum = pgEnum("maintenance_type", ["preventivo", "correctivo", "predictivo"]);
+
+// Vehicle Maintenance table - Maintenance records for PESV module
+export const vehicleMaintenances = pgTable("vehicle_maintenances", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  vehicleId: varchar("vehicle_id").notNull().references(() => vehicles.id),
+  maintenanceType: maintenanceTypeEnum("maintenance_type").notNull(),
+  description: text("description").notNull(),
+  maintenanceDate: date("maintenance_date").notNull(),
+  mileageAtMaintenance: integer("mileage_at_maintenance"),
+  nextMaintenanceDate: date("next_maintenance_date"),
+  nextMaintenanceMileage: integer("next_maintenance_mileage"),
+  cost: integer("cost"), // Costo en COP
+  provider: text("provider"),
+  invoiceNumber: text("invoice_number"),
+  partsReplaced: text("parts_replaced"),
+  observations: text("observations"),
+  documentUrl: text("document_url"), // URL del soporte de factura/recibo
+  
+  // Vinculación a evaluación PESV anual (opcional para datos existentes)
+  evaluacionPesvId: varchar("evaluacion_pesv_id"),
+  
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const insertVehicleMaintenanceSchema = createInsertSchema(vehicleMaintenances)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    vehicleId: z.string().min(1, "Debe seleccionar un vehículo"),
+    maintenanceType: z.string().min(1, "El tipo de mantenimiento es obligatorio"),
+    description: z.string().min(1, "La descripción es obligatoria"),
+    maintenanceDate: z.string().min(1, "La fecha de mantenimiento es obligatoria"),
+  });
+export type InsertVehicleMaintenance = z.infer<typeof insertVehicleMaintenanceSchema>;
+export type VehicleMaintenance = typeof vehicleMaintenances.$inferSelect;
+
+// ==================== Monitoreo GPS/Velocidad - H07 ====================
+// Resolución 40595/2022 - Monitoreo en tiempo real de velocidad y ubicación
+
+export const engineStatusEnum = pgEnum("engine_status", ["encendido", "apagado", "ralenti"]);
+
+// Vehicle GPS Tracking table - Real-time GPS and speed monitoring for PESV module
+export const vehicleGpsTracking = pgTable("vehicle_gps_tracking", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  vehicleId: varchar("vehicle_id").notNull().references(() => vehicles.id),
+  driverId: varchar("driver_id").references(() => drivers.id), // Opcional
+  trackingDate: date("tracking_date").notNull(),
+  trackingTime: text("tracking_time"),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
+  speed: integer("speed"), // Velocidad en km/h
+  maxSpeedAllowed: integer("max_speed_allowed"),
+  speedExceeded: integer("speed_exceeded").notNull().default(0), // 0=no, 1=sí
+  engineStatus: engineStatusEnum("engine_status"),
+  geofenceAlert: integer("geofence_alert").notNull().default(0), // 0=no, 1=sí
+  alertType: text("alert_type"),
+  observations: text("observations"),
+  
+  // Vinculación a evaluación PESV anual (opcional para datos existentes)
+  evaluacionPesvId: varchar("evaluacion_pesv_id"),
+  
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const insertVehicleGpsTrackingSchema = createInsertSchema(vehicleGpsTracking)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    vehicleId: z.string().min(1, "Debe seleccionar un vehículo"),
+    trackingDate: z.string().min(1, "La fecha de rastreo es obligatoria"),
+  });
+export type InsertVehicleGpsTracking = z.infer<typeof insertVehicleGpsTrackingSchema>;
+export type VehicleGpsTracking = typeof vehicleGpsTracking.$inferSelect;
+
+// ==================== Rutas Seguras - H08 ====================
+// Resolución 40595/2022 - Definición de rutas seguras con análisis de riesgos
+
+export const routeTypeEnum = pgEnum("route_type", ["urbana", "rural", "mixta", "autopista"]);
+export const safeRouteRiskLevelEnum = pgEnum("safe_route_risk_level", ["bajo", "medio", "alto", "muy_alto"]);
+
+// Safe Routes table - Definition and management of safe routes for PESV module
+export const safeRoutes = pgTable("safe_routes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  routeName: text("route_name").notNull(),
+  origin: text("origin").notNull(),
+  destination: text("destination").notNull(),
+  distance: integer("distance"), // Distancia en km
+  estimatedTime: integer("estimated_time"), // Tiempo estimado en minutos
+  routeType: routeTypeEnum("route_type").notNull(),
+  riskLevel: safeRouteRiskLevelEnum("risk_level").notNull(),
+  criticalPoints: text("critical_points"), // JSON con puntos críticos
+  speedLimits: text("speed_limits"), // JSON con límites de velocidad por tramo
+  restStops: text("rest_stops"), // Lugares de descanso
+  emergencyContacts: text("emergency_contacts"), // Contactos de emergencia en ruta
+  restrictions: text("restrictions"), // Restricciones de tránsito
+  mapUrl: text("map_url"), // URL del mapa
+  isActive: integer("is_active").notNull().default(1), // 0=no, 1=sí
+  observations: text("observations"),
+  
+  // Vinculación a evaluación PESV anual (opcional para datos existentes)
+  evaluacionPesvId: varchar("evaluacion_pesv_id"),
+  
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const insertSafeRouteSchema = createInsertSchema(safeRoutes)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    routeName: z.string().min(1, "El nombre de la ruta es obligatorio"),
+    origin: z.string().min(1, "El origen es obligatorio"),
+    destination: z.string().min(1, "El destino es obligatorio"),
+    routeType: z.string().min(1, "El tipo de ruta es obligatorio"),
+    riskLevel: z.string().min(1, "El nivel de riesgo es obligatorio"),
+  });
+export type InsertSafeRoute = z.infer<typeof insertSafeRouteSchema>;
+export type SafeRoute = typeof safeRoutes.$inferSelect;
