@@ -597,18 +597,16 @@ export default function EvaluacionesPesv() {
                       <Copy className="h-4 w-4 mr-1" />
                       Crear {evaluacion.anio + 1}
                     </Button>
-                    {isSuperAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={(e) => handleDeleteClick(e, evaluacion)}
-                        data-testid={`button-delete-${evaluacion.id}`}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Eliminar
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={(e) => handleDeleteClick(e, evaluacion)}
+                      data-testid={`button-delete-${evaluacion.id}`}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Eliminar
+                    </Button>
                   </div>
                 </div>
               </CardContent>
