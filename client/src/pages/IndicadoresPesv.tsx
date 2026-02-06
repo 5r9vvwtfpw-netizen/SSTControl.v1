@@ -18,6 +18,7 @@ import { IndicadorSV, insertIndicadorSVSchema, MedicionIndicadorSV, FactorDesemp
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { z } from "zod";
 
 const FRECUENCIA_CONFIG = {
@@ -434,6 +435,7 @@ export default function IndicadoresPesv() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <BackToPesvEvaluationButton />
           <Link href="/pesv/evaluaciones">
             <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
               <Target className="h-4 w-4 mr-2" />

@@ -296,6 +296,10 @@ function Router() {
       <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/mantenimiento" component={PesvMantenimientoVehicular} />
       <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/monitoreo-gps" component={PesvMonitoreoGps} />
       <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/rutas-seguras" component={PesvRutasSeguras} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/indicadores" component={IndicadoresPesv} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/liderazgo" component={PesvLiderazgo} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/contexto-organizacional" component={ContextoOrganizacionalPesv} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/factores-desempeno" component={FactoresDesempenoPesv} />
       <ProtectedRoute path="/pesv/mantenimiento" component={PesvMantenimientoVehicular} />
       <ProtectedRoute path="/pesv/monitoreo-gps" component={PesvMonitoreoGps} />
       <ProtectedRoute path="/pesv/rutas-seguras" component={PesvRutasSeguras} />

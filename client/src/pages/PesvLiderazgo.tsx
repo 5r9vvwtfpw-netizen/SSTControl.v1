@@ -5,6 +5,7 @@ import { ArrowLeft, Users, FileText, Wallet, Shield, ExternalLink, CheckCircle2,
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
+import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 
 interface EvidenciaItem {
   nombre: string;
@@ -72,6 +73,7 @@ export default function PesvLiderazgo() {
             Demostración del compromiso de la alta dirección con la seguridad vial
           </p>
         </div>
+        <BackToPesvEvaluationButton />
         <Link href="/pesv/evaluaciones">
           <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
             <FileText className="h-4 w-4 mr-2" />
