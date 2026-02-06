@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
 import { Plus, Search, Trash2, Edit, TrendingUp, Target, BarChart3, Activity, Calendar, ChevronDown, ChevronUp } from "lucide-react";
-import { Link } from "wouter";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -436,12 +435,6 @@ export default function IndicadoresPesv() {
         </div>
         <div className="flex flex-wrap gap-2">
           <BackToPesvEvaluationButton />
-          <Link href="/pesv/evaluaciones">
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
-              <Target className="h-4 w-4 mr-2" />
-              Ir a Evaluación PESV
-            </Button>
-          </Link>
           <Button className="bg-green-600 hover:bg-green-700" onClick={handleAddIndicador} data-testid="button-agregar-indicador">
             <Plus className="h-4 w-4 mr-2" />
             Agregar Indicador

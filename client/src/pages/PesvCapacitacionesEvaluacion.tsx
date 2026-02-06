@@ -1,4 +1,4 @@
-import { useParams, Link } from "wouter";
+import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Eye, GraduationCap, Calendar, Clock, MapPin, Users, Target } from "lucide-react";
+import { Plus, Eye, GraduationCap, Calendar, Clock, MapPin, Users } from "lucide-react";
+import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -127,12 +128,7 @@ export default function PesvCapacitacionesEvaluacion() {
       />
 
       <div className="flex justify-end mb-4">
-        <Link href="/pesv/evaluaciones">
-          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
-            <Target className="h-4 w-4 mr-2" />
-            Ir a Evaluación PESV
-          </Button>
-        </Link>
+        <BackToPesvEvaluationButton />
       </div>
 
       <Card>

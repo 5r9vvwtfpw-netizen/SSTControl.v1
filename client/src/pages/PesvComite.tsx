@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { hasCompanyAdminAccess } from "@shared/permissions";
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
+import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 
 type RolComite = "presidente" | "secretario" | "representante_direccion" | "representante_trabajadores" | "lider_pesv" | "coordinador_sst" | "otro";
 type EstadoIntegrante = "activo" | "inactivo";
@@ -359,12 +360,7 @@ export default function PesvComite() {
             Volver al Panel PESV
           </Button>
         </Link>
-        <Link href="/pesv/evaluaciones">
-          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
-            <FileText className="h-4 w-4 mr-2" />
-            Ir a Evaluación PESV
-          </Button>
-        </Link>
+        <BackToPesvEvaluationButton />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-4">

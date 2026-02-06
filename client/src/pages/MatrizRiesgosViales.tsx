@@ -7,8 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Search, Trash2, Edit, User, Car, Building, Cloud, AlertTriangle, ShieldPlus, Link2, Target } from "lucide-react";
-import { Link } from "wouter";
+import { Plus, Search, Trash2, Edit, User, Car, Building, Cloud, AlertTriangle, ShieldPlus, Link2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -18,6 +17,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { VinculacionRiesgosSstPesvBanner } from "@/components/pesv/VinculacionRiesgosSstPesvBanner";
+import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { z } from "zod";
 
 const PROBABILIDAD_VALUES = {
@@ -361,12 +361,7 @@ export default function MatrizRiesgosViales() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/pesv/evaluaciones">
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
-              <Target className="h-4 w-4 mr-2" />
-              Ir a Evaluación PESV
-            </Button>
-          </Link>
+          <BackToPesvEvaluationButton />
           <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild>
               <Button className="bg-green-600 hover:bg-green-700" data-testid="button-agregar-riesgo">

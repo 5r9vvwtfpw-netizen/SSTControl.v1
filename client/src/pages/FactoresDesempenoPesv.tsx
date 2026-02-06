@@ -8,7 +8,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Search, Trash2, Edit, TrendingUp, TrendingDown, Minus, Target, Activity, Shield, AlertTriangle } from "lucide-react";
-import { Link } from "wouter";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -291,12 +290,6 @@ export default function FactoresDesempenoPesv() {
         </div>
         <div className="flex flex-wrap gap-2">
           <BackToPesvEvaluationButton />
-          <Link href="/pesv/evaluaciones">
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
-              <Target className="h-4 w-4 mr-2" />
-              Ir a Evaluación PESV
-            </Button>
-          </Link>
           <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild>
               <Button className="bg-green-600 hover:bg-green-700" onClick={handleOpenNewDialog} data-testid="button-agregar-factor">

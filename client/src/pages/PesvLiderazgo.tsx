@@ -74,12 +74,6 @@ export default function PesvLiderazgo() {
           </p>
         </div>
         <BackToPesvEvaluationButton />
-        <Link href="/pesv/evaluaciones">
-          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
-            <FileText className="h-4 w-4 mr-2" />
-            Ir a Evaluación PESV
-          </Button>
-        </Link>
       </div>
 
       <TrazabilidadPesvBanner codigoPaso="P04" compacto={false} />
