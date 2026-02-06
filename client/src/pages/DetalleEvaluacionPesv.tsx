@@ -193,6 +193,12 @@ export default function DetalleEvaluacionPesv() {
     },
   });
 
+  const getRespuestaForPaso = (paso: PasoPesvData): RespuestaPasoPesv | undefined => {
+    const pasoDb = pasosDb.find(p => p.codigo === paso.codigo);
+    if (!pasoDb) return undefined;
+    return respuestas.find(r => r.pasoId === pasoDb.id);
+  };
+
   const pasosEvaluados = pasos.filter(p => getRespuestaForPaso(p)).length;
   const totalPasos = pasos.length;
   const progresoPasos = totalPasos > 0 ? Math.round((pasosEvaluados / totalPasos) * 100) : 0;
@@ -259,12 +265,6 @@ export default function DetalleEvaluacionPesv() {
   const onSubmitRespuesta = (values: z.infer<typeof insertRespuestaPasoPesvSchema>) => {
     if (!selectedPaso) return;
     saveRespuestaMutation.mutate(values);
-  };
-
-  const getRespuestaForPaso = (paso: PasoPesvData): RespuestaPasoPesv | undefined => {
-    const pasoDb = pasosDb.find(p => p.codigo === paso.codigo);
-    if (!pasoDb) return undefined;
-    return respuestas.find(r => r.pasoId === pasoDb.id);
   };
 
   const getEstadoBadge = (paso: PasoPesvData) => {
