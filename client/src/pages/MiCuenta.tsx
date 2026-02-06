@@ -308,22 +308,35 @@ export default function MiCuenta() {
       }
       
       const quoteToken = typeof window !== 'undefined' ? sessionStorage.getItem('sst_quote_token') : null;
-      return await apiRequest(
+      const res = await apiRequest(
         "POST",
         `/api/billing/subscription/${subscriptionData.subscription.id}/activate`,
         quoteToken ? { quoteToken } : {}
       );
+      return await res.json() as { paymentUrl?: string; error?: string; amount?: number; trial?: boolean; message?: string; trialDays?: number };
     },
-    onSuccess: async (data: any) => {
-      if (data.paymentUrl) {
+    onSuccess: (data) => {
+      if (data.trial) {
+        toast({
+          title: "Prueba gratuita activada",
+          description: data.message || `${data.trialDays || 30} días de prueba gratis activados`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
+      } else if (data.paymentUrl) {
         toast({
           title: "Redirigiendo al pago",
-          description: `Monto a pagar: ${formatPrice(data.amount)}`,
+          description: data.amount ? `Monto a pagar: ${formatPrice(data.amount)}` : 'Redirigiendo a Stripe...',
         });
         
         setTimeout(() => {
-          window.location.href = data.paymentUrl;
+          window.location.href = data.paymentUrl!;
         }, 1500);
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "No se pudo generar el enlace de pago",
+          variant: "destructive",
+        });
       }
     },
     onError: (error: any) => {

@@ -637,6 +637,9 @@ export function registerBillingRoutes(app: Express) {
       let productDescription = `Plan ${plan.displayName || plan.name} - Primer mes`;
       let quoteSource = 'plan_price';
 
+      let isFullDiscount = false;
+      let couponCode: string | undefined;
+
       if (quoteToken) {
         try {
           const { getRawQuotePayload } = await import('../../plugins/landing-page-integration');
@@ -644,7 +647,7 @@ export function registerBillingRoutes(app: Express) {
           
           const jwtCurrentPrice = quoteData.sub_data.current_period_price || 0;
           const jwtBasePrice = quoteData.sub_data.base_monthly_price || 0;
-          const couponCode = quoteData.metadata?.coupon_code;
+          couponCode = quoteData.metadata?.coupon_code;
           
           console.log('[Billing] JWT quote verified:', {
             basePrice: jwtBasePrice,
@@ -652,7 +655,8 @@ export function registerBillingRoutes(app: Express) {
             coupon: couponCode
           });
 
-          amountInCOP = jwtCurrentPrice > 0 ? jwtCurrentPrice : jwtBasePrice;
+          isFullDiscount = jwtCurrentPrice === 0 && jwtBasePrice > 0;
+          amountInCOP = isFullDiscount ? jwtBasePrice : (jwtCurrentPrice > 0 ? jwtCurrentPrice : jwtBasePrice);
           quoteSource = 'jwt_verified';
           
           if (couponCode && jwtCurrentPrice < jwtBasePrice) {
@@ -668,10 +672,38 @@ export function registerBillingRoutes(app: Express) {
       }
 
       const STRIPE_MIN_COP = 2000;
-      if (amountInCOP < STRIPE_MIN_COP) {
-        console.error('[Billing] Amount too low for Stripe:', amountInCOP, 'COP. Minimum:', STRIPE_MIN_COP);
+      
+      if (!isFullDiscount && amountInCOP > 0 && amountInCOP < STRIPE_MIN_COP) {
+        console.warn('[Billing] Discounted price below Stripe minimum, converting to 30-day trial. Amount:', amountInCOP, 'COP');
+        isFullDiscount = true;
+      }
+      
+      if (isFullDiscount) {
+        console.log('[Billing] 100% discount detected - activating as 30-day trial');
+        const trialEnd = new Date();
+        trialEnd.setDate(trialEnd.getDate() + 30);
+        
+        await storage.updateSubscription(subscription.id, {
+          status: 'trial',
+          trialEnd: trialEnd,
+        });
+        
+        return res.status(200).json({
+          success: true,
+          trial: true,
+          trialDays: 30,
+          trialEnd: trialEnd.toISOString(),
+          message: couponCode 
+            ? `Cupón "${couponCode}" aplicado: 30 días de prueba gratis` 
+            : '30 días de prueba gratis activados',
+          amount: 0,
+        });
+      }
+      
+      if (amountInCOP <= 0) {
+        console.error('[Billing] Invalid amount after all calculations:', amountInCOP);
         return res.status(400).json({ 
-          error: `El monto ${amountInCOP} COP es inferior al mínimo de Stripe (${STRIPE_MIN_COP} COP)` 
+          error: 'No se pudo determinar un precio válido para la suscripción' 
         });
       }
       

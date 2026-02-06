@@ -204,9 +204,15 @@ export default function MiSuscripcion() {
         `/api/billing/subscription/${subscriptionData.subscription.id}/activate`,
         quoteToken ? { quoteToken } : {}
       );
-      const data = await res.json() as { paymentUrl?: string; error?: string; amount?: number };
+      const data = await res.json() as { paymentUrl?: string; error?: string; amount?: number; trial?: boolean; message?: string; trialDays?: number };
       
-      if (data.paymentUrl) {
+      if (data.trial) {
+        toast({
+          title: "Prueba gratuita activada",
+          description: data.message || `${data.trialDays || 30} días de prueba gratis activados`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
+      } else if (data.paymentUrl) {
         toast({
           title: "Redirigiendo a pasarela de pago",
           description: "Serás redirigido a Stripe para completar el pago...",
