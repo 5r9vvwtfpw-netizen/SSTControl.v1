@@ -2145,6 +2145,10 @@ export class DbStorage implements IStorage {
       { table: 'audit_logs', column: 'company_id' },
       { table: 'provider_access_logs', column: 'client_company_id' },
       { table: 'lecturas_comunicacion', column: 'company_id' },
+      { table: 'worker_portal_access_logs', column: 'company_id' },
+      { table: 'support_access_events', column: 'actor_id', subquery: 'SELECT id FROM users WHERE company_id = $1' },
+      { table: 'support_access_sessions', column: 'company_id' },
+      { table: 'lso_activity_log', column: 'company_id' },
       
       // 2. Notificaciones y comunicaciones
       { table: 'internal_messages', column: 'company_id' },
@@ -2165,8 +2169,13 @@ export class DbStorage implements IStorage {
       { table: 'registros_induccion', column: 'company_id' },
       { table: 'curso_50_horas', column: 'company_id' },
       { table: 'road_safety_trainings', column: 'company_id' },
+      { table: 'contenidos_induccion', column: 'company_id' },
+      { table: 'preguntas_induccion', column: 'company_id' },
+      { table: 'sesiones_induccion_virtual', column: 'company_id' },
       
       // 4. Auditorías internas
+      { table: 'auditoria_checklists', column: 'evaluado_por_id', subquery: 'SELECT id FROM users WHERE company_id = $1' },
+      { table: 'auditoria_auditores', column: 'auditor_id', subquery: 'SELECT id FROM users WHERE company_id = $1' },
       { table: 'planes_accion_auditoria', column: 'company_id' },
       { table: 'hallazgos_auditoria', column: 'company_id' },
       { table: 'auditorias_internas', column: 'company_id' },
@@ -2180,20 +2189,29 @@ export class DbStorage implements IStorage {
       
       // 6. IPERC y peligros
       { table: 'inspecciones_peligros_vinculados', column: 'company_id' },
+      { table: 'inspecciones_peligros_vinculos', column: 'company_id' },
+      { table: 'riesgos_trabajador', column: 'company_id' },
+      { table: 'peligros', column: 'company_id' },
       { table: 'peligros_trabajadores_asignacion', column: 'company_id' },
       { table: 'peligros_iperc', column: 'company_id' },
       { table: 'matrices_iperc', column: 'company_id' },
+      { table: 'inspecciones', column: 'company_id' },
+      { table: 'controles_operacionales', column: 'company_id' },
       
       // 7. Inspecciones y mediciones
       { table: 'inspections', column: 'company_id' },
       { table: 'environmental_measurements', column: 'company_id' },
       
-      // 8. Accidentes y enfermedades
+      // 8. Accidentes, investigaciones y enfermedades
+      { table: 'accident_statistics', column: 'company_id' },
+      { table: 'accident_investigations', column: 'company_id' },
       { table: 'accidents', column: 'company_id' },
       { table: 'occupational_diseases', column: 'company_id' },
       { table: 'road_incidents', column: 'company_id' },
+      { table: 'worker_absences', column: 'company_id' },
       
       // 9. Gestión del cambio
+      { table: 'automatizacion_cambio_logs', column: 'company_id' },
       { table: 'seguimientos_cambios', column: 'company_id' },
       { table: 'controles_cambios', column: 'company_id' },
       { table: 'evaluaciones_impacto_cambios', column: 'company_id' },
@@ -2211,23 +2229,20 @@ export class DbStorage implements IStorage {
       { table: 'verificaciones_adquisicion', column: 'company_id' },
       { table: 'evaluaciones_adquisicion', column: 'company_id' },
       { table: 'especificaciones_tecnicas', column: 'company_id' },
+      { table: 'adquisicion_items', column: 'company_id' },
       { table: 'solicitudes_adquisicion', column: 'company_id' },
       
       // 12. Plan de emergencias (orden correcto: primero tablas dependientes)
-      // participantes_simulacro tiene FK a simulacros (sin cascade)
       { table: 'participantes_simulacro', column: 'simulacro_id', subquery: 'SELECT id FROM simulacros WHERE company_id = $1' },
       { table: 'simulacros', column: 'company_id' },
       { table: 'rutas_evacuacion', column: 'company_id' },
       { table: 'zonas_evacuacion', column: 'company_id' },
       { table: 'puntos_encuentro', column: 'company_id' },
-      // inspecciones_recursos_emergencia tiene FK a recursos_emergencia (sin cascade)
       { table: 'inspecciones_recursos_emergencia', column: 'recurso_id', subquery: 'SELECT id FROM recursos_emergencia WHERE company_id = $1' },
       { table: 'recursos_emergencia', column: 'company_id' },
-      // miembros_brigada tiene FK a brigadas_emergencia (sin cascade)
       { table: 'miembros_brigada', column: 'brigada_id', subquery: 'SELECT id FROM brigadas_emergencia WHERE company_id = $1' },
       { table: 'brigadas_emergencia', column: 'company_id' },
       { table: 'planes_emergencia', column: 'company_id' },
-      // amenazas_identificadas tiene FK a analisis_vulnerabilidad (sin cascade)
       { table: 'amenazas_identificadas', column: 'analisis_id', subquery: 'SELECT id FROM analisis_vulnerabilidad WHERE company_id = $1' },
       { table: 'analisis_vulnerabilidad', column: 'company_id' },
       
@@ -2245,13 +2260,15 @@ export class DbStorage implements IStorage {
       { table: 'mediciones_indicadores', column: 'company_id' },
       { table: 'datos_calculo_indicadores', column: 'company_id' },
       { table: 'indicadores_sst', column: 'company_id' },
+      { table: 'objetivos_estandares_vinculacion', column: 'company_id' },
       { table: 'objetivos_sst', column: 'company_id' },
       
       // 16. Documentos y matrices
-      // sst_document_versions, sst_document_access_log, sst_document_alerts tienen FK a sst_documents (sin cascade)
       { table: 'sst_document_versions', column: 'document_id', subquery: 'SELECT id FROM sst_documents WHERE company_id = $1' },
       { table: 'sst_document_access_log', column: 'document_id', subquery: 'SELECT id FROM sst_documents WHERE company_id = $1' },
       { table: 'sst_document_alerts', column: 'document_id', subquery: 'SELECT id FROM sst_documents WHERE company_id = $1' },
+      { table: 'document_acknowledgments', column: 'company_id' },
+      { table: 'document_worker_assignments', column: 'company_id' },
       { table: 'sst_documents', column: 'company_id' },
       { table: 'matriz_legal', column: 'company_id' },
       { table: 'politicas_sst', column: 'company_id' },
@@ -2264,19 +2281,17 @@ export class DbStorage implements IStorage {
       
       // 18. Comités y COPASST Electoral/Training
       { table: 'comite_convivencia_actas', column: 'company_id' },
-      // COPASST Electoral - tablas con FK a otras tablas COPASST
+      { table: 'convivencia_actas', column: 'company_id' },
+      { table: 'convivencia_elecciones', column: 'company_id' },
+      { table: 'convivencia_periodos', column: 'company_id' },
       { table: 'copasst_votos', column: 'candidato_id', subquery: 'SELECT id FROM copasst_candidatos WHERE eleccion_id IN (SELECT id FROM copasst_elecciones WHERE company_id = $1)' },
       { table: 'copasst_registro_votacion', column: 'eleccion_id', subquery: 'SELECT id FROM copasst_elecciones WHERE company_id = $1' },
       { table: 'copasst_candidatos', column: 'eleccion_id', subquery: 'SELECT id FROM copasst_elecciones WHERE company_id = $1' },
       { table: 'copasst_miembros', column: 'periodo_id', subquery: 'SELECT id FROM copasst_periodos WHERE company_id = $1' },
-      // COPASST Training - tablas con FK a otras tablas (cursos no tienen company_id directo, son globales)
-      // Las lecciones y preguntas se vinculan a cursos globales, no por empresa
-      // Solo eliminamos escenarios si tienen company_id
       { table: 'copasst_evaluacion_respuestas', column: 'asignacion_id', subquery: 'SELECT id FROM copasst_evaluacion_asignaciones WHERE periodo_id IN (SELECT id FROM copasst_evaluacion_periodos WHERE company_id = $1)' },
       { table: 'copasst_evaluacion_resultados', column: 'periodo_id', subquery: 'SELECT id FROM copasst_evaluacion_periodos WHERE company_id = $1' },
       { table: 'copasst_evaluacion_asignaciones', column: 'periodo_id', subquery: 'SELECT id FROM copasst_evaluacion_periodos WHERE company_id = $1' },
       { table: 'copasst_evaluacion_items', column: 'competencia_id', subquery: 'SELECT id FROM copasst_competencias WHERE company_id = $1' },
-      // COPASST - tablas con company_id directo
       { table: 'copasst_actas', column: 'company_id' },
       { table: 'copasst_banco_preguntas', column: 'company_id' },
       { table: 'copasst_certificados', column: 'company_id' },
@@ -2295,10 +2310,15 @@ export class DbStorage implements IStorage {
       { table: 'copasst_rachas_usuario', column: 'company_id' },
       
       // 19. Recomendaciones ARL
+      { table: 'seguimiento_recomendaciones', column: 'registrado_por', subquery: 'SELECT id FROM users WHERE company_id = $1' },
       { table: 'recomendaciones_arl_autoridades', column: 'company_id' },
       
-      // 20. Planes de trabajo
+      // 20. Planes de trabajo y contexto
       { table: 'planes_trabajo_anual', column: 'company_id' },
+      { table: 'acciones_mejora_contexto', column: 'company_id' },
+      { table: 'factores_contexto', column: 'responsable_accion', subquery: 'SELECT id FROM users WHERE company_id = $1' },
+      { table: 'analisis_contexto', column: 'company_id' },
+      { table: 'partes_interesadas', column: 'company_id' },
       
       // 21. Recursos y responsables
       { table: 'resource_allocations', column: 'company_id' },
@@ -2307,8 +2327,7 @@ export class DbStorage implements IStorage {
       // 22. Medidas preventivas
       { table: 'preventive_measures', column: 'company_id' },
       
-      // 23. Tickets de soporte (primero respuestas e historial, luego los tickets)
-      // ticket_responses y ticket_status_history se eliminan a través de subquery por ticket_id
+      // 23. Tickets de soporte
       { table: 'ticket_responses', column: 'ticket_id', subquery: 'SELECT id FROM support_tickets WHERE company_id = $1' },
       { table: 'ticket_status_history', column: 'ticket_id', subquery: 'SELECT id FROM support_tickets WHERE company_id = $1' },
       { table: 'support_tickets', column: 'company_id' },
@@ -2324,33 +2343,57 @@ export class DbStorage implements IStorage {
       { table: 'evs_controls', column: 'company_id' },
       { table: 'evs_programs', column: 'company_id' },
       
-      // 26. Verificación SGSS (tiene FK a workers, eliminar antes)
+      // 26. Verificación SGSS
       { table: 'detalle_verificacion_sgss', column: 'verificacion_id', subquery: 'SELECT id FROM verificaciones_muestreo_sgss WHERE company_id = $1' },
       { table: 'verificaciones_muestreo_sgss', column: 'company_id' },
       
-      // 27. Trabajadores y sus dependencias
+      // 27. EPP
+      { table: 'epp_deliveries', column: 'company_id' },
+      { table: 'epp_catalog', column: 'company_id' },
+      
+      // 28. Sociodemográfico
+      { table: 'sociodemographic_diagnosis', column: 'company_id' },
+      { table: 'sociodemographic_diagnosis_periods', column: 'company_id' },
+      
+      // 29. Promoción y prevención
+      { table: 'promotion_prevention_activities', column: 'company_id' },
+      
+      // 30. Conservación auditiva
+      { table: 'audiometry_records', column: 'company_id' },
+      { table: 'noise_exposure_profiles', column: 'company_id' },
+      
+      // 31. Trabajadores y sus dependencias
       { table: 'reportes_trabajadores', column: 'company_id' },
       { table: 'trabajadores_alto_riesgo', column: 'company_id' },
+      { table: 'high_risk_workers', column: 'company_id' },
       { table: 'afiliaciones_ssss', column: 'company_id' },
       { table: 'medical_exams', column: 'company_id' },
       { table: 'job_profiles', column: 'company_id' },
       { table: 'health_conditions', column: 'company_id' },
+      { table: 'trabajadores', column: 'company_id' },
       { table: 'workers', column: 'company_id' },
       
-      // 27. Facturación y pagos
+      // 32. Facturación y pagos
       { table: 'payment_transactions', column: 'company_id' },
       { table: 'payment_sources', column: 'company_id' },
       { table: 'invoices', column: 'company_id' },
       { table: 'plan_change_history', column: 'company_id' },
       
-      // 28. Pricing plugin
+      // 33. Pricing plugin
       { table: 'pricing_plugin_invoices', column: 'customer_id' },
       { table: 'pricing_plugin_subscriptions', column: 'customer_id' },
       
-      // 29. Suscripción
+      // 34. Suscripción
       { table: 'subscriptions', column: 'company_id' },
       
-      // 30. Usuarios de la empresa
+      // 35. LSO profesionales y asignaciones (antes de users)
+      { table: 'licensed_professional_assignments', column: 'company_id' },
+      { table: 'lso_company_assignments', column: 'company_id' },
+      { table: 'lso_invitations', column: 'company_id' },
+      { table: 'lso_professionals', column: 'user_id', subquery: 'SELECT id FROM users WHERE company_id = $1' },
+      { table: 'lso_registrations', column: 'reviewed_by', subquery: 'SELECT id FROM users WHERE company_id = $1' },
+      
+      // 36. Usuarios de la empresa (al final, muchas tablas referencian users)
       { table: 'users', column: 'company_id' },
     ];
 
@@ -2457,6 +2500,38 @@ export class DbStorage implements IStorage {
         }
       }
       
+      // Antes de eliminar la empresa, NULL-ificar referencias cruzadas de usuarios
+      // en tablas de OTRAS empresas que podrían apuntar a usuarios de ESTA empresa
+      const crossCompanyUserRefs = [
+        { table: 'lso_company_assignments', columns: ['assigned_by', 'unassigned_by'] },
+        { table: 'lso_invitations', columns: ['invited_by'] },
+        { table: 'lso_registrations', columns: ['reviewed_by'] },
+        { table: 'support_access_sessions', columns: ['support_user_id', 'approved_by'] },
+        { table: 'support_tickets', columns: ['assigned_to', 'resolved_by'] },
+        { table: 'ticket_responses', columns: ['user_id'] },
+        { table: 'ticket_status_history', columns: ['changed_by'] },
+      ];
+
+      for (const ref of crossCompanyUserRefs) {
+        if (!existingTables.has(ref.table)) continue;
+        const cols = tableColumns.get(ref.table);
+        if (!cols) continue;
+        for (const col of ref.columns) {
+          if (!cols.has(col)) continue;
+          try {
+            await client.query(`SAVEPOINT nullify_${ref.table}_${col}`);
+            await client.query(
+              `UPDATE ${ref.table} SET ${col} = NULL WHERE ${col} IN (SELECT id FROM users WHERE company_id = $1)`,
+              [id]
+            );
+            await client.query(`RELEASE SAVEPOINT nullify_${ref.table}_${col}`);
+          } catch (nullErr: any) {
+            try { await client.query(`ROLLBACK TO SAVEPOINT nullify_${ref.table}_${col}`); } catch (e) {}
+            console.warn(`[DeleteCompany] Could not nullify ${ref.table}.${col}:`, nullErr.message);
+          }
+        }
+      }
+
       // Finalmente eliminar la empresa
       try {
         const companyResult = await client.query(
