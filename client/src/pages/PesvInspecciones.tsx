@@ -16,7 +16,7 @@ import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
-import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 
@@ -199,7 +199,7 @@ export default function PesvInspecciones() {
             Volver al Plan Estratégico de Seguridad Vial
           </Button>
         </Link>
-        <BackToEvaluationButton />
+        <BackToPesvEvaluationButton />
         <Link href="/pesv/evaluaciones">
           <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
             <Search className="h-4 w-4 mr-2" />
