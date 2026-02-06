@@ -301,24 +301,24 @@ export default function MiCuenta() {
     setQuote(null);
   };
 
-  // Mutation para activar suscripción con pago inmediato
   const activateSubscriptionMutation = useMutation({
     mutationFn: async () => {
       if (!subscriptionData?.subscription.id) {
         throw new Error("No hay suscripción activa");
       }
       
+      const quoteToken = typeof window !== 'undefined' ? sessionStorage.getItem('sst_quote_token') : null;
       return await apiRequest(
         "POST",
         `/api/billing/subscription/${subscriptionData.subscription.id}/activate`,
-        {}
+        quoteToken ? { quoteToken } : {}
       );
     },
     onSuccess: async (data: any) => {
       if (data.paymentUrl) {
         toast({
           title: "Redirigiendo al pago",
-          description: `Monto a pagar: ${formatPrice(data.amount / 100)}`,
+          description: `Monto a pagar: ${formatPrice(data.amount)}`,
         });
         
         setTimeout(() => {

@@ -328,7 +328,7 @@ app.post(
                             stripeCustomerId: session.customer as string,
                             stripeSessionId: session.id,
                             recoveredFromWebhook: true,
-                            lastPaymentAmount: session.amount_total ? session.amount_total / 100 : 0
+                            lastPaymentAmount: session.amount_total || 0
                           }
                         });
                         

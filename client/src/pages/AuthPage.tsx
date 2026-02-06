@@ -52,8 +52,8 @@ export default function AuthPage() {
         if (response.ok) {
           const result = await response.json();
           if (result.valid && result.data) {
-            // Guardar todos los datos del quote para pre-llenar formularios
             sessionStorage.setItem('sst_quote_data', JSON.stringify(result.data));
+            sessionStorage.setItem('sst_quote_token', urlQuote);
             console.log('[Quote] Datos guardados:', result.data);
             
             // Pre-llenar nombre de empresa desde el JWT

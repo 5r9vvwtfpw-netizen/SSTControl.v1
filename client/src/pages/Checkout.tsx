@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Check, Loader2, AlertCircle, CheckCircle, CreditCard, Shield, ArrowLeft, Scale } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { formatPrice } from '@/lib/utils/formatters';
 import { useToast } from '@/hooks/use-toast';
 import { ContratoServiciosSaas, ContractAcceptanceData } from '@/components/ContratoServiciosSaas';
 import { ColombianFlag } from '@/components/ColombianFlag';
@@ -138,14 +139,6 @@ export default function Checkout() {
 
   const handleCancel = () => {
     navigate('/planes-suscripcion');
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0,
-    }).format(price / 100);
   };
 
   if (success === 'true') {

@@ -597,8 +597,8 @@ export function registerBillingRoutes(app: Express) {
     try {
       console.log('[Billing] Starting subscription activation for:', req.params.id);
       const subscriptionId = req.params.id;
+      const { quoteToken } = req.body || {};
 
-      // Get subscription to verify ownership
       const subscription = await storage.getSubscription(subscriptionId);
       if (!subscription) {
         console.log('[Billing] Subscription not found:', subscriptionId);
@@ -606,7 +606,6 @@ export function registerBillingRoutes(app: Express) {
       }
       console.log('[Billing] Found subscription:', subscription.id, 'planId:', subscription.planId);
 
-      // Check permissions: admin or owner company
       const isAdmin = req.user!.role === 'admin';
       const isOwner = req.user!.companyId === subscription.companyId;
 
@@ -614,7 +613,6 @@ export function registerBillingRoutes(app: Express) {
         return res.status(403).json({ error: "No tiene permisos para activar esta suscripción" });
       }
 
-      // Get the current plan
       const plan = await storage.getSubscriptionPlan(subscription.planId);
       if (!plan) {
         console.log('[Billing] Plan not found:', subscription.planId);
@@ -622,27 +620,62 @@ export function registerBillingRoutes(app: Express) {
       }
       console.log('[Billing] Found plan:', plan.name, 'price:', plan.priceMonthly);
 
-      // Get company info
       const company = await storage.getCompany(subscription.companyId);
       console.log('[Billing] Company:', company?.name);
       
-      // Get Stripe client
       console.log('[Billing] Getting Stripe client...');
       const stripe = await getUncachableStripeClient();
       console.log('[Billing] Stripe client obtained');
       
-      // Build Stripe Checkout session - use APP_URL for production
       const baseUrl = process.env.APP_URL || (process.env.REPLIT_DEV_DOMAIN 
         ? `https://${process.env.REPLIT_DEV_DOMAIN}`
         : process.env.REPLIT_DOMAINS 
           ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
           : 'http://localhost:5000');
       
-      // COP es moneda zero-decimal en Stripe - NO dividir
-      // El precio en BD ya está en COP reales (ej: 116000 = $116,000 COP)
-      const amountInCOP = Math.max(116000, Math.round(plan.priceMonthly)); // Mínimo 116,000 COP
+      let amountInCOP: number;
+      let productDescription = `Plan ${plan.displayName || plan.name} - Primer mes`;
+      let quoteSource = 'plan_price';
+
+      if (quoteToken) {
+        try {
+          const { getRawQuotePayload } = await import('../../plugins/landing-page-integration');
+          const quoteData = getRawQuotePayload(quoteToken);
+          
+          const jwtCurrentPrice = quoteData.sub_data.current_period_price || 0;
+          const jwtBasePrice = quoteData.sub_data.base_monthly_price || 0;
+          const couponCode = quoteData.metadata?.coupon_code;
+          
+          console.log('[Billing] JWT quote verified:', {
+            basePrice: jwtBasePrice,
+            currentPrice: jwtCurrentPrice,
+            coupon: couponCode
+          });
+
+          amountInCOP = jwtCurrentPrice > 0 ? jwtCurrentPrice : jwtBasePrice;
+          quoteSource = 'jwt_verified';
+          
+          if (couponCode && jwtCurrentPrice < jwtBasePrice) {
+            productDescription = `Plan ${plan.displayName || plan.name} - Primer mes (Cupón ${couponCode})`;
+          }
+        } catch (jwtError: any) {
+          console.warn('[Billing] JWT verification failed, falling back to plan price:', jwtError.message);
+          amountInCOP = Math.round(plan.priceMonthly / 100);
+          quoteSource = 'plan_price_fallback';
+        }
+      } else {
+        amountInCOP = Math.round(plan.priceMonthly / 100);
+      }
+
+      const STRIPE_MIN_COP = 2000;
+      if (amountInCOP < STRIPE_MIN_COP) {
+        console.error('[Billing] Amount too low for Stripe:', amountInCOP, 'COP. Minimum:', STRIPE_MIN_COP);
+        return res.status(400).json({ 
+          error: `El monto ${amountInCOP} COP es inferior al mínimo de Stripe (${STRIPE_MIN_COP} COP)` 
+        });
+      }
       
-      console.log('[Billing] Creating Stripe session. priceMonthly from DB:', plan.priceMonthly, '-> Amount to charge:', amountInCOP, 'COP, baseUrl:', baseUrl);
+      console.log('[Billing] Creating Stripe session. Source:', quoteSource, 'Amount:', amountInCOP, 'COP, baseUrl:', baseUrl);
       
       try {
         const session = await stripe.checkout.sessions.create({
@@ -654,7 +687,7 @@ export function registerBillingRoutes(app: Express) {
                 currency: 'cop',
                 product_data: {
                   name: `Suscripción ${plan.displayName || plan.name}`,
-                  description: `Plan ${plan.displayName || plan.name} - Primer mes`,
+                  description: productDescription,
                 },
                 unit_amount: amountInCOP,
               },
@@ -669,13 +702,14 @@ export function registerBillingRoutes(app: Express) {
             companyName: company?.name || 'Unknown',
             userId: req.user!.id,
             amountChargedCOP: amountInCOP.toString(),
+            priceSource: quoteSource,
           },
           success_url: `${baseUrl}/mi-cuenta?activation=success&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${baseUrl}/mi-cuenta?activation=cancelled`,
           customer_email: req.user!.email || undefined,
         });
         
-        console.log('[Billing] Stripe session created successfully:', session.id, 'URL:', session.url);
+        console.log('[Billing] Stripe session created successfully:', session.id, 'URL:', session.url, 'Amount:', amountInCOP, 'COP');
         
         return res.status(200).json({
           success: true,
