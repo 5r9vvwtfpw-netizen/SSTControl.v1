@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Shield, FileText, Scale, Lock, Mail } from "lucide-react";
+import { Shield, FileText, Scale, Lock } from "lucide-react";
 
 export function Footer() {
   return (
@@ -36,14 +36,6 @@ export function Footer() {
               <Scale className="h-3 w-3" />
               <span>Propiedad Intelectual</span>
             </Link>
-            <a 
-              href="mailto:soporte@sst-colombia.com" 
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
-              data-testid="link-support-email-footer"
-            >
-              <Mail className="h-3 w-3" />
-              <span>Soporte</span>
-            </a>
           </div>
           
           <div className="text-center md:text-right">
