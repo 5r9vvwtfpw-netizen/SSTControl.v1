@@ -23,8 +23,6 @@ import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { NIVELES_PESV_LABELS, FASES_PESV_LABELS, FASES_PESV_COLORS, PASOS_PESV, PasoPesvData, ModuloSstUrl } from "@/data/pasos-pesv";
 import { usePesvSmartPrefill } from "@/hooks/usePesvSmartPrefill";
-import { SmartPrefillBanner } from "@/components/pesv/SmartPrefillBanner";
-import { usePesvStepPrefill } from "@/hooks/usePesvStepPrefill";
 
 type FasePHVA = "planear" | "hacer" | "verificar" | "actuar";
 
@@ -53,7 +51,6 @@ export default function DetalleEvaluacionPesv() {
   const [autoFilledFields, setAutoFilledFields] = useState<Record<string, boolean>>({});
 
   const { operationalStats, isLoading: isLoadingSmartData } = usePesvSmartPrefill();
-  const { prefillFields, isLoading: isLoadingPrefill } = usePesvStepPrefill(selectedPaso?.codigo || '');
 
   const { data: evaluacion, isLoading: loadingEvaluacion } = useQuery<EvaluacionPesv>({
     queryKey: ["/api/evaluaciones-pesv", id],
@@ -555,15 +552,6 @@ export default function DetalleEvaluacionPesv() {
                 {selectedPaso.fundamentoNormativo}
               </AlertDescription>
             </Alert>
-          )}
-
-          {selectedPaso && !isLoadingPrefill && prefillFields.length > 0 && (
-            <SmartPrefillBanner
-              stepCode={selectedPaso.codigo}
-              stepName={selectedPaso.nombre}
-              fields={prefillFields}
-              isLoading={isLoadingPrefill}
-            />
           )}
 
           <Form {...respuestaForm}>
