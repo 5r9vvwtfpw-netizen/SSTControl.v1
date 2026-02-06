@@ -34,6 +34,13 @@ export interface PasoPesvData {
   moduloPesvNombre?: string;
   // ADD-ONLY: Navegación bidireccional a módulos SST
   modulosSstUrls?: ModuloSstUrl[];
+  // ADD-ONLY: Smart Form Auto-Fill Data (Resolución 40595/2022)
+  modoVerificacionSugerido?: string[];
+  hallazgoSugeridoNoCumple?: string;
+  observacionesCumple?: string;
+  observacionesNoCumple?: string;
+  justificacionNaSugerida?: string;
+  fundamentoNormativo?: string;
 }
 
 export const PASOS_PESV: PasoPesvData[] = [
@@ -60,7 +67,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     ],
     modulosSstRelacionados: ['copasst', 'politicas'],
     moduloPesvUrl: '/pesv/comite',
-    moduloPesvNombre: 'Comité PESV'
+    moduloPesvNombre: 'Comité PESV',
+    modoVerificacionSugerido: ['Revisión documental del acto administrativo', 'Verificación de actas de reunión del equipo PESV', 'Entrevista con miembros del equipo'],
+    hallazgoSugeridoNoCumple: 'No se evidencia la conformación formal del equipo de trabajo PESV mediante acto administrativo. No se definen funciones y responsabilidades de los integrantes del equipo según Art. 5 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifica acto administrativo de conformación del equipo de trabajo PESV con funciones y responsabilidades definidas. Se evidencian actas de reuniones periódicas conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere la conformación formal del equipo de trabajo PESV con designación mediante acto administrativo, definición de funciones y cronograma de reuniones.',
+    justificacionNaSugerida: 'No aplica en caso de empresa unipersonal donde el representante legal asume todas las funciones del PESV.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 5 - Conformación del equipo de trabajo del PESV'
   },
   {
     codigo: 'P02',
@@ -84,7 +97,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     ],
     modulosSstRelacionados: ['politicas'],
     moduloPesvUrl: '/pesv/liderazgo',
-    moduloPesvNombre: 'Liderazgo y Compromiso'
+    moduloPesvNombre: 'Liderazgo y Compromiso',
+    modoVerificacionSugerido: ['Revisión del documento de política de seguridad vial', 'Verificación de firma de la alta dirección', 'Revisión de registros de divulgación'],
+    hallazgoSugeridoNoCumple: 'No se evidencia política de seguridad vial documentada, firmada por la alta dirección y divulgada a todos los trabajadores. No cumple con Art. 6 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifica política de seguridad vial documentada, firmada por la alta dirección, articulada con la política SST y divulgada a todos los trabajadores conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere documentar, aprobar por alta dirección y divulgar la política de seguridad vial articulada con la política SST.',
+    justificacionNaSugerida: 'No aplica para organizaciones sin actividad de desplazamiento vial.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 6 - Política de seguridad vial'
   },
   {
     codigo: 'P03',
@@ -108,7 +127,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     ],
     modulosSstRelacionados: ['trabajadores', 'perfiles-cargo'],
     moduloPesvUrl: '/pesv/contexto-organizacional',
-    moduloPesvNombre: 'Contexto Organizacional'
+    moduloPesvNombre: 'Contexto Organizacional',
+    modoVerificacionSugerido: ['Revisión del documento de caracterización', 'Verificación de inventario de vehículos', 'Revisión de base de datos de conductores'],
+    hallazgoSugeridoNoCumple: 'No se evidencia diagnóstico inicial que incluya la caracterización de la empresa, flota vehicular y base de datos de conductores según Art. 7 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifica diagnóstico organizacional completo con caracterización de la empresa, inventario de vehículos actualizado y base de datos de conductores conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere elaborar el diagnóstico organizacional incluyendo caracterización, inventario vehicular y base de datos de conductores.',
+    justificacionNaSugerida: 'No aplica para organizaciones que no operan vehículos propios ni contratados.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 7 - Diagnóstico'
   },
   {
     codigo: 'P04',
@@ -132,7 +157,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     ],
     modulosSstRelacionados: ['iperc', 'matriz-peligros'],
     moduloPesvUrl: '/pesv/matriz-riesgos',
-    moduloPesvNombre: 'Matriz de Riesgos Viales'
+    moduloPesvNombre: 'Matriz de Riesgos Viales',
+    modoVerificacionSugerido: ['Revisión de la matriz de riesgos viales', 'Verificación de evaluación por línea de acción', 'Inspección de controles implementados'],
+    hallazgoSugeridoNoCumple: 'No se evidencia identificación y evaluación de riesgos viales en las cinco líneas de acción (factor humano, vehículos, infraestructura, factores organizacionales, atención a víctimas) según Art. 8 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifica matriz de identificación de peligros y evaluación de riesgos viales en las cinco líneas de acción con priorización y plan de intervención conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere identificar y evaluar riesgos viales en las cinco líneas de acción con priorización e intervención.',
+    justificacionNaSugerida: 'No aplica para organizaciones sin exposición a riesgo vial.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 8 - Caracterización, evaluación y control del riesgo'
   },
   {
     codigo: 'P05',
@@ -156,7 +187,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     ],
     modulosSstRelacionados: ['indicadores', 'objetivos-sst'],
     moduloPesvUrl: '/pesv/indicadores',
-    moduloPesvNombre: 'Indicadores PESV'
+    moduloPesvNombre: 'Indicadores PESV',
+    modoVerificacionSugerido: ['Revisión de documento de objetivos y metas', 'Verificación de indicadores definidos', 'Revisión de línea base'],
+    hallazgoSugeridoNoCumple: 'No se evidencian objetivos medibles tipo SMART ni metas cuantificables de seguridad vial con indicadores de seguimiento según Art. 9 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifican objetivos SMART definidos con metas cuantificables, indicadores de seguimiento y línea base establecida conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere definir objetivos SMART con metas cuantificables e indicadores de seguimiento.',
+    justificacionNaSugerida: 'No aplica para organizaciones sin plan estratégico de seguridad vial vigente.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 9 - Objetivos y metas del PESV'
   },
   {
     codigo: 'P06',
@@ -180,7 +217,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     ],
     modulosSstRelacionados: ['programas-sst', 'cronogramas'],
     moduloPesvUrl: '/pesv/factores-desempeno',
-    moduloPesvNombre: 'Factores de Desempeño'
+    moduloPesvNombre: 'Factores de Desempeño',
+    modoVerificacionSugerido: ['Revisión de programas por línea de acción', 'Verificación de cronograma anual', 'Revisión de asignación presupuestal'],
+    hallazgoSugeridoNoCumple: 'No se evidencian programas y planes de acción para las cinco líneas de acción del PESV con cronograma y presupuesto según Art. 10 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifican programas documentados para cada línea de acción con cronograma anual y presupuesto asignado conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere diseñar programas y planes de acción para cada línea de acción con cronograma y presupuesto.',
+    justificacionNaSugerida: 'No aplica para organizaciones en fase inicial de implementación del PESV.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 10 - Planes de acción de seguridad vial'
   },
   {
     codigo: 'P07',
@@ -204,7 +247,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     ],
     modulosSstRelacionados: ['perfiles-cargo', 'responsabilidades-sst'],
     moduloPesvUrl: '/pesv/liderazgo',
-    moduloPesvNombre: 'Liderazgo y Compromiso'
+    moduloPesvNombre: 'Liderazgo y Compromiso',
+    modoVerificacionSugerido: ['Revisión de documento de roles y responsabilidades', 'Verificación de inclusión en perfiles de cargo', 'Entrevista a personal con responsabilidades asignadas'],
+    hallazgoSugeridoNoCumple: 'No se evidencia documento de roles y responsabilidades de los actores del PESV ni inclusión en perfiles de cargo según Art. 11 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifican roles y responsabilidades documentados, incluidos en perfiles de cargo y comunicados a los involucrados conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere documentar roles y responsabilidades e incluirlos en los perfiles de cargo.',
+    justificacionNaSugerida: 'No aplica para empresas unipersonales donde una sola persona asume todas las funciones.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 11 - Funciones y responsabilidades'
   },
   {
     codigo: 'P08',
@@ -228,7 +277,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     ],
     modulosSstRelacionados: ['presupuesto-sst'],
     moduloPesvUrl: '/pesv/liderazgo',
-    moduloPesvNombre: 'Liderazgo y Compromiso'
+    moduloPesvNombre: 'Liderazgo y Compromiso',
+    modoVerificacionSugerido: ['Revisión de presupuesto aprobado', 'Verificación de recursos humanos asignados', 'Revisión de recursos técnicos disponibles'],
+    hallazgoSugeridoNoCumple: 'No se evidencia asignación de recursos humanos, técnicos, físicos y financieros para la implementación del PESV según Art. 12 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifica presupuesto anual aprobado, recursos humanos, técnicos y físicos asignados para la implementación del PESV conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere asignar y documentar recursos (humanos, técnicos, físicos y financieros) para el PESV.',
+    justificacionNaSugerida: 'No aplica para organizaciones sin PESV vigente.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 12 - Recursos'
   },
 
   // ==================== HACER (11 pasos) ====================
@@ -256,7 +311,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     modulosSstUrls: [
       { nombre: 'Gestión de Trabajadores', url: '/trabajadores', icono: 'Users' },
       { nombre: 'Exámenes Médicos', url: '/examenes-medicos', icono: 'Stethoscope' }
-    ]
+    ],
+    modoVerificacionSugerido: ['Revisión de procedimiento de selección de conductores', 'Verificación de certificados de aptitud psicofísica', 'Revisión de matriz de documentos'],
+    hallazgoSugeridoNoCumple: 'No se evidencian acciones de fortalecimiento del comportamiento seguro de conductores y actores viales según Art. 13 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifican acciones implementadas para el fortalecimiento del factor humano incluyendo selección de conductores, evaluación psicofísica y control documental conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere implementar proceso de selección de conductores, evaluación de aptitud y control de documentación.',
+    justificacionNaSugerida: 'No aplica para organizaciones sin conductores en su nómina.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 13 - Comportamiento humano'
   },
   {
     codigo: 'H02',
@@ -281,7 +342,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     ],
     modulosSstRelacionados: ['capacitaciones', 'induccion'],
     moduloPesvUrl: '/pesv/capacitaciones',
-    moduloPesvNombre: 'Capacitaciones PESV'
+    moduloPesvNombre: 'Capacitaciones PESV',
+    modoVerificacionSugerido: ['Revisión de plan de capacitación anual', 'Verificación de registros de asistencia', 'Revisión de evaluaciones de conocimiento'],
+    hallazgoSugeridoNoCumple: 'No se evidencia programa de capacitación continua en seguridad vial con plan anual, registros de asistencia y evaluaciones según Art. 14 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifica programa de capacitación continua en seguridad vial con plan anual, registros de asistencia, evaluaciones de conocimiento y material didáctico conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere desarrollar programa de capacitación en seguridad vial con plan anual y evaluaciones.',
+    justificacionNaSugerida: 'No aplica para organizaciones sin personal expuesto a riesgo vial.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 14 - Capacitación en seguridad vial'
   },
   {
     codigo: 'H03',
@@ -306,7 +373,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     modulosSstRelacionados: ['trabajadores'],
     modulosSstUrls: [
       { nombre: 'Gestión de Trabajadores', url: '/trabajadores', icono: 'Users' }
-    ]
+    ],
+    modoVerificacionSugerido: ['Revisión de base de datos de documentos', 'Verificación de alertas de vencimiento', 'Consulta SIMIT de comparendos'],
+    hallazgoSugeridoNoCumple: 'No se evidencia control actualizado de documentación de conductores (licencias, comparendos, antecedentes) según Art. 15 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifica base de datos actualizada con control de documentos de conductores, alertas de vencimiento y consulta periódica SIMIT conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere implementar control de documentación de conductores con alertas de vencimiento y consulta SIMIT.',
+    justificacionNaSugerida: 'No aplica para organizaciones sin conductores.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 15 - Documentación de conductores'
   },
   {
     codigo: 'H04',
@@ -333,7 +406,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     modulosSstUrls: [
       { nombre: 'Equipos y Herramientas', url: '/equipos', icono: 'Wrench' },
       { nombre: 'Inspecciones SST', url: '/inspecciones', icono: 'ClipboardCheck' }
-    ]
+    ],
+    modoVerificacionSugerido: ['Revisión de inventario de vehículos', 'Verificación de RTM y SOAT vigentes', 'Inspección de condiciones de seguridad'],
+    hallazgoSugeridoNoCumple: 'No se evidencia que los vehículos cuenten con condiciones técnicas y de seguridad adecuadas (RTM, SOAT vigentes) según Art. 16 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifica inventario de vehículos actualizado con RTM y SOAT vigentes, tarjetas de propiedad y condiciones técnicas adecuadas conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere asegurar que todos los vehículos cumplan con RTM, SOAT y condiciones técnicas de seguridad.',
+    justificacionNaSugerida: 'No aplica para organizaciones sin vehículos propios ni contratados.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 16 - Vehículos seguros'
   },
   {
     codigo: 'H05',
@@ -361,7 +440,13 @@ export const PASOS_PESV: PasoPesvData[] = [
       { nombre: 'Equipos y Herramientas', url: '/equipos', icono: 'Wrench' }
     ],
     moduloPesvUrl: '/pesv/mantenimiento',
-    moduloPesvNombre: 'Mantenimiento Vehicular'
+    moduloPesvNombre: 'Mantenimiento Vehicular',
+    modoVerificacionSugerido: ['Revisión de plan de mantenimiento documentado', 'Verificación de hojas de vida vehiculares', 'Revisión de órdenes de trabajo'],
+    hallazgoSugeridoNoCumple: 'No se evidencia plan de mantenimiento preventivo y correctivo para la flota vehicular según Art. 17 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifica plan de mantenimiento vehicular documentado con hojas de vida actualizadas y registros de intervenciones conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere implementar plan de mantenimiento preventivo y correctivo con hojas de vida vehiculares.',
+    justificacionNaSugerida: 'No aplica para organizaciones sin flota vehicular propia.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 17 - Mantenimiento y control de vehículos'
   },
   {
     codigo: 'H06',
@@ -385,7 +470,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     ],
     modulosSstRelacionados: ['inspecciones'],
     moduloPesvUrl: '/pesv/inspecciones',
-    moduloPesvNombre: 'Inspecciones Preoperacionales'
+    moduloPesvNombre: 'Inspecciones Preoperacionales',
+    modoVerificacionSugerido: ['Revisión de formato de inspección', 'Verificación de registros diarios', 'Revisión de seguimiento a hallazgos'],
+    hallazgoSugeridoNoCumple: 'No se evidencian inspecciones preoperacionales diarias de vehículos con formato estandarizado y seguimiento a hallazgos según Art. 18 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifican inspecciones preoperacionales con formato estandarizado, registros diarios y seguimiento a hallazgos conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere implementar inspecciones preoperacionales diarias con formato y seguimiento a hallazgos.',
+    justificacionNaSugerida: 'No aplica para organizaciones sin operación vehicular.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 18 - Inspección de vehículos'
   },
   {
     codigo: 'H07',
@@ -412,7 +503,13 @@ export const PASOS_PESV: PasoPesvData[] = [
       { nombre: 'Indicadores SST', url: '/indicadores', icono: 'BarChart3' }
     ],
     moduloPesvUrl: '/pesv/monitoreo-gps',
-    moduloPesvNombre: 'Monitoreo GPS/Velocidad'
+    moduloPesvNombre: 'Monitoreo GPS/Velocidad',
+    modoVerificacionSugerido: ['Revisión de política de velocidad', 'Verificación de reportes de monitoreo GPS', 'Revisión de estadísticas de excesos'],
+    hallazgoSugeridoNoCumple: 'No se evidencian controles para la gestión de velocidad (política, GPS, seguimiento a infracciones) según Art. 19 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifican controles de velocidad implementados con política documentada, monitoreo GPS y seguimiento a infracciones conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere implementar controles de velocidad con política, mecanismos de monitoreo y seguimiento.',
+    justificacionNaSugerida: 'No aplica para nivel básico según Resolución 40595/2022.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 19 - Gestión de la velocidad'
   },
   {
     codigo: 'H08',
@@ -439,7 +536,13 @@ export const PASOS_PESV: PasoPesvData[] = [
       { nombre: 'Matriz IPERC', url: '/iperc', icono: 'AlertTriangle' }
     ],
     moduloPesvUrl: '/pesv/rutas-seguras',
-    moduloPesvNombre: 'Rutas Seguras'
+    moduloPesvNombre: 'Rutas Seguras',
+    modoVerificacionSugerido: ['Revisión de análisis de rutas', 'Verificación de mapa de puntos críticos', 'Revisión de plan de rutas alternas'],
+    hallazgoSugeridoNoCumple: 'No se evidencia análisis de rutas con identificación de puntos críticos y alternativas según Art. 20 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifica análisis de rutas con identificación de puntos críticos, señalización y rutas alternas conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere realizar análisis de rutas con identificación de puntos críticos y alternativas.',
+    justificacionNaSugerida: 'No aplica para nivel básico según Resolución 40595/2022.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 20 - Infraestructura segura'
   },
   {
     codigo: 'H09',
@@ -465,7 +568,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     modulosSstUrls: [
       { nombre: 'Sistema de Vigilancia Epidemiológica', url: '/sve', icono: 'Activity' },
       { nombre: 'Exámenes Médicos', url: '/examenes-medicos', icono: 'Stethoscope' }
-    ]
+    ],
+    modoVerificacionSugerido: ['Revisión de política de jornadas y descansos', 'Verificación de registros de horas de conducción', 'Revisión de capacitaciones sobre fatiga'],
+    hallazgoSugeridoNoCumple: 'No se evidencian controles para prevenir la fatiga y somnolencia en conductores (jornadas, descansos, horas de conducción) según Art. 21 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifican controles de fatiga y somnolencia con política de jornadas, registro de horas de conducción y programa de prevención conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere implementar controles de fatiga con política de jornadas y programa de prevención.',
+    justificacionNaSugerida: 'No aplica para nivel básico según Resolución 40595/2022.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 21 - Prevención de la fatiga'
   },
   {
     codigo: 'H10',
@@ -491,7 +600,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     modulosSstUrls: [
       { nombre: 'Sistema de Vigilancia Epidemiológica', url: '/sve', icono: 'Activity' },
       { nombre: 'Exámenes Médicos', url: '/examenes-medicos', icono: 'Stethoscope' }
-    ]
+    ],
+    modoVerificacionSugerido: ['Revisión de política de cero tolerancia', 'Verificación de registros de pruebas', 'Revisión de capacitaciones de prevención'],
+    hallazgoSugeridoNoCumple: 'No se evidencia programa de prevención y control de consumo de alcohol y sustancias psicoactivas con política de cero tolerancia según Art. 22 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifica programa de prevención con política de cero tolerancia, pruebas aleatorias y capacitaciones de prevención conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere implementar programa de prevención de alcohol y sustancias con política de cero tolerancia.',
+    justificacionNaSugerida: 'No aplica para organizaciones sin conductores ni personal expuesto a riesgo vial.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 22 - Sustancias psicoactivas'
   },
   {
     codigo: 'H11',
@@ -517,7 +632,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     modulosSstUrls: [
       { nombre: 'Plan de Emergencias', url: '/emergencias', icono: 'Siren' },
       { nombre: 'Accidentes de Trabajo', url: '/accidentes', icono: 'AlertOctagon' }
-    ]
+    ],
+    modoVerificacionSugerido: ['Revisión de protocolo de atención', 'Verificación de directorio de emergencias', 'Revisión de convenios con IPS'],
+    hallazgoSugeridoNoCumple: 'No se evidencia protocolo de atención a víctimas de siniestros viales con líneas de emergencia y programa de acompañamiento según Art. 23 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifica protocolo de atención a víctimas con directorio de emergencias, convenios con IPS y programa de acompañamiento conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere establecer protocolo de atención a víctimas con directorio de emergencias y convenios.',
+    justificacionNaSugerida: 'No aplica para organizaciones sin historial de siniestros viales y bajo riesgo vial.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 23 - Atención a víctimas'
   },
 
   // ==================== VERIFICAR (3 pasos) ====================
@@ -541,7 +662,13 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Reportes de seguimiento',
       'Gráficos de tendencias'
     ],
-    modulosSstRelacionados: ['indicadores']
+    modulosSstRelacionados: ['indicadores'],
+    modoVerificacionSugerido: ['Revisión de tablero de indicadores', 'Verificación de mediciones periódicas', 'Revisión de análisis de tendencias'],
+    hallazgoSugeridoNoCumple: 'No se evidencian indicadores de desempeño del PESV definidos con medición periódica y análisis de tendencias según Art. 24 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifican indicadores de desempeño definidos con medición periódica, análisis de tendencias y reportes de seguimiento conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere definir y monitorear indicadores de desempeño del PESV con análisis de tendencias.',
+    justificacionNaSugerida: 'No aplica para evaluaciones en primer año de implementación sin línea base.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 24 - Seguimiento, medición, análisis y evaluación del desempeño'
   },
   {
     codigo: 'V02',
@@ -565,7 +692,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     ],
     modulosSstRelacionados: ['accidentes', 'investigaciones'],
     moduloPesvUrl: '/pesv/siniestros',
-    moduloPesvNombre: 'Siniestros Viales'
+    moduloPesvNombre: 'Siniestros Viales',
+    modoVerificacionSugerido: ['Revisión de base de datos de siniestros', 'Verificación de informes de investigación', 'Revisión de análisis de causalidad'],
+    hallazgoSugeridoNoCumple: 'No se evidencia registro, investigación y análisis de siniestros viales con lecciones aprendidas según Art. 25 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifica registro completo de siniestros viales con investigación de causas, análisis de causalidad y lecciones aprendidas conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere implementar registro sistemático de siniestros con investigación y análisis de causas.',
+    justificacionNaSugerida: 'No aplica para organizaciones sin historial de siniestros viales en el período evaluado.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 25 - Investigación de siniestros viales'
   },
   {
     codigo: 'V03',
@@ -587,7 +720,13 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Listas de verificación',
       'Informes de hallazgos'
     ],
-    modulosSstRelacionados: ['auditorias']
+    modulosSstRelacionados: ['auditorias'],
+    modoVerificacionSugerido: ['Revisión de programa anual de auditorías', 'Verificación de informes de auditoría', 'Revisión de plan de acciones correctivas'],
+    hallazgoSugeridoNoCumple: 'No se evidencian auditorías periódicas al PESV con programa, informes y plan de acciones correctivas según Art. 26 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifican auditorías periódicas al PESV con programa anual, informes de hallazgos y plan de acciones correctivas conforme a la Resolución 40595/2022.',
+    observacionesNoCumple: 'Se requiere implementar programa de auditorías con informes y plan de acciones correctivas.',
+    justificacionNaSugerida: 'No aplica para nivel básico según Resolución 40595/2022.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 26 - Auditoría'
   },
 
   // ==================== ACTUAR (2 pasos) ====================
@@ -616,7 +755,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     moduloPesvNombre: 'Mejora Continua PESV',
     modulosSstUrls: [
       { nombre: 'Plan de Mejoramiento SST', url: '/plan-mejoramiento', icono: 'ClipboardCheck' }
-    ]
+    ],
+    modoVerificacionSugerido: ['Revisión de plan de mejora documentado', 'Verificación de seguimiento a acciones', 'Revisión de informes de eficacia'],
+    hallazgoSugeridoNoCumple: 'No se evidencian acciones correctivas, preventivas y de mejora derivadas del PESV con seguimiento y verificación de eficacia según Art. 27 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifican acciones correctivas, preventivas y de mejora documentadas con seguimiento y verificación de eficacia conforme a la Resolución 40595/2022 y Decreto 1072/2015 Art. 2.2.4.6.33.',
+    observacionesNoCumple: 'Se requiere implementar plan de mejora con acciones correctivas, preventivas y de mejora con seguimiento.',
+    justificacionNaSugerida: 'No aplica para evaluaciones sin hallazgos previos que requieran acciones de mejora.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 27 - Mejora continua; Decreto 1072/2015, Art. 2.2.4.6.33'
   },
   {
     codigo: 'A02',
@@ -643,7 +788,13 @@ export const PASOS_PESV: PasoPesvData[] = [
     moduloPesvNombre: 'Revisión por la Dirección PESV',
     modulosSstUrls: [
       { nombre: 'Revisiones por la Dirección SST', url: '/revisiones-direccion', icono: 'ClipboardCheck' }
-    ]
+    ],
+    modoVerificacionSugerido: ['Revisión de acta de revisión por la dirección', 'Verificación de análisis de resultados', 'Revisión de decisiones y compromisos'],
+    hallazgoSugeridoNoCumple: 'No se evidencia revisión periódica del PESV por parte de la alta dirección con análisis de resultados, decisiones y compromisos según Art. 28 de la Resolución 40595/2022.',
+    observacionesCumple: 'Se verifica revisión periódica del PESV por la alta dirección con acta de revisión, análisis de resultados y compromisos conforme a la Resolución 40595/2022 y Decreto 1072/2015 Art. 2.2.4.6.31.',
+    observacionesNoCumple: 'Se requiere realizar revisión por la alta dirección con análisis de resultados y definición de compromisos.',
+    justificacionNaSugerida: 'No aplica para evaluaciones iniciales sin período de implementación previo.',
+    fundamentoNormativo: 'Resolución 40595/2022, Art. 28 - Revisión por la dirección; Decreto 1072/2015, Art. 2.2.4.6.31; ISO 39001:2012 Cláusula 9.3'
   }
 ];
 
