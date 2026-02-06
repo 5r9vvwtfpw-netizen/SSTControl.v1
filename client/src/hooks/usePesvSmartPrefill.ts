@@ -153,9 +153,9 @@ export function usePesvSmartPrefill(): PesvSmartPrefillData {
     numWorkers: company.numberOfWorkers,
     numVehicles: company.numberOfVehicles || vehicles.length,
     numDrivers: drivers.length,
-    actividadEconomica: company.actividadPrincipal || null,
-    responsableSst: company.responsableSstNombre || null,
-    representanteLegal: company.representanteLegal || null,
+    actividadEconomica: company.ciiuCode || null,
+    responsableSst: company.legalRepName || null,
+    representanteLegal: company.legalRepName || null,
   } : null;
 
   const sstObjectives: SstObjectiveData[] = objetivos.map(obj => ({
@@ -186,14 +186,14 @@ export function usePesvSmartPrefill(): PesvSmartPrefillData {
     }).length,
   } : null;
 
-  const vehicleMap = vehicles.reduce((acc, v) => { acc[v.id] = v.plate || v.make || v.id; return acc; }, {} as Record<string, string>);
+  const vehicleMap = vehicles.reduce((acc, v) => { acc[v.id] = v.plate || v.brand || v.id; return acc; }, {} as Record<string, string>);
   const driverMap = drivers.reduce((acc, d) => { acc[d.id] = d.name || d.id; return acc; }, {} as Record<string, string>);
 
   const operationalStats: OperationalStats = {
     inspections: {
       total: inspections.length,
-      passed: inspections.filter(i => i.result === "aprobado" || i.result === "approved").length,
-      failed: inspections.filter(i => i.result === "rechazado" || i.result === "rejected" || i.result === "failed").length,
+      passed: inspections.filter(i => i.result === "apto" || i.result === "apto-con-observaciones").length,
+      failed: inspections.filter(i => i.result === "no-apto").length,
       items: inspections.map(i => ({
         id: i.id,
         label: `Inspección ${i.inspectionDate} - ${vehicleMap[i.vehicleId] || 'Vehículo'} (${i.result})`,
@@ -218,7 +218,7 @@ export function usePesvSmartPrefill(): PesvSmartPrefillData {
     },
     trainings: {
       total: trainings.length,
-      completed: trainings.filter(t => t.status === "completada" || t.status === "completed").length,
+      completed: trainings.filter(t => t.status === "completada").length,
       items: trainings.map(t => ({
         id: t.id,
         label: `${t.title} - ${t.trainingDate} (${t.status})`,
