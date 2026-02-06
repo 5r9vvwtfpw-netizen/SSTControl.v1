@@ -1,39 +1,47 @@
 import { ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { isModuleAllowedForChapter, CHAPTER_DESCRIPTIONS, type ChapterType } from "@shared/chapter-modules";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock, ArrowLeft, Building2 } from "lucide-react";
+import type { Company } from "@shared/schema";
 
 interface ChapterGateProps {
   children: ReactNode;
 }
 
+function isPesvRoute(path: string): boolean {
+  const cleanPath = path.split("?")[0];
+  return cleanPath === "/pesv" || cleanPath.startsWith("/pesv/");
+}
+
 export function ChapterGate({ children }: ChapterGateProps) {
   const [location, setLocation] = useLocation();
   const { user } = useAuth();
-  const { companyChapter, canSelectCompany, selectedCompanyId, isLoading } = useCompanyContext();
-  
-  console.log("[ChapterGate] location:", location, "companyChapter:", companyChapter, "isLoading:", isLoading);
+  const { companyChapter, canSelectCompany, selectedCompanyId, selectedCompany, isLoading } = useCompanyContext();
 
-  // Determinar el capítulo efectivo
-  // El contexto ya calcula companyChapter correctamente para ambos casos:
-  // - Superadmin con empresa seleccionada
-  // - Usuario regular con su empresa asignada
+  const { data: userCompany } = useQuery<Company>({
+    queryKey: ["/api/company/current"],
+    enabled: !!user && !canSelectCompany && !!user.companyId,
+    staleTime: 60000,
+  });
+
+  const effectiveCompany = canSelectCompany ? selectedCompany : userCompany;
+  const companyHasVehicles = (effectiveCompany?.numberOfVehicles ?? 0) > 0;
+
   const effectiveChapter: ChapterType | null = (() => {
-    // Superadmin sin empresa seleccionada puede ver todo
     if (canSelectCompany && !selectedCompanyId) {
       return null;
     }
-    
-    // Usar capítulo del contexto (ya calculado para superadmin o usuario)
     return companyChapter;
   })();
 
-  // Verificar si la ruta actual está permitida
-  const isAllowed = effectiveChapter === null || isModuleAllowedForChapter(location, effectiveChapter);
+  const isAllowed = effectiveChapter === null 
+    || isModuleAllowedForChapter(location, effectiveChapter)
+    || (isPesvRoute(location) && companyHasVehicles);
 
   // Si está cargando, mostrar el contenido (evitar flash de contenido)
   if (isLoading) {

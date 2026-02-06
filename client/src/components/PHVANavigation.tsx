@@ -22,10 +22,12 @@ import {
 import safetyHelmetAvatar from "@assets/generated_images/safety_helmet_avatar_icon.png";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { roleLabels, getRolePermissions } from "@shared/permissions";
 import { canAccessRoute } from "@shared/route-permissions";
 import { filterMenuItemsByChapter } from "@shared/chapter-modules";
+import type { Company } from "@shared/schema";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
@@ -169,6 +171,15 @@ export function PHVANavigation() {
     setPendingCompanySelection,
     companyChapter,
   } = useCompanyContext();
+
+  const { data: userCompanyData } = useQuery<Company>({
+    queryKey: ["/api/company/current"],
+    enabled: !!user && user.role !== 'superadmin' && !!user.companyId,
+    staleTime: 60000,
+  });
+
+  const effectiveCompany = user?.role === 'superadmin' ? selectedCompany : userCompanyData;
+  const companyHasVehicles = (effectiveCompany?.numberOfVehicles ?? 0) > 0;
 
   // Estado del chatbot
   const [chatbotOpen, setChatbotOpen] = useState(false);
@@ -331,9 +342,19 @@ export function PHVANavigation() {
           canAccessRoute(userPermissions, item.path)
         );
         
-        // Luego filtrar por capítulo de la empresa (si está definido)
-        // Nota: superadmin sin empresa seleccionada ve todo (companyChapter = null)
         filteredItems = filterMenuItemsByChapter(filteredItems, companyChapter);
+        
+        if (companyHasVehicles && companyChapter !== null) {
+          const pesvItemsFromOriginal = group.items.filter(item =>
+            canAccessRoute(userPermissions, item.path) &&
+            (item.path === "/pesv" || item.path.startsWith("/pesv/"))
+          );
+          for (const pesvItem of pesvItemsFromOriginal) {
+            if (!filteredItems.some(fi => fi.path === pesvItem.path)) {
+              filteredItems.push(pesvItem);
+            }
+          }
+        }
         
         // Solo incluir el grupo si tiene items visibles
         if (filteredItems.length > 0) {
@@ -348,7 +369,7 @@ export function PHVANavigation() {
     }
 
     return filtered;
-  }, [userPermissions, companyChapter]);
+  }, [userPermissions, companyChapter, companyHasVehicles]);
 
   // Filtrar tabs PHVA (no mostrar tabs sin items)
   const visiblePhvaTabs = useMemo(() => {
