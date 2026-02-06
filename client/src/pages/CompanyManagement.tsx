@@ -419,6 +419,9 @@ export default function CompanyManagement() {
 
   const handleEdit = (company: Company) => {
     setEditingCompany(company);
+    const quoteDataRaw = typeof window !== 'undefined' ? sessionStorage.getItem('sst_quote_data') : null;
+    const quoteData = quoteDataRaw ? JSON.parse(quoteDataRaw) : null;
+    const quoteVehicles = quoteData?.vehicles ? parseInt(String(quoteData.vehicles), 10) : 0;
     setFormData({
       name: company.name,
       nit: company.nit,
@@ -431,7 +434,7 @@ export default function CompanyManagement() {
       legalRepId: company.legalRepId || "",
       legalRepPosition: company.legalRepPosition || "",
       numberOfWorkers: company.numberOfWorkers,
-      numberOfVehicles: company.numberOfVehicles || 0,
+      numberOfVehicles: company.numberOfVehicles || quoteVehicles || 0,
       riskLevel: company.riskLevel,
     });
     setLogoPreview(company.logoUrl || null);
