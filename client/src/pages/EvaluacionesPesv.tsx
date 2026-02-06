@@ -79,11 +79,43 @@ export default function EvaluacionesPesv() {
     enabled: !!user,
   });
 
+  const { data: currentCompany } = useQuery<any>({
+    queryKey: ["/api/company/current"],
+    enabled: !!user && !isSuperAdmin,
+  });
+
+  const calcularNivelPesv = (numVehiculos: number): "basico" | "estandar" | "avanzado" => {
+    if (numVehiculos > 50) return "avanzado";
+    if (numVehiculos >= 11) return "estandar";
+    return "basico";
+  };
+
   useEffect(() => {
     if (!isSuperAdmin && user?.companyId && dialogOpen) {
       form.setValue("companyId", user.companyId);
+      if (currentCompany?.numberOfVehicles != null) {
+        const vehiculos = currentCompany.numberOfVehicles;
+        const nivel = calcularNivelPesv(vehiculos);
+        form.setValue("numeroVehiculos", vehiculos);
+        form.setValue("nivel", nivel);
+      }
     }
-  }, [isSuperAdmin, user?.companyId, dialogOpen, form]);
+  }, [isSuperAdmin, user?.companyId, dialogOpen, form, currentCompany]);
+
+  useEffect(() => {
+    if (isSuperAdmin && dialogOpen) {
+      const selectedCompanyId = form.getValues("companyId");
+      if (selectedCompanyId) {
+        const selectedCompany = companies.find((c: any) => c.id === selectedCompanyId);
+        if (selectedCompany?.numberOfVehicles != null) {
+          const vehiculos = selectedCompany.numberOfVehicles;
+          const nivel = calcularNivelPesv(vehiculos);
+          form.setValue("numeroVehiculos", vehiculos);
+          form.setValue("nivel", nivel);
+        }
+      }
+    }
+  }, [isSuperAdmin, dialogOpen, form, companies, form.watch?.("companyId")]);
 
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
@@ -333,8 +365,8 @@ export default function EvaluacionesPesv() {
                   name="nivel"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nivel PESV</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <FormLabel>Nivel PESV (Auto-calculado)</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value} disabled>
                         <FormControl>
                           <SelectTrigger data-testid="select-nivel-pesv">
                             <SelectValue placeholder="Seleccione nivel" />
@@ -349,7 +381,7 @@ export default function EvaluacionesPesv() {
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Según cantidad de vehículos o conductores (Res. 40595/2022)
+                        Calculado automáticamente según vehículos registrados en la empresa (Res. 40595/2022)
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
