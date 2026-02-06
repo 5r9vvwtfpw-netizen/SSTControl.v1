@@ -313,7 +313,7 @@ export function registerBillingRoutes(app: Express) {
       const auditContext = getAuditContext(req);
       await logAuditEvent({
         userId: req.user!.id,
-        action: 'admin_assign_trial',
+        action: 'create',
         resource: 'subscription',
         resourceId: subscription.id,
         oldValue: null,
@@ -604,7 +604,27 @@ export function registerBillingRoutes(app: Express) {
         console.log('[Billing] Subscription not found:', subscriptionId);
         return res.status(404).json({ error: "Suscripción no encontrada" });
       }
-      console.log('[Billing] Found subscription:', subscription.id, 'planId:', subscription.planId);
+      console.log('[Billing] Found subscription:', subscription.id, 'planId:', subscription.planId, 'status:', subscription.status);
+
+      if (subscription.status === 'active') {
+        console.log('[Billing] Subscription already active, skipping activation:', subscription.id);
+        return res.status(200).json({
+          success: true,
+          alreadyActive: true,
+          message: 'La suscripción ya está activa',
+        });
+      }
+
+      if (subscription.status === 'trial') {
+        console.log('[Billing] Subscription already in trial, skipping activation:', subscription.id);
+        return res.status(200).json({
+          success: true,
+          trial: true,
+          alreadyActive: true,
+          trialEnd: subscription.trialEnd ? new Date(subscription.trialEnd).toISOString() : undefined,
+          message: 'La suscripción ya tiene un período de prueba activo',
+        });
+      }
 
       const isAdmin = req.user!.role === 'admin';
       const isOwner = req.user!.companyId === subscription.companyId;
@@ -647,7 +667,7 @@ export function registerBillingRoutes(app: Express) {
           
           const jwtCurrentPrice = quoteData.sub_data.current_period_price || 0;
           const jwtBasePrice = quoteData.sub_data.base_monthly_price || 0;
-          couponCode = quoteData.metadata?.coupon_code;
+          couponCode = quoteData.metadata?.coupon_code || undefined;
           
           console.log('[Billing] JWT quote verified:', {
             basePrice: jwtBasePrice,
@@ -1140,7 +1160,7 @@ export function registerBillingRoutes(app: Express) {
    */
   app.get("/api/billing/invoice/:id/download", billingRateLimiter, requireAuth, async (req, res) => {
     try {
-      const invoiceId = parseInt(req.params.id);
+      const invoiceId = req.params.id;
       const companyId = req.user!.companyId;
       
       if (!companyId) {
@@ -1163,12 +1183,10 @@ export function registerBillingRoutes(app: Express) {
       }
 
       // Re-generate PDF
-      const pdfBuffer = await invoicePdfService.generateInvoicePdf({
-        invoice,
-        company,
-        subscription,
-        plan
-      });
+      const pdfBuffer = await invoicePdfService.generateInvoicePdf(
+        invoice as any,
+        company as any
+      );
 
       // Send PDF file
       res.setHeader('Content-Type', 'application/pdf');
