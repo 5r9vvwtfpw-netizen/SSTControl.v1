@@ -341,14 +341,6 @@ export default function DetalleEvaluacionPesv() {
             <RefreshCcw className={`h-4 w-4 mr-2 ${recalcularMutation.isPending ? 'animate-spin' : ''}`} />
             Recalcular Puntajes
           </Button>
-          <Button 
-            variant="outline" 
-            disabled
-            data-testid="button-generar-pdf"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            Generar PDF
-          </Button>
         </div>
       </div>
 
