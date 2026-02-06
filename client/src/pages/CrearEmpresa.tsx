@@ -78,11 +78,14 @@ export default function CrearEmpresa() {
     queryKey: ["/api/user"],
   });
 
-  // Leer parámetro workers desde URL o sessionStorage (desde página de marketing)
+  // Leer parámetro workers desde URL, sessionStorage, o datos del quote JWT (landing page)
   const searchParams = new URLSearchParams(window.location.search);
   const urlWorkers = searchParams.get("workers");
   const storedWorkers = typeof window !== 'undefined' ? sessionStorage.getItem('sst_onboarding_workers') : null;
-  const workersParam = urlWorkers || storedWorkers;
+  const quoteDataRaw = typeof window !== 'undefined' ? sessionStorage.getItem('sst_quote_data') : null;
+  const quoteData = quoteDataRaw ? JSON.parse(quoteDataRaw) : null;
+  const quoteWorkers = quoteData?.employees ? String(quoteData.employees) : null;
+  const workersParam = urlWorkers || storedWorkers || quoteWorkers;
   const initialWorkers = workersParam ? parseInt(workersParam, 10) : 1;
 
   useEffect(() => {
