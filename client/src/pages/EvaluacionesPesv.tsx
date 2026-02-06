@@ -530,84 +530,81 @@ export default function EvaluacionesPesv() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {filteredEvaluaciones.map((evaluacion) => (
             <Card
               key={evaluacion.id}
-              className="cursor-pointer hover-elevate transition-all"
+              className="hover-elevate active-elevate-2 cursor-pointer"
               onClick={() => setLocation(`/pesv/evaluacion/${evaluacion.id}`)}
               data-testid={`card-evaluacion-${evaluacion.id}`}
             >
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <CardTitle className="text-xl">PESV {evaluacion.anio}</CardTitle>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {getNivelBadge(evaluacion.nivel)}
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-xl mb-2">
+                      Evaluación PESV {evaluacion.anio}
+                    </CardTitle>
+                    <CardDescription>
+                      <div className="space-y-1">
+                        <p className="font-medium">Responsable: {evaluacion.responsableNombre}</p>
+                        <p>Cargo: {evaluacion.responsableCargo}</p>
+                      </div>
+                    </CardDescription>
+                  </div>
+                  <div className="flex flex-col gap-2 items-end">
                     {getEstadoBadge(evaluacion.estado)}
+                    {getNivelBadge(evaluacion.nivel)}
                   </div>
                 </div>
-                <CardDescription>
-                  {evaluacion.responsableNombre} - {evaluacion.responsableCargo}
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Cumplimiento</span>
-                    <span className="font-medium" data-testid={`text-cumplimiento-${evaluacion.id}`}>
-                      {evaluacion.porcentajeCumplimiento}%
-                    </span>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Nivel</p>
+                    <p className="font-semibold">{NIVELES_PESV_LABELS[evaluacion.nivel] || evaluacion.nivel}</p>
                   </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full transition-all ${
-                        evaluacion.porcentajeCumplimiento >= 85
-                          ? "bg-green-500"
-                          : evaluacion.porcentajeCumplimiento >= 60
-                          ? "bg-yellow-500"
-                          : "bg-red-500"
-                      }`}
-                      style={{ width: `${evaluacion.porcentajeCumplimiento}%` }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Puntaje</span>
-                    <span className="font-medium" data-testid={`text-puntaje-${evaluacion.id}`}>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Puntaje</p>
+                    <p className="font-semibold" data-testid={`text-puntaje-${evaluacion.id}`}>
                       {evaluacion.puntajeTotal} / {evaluacion.puntajeMaximo}
-                    </span>
+                    </p>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Car className="h-4 w-4" />
-                      <span data-testid={`text-vehiculos-${evaluacion.id}`}>{evaluacion.numeroVehiculos} vehículos</span>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Cumplimiento</p>
+                    <p className="font-semibold" data-testid={`text-cumplimiento-${evaluacion.id}`}>{evaluacion.porcentajeCumplimiento}%</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Flota</p>
+                      <p className="font-semibold" data-testid={`text-vehiculos-${evaluacion.id}`}>
+                        <Car className="h-4 w-4 inline mr-1" />{evaluacion.numeroVehiculos} veh.
+                        <Users className="h-4 w-4 inline ml-2 mr-1" /><span data-testid={`text-conductores-${evaluacion.id}`}>{evaluacion.numeroConductores} cond.</span>
+                      </p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      <span data-testid={`text-conductores-${evaluacion.id}`}>{evaluacion.numeroConductores} conductores</span>
-                    </div>
                   </div>
-                  <div className="pt-2 border-t flex items-center gap-2 flex-wrap">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => handleHeredarClick(e, evaluacion)}
-                      disabled={heredarMutation.isPending}
-                      data-testid={`button-heredar-${evaluacion.id}`}
-                    >
-                      <Copy className="h-4 w-4 mr-1" />
-                      Crear {evaluacion.anio + 1}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={(e) => handleDeleteClick(e, evaluacion)}
-                      data-testid={`button-delete-${evaluacion.id}`}
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Eliminar
-                    </Button>
-                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => handleHeredarClick(e, evaluacion)}
+                    disabled={heredarMutation.isPending}
+                    data-testid={`button-heredar-${evaluacion.id}`}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Crear {evaluacion.anio + 1}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive"
+                    onClick={(e) => handleDeleteClick(e, evaluacion)}
+                    data-testid={`button-delete-${evaluacion.id}`}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar
+                  </Button>
                 </div>
               </CardContent>
             </Card>
