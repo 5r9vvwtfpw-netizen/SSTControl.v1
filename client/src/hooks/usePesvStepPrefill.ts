@@ -4,7 +4,8 @@ import {
   CompanyData,
   VehicleStats,
   DriverStats,
-  SstObjectiveData
+  SstObjectiveData,
+  OperationalStats
 } from "./usePesvSmartPrefill";
 import { 
   getPrefillConfigForStep, 
@@ -18,6 +19,7 @@ interface RawPrefillData {
   driverStats: DriverStats | null;
   workersList: Array<{ id: string; name: string }>;
   sstObjectives: SstObjectiveData[];
+  operationalStats: OperationalStats;
 }
 
 interface UsePesvStepPrefillResult {
@@ -111,6 +113,92 @@ function resolveFieldValue(
       }
     }
 
+    case "inspections": {
+      const stats = data.operationalStats?.inspections;
+      if (!stats) return null;
+      switch (transform) {
+        case "count":
+          return stats.total;
+        case "passed":
+          return stats.passed;
+        case "failed":
+          return stats.failed;
+        case "list":
+          return stats.items.length > 0
+            ? stats.items.slice(0, 5).map(i => i.label).join("; ")
+            : null;
+        case "summary":
+          return stats.total > 0
+            ? `${stats.total} inspecciones (${stats.passed} aprobadas, ${stats.failed} rechazadas)`
+            : "Sin inspecciones registradas";
+        default:
+          return stats.total;
+      }
+    }
+
+    case "incidents": {
+      const stats = data.operationalStats?.incidents;
+      if (!stats) return null;
+      switch (transform) {
+        case "count":
+          return stats.total;
+        case "injuries":
+          return stats.injuries;
+        case "fatalities":
+          return stats.fatalities;
+        case "list":
+          return stats.items.length > 0
+            ? stats.items.slice(0, 5).map(i => i.label).join("; ")
+            : null;
+        case "summary":
+          return stats.total > 0
+            ? `${stats.total} siniestros (${stats.injuries} lesionados, ${stats.fatalities} fatalidades)`
+            : "Sin siniestros registrados";
+        default:
+          return stats.total;
+      }
+    }
+
+    case "trainings": {
+      const stats = data.operationalStats?.trainings;
+      if (!stats) return null;
+      switch (transform) {
+        case "count":
+          return stats.total;
+        case "completed":
+          return stats.completed;
+        case "list":
+          return stats.items.length > 0
+            ? stats.items.slice(0, 5).map(t => t.label).join("; ")
+            : null;
+        case "summary":
+          return stats.total > 0
+            ? `${stats.total} capacitaciones (${stats.completed} completadas)`
+            : "Sin capacitaciones registradas";
+        default:
+          return stats.total;
+      }
+    }
+
+    case "audits": {
+      const stats = data.operationalStats?.audits;
+      if (!stats) return null;
+      switch (transform) {
+        case "count":
+          return stats.total;
+        case "list":
+          return stats.items.length > 0
+            ? stats.items.slice(0, 5).map(a => a.label).join("; ")
+            : null;
+        case "summary":
+          return stats.total > 0
+            ? `${stats.total} auditorías realizadas`
+            : "Sin auditorías registradas";
+        default:
+          return stats.total;
+      }
+    }
+
     case "calculated":
       return null;
 
@@ -126,6 +214,7 @@ export function usePesvStepPrefill(stepCode: string): UsePesvStepPrefillResult {
     driverStats,
     workersList,
     sstObjectives,
+    operationalStats,
     isLoading,
     error,
   } = usePesvSmartPrefill();
@@ -139,8 +228,9 @@ export function usePesvStepPrefill(stepCode: string): UsePesvStepPrefillResult {
       driverStats,
       workersList: workersList.map(w => ({ id: w.id, name: w.name })),
       sstObjectives,
+      operationalStats,
     }),
-    [companyData, vehicleStats, driverStats, workersList, sstObjectives]
+    [companyData, vehicleStats, driverStats, workersList, sstObjectives, operationalStats]
   );
 
   const prefillFields: PrefillField[] = useMemo(() => {

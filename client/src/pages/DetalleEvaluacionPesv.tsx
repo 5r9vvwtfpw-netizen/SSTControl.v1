@@ -22,6 +22,9 @@ import { useLocation, useParams } from "wouter";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { NIVELES_PESV_LABELS, FASES_PESV_LABELS, FASES_PESV_COLORS, PASOS_PESV, PasoPesvData, ModuloSstUrl } from "@/data/pasos-pesv";
+import { usePesvSmartPrefill } from "@/hooks/usePesvSmartPrefill";
+import { SmartPrefillBanner } from "@/components/pesv/SmartPrefillBanner";
+import { usePesvStepPrefill } from "@/hooks/usePesvStepPrefill";
 
 type FasePHVA = "planear" | "hacer" | "verificar" | "actuar";
 
@@ -48,6 +51,9 @@ export default function DetalleEvaluacionPesv() {
   const [selectedPaso, setSelectedPaso] = useState<PasoPesvData | null>(null);
   const [respuestaDialogOpen, setRespuestaDialogOpen] = useState(false);
   const [autoFilledFields, setAutoFilledFields] = useState<Record<string, boolean>>({});
+
+  const { operationalStats, isLoading: isLoadingSmartData } = usePesvSmartPrefill();
+  const { prefillFields, isLoading: isLoadingPrefill } = usePesvStepPrefill(selectedPaso?.codigo || '');
 
   const { data: evaluacion, isLoading: loadingEvaluacion } = useQuery<EvaluacionPesv>({
     queryKey: ["/api/evaluaciones-pesv", id],
@@ -178,19 +184,31 @@ export default function DetalleEvaluacionPesv() {
         inspeccionSstId: existing.inspeccionSstId || "",
       });
     } else {
+      const newAutoFilled: Record<string, boolean> = {};
+      const autoModo = paso.modoVerificacionSugerido?.length
+        ? paso.modoVerificacionSugerido.join("; ")
+        : "";
+      const autoEvidencias = paso.evidenciasRequeridas?.length
+        ? paso.evidenciasRequeridas.join("; ")
+        : "";
+      if (autoModo) newAutoFilled.modoVerificacion = true;
+      if (autoEvidencias) newAutoFilled.evidencias = true;
       respuestaForm.reset({
         evaluacionId: id || "",
         pasoId: pasoDb?.id || "",
         cumple: 0,
         noAplica: 0,
         observaciones: "",
-        evidencias: "",
-        modoVerificacion: "",
+        evidencias: autoEvidencias,
+        modoVerificacion: autoModo,
         hallazgo: "",
         accidenteSstId: "",
         capacitacionSstId: "",
         inspeccionSstId: "",
       });
+      setAutoFilledFields(newAutoFilled);
+      setRespuestaDialogOpen(true);
+      return;
     }
     setAutoFilledFields({});
     setRespuestaDialogOpen(true);
@@ -198,7 +216,13 @@ export default function DetalleEvaluacionPesv() {
 
   const onSubmitRespuesta = (values: z.infer<typeof insertRespuestaPasoPesvSchema>) => {
     if (!selectedPaso) return;
-    saveRespuestaMutation.mutate(values);
+    const normalized = {
+      ...values,
+      accidenteSstId: values.accidenteSstId === "none" ? "" : (values.accidenteSstId || ""),
+      capacitacionSstId: values.capacitacionSstId === "none" ? "" : (values.capacitacionSstId || ""),
+      inspeccionSstId: values.inspeccionSstId === "none" ? "" : (values.inspeccionSstId || ""),
+    };
+    saveRespuestaMutation.mutate(normalized);
   };
 
   const getRespuestaForPaso = (paso: PasoPesvData): RespuestaPasoPesv | undefined => {
@@ -533,6 +557,15 @@ export default function DetalleEvaluacionPesv() {
             </Alert>
           )}
 
+          {selectedPaso && !isLoadingPrefill && prefillFields.length > 0 && (
+            <SmartPrefillBanner
+              stepCode={selectedPaso.codigo}
+              stepName={selectedPaso.nombre}
+              fields={prefillFields}
+              isLoading={isLoadingPrefill}
+            />
+          )}
+
           <Form {...respuestaForm}>
             <form onSubmit={respuestaForm.handleSubmit(onSubmitRespuesta)} className="space-y-4">
               <FormField
@@ -820,8 +853,14 @@ export default function DetalleEvaluacionPesv() {
               )}
 
               <div className="border-t pt-4">
-                <p className="text-sm font-medium mb-3 text-muted-foreground">
+                <p className="text-sm font-medium mb-3 text-muted-foreground flex items-center gap-2">
                   Trazabilidad SST (opcional)
+                  {(operationalStats.incidents.total > 0 || operationalStats.trainings.total > 0 || operationalStats.inspections.total > 0) && (
+                    <Badge variant="secondary" className="text-xs font-normal gap-1">
+                      <Sparkles className="h-3 w-3 text-amber-500" />
+                      Seleccione registros existentes
+                    </Badge>
+                  )}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
@@ -829,15 +868,37 @@ export default function DetalleEvaluacionPesv() {
                     name="accidenteSstId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs">ID Accidente SST</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="ID opcional..."
-                            {...field}
+                        <FormLabel className="text-xs">Siniestro Vial</FormLabel>
+                        {operationalStats.incidents.items.length > 0 ? (
+                          <Select
                             value={field.value || ""}
-                            data-testid="input-accidente-sst-id"
-                          />
-                        </FormControl>
+                            onValueChange={field.onChange}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-accidente-sst-id">
+                                <SelectValue placeholder="Seleccionar siniestro..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="none">Sin vincular</SelectItem>
+                              {operationalStats.incidents.items.map((item) => (
+                                <SelectItem key={item.id} value={item.id}>
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <FormControl>
+                            <Input 
+                              placeholder="Sin siniestros registrados"
+                              {...field}
+                              value={field.value || ""}
+                              disabled={isLoadingSmartData}
+                              data-testid="input-accidente-sst-id"
+                            />
+                          </FormControl>
+                        )}
                       </FormItem>
                     )}
                   />
@@ -846,15 +907,37 @@ export default function DetalleEvaluacionPesv() {
                     name="capacitacionSstId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs">ID Capacitación SST</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="ID opcional..."
-                            {...field}
+                        <FormLabel className="text-xs">Capacitación Vial</FormLabel>
+                        {operationalStats.trainings.items.length > 0 ? (
+                          <Select
                             value={field.value || ""}
-                            data-testid="input-capacitacion-sst-id"
-                          />
-                        </FormControl>
+                            onValueChange={field.onChange}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-capacitacion-sst-id">
+                                <SelectValue placeholder="Seleccionar capacitación..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="none">Sin vincular</SelectItem>
+                              {operationalStats.trainings.items.map((item) => (
+                                <SelectItem key={item.id} value={item.id}>
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <FormControl>
+                            <Input 
+                              placeholder="Sin capacitaciones registradas"
+                              {...field}
+                              value={field.value || ""}
+                              disabled={isLoadingSmartData}
+                              data-testid="input-capacitacion-sst-id"
+                            />
+                          </FormControl>
+                        )}
                       </FormItem>
                     )}
                   />
@@ -863,15 +946,37 @@ export default function DetalleEvaluacionPesv() {
                     name="inspeccionSstId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs">ID Inspección SST</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="ID opcional..."
-                            {...field}
+                        <FormLabel className="text-xs">Inspección Vehicular</FormLabel>
+                        {operationalStats.inspections.items.length > 0 ? (
+                          <Select
                             value={field.value || ""}
-                            data-testid="input-inspeccion-sst-id"
-                          />
-                        </FormControl>
+                            onValueChange={field.onChange}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-inspeccion-sst-id">
+                                <SelectValue placeholder="Seleccionar inspección..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="none">Sin vincular</SelectItem>
+                              {operationalStats.inspections.items.map((item) => (
+                                <SelectItem key={item.id} value={item.id}>
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <FormControl>
+                            <Input 
+                              placeholder="Sin inspecciones registradas"
+                              {...field}
+                              value={field.value || ""}
+                              disabled={isLoadingSmartData}
+                              data-testid="input-inspeccion-sst-id"
+                            />
+                          </FormControl>
+                        )}
                       </FormItem>
                     )}
                   />
