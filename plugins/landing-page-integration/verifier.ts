@@ -8,13 +8,14 @@
  * - JWTs are signed with HMAC-SHA256 using shared secret
  * - Tokens expire in 30 minutes to prevent replay attacks
  * - Prices are NOT recalculated - we trust the signed JWT
+ * - Strict payload structure validation prevents injection
  * 
  * @module plugins/landing-page-integration/verifier
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 import jwt from "jsonwebtoken";
-import type { QuotePayload, PluginConfig } from "./types";
+import type { QuotePayload } from "./types";
 
 const VALID_RISK_LEVELS = ['I', 'II', 'III', 'IV', 'V'] as const;
 const MAX_TOKEN_LENGTH = 5000;
@@ -22,11 +23,9 @@ const MAX_PRICE = 100_000_000;
 const MAX_EMPLOYEES = 10_000;
 const MAX_VEHICLES = 1_000;
 const MAX_DISCOUNT_MONTHS = 24;
+const JWT_PATTERN = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
+const TOKEN_MAX_AGE = '30m';
 
-/**
- * Validates the structure of a decoded JWT payload
- * Prevents injection of malformed data
- */
 function validatePayloadStructure(payload: unknown): payload is QuotePayload {
   if (!payload || typeof payload !== 'object') return false;
   
@@ -75,21 +74,30 @@ function validatePayloadStructure(payload: unknown): payload is QuotePayload {
 }
 
 /**
- * Verifies a JWT token using the configured secret
+ * Verifies and decodes a JWT quote token.
+ * 
+ * @param token - The raw JWT string from ?quote= parameter
+ * @param secret - The HMAC-SHA256 shared secret (LANDING_PAGE_API_KEY)
+ * @returns Validated QuotePayload
+ * @throws Error with user-facing message on any failure
  */
-export function verifyJWT(token: string, config: PluginConfig): QuotePayload {
-  if (!config.jwtSecret) {
-    throw new Error("Configuración de seguridad incompleta");
+export function verifyJWT(token: string, secret: string): QuotePayload {
+  if (!token || typeof token !== 'string') {
+    throw new Error("Token de cotización requerido");
   }
-  
-  if (!token || typeof token !== 'string' || token.length > MAX_TOKEN_LENGTH) {
+
+  if (token.length > MAX_TOKEN_LENGTH) {
     throw new Error("Token de cotización inválido");
+  }
+
+  if (!JWT_PATTERN.test(token)) {
+    throw new Error("Formato de token no soportado");
   }
   
   try {
-    const decoded = jwt.verify(token, config.jwtSecret, {
+    const decoded = jwt.verify(token, secret, {
       algorithms: ['HS256'],
-      maxAge: config.tokenMaxAge,
+      maxAge: TOKEN_MAX_AGE,
     });
     
     if (!validatePayloadStructure(decoded)) {
@@ -106,21 +114,4 @@ export function verifyJWT(token: string, config: PluginConfig): QuotePayload {
     }
     throw error;
   }
-}
-
-/**
- * Decodes a token (JWT format only)
- */
-export function decodeWithFallback(token: string, config: PluginConfig): QuotePayload {
-  if (!token || typeof token !== 'string') {
-    throw new Error("Token de cotización requerido");
-  }
-  
-  const jwtPattern = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
-  
-  if (!jwtPattern.test(token)) {
-    throw new Error("Formato de token no soportado");
-  }
-  
-  return verifyJWT(token, config);
 }

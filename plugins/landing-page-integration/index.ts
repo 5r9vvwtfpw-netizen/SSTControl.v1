@@ -7,7 +7,6 @@
  * ARCHITECTURE:
  * - Sidecar pattern: Independent module that can be disabled without affecting main app
  * - Stable facade: Main app only imports from this index file
- * - Kill switch: Call disablePlugin() to disable all quote verifications
  * 
  * USAGE:
  * ```typescript
@@ -24,7 +23,7 @@
  * ```
  * 
  * @module plugins/landing-page-integration
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 export { default as landingPageRouter } from "./routes";
@@ -33,15 +32,10 @@ export {
   verifyQuote,
   getRawQuotePayload,
   getQuoteSummary,
-  disablePlugin,
-  enablePlugin,
-  isPluginEnabled,
-  isPluginConfigured,
 } from "./facade";
 
 export type {
   QuotePayload,
   NormalizedQuoteData,
   QuoteVerificationResult,
-  PluginConfig,
 } from "./types";

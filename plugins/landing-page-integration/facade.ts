@@ -13,55 +13,17 @@
  * - New fields may be added but existing fields will not be removed
  * 
  * @module plugins/landing-page-integration/facade
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 import type { 
   QuotePayload, 
   NormalizedQuoteData, 
-  QuoteVerificationResult,
-  PluginConfig 
+  QuoteVerificationResult 
 } from "./types";
-import { decodeWithFallback } from "./verifier";
+import { verifyJWT } from "./verifier";
 
-let pluginEnabled = true;
-const pluginConfig: PluginConfig = {
-  enabled: true,
-  jwtSecret: process.env.LANDING_PAGE_API_KEY || null,
-  tokenMaxAge: '30m',
-  allowLegacyBase64: false,
-};
-
-/**
- * KILL SWITCH - Disable the plugin entirely
- * When disabled, all verification attempts will fail gracefully
- */
-export function disablePlugin(): void {
-  pluginEnabled = false;
-  console.warn("[LandingPagePlugin] Plugin DISABLED via kill switch");
-}
-
-/**
- * Enable the plugin
- */
-export function enablePlugin(): void {
-  pluginEnabled = true;
-  console.info("[LandingPagePlugin] Plugin ENABLED");
-}
-
-/**
- * Check if plugin is enabled
- */
-export function isPluginEnabled(): boolean {
-  return pluginEnabled;
-}
-
-/**
- * Check if plugin is properly configured
- */
-export function isPluginConfigured(): boolean {
-  return !!pluginConfig.jwtSecret;
-}
+const jwtSecret = process.env.LANDING_PAGE_API_KEY || null;
 
 /**
  * STABLE INTERFACE: Verify a quote token from the landing page
@@ -70,15 +32,7 @@ export function isPluginConfigured(): boolean {
  * @returns QuoteVerificationResult with normalized data or error
  */
 export function verifyQuote(token: string): QuoteVerificationResult {
-  if (!pluginEnabled) {
-    return {
-      valid: false,
-      data: null,
-      error: "Integración con landing page deshabilitada temporalmente"
-    };
-  }
-
-  if (!pluginConfig.jwtSecret) {
+  if (!jwtSecret) {
     console.error("[LandingPagePlugin] LANDING_PAGE_API_KEY not configured");
     return {
       valid: false,
@@ -96,7 +50,7 @@ export function verifyQuote(token: string): QuoteVerificationResult {
   }
 
   try {
-    const quoteData = decodeWithFallback(token, pluginConfig);
+    const quoteData = verifyJWT(token, jwtSecret);
     const normalized = normalizeQuoteData(quoteData);
     
     return {
@@ -122,15 +76,11 @@ export function verifyQuote(token: string): QuoteVerificationResult {
  * @throws Error if verification fails
  */
 export function getRawQuotePayload(token: string): QuotePayload {
-  if (!pluginEnabled) {
-    throw new Error("Integración con landing page deshabilitada temporalmente");
-  }
-
-  if (!pluginConfig.jwtSecret) {
+  if (!jwtSecret) {
     throw new Error("Configuración de integración incompleta");
   }
 
-  return decodeWithFallback(token, pluginConfig);
+  return verifyJWT(token, jwtSecret);
 }
 
 /**
@@ -156,9 +106,6 @@ export function getQuoteSummary(data: NormalizedQuoteData): string {
   return parts.join(', ');
 }
 
-/**
- * Format COP currency for display
- */
 function formatCOP(amount: number): string {
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
@@ -168,9 +115,6 @@ function formatCOP(amount: number): string {
   }).format(amount);
 }
 
-/**
- * Normalize raw quote payload to simplified structure for main app
- */
 function normalizeQuoteData(quote: QuotePayload): NormalizedQuoteData {
   return {
     companyName: quote.metadata.company_name || null,

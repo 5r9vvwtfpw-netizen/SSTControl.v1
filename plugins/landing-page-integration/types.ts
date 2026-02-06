@@ -7,7 +7,7 @@
  * backward compatible to avoid breaking the integration.
  * 
  * @module plugins/landing-page-integration/types
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 /**
@@ -64,14 +64,4 @@ export interface QuoteVerificationResult {
   valid: boolean;
   data: NormalizedQuoteData | null;
   error: string | null;
-}
-
-/**
- * Plugin configuration options
- */
-export interface PluginConfig {
-  enabled: boolean;
-  jwtSecret: string | null;
-  tokenMaxAge: string;
-  allowLegacyBase64: boolean;
 }
