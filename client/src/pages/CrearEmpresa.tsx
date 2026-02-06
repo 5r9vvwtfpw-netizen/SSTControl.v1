@@ -95,13 +95,13 @@ export default function CrearEmpresa() {
   const form = useForm<CreateCompanyForm>({
     resolver: zodResolver(createCompanySchema),
     defaultValues: {
-      name: "",
+      name: quoteData?.companyName || "",
       nit: "",
       city: "",
       ciiuCode: "",
       address: "",
       contactPhone: "",
-      contactEmail: "",
+      contactEmail: user?.email || "",
       numberOfWorkers: isNaN(initialWorkers) || initialWorkers < 1 ? 1 : initialWorkers,
       riskLevel: "I",
     },
