@@ -1764,6 +1764,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     actividadEconomica: z.string().optional(),
     representanteLegal: z.string().optional(),
     logoUrl: z.string().optional(),
+    // Número de vehículos desde quote JWT (PESV - Resolución 40595/2022)
+    numberOfVehicles: z.coerce.number().min(0).optional().default(0),
   });
   
 
@@ -1834,6 +1836,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         numberOfWorkers: validatedData.numberOfWorkers,
         riskLevel: validatedData.riskLevel as "I" | "II" | "III" | "IV" | "V",
         logoUrl: validatedData.logoUrl || null,
+        numberOfVehicles: validatedData.numberOfVehicles || 0,
       };
       
       console.log(`✅ [ONBOARDING] Datos validados para crear empresa:`, companyData);

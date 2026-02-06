@@ -74,6 +74,8 @@ const createCompanySchema = z.object({
   contactEmail: z.string().email("Debe ser un correo electrónico válido"),
   numberOfWorkers: z.coerce.number().min(1, "Debe tener al menos 1 trabajador"),
   riskLevel: z.enum(["I", "II", "III", "IV", "V"]).default("I"),
+  // Número de vehículos desde quote JWT (PESV - Resolución 40595/2022)
+  numberOfVehicles: z.coerce.number().min(0).optional().default(0),
 });
 
 type CreateCompanyForm = z.infer<typeof createCompanySchema>;
@@ -120,6 +122,8 @@ export default function CrearEmpresaCiiuFirst() {
       numberOfWorkers: quoteData?.employees || (isNaN(initialWorkers) || initialWorkers < 1 ? 1 : initialWorkers),
       // Pre-llenar nivel de riesgo si viene del quote
       riskLevel: quoteData?.riskLevel || "I",
+      // Pre-llenar número de vehículos desde quote JWT (PESV)
+      numberOfVehicles: quoteData?.vehicles || 0,
     },
   });
 
