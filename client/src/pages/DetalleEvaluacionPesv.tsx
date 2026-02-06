@@ -7,8 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Check, X, MinusCircle, RefreshCcw, FileText, Car, ClipboardList, Hammer, CheckSquare, AlertCircle, ClipboardCheck, AlertTriangle, GraduationCap, ExternalLink, Users, Stethoscope, Wrench, Settings, BarChart3, Activity, Siren, AlertOctagon, LucideIcon, Sparkles, BookOpen, Wand2 } from "lucide-react";
+import { ArrowLeft, Save, Check, X, MinusCircle, RefreshCcw, FileText, Car, ClipboardList, Hammer, CheckSquare, AlertCircle, ClipboardCheck, AlertTriangle, GraduationCap, ExternalLink, Users, Stethoscope, Wrench, Settings, BarChart3, Activity, Siren, AlertOctagon, LucideIcon, Sparkles, BookOpen, Wand2, CheckCircle2, FileCheck } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -48,6 +49,7 @@ export default function DetalleEvaluacionPesv() {
   const [selectedPaso, setSelectedPaso] = useState<PasoPesvData | null>(null);
   const [respuestaDialogOpen, setRespuestaDialogOpen] = useState(false);
   const [autoFilledFields, setAutoFilledFields] = useState<Record<string, boolean>>({});
+  const [finalizarDialogOpen, setFinalizarDialogOpen] = useState(false);
 
   const { data: evaluacion, isLoading: loadingEvaluacion } = useQuery<EvaluacionPesv>({
     queryKey: ["/api/evaluaciones-pesv", id],
@@ -149,8 +151,54 @@ export default function DetalleEvaluacionPesv() {
     },
   });
 
+  const finalizarEvaluacionMutation = useMutation({
+    mutationFn: async (nuevoEstado: string) => {
+      const res = await apiRequest("PATCH", `/api/evaluaciones-pesv/${id}`, { estado: nuevoEstado });
+      return res.json();
+    },
+    onSuccess: (_, nuevoEstado) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv"] });
+      setFinalizarDialogOpen(false);
+
+      const mensajes: Record<string, { titulo: string; descripcion: string }> = {
+        "completada": {
+          titulo: "Evaluación finalizada",
+          descripcion: "La evaluación PESV ha sido finalizada exitosamente. Ya puede generar el reporte para Supertransporte."
+        },
+        "enviada": {
+          titulo: "Evaluación enviada",
+          descripcion: "La evaluación ha sido marcada como enviada a Supertransporte/RUNT."
+        },
+        "en-progreso": {
+          titulo: "Evaluación reabierta",
+          descripcion: "La evaluación ha sido reabierta para continuar con la edición."
+        }
+      };
+
+      const mensaje = mensajes[nuevoEstado] || { titulo: "Estado actualizado", descripcion: "El estado de la evaluación ha sido actualizado." };
+
+      toast({
+        title: mensaje.titulo,
+        description: mensaje.descripcion,
+        className: "bg-green-50 border-green-200",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const pasosEvaluados = pasos.filter(p => getRespuestaForPaso(p)).length;
+  const totalPasos = pasos.length;
+  const progresoPasos = totalPasos > 0 ? Math.round((pasosEvaluados / totalPasos) * 100) : 0;
+
   const handlePasoClick = (paso: PasoPesvData) => {
-    if (evaluacion?.estado === "finalizada" || evaluacion?.estado === "aprobada") {
+    if (evaluacion?.estado === "completada" || evaluacion?.estado === "enviada") {
       toast({
         title: "Evaluación bloqueada",
         description: "Esta evaluación está finalizada y no permite ediciones.",
@@ -313,25 +361,43 @@ export default function DetalleEvaluacionPesv() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Link href="/pesv/auditorias">
-            <Button variant="outline" size="icon" data-testid="button-volver">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
-              <Car className="h-6 w-6" />
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          onClick={() => setLocation('/pesv/evaluaciones')}
+          data-testid="button-back"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Salir de la evaluación
+        </Button>
+        <div className="flex-1">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-3xl font-bold" data-testid="text-page-title">
               Evaluación PESV {evaluacion.anio}
             </h1>
-            <p className="text-muted-foreground">
-              {NIVELES_PESV_LABELS[evaluacion.nivel] || evaluacion.nivel} • {evaluacion.responsableNombre}
-            </p>
+            {evaluacion.estado === "en-progreso" && (
+              <Badge variant="outline" className="border-yellow-500 text-yellow-700 dark:text-yellow-400" data-testid="badge-estado-en-progreso">
+                En Progreso
+              </Badge>
+            )}
+            {evaluacion.estado === "completada" && (
+              <Badge className="bg-green-500/10 text-green-700 dark:text-green-400" data-testid="badge-estado-completada">
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                Finalizada
+              </Badge>
+            )}
+            {evaluacion.estado === "enviada" && (
+              <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400" data-testid="badge-estado-enviada">
+                <FileCheck className="h-3 w-3 mr-1" />
+                Enviada a Supertransporte
+              </Badge>
+            )}
           </div>
+          <p className="text-muted-foreground">
+            {NIVELES_PESV_LABELS[evaluacion.nivel] || evaluacion.nivel} • Responsable: {evaluacion.responsableNombre}
+          </p>
         </div>
-        
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button 
             variant="outline" 
             onClick={() => recalcularMutation.mutate()}
@@ -341,6 +407,60 @@ export default function DetalleEvaluacionPesv() {
             <RefreshCcw className={`h-4 w-4 mr-2 ${recalcularMutation.isPending ? 'animate-spin' : ''}`} />
             Recalcular Puntajes
           </Button>
+          <Button 
+            variant="default" 
+            disabled
+            data-testid="button-export-supertransporte"
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Exportar Reporte Supertransporte
+          </Button>
+          {evaluacion.estado === "en-progreso" && (
+            <Button 
+              variant="default"
+              onClick={() => setFinalizarDialogOpen(true)}
+              data-testid="button-finalizar-evaluacion"
+              className="bg-primary"
+            >
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              Finalizar Evaluación
+            </Button>
+          )}
+          {evaluacion.estado === "completada" && (
+            <>
+              <Button 
+                variant="outline"
+                onClick={() => finalizarEvaluacionMutation.mutate("en-progreso")}
+                disabled={finalizarEvaluacionMutation.isPending}
+                data-testid="button-reabrir-evaluacion"
+              >
+                <RefreshCcw className="h-4 w-4 mr-2" />
+                Reabrir
+              </Button>
+              <Button 
+                variant="default"
+                onClick={() => finalizarEvaluacionMutation.mutate("enviada")}
+                disabled={finalizarEvaluacionMutation.isPending}
+                data-testid="button-marcar-enviada"
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <FileCheck className="h-4 w-4 mr-2" />
+                Marcar como Enviada
+              </Button>
+            </>
+          )}
+          {evaluacion.estado === "enviada" && (
+            <Button 
+              variant="outline"
+              onClick={() => finalizarEvaluacionMutation.mutate("en-progreso")}
+              disabled={finalizarEvaluacionMutation.isPending}
+              data-testid="button-reabrir-evaluacion-enviada"
+            >
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Reabrir
+            </Button>
+          )}
         </div>
       </div>
 
@@ -917,6 +1037,49 @@ export default function DetalleEvaluacionPesv() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={finalizarDialogOpen} onOpenChange={setFinalizarDialogOpen}>
+        <AlertDialogContent data-testid="dialog-finalizar-evaluacion">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              Finalizar Evaluación PESV
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              {progresoPasos < 100 ? (
+                <>
+                  <span className="font-semibold text-amber-600">Atención:</span> Solo ha evaluado {progresoPasos}% de los pasos ({pasosEvaluados} de {totalPasos}).
+                  <br /><br />
+                  ¿Está seguro de que desea finalizar la evaluación con pasos pendientes? Los pasos no evaluados contarán como "No Cumple" (0 puntos).
+                </>
+              ) : (
+                <>
+                  Ha completado la evaluación de todos los pasos. Al finalizar:
+                  <br /><br />
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>La evaluación quedará bloqueada para edición</li>
+                    <li>Podrá generar el reporte para Supertransporte/RUNT</li>
+                    <li>Las acciones de mejora quedarán registradas</li>
+                  </ul>
+                  <br />
+                  Si necesita hacer cambios después, puede reabrir la evaluación.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-finalizar">Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => finalizarEvaluacionMutation.mutate("completada")}
+              className="bg-primary"
+              data-testid="button-confirm-finalizar"
+              disabled={finalizarEvaluacionMutation.isPending}
+            >
+              {finalizarEvaluacionMutation.isPending ? "Finalizando..." : "Sí, Finalizar Evaluación"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
