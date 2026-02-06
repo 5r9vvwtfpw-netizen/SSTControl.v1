@@ -2172,13 +2172,212 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Storage will use the pre-calculated or existing riskLevel and chapter
+      // Obtener empresa ANTES de actualizar para detectar cambio de nivel PESV
+      const existingCompanyForPesv = await storage.getCompany(req.params.id);
       const company = await storage.updateCompany(req.params.id, dataToUpdate);
       if (!company) {
         return res.status(404).send("Empresa no encontrada");
       }
-      res.json(company);
+
+      // PESV Level Migration: Detectar cambio de nivel PESV por cambio de vehículos (Resolución 40595/2022)
+      let pesvMigration = null;
+      if (existingCompanyForPesv && validatedData.numberOfVehicles !== undefined) {
+        const oldVehicles = existingCompanyForPesv.numberOfVehicles || 0;
+        const newVehicles = company.numberOfVehicles || 0;
+        
+        if (oldVehicles !== newVehicles && newVehicles > 0) {
+          const calcNivel = (v: number): string => {
+            if (v <= 10) return 'basico';
+            if (v <= 50) return 'estandar';
+            return 'avanzado';
+          };
+          const calcPasos = (nivel: string): number => nivel === 'basico' ? 20 : 24;
+          const calcCosto = (nivel: string): number => calcPasos(nivel) * 8000;
+          
+          const oldNivel = oldVehicles > 0 ? calcNivel(oldVehicles) : null;
+          const newNivel = calcNivel(newVehicles);
+          
+          if (oldNivel !== newNivel) {
+            // Migrar evaluaciones PESV activas al nuevo nivel
+            const evaluacionesActivas = await db.select()
+              .from(evaluacionesPesv)
+              .where(and(
+                eq(evaluacionesPesv.companyId, req.params.id),
+                eq(evaluacionesPesv.estado, 'en-progreso')
+              ));
+            
+            const evaluacionesMigradas = [];
+            for (const eval_ of evaluacionesActivas) {
+              await db.update(evaluacionesPesv)
+                .set({ 
+                  nivel: newNivel, 
+                  numeroVehiculos: newVehicles,
+                  updatedAt: new Date()
+                })
+                .where(eq(evaluacionesPesv.id, eval_.id));
+              evaluacionesMigradas.push({ id: eval_.id, anio: eval_.anio });
+            }
+            
+            const isUpgrade = calcPasos(newNivel) > calcPasos(oldNivel || 'basico');
+            
+            const crypto = require('crypto');
+            const upgradePayload = {
+              companyId: req.params.id,
+              oldNivel: oldNivel,
+              newNivel: newNivel,
+              oldVehicles: oldVehicles,
+              newVehicles: newVehicles,
+              oldPasos: oldNivel ? calcPasos(oldNivel) : 0,
+              newPasos: calcPasos(newNivel),
+              diferenciaMensual: calcCosto(newNivel) - (oldNivel ? calcCosto(oldNivel) : 0),
+              timestamp: Date.now(),
+            };
+            const upgradePayloadStr = JSON.stringify(upgradePayload);
+            const upgradeSecret = process.env.SESSION_SECRET || process.env.LANDING_PAGE_API_KEY || 'pesv-upgrade-secret';
+            const upgradeSignature = crypto.createHmac('sha256', upgradeSecret).update(upgradePayloadStr).digest('hex');
+            const upgradeToken = Buffer.from(JSON.stringify({ payload: upgradePayload, signature: upgradeSignature })).toString('base64');
+
+            pesvMigration = {
+              migrated: true,
+              oldNivel: oldNivel,
+              newNivel: newNivel,
+              oldVehicles: oldVehicles,
+              newVehicles: newVehicles,
+              isUpgrade: isUpgrade,
+              oldPasos: oldNivel ? calcPasos(oldNivel) : 0,
+              newPasos: calcPasos(newNivel),
+              oldCostoMensual: oldNivel ? calcCosto(oldNivel) : 0,
+              newCostoMensual: calcCosto(newNivel),
+              diferenciaMensual: calcCosto(newNivel) - (oldNivel ? calcCosto(oldNivel) : 0),
+              evaluacionesMigradas: evaluacionesMigradas,
+              upgradeToken: upgradeToken,
+              message: isUpgrade 
+                ? `Nivel PESV actualizado de ${oldNivel || 'sin PESV'} a ${newNivel}. Se desbloquearon ${calcPasos(newNivel) - (oldNivel ? calcPasos(oldNivel) : 0)} pasos adicionales.`
+                : `Nivel PESV actualizado de ${oldNivel || 'sin PESV'} a ${newNivel}.`
+            };
+            
+            console.log(`[PESV-MIGRATION] Empresa ${req.params.id}: ${oldNivel} → ${newNivel} (${oldVehicles} → ${newVehicles} vehículos). ${evaluacionesMigradas.length} evaluaciones migradas.`);
+          }
+        }
+      }
+
+      res.json({ ...company, pesvMigration });
     } catch (error: any) {
       res.status(400).send(error.message);
+    }
+  });
+
+  // POST /api/pesv/upgrade-billing - Genera sesión Stripe para upgrade de nivel PESV (Resolución 40595/2022)
+  // Seguridad: Verifica token firmado del servidor con datos de migración pre-calculados
+  app.post("/api/pesv/upgrade-billing", requireAuth, async (req, res) => {
+    try {
+      const upgradeSchema = z.object({
+        upgradeToken: z.string().min(1, "Token de upgrade requerido"),
+      });
+
+      const validatedData = upgradeSchema.parse(req.body);
+      const companyId = req.user!.companyId;
+
+      if (!companyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
+      const crypto = require('crypto');
+      let tokenData;
+      try {
+        tokenData = JSON.parse(Buffer.from(validatedData.upgradeToken, 'base64').toString('utf-8'));
+      } catch {
+        return res.status(400).json({ error: "Token de upgrade inválido" });
+      }
+
+      const { payload, signature } = tokenData;
+      if (!payload || !signature) {
+        return res.status(400).json({ error: "Token de upgrade malformado" });
+      }
+
+      const upgradeSecret = process.env.SESSION_SECRET || process.env.LANDING_PAGE_API_KEY || 'pesv-upgrade-secret';
+      const expectedSignature = crypto.createHmac('sha256', upgradeSecret).update(JSON.stringify(payload)).digest('hex');
+      if (signature !== expectedSignature) {
+        return res.status(403).json({ error: "Token de upgrade con firma inválida" });
+      }
+
+      if (payload.companyId !== companyId) {
+        return res.status(403).json({ error: "Token no corresponde a esta empresa" });
+      }
+
+      const tokenAge = Date.now() - payload.timestamp;
+      if (tokenAge > 30 * 60 * 1000) {
+        return res.status(410).json({ error: "Token de upgrade expirado. Actualice los vehículos nuevamente." });
+      }
+
+      const diferencia = payload.diferenciaMensual;
+      if (!diferencia || diferencia <= 0) {
+        return res.json({ requiresPayment: false, message: "No hay diferencia de costo a cobrar" });
+      }
+
+      const { getUncachableStripeClient } = await import("./stripeClient");
+      const stripe = await getUncachableStripeClient();
+
+      const company = await storage.getCompany(companyId);
+
+      const baseUrl = process.env.APP_URL || (process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : process.env.REPLIT_DOMAINS 
+          ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+          : 'http://localhost:5000');
+
+      const amountCOP = Math.max(diferencia, 116000);
+
+      const nivelLabels: Record<string, string> = {
+        'basico': 'Básico', 'estandar': 'Estándar', 'avanzado': 'Avanzado'
+      };
+
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'cop',
+              product_data: {
+                name: `Upgrade PESV: ${nivelLabels[payload.oldNivel] || payload.oldNivel} → ${nivelLabels[payload.newNivel] || payload.newNivel}`,
+                description: `Diferencia mensual por cambio de nivel PESV (${payload.oldVehicles} → ${payload.newVehicles} vehículos). Resolución 40595/2022.`,
+              },
+              unit_amount: amountCOP,
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          type: 'pesv_upgrade',
+          companyId: companyId,
+          companyName: company?.name || 'Unknown',
+          userId: req.user!.id,
+          oldNivel: payload.oldNivel,
+          newNivel: payload.newNivel,
+          oldVehicles: payload.oldVehicles.toString(),
+          newVehicles: payload.newVehicles.toString(),
+          diferenciaMensualCOP: diferencia.toString(),
+        },
+        success_url: `${baseUrl}/pesv?upgrade=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/pesv?upgrade=cancelled`,
+        customer_email: req.user!.email || undefined,
+      });
+
+      console.log(`[PESV-BILLING] Checkout creado para empresa ${companyId}: ${payload.oldNivel} → ${payload.newNivel}, diferencia: $${diferencia.toLocaleString()} COP`);
+
+      res.json({
+        requiresPayment: true,
+        checkoutUrl: session.url,
+        sessionId: session.id,
+        diferenciaMensual: diferencia,
+        oldCosto: payload.oldPasos * 8000,
+        newCosto: payload.newPasos * 8000,
+        currency: 'COP',
+      });
+    } catch (error: any) {
+      console.error('[PESV-BILLING] Error:', error);
+      res.status(400).json({ error: error.message });
     }
   });
 

@@ -291,7 +291,7 @@ export default function CompanyManagement() {
     
     try {
       if (editingCompany) {
-        await updateCompanyMutation.mutateAsync({ id: editingCompany.id, data: formData });
+        const updateResult = await updateCompanyMutation.mutateAsync({ id: editingCompany.id, data: formData });
         
         // Upload logo if a new file was selected (optional - don't fail if upload fails)
         if (logoFile) {
@@ -330,6 +330,51 @@ export default function CompanyManagement() {
             description: "Los datos se han actualizado exitosamente",
             className: "bg-yellow-50 border-yellow-200",
           });
+        }
+
+        // PESV Level Migration: Notificar y ofrecer upgrade de facturación (Resolución 40595/2022)
+        if (updateResult?.pesvMigration?.migrated) {
+          const migration = updateResult.pesvMigration;
+          const nivelLabels: Record<string, string> = {
+            'basico': 'Básico',
+            'estandar': 'Estándar', 
+            'avanzado': 'Avanzado'
+          };
+          
+          // Notificación de migración inmediata
+          setTimeout(() => {
+            toast({
+              title: `Nivel PESV migrado: ${nivelLabels[migration.oldNivel] || 'Sin PESV'} → ${nivelLabels[migration.newNivel]}`,
+              description: `${migration.evaluacionesMigradas.length} evaluación(es) actualizada(s) inmediatamente. ${migration.isUpgrade ? `Se desbloquearon ${migration.newPasos - migration.oldPasos} pasos adicionales.` : 'Los pasos han sido ajustados.'}`,
+              duration: 10000,
+            });
+          }, 500);
+
+          // Si es upgrade con diferencia de costo, ofrecer pago vía Stripe
+          if (migration.isUpgrade && migration.diferenciaMensual > 0) {
+            setTimeout(async () => {
+              try {
+                const billingRes = await apiRequest("POST", "/api/pesv/upgrade-billing", {
+                  upgradeToken: migration.upgradeToken,
+                });
+                const billingData = await billingRes.json();
+                
+                if (billingData.requiresPayment && billingData.checkoutUrl) {
+                  toast({
+                    title: "Ajuste de facturación PESV requerido",
+                    description: `Diferencia mensual: $${migration.diferenciaMensual.toLocaleString('es-CO')} COP. Será redirigido a la página de pago.`,
+                    duration: 15000,
+                  });
+                  // Redirect en la misma pestaña tras breve pausa (evita popup blocker)
+                  setTimeout(() => {
+                    window.location.href = billingData.checkoutUrl;
+                  }, 2000);
+                }
+              } catch (err) {
+                console.warn('[PESV-BILLING] Error al generar checkout:', err);
+              }
+            }, 2000);
+          }
         }
       } else {
         const newCompany = await createCompanyMutation.mutateAsync(formData);

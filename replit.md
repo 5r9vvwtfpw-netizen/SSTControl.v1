@@ -29,6 +29,16 @@ The PESV module is being restructured to be evaluation-centric, where all module
 - **Routes**: Evaluation-scoped at `/pesv/evaluacion/:evaluacionId/[module]`
 - **Database columns**: `parent_evaluacion_id` in `evaluaciones_pesv`, `evaluacion_pesv_id` in `vehicle_inspections`, `road_incidents`, `road_safety_trainings`
 
+### PESV Immediate Level Migration System
+When a company updates its `numberOfVehicles` in the company profile, the system immediately:
+1. **Detects level change**: Compares old vs new PESV level (basico ≤10, estandar 11-50, avanzado 50+)
+2. **Migrates active evaluations**: Updates `nivel` and `numero_vehiculos` on all active (`en-progreso`) evaluaciones_pesv immediately, unlocking/adjusting steps via `getPasosPorNivel()`
+3. **Triggers billing upgrade**: Creates a Stripe Checkout session for the monthly cost difference ($8,000/step COP). Endpoint: `POST /api/pesv/upgrade-billing` calculates pricing server-side (never trusts client input)
+4. **Frontend notification**: Shows toast with migration details and redirects to Stripe checkout for payment
+- Migration is immediate, no waiting for next evaluation cycle
+- Pricing: Básico=20 steps×$8,000=$160,000/mo, Estándar/Avanzado=24 steps×$8,000=$192,000/mo
+- Downgrade scenario: If vehicles decrease but level stays same, no migration. If vehicles=0, evaluation keeps current level
+
 The billing system includes a robust validator (`server/lib/billing-validator.ts`) for data integrity before invoice generation, utilizing Zod schema validation, company validation, and subscription validation, and provides a health check endpoint.
 
 The system incorporates a comprehensive pricing calculator (V2) integrating SST, PESV, and user licensing, with real-time cost breakdowns and Stripe checkout. The user licensing model includes one user per administrative role at no additional cost, with additional users charged monthly. Stripe integration handles COP as a non-zero-decimal currency.
