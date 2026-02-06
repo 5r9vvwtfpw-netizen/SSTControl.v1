@@ -42969,10 +42969,31 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         }
       }
       
+      // Auto-calcular nivel PESV desde datos de la empresa (Resolución 40595/2022)
+      const [company] = await db.select()
+        .from(schema.companies)
+        .where(eq(schema.companies.id, companyId));
+      
+      let nivel = validatedData.nivel || 'basico';
+      let numeroVehiculos = validatedData.numeroVehiculos ?? 0;
+      
+      if (company?.numberOfVehicles != null && company.numberOfVehicles > 0) {
+        numeroVehiculos = company.numberOfVehicles;
+        if (numeroVehiculos > 50) {
+          nivel = 'avanzado';
+        } else if (numeroVehiculos >= 11) {
+          nivel = 'estandar';
+        } else {
+          nivel = 'basico';
+        }
+      }
+
       const [evaluacion] = await db.insert(evaluacionesPesv)
         .values({
           ...validatedData,
           companyId,
+          nivel,
+          numeroVehiculos,
         })
         .returning();
       
@@ -43326,15 +43347,34 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(400).send(`Ya existe una evaluación PESV para el año \${nuevoAnio}`);
       }
       
+      // Auto-calcular nivel PESV desde datos de la empresa (Resolución 40595/2022)
+      const [companyHeredar] = await db.select()
+        .from(schema.companies)
+        .where(eq(schema.companies.id, evaluacionPadre.companyId));
+      
+      let nivelHeredar = evaluacionPadre.nivel || 'basico';
+      let numeroVehiculosHeredar = evaluacionPadre.numeroVehiculos ?? 0;
+      
+      if (companyHeredar?.numberOfVehicles != null && companyHeredar.numberOfVehicles > 0) {
+        numeroVehiculosHeredar = companyHeredar.numberOfVehicles;
+        if (numeroVehiculosHeredar > 50) {
+          nivelHeredar = 'avanzado';
+        } else if (numeroVehiculosHeredar >= 11) {
+          nivelHeredar = 'estandar';
+        } else {
+          nivelHeredar = 'basico';
+        }
+      }
+
       // Crear nueva evaluación con referencia al padre
       const [nuevaEvaluacion] = await db.insert(evaluacionesPesv)
         .values({
           companyId: evaluacionPadre.companyId,
           anio: nuevoAnio,
           mes: new Date().getMonth() + 1,
-          nivel: evaluacionPadre.nivel,
+          nivel: nivelHeredar,
           estado: "en-progreso",
-          numeroVehiculos: evaluacionPadre.numeroVehiculos,
+          numeroVehiculos: numeroVehiculosHeredar,
           numeroConductores: evaluacionPadre.numeroConductores,
           responsableNombre: evaluacionPadre.responsableNombre,
           responsableCargo: evaluacionPadre.responsableCargo,
