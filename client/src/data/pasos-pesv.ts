@@ -611,7 +611,12 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Registros de seguimiento',
       'Informes de eficacia'
     ],
-    modulosSstRelacionados: ['acciones-mejora']
+    modulosSstRelacionados: ['acciones-mejora'],
+    moduloPesvUrl: '/pesv/evaluacion/:evaluacionId/mejora-continua',
+    moduloPesvNombre: 'Mejora Continua PESV',
+    modulosSstUrls: [
+      { nombre: 'Plan de Mejoramiento SST', url: '/plan-mejoramiento', icono: 'ClipboardCheck' }
+    ]
   },
   {
     codigo: 'A02',
@@ -633,7 +638,12 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Informe ejecutivo de resultados',
       'Plan de acción de la dirección'
     ],
-    modulosSstRelacionados: ['revision-direccion']
+    modulosSstRelacionados: ['revision-direccion'],
+    moduloPesvUrl: '/pesv/evaluacion/:evaluacionId/revision-direccion',
+    moduloPesvNombre: 'Revisión por la Dirección PESV',
+    modulosSstUrls: [
+      { nombre: 'Revisiones por la Dirección SST', url: '/revisiones-direccion', icono: 'ClipboardCheck' }
+    ]
   }
 ];
 

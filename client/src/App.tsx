@@ -48,6 +48,8 @@ import PesvMantenimientoVehicular from "@/pages/PesvMantenimientoVehicular";
 import PesvMonitoreoGps from "@/pages/PesvMonitoreoGps";
 import PesvRutasSeguras from "@/pages/PesvRutasSeguras";
 import PesvSiniestros from "@/pages/PesvSiniestros";
+import PesvMejoraContinua from "@/pages/PesvMejoraContinua";
+import PesvRevisionDireccion from "@/pages/PesvRevisionDireccion";
 import PesvCapacitaciones from "@/pages/PesvCapacitaciones";
 import PesvInspeccionesEvaluacion from "@/pages/PesvInspeccionesEvaluacion";
 import PesvSiniestrosEvaluacion from "@/pages/PesvSiniestrosEvaluacion";
@@ -300,6 +302,8 @@ function Router() {
       <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/liderazgo" component={PesvLiderazgo} />
       <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/contexto-organizacional" component={ContextoOrganizacionalPesv} />
       <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/factores-desempeno" component={FactoresDesempenoPesv} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/mejora-continua" component={PesvMejoraContinua} />
+      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/revision-direccion" component={PesvRevisionDireccion} />
       <ProtectedRoute path="/pesv/mantenimiento" component={PesvMantenimientoVehicular} />
       <ProtectedRoute path="/pesv/monitoreo-gps" component={PesvMonitoreoGps} />
       <ProtectedRoute path="/pesv/rutas-seguras" component={PesvRutasSeguras} />

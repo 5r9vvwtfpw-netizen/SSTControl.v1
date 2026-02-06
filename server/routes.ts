@@ -205,9 +205,11 @@ import {
   pasosPesv,
   respuestasPasosPesv,
   accionesMejoraPesv,
+  revisionesDireccionPesv,
   insertEvaluacionPesvSchema,
   insertRespuestaPasoPesvSchema,
   insertAccionMejoraPesvSchema,
+  insertRevisionDireccionPesvSchema,
   contextoOrganizacionalPesv,
   insertContextoOrganizacionalPesvSchema,
   riesgosViales,
@@ -222,7 +224,7 @@ import {
   workers,
 } from "@shared/schema";
 import * as schema from "@shared/schema";
-import type { UserRole, User } from "@shared/schema";
+import type { UserRole, User, RevisionDireccionPesv, InsertRevisionDireccionPesv } from "@shared/schema";
 import { calculateChapter, getEmpresaTipoFromChapterAndRisk, getTrialStatus, getChapterDescription } from "@shared/utils";
 import { isStandardPersistent, getPersistentStandardCodes } from "../shared/sst-inheritance";
 import { PASOS_PESV } from "@shared/pasos-pesv";
@@ -45789,6 +45791,182 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.status(400).json({ error: error.message || "Error al eliminar ruta" });
     }
   });
+  // ============================================================================
+  // PESV CICLO ACTUAR - A01 Mejora Continua + A02 Revisión por la Dirección
+  // ADD-ONLY: Nuevos endpoints - no modifica endpoints existentes
+  // ============================================================================
+
+  // PATCH /api/evaluaciones-pesv/:id/acciones/:accionId - Update mejora action
+  app.patch('/api/evaluaciones-pesv/:id/acciones/:accionId', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, req.params.id));
+      
+      if (!evaluacion) {
+        return res.status(404).send("Evaluación PESV no encontrada");
+      }
+      
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send("No tienes acceso a esta evaluación");
+      }
+      
+      const accionPatchSchema = insertAccionMejoraPesvSchema.partial().omit({ evaluacionId: true });
+      const validatedBody = accionPatchSchema.parse(req.body);
+
+      const updateData: any = { updatedAt: new Date() };
+      if (validatedBody.estado !== undefined) updateData.estado = validatedBody.estado;
+      if (validatedBody.observaciones !== undefined) updateData.observaciones = validatedBody.observaciones;
+      if (validatedBody.evidenciaCierre !== undefined) updateData.evidenciaCierre = validatedBody.evidenciaCierre;
+      if (validatedBody.fechaCierre !== undefined) updateData.fechaCierre = validatedBody.fechaCierre;
+      if (validatedBody.verificadoPor !== undefined) updateData.verificadoPor = validatedBody.verificadoPor;
+      if (validatedBody.eficaciaVerificada !== undefined) updateData.eficaciaVerificada = validatedBody.eficaciaVerificada;
+      if (validatedBody.prioridad !== undefined) updateData.prioridad = validatedBody.prioridad;
+      if (validatedBody.responsable !== undefined) updateData.responsable = validatedBody.responsable;
+      if (validatedBody.fechaLimite !== undefined) updateData.fechaLimite = validatedBody.fechaLimite;
+      if (validatedBody.descripcion !== undefined) updateData.descripcion = validatedBody.descripcion;
+      
+      const [updated] = await db.update(accionesMejoraPesv)
+        .set(updateData)
+        .where(and(eq(accionesMejoraPesv.id, req.params.accionId), eq(accionesMejoraPesv.evaluacionId, req.params.id)))
+        .returning();
+      
+      if (!updated) {
+        return res.status(404).send("Acción de mejora no encontrada");
+      }
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error updating acción mejora PESV:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // GET /api/evaluaciones-pesv/:id/revisiones-direccion - List management reviews
+  app.get('/api/evaluaciones-pesv/:id/revisiones-direccion', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, req.params.id));
+      
+      if (!evaluacion) {
+        return res.status(404).send("Evaluación PESV no encontrada");
+      }
+      
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send("No tienes acceso a esta evaluación");
+      }
+      
+      const revisiones = await db.select()
+        .from(revisionesDireccionPesv)
+        .where(eq(revisionesDireccionPesv.evaluacionPesvId, req.params.id))
+        .orderBy(desc(revisionesDireccionPesv.createdAt));
+      
+      res.json(revisiones);
+    } catch (error: any) {
+      console.error('Error fetching revisiones dirección PESV:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/evaluaciones-pesv/:id/revisiones-direccion - Create management review
+  app.post('/api/evaluaciones-pesv/:id/revisiones-direccion', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, req.params.id));
+      
+      if (!evaluacion) {
+        return res.status(404).send("Evaluación PESV no encontrada");
+      }
+      
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send("No tienes acceso a esta evaluación");
+      }
+      
+      const validatedData = insertRevisionDireccionPesvSchema.parse({
+        ...req.body,
+        evaluacionPesvId: req.params.id
+      });
+      
+      const [revision] = await db.insert(revisionesDireccionPesv)
+        .values({
+          ...validatedData,
+          companyId: evaluacion.companyId,
+        })
+        .returning();
+      
+      res.status(201).json(revision);
+    } catch (error: any) {
+      console.error('Error creating revisión dirección PESV:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/evaluaciones-pesv/:id/revisiones-direccion/:revisionId - Update management review
+  app.patch('/api/evaluaciones-pesv/:id/revisiones-direccion/:revisionId', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      const [evaluacion] = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.id, req.params.id));
+      
+      if (!evaluacion) {
+        return res.status(404).send("Evaluación PESV no encontrada");
+      }
+      
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+        return res.status(403).send("No tienes acceso a esta evaluación");
+      }
+      
+      const revisionPatchSchema = insertRevisionDireccionPesvSchema.partial().omit({ evaluacionPesvId: true, companyId: true });
+      const validatedBody = revisionPatchSchema.parse(req.body);
+
+      const updateData: any = { updatedAt: new Date() };
+      const allowedFields = [
+        'codigo', 'fechaRevision', 'presididaPor', 'participantes',
+        'revisionIndicadores', 'revisionAuditorias', 'revisionSiniestros',
+        'revisionAccionesMejora', 'revisionCumplimientoLegal', 'revisionRecursos',
+        'revisionCapacitaciones', 'revisionInspecciones',
+        'resumenIndicadores', 'resumenAuditorias', 'resumenSiniestros',
+        'resumenAccionesMejora', 'analisisGeneral',
+        'decisiones', 'compromisos', 'vinculacionRevisionSstId',
+        'estado', 'fechaProximaRevision'
+      ];
+      
+      for (const field of allowedFields) {
+        if ((validatedBody as any)[field] !== undefined) {
+          updateData[field] = (validatedBody as any)[field];
+        }
+      }
+      
+      const [updated] = await db.update(revisionesDireccionPesv)
+        .set(updateData)
+        .where(and(eq(revisionesDireccionPesv.id, req.params.revisionId), eq(revisionesDireccionPesv.evaluacionPesvId, req.params.id)))
+        .returning();
+      
+      if (!updated) {
+        return res.status(404).send("Revisión por la dirección no encontrada");
+      }
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error updating revisión dirección PESV:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
   // ========== GLOBAL ERROR HANDLER ==========
   // Middleware global para interceptar errores no manejados y evitar exponer mensajes técnicos
   // Especialmente importante para errores de SSL/certificados en producción

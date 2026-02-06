@@ -9591,6 +9591,18 @@ export const accionesMejoraPesv = pgTable("acciones_mejora_pesv", {
   
   observaciones: text("observaciones"),
   
+  // ADD-ONLY: Campos adicionales para página de Mejora Continua PESV (Ciclo Actuar - A01)
+  companyId: varchar("company_id").references(() => companies.id),
+  tipoAccion: varchar("tipo_accion").default("correctiva"), // correctiva, preventiva, mejora
+  prioridad: varchar("prioridad").default("media"), // baja, media, alta, critica
+  fuenteHallazgo: varchar("fuente_hallazgo"), // auditoria, indicador, siniestro, inspeccion, revision_direccion
+  fuenteId: varchar("fuente_id"), // ID del registro fuente (audit id, incident id, etc.)
+  evidenciaCierre: text("evidencia_cierre"),
+  fechaCierre: date("fecha_cierre"),
+  verificadoPor: varchar("verificado_por"),
+  eficaciaVerificada: integer("eficacia_verificada").default(0), // 0=no, 1=sí
+  vinculacionSstId: varchar("vinculacion_sst_id"), // Link to SST acciones correctivas if applicable
+
   createdAt: timestamp("created_at").default(sql`now()`),
   updatedAt: timestamp("updated_at").default(sql`now()`),
 });
@@ -9619,6 +9631,64 @@ export const insertAccionMejoraPesvSchema = createInsertSchema(accionesMejoraPes
   });
 export type InsertAccionMejoraPesv = z.infer<typeof insertAccionMejoraPesvSchema>;
 export type AccionMejoraPesv = typeof accionesMejoraPesv.$inferSelect;
+
+// ============================================================================
+// REVISIÓN POR LA ALTA DIRECCIÓN PESV - Ciclo Actuar (A02)
+// Resolución 40595/2022 - ISO 39001:2012 Cláusula 9.3
+// ADD-ONLY: Nueva tabla - no modifica código existente
+// ============================================================================
+
+export const revisionesDireccionPesv = pgTable("revisiones_direccion_pesv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  evaluacionPesvId: varchar("evaluacion_pesv_id").references(() => evaluacionesPesv.id),
+  
+  // Identificación
+  codigo: varchar("codigo").notNull(), // Ej: REV-PESV-2024-001
+  fechaRevision: date("fecha_revision").notNull(),
+  
+  // Participantes
+  presididaPor: text("presidida_por").notNull(), // Alta dirección que preside
+  participantes: text("participantes"), // JSON array of participants
+  
+  // Temas revisados (entradas de la revisión según ISO 39001:2012 9.3)
+  revisionIndicadores: integer("revision_indicadores").notNull().default(0), // 0=no, 1=sí
+  revisionAuditorias: integer("revision_auditorias").notNull().default(0),
+  revisionSiniestros: integer("revision_siniestros").notNull().default(0),
+  revisionAccionesMejora: integer("revision_acciones_mejora").notNull().default(0),
+  revisionCumplimientoLegal: integer("revision_cumplimiento_legal").notNull().default(0),
+  revisionRecursos: integer("revision_recursos").notNull().default(0),
+  revisionCapacitaciones: integer("revision_capacitaciones").notNull().default(0),
+  revisionInspecciones: integer("revision_inspecciones").notNull().default(0),
+  
+  // Análisis y resultados
+  resumenIndicadores: text("resumen_indicadores"),
+  resumenAuditorias: text("resumen_auditorias"),
+  resumenSiniestros: text("resumen_siniestros"),
+  resumenAccionesMejora: text("resumen_acciones_mejora"),
+  analisisGeneral: text("analisis_general"),
+  
+  // Decisiones y compromisos
+  decisiones: text("decisiones"), // JSON array of decisions
+  compromisos: text("compromisos"), // JSON array of commitments
+  
+  // Vinculación con SST
+  vinculacionRevisionSstId: varchar("vinculacion_revision_sst_id"), // Link to SST revision if applicable
+  
+  // Estado
+  estado: varchar("estado").notNull().default("borrador"), // borrador, aprobada, cerrada
+  
+  // Próxima revisión
+  fechaProximaRevision: date("fecha_proxima_revision"),
+  
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+export const insertRevisionDireccionPesvSchema = createInsertSchema(revisionesDireccionPesv)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
+export type InsertRevisionDireccionPesv = z.infer<typeof insertRevisionDireccionPesvSchema>;
+export type RevisionDireccionPesv = typeof revisionesDireccionPesv.$inferSelect;
 
 // ============================================================================
 // ISO 31000:2018 - GESTIÓN DE RIESGOS VIALES PARA PESV

@@ -773,7 +773,7 @@ export default function DetalleEvaluacionPesv() {
               {/* ADD-ONLY: Botón para ir al módulo PESV relacionado */}
               {selectedPaso?.moduloPesvUrl && (
                 <div className="border-t pt-4">
-                  <Link href={`/pesv/evaluacion/${id}${selectedPaso.moduloPesvUrl.replace('/pesv', '')}`}>
+                  <Link href={selectedPaso.moduloPesvUrl.includes(':evaluacionId') ? selectedPaso.moduloPesvUrl.replace(':evaluacionId', id!) : `/pesv/evaluacion/${id}${selectedPaso.moduloPesvUrl.replace('/pesv', '')}`}>
                     <Button 
                       type="button" 
                       className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md"

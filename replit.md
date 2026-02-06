@@ -29,6 +29,21 @@ The PESV module is being restructured to be evaluation-centric, where all module
 - **Routes**: Evaluation-scoped at `/pesv/evaluacion/:evaluacionId/[module]`
 - **Database columns**: `parent_evaluacion_id` in `evaluaciones_pesv`, `evaluacion_pesv_id` in `vehicle_inspections`, `road_incidents`, `road_safety_trainings`
 
+### PESV Ciclo Actuar (A01-A02) - Completo
+The PESV PHVA cycle is now fully implemented with the Actuar phase:
+- **A01 - Mejora Continua**: `PesvMejoraContinua.tsx` at `/pesv/evaluacion/:evaluacionId/mejora-continua`
+  - CRUD for acciones correctivas, preventivas y de mejora
+  - Fields: descripcion, tipoAccion, prioridad, fuenteHallazgo, responsable, fechaLimite, estado, evidenciaCierre
+  - Bidirectional traceability with SST Plan de Mejoramiento (Decreto 1072/2015 Art. 2.2.4.6.33)
+  - Table `acciones_mejora_pesv` enriched with fuente_hallazgo, tipo_accion, prioridad, evidencia_cierre, eficacia_verificada
+- **A02 - Revisión por la Dirección**: `PesvRevisionDireccion.tsx` at `/pesv/evaluacion/:evaluacionId/revision-direccion`
+  - Management review records with 8 topic checkboxes (indicadores, auditorias, siniestros, etc.)
+  - Decisions and commitments tracking
+  - Bidirectional traceability with SST Revisiones por la Dirección (Decreto 1072/2015 Art. 2.2.4.6.31)
+  - New table `revisiones_direccion_pesv` with full review structure
+- **Endpoints**: GET/POST/PATCH for both modules scoped to evaluacion_pesv_id
+- **Normative compliance**: Resolución 40595/2022, ISO 39001:2012 Cláusula 9.3, Decreto 1072/2015
+
 ### PESV Immediate Level Migration System
 When a company updates its `numberOfVehicles` in the company profile, the system immediately:
 1. **Detects level change**: Compares old vs new PESV level (basico ≤10, estandar 11-50, avanzado 50+)
