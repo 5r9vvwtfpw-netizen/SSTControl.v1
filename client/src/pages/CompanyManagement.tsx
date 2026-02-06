@@ -350,29 +350,22 @@ export default function CompanyManagement() {
             });
           }, 500);
 
-          // Si es upgrade con diferencia de costo, ofrecer pago vía Stripe
+          // Mensaje informativo sobre ajuste de facturación en próxima factura
           if (migration.isUpgrade && migration.diferenciaMensual > 0) {
-            setTimeout(async () => {
-              try {
-                const billingRes = await apiRequest("POST", "/api/pesv/upgrade-billing", {
-                  upgradeToken: migration.upgradeToken,
-                });
-                const billingData = await billingRes.json();
-                
-                if (billingData.requiresPayment && billingData.checkoutUrl) {
-                  toast({
-                    title: "Ajuste de facturación PESV requerido",
-                    description: `Diferencia mensual: $${migration.diferenciaMensual.toLocaleString('es-CO')} COP. Será redirigido a la página de pago.`,
-                    duration: 15000,
-                  });
-                  // Redirect en la misma pestaña tras breve pausa (evita popup blocker)
-                  setTimeout(() => {
-                    window.location.href = billingData.checkoutUrl;
-                  }, 2000);
-                }
-              } catch (err) {
-                console.warn('[PESV-BILLING] Error al generar checkout:', err);
-              }
+            setTimeout(() => {
+              toast({
+                title: "Información de facturación PESV",
+                description: `Su plan PESV pasó de $${migration.oldCostoMensual.toLocaleString('es-CO')} a $${migration.newCostoMensual.toLocaleString('es-CO')} COP/mes. La diferencia de $${migration.diferenciaMensual.toLocaleString('es-CO')} COP se aplicará automáticamente en su próxima factura mensual. No requiere acción adicional.`,
+                duration: 20000,
+              });
+            }, 2000);
+          } else if (migration.diferenciaMensual < 0) {
+            setTimeout(() => {
+              toast({
+                title: "Ajuste de facturación PESV",
+                description: `Su plan PESV se redujo a $${migration.newCostoMensual.toLocaleString('es-CO')} COP/mes. El ajuste se reflejará en su próxima factura mensual.`,
+                duration: 15000,
+              });
             }, 2000);
           }
         }

@@ -33,9 +33,10 @@ The PESV module is being restructured to be evaluation-centric, where all module
 When a company updates its `numberOfVehicles` in the company profile, the system immediately:
 1. **Detects level change**: Compares old vs new PESV level (basico ≤10, estandar 11-50, avanzado 50+)
 2. **Migrates active evaluations**: Updates `nivel` and `numero_vehiculos` on all active (`en-progreso`) evaluaciones_pesv immediately, unlocking/adjusting steps via `getPasosPorNivel()`
-3. **Triggers billing upgrade**: Creates a Stripe Checkout session for the monthly cost difference ($8,000/step COP). Endpoint: `POST /api/pesv/upgrade-billing` calculates pricing server-side (never trusts client input)
-4. **Frontend notification**: Shows toast with migration details and redirects to Stripe checkout for payment
+3. **Deferred billing**: The cost difference is NOT charged immediately. Instead, it is applied on the next monthly invoice cycle (billingMode: 'next_invoice')
+4. **Frontend notification**: Shows informative toasts with migration details, new/old costs, and explains the difference will appear in the next monthly invoice
 - Migration is immediate, no waiting for next evaluation cycle
+- Billing is deferred to next invoice (no Stripe redirect at update time)
 - Pricing: Básico=20 steps×$8,000=$160,000/mo, Estándar/Avanzado=24 steps×$8,000=$192,000/mo
 - Downgrade scenario: If vehicles decrease but level stays same, no migration. If vehicles=0, evaluation keeps current level
 
