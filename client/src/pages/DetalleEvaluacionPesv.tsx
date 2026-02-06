@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Check, X, MinusCircle, RefreshCcw, FileText, Car, ClipboardList, Hammer, CheckSquare, AlertCircle, ClipboardCheck, AlertTriangle, GraduationCap, ExternalLink, Users, Stethoscope, Wrench, Settings, BarChart3, Activity, Siren, AlertOctagon, LucideIcon } from "lucide-react";
+import { ArrowLeft, Save, Check, X, MinusCircle, RefreshCcw, FileText, Car, ClipboardList, Hammer, CheckSquare, AlertCircle, ClipboardCheck, AlertTriangle, GraduationCap, ExternalLink, Users, Stethoscope, Wrench, Settings, BarChart3, Activity, Siren, AlertOctagon, LucideIcon, Sparkles, BookOpen, Wand2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -46,6 +47,7 @@ export default function DetalleEvaluacionPesv() {
   const [selectedFase, setSelectedFase] = useState<FasePHVA>("planear");
   const [selectedPaso, setSelectedPaso] = useState<PasoPesvData | null>(null);
   const [respuestaDialogOpen, setRespuestaDialogOpen] = useState(false);
+  const [autoFilledFields, setAutoFilledFields] = useState<Record<string, boolean>>({});
 
   const { data: evaluacion, isLoading: loadingEvaluacion } = useQuery<EvaluacionPesv>({
     queryKey: ["/api/evaluaciones-pesv", id],
@@ -190,6 +192,7 @@ export default function DetalleEvaluacionPesv() {
         inspeccionSstId: "",
       });
     }
+    setAutoFilledFields({});
     setRespuestaDialogOpen(true);
   };
 
@@ -521,6 +524,15 @@ export default function DetalleEvaluacionPesv() {
             </DialogDescription>
           </DialogHeader>
 
+          {selectedPaso?.fundamentoNormativo && (
+            <Alert className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30" data-testid="alert-fundamento-normativo">
+              <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-sm text-blue-700 dark:text-blue-300">
+                {selectedPaso.fundamentoNormativo}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Form {...respuestaForm}>
             <form onSubmit={respuestaForm.handleSubmit(onSubmitRespuesta)} className="space-y-4">
               <FormField
@@ -538,16 +550,49 @@ export default function DetalleEvaluacionPesv() {
                             : "no_cumple"
                       }
                       onValueChange={(value) => {
+                        const newAutoFilled: Record<string, boolean> = {};
+                        const canReplace = (fieldName: string) => {
+                          const currentVal = respuestaForm.getValues(fieldName as any);
+                          return !currentVal || autoFilledFields[fieldName];
+                        };
                         if (value === "no_aplica") {
                           respuestaForm.setValue("noAplica", 1);
                           respuestaForm.setValue("cumple", 0);
+                          if (canReplace("justificacionNa") && selectedPaso?.justificacionNaSugerida) {
+                            respuestaForm.setValue("justificacionNa", selectedPaso.justificacionNaSugerida);
+                            newAutoFilled.justificacionNa = true;
+                          }
+                          if (autoFilledFields.observaciones) respuestaForm.setValue("observaciones", "");
+                          if (autoFilledFields.hallazgo) respuestaForm.setValue("hallazgo", "");
                         } else if (value === "cumple") {
                           respuestaForm.setValue("noAplica", 0);
                           respuestaForm.setValue("cumple", 1);
+                          if (canReplace("observaciones") && selectedPaso?.observacionesCumple) {
+                            respuestaForm.setValue("observaciones", selectedPaso.observacionesCumple);
+                            newAutoFilled.observaciones = true;
+                          }
+                          if (canReplace("modoVerificacion") && selectedPaso?.modoVerificacionSugerido?.length) {
+                            respuestaForm.setValue("modoVerificacion", selectedPaso.modoVerificacionSugerido.join("; "));
+                            newAutoFilled.modoVerificacion = true;
+                          }
+                          if (autoFilledFields.hallazgo) respuestaForm.setValue("hallazgo", "");
                         } else {
                           respuestaForm.setValue("noAplica", 0);
                           respuestaForm.setValue("cumple", 0);
+                          if (canReplace("observaciones") && selectedPaso?.observacionesNoCumple) {
+                            respuestaForm.setValue("observaciones", selectedPaso.observacionesNoCumple);
+                            newAutoFilled.observaciones = true;
+                          }
+                          if (canReplace("hallazgo") && selectedPaso?.hallazgoSugeridoNoCumple) {
+                            respuestaForm.setValue("hallazgo", selectedPaso.hallazgoSugeridoNoCumple);
+                            newAutoFilled.hallazgo = true;
+                          }
+                          if (canReplace("modoVerificacion") && selectedPaso?.modoVerificacionSugerido?.length) {
+                            respuestaForm.setValue("modoVerificacion", selectedPaso.modoVerificacionSugerido.join("; "));
+                            newAutoFilled.modoVerificacion = true;
+                          }
                         }
+                        setAutoFilledFields(newAutoFilled);
                       }}
                     >
                       <FormControl>
@@ -587,7 +632,15 @@ export default function DetalleEvaluacionPesv() {
                   name="justificacionNa"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Justificación "No Aplica"</FormLabel>
+                      <FormLabel className="flex items-center gap-2">
+                        Justificación "No Aplica"
+                        {autoFilledFields.justificacionNa && (
+                          <Badge variant="secondary" className="text-xs font-normal gap-1">
+                            <Sparkles className="h-3 w-3 text-amber-500" />
+                            Auto-completado
+                          </Badge>
+                        )}
+                      </FormLabel>
                       <FormControl>
                         <Textarea 
                           placeholder="Justifique por qué este paso no aplica..."
@@ -608,15 +661,56 @@ export default function DetalleEvaluacionPesv() {
                 name="modoVerificacion"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Modo de Verificación</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Ej: Revisión documental, Entrevista, Inspección visual..."
-                        {...field}
+                    <FormLabel className="flex items-center gap-2">
+                      Modo de Verificación
+                      {autoFilledFields.modoVerificacion && (
+                        <Badge variant="secondary" className="text-xs font-normal gap-1">
+                          <Sparkles className="h-3 w-3 text-amber-500" />
+                          Auto-completado
+                        </Badge>
+                      )}
+                    </FormLabel>
+                    {selectedPaso?.modoVerificacionSugerido && selectedPaso.modoVerificacionSugerido.length > 0 ? (
+                      <Select
                         value={field.value || ""}
-                        data-testid="input-modo-verificacion"
-                      />
-                    </FormControl>
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          setAutoFilledFields(prev => ({ ...prev, modoVerificacion: false }));
+                        }}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-modo-verificacion">
+                            <SelectValue placeholder="Seleccione modo de verificación..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {field.value && !selectedPaso.modoVerificacionSugerido.includes(field.value) && field.value !== selectedPaso.modoVerificacionSugerido.join("; ") && (
+                            <SelectItem value={field.value}>
+                              {field.value}
+                            </SelectItem>
+                          )}
+                          {selectedPaso.modoVerificacionSugerido.map((modo, idx) => (
+                            <SelectItem key={idx} value={modo}>
+                              {modo}
+                            </SelectItem>
+                          ))}
+                          {selectedPaso.modoVerificacionSugerido.length > 1 && (
+                            <SelectItem value={selectedPaso.modoVerificacionSugerido.join("; ")}>
+                              Todos los modos de verificaci\u00f3n
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <FormControl>
+                        <Input 
+                          placeholder="Ej: Revisión documental, Entrevista, Inspección visual..."
+                          {...field}
+                          value={field.value || ""}
+                          data-testid="input-modo-verificacion"
+                        />
+                      </FormControl>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -627,7 +721,33 @@ export default function DetalleEvaluacionPesv() {
                 name="evidencias"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Evidencias</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Evidencias
+                      {selectedPaso?.evidenciasRequeridas && selectedPaso.evidenciasRequeridas.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1 text-xs text-amber-600 dark:text-amber-400"
+                          onClick={() => {
+                            if (!field.value) {
+                              field.onChange(selectedPaso.evidenciasRequeridas.join("; "));
+                              setAutoFilledFields(prev => ({ ...prev, evidencias: true }));
+                            }
+                          }}
+                          data-testid="button-autocompletar-evidencias"
+                        >
+                          <Wand2 className="h-3 w-3" />
+                          Auto-completar
+                        </Button>
+                      )}
+                      {autoFilledFields.evidencias && (
+                        <Badge variant="secondary" className="text-xs font-normal gap-1">
+                          <Sparkles className="h-3 w-3 text-amber-500" />
+                          Auto-completado
+                        </Badge>
+                      )}
+                    </FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="URL o descripción de las evidencias..."
@@ -646,7 +766,15 @@ export default function DetalleEvaluacionPesv() {
                 name="observaciones"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Observaciones</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Observaciones
+                      {autoFilledFields.observaciones && (
+                        <Badge variant="secondary" className="text-xs font-normal gap-1">
+                          <Sparkles className="h-3 w-3 text-amber-500" />
+                          Auto-completado
+                        </Badge>
+                      )}
+                    </FormLabel>
                     <FormControl>
                       <Textarea 
                         placeholder="Ingrese observaciones adicionales..."
@@ -667,7 +795,15 @@ export default function DetalleEvaluacionPesv() {
                   name="hallazgo"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Hallazgo / No Conformidad</FormLabel>
+                      <FormLabel className="flex items-center gap-2">
+                        Hallazgo / No Conformidad
+                        {autoFilledFields.hallazgo && (
+                          <Badge variant="secondary" className="text-xs font-normal gap-1">
+                            <Sparkles className="h-3 w-3 text-amber-500" />
+                            Auto-completado
+                          </Badge>
+                        )}
+                      </FormLabel>
                       <FormControl>
                         <Textarea 
                           placeholder="Describa el hallazgo o no conformidad..."
