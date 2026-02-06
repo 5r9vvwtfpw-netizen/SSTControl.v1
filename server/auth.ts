@@ -270,8 +270,8 @@ export function setupAuth(app: Express) {
         })
         .where(eq(users.id, user.id));
 
-      // Redirect to login with success message
-      res.redirect("/auth?verified=true");
+      // Redirect to login with success message and pre-fill username
+      res.redirect(`/auth?verified=true&user=${encodeURIComponent(user.username)}`);
     } catch (error: any) {
       logger.error({ err: error }, "Email verification error");
       res.redirect("/auth?error=verification_failed");

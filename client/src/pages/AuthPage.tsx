@@ -91,6 +91,10 @@ export default function AuthPage() {
   useEffect(() => {
     if (verified === "true") {
       setActiveTab("login");
+      const verifiedUser = searchParams.get("user");
+      if (verifiedUser) {
+        setLoginData(prev => ({ ...prev, username: verifiedUser }));
+      }
     }
   }, [verified]);
 
