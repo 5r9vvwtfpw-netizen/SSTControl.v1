@@ -22,7 +22,6 @@ import { useLocation, useParams } from "wouter";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { NIVELES_PESV_LABELS, FASES_PESV_LABELS, FASES_PESV_COLORS, PASOS_PESV, PasoPesvData, ModuloSstUrl } from "@/data/pasos-pesv";
-import { usePesvSmartPrefill } from "@/hooks/usePesvSmartPrefill";
 
 type FasePHVA = "planear" | "hacer" | "verificar" | "actuar";
 
@@ -49,8 +48,6 @@ export default function DetalleEvaluacionPesv() {
   const [selectedPaso, setSelectedPaso] = useState<PasoPesvData | null>(null);
   const [respuestaDialogOpen, setRespuestaDialogOpen] = useState(false);
   const [autoFilledFields, setAutoFilledFields] = useState<Record<string, boolean>>({});
-
-  const { operationalStats, isLoading: isLoadingSmartData } = usePesvSmartPrefill();
 
   const { data: evaluacion, isLoading: loadingEvaluacion } = useQuery<EvaluacionPesv>({
     queryKey: ["/api/evaluaciones-pesv", id],
@@ -213,13 +210,7 @@ export default function DetalleEvaluacionPesv() {
 
   const onSubmitRespuesta = (values: z.infer<typeof insertRespuestaPasoPesvSchema>) => {
     if (!selectedPaso) return;
-    const normalized = {
-      ...values,
-      accidenteSstId: values.accidenteSstId === "none" ? "" : (values.accidenteSstId || ""),
-      capacitacionSstId: values.capacitacionSstId === "none" ? "" : (values.capacitacionSstId || ""),
-      inspeccionSstId: values.inspeccionSstId === "none" ? "" : (values.inspeccionSstId || ""),
-    };
-    saveRespuestaMutation.mutate(normalized);
+    saveRespuestaMutation.mutate(values);
   };
 
   const getRespuestaForPaso = (paso: PasoPesvData): RespuestaPasoPesv | undefined => {
@@ -840,136 +831,6 @@ export default function DetalleEvaluacionPesv() {
                 />
               )}
 
-              <div className="border-t pt-4">
-                <p className="text-sm font-medium mb-3 text-muted-foreground flex items-center gap-2">
-                  Trazabilidad SST (opcional)
-                  {(operationalStats.incidents.total > 0 || operationalStats.trainings.total > 0 || operationalStats.inspections.total > 0) && (
-                    <Badge variant="secondary" className="text-xs font-normal gap-1">
-                      <Sparkles className="h-3 w-3 text-amber-500" />
-                      Seleccione registros existentes
-                    </Badge>
-                  )}
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={respuestaForm.control}
-                    name="accidenteSstId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">Siniestro Vial</FormLabel>
-                        {operationalStats.incidents.items.length > 0 ? (
-                          <Select
-                            value={field.value || ""}
-                            onValueChange={field.onChange}
-                          >
-                            <FormControl>
-                              <SelectTrigger data-testid="select-accidente-sst-id">
-                                <SelectValue placeholder="Seleccionar siniestro..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="none">Sin vincular</SelectItem>
-                              {operationalStats.incidents.items.map((item) => (
-                                <SelectItem key={item.id} value={item.id}>
-                                  {item.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <FormControl>
-                            <Input 
-                              placeholder="Sin siniestros registrados"
-                              {...field}
-                              value={field.value || ""}
-                              disabled={isLoadingSmartData}
-                              data-testid="input-accidente-sst-id"
-                            />
-                          </FormControl>
-                        )}
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={respuestaForm.control}
-                    name="capacitacionSstId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">Capacitación Vial</FormLabel>
-                        {operationalStats.trainings.items.length > 0 ? (
-                          <Select
-                            value={field.value || ""}
-                            onValueChange={field.onChange}
-                          >
-                            <FormControl>
-                              <SelectTrigger data-testid="select-capacitacion-sst-id">
-                                <SelectValue placeholder="Seleccionar capacitación..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="none">Sin vincular</SelectItem>
-                              {operationalStats.trainings.items.map((item) => (
-                                <SelectItem key={item.id} value={item.id}>
-                                  {item.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <FormControl>
-                            <Input 
-                              placeholder="Sin capacitaciones registradas"
-                              {...field}
-                              value={field.value || ""}
-                              disabled={isLoadingSmartData}
-                              data-testid="input-capacitacion-sst-id"
-                            />
-                          </FormControl>
-                        )}
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={respuestaForm.control}
-                    name="inspeccionSstId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">Inspección Vehicular</FormLabel>
-                        {operationalStats.inspections.items.length > 0 ? (
-                          <Select
-                            value={field.value || ""}
-                            onValueChange={field.onChange}
-                          >
-                            <FormControl>
-                              <SelectTrigger data-testid="select-inspeccion-sst-id">
-                                <SelectValue placeholder="Seleccionar inspección..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="none">Sin vincular</SelectItem>
-                              {operationalStats.inspections.items.map((item) => (
-                                <SelectItem key={item.id} value={item.id}>
-                                  {item.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <FormControl>
-                            <Input 
-                              placeholder="Sin inspecciones registradas"
-                              {...field}
-                              value={field.value || ""}
-                              disabled={isLoadingSmartData}
-                              data-testid="input-inspeccion-sst-id"
-                            />
-                          </FormControl>
-                        )}
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
 
               {selectedPaso && (
                 <div className="border-t pt-4">
