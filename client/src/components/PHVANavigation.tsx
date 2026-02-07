@@ -118,13 +118,6 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
         { label: "Panel HACER - Controles", path: "/dashboard-hacer" },
       ],
     },
-    {
-      title: "PESV - Seguridad Vial",
-      items: [
-        { label: "Dashboard PESV", path: "/pesv" },
-        { label: "Evaluaciones PESV (Trazabilidad SST)", path: "/pesv/evaluaciones" },
-      ],
-    },
   ],
   verificar: [
     {
