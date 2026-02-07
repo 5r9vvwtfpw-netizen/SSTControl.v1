@@ -152,10 +152,31 @@ const phvaTabs: { key: PHVASection; label: string; icon?: typeof Settings }[] = 
   { key: "actuar", label: "Actuar", icon: RefreshCw },
 ];
 
+const pesvNavMenuItems: { label: string; path: string }[] = [
+  { label: "Dashboard PESV", path: "/pesv" },
+  { label: "Evaluaciones PESV", path: "/pesv/evaluaciones" },
+  { label: "Vehículos", path: "/pesv/vehiculos" },
+  { label: "Conductores", path: "/pesv/conductores" },
+  { label: "Inspecciones", path: "/pesv/inspecciones" },
+  { label: "Siniestros Viales", path: "/pesv/siniestros" },
+  { label: "Capacitaciones Viales", path: "/pesv/capacitaciones" },
+  { label: "Comité de Seguridad Vial", path: "/pesv/comite" },
+  { label: "Matriz de Riesgos Viales", path: "/pesv/matriz-riesgos" },
+  { label: "Mantenimiento Vehicular", path: "/pesv/mantenimiento" },
+  { label: "Monitoreo GPS", path: "/pesv/monitoreo-gps" },
+  { label: "Rutas Seguras", path: "/pesv/rutas-seguras" },
+  { label: "Indicadores PESV", path: "/pesv/indicadores" },
+  { label: "Auditorías PESV", path: "/pesv/auditorias" },
+  { label: "Liderazgo y Compromiso", path: "/pesv/liderazgo" },
+  { label: "Contexto Organizacional", path: "/pesv/contexto-organizacional" },
+  { label: "Factores de Desempeño", path: "/pesv/factores-desempeno" },
+];
+
 export function PHVANavigation() {
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
   const [openDropdown, setOpenDropdown] = useState<PHVASection | null>(null);
+  const [pesvDropdownOpen, setPesvDropdownOpen] = useState(false);
   const [selectKey, setSelectKey] = useState(0);
   const { 
     canSelectCompany, 
@@ -378,6 +399,19 @@ export function PHVANavigation() {
     );
   }, [filteredPhvaMenus]);
 
+  const showPesvTab = useMemo(() => {
+    if (!user) return false;
+    const globalRoles = ["superadmin", "admin", "soporte"];
+    if (globalRoles.includes(user.role)) return true;
+    return companyHasVehicles && canAccessRoute(userPermissions, "/pesv");
+  }, [user, companyHasVehicles, userPermissions]);
+
+  const filteredPesvNavItems = useMemo(() => {
+    return pesvNavMenuItems.filter(item => canAccessRoute(userPermissions, item.path));
+  }, [userPermissions]);
+
+  const isPesvActive = location === "/pesv" || location.startsWith("/pesv/");
+
   const getActiveSection = (): PHVASection => {
     for (const [section, groups] of Object.entries(filteredPhvaMenus)) {
       for (const group of groups) {
@@ -524,7 +558,7 @@ export function PHVANavigation() {
             </div>
 
             {/* Navegación PHVA - Tabs horizontales (filtrados por permisos) */}
-            <nav className="flex items-center gap-2">
+            <nav className="flex items-center gap-1">
               {visiblePhvaTabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -573,6 +607,45 @@ export function PHVANavigation() {
                   </DropdownMenu>
                 );
               })}
+
+              {/* Tab PESV separado - Resolución 40595/2022 */}
+              {showPesvTab && filteredPesvNavItems.length > 0 && (
+                <DropdownMenu
+                  open={pesvDropdownOpen}
+                  onOpenChange={(open) => setPesvDropdownOpen(open)}
+                >
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant={isPesvActive ? "secondary" : "ghost"}
+                      size="default"
+                      className={isPesvActive ? "font-semibold text-primary" : "text-white"}
+                      data-testid="tab-pesv"
+                    >
+                      <Car className="mr-2 h-4 w-4" />
+                      PESV
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="min-w-[240px]" data-testid="menu-pesv">
+                    <DropdownMenuLabel className="text-base font-black text-foreground">Plan Estratégico de Seguridad Vial</DropdownMenuLabel>
+                    {filteredPesvNavItems.map((item) => (
+                      <DropdownMenuItem key={item.path} asChild>
+                        <Link
+                          href={item.path}
+                          data-testid={`link${item.path.replace(/\//g, "-")}`}
+                          className={`w-full cursor-pointer ${
+                            location === item.path || location.startsWith(item.path + "/")
+                              ? "font-semibold text-primary"
+                              : ""
+                          }`}
+                        >
+                          {item.label}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </nav>
 
             {/* Usuario y controles */}
