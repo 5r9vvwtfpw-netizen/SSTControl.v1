@@ -409,9 +409,11 @@ export default function DetalleEvaluacionPesv() {
           </Button>
           <Button 
             variant="default" 
-            disabled
+            onClick={() => {
+              window.open(`/api/evaluaciones-pesv/${id}/pdf`, '_blank');
+            }}
             data-testid="button-export-supertransporte"
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600"
           >
             <FileText className="h-4 w-4 mr-2" />
             Exportar Reporte Supertransporte

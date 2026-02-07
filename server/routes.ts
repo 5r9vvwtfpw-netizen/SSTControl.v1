@@ -43758,7 +43758,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             currentY = 50;
           }
 
-          const respuesta = respuestasMap.get(paso.id);
+          const respuesta = respuestasMap.get(paso.codigo);
           let valoracion = 'Pendiente';
           let valoracionColor = '#666666';
 
