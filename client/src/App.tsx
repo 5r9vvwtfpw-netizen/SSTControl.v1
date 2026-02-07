@@ -22,6 +22,7 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useWebSocketNotifications } from "@/hooks/use-websocket-notifications";
 import { CompanyProvider } from "@/hooks/use-company-context";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { SubscriptionProtectedRoute } from "@/lib/subscription-protected-route";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -200,7 +201,7 @@ function Router() {
       <ProtectedRoute path="/asignacion-recursos" component={ResourceAllocation} />
       <ProtectedRoute path="/designacion-responsable" component={ResponsibleDesignation} />
       <ProtectedRoute path="/asignar-lso-externo" component={AsignarLsoExterno} />
-      <ProtectedRoute path="/examenes-medicos" component={ExamenesMedicos} />
+      <SubscriptionProtectedRoute path="/examenes-medicos" component={ExamenesMedicos} feature="hasExamenesMedicos" featureName="Exámenes Médicos Ocupacionales" />
       <ProtectedRoute path="/afiliaciones-ssss" component={AfiliacionesSsss} />
       <ProtectedRoute path="/trabajadores-alto-riesgo" component={TrabajadoresAltoRiesgo} />
       <ProtectedRoute path="/copasst" component={CopasstGestion} />
@@ -214,9 +215,9 @@ function Router() {
       <ProtectedRoute path="/registros-induccion" component={RegistrosInduccion} />
       <ProtectedRoute path="/configuracion-induccion" component={ConfiguracionInduccion} />
       <ProtectedRoute path="/configuracion-notificaciones" component={ConfiguracionNotificaciones} />
-      <ProtectedRoute path="/mediciones-ambientales" component={MedicionesAmbientales} />
+      <SubscriptionProtectedRoute path="/mediciones-ambientales" component={MedicionesAmbientales} feature="hasMedicionesAmbientales" featureName="Mediciones Ambientales" />
       <ProtectedRoute path="/conservacion-auditiva" component={ConservacionAuditiva} />
-      <ProtectedRoute path="/sustancias-quimicas" component={SustanciasQuimicas} />
+      <SubscriptionProtectedRoute path="/sustancias-quimicas" component={SustanciasQuimicas} feature="hasSustanciasQuimicas" featureName="Sustancias Químicas" />
       <ProtectedRoute path="/vigilancia-epidemiologica" component={VigilanciaEpidemiologica} />
       <ProtectedRoute path="/perfil-sociodemografico" component={PerfilSociodemografico} />
       <ProtectedRoute path="/actividades-promocion-prevencion" component={ActividadesPromocionPrevencion} />
@@ -248,19 +249,19 @@ function Router() {
       <ProtectedRoute path="/planes-trabajo-anual" component={PlanesTrabajoAnual} />
       <ProtectedRoute path="/iperc" component={Iperc} />
       <ProtectedRoute path="/plan-emergencias" component={PlanEmergencias} />
-      <ProtectedRoute path="/auditorias-internas" component={AuditoriasInternas} />
-      <ProtectedRoute path="/revisiones-direccion" component={RevisionesDireccion} />
+      <SubscriptionProtectedRoute path="/auditorias-internas" component={AuditoriasInternas} feature="hasAuditorias" featureName="Auditorías Internas SST" />
+      <SubscriptionProtectedRoute path="/revisiones-direccion" component={RevisionesDireccion} feature="hasRevisionDireccion" featureName="Revisión por la Dirección" />
       <ProtectedRoute path="/recomendaciones-arl" component={RecomendacionesArl} />
       <ProtectedRoute path="/dashboard-hacer" component={DashboardHacer} />
       <ProtectedRoute path="/dashboard-verificar" component={DashboardVerificar} />
       <ProtectedRoute path="/dashboard-actuar" component={DashboardActuar} />
-      <ProtectedRoute path="/matriz-legal" component={MatrizLegal} />
+      <SubscriptionProtectedRoute path="/matriz-legal" component={MatrizLegal} feature="hasMatrizLegal" featureName="Matriz Legal" />
       <ProtectedRoute path="/conservacion-documentos" component={ConservacionDocumentos} />
-      <ProtectedRoute path="/objetivos-sst" component={ObjetivosSst} />
-      <ProtectedRoute path="/evaluacion-proveedores" component={EvaluacionProveedores} />
-      <ProtectedRoute path="/gestion-cambios" component={GestionCambios} />
-      <ProtectedRoute path="/adquisiciones-sst" component={AdquisicionesSst} />
-      <ProtectedRoute path="/comunicacion-sst" component={ComunicacionSst} />
+      <SubscriptionProtectedRoute path="/objetivos-sst" component={ObjetivosSst} feature="hasObjetivosIndicadores" featureName="Objetivos e Indicadores SST" />
+      <SubscriptionProtectedRoute path="/evaluacion-proveedores" component={EvaluacionProveedores} feature="hasEvaluacionProveedores" featureName="Evaluación de Proveedores" />
+      <SubscriptionProtectedRoute path="/gestion-cambios" component={GestionCambios} feature="hasGestionCambios" featureName="Gestión de Cambios" />
+      <SubscriptionProtectedRoute path="/adquisiciones-sst" component={AdquisicionesSst} feature="hasAdquisicionesSST" featureName="Adquisiciones SST" />
+      <SubscriptionProtectedRoute path="/comunicacion-sst" component={ComunicacionSst} feature="hasComunicacionSST" featureName="Comunicación SST" />
       <ProtectedRoute path="/partes-interesadas" component={PartesInteresadas} />
       <ProtectedRoute path="/analisis-contexto" component={AnalisisContexto} />
       <ProtectedRoute path="/plan-mejoramiento-contexto" component={PlanMejoramientoContexto} />
@@ -278,41 +279,41 @@ function Router() {
       <ProtectedRoute path="/checkout" component={Checkout} />
       <ProtectedRoute path="/dashboard-facturacion" component={DashboardFacturacion} />
       <ProtectedRoute path="/mi-suscripcion" component={MiSuscripcion} />
-      <ProtectedRoute path="/pesv" component={Pesv} />
-      <ProtectedRoute path="/pesv/vehiculos" component={PesvVehiculos} />
-      <ProtectedRoute path="/pesv/conductores" component={PesvConductores} />
-      <ProtectedRoute path="/pesv/inspecciones" component={PesvInspecciones} />
-      <ProtectedRoute path="/pesv/siniestros" component={PesvSiniestros} />
-      <ProtectedRoute path="/pesv/capacitaciones" component={PesvCapacitaciones} />
-      <ProtectedRoute path="/pesv/auditorias" component={PesvAuditorias} />
-      <ProtectedRoute path="/pesv/evaluaciones" component={EvaluacionesPesv} />
-      <ProtectedRoute path="/pesv/evaluacion/:id" component={DetalleEvaluacionPesv} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/vehiculos" component={PesvVehiculos} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/conductores" component={PesvConductores} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/inspecciones" component={PesvInspeccionesEvaluacion} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/siniestros" component={PesvSiniestrosEvaluacion} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/capacitaciones" component={PesvCapacitacionesEvaluacion} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/auditorias" component={PesvAuditorias} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/comite" component={PesvComite} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/matriz-riesgos" component={MatrizRiesgosViales} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/mantenimiento" component={PesvMantenimientoVehicular} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/monitoreo-gps" component={PesvMonitoreoGps} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/rutas-seguras" component={PesvRutasSeguras} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/indicadores" component={IndicadoresPesv} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/liderazgo" component={PesvLiderazgo} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/contexto-organizacional" component={ContextoOrganizacionalPesv} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/factores-desempeno" component={FactoresDesempenoPesv} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/mejora-continua" component={PesvMejoraContinua} />
-      <ProtectedRoute path="/pesv/evaluacion/:evaluacionId/revision-direccion" component={PesvRevisionDireccion} />
-      <ProtectedRoute path="/pesv/mantenimiento" component={PesvMantenimientoVehicular} />
-      <ProtectedRoute path="/pesv/monitoreo-gps" component={PesvMonitoreoGps} />
-      <ProtectedRoute path="/pesv/rutas-seguras" component={PesvRutasSeguras} />
-      <ProtectedRoute path="/pesv/matriz-riesgos" component={MatrizRiesgosViales} />
-      <ProtectedRoute path="/pesv/contexto-organizacional" component={ContextoOrganizacionalPesv} />
-      <ProtectedRoute path="/pesv/indicadores" component={IndicadoresPesv} />
-      <ProtectedRoute path="/pesv/factores-desempeno" component={FactoresDesempenoPesv} />
-      <ProtectedRoute path="/pesv/comite" component={PesvComite} />
-      <ProtectedRoute path="/pesv/liderazgo" component={PesvLiderazgo} />
+      <SubscriptionProtectedRoute path="/pesv" component={Pesv} feature="hasPESV" featureName="Módulo PESV - Seguridad Vial" />
+      <SubscriptionProtectedRoute path="/pesv/vehiculos" component={PesvVehiculos} feature="hasPESV" featureName="Módulo PESV - Vehículos" />
+      <SubscriptionProtectedRoute path="/pesv/conductores" component={PesvConductores} feature="hasPESV" featureName="Módulo PESV - Conductores" />
+      <SubscriptionProtectedRoute path="/pesv/inspecciones" component={PesvInspecciones} feature="hasPESV" featureName="Módulo PESV - Inspecciones" />
+      <SubscriptionProtectedRoute path="/pesv/siniestros" component={PesvSiniestros} feature="hasPESV" featureName="Módulo PESV - Siniestros" />
+      <SubscriptionProtectedRoute path="/pesv/capacitaciones" component={PesvCapacitaciones} feature="hasPESV" featureName="Módulo PESV - Capacitaciones" />
+      <SubscriptionProtectedRoute path="/pesv/auditorias" component={PesvAuditorias} feature="hasPESV" featureName="Módulo PESV - Auditorías" />
+      <SubscriptionProtectedRoute path="/pesv/evaluaciones" component={EvaluacionesPesv} feature="hasPESV" featureName="Módulo PESV - Evaluaciones" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:id" component={DetalleEvaluacionPesv} feature="hasPESV" featureName="Módulo PESV - Evaluación" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/vehiculos" component={PesvVehiculos} feature="hasPESV" featureName="Módulo PESV - Vehículos" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/conductores" component={PesvConductores} feature="hasPESV" featureName="Módulo PESV - Conductores" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/inspecciones" component={PesvInspeccionesEvaluacion} feature="hasPESV" featureName="Módulo PESV - Inspecciones" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/siniestros" component={PesvSiniestrosEvaluacion} feature="hasPESV" featureName="Módulo PESV - Siniestros" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/capacitaciones" component={PesvCapacitacionesEvaluacion} feature="hasPESV" featureName="Módulo PESV - Capacitaciones" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/auditorias" component={PesvAuditorias} feature="hasPESV" featureName="Módulo PESV - Auditorías" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/comite" component={PesvComite} feature="hasPESV" featureName="Módulo PESV - Comité" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/matriz-riesgos" component={MatrizRiesgosViales} feature="hasPESV" featureName="Módulo PESV - Matriz de Riesgos" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/mantenimiento" component={PesvMantenimientoVehicular} feature="hasPESV" featureName="Módulo PESV - Mantenimiento" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/monitoreo-gps" component={PesvMonitoreoGps} feature="hasPESV" featureName="Módulo PESV - Monitoreo GPS" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/rutas-seguras" component={PesvRutasSeguras} feature="hasPESV" featureName="Módulo PESV - Rutas Seguras" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/indicadores" component={IndicadoresPesv} feature="hasPESV" featureName="Módulo PESV - Indicadores" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/liderazgo" component={PesvLiderazgo} feature="hasPESV" featureName="Módulo PESV - Liderazgo" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/contexto-organizacional" component={ContextoOrganizacionalPesv} feature="hasPESV" featureName="Módulo PESV - Contexto Organizacional" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/factores-desempeno" component={FactoresDesempenoPesv} feature="hasPESV" featureName="Módulo PESV - Factores de Desempeño" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/mejora-continua" component={PesvMejoraContinua} feature="hasPESV" featureName="Módulo PESV - Mejora Continua" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/revision-direccion" component={PesvRevisionDireccion} feature="hasPESV" featureName="Módulo PESV - Revisión Dirección" />
+      <SubscriptionProtectedRoute path="/pesv/mantenimiento" component={PesvMantenimientoVehicular} feature="hasPESV" featureName="Módulo PESV - Mantenimiento" />
+      <SubscriptionProtectedRoute path="/pesv/monitoreo-gps" component={PesvMonitoreoGps} feature="hasPESV" featureName="Módulo PESV - Monitoreo GPS" />
+      <SubscriptionProtectedRoute path="/pesv/rutas-seguras" component={PesvRutasSeguras} feature="hasPESV" featureName="Módulo PESV - Rutas Seguras" />
+      <SubscriptionProtectedRoute path="/pesv/matriz-riesgos" component={MatrizRiesgosViales} feature="hasPESV" featureName="Módulo PESV - Matriz de Riesgos" />
+      <SubscriptionProtectedRoute path="/pesv/contexto-organizacional" component={ContextoOrganizacionalPesv} feature="hasPESV" featureName="Módulo PESV - Contexto" />
+      <SubscriptionProtectedRoute path="/pesv/indicadores" component={IndicadoresPesv} feature="hasPESV" featureName="Módulo PESV - Indicadores" />
+      <SubscriptionProtectedRoute path="/pesv/factores-desempeno" component={FactoresDesempenoPesv} feature="hasPESV" featureName="Módulo PESV - Factores" />
+      <SubscriptionProtectedRoute path="/pesv/comite" component={PesvComite} feature="hasPESV" featureName="Módulo PESV - Comité" />
+      <SubscriptionProtectedRoute path="/pesv/liderazgo" component={PesvLiderazgo} feature="hasPESV" featureName="Módulo PESV - Liderazgo" />
       <Route path="/pricing" component={Pricing} />
       <Route path="/pricing-plugin/calculator" component={PricingPluginCalculator} />
       <Route path="/calculadora-precios" component={PricingCalculatorV2} />

@@ -45,6 +45,22 @@ import sstLogoPath from "@assets/SST-Colombia-logo-3_1768408022586.png";
 import { useQuery } from "@tanstack/react-query";
 import { isPesvRequired } from "@shared/utils";
 import { hasAnyPermission, type Permission } from "@shared/permissions";
+import { useSubscriptionFeatures, type SubscriptionFeatures } from "@/hooks/use-subscription-features";
+
+const SUBSCRIPTION_FEATURE_MAP: Record<string, keyof SubscriptionFeatures> = {
+  "/pesv": "hasPESV",
+  "/examenes-medicos": "hasExamenesMedicos",
+  "/auditorias-internas": "hasAuditorias",
+  "/revisiones-direccion": "hasRevisionDireccion",
+  "/matriz-legal": "hasMatrizLegal",
+  "/objetivos-sst": "hasObjetivosIndicadores",
+  "/evaluacion-proveedores": "hasEvaluacionProveedores",
+  "/gestion-cambios": "hasGestionCambios",
+  "/comunicacion-sst": "hasComunicacionSST",
+  "/adquisiciones-sst": "hasAdquisicionesSST",
+  "/mediciones-ambientales": "hasMedicionesAmbientales",
+  "/sustancias-quimicas": "hasSustanciasQuimicas",
+};
 
 const menuItems: Array<{
   title: string;
@@ -84,6 +100,8 @@ const menuItems: Array<{
   { title: "Plan Mejora (Contexto)", url: "/plan-mejoramiento-contexto", icon: Target, requiredPermissions: ["companies:view"] },
 ];
 
+const GLOBAL_ACCESS_ROLES = ["superadmin", "admin", "soporte"];
+
 export function AppSidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
@@ -97,10 +115,15 @@ export function AppSidebar() {
     enabled: !!user && !!user.companyId,
   });
 
+  // Fetch subscription features for the current company
+  const { data: subscriptionFeatures } = useSubscriptionFeatures();
+
   // Determine if PESV module should be available based on Decreto 1252/2021
   const hasPesv = companyData 
     ? isPesvRequired(companyData.vehicleCount, companyData.driverCount)
     : false;
+
+  const isGlobalRole = user?.role && GLOBAL_ACCESS_ROLES.includes(user.role);
 
   const visibleMenuItems = menuItems.filter(item => {
     // Filter superadmin-only items
@@ -114,6 +137,14 @@ export function AppSidebar() {
     
     // Filter PESV items based on requirement (≥10 vehicles OR ≥2 drivers)
     if (item.pesvOnly && !hasPesv) return false;
+
+    // Filter by subscription features (skip for global access roles)
+    if (!isGlobalRole && subscriptionFeatures) {
+      const requiredFeature = SUBSCRIPTION_FEATURE_MAP[item.url];
+      if (requiredFeature && !subscriptionFeatures[requiredFeature]) {
+        return false;
+      }
+    }
     
     return true;
   });

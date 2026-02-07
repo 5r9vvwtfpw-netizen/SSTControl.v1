@@ -34,6 +34,7 @@ import { scheduleWeeklyBackup } from "./jobs/weekly-backup";
 import { getUncachableStripeClient, getStripeSecretKey } from "./stripeClient";
 import { storage } from "./storage";
 import { initializeLicense, requireValidLicense } from "./middleware/license";
+import { featureGateMiddleware } from "./middleware/feature-gate";
 import { initializeMasterKey } from "./lib/crypto";
 import fs from "fs";
 import path from "path";
@@ -701,6 +702,11 @@ app.use(requireValidLicense);
     logger.error({ err: error }, "⚠️ Encryption initialization failed");
   }
   
+  // Feature Gate: Control de acceso por suscripción a módulos premium
+  // Se registra ANTES de registerRoutes para interceptar requests a rutas protegidas
+  app.use(featureGateMiddleware());
+  logger.info("✅ Feature Gate middleware registrado (control de acceso por suscripción)");
+
   const server = await registerRoutes(app);
 
   // Mount plugin routes (Arquitectura Sidecar - Independiente del sistema principal)
