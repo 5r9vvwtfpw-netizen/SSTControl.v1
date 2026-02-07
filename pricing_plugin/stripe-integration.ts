@@ -86,7 +86,7 @@ export async function createPricingCheckoutSession(params: CreatePricingCheckout
     }
   }
 
-  const unitAmountCOP = Math.round(pricing.monthlyCost);
+  const unitAmountStripe = Math.round(pricing.monthlyCost * 100);
 
   const session = await stripe.checkout.sessions.create({
     customer: stripeCustomerId,
@@ -105,7 +105,7 @@ export async function createPricingCheckoutSession(params: CreatePricingCheckout
               minimum_fee: pricing.minimumFee.toString(),
             },
           },
-          unit_amount: unitAmountCOP,
+          unit_amount: unitAmountStripe,
           recurring: {
             interval: 'month',
           },

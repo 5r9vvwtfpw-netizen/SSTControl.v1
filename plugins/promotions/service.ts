@@ -308,7 +308,7 @@ export async function createPromotionalCheckout(
     
     // Create price for initial discounted period
     const initialPrice = await stripe.prices.create({
-      unit_amount: Math.round(sub_data.current_period_price),
+      unit_amount: Math.round(sub_data.current_period_price * 100),
       currency: sub_data.currency.toLowerCase(),
       recurring: { interval: "month" },
       product_data: {
@@ -421,7 +421,7 @@ export async function handleInvoicePaid(
         
         // Create new price at base rate
         const newPrice = await stripe.prices.create({
-          unit_amount: Math.round(basePrice),
+          unit_amount: Math.round(basePrice * 100),
           currency: "cop",
           recurring: { interval: "month" },
           product_data: {

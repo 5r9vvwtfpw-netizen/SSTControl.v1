@@ -650,7 +650,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
     // Crear line items para Stripe
     const lineItems: any[] = [];
 
-    const COP_MULTIPLIER = 1;
+    const COP_MULTIPLIER = 100;
     
     // Item 1: SST - Trabajadores
     if (result.costoTrabajadores > 0) {
