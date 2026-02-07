@@ -14,7 +14,7 @@
 
 import PDFDocument from 'pdfkit';
 import { db } from '../db';
-import { users, companies, licensedProfessionalAssignments } from '@shared/schema';
+import { users, companies, licensedProfessionalAssignments, responsibleDesignations } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { objectStorageService } from '../objectStorage';
 
@@ -161,6 +161,48 @@ export async function getSignersForCompany(companyId: string, requiresLSO: boole
             signatureUrl: lsoUser.sstSignatureUrl || undefined,
           };
         }
+      }
+    }
+
+    // Fallback: buscar licencia en responsible_designations si no se encontró en licensed_professional_assignments
+    // La licencia SST se registra en la designación del responsable (Resolución 0312/2019)
+    if (lsoData && lsoData.licenseNumber === 'Pendiente') {
+      const [designation] = await db
+        .select()
+        .from(responsibleDesignations)
+        .where(and(
+          eq(responsibleDesignations.companyId, companyId),
+          eq(responsibleDesignations.isExternalLso, true)
+        ))
+        .limit(1);
+
+      if (designation && designation.licenciaSstNumero) {
+        lsoData.licenseNumber = designation.licenciaSstNumero;
+        if (designation.licenciaSstVigencia) {
+          lsoData.licenseIssuer = `Vigencia: ${formatDate(designation.licenciaSstVigencia)}`;
+        }
+      }
+    }
+
+    // Fallback adicional: si no hay lsoData, buscar designación LSO externa directamente
+    if (!lsoData) {
+      const [designation] = await db
+        .select()
+        .from(responsibleDesignations)
+        .where(and(
+          eq(responsibleDesignations.companyId, companyId),
+          eq(responsibleDesignations.isExternalLso, true)
+        ))
+        .limit(1);
+
+      if (designation && designation.externalLsoName && designation.licenciaSstNumero) {
+        lsoData = {
+          name: designation.externalLsoName,
+          licenseNumber: designation.licenciaSstNumero,
+          licenseIssuer: designation.licenciaSstVigencia 
+            ? `Vigencia: ${formatDate(designation.licenciaSstVigencia)}`
+            : 'Secretaría de Salud',
+        };
       }
     }
   }
