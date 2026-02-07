@@ -653,7 +653,8 @@ export function registerBillingRoutes(app: Express) {
           ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
           : 'http://localhost:5000');
       
-      let amountInCOP: number;
+      let stripeUnitAmount: number;
+      let displayAmountCOP: number;
       let productDescription = `Plan ${plan.displayName || plan.name} - Primer mes`;
       let quoteSource = 'plan_price';
 
@@ -676,7 +677,9 @@ export function registerBillingRoutes(app: Express) {
           });
 
           isFullDiscount = jwtCurrentPrice === 0 && jwtBasePrice > 0;
-          amountInCOP = isFullDiscount ? jwtBasePrice : (jwtCurrentPrice > 0 ? jwtCurrentPrice : jwtBasePrice);
+          const rawCOP = isFullDiscount ? jwtBasePrice : (jwtCurrentPrice > 0 ? jwtCurrentPrice : jwtBasePrice);
+          displayAmountCOP = rawCOP;
+          stripeUnitAmount = Math.round(rawCOP * 100);
           quoteSource = 'jwt_verified';
           
           if (couponCode && jwtCurrentPrice < jwtBasePrice) {
@@ -684,17 +687,19 @@ export function registerBillingRoutes(app: Express) {
           }
         } catch (jwtError: any) {
           console.warn('[Billing] JWT verification failed, falling back to plan price:', jwtError.message);
-          amountInCOP = Math.round(plan.priceMonthly * 100);
+          stripeUnitAmount = plan.priceMonthly;
+          displayAmountCOP = Math.round(plan.priceMonthly / 100);
           quoteSource = 'plan_price_fallback';
         }
       } else {
-        amountInCOP = Math.round(plan.priceMonthly * 100);
+        stripeUnitAmount = plan.priceMonthly;
+        displayAmountCOP = Math.round(plan.priceMonthly / 100);
       }
 
-      const STRIPE_MIN_COP = 2000;
+      const STRIPE_MIN_UNIT = 200000;
       
-      if (!isFullDiscount && amountInCOP > 0 && amountInCOP < STRIPE_MIN_COP) {
-        console.warn('[Billing] Discounted price below Stripe minimum, converting to 30-day trial. Amount:', amountInCOP, 'COP');
+      if (!isFullDiscount && stripeUnitAmount > 0 && stripeUnitAmount < STRIPE_MIN_UNIT) {
+        console.warn('[Billing] Discounted price below Stripe minimum, converting to 30-day trial. Amount:', displayAmountCOP, 'COP');
         isFullDiscount = true;
       }
       
@@ -720,14 +725,14 @@ export function registerBillingRoutes(app: Express) {
         });
       }
       
-      if (amountInCOP <= 0) {
-        console.error('[Billing] Invalid amount after all calculations:', amountInCOP);
+      if (stripeUnitAmount <= 0) {
+        console.error('[Billing] Invalid amount after all calculations:', stripeUnitAmount);
         return res.status(400).json({ 
           error: 'No se pudo determinar un precio válido para la suscripción' 
         });
       }
       
-      console.log('[Billing] Creating Stripe session. Source:', quoteSource, 'Amount:', amountInCOP, 'COP, baseUrl:', baseUrl);
+      console.log('[Billing] Creating Stripe session. Source:', quoteSource, 'Amount:', displayAmountCOP, 'COP, stripeUnit:', stripeUnitAmount, ', baseUrl:', baseUrl);
       
       try {
         const session = await stripe.checkout.sessions.create({
@@ -741,7 +746,7 @@ export function registerBillingRoutes(app: Express) {
                   name: `Suscripción ${plan.displayName || plan.name}`,
                   description: productDescription,
                 },
-                unit_amount: amountInCOP,
+                unit_amount: stripeUnitAmount,
               },
               quantity: 1,
             },
@@ -753,7 +758,7 @@ export function registerBillingRoutes(app: Express) {
             companyId: subscription.companyId,
             companyName: company?.name || 'Unknown',
             userId: req.user!.id,
-            amountChargedCOP: amountInCOP.toString(),
+            amountChargedCOP: displayAmountCOP.toString(),
             priceSource: quoteSource,
           },
           success_url: `${baseUrl}/mi-cuenta?activation=success&session_id={CHECKOUT_SESSION_ID}`,
