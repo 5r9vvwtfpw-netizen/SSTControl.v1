@@ -493,9 +493,8 @@ export function registerBillingRoutes(app: Express) {
               ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
               : 'http://localhost:5000');
           
-          // COP es moneda zero-decimal en Stripe - NO dividir
-          // El precio ya está en COP reales (ej: 116000 = $116,000 COP)
-          const amountInCOP = Math.max(116000, Math.round(quote.amountToCharge)); // Mínimo 116,000 COP
+          const chargeAmountCOP = Math.max(116000, Math.round(quote.amountToCharge));
+          const upgradeStripeUnit = Math.round(chargeAmountCOP * 100);
           
           const session = await stripe.checkout.sessions.create({
             mode: 'payment',
@@ -508,7 +507,7 @@ export function registerBillingRoutes(app: Express) {
                     name: `Upgrade a ${quote.newPlan.displayName}`,
                     description: `Cambio de plan: ${quote.oldPlan.displayName} → ${quote.newPlan.displayName}`,
                   },
-                  unit_amount: amountInCOP,
+                  unit_amount: upgradeStripeUnit,
                 },
                 quantity: 1,
               },
@@ -653,8 +652,7 @@ export function registerBillingRoutes(app: Express) {
           ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
           : 'http://localhost:5000');
       
-      let stripeUnitAmount: number;
-      let displayAmountCOP: number;
+      let amountInCOP: number;
       let productDescription = `Plan ${plan.displayName || plan.name} - Primer mes`;
       let quoteSource = 'plan_price';
 
@@ -677,9 +675,7 @@ export function registerBillingRoutes(app: Express) {
           });
 
           isFullDiscount = jwtCurrentPrice === 0 && jwtBasePrice > 0;
-          const rawCOP = isFullDiscount ? jwtBasePrice : (jwtCurrentPrice > 0 ? jwtCurrentPrice : jwtBasePrice);
-          displayAmountCOP = rawCOP;
-          stripeUnitAmount = Math.round(rawCOP * 100);
+          amountInCOP = isFullDiscount ? jwtBasePrice : (jwtCurrentPrice > 0 ? jwtCurrentPrice : jwtBasePrice);
           quoteSource = 'jwt_verified';
           
           if (couponCode && jwtCurrentPrice < jwtBasePrice) {
@@ -687,19 +683,17 @@ export function registerBillingRoutes(app: Express) {
           }
         } catch (jwtError: any) {
           console.warn('[Billing] JWT verification failed, falling back to plan price:', jwtError.message);
-          stripeUnitAmount = plan.priceMonthly;
-          displayAmountCOP = Math.round(plan.priceMonthly / 100);
+          amountInCOP = plan.priceMonthly;
           quoteSource = 'plan_price_fallback';
         }
       } else {
-        stripeUnitAmount = plan.priceMonthly;
-        displayAmountCOP = Math.round(plan.priceMonthly / 100);
+        amountInCOP = plan.priceMonthly;
       }
 
-      const STRIPE_MIN_UNIT = 200000;
+      const STRIPE_MIN_COP = 2000;
       
-      if (!isFullDiscount && stripeUnitAmount > 0 && stripeUnitAmount < STRIPE_MIN_UNIT) {
-        console.warn('[Billing] Discounted price below Stripe minimum, converting to 30-day trial. Amount:', displayAmountCOP, 'COP');
+      if (!isFullDiscount && amountInCOP > 0 && amountInCOP < STRIPE_MIN_COP) {
+        console.warn('[Billing] Price below Stripe minimum, converting to 30-day trial. Amount:', amountInCOP, 'COP');
         isFullDiscount = true;
       }
       
@@ -725,14 +719,15 @@ export function registerBillingRoutes(app: Express) {
         });
       }
       
-      if (stripeUnitAmount <= 0) {
-        console.error('[Billing] Invalid amount after all calculations:', stripeUnitAmount);
+      if (amountInCOP <= 0) {
+        console.error('[Billing] Invalid amount after all calculations:', amountInCOP);
         return res.status(400).json({ 
           error: 'No se pudo determinar un precio válido para la suscripción' 
         });
       }
       
-      console.log('[Billing] Creating Stripe session. Source:', quoteSource, 'Amount:', displayAmountCOP, 'COP, stripeUnit:', stripeUnitAmount, ', baseUrl:', baseUrl);
+      const stripeUnitAmount = Math.round(amountInCOP * 100);
+      console.log('[Billing] Creating Stripe session. Source:', quoteSource, 'Amount:', amountInCOP, 'COP, stripeUnit:', stripeUnitAmount, ', baseUrl:', baseUrl);
       
       try {
         const session = await stripe.checkout.sessions.create({
@@ -758,7 +753,7 @@ export function registerBillingRoutes(app: Express) {
             companyId: subscription.companyId,
             companyName: company?.name || 'Unknown',
             userId: req.user!.id,
-            amountChargedCOP: displayAmountCOP.toString(),
+            amountChargedCOP: amountInCOP.toString(),
             priceSource: quoteSource,
           },
           success_url: `${baseUrl}/mi-cuenta?activation=success&session_id={CHECKOUT_SESSION_ID}`,

@@ -19,14 +19,12 @@ interface PlanConfig {
   features: string[];
 }
 
-// IMPORTANTE: COP NO es zero-decimal en Stripe. Los valores deben ser en "centavos" (×100)
-// Ejemplo: $60,000 COP = unit_amount 6,000,000
 const plans: PlanConfig[] = [
   {
     name: 'microempresa',
     displayName: 'Microempresa',
     description: 'Plan ideal para microempresas con hasta 10 trabajadores. Cumplimiento del Capítulo I de la Resolución 0312/2019.',
-    priceMonthly: 6000000, // $60,000 COP/mes (×100)
+    priceMonthly: 60000,
     maxWorkers: 10,
     features: [
       '7 estándares mínimos',
@@ -40,7 +38,7 @@ const plans: PlanConfig[] = [
     name: 'pequena',
     displayName: 'Pequeña Empresa',
     description: 'Plan para pequeñas empresas de 11 a 49 trabajadores. Cumplimiento del Capítulo II de la Resolución 0312/2019.',
-    priceMonthly: 26400000, // $264,000 COP/mes (×100)
+    priceMonthly: 264000,
     maxWorkers: 49,
     features: [
       '21 estándares mínimos',
@@ -54,7 +52,7 @@ const plans: PlanConfig[] = [
     name: 'mediana',
     displayName: 'Mediana Empresa',
     description: 'Plan completo para medianas empresas de 50 a 199 trabajadores. Cumplimiento total del Capítulo III de la Resolución 0312/2019.',
-    priceMonthly: 110000000, // $1,100,000 COP/mes (×100)
+    priceMonthly: 1100000,
     maxWorkers: 199,
     features: [
       '61 estándares mínimos',
@@ -68,8 +66,8 @@ const plans: PlanConfig[] = [
     name: 'grande',
     displayName: 'Gran Empresa',
     description: 'Plan empresarial para grandes empresas con 200+ trabajadores. Cumplimiento total de la Resolución 0312/2019 y certificación ISO 45001:2018.',
-    priceMonthly: 400000000, // $4,000,000 COP/mes (×100)
-    maxWorkers: -1, // Unlimited
+    priceMonthly: 4000000,
+    maxWorkers: -1,
     features: [
       '61 estándares mínimos',
       'Usuarios ilimitados',
@@ -117,25 +115,25 @@ async function seedStripeProducts() {
         active: true
       });
       
-      const expectedYearlyAmount = Math.round(plan.priceMonthly * 12 * 0.8);
+      const expectedMonthlyStripe = Math.round(plan.priceMonthly * 100);
+      const expectedYearlyStripe = Math.round(plan.priceMonthly * 12 * 0.8 * 100);
       const hasCorrectMonthlyPrice = existingPrices.data.some(
-        p => p.recurring?.interval === 'month' && p.unit_amount === plan.priceMonthly
+        p => p.recurring?.interval === 'month' && p.unit_amount === expectedMonthlyStripe
       );
       const hasCorrectYearlyPrice = existingPrices.data.some(
-        p => p.recurring?.interval === 'year' && p.unit_amount === expectedYearlyAmount
+        p => p.recurring?.interval === 'year' && p.unit_amount === expectedYearlyStripe
       );
       
       if (hasCorrectMonthlyPrice && hasCorrectYearlyPrice) {
-        console.log(`   ✅ Precios correctos ya existen, saltando...\n`);
+        console.log(`   Precios correctos ya existen, saltando...\n`);
         continue;
       }
       
-      // Archive old prices
       for (const price of existingPrices.data) {
-        if ((price.recurring?.interval === 'month' && price.unit_amount !== plan.priceMonthly) ||
-            (price.recurring?.interval === 'year' && price.unit_amount !== expectedYearlyAmount)) {
+        if ((price.recurring?.interval === 'month' && price.unit_amount !== expectedMonthlyStripe) ||
+            (price.recurring?.interval === 'year' && price.unit_amount !== expectedYearlyStripe)) {
           await stripe.prices.update(price.id, { active: false });
-          console.log(`   🗄️  Precio antiguo archivado: ${price.id} (${price.unit_amount} COP)`);
+          console.log(`   Precio antiguo archivado: ${price.id} (${price.unit_amount})`);
         }
       }
     } else {
@@ -154,11 +152,9 @@ async function seedStripeProducts() {
       console.log(`   ✅ Producto creado: ${product.id}`);
     }
     
-    // Create monthly price
-    // NOTA: COP es zero-decimal, el valor es directamente en pesos
     const monthlyPrice = await stripe.prices.create({
       product: productId,
-      unit_amount: plan.priceMonthly, // Valor directo en COP (zero-decimal)
+      unit_amount: Math.round(plan.priceMonthly * 100),
       currency: 'cop',
       recurring: {
         interval: 'month'
@@ -170,13 +166,13 @@ async function seedStripeProducts() {
       }
     });
     
-    console.log(`   💰 Precio mensual creado: ${monthlyPrice.id} ($${(plan.priceMonthly / 100).toLocaleString('es-CO')} COP/mes)`);
+    console.log(`   Precio mensual creado: ${monthlyPrice.id} ($${plan.priceMonthly.toLocaleString('es-CO')} COP/mes)`);
     
     // Create yearly price (20% discount)
-    const yearlyAmount = Math.round(plan.priceMonthly * 12 * 0.8); // 20% descuento anual
+    const yearlyAmountCOP = Math.round(plan.priceMonthly * 12 * 0.8);
     const yearlyPrice = await stripe.prices.create({
       product: productId,
-      unit_amount: yearlyAmount,
+      unit_amount: Math.round(yearlyAmountCOP * 100),
       currency: 'cop',
       recurring: {
         interval: 'year'
@@ -189,7 +185,7 @@ async function seedStripeProducts() {
       }
     });
     
-    console.log(`   💰 Precio anual creado: ${yearlyPrice.id} ($${(yearlyAmount / 100).toLocaleString('es-CO')} COP/año - 20% descuento)\n`);
+    console.log(`   Precio anual creado: ${yearlyPrice.id} ($${yearlyAmountCOP.toLocaleString('es-CO')} COP/año - 20% descuento)\n`);
   }
   
   console.log('✅ Productos de Stripe creados exitosamente!');

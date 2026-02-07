@@ -161,7 +161,7 @@ export class StripeService {
     currency: string;
     productName: string;
     productDescription?: string;
-    unitAmount: number; // COP es zero-decimal, no multiplicar por 100
+    unitAmount: number;
     successUrl: string;
     cancelUrl: string;
     metadata?: Record<string, string>;

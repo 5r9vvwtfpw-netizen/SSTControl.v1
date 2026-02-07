@@ -69,7 +69,7 @@ async function seedStripeProducts() {
     if (!monthlyPrice) {
       monthlyPrice = await stripe.prices.create({
         product: product.id,
-        unit_amount: plan.priceMonthly,
+        unit_amount: Math.round(plan.priceMonthly * 100),
         currency: 'cop',
         recurring: {
           interval: 'month'
@@ -88,7 +88,7 @@ async function seedStripeProducts() {
     if (!yearlyPrice) {
       yearlyPrice = await stripe.prices.create({
         product: product.id,
-        unit_amount: plan.priceYearly,
+        unit_amount: Math.round(plan.priceYearly * 100),
         currency: 'cop',
         recurring: {
           interval: 'year'

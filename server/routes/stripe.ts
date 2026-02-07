@@ -372,7 +372,6 @@ export function registerStripeRoutes(app: Express) {
       const isFullDiscount = currentPeriodPrice === 0;
       const hasPartialDiscount = currentPeriodPrice > 0 && currentPeriodPrice < baseMonthlyPrice;
 
-      // NOTA: COP es moneda de cero decimales en Stripe, NO multiplicar por 100
       let priceToCharge = hasPartialDiscount ? currentPeriodPrice : baseMonthlyPrice;
       
       // VALIDACIÓN: El precio a cobrar debe cumplir con el mínimo de Stripe
@@ -430,7 +429,7 @@ export function registerStripeRoutes(app: Express) {
           currency: 'cop',
           productName,
           productDescription: 'Suscripción mensual SST Colombia - Primer mes gratis',
-          unitAmount: baseMonthlyPrice,
+          unitAmount: Math.round(baseMonthlyPrice * 100),
           successUrl: validatedData.successUrl || `${baseUrl}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: validatedData.cancelUrl || `${baseUrl}/mi-suscripcion?payment=cancelled`,
           metadata,
@@ -455,7 +454,7 @@ export function registerStripeRoutes(app: Express) {
           productDescription: hasPartialDiscount 
             ? `Suscripción mensual SST Colombia - Precio promocional por ${discountDurationMonths} mes(es)`
             : 'Suscripción mensual SST Colombia',
-          unitAmount: priceToCharge,
+          unitAmount: Math.round(priceToCharge * 100),
           successUrl: validatedData.successUrl || `${baseUrl}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: validatedData.cancelUrl || `${baseUrl}/mi-suscripcion?payment=cancelled`,
           metadata,
