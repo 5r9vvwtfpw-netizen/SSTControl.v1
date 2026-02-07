@@ -684,11 +684,11 @@ export function registerBillingRoutes(app: Express) {
           }
         } catch (jwtError: any) {
           console.warn('[Billing] JWT verification failed, falling back to plan price:', jwtError.message);
-          amountInCOP = Math.round(plan.priceMonthly / 100);
+          amountInCOP = Math.round(plan.priceMonthly);
           quoteSource = 'plan_price_fallback';
         }
       } else {
-        amountInCOP = Math.round(plan.priceMonthly / 100);
+        amountInCOP = Math.round(plan.priceMonthly);
       }
 
       const STRIPE_MIN_COP = 2000;

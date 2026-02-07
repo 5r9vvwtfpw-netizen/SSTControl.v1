@@ -650,11 +650,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
     // Crear line items para Stripe
     const lineItems: any[] = [];
 
-    // CRÍTICO: COP NO es moneda zero-decimal en Stripe - DEBE multiplicar por 100
-    // Monedas zero-decimal: JPY, KRW, VND (NO COP, USD, EUR)
-    // https://stripe.com/docs/currencies#zero-decimal
-    // Ejemplo: $10,000 COP → unit_amount: 1,000,000
-    const COP_MULTIPLIER = 100;
+    const COP_MULTIPLIER = 1;
     
     // Item 1: SST - Trabajadores
     if (result.costoTrabajadores > 0) {
