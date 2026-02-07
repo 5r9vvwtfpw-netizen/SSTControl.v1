@@ -614,15 +614,11 @@ export function registerBillingRoutes(app: Express) {
         });
       }
 
+      // Trial users CAN activate (convert trial → paid). Do NOT block them.
+      // The TrialAlert button "Activar suscripción" appears for trial users
+      // wanting to convert to paid before their trial expires.
       if (subscription.status === 'trial') {
-        console.log('[Billing] Subscription already in trial, skipping activation:', subscription.id);
-        return res.status(200).json({
-          success: true,
-          trial: true,
-          alreadyActive: true,
-          trialEnd: subscription.trialEnd ? new Date(subscription.trialEnd).toISOString() : undefined,
-          message: 'La suscripción ya tiene un período de prueba activo',
-        });
+        console.log('[Billing] Trial subscription - proceeding with activation (trial → paid conversion):', subscription.id);
       }
 
       const isAdmin = req.user!.role === 'admin';
@@ -682,8 +678,23 @@ export function registerBillingRoutes(app: Express) {
             productDescription = `Plan ${plan.displayName || plan.name} - Primer mes (Cupón ${couponCode})`;
           }
         } catch (jwtError: any) {
-          console.warn('[Billing] JWT verification failed, falling back to plan price:', jwtError.message);
-          amountInCOP = plan.priceMonthly;
+          console.warn('[Billing] JWT verification failed, recalculating price from company data:', jwtError.message);
+          
+          if (company) {
+            try {
+              const vehicles = company.numberOfVehicles || 0;
+              const vehiclePrice = vehicles > 0 ? vehicles * 8000 : 0;
+              const calculatedPrice = plan.priceMonthly + vehiclePrice;
+              
+              amountInCOP = calculatedPrice > 0 ? calculatedPrice : plan.priceMonthly;
+              console.log('[Billing] Recalculated price:', { planBase: plan.priceMonthly, vehiclePrice, total: amountInCOP });
+            } catch (calcError) {
+              console.warn('[Billing] Price recalculation failed, using plan price:', plan.priceMonthly);
+              amountInCOP = plan.priceMonthly;
+            }
+          } else {
+            amountInCOP = plan.priceMonthly;
+          }
           quoteSource = 'plan_price_fallback';
         }
       } else {
