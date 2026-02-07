@@ -153,23 +153,8 @@ const phvaTabs: { key: PHVASection; label: string; icon?: typeof Settings }[] = 
 ];
 
 const pesvNavMenuItems: { label: string; path: string }[] = [
-  { label: "Dashboard PESV", path: "/pesv" },
+  { label: "Panel de Control", path: "/pesv" },
   { label: "Evaluaciones PESV", path: "/pesv/evaluaciones" },
-  { label: "Vehículos", path: "/pesv/vehiculos" },
-  { label: "Conductores", path: "/pesv/conductores" },
-  { label: "Inspecciones", path: "/pesv/inspecciones" },
-  { label: "Siniestros Viales", path: "/pesv/siniestros" },
-  { label: "Capacitaciones Viales", path: "/pesv/capacitaciones" },
-  { label: "Comité de Seguridad Vial", path: "/pesv/comite" },
-  { label: "Matriz de Riesgos Viales", path: "/pesv/matriz-riesgos" },
-  { label: "Mantenimiento Vehicular", path: "/pesv/mantenimiento" },
-  { label: "Monitoreo GPS", path: "/pesv/monitoreo-gps" },
-  { label: "Rutas Seguras", path: "/pesv/rutas-seguras" },
-  { label: "Indicadores PESV", path: "/pesv/indicadores" },
-  { label: "Auditorías PESV", path: "/pesv/auditorias" },
-  { label: "Liderazgo y Compromiso", path: "/pesv/liderazgo" },
-  { label: "Contexto Organizacional", path: "/pesv/contexto-organizacional" },
-  { label: "Factores de Desempeño", path: "/pesv/factores-desempeno" },
 ];
 
 export function PHVANavigation() {
