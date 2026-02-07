@@ -54,7 +54,7 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'ACTA DE REUNIÓN - COMITÉ DE SEGURIDAD VIAL',
@@ -99,7 +99,7 @@ export function registerPesvPdfRoutes(app: Express) {
         y = addLabeledField(doc, 'Próxima Reunión', formatDate(acta.proximaReunion), { y });
       }
 
-      addSignatureFooter(doc, signers);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-acta-comite');
@@ -129,7 +129,7 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'LISTADO DE INTEGRANTES - COMITÉ DE SEGURIDAD VIAL',
@@ -141,7 +141,7 @@ export function registerPesvPdfRoutes(app: Express) {
       ]);
       y = addSimpleTable(doc, ['Nombre', 'Cargo', 'Rol', 'Email', 'Estado'], rows, { y });
 
-      addSignatureFooter(doc, signers);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-comite-integrantes');
@@ -175,7 +175,7 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'INFORME DE AUDITORÍA - PLAN ESTRATÉGICO DE SEGURIDAD VIAL',
@@ -216,7 +216,7 @@ export function registerPesvPdfRoutes(app: Express) {
       y = addSectionBar(doc, 'Recomendaciones', y);
       y = addParagraph(doc, auditoria.recomendaciones || 'Sin recomendaciones registradas.', { y });
 
-      addSignatureFooter(doc, signers);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-auditoria');
@@ -247,7 +247,7 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'PLAN DE MEJORA CONTINUA - PESV',
@@ -264,7 +264,7 @@ export function registerPesvPdfRoutes(app: Express) {
       ]);
       y = addSimpleTable(doc, ['Descripción', 'Tipo', 'Prioridad', 'Responsable', 'Estado', 'Fecha Límite'], rows, { y });
 
-      addSignatureFooter(doc, signers);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-acciones-mejora');
@@ -296,7 +296,7 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'REVISIÓN POR LA DIRECCIÓN - PESV',
@@ -337,7 +337,7 @@ export function registerPesvPdfRoutes(app: Express) {
         y = addLabeledField(doc, 'Próxima Revisión', formatDate(revision.fechaProximaRevision), { y });
       }
 
-      addSignatureFooter(doc, signers);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-revision-direccion');
@@ -367,7 +367,7 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'ANÁLISIS DE CONTEXTO ORGANIZACIONAL - PESV',
@@ -397,7 +397,7 @@ export function registerPesvPdfRoutes(app: Express) {
         y = addParagraph(doc, 'No se han registrado factores de contexto organizacional.', { y });
       }
 
-      addSignatureFooter(doc, signers);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-contexto-organizacional');
@@ -427,7 +427,7 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'MATRIZ DE RIESGOS VIALES - ISO 31000',
@@ -440,7 +440,7 @@ export function registerPesvPdfRoutes(app: Express) {
       ]);
       y = addSimpleTable(doc, ['Código', 'Nombre', 'Categoría', 'Probabilidad', 'Impacto', 'Nivel Riesgo', 'Estado'], rows, { y });
 
-      addSignatureFooter(doc, signers);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-riesgos-viales');
@@ -470,7 +470,7 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'FACTORES DE DESEMPEÑO DE SEGURIDAD VIAL - ISO 39001',
@@ -483,7 +483,7 @@ export function registerPesvPdfRoutes(app: Express) {
       ]);
       y = addSimpleTable(doc, ['Código', 'Nombre', 'Categoría', 'Valor Base', 'Meta', 'Valor Actual'], rows, { y });
 
-      addSignatureFooter(doc, signers);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-factores-desempeno');
@@ -513,7 +513,7 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'INDICADORES DE SEGURIDAD VIAL - ISO 39001',
@@ -526,7 +526,7 @@ export function registerPesvPdfRoutes(app: Express) {
       ]);
       y = addSimpleTable(doc, ['Código', 'Nombre', 'Unidad', 'Meta', 'Actual', 'Frecuencia'], rows, { y });
 
-      addSignatureFooter(doc, signers);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-indicadores-sv');
@@ -556,7 +556,7 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'LISTADO DE CONDUCTORES - PESV',
@@ -568,7 +568,7 @@ export function registerPesvPdfRoutes(app: Express) {
       ]);
       y = addSimpleTable(doc, ['Nombre', 'Documento', 'Categoría Licencia', 'Vencimiento', 'Estado'], rows, { y });
 
-      addSignatureFooter(doc, signers);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-conductores');
@@ -598,7 +598,7 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'PARQUE AUTOMOTOR - PESV',
@@ -610,7 +610,7 @@ export function registerPesvPdfRoutes(app: Express) {
       ]);
       y = addSimpleTable(doc, ['Placa', 'Tipo', 'Marca', 'Modelo', 'Año', 'Estado'], rows, { y });
 
-      addSignatureFooter(doc, signers);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-vehiculos');
@@ -640,7 +640,7 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'REGISTRO DE MANTENIMIENTO VEHICULAR - PESV',
@@ -653,7 +653,7 @@ export function registerPesvPdfRoutes(app: Express) {
       ]);
       y = addSimpleTable(doc, ['Vehículo', 'Tipo', 'Fecha', 'Descripción', 'Costo', 'Estado'], rows, { y });
 
-      addSignatureFooter(doc, signers);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-mantenimientos');
@@ -683,7 +683,7 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'PROGRAMA DE CAPACITACIÓN EN SEGURIDAD VIAL',
@@ -700,7 +700,7 @@ export function registerPesvPdfRoutes(app: Express) {
       ]);
       y = addSimpleTable(doc, ['Tema', 'Fecha', 'Instructor', 'Asistentes', 'Duración'], rows, { y });
 
-      addSignatureFooter(doc, signers);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-capacitaciones');
@@ -730,7 +730,7 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'REGISTRO DE INSPECCIONES VEHICULARES',
@@ -743,7 +743,7 @@ export function registerPesvPdfRoutes(app: Express) {
       ]);
       y = addSimpleTable(doc, ['Vehículo', 'Fecha', 'Inspector', 'Resultado', 'Estado'], rows, { y });
 
-      addSignatureFooter(doc, signers);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-inspecciones');
@@ -773,7 +773,7 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'REGISTRO DE SINIESTROS VIALES',
@@ -786,7 +786,7 @@ export function registerPesvPdfRoutes(app: Express) {
       ]);
       y = addSimpleTable(doc, ['Fecha', 'Tipo', 'Ubicación', 'Vehículo', 'Conductor', 'Gravedad'], rows, { y });
 
-      addSignatureFooter(doc, signers);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-siniestros');
