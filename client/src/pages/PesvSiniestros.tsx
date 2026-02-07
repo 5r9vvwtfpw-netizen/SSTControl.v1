@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Eye, Trash2, AlertTriangle, Users, Skull, DollarSign, ArrowLeft } from "lucide-react";
+import { Plus, Search, Eye, Trash2, AlertTriangle, Users, Skull, DollarSign, ArrowLeft, FileDown } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { RoadIncident, Vehicle, Driver, insertRoadIncidentSchema } from "@shared/schema";
@@ -216,6 +216,16 @@ export default function PesvSiniestros() {
     return vehiclePlate.includes(searchLower) || driverName.includes(searchLower) || typeLabel.includes(searchLower);
   });
 
+  const handleDownloadPdf = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const totalIncidents = incidents.length;
   const totalInjuries = incidents.reduce((sum, i) => sum + (i.injuries || 0), 0);
   const totalFatalities = incidents.reduce((sum, i) => sum + (i.fatalities || 0), 0);
@@ -237,6 +247,15 @@ export default function PesvSiniestros() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Siniestros Viales</h1>
           <p className="text-muted-foreground">Registro e investigación de accidentes de tránsito</p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleDownloadPdf('/api/pesv/siniestros/pdf', 'siniestros-viales.pdf')}
+          data-testid="button-download-siniestros-pdf"
+        >
+          <FileDown className="h-4 w-4 mr-2" />
+          Descargar PDF
+        </Button>
       </div>
       
       <TrazabilidadPesvBanner codigoPaso="H05" compacto />

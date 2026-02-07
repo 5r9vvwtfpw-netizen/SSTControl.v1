@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Plus, Search, Eye, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Search, Eye, Trash2, ArrowLeft, FileDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { PesvAudit, insertPesvAuditSchema } from "@shared/schema";
@@ -302,6 +302,16 @@ export default function PesvAuditorias() {
       />
     </div>
   );
+
+  const handleDownloadPdf = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="space-y-6">
@@ -616,6 +626,14 @@ export default function PesvAuditorias() {
                         data-testid={`button-view-${audit.id}`}
                       >
                         <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDownloadPdf(`/api/auditorias-pesv/${audit.id}/pdf`, `auditoria-pesv-${audit.codigo || audit.id}.pdf`)}
+                        data-testid={`button-download-auditoria-pdf-${audit.id}`}
+                      >
+                        <FileDown className="h-4 w-4" />
                       </Button>
                       {user?.role && hasCompanyAdminAccess(user.role) && (
                         <Button

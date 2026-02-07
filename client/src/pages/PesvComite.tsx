@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, ArrowLeft, Users, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowLeft, Users, FileText, FileDown } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { ComiteIntegrantePesv, ActaComitePesv, Worker, insertComiteIntegrantePesvSchema, insertActaComitePesvSchema } from "@shared/schema";
@@ -349,6 +349,16 @@ export default function PesvComite() {
     });
   };
 
+  const handleDownloadPdf = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const integrantesActivos = integrantes.filter(i => i.estado === "activo");
 
   return (
@@ -385,10 +395,20 @@ export default function PesvComite() {
         </TabsList>
 
         <TabsContent value="integrantes" className="mt-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
             <div className="text-sm text-muted-foreground">
               {integrantes.length} integrantes registrados ({integrantesActivos.length} activos)
             </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDownloadPdf('/api/pesv/comite/integrantes/pdf', 'integrantes-comite-pesv.pdf')}
+                data-testid="button-download-integrantes-pdf"
+              >
+                <FileDown className="h-4 w-4 mr-2" />
+                Descargar PDF
+              </Button>
             {isAdmin && (
               <Dialog open={integranteDialogOpen} onOpenChange={(open) => {
                 setIntegranteDialogOpen(open);
@@ -508,6 +528,7 @@ export default function PesvComite() {
                 </DialogContent>
               </Dialog>
             )}
+            </div>
           </div>
 
           {integrantesLoading ? (
@@ -790,16 +811,26 @@ export default function PesvComite() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        {isAdmin && (
-                          <div className="flex gap-1 justify-end">
-                            <Button variant="ghost" size="icon" onClick={() => handleEditActa(acta)} data-testid={`button-edit-acta-${acta.id}`}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => { if (confirm("¿Eliminar esta acta?")) deleteActaMutation.mutate(acta.id); }} data-testid={`button-delete-acta-${acta.id}`}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex gap-1 justify-end">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDownloadPdf(`/api/pesv/comite/actas/${acta.id}/pdf`, `acta-comite-pesv-${acta.numeroActa}.pdf`)}
+                            data-testid={`button-download-acta-pdf-${acta.id}`}
+                          >
+                            <FileDown className="h-4 w-4" />
+                          </Button>
+                          {isAdmin && (
+                            <>
+                              <Button variant="ghost" size="icon" onClick={() => handleEditActa(acta)} data-testid={`button-edit-acta-${acta.id}`}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => { if (confirm("¿Eliminar esta acta?")) deleteActaMutation.mutate(acta.id); }} data-testid={`button-delete-acta-${acta.id}`}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

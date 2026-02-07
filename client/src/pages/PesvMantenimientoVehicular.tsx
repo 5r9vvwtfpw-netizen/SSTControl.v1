@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Pencil, Trash2, ArrowLeft, Wrench } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ArrowLeft, Wrench, FileDown } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { VehicleMaintenance, InsertVehicleMaintenance, insertVehicleMaintenanceSchema, Vehicle } from "@shared/schema";
@@ -240,6 +240,16 @@ export default function PesvMantenimientoVehicular() {
     }).format(amount);
   };
 
+  const handleDownloadPdf = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-4">
@@ -259,6 +269,15 @@ export default function PesvMantenimientoVehicular() {
           </h1>
           <p className="text-muted-foreground">Gestión de mantenimientos preventivos, correctivos y predictivos</p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleDownloadPdf('/api/pesv/mantenimientos/pdf', 'mantenimientos-pesv.pdf')}
+          data-testid="button-download-mantenimientos-pdf"
+        >
+          <FileDown className="h-4 w-4 mr-2" />
+          Descargar PDF
+        </Button>
       </div>
       
       <TrazabilidadPesvBanner codigoPaso="H05" compacto />

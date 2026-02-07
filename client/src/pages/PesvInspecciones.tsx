@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Eye, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Search, Eye, Trash2, ArrowLeft, FileDown } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { VehicleInspection, Vehicle, Driver, insertVehicleInspectionSchema } from "@shared/schema";
@@ -183,6 +183,16 @@ export default function PesvInspecciones() {
     return labels[result] || result;
   };
 
+  const handleDownloadPdf = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const filteredInspections = inspections.filter((inspection) => {
     const searchLower = searchTerm.toLowerCase();
     const vehiclePlate = getVehiclePlate(inspection.vehicleId).toLowerCase();
@@ -206,6 +216,15 @@ export default function PesvInspecciones() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Inspecciones Preoperacionales</h1>
           <p className="text-muted-foreground">Revisiones diarias de vehículos antes de operar</p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleDownloadPdf('/api/pesv/inspecciones/pdf', 'inspecciones-preoperacionales.pdf')}
+          data-testid="button-download-inspecciones-pdf"
+        >
+          <FileDown className="h-4 w-4 mr-2" />
+          Descargar PDF
+        </Button>
       </div>
       
       <TrazabilidadPesvBanner codigoPaso="H08" compacto />

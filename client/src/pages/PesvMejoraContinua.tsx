@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, AlertTriangle, Shield, Plus, Eye, Calendar, ClipboardCheck, ExternalLink, Search } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Shield, Plus, Eye, Calendar, ClipboardCheck, ExternalLink, Search, FileDown } from "lucide-react";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
@@ -94,6 +94,17 @@ function getFuenteLabel(fuente: string | null) {
 export default function PesvMejoraContinua() {
   const { evaluacionId } = useParams<{ evaluacionId: string }>();
   const { toast } = useToast();
+
+  const handleDownloadPdf = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedAccion, setSelectedAccion] = useState<AccionMejoraPesv | null>(null);
@@ -246,7 +257,16 @@ export default function PesvMejoraContinua() {
         isLoading={evaluacionLoading}
       />
 
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end mb-4 gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleDownloadPdf(`/api/evaluaciones-pesv/${evaluacionId}/acciones-mejora/pdf`, 'acciones-mejora-pesv.pdf')}
+          data-testid="button-download-acciones-mejora-pdf"
+        >
+          <FileDown className="h-4 w-4 mr-2" />
+          Descargar PDF
+        </Button>
         <BackToPesvEvaluationButton />
       </div>
 

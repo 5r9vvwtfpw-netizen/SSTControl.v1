@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Users, Calendar, CheckCircle2, FileText, Plus, Eye, ArrowLeft, ClipboardCheck, ExternalLink, Building2, Shield } from "lucide-react";
+import { Users, Calendar, CheckCircle2, FileText, Plus, Eye, ArrowLeft, ClipboardCheck, ExternalLink, Building2, Shield, FileDown } from "lucide-react";
 import { Link } from "wouter";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
@@ -195,6 +195,16 @@ export default function PesvRevisionDireccion() {
 
   const isLoading = evaluacionLoading || revisionesLoading;
 
+  const handleDownloadPdf = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="container mx-auto p-4 max-w-7xl">
       <EvaluacionPesvContextHeader
@@ -204,7 +214,15 @@ export default function PesvRevisionDireccion() {
         isLoading={evaluacionLoading}
       />
 
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end gap-2 mb-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => handleDownloadPdf(`/api/evaluaciones-pesv/${evaluacionId}/pdf`, `evaluacion-pesv-${evaluacionId}.pdf`)}
+          data-testid="button-download-evaluation-pdf"
+        >
+          <FileDown className="h-4 w-4" />
+        </Button>
         <BackToPesvEvaluationButton />
       </div>
 
@@ -439,18 +457,28 @@ export default function PesvRevisionDireccion() {
                         </div>
                         {getEstadoBadge(revision.estado)}
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedRevision(revision);
-                          setDetailDialogOpen(true);
-                        }}
-                        data-testid={`button-view-revision-${revision.id}`}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Ver Detalle
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDownloadPdf(`/api/evaluaciones-pesv/${evaluacionId}/revisiones-direccion/${revision.id}/pdf`, `revision-direccion-pesv-${revision.codigo}.pdf`)}
+                          data-testid={`button-download-revision-pdf-${revision.id}`}
+                        >
+                          <FileDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedRevision(revision);
+                            setDetailDialogOpen(true);
+                          }}
+                          data-testid={`button-view-revision-${revision.id}`}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Ver Detalle
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>

@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Users, ArrowLeft } from "lucide-react";
+import { Plus, Search, Users, ArrowLeft, FileDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { RoadSafetyTraining, Driver, Worker, insertRoadSafetyTrainingSchema } from "@shared/schema";
@@ -238,6 +238,16 @@ export default function PesvCapacitaciones() {
     return training.title.toLowerCase().includes(searchLower);
   });
 
+  const handleDownloadPdf = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const getAttendeeCount = (trainingId: string) => {
     return attendees.filter((a: any) => a.trainingId === trainingId && a.attended === 1).length || 0;
   };
@@ -258,6 +268,15 @@ export default function PesvCapacitaciones() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Capacitaciones de Seguridad Vial</h1>
           <p className="text-muted-foreground">Formación en seguridad vial y conducción defensiva</p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleDownloadPdf('/api/pesv/capacitaciones/pdf', 'capacitaciones-seguridad-vial.pdf')}
+          data-testid="button-download-capacitaciones-pdf"
+        >
+          <FileDown className="h-4 w-4 mr-2" />
+          Descargar PDF
+        </Button>
       </div>
       
       <TrazabilidadPesvBanner codigoPaso="H02" compacto />

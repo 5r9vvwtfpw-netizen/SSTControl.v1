@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Pencil, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ArrowLeft, FileDown } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Vehicle, insertVehicleSchema } from "@shared/schema";
@@ -235,6 +235,16 @@ export default function PesvVehiculos() {
     return labels[status] || status;
   };
 
+  const handleDownloadPdf = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-4">
@@ -252,6 +262,15 @@ export default function PesvVehiculos() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Vehículos PESV</h1>
           <p className="text-muted-foreground">Gestión de flota vehicular</p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleDownloadPdf('/api/pesv/vehiculos/pdf', 'vehiculos-pesv.pdf')}
+          data-testid="button-download-vehiculos-pdf"
+        >
+          <FileDown className="h-4 w-4 mr-2" />
+          Descargar PDF
+        </Button>
       </div>
       
       <TrazabilidadPesvBanner codigoPaso="H08" compacto />

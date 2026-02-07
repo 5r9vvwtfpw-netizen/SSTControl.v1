@@ -42978,6 +42978,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   const { registerLsoDirectoryRoutes } = await import("./routes-lso-directory");
   registerLsoDirectoryRoutes(app);
 
+  // ========== PESV PDF ROUTES ==========
+  // Rutas de generación PDF para todos los módulos PESV (Resolución 40595/2022)
+  const { registerPesvPdfRoutes } = await import("./routes/pesv-pdf-routes");
+  registerPesvPdfRoutes(app);
+
   // ========== EVALUACIONES PESV ROUTES ==========
   // Rutas para evaluaciones del Plan Estratégico de Seguridad Vial (Resolución 40595/2022)
 

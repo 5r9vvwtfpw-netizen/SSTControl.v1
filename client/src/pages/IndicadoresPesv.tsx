@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Search, Trash2, Edit, TrendingUp, Target, BarChart3, Activity, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Search, Trash2, Edit, TrendingUp, Target, BarChart3, Activity, Calendar, ChevronDown, ChevronUp, FileDown } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -424,6 +424,16 @@ export default function IndicadoresPesv() {
     return worker ? worker.name : null;
   };
 
+  const handleDownloadPdf = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -435,6 +445,15 @@ export default function IndicadoresPesv() {
         </div>
         <div className="flex flex-wrap gap-2">
           <BackToPesvEvaluationButton />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDownloadPdf('/api/indicadores-sv/pdf', 'indicadores-sv.pdf')}
+            data-testid="button-download-indicadores-pdf"
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Descargar PDF
+          </Button>
           <Button className="bg-green-600 hover:bg-green-700" onClick={handleAddIndicador} data-testid="button-agregar-indicador">
             <Plus className="h-4 w-4 mr-2" />
             Agregar Indicador
