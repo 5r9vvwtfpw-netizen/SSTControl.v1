@@ -2253,8 +2253,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/companies/:id", requirePermission("companies:delete"), async (req, res) => {
-    await storage.deleteCompany(req.params.id);
-    res.status(204).send();
+    try {
+      const company = await storage.getCompany(req.params.id);
+      if (!company) {
+        return res.status(200).json({ message: "La empresa ya fue eliminada previamente" });
+      }
+      await storage.deleteCompany(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      if (error.message?.includes('violates foreign key') || error.code === '23503') {
+        return res.status(409).json({ 
+          error: "No se puede eliminar: la empresa tiene datos asociados. Use 'Eliminar Todo' para borrar la empresa con todos sus datos." 
+        });
+      }
+      console.error('Error al eliminar empresa:', error);
+      res.status(500).json({ error: "Error al eliminar la empresa", details: error.message });
+    }
   });
 
   // Full delete company with all related data (superadmin only)
@@ -2272,7 +2286,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verificar que la empresa existe
       const company = await storage.getCompany(companyId);
       if (!company) {
-        return res.status(404).json({ error: "Empresa no encontrada" });
+        return res.status(200).json({ 
+          success: true,
+          message: "La empresa ya fue eliminada previamente",
+          deletedTables: [],
+          totalRecordsDeleted: 0,
+          alreadyDeleted: true
+        });
       }
 
       // Ejecutar eliminación en cascada

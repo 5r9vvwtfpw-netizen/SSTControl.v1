@@ -202,8 +202,19 @@ export default function CompanyManagement() {
       });
     },
     onError: (error: Error) => {
+      if (error.message?.includes("no encontrada") || error.message?.includes("not found") || error.message?.includes("404")) {
+        queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+        setDeleteDialogOpen(false);
+        setCompanyToDelete(null);
+        toast({
+          title: "Empresa ya eliminada",
+          description: "La empresa ya no existe en el sistema. La lista se ha actualizado.",
+          className: "bg-yellow-50 border-yellow-200",
+        });
+        return;
+      }
       toast({
-        title: "Error",
+        title: "Error al eliminar",
         description: error.message,
         variant: "destructive",
       });
@@ -227,6 +238,17 @@ export default function CompanyManagement() {
       });
     },
     onError: (error: Error) => {
+      if (error.message?.includes("no encontrada") || error.message?.includes("not found") || error.message?.includes("404")) {
+        queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+        setDeleteDialogOpen(false);
+        setCompanyToDelete(null);
+        toast({
+          title: "Empresa ya eliminada",
+          description: "La empresa ya no existe en el sistema. La lista se ha actualizado.",
+          className: "bg-yellow-50 border-yellow-200",
+        });
+        return;
+      }
       toast({
         title: "Error al eliminar",
         description: error.message,

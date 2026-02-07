@@ -2178,7 +2178,29 @@ export class DbStorage implements IStorage {
       { table: 'auditoria_auditores', column: 'auditor_id', subquery: 'SELECT id FROM users WHERE company_id = $1' },
       { table: 'planes_accion_auditoria', column: 'company_id' },
       { table: 'hallazgos_auditoria', column: 'company_id' },
+      { table: 'hallazgos_auditoria_pesv', column: 'company_id' },
+      { table: 'auditorias_pesv', column: 'company_id' },
       { table: 'auditorias_internas', column: 'company_id' },
+      { table: 'no_conformidades', column: 'company_id' },
+      { table: 'acciones_correctivas', column: 'company_id' },
+      { table: 'oportunidades_mejora', column: 'company_id' },
+      
+      // 4b. PESV - Módulos de evaluación
+      { table: 'mediciones_indicador_sv', column: 'indicador_id', subquery: 'SELECT id FROM indicadores_sv WHERE company_id = $1' },
+      { table: 'indicadores_sv', column: 'company_id' },
+      { table: 'factores_desempeno_sv', column: 'company_id' },
+      { table: 'objetivos_sv', column: 'company_id' },
+      { table: 'tratamientos_riesgo_vial', column: 'company_id' },
+      { table: 'riesgos_sst_pesv_vinculacion', column: 'company_id' },
+      { table: 'riesgos_viales', column: 'company_id' },
+      { table: 'contexto_organizacional_pesv', column: 'company_id' },
+      { table: 'acciones_mejora_pesv', column: 'company_id' },
+      { table: 'revisiones_direccion_pesv', column: 'company_id' },
+      { table: 'pesv_comite_actas', column: 'company_id' },
+      { table: 'pesv_comite_integrantes', column: 'company_id' },
+      { table: 'safe_routes', column: 'company_id' },
+      { table: 'vehicle_gps_tracking', column: 'company_id' },
+      { table: 'vehicle_maintenances', column: 'company_id' },
       
       // 5. Revisión por dirección
       { table: 'acciones_revision', column: 'company_id' },
@@ -2382,6 +2404,9 @@ export class DbStorage implements IStorage {
       // 33. Pricing plugin
       { table: 'pricing_plugin_invoices', column: 'customer_id' },
       { table: 'pricing_plugin_subscriptions', column: 'customer_id' },
+      
+      // 33b. Asientos extra
+      { table: 'company_extra_seats', column: 'company_id' },
       
       // 34. Suscripción
       { table: 'subscriptions', column: 'company_id' },
