@@ -122,6 +122,15 @@ export default function AuthPage() {
         // Marcar como nuevo registro para redirigir al onboarding después del login
         sessionStorage.setItem('sst_new_registration', 'true');
         
+        // Trazabilidad: guardar datos del registro para pre-llenar formulario de creación de empresa
+        // Esto evita que el cliente tenga que volver a escribir nombre de empresa y correo
+        if (registerData.fullName) {
+          sessionStorage.setItem('sst_registration_company_name', registerData.fullName);
+        }
+        if (registerData.email) {
+          sessionStorage.setItem('sst_registration_email', registerData.email);
+        }
+        
         // Si el usuario fue auto-verificado (modo desarrollo), cambiar a login
         if (data?.autoVerified) {
           // Pre-llenar el username en el formulario de login

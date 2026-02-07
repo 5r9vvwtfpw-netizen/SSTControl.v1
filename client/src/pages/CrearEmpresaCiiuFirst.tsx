@@ -101,6 +101,11 @@ export default function CrearEmpresaCiiuFirst() {
   const storedQuote = typeof window !== 'undefined' ? sessionStorage.getItem('sst_quote_data') : null;
   const quoteData = storedQuote ? JSON.parse(storedQuote) : null;
 
+  // Trazabilidad: Leer datos del formulario de registro como fallback
+  // Si el usuario no vino del cotizador (sin quote JWT), estos datos se guardaron en AuthPage
+  const registrationCompanyName = typeof window !== 'undefined' ? sessionStorage.getItem('sst_registration_company_name') : null;
+  const registrationEmail = typeof window !== 'undefined' ? sessionStorage.getItem('sst_registration_email') : null;
+
   useEffect(() => {
     sessionStorage.removeItem('sst_new_registration');
   }, []);
@@ -108,16 +113,16 @@ export default function CrearEmpresaCiiuFirst() {
   const form = useForm<CreateCompanyForm>({
     resolver: zodResolver(createCompanySchema),
     defaultValues: {
-      // Pre-llenar nombre de empresa desde quote JWT (Problema 1 del documento)
-      name: quoteData?.companyName || "",
+      // Pre-llenar nombre de empresa: prioridad quote JWT > datos de registro > vacío
+      name: quoteData?.companyName || registrationCompanyName || "",
       nit: "",
       city: "",
       // Pre-llenar código CIIU si viene del quote
       ciiuCode: quoteData?.ciiuCode || "",
       address: "",
       contactPhone: "",
-      // Pre-llenar email de contacto desde el usuario registrado
-      contactEmail: "",
+      // Pre-llenar email de contacto: prioridad registro > vacío (useEffect llenará desde user)
+      contactEmail: registrationEmail || "",
       // Pre-llenar número de trabajadores desde quote o URL
       numberOfWorkers: quoteData?.employees || (isNaN(initialWorkers) || initialWorkers < 1 ? 1 : initialWorkers),
       // Pre-llenar nivel de riesgo si viene del quote
@@ -127,7 +132,7 @@ export default function CrearEmpresaCiiuFirst() {
     },
   });
 
-  // Pre-llenar email de contacto cuando el usuario esté disponible
+  // Pre-llenar email de contacto cuando el usuario esté disponible (fallback si no hay dato de registro)
   useEffect(() => {
     if (user?.email && !form.getValues("contactEmail")) {
       form.setValue("contactEmail", user.email);
@@ -161,6 +166,9 @@ export default function CrearEmpresaCiiuFirst() {
     },
     onSuccess: (data) => {
       sessionStorage.removeItem('sst_onboarding_workers');
+      // Trazabilidad: limpiar datos temporales del registro
+      sessionStorage.removeItem('sst_registration_company_name');
+      sessionStorage.removeItem('sst_registration_email');
       toast({
         title: "¡Bienvenido a SST Colombia!",
         description: data.message || "Tu período de prueba de 7 días ha comenzado. Explora tu panel de control.",

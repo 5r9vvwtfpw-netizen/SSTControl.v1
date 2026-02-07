@@ -88,6 +88,10 @@ export default function CrearEmpresa() {
   const workersParam = urlWorkers || storedWorkers || quoteWorkers;
   const initialWorkers = workersParam ? parseInt(workersParam, 10) : 1;
 
+  // Trazabilidad: Leer datos del formulario de registro como fallback
+  const registrationCompanyName = typeof window !== 'undefined' ? sessionStorage.getItem('sst_registration_company_name') : null;
+  const registrationEmail = typeof window !== 'undefined' ? sessionStorage.getItem('sst_registration_email') : null;
+
   useEffect(() => {
     sessionStorage.removeItem('sst_new_registration');
   }, []);
@@ -95,13 +99,13 @@ export default function CrearEmpresa() {
   const form = useForm<CreateCompanyForm>({
     resolver: zodResolver(createCompanySchema),
     defaultValues: {
-      name: quoteData?.companyName || "",
+      name: quoteData?.companyName || registrationCompanyName || "",
       nit: "",
       city: "",
       ciiuCode: "",
       address: "",
       contactPhone: "",
-      contactEmail: user?.email || "",
+      contactEmail: registrationEmail || user?.email || "",
       numberOfWorkers: isNaN(initialWorkers) || initialWorkers < 1 ? 1 : initialWorkers,
       riskLevel: "I",
     },
@@ -123,6 +127,9 @@ export default function CrearEmpresa() {
     onSuccess: (data) => {
       // Limpiar sessionStorage del onboarding
       sessionStorage.removeItem('sst_onboarding_workers');
+      // Trazabilidad: limpiar datos temporales del registro
+      sessionStorage.removeItem('sst_registration_company_name');
+      sessionStorage.removeItem('sst_registration_email');
       
       toast({
         title: "¡Bienvenido a SST Colombia!",
