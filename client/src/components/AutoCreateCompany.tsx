@@ -17,6 +17,8 @@ const REGISTRATION_KEYS = [
   'sst_registration_address',
   'sst_registration_phone',
   'sst_registration_risk',
+  'sst_quote_data',
+  'sst_quote_token',
 ] as const;
 
 function getStoredRegistrationData() {
@@ -83,7 +85,20 @@ export default function AutoCreateCompany() {
       }
 
       try {
-        const response = await apiRequest("POST", "/api/my-company", data);
+        const payload: Record<string, any> = { ...data };
+        const storedQuote = localStorage.getItem('sst_quote_data');
+        if (storedQuote) {
+          try {
+            const quoteData = JSON.parse(storedQuote);
+            if (quoteData.baseMonthlyPrice) payload.quoteBaseMonthlyPrice = quoteData.baseMonthlyPrice;
+            if (quoteData.currentPeriodPrice) payload.quoteCurrentPeriodPrice = quoteData.currentPeriodPrice;
+            if (quoteData.discountDurationMonths) payload.quoteDiscountDurationMonths = quoteData.discountDurationMonths;
+            if (quoteData.couponCode) payload.quoteCouponCode = quoteData.couponCode;
+            if (quoteData.referrerId) payload.quoteReferrerId = quoteData.referrerId;
+          } catch {}
+        }
+
+        const response = await apiRequest("POST", "/api/my-company", payload);
         const result = await response.json();
 
         clearStoredRegistrationData();

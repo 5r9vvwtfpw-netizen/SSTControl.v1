@@ -98,7 +98,7 @@ export default function CrearEmpresaCiiuFirst() {
   const workersParam = urlWorkers || storedWorkers;
   const initialWorkers = workersParam ? parseInt(workersParam, 10) : 1;
 
-  const storedQuote = typeof window !== 'undefined' ? sessionStorage.getItem('sst_quote_data') : null;
+  const storedQuote = typeof window !== 'undefined' ? localStorage.getItem('sst_quote_data') : null;
   const quoteData = storedQuote ? JSON.parse(storedQuote) : null;
 
   const regCompanyName = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_company_name') : null;
@@ -177,7 +177,8 @@ export default function CrearEmpresaCiiuFirst() {
     },
     onSuccess: (data) => {
       sessionStorage.removeItem('sst_onboarding_workers');
-      sessionStorage.removeItem('sst_quote_data');
+      localStorage.removeItem('sst_quote_data');
+      localStorage.removeItem('sst_quote_token');
       localStorage.removeItem('sst_registration_company_name');
       localStorage.removeItem('sst_registration_email');
       localStorage.removeItem('sst_registration_username');

@@ -85,8 +85,8 @@ export default function AuthPage() {
         if (response.ok) {
           const result = await response.json();
           if (result.valid && result.data) {
-            sessionStorage.setItem('sst_quote_data', JSON.stringify(result.data));
-            sessionStorage.setItem('sst_quote_token', urlQuote);
+            localStorage.setItem('sst_quote_data', JSON.stringify(result.data));
+            localStorage.setItem('sst_quote_token', urlQuote);
             
             if (result.data.companyName) {
               setRegisterData(prev => ({ ...prev, fullName: result.data.companyName }));
@@ -160,15 +160,10 @@ export default function AuthPage() {
     companyData.contactPhone && companyData.contactPhone.length >= 7;
 
   if (user) {
-    if (user.role === 'superusuario' && !user.companyId) {
-      sessionStorage.removeItem('sst_new_registration');
-      const hasRegData = typeof window !== 'undefined' && !!localStorage.getItem('sst_registration_ciiu');
-      if (hasRegData) {
-        return <Redirect to="/dashboard" />;
-      }
-      return <Redirect to="/crear-empresa" />;
-    }
     sessionStorage.removeItem('sst_new_registration');
+    if (user.role === 'superusuario' && !user.companyId) {
+      return <Redirect to="/dashboard" />;
+    }
     return <Redirect to="/" />;
   }
 

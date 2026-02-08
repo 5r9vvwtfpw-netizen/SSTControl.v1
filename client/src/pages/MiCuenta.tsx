@@ -307,7 +307,7 @@ export default function MiCuenta() {
         throw new Error("No hay suscripción activa");
       }
       
-      const quoteToken = typeof window !== 'undefined' ? sessionStorage.getItem('sst_quote_token') : null;
+      const quoteToken = typeof window !== 'undefined' ? localStorage.getItem('sst_quote_token') : null;
       const res = await apiRequest(
         "POST",
         `/api/billing/subscription/${subscriptionData.subscription.id}/activate`,

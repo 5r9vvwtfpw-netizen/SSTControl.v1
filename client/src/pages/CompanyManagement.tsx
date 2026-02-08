@@ -441,7 +441,7 @@ export default function CompanyManagement() {
 
   const handleEdit = (company: Company) => {
     setEditingCompany(company);
-    const quoteDataRaw = typeof window !== 'undefined' ? sessionStorage.getItem('sst_quote_data') : null;
+    const quoteDataRaw = typeof window !== 'undefined' ? localStorage.getItem('sst_quote_data') : null;
     const quoteData = quoteDataRaw ? JSON.parse(quoteDataRaw) : null;
     const quoteVehicles = quoteData?.vehicles ? parseInt(String(quoteData.vehicles), 10) : 0;
     setFormData({

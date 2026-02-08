@@ -49,7 +49,7 @@ export function TrialAlert() {
 
     setIsActivating(true);
     try {
-      const quoteToken = typeof window !== 'undefined' ? sessionStorage.getItem('sst_quote_token') : null;
+      const quoteToken = typeof window !== 'undefined' ? localStorage.getItem('sst_quote_token') : null;
       const res = await apiRequest(
         "POST",
         `/api/billing/subscription/${subscriptionId}/activate`,

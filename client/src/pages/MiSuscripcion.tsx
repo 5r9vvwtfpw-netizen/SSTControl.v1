@@ -198,7 +198,7 @@ export default function MiSuscripcion() {
 
     setIsActivating(true);
     try {
-      const quoteToken = typeof window !== 'undefined' ? sessionStorage.getItem('sst_quote_token') : null;
+      const quoteToken = typeof window !== 'undefined' ? localStorage.getItem('sst_quote_token') : null;
       const res = await apiRequest(
         "POST",
         `/api/billing/subscription/${subscriptionData.subscription.id}/activate`,
