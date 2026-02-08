@@ -98,29 +98,59 @@ async function getCompanyLimits(companyId: string): Promise<SubscriptionLimits> 
       (subscription.status === 'active' || subscription.status === 'trial');
 
     if (!hasValidSubscription) {
-      // Sin suscripción válida = límites de Plan Esencial como fallback
-      // Esto permite a las empresas nuevas o sin configurar usar el sistema básico
       console.log(`[SubscriptionLimits] Company ${companyId} has no valid subscription, using Esencial defaults`);
       return DEFAULT_ESENCIAL_LIMITS;
     }
 
-    // 2. Obtener detalles del plan
+    // 2. Trial: desbloquear TODAS las features para que el usuario explore el sistema completo
+    if (subscription.status === 'trial') {
+      const plan = await storage.getSubscriptionPlan(subscription.planId);
+      return {
+        maxWorkers: plan ? (plan.maxWorkers === -1 ? null : plan.maxWorkers) : 50,
+        maxUsers: plan ? (plan.maxUsers === -1 ? null : plan.maxUsers) : 5,
+        maxCompanies: 1,
+        maxSedes: plan ? (plan.maxSedes === -1 ? null : plan.maxSedes) : 3,
+        hasIPERCCompleto: true,
+        hasAuditorias: true,
+        hasPESV: true,
+        hasRevisionDireccion: true,
+        hasGestionCambios: true,
+        hasMatrizLegal: true,
+        hasObjetivosIndicadores: true,
+        hasEvaluacionProveedores: true,
+        hasComunicacionSST: true,
+        hasAdquisicionesSST: true,
+        hasDashboardsEjecutivos: true,
+        hasPDFsNormativos: true,
+        hasExamenesMedicos: true,
+        hasMedicionesAmbientales: true,
+        hasSustanciasQuimicas: true,
+        hasCOPASST: true,
+        hasComiteConvivencia: true,
+        hasAPI: false,
+        hasExportacionMasiva: false,
+        hasWhiteLabel: false,
+        hasSLA: false,
+        hasGerenteCuenta: false,
+        hasConsultoriaSST: false,
+      };
+    }
+
+    // 3. Suscripción activa: obtener detalles del plan
     const plan = await storage.getSubscriptionPlan(subscription.planId);
 
     if (!plan) {
-      // Si la suscripción existe pero el plan no se encuentra, usar Esencial como fallback
       console.warn(`[SubscriptionLimits] Plan ${subscription.planId} not found for company ${companyId}, using Esencial defaults`);
       return DEFAULT_ESENCIAL_LIMITS;
     }
 
-    // 3. Retornar límites del plan (convertir integers a booleans para feature flags)
+    // 4. Retornar límites del plan (convertir integers a booleans para feature flags)
     return {
       maxWorkers: plan.maxWorkers === -1 ? null : plan.maxWorkers,
       maxUsers: plan.maxUsers === -1 ? null : plan.maxUsers,
       maxCompanies: plan.maxCompanies === -1 ? null : plan.maxCompanies,
       maxSedes: plan.maxSedes === -1 ? null : plan.maxSedes,
       
-      // Feature flags (integers 0/1 -> booleans)
       hasIPERCCompleto: plan.hasIPERCCompleto === 1,
       hasAuditorias: plan.hasAuditorias === 1,
       hasPESV: plan.hasPESV === 1,

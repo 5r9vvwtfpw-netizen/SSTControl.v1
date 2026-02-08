@@ -602,10 +602,10 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
     const { 
       companyId, trabajadores, claseRiesgo, vehiculos, 
       usuariosAdicionales, customerEmail, customerName, 
-      successUrl, cancelUrl 
+      successUrl, cancelUrl
     } = parsed.data;
 
-    // Calcular precios
+    // Calcular precios dinámicos
     const estandaresAplicables = getEstandaresAplicablesPorClase(claseRiesgo, trabajadores);
     const tarifaPorTrabajador = getTarifaPorRiesgo(claseRiesgo, DEFAULT_PRICING_V2_CONFIG);
     
@@ -618,6 +618,25 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
 
     const costoUsuariosAdicionales = usuariosAdicionales * TARIFA_USUARIO_ADICIONAL;
     const costoMensualTotal = result.costoMensualTotal + costoUsuariosAdicionales;
+
+    // Leer precios de cotización desde BD (fuente de verdad, NO del cliente)
+    const [companyRecord] = await db.select({
+      quoteBaseMonthlyPrice: companies.quoteBaseMonthlyPrice,
+      quoteCurrentPeriodPrice: companies.quoteCurrentPeriodPrice,
+      quoteDiscountDurationMonths: companies.quoteDiscountDurationMonths,
+      quoteCouponCode: companies.quoteCouponCode,
+    }).from(companies).where(eq(companies.id, companyId)).limit(1);
+
+    const quoteBaseMonthlyPrice = companyRecord?.quoteBaseMonthlyPrice ?? null;
+    const quoteCurrentPeriodPrice = companyRecord?.quoteCurrentPeriodPrice ?? null;
+    const quoteDiscountDurationMonths = companyRecord?.quoteDiscountDurationMonths ?? null;
+    const quoteCouponCode = companyRecord?.quoteCouponCode ?? null;
+
+    const useQuotePricing = quoteBaseMonthlyPrice !== null && quoteBaseMonthlyPrice > 0;
+    const finalMonthlyPrice = useQuotePricing ? quoteBaseMonthlyPrice : costoMensualTotal;
+    const finalFirstMonthPrice = (useQuotePricing && quoteCurrentPeriodPrice !== null && quoteCurrentPeriodPrice <= quoteBaseMonthlyPrice) 
+      ? quoteCurrentPeriodPrice 
+      : finalMonthlyPrice;
 
     // Inicializar Stripe
     const stripe = await getUncachableStripeClient();
@@ -651,70 +670,99 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
     const lineItems: any[] = [];
 
     const COP_MULTIPLIER = 100;
-    
-    // Item 1: SST - Trabajadores
-    if (result.costoTrabajadores > 0) {
+
+    if (useQuotePricing) {
       lineItems.push({
         price_data: {
           currency: 'cop',
           product_data: {
-            name: 'SST - Licencia por Trabajadores',
-            description: `${trabajadores} trabajadores × $${tarifaPorTrabajador.toLocaleString('es-CO')}/mes (Clase ${claseRiesgo})`,
+            name: 'SST Colombia - Plan Integral',
+            description: `SST + ${vehiculos > 0 ? 'PESV' : ''} - ${trabajadores} trabajadores, Clase ${claseRiesgo}${vehiculos > 0 ? `, ${vehiculos} vehículos` : ''}`,
           },
-          unit_amount: Math.round(result.costoTrabajadores * COP_MULTIPLIER),
-          recurring: { interval: 'month' },
+          unit_amount: Math.round(quoteBaseMonthlyPrice! * COP_MULTIPLIER),
+          recurring: { interval: 'month' as const },
         },
         quantity: 1,
       });
+    } else {
+      // Item 1: SST - Trabajadores
+      if (result.costoTrabajadores > 0) {
+        lineItems.push({
+          price_data: {
+            currency: 'cop',
+            product_data: {
+              name: 'SST - Licencia por Trabajadores',
+              description: `${trabajadores} trabajadores × $${tarifaPorTrabajador.toLocaleString('es-CO')}/mes (Clase ${claseRiesgo})`,
+            },
+            unit_amount: Math.round(result.costoTrabajadores * COP_MULTIPLIER),
+            recurring: { interval: 'month' },
+          },
+          quantity: 1,
+        });
+      }
+
+      // Item 2: SST - Estándares
+      if (result.costoEstandaresSst > 0) {
+        lineItems.push({
+          price_data: {
+            currency: 'cop',
+            product_data: {
+              name: 'SST - Estándares Aplicables',
+              description: `${estandaresAplicables} estándares × $8,000/mes (Resolución 0312/2019)`,
+            },
+            unit_amount: Math.round(result.costoEstandaresSst * COP_MULTIPLIER),
+            recurring: { interval: 'month' },
+          },
+          quantity: 1,
+        });
+      }
+
+      // Item 3: PESV - Pasos (si aplica)
+      if (result.tienePesv && result.costoPasosPesv > 0) {
+        const nivelLabel = getNivelPesvLabel(result.nivelPesv!);
+        lineItems.push({
+          price_data: {
+            currency: 'cop',
+            product_data: {
+              name: 'PESV - Plan Estratégico de Seguridad Vial',
+              description: `${result.pasosAplicablesPesv} pasos × $8,000/mes (${nivelLabel})`,
+            },
+            unit_amount: Math.round(result.costoPasosPesv * COP_MULTIPLIER),
+            recurring: { interval: 'month' },
+          },
+          quantity: 1,
+        });
+      }
+
+      // Item 4: Usuarios adicionales (si aplica)
+      if (usuariosAdicionales > 0 && costoUsuariosAdicionales > 0) {
+        lineItems.push({
+          price_data: {
+            currency: 'cop',
+            product_data: {
+              name: 'Usuarios Adicionales',
+              description: `${usuariosAdicionales} usuarios × $10,000/mes`,
+            },
+            unit_amount: Math.round(costoUsuariosAdicionales * COP_MULTIPLIER),
+            recurring: { interval: 'month' },
+          },
+          quantity: 1,
+        });
+      }
     }
 
-    // Item 2: SST - Estándares
-    if (result.costoEstandaresSst > 0) {
-      lineItems.push({
-        price_data: {
-          currency: 'cop',
-          product_data: {
-            name: 'SST - Estándares Aplicables',
-            description: `${estandaresAplicables} estándares × $8,000/mes (Resolución 0312/2019)`,
-          },
-          unit_amount: Math.round(result.costoEstandaresSst * COP_MULTIPLIER),
-          recurring: { interval: 'month' },
-        },
-        quantity: 1,
+    // Si el primer mes tiene precio diferente (descuento de cupón), crear cupón en Stripe
+    let stripeDiscounts: any[] = [];
+    if (useQuotePricing && finalFirstMonthPrice < finalMonthlyPrice) {
+      const discountAmount = finalMonthlyPrice - finalFirstMonthPrice;
+      const coupon = await stripe.coupons.create({
+        amount_off: Math.round(discountAmount * COP_MULTIPLIER),
+        currency: 'cop',
+        duration: quoteDiscountDurationMonths && quoteDiscountDurationMonths > 1 ? 'repeating' : 'once',
+        duration_in_months: quoteDiscountDurationMonths && quoteDiscountDurationMonths > 1 ? quoteDiscountDurationMonths : undefined,
+        name: quoteCouponCode ? `Cupón ${quoteCouponCode}` : 'Descuento primer período',
       });
-    }
-
-    // Item 3: PESV - Pasos (si aplica)
-    if (result.tienePesv && result.costoPasosPesv > 0) {
-      const nivelLabel = getNivelPesvLabel(result.nivelPesv!);
-      lineItems.push({
-        price_data: {
-          currency: 'cop',
-          product_data: {
-            name: 'PESV - Plan Estratégico de Seguridad Vial',
-            description: `${result.pasosAplicablesPesv} pasos × $8,000/mes (${nivelLabel})`,
-          },
-          unit_amount: Math.round(result.costoPasosPesv * COP_MULTIPLIER),
-          recurring: { interval: 'month' },
-        },
-        quantity: 1,
-      });
-    }
-
-    // Item 4: Usuarios adicionales (si aplica)
-    if (usuariosAdicionales > 0 && costoUsuariosAdicionales > 0) {
-      lineItems.push({
-        price_data: {
-          currency: 'cop',
-          product_data: {
-            name: 'Usuarios Adicionales',
-            description: `${usuariosAdicionales} usuarios × $10,000/mes`,
-          },
-          unit_amount: Math.round(costoUsuariosAdicionales * COP_MULTIPLIER),
-          recurring: { interval: 'month' },
-        },
-        quantity: 1,
-      });
+      stripeDiscounts = [{ coupon: coupon.id }];
     }
 
     // Crear sesión de checkout con 7 días de prueba gratis
@@ -725,7 +773,9 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
       mode: 'subscription',
       success_url: successUrl,
       cancel_url: cancelUrl,
-      allow_promotion_codes: true,
+      ...(stripeDiscounts.length > 0 
+        ? { discounts: stripeDiscounts }
+        : { allow_promotion_codes: true }),
       subscription_data: {
         trial_period_days: 7,
         description: 'SST Colombia - Prueba gratis de 7 días',
@@ -733,6 +783,9 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
       metadata: {
         pricing_v2: 'true',
         company_id: companyId,
+        quote_pricing: useQuotePricing ? 'true' : 'false',
+        quote_base_monthly: useQuotePricing ? quoteBaseMonthlyPrice!.toString() : '',
+        quote_current_period: useQuotePricing ? (quoteCurrentPeriodPrice || '').toString() : '',
         trabajadores: trabajadores.toString(),
         clase_riesgo: claseRiesgo,
         estandares_aplicables: estandaresAplicables.toString(),
@@ -740,7 +793,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
         nivel_pesv: result.nivelPesv || '',
         pasos_pesv: (result.pasosAplicablesPesv || 0).toString(),
         usuarios_adicionales: usuariosAdicionales.toString(),
-        costo_mensual_total: costoMensualTotal.toString(),
+        costo_mensual_total: finalMonthlyPrice.toString(),
       },
     });
 
@@ -770,9 +823,10 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
         costoEstandares: result.costoEstandaresSst,
         costoPesv: result.costoPasosPesv,
         costoUsuarios: costoUsuariosAdicionales,
-        costoMensualTotal,
-        costoAnualTotal: costoMensualTotal * 12,
+        costoMensualTotal: finalMonthlyPrice,
+        costoAnualTotal: finalMonthlyPrice * 12,
         currency: 'COP',
+        quotePricing: useQuotePricing,
       },
     });
   } catch (error: any) {

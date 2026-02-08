@@ -87,6 +87,16 @@ The Landing Page Integration Plugin (`plugins/landing-page-integration/`) provid
 
 The quote verification flow ensures data integrity during registration and checkout by using HMAC-SHA256 signed JWTs. Prices are NOT recalculated - the app trusts the signed JWT to prevent tampering. COP currency is handled as a zero-decimal currency for Stripe transactions, and 100% discount coupons are converted into 30-day trials.
 
+### Quote-to-Checkout Flow (JWT Token Pricing)
+When a user arrives from the landing page with a JWT quote token, the flow is:
+1. **AuthPage**: Verifies JWT token, stores `NormalizedQuoteData` in sessionStorage (`sst_quote_data`)
+2. **CrearEmpresaCiiuFirst**: Auto-fills form fields from quote data. On submit, sends quote pricing fields (`quoteBaseMonthlyPrice`, `quoteCurrentPeriodPrice`, `quoteDiscountDurationMonths`, `quoteCouponCode`, `quoteReferrerId`) alongside company data to `POST /api/my-company`
+3. **Backend**: Persists quote fields in the `companies` table for later use during checkout
+4. **Checkout**: Detects if company has `quoteBaseMonthlyPrice > 0`. If yes, displays the agreed price and sends quote data to `POST /api/pricing-v2/create-checkout-v2`
+5. **Stripe Checkout**: Creates a single line item with the quote base price. If `currentPeriodPrice < baseMonthlyPrice`, creates a Stripe coupon for the discount period
+- **Security**: Backend reads quote prices from `companies` table (source of truth), NEVER from client request payload. Client cannot tamper with pricing.
+- Trial subscriptions unlock ALL features (hasPESV, hasAuditorias, etc.) regardless of plan, so users can explore the full system during the 7-day trial
+
 ## External Dependencies
 
 -   **PostgreSQL (Neon/AWS RDS)**: Relational database.

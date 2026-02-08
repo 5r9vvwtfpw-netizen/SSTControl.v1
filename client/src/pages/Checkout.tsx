@@ -23,6 +23,10 @@ interface CompanyData {
   numberOfVehicles: number;
   ciiuCode: string | null;
   economicActivity: string | null;
+  quoteBaseMonthlyPrice: number | null;
+  quoteCurrentPeriodPrice: number | null;
+  quoteDiscountDurationMonths: number | null;
+  quoteCouponCode: string | null;
 }
 
 interface DynamicPricing {
@@ -410,21 +414,62 @@ export default function Checkout() {
               <Separator />
 
               <div className="pt-2">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-lg font-medium">Total Mensual</span>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-primary" data-testid="text-total-price">
-                      {formatCurrency(pricing.totales.costoMensualTotal)}
+                {company.quoteBaseMonthlyPrice && company.quoteBaseMonthlyPrice > 0 ? (
+                  <>
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-lg font-medium">Precio Acordado</span>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-primary" data-testid="text-total-price">
+                          {formatCurrency(company.quoteBaseMonthlyPrice)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          COP / mes
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      COP / mes
+                    {company.quoteCurrentPeriodPrice !== null && company.quoteCurrentPeriodPrice !== undefined && company.quoteCurrentPeriodPrice < company.quoteBaseMonthlyPrice && (
+                      <div className="mt-2 p-2 rounded-md bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-green-700 dark:text-green-300 font-medium">
+                            Primer mes con descuento
+                            {company.quoteCouponCode && ` (${company.quoteCouponCode})`}
+                          </span>
+                          <span className="text-green-700 dark:text-green-300 font-bold">
+                            {formatCurrency(company.quoteCurrentPeriodPrice)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                      <span>Total anual</span>
+                      <span>{formatCurrency(company.quoteBaseMonthlyPrice * 12)} / ano</span>
                     </div>
-                  </div>
-                </div>
-                <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                  <span>Total anual</span>
-                  <span>{formatCurrency(pricing.totales.costoAnualTotal)} / ano</span>
-                </div>
+                    {pricing.totales.costoMensualTotal !== company.quoteBaseMonthlyPrice && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        <span className="line-through">{formatCurrency(pricing.totales.costoMensualTotal)}/mes</span>
+                        <span className="ml-1">(precio de lista)</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-lg font-medium">Total Mensual</span>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-primary" data-testid="text-total-price">
+                          {formatCurrency(pricing.totales.costoMensualTotal)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          COP / mes
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                      <span>Total anual</span>
+                      <span>{formatCurrency(pricing.totales.costoAnualTotal)} / ano</span>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="space-y-1 text-xs text-muted-foreground">
@@ -510,7 +555,7 @@ export default function Checkout() {
               <div className="bg-primary/5 rounded-lg p-4 text-center">
                 <p className="text-sm text-muted-foreground">Se cobrara mensualmente</p>
                 <p className="text-2xl font-bold text-primary" data-testid="text-checkout-total">
-                  {formatCurrency(pricing.totales.costoMensualTotal)}
+                  {formatCurrency(company.quoteBaseMonthlyPrice && company.quoteBaseMonthlyPrice > 0 ? company.quoteBaseMonthlyPrice : pricing.totales.costoMensualTotal)}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Primer cobro despues de 7 dias de prueba
@@ -537,7 +582,7 @@ export default function Checkout() {
                 ) : (
                   <>
                     <CreditCard className="h-4 w-4 mr-2" />
-                    Proceder al Pago - {formatCurrency(pricing.totales.costoMensualTotal)}/mes
+                    Proceder al Pago - {formatCurrency(company.quoteBaseMonthlyPrice && company.quoteBaseMonthlyPrice > 0 ? company.quoteBaseMonthlyPrice : pricing.totales.costoMensualTotal)}/mes
                   </>
                 )}
               </Button>
