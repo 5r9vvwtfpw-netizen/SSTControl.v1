@@ -650,73 +650,36 @@ export function registerBillingRoutes(app: Express) {
       
       let amountInCOP: number;
       let productDescription = `Plan ${plan.displayName || plan.name} - Primer mes`;
-      let quoteSource = 'plan_price';
+      let quoteSource = 'none';
 
       let isFullDiscount = false;
       let couponCode: string | undefined;
 
-      if (quoteToken) {
-        try {
-          const { getRawQuotePayload } = await import('../../plugins/landing-page-integration');
-          const quoteData = getRawQuotePayload(quoteToken);
-          
-          const jwtCurrentPrice = quoteData.sub_data.current_period_price || 0;
-          const jwtBasePrice = quoteData.sub_data.base_monthly_price || 0;
-          couponCode = quoteData.metadata?.coupon_code || undefined;
-          
-          console.log('[Billing] JWT quote verified:', {
-            basePrice: jwtBasePrice,
-            currentPrice: jwtCurrentPrice,
-            coupon: couponCode
-          });
+      // PRINCIPIO: El precio SIEMPRE viene del token/quote guardado en companies.
+      // NUNCA se recalcula durante registro ni checkout.
+      // Solo se recalcula si la empresa cambia datos después (empleados, vehículos, CIIU).
+      
+      // Fuente de verdad: companies table (donde se guardó el precio del JWT al registrar)
+      const companyQuoteBase = company ? (company as any).quoteBaseMonthlyPrice : null;
+      const companyQuoteCurrent = company ? (company as any).quoteCurrentPeriodPrice : null;
+      const companyCouponCode = company ? (company as any).quoteCouponCode : null;
 
-          isFullDiscount = jwtCurrentPrice === 0 && jwtBasePrice > 0;
-          amountInCOP = isFullDiscount ? jwtBasePrice : (jwtCurrentPrice > 0 ? jwtCurrentPrice : jwtBasePrice);
-          quoteSource = 'jwt_verified';
-          
-          if (couponCode && jwtCurrentPrice < jwtBasePrice) {
-            productDescription = `Plan ${plan.displayName || plan.name} - Primer mes (Cupón ${couponCode})`;
-          }
-        } catch (jwtError: any) {
-          console.warn('[Billing] JWT verification failed, checking company quote data:', jwtError.message);
-          
-          if (company && (company as any).quoteBaseMonthlyPrice && (company as any).quoteBaseMonthlyPrice > 0) {
-            const companyQuoteBase = (company as any).quoteBaseMonthlyPrice;
-            const companyQuoteCurrent = (company as any).quoteCurrentPeriodPrice;
-            couponCode = (company as any).quoteCouponCode || undefined;
-            
-            isFullDiscount = companyQuoteCurrent === 0 && companyQuoteBase > 0;
-            amountInCOP = isFullDiscount ? companyQuoteBase : (companyQuoteCurrent != null && companyQuoteCurrent > 0 && companyQuoteCurrent < companyQuoteBase ? companyQuoteCurrent : companyQuoteBase);
-            quoteSource = 'company_quote_data';
-            
-            console.log('[Billing] Using company quote data:', { base: companyQuoteBase, current: companyQuoteCurrent, coupon: couponCode, amount: amountInCOP });
-            
-            if (couponCode && companyQuoteCurrent != null && companyQuoteCurrent < companyQuoteBase) {
-              productDescription = `Plan ${plan.displayName || plan.name} - Primer mes (Cupón ${couponCode})`;
-            }
-          } else {
-            amountInCOP = plan.priceMonthly;
-            quoteSource = 'plan_price_fallback';
-          }
+      if (companyQuoteBase && companyQuoteBase > 0) {
+        couponCode = companyCouponCode || undefined;
+        isFullDiscount = companyQuoteCurrent === 0 && companyQuoteBase > 0;
+        amountInCOP = isFullDiscount ? companyQuoteBase : (companyQuoteCurrent != null && companyQuoteCurrent > 0 && companyQuoteCurrent < companyQuoteBase ? companyQuoteCurrent : companyQuoteBase);
+        quoteSource = 'company_quote';
+        
+        console.log('[Billing] Using agreed quote price from companies table:', { base: companyQuoteBase, current: companyQuoteCurrent, coupon: couponCode, amount: amountInCOP });
+        
+        if (couponCode && companyQuoteCurrent != null && companyQuoteCurrent < companyQuoteBase) {
+          productDescription = `Plan ${plan.displayName || plan.name} - Primer mes (Cupón ${couponCode})`;
         }
       } else {
-        if (company && (company as any).quoteBaseMonthlyPrice && (company as any).quoteBaseMonthlyPrice > 0) {
-          const companyQuoteBase = (company as any).quoteBaseMonthlyPrice;
-          const companyQuoteCurrent = (company as any).quoteCurrentPeriodPrice;
-          couponCode = (company as any).quoteCouponCode || undefined;
-          
-          isFullDiscount = companyQuoteCurrent === 0 && companyQuoteBase > 0;
-          amountInCOP = isFullDiscount ? companyQuoteBase : (companyQuoteCurrent != null && companyQuoteCurrent > 0 && companyQuoteCurrent < companyQuoteBase ? companyQuoteCurrent : companyQuoteBase);
-          quoteSource = 'company_quote_data';
-          
-          console.log('[Billing] No JWT token, using company quote data:', { base: companyQuoteBase, current: companyQuoteCurrent, coupon: couponCode, amount: amountInCOP });
-          
-          if (couponCode && companyQuoteCurrent != null && companyQuoteCurrent < companyQuoteBase) {
-            productDescription = `Plan ${plan.displayName || plan.name} - Primer mes (Cupón ${couponCode})`;
-          }
-        } else {
-          amountInCOP = plan.priceMonthly;
-        }
+        // Fallback: solo para empresas que NO llegaron con token (ej: creadas manualmente o que cambiaron datos después)
+        amountInCOP = plan.priceMonthly;
+        quoteSource = 'plan_price_fallback';
+        console.log('[Billing] No quote price in companies table, using plan price as fallback:', amountInCOP);
       }
 
       const STRIPE_MIN_COP = 2000;

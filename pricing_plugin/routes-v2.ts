@@ -605,21 +605,11 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
       successUrl, cancelUrl
     } = parsed.data;
 
-    // Calcular precios dinámicos
-    const estandaresAplicables = getEstandaresAplicablesPorClase(claseRiesgo, trabajadores);
-    const tarifaPorTrabajador = getTarifaPorRiesgo(claseRiesgo, DEFAULT_PRICING_V2_CONFIG);
+    // PRINCIPIO: El precio SIEMPRE viene del token/quote guardado en companies.
+    // NUNCA se recalcula durante registro ni checkout.
+    // Solo se recalcula si la empresa cambia datos después (empleados, vehículos, CIIU).
     
-    const result = calculateCombinedPricing(
-      { trabajadores, claseRiesgo, estandaresAplicables, vehiculos },
-      tarifaPorTrabajador,
-      DEFAULT_PRICING_V2_CONFIG.tarifaPorEstandar,
-      DEFAULT_PESV_PRICING_CONFIG.tarifaPorPasoPesv
-    );
-
-    const costoUsuariosAdicionales = usuariosAdicionales * TARIFA_USUARIO_ADICIONAL;
-    const costoMensualTotal = result.costoMensualTotal + costoUsuariosAdicionales;
-
-    // Leer precios de cotización desde BD (fuente de verdad, NO del cliente)
+    // Fuente de verdad: companies table (donde se guardó el precio del JWT al registrar)
     const [companyRecord] = await db.select({
       quoteBaseMonthlyPrice: companies.quoteBaseMonthlyPrice,
       quoteCurrentPeriodPrice: companies.quoteCurrentPeriodPrice,
@@ -633,8 +623,49 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
     const quoteCouponCode = companyRecord?.quoteCouponCode ?? null;
 
     const useQuotePricing = quoteBaseMonthlyPrice !== null && quoteBaseMonthlyPrice > 0;
-    const finalMonthlyPrice = useQuotePricing ? quoteBaseMonthlyPrice : costoMensualTotal;
-    const finalFirstMonthPrice = (useQuotePricing && quoteCurrentPeriodPrice !== null && quoteCurrentPeriodPrice <= quoteBaseMonthlyPrice) 
+
+    let costoMensualTotal: number;
+    let estandaresAplicables: number;
+    let nivelPesv: ReturnType<typeof getNivelPesv> | null = null;
+    let pasosAplicablesPesv = 0;
+    let tienePesv = false;
+    let costoTrabajadores = 0;
+    let costoEstandaresSst = 0;
+    let costoPasosPesv = 0;
+    
+    estandaresAplicables = getEstandaresAplicablesPorClase(claseRiesgo, trabajadores);
+    
+    if (useQuotePricing) {
+      // Quote existe: usar precio acordado, NO recalcular
+      logger.info({ companyId, quoteBaseMonthlyPrice, quoteCurrentPeriodPrice, quoteCouponCode }, 'Using agreed quote price from companies table - no recalculation');
+      costoMensualTotal = quoteBaseMonthlyPrice;
+      if (vehiculos > 0) {
+        nivelPesv = getNivelPesv(vehiculos);
+        tienePesv = true;
+        pasosAplicablesPesv = getPasosAplicablesPorNivel(nivelPesv);
+      }
+    } else {
+      // Sin quote: calcular precio dinámico (empresa creada manualmente o cambió datos)
+      logger.info({ companyId }, 'No quote price found - calculating dynamic price');
+      const tarifaPorTrabajador = getTarifaPorRiesgo(claseRiesgo, DEFAULT_PRICING_V2_CONFIG);
+      const result = calculateCombinedPricing(
+        { trabajadores, claseRiesgo, estandaresAplicables, vehiculos },
+        tarifaPorTrabajador,
+        DEFAULT_PRICING_V2_CONFIG.tarifaPorEstandar,
+        DEFAULT_PESV_PRICING_CONFIG.tarifaPorPasoPesv
+      );
+      costoTrabajadores = result.costoTrabajadores;
+      costoEstandaresSst = result.costoEstandaresSst;
+      costoPasosPesv = result.costoPasosPesv;
+      tienePesv = result.tienePesv;
+      nivelPesv = result.nivelPesv;
+      pasosAplicablesPesv = result.pasosAplicablesPesv;
+      const costoUsuariosAdicionales = usuariosAdicionales * TARIFA_USUARIO_ADICIONAL;
+      costoMensualTotal = result.costoMensualTotal + costoUsuariosAdicionales;
+    }
+
+    const finalMonthlyPrice = useQuotePricing ? quoteBaseMonthlyPrice! : costoMensualTotal;
+    const finalFirstMonthPrice = (useQuotePricing && quoteCurrentPeriodPrice !== null && quoteCurrentPeriodPrice <= quoteBaseMonthlyPrice!) 
       ? quoteCurrentPeriodPrice 
       : finalMonthlyPrice;
 
@@ -685,8 +716,11 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
         quantity: 1,
       });
     } else {
+      const tarifaPorTrabajador = getTarifaPorRiesgo(claseRiesgo, DEFAULT_PRICING_V2_CONFIG);
+      const costoUsuariosAdicionales = usuariosAdicionales * TARIFA_USUARIO_ADICIONAL;
+      
       // Item 1: SST - Trabajadores
-      if (result.costoTrabajadores > 0) {
+      if (costoTrabajadores > 0) {
         lineItems.push({
           price_data: {
             currency: 'cop',
@@ -694,7 +728,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
               name: 'SST - Licencia por Trabajadores',
               description: `${trabajadores} trabajadores × $${tarifaPorTrabajador.toLocaleString('es-CO')}/mes (Clase ${claseRiesgo})`,
             },
-            unit_amount: Math.round(result.costoTrabajadores * COP_MULTIPLIER),
+            unit_amount: Math.round(costoTrabajadores * COP_MULTIPLIER),
             recurring: { interval: 'month' },
           },
           quantity: 1,
@@ -702,7 +736,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
       }
 
       // Item 2: SST - Estándares
-      if (result.costoEstandaresSst > 0) {
+      if (costoEstandaresSst > 0) {
         lineItems.push({
           price_data: {
             currency: 'cop',
@@ -710,7 +744,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
               name: 'SST - Estándares Aplicables',
               description: `${estandaresAplicables} estándares × $8,000/mes (Resolución 0312/2019)`,
             },
-            unit_amount: Math.round(result.costoEstandaresSst * COP_MULTIPLIER),
+            unit_amount: Math.round(costoEstandaresSst * COP_MULTIPLIER),
             recurring: { interval: 'month' },
           },
           quantity: 1,
@@ -718,16 +752,16 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
       }
 
       // Item 3: PESV - Pasos (si aplica)
-      if (result.tienePesv && result.costoPasosPesv > 0) {
-        const nivelLabel = getNivelPesvLabel(result.nivelPesv!);
+      if (tienePesv && costoPasosPesv > 0) {
+        const nivelLabel = getNivelPesvLabel(nivelPesv!);
         lineItems.push({
           price_data: {
             currency: 'cop',
             product_data: {
               name: 'PESV - Plan Estratégico de Seguridad Vial',
-              description: `${result.pasosAplicablesPesv} pasos × $8,000/mes (${nivelLabel})`,
+              description: `${pasosAplicablesPesv} pasos × $8,000/mes (${nivelLabel})`,
             },
-            unit_amount: Math.round(result.costoPasosPesv * COP_MULTIPLIER),
+            unit_amount: Math.round(costoPasosPesv * COP_MULTIPLIER),
             recurring: { interval: 'month' },
           },
           quantity: 1,
@@ -790,8 +824,8 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
         clase_riesgo: claseRiesgo,
         estandares_aplicables: estandaresAplicables.toString(),
         vehiculos: vehiculos.toString(),
-        nivel_pesv: result.nivelPesv || '',
-        pasos_pesv: (result.pasosAplicablesPesv || 0).toString(),
+        nivel_pesv: nivelPesv || '',
+        pasos_pesv: (pasosAplicablesPesv || 0).toString(),
         usuarios_adicionales: usuariosAdicionales.toString(),
         costo_mensual_total: finalMonthlyPrice.toString(),
       },
@@ -816,13 +850,13 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
         claseRiesgo,
         estandaresAplicables,
         vehiculos,
-        nivelPesv: result.nivelPesv,
-        pasosAplicables: result.pasosAplicablesPesv,
+        nivelPesv,
+        pasosAplicables: pasosAplicablesPesv,
         usuariosAdicionales,
-        costoTrabajadores: result.costoTrabajadores,
-        costoEstandares: result.costoEstandaresSst,
-        costoPesv: result.costoPasosPesv,
-        costoUsuarios: costoUsuariosAdicionales,
+        costoTrabajadores,
+        costoEstandares: costoEstandaresSst,
+        costoPesv: costoPasosPesv,
+        costoUsuarios: useQuotePricing ? 0 : usuariosAdicionales * TARIFA_USUARIO_ADICIONAL,
         costoMensualTotal: finalMonthlyPrice,
         costoAnualTotal: finalMonthlyPrice * 12,
         currency: 'COP',
