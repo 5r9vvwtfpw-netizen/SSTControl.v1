@@ -28,7 +28,7 @@ const SUBSCRIPTION_PLANS = [
     ],
     hasIPERCCompleto: 0,
     hasAuditorias: 0,
-    hasPESV: 0,
+    hasPESV: 1, // PESV disponible para todos los planes - se cobra por vehículos (Res. 40595/2022)
     hasRevisionDireccion: 0,
     hasGestionCambios: 0,
     hasMatrizLegal: 0,
@@ -84,7 +84,7 @@ const SUBSCRIPTION_PLANS = [
     ],
     hasIPERCCompleto: 1,
     hasAuditorias: 1,
-    hasPESV: 0,
+    hasPESV: 1, // PESV disponible para todos los planes - se cobra por vehículos (Res. 40595/2022)
     hasRevisionDireccion: 0,
     hasGestionCambios: 0,
     hasMatrizLegal: 1,

@@ -147,17 +147,20 @@ export function getStandardsLabel(chapter: "1" | "2" | "3"): string {
 }
 
 /**
- * Determines if PESV module is required based on Decreto 1252/2021
- * PESV is mandatory for companies with:
- * - 10 or more vehicles, OR
- * - 2 or more drivers
+ * Determines if PESV module is required based on Resolución 40595/2022
+ * PESV is mandatory for ANY company that operates vehicles on public roads.
+ * The level (básico/estándar/avanzado) depends on the number of vehicles.
+ * 
+ * Previous threshold (10+ vehicles or 2+ drivers) was based on Decreto 1252/2021,
+ * but Resolución 40595/2022 establishes PESV for all companies with vehicles.
+ * Pricing charges PESV from 1 vehicle, so access must match.
  * 
  * @param vehicleCount - Total number of vehicles
  * @param driverCount - Total number of drivers
  * @returns true if PESV is required, false otherwise
  */
 export function isPesvRequired(vehicleCount: number, driverCount: number): boolean {
-  return vehicleCount >= 10 || driverCount >= 2;
+  return vehicleCount >= 1 || driverCount >= 1;
 }
 
 /**
