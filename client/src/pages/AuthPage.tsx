@@ -197,10 +197,9 @@ export default function AuthPage() {
           localStorage.setItem('sst_registration_risk', calculatedRisk);
         }
         
-        if (data?.autoVerified) {
-          setLoginData(prev => ({ ...prev, username: registerData.username }));
-          setActiveTab("login");
-        } else {
+        setLoginData(prev => ({ ...prev, username: registerData.username }));
+        setActiveTab("login");
+        if (!data?.autoVerified) {
           setRegistrationSuccess(true);
         }
         setRegisterData({ username: "", password: "", fullName: "", email: "" });
