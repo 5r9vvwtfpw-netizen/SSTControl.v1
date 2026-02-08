@@ -88,6 +88,11 @@ export const companies = pgTable("companies", {
   arlNombreEmpresa: text("arl_nombre_empresa"), // ARL por defecto para todos los trabajadores
   afpNombreEmpresa: text("afp_nombre_empresa"), // AFP por defecto para todos los trabajadores
   ccfNombreEmpresa: text("ccf_nombre_empresa"), // CCF por defecto para todos los trabajadores
+  quoteBaseMonthlyPrice: integer("quote_base_monthly_price"),
+  quoteCurrentPeriodPrice: integer("quote_current_period_price"),
+  quoteDiscountDurationMonths: integer("quote_discount_duration_months"),
+  quoteCouponCode: text("quote_coupon_code"),
+  quoteReferrerId: text("quote_referrer_id"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 

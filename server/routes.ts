@@ -1768,6 +1768,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     logoUrl: z.string().optional(),
     // Número de vehículos desde quote JWT (PESV - Resolución 40595/2022)
     numberOfVehicles: z.coerce.number().min(0).optional().default(0),
+    quoteBaseMonthlyPrice: z.coerce.number().min(0).optional(),
+    quoteCurrentPeriodPrice: z.coerce.number().min(0).optional(),
+    quoteDiscountDurationMonths: z.coerce.number().min(0).optional(),
+    quoteCouponCode: z.string().optional(),
+    quoteReferrerId: z.string().optional(),
+    ciiuCode: z.string().optional(),
+    city: z.string().optional(),
   });
   
 
@@ -1839,6 +1846,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         riskLevel: validatedData.riskLevel as "I" | "II" | "III" | "IV" | "V",
         logoUrl: validatedData.logoUrl || null,
         numberOfVehicles: validatedData.numberOfVehicles || 0,
+        quoteBaseMonthlyPrice: validatedData.quoteBaseMonthlyPrice || null,
+        quoteCurrentPeriodPrice: validatedData.quoteCurrentPeriodPrice || null,
+        quoteDiscountDurationMonths: validatedData.quoteDiscountDurationMonths || null,
+        quoteCouponCode: validatedData.quoteCouponCode || null,
+        quoteReferrerId: validatedData.quoteReferrerId || null,
+        ciiuCode: validatedData.ciiuCode || null,
+        city: validatedData.city || null,
       };
       
       console.log(`✅ [ONBOARDING] Datos validados para crear empresa:`, companyData);
