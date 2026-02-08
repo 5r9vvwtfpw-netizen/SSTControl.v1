@@ -10,22 +10,17 @@ import {
   validatePromotionJwt,
   generatePromotionJwt,
   createCoupon,
-  getCouponByCode,
   validateCoupon,
-  useCoupon,
   getAllCoupons,
   deleteCoupon,
   toggleCouponActive,
   registerDigitalContract,
   getDigitalContractByCompany,
   getAllDigitalContracts,
-  createReferralEntry,
-  activateReferralCredit,
   getReferrerCredits,
   getTotalRemainingCredit,
   getAllReferralLedger,
   createPromotionalCheckout,
-  handleInvoicePaid,
   getPromotionStats,
 } from "./service";
 import { insertPluginPromotionCouponSchema, jwtPromotionPayloadSchema } from "./schema";
@@ -377,112 +372,6 @@ router.get("/stats", async (req: Request, res: Response) => {
     const stats = await getPromotionStats();
     res.json(stats);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ==================== WEBHOOK HANDLER (for invoice.paid) ====================
-
-/**
- * POST /api/plugins/promotions/webhook/invoice-paid
- * Internal webhook handler for invoice.paid events
- * Called by main Stripe webhook handler
- */
-router.post("/webhook/invoice-paid", async (req: Request, res: Response) => {
-  try {
-    const { invoiceId, subscriptionId, customerId } = req.body;
-    
-    if (!invoiceId || !subscriptionId) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-    
-    await handleInvoicePaid(invoiceId, subscriptionId, customerId);
-    res.json({ success: true });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ==================== STRIPE WEBHOOK DEDICADO (Receptor Directo) ====================
-
-import Stripe from "stripe";
-
-const stripeWebhook = process.env.STRIPE_SECRET_KEY 
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2025-04-30.basil" as any })
-  : null;
-
-/**
- * POST /api/plugins/promotions/webhook
- * Webhook directo de Stripe para el plugin de referidos
- * Escucha eventos: invoice.paid, customer.subscription.created
- * 
- * ARQUITECTURA SIDECAR: Este webhook es completamente independiente
- * del webhook principal del sistema. Debe configurarse en Stripe Dashboard
- * con su propia signing secret (STRIPE_PROMOTIONS_WEBHOOK_SECRET).
- */
-router.post("/webhook", async (req: Request, res: Response) => {
-  const sig = req.headers["stripe-signature"] as string;
-  const webhookSecret = process.env.STRIPE_PROMOTIONS_WEBHOOK_SECRET;
-  
-  if (!stripeWebhook) {
-    console.error("[PromotionsPlugin] Stripe not configured");
-    return res.status(500).json({ error: "Stripe not configured" });
-  }
-  
-  if (!webhookSecret) {
-    console.error("[PromotionsPlugin] STRIPE_PROMOTIONS_WEBHOOK_SECRET not configured");
-    return res.status(500).json({ error: "Webhook secret not configured" });
-  }
-  
-  let event: Stripe.Event;
-  
-  try {
-    // Validate webhook signature
-    const rawBody = (req as any).rawBody || req.body;
-    event = stripeWebhook.webhooks.constructEvent(
-      typeof rawBody === "string" ? rawBody : JSON.stringify(rawBody),
-      sig,
-      webhookSecret
-    );
-  } catch (err: any) {
-    console.error("[PromotionsPlugin] Webhook signature verification failed:", err.message);
-    return res.status(400).json({ error: `Webhook Error: ${err.message}` });
-  }
-  
-  console.log(`[PromotionsPlugin] Received webhook event: ${event.type}`);
-  
-  try {
-    switch (event.type) {
-      case "invoice.paid": {
-        const invoice = event.data.object as any;
-        const subscriptionId = typeof invoice.subscription === "string" 
-          ? invoice.subscription 
-          : invoice.subscription?.id;
-        
-        if (subscriptionId) {
-          await handleInvoicePaid(
-            invoice.id,
-            subscriptionId,
-            typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id || ""
-          );
-        }
-        break;
-      }
-      
-      case "customer.subscription.created": {
-        const subscription = event.data.object as Stripe.Subscription;
-        console.log(`[PromotionsPlugin] New subscription created: ${subscription.id}`);
-        // Log for audit purposes
-        break;
-      }
-      
-      default:
-        console.log(`[PromotionsPlugin] Unhandled event type: ${event.type}`);
-    }
-    
-    res.json({ received: true });
-  } catch (error: any) {
-    console.error(`[PromotionsPlugin] Error processing webhook:`, error);
     res.status(500).json({ error: error.message });
   }
 });

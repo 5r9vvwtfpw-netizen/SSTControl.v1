@@ -96,7 +96,10 @@ async function migrate() {
   }
 }
 
-// Run migration if executed directly
-migrate()
-  .then(() => process.exit(0))
-  .catch(() => process.exit(1));
+if (require.main === module) {
+  migrate()
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
+}
+
+export { migrate };

@@ -496,10 +496,9 @@ export async function applySecondMonthFree(subscriptionId: string): Promise<void
       },
     });
     
-    // Get existing discounts and merge with new coupon
-    const existingDiscounts = subscription.discount 
-      ? [{ coupon: subscription.discount.coupon?.id }].filter(d => d.coupon)
-      : [];
+    const existingDiscounts = (subscription.discounts || [])
+      .map((d: any) => ({ coupon: typeof d === 'string' ? d : d.coupon?.id || d.coupon }))
+      .filter((d: any) => d.coupon);
     
     // Apply the coupon to the subscription for the next billing cycle
     // Merge with existing discounts to avoid clobbering
