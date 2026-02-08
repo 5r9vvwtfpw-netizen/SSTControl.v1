@@ -2132,8 +2132,9 @@ export class DbStorage implements IStorage {
     await db.delete(schema.companies).where(eq(schema.companies.id, id));
   }
 
-  async deleteCompanyWithAllData(id: string): Promise<{ deletedTables: string[], totalDeleted: number }> {
+  async deleteCompanyWithAllData(id: string): Promise<{ deletedTables: string[], totalDeleted: number, failedTables: string[] }> {
     const deletedTables: string[] = [];
+    const failedTables: string[] = [];
     let totalDeleted = 0;
 
     // Orden de eliminación: de más dependiente a menos dependiente
@@ -2450,8 +2451,6 @@ export class DbStorage implements IStorage {
         }
         tableColumns.get(row.table_name)!.add(row.column_name);
       }
-      
-      const failedTables: string[] = [];
       
       for (const tableConfig of tablesToDelete) {
         const { table, column, subquery } = tableConfig as { table: string; column: string; subquery?: string };
