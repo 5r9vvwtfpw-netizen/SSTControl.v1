@@ -4,6 +4,7 @@ import { Redirect, Route } from "wouter";
 import { canAccessRoute } from "@shared/route-permissions";
 import { getRolePermissions } from "@shared/permissions";
 import { useMemo } from "react";
+import AutoCreateCompany, { hasStoredRegistrationData } from "@/components/AutoCreateCompany";
 
 export function ProtectedRoute({
   path,
@@ -42,9 +43,14 @@ export function ProtectedRoute({
     );
   }
 
-  // SUPERUSUARIO sin empresa: Redirigir a crear empresa (onboarding)
-  // Excepto si ya están en la página de crear empresa
   if (user.role === "superusuario" && !user.companyId && path !== "/crear-empresa") {
+    if (hasStoredRegistrationData()) {
+      return (
+        <Route path={path}>
+          <AutoCreateCompany />
+        </Route>
+      );
+    }
     return (
       <Route path={path}>
         <Redirect to="/crear-empresa" />
