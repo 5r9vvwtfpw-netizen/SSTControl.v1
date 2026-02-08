@@ -85,7 +85,8 @@ export default function CrearEmpresaCiiuFirst() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const hasRegistrationData = typeof window !== 'undefined' && !!localStorage.getItem('sst_registration_ciiu');
+  const [currentStep, setCurrentStep] = useState(hasRegistrationData ? 2 : 1);
 
   const { data: user } = useQuery<User>({
     queryKey: ["/api/user"],
@@ -97,38 +98,40 @@ export default function CrearEmpresaCiiuFirst() {
   const workersParam = urlWorkers || storedWorkers;
   const initialWorkers = workersParam ? parseInt(workersParam, 10) : 1;
 
-  // Leer datos del quote JWT desde landing page (si existen)
   const storedQuote = typeof window !== 'undefined' ? sessionStorage.getItem('sst_quote_data') : null;
   const quoteData = storedQuote ? JSON.parse(storedQuote) : null;
 
-  // Trazabilidad: Leer datos del formulario de registro como fallback
-  // Si el usuario no vino del cotizador (sin quote JWT), estos datos se guardaron en AuthPage
-  const registrationCompanyName = typeof window !== 'undefined' ? sessionStorage.getItem('sst_registration_company_name') : null;
-  const registrationEmail = typeof window !== 'undefined' ? sessionStorage.getItem('sst_registration_email') : null;
+  const regCompanyName = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_company_name') : null;
+  const regEmail = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_email') : null;
+  const regNit = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_nit') : null;
+  const regCity = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_city') : null;
+  const regCiiu = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_ciiu') : null;
+  const regWorkers = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_workers') : null;
+  const regVehicles = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_vehicles') : null;
+  const regAddress = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_address') : null;
+  const regPhone = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_phone') : null;
+  const regRisk = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_risk') : null;
 
   useEffect(() => {
     sessionStorage.removeItem('sst_new_registration');
   }, []);
 
+  const parsedRegWorkers = regWorkers ? parseInt(regWorkers, 10) : NaN;
+  const parsedRegVehicles = regVehicles ? parseInt(regVehicles, 10) : NaN;
+
   const form = useForm<CreateCompanyForm>({
     resolver: zodResolver(createCompanySchema),
     defaultValues: {
-      // Pre-llenar nombre de empresa: prioridad quote JWT > datos de registro > vacío
-      name: quoteData?.companyName || registrationCompanyName || "",
-      nit: "",
-      city: "",
-      // Pre-llenar código CIIU si viene del quote
-      ciiuCode: quoteData?.ciiuCode || "",
-      address: "",
-      contactPhone: "",
-      // Pre-llenar email de contacto: prioridad registro > vacío (useEffect llenará desde user)
-      contactEmail: registrationEmail || "",
-      // Pre-llenar número de trabajadores desde quote o URL
-      numberOfWorkers: quoteData?.employees || (isNaN(initialWorkers) || initialWorkers < 1 ? 1 : initialWorkers),
-      // Pre-llenar nivel de riesgo si viene del quote
-      riskLevel: quoteData?.riskLevel || "I",
-      // Pre-llenar número de vehículos desde quote JWT (PESV)
-      numberOfVehicles: quoteData?.vehicles || 0,
+      name: quoteData?.companyName || regCompanyName || "",
+      nit: regNit || "",
+      city: regCity || "",
+      ciiuCode: quoteData?.ciiuCode || regCiiu || "",
+      address: regAddress || "",
+      contactPhone: regPhone || "",
+      contactEmail: regEmail || "",
+      numberOfWorkers: quoteData?.employees || (!isNaN(parsedRegWorkers) && parsedRegWorkers >= 1 ? parsedRegWorkers : (isNaN(initialWorkers) || initialWorkers < 1 ? 1 : initialWorkers)),
+      riskLevel: (quoteData?.riskLevel || regRisk || "I") as "I" | "II" | "III" | "IV" | "V",
+      numberOfVehicles: quoteData?.vehicles || (!isNaN(parsedRegVehicles) ? parsedRegVehicles : 0),
     },
   });
 
@@ -166,9 +169,17 @@ export default function CrearEmpresaCiiuFirst() {
     },
     onSuccess: (data) => {
       sessionStorage.removeItem('sst_onboarding_workers');
-      // Trazabilidad: limpiar datos temporales del registro
-      sessionStorage.removeItem('sst_registration_company_name');
-      sessionStorage.removeItem('sst_registration_email');
+      localStorage.removeItem('sst_registration_company_name');
+      localStorage.removeItem('sst_registration_email');
+      localStorage.removeItem('sst_registration_username');
+      localStorage.removeItem('sst_registration_nit');
+      localStorage.removeItem('sst_registration_city');
+      localStorage.removeItem('sst_registration_ciiu');
+      localStorage.removeItem('sst_registration_workers');
+      localStorage.removeItem('sst_registration_vehicles');
+      localStorage.removeItem('sst_registration_address');
+      localStorage.removeItem('sst_registration_phone');
+      localStorage.removeItem('sst_registration_risk');
       toast({
         title: "¡Bienvenido a SST Colombia!",
         description: data.message || "Tu período de prueba de 7 días ha comenzado. Explora tu panel de control.",
