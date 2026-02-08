@@ -6,6 +6,14 @@ This project is an integral management system for Occupational Health and Safety
 ## User Preferences
 I prefer simple language and clear explanations. I want iterative development with regular updates. Please ask before making major architectural changes or introducing new dependencies. I prefer detailed explanations for complex features. Do not make changes to the `shared/` folder without explicit instruction.
 
+### REGLA CRÍTICA: Base de Datos de Producción
+- **Producción usa EXCLUSIVAMENTE AWS RDS** (PostgreSQL). NO Neon.
+- **Desarrollo usa Neon** (DATABASE_URL).
+- **TODAS las migraciones automáticas DEBEN usar la instancia `db` compartida de `server/db.ts`**, que conecta automáticamente a AWS RDS cuando `NODE_ENV=production` y a Neon cuando es development.
+- **NUNCA usar `neon(process.env.DATABASE_URL!)` directamente en migraciones**, porque en producción DATABASE_URL apunta a Neon pero el app usa AWS RDS. Esto causa que las migraciones se ejecuten en la BD equivocada.
+- **Conexión en producción**: `server/db.ts` construye la cadena de conexión AWS RDS usando `AWS_RDS_HOST`, `AWS_RDS_PASSWORD`, `AWS_RDS_USER`, `AWS_RDS_PORT`, `AWS_RDS_DATABASE`.
+- **Antes de publicar**: Verificar que TODAS las migraciones en `server/migrations/` usen `import { db } from '../db'` y `import { sql } from 'drizzle-orm'`, NO `import { neon } from '@neondatabase/serverless'`.
+
 ## System Architecture
 
 ### UI/UX Decisions
