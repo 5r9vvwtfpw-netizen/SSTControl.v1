@@ -678,27 +678,45 @@ export function registerBillingRoutes(app: Express) {
             productDescription = `Plan ${plan.displayName || plan.name} - Primer mes (Cupón ${couponCode})`;
           }
         } catch (jwtError: any) {
-          console.warn('[Billing] JWT verification failed, recalculating price from company data:', jwtError.message);
+          console.warn('[Billing] JWT verification failed, checking company quote data:', jwtError.message);
           
-          if (company) {
-            try {
-              const vehicles = company.numberOfVehicles || 0;
-              const vehiclePrice = vehicles > 0 ? vehicles * 8000 : 0;
-              const calculatedPrice = plan.priceMonthly + vehiclePrice;
-              
-              amountInCOP = calculatedPrice > 0 ? calculatedPrice : plan.priceMonthly;
-              console.log('[Billing] Recalculated price:', { planBase: plan.priceMonthly, vehiclePrice, total: amountInCOP });
-            } catch (calcError) {
-              console.warn('[Billing] Price recalculation failed, using plan price:', plan.priceMonthly);
-              amountInCOP = plan.priceMonthly;
+          if (company && (company as any).quoteBaseMonthlyPrice && (company as any).quoteBaseMonthlyPrice > 0) {
+            const companyQuoteBase = (company as any).quoteBaseMonthlyPrice;
+            const companyQuoteCurrent = (company as any).quoteCurrentPeriodPrice;
+            couponCode = (company as any).quoteCouponCode || undefined;
+            
+            isFullDiscount = companyQuoteCurrent === 0 && companyQuoteBase > 0;
+            amountInCOP = isFullDiscount ? companyQuoteBase : (companyQuoteCurrent != null && companyQuoteCurrent > 0 && companyQuoteCurrent < companyQuoteBase ? companyQuoteCurrent : companyQuoteBase);
+            quoteSource = 'company_quote_data';
+            
+            console.log('[Billing] Using company quote data:', { base: companyQuoteBase, current: companyQuoteCurrent, coupon: couponCode, amount: amountInCOP });
+            
+            if (couponCode && companyQuoteCurrent != null && companyQuoteCurrent < companyQuoteBase) {
+              productDescription = `Plan ${plan.displayName || plan.name} - Primer mes (Cupón ${couponCode})`;
             }
           } else {
             amountInCOP = plan.priceMonthly;
+            quoteSource = 'plan_price_fallback';
           }
-          quoteSource = 'plan_price_fallback';
         }
       } else {
-        amountInCOP = plan.priceMonthly;
+        if (company && (company as any).quoteBaseMonthlyPrice && (company as any).quoteBaseMonthlyPrice > 0) {
+          const companyQuoteBase = (company as any).quoteBaseMonthlyPrice;
+          const companyQuoteCurrent = (company as any).quoteCurrentPeriodPrice;
+          couponCode = (company as any).quoteCouponCode || undefined;
+          
+          isFullDiscount = companyQuoteCurrent === 0 && companyQuoteBase > 0;
+          amountInCOP = isFullDiscount ? companyQuoteBase : (companyQuoteCurrent != null && companyQuoteCurrent > 0 && companyQuoteCurrent < companyQuoteBase ? companyQuoteCurrent : companyQuoteBase);
+          quoteSource = 'company_quote_data';
+          
+          console.log('[Billing] No JWT token, using company quote data:', { base: companyQuoteBase, current: companyQuoteCurrent, coupon: couponCode, amount: amountInCOP });
+          
+          if (couponCode && companyQuoteCurrent != null && companyQuoteCurrent < companyQuoteBase) {
+            productDescription = `Plan ${plan.displayName || plan.name} - Primer mes (Cupón ${couponCode})`;
+          }
+        } else {
+          amountInCOP = plan.priceMonthly;
+        }
       }
 
       const STRIPE_MIN_COP = 2000;
