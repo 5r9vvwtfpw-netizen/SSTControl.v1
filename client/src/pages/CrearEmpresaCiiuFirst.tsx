@@ -164,11 +164,20 @@ export default function CrearEmpresaCiiuFirst() {
 
   const createCompanyMutation = useMutation({
     mutationFn: async (data: CreateCompanyForm) => {
-      const response = await apiRequest("POST", "/api/my-company", data);
+      const payload: Record<string, any> = { ...data };
+      if (quoteData) {
+        if (quoteData.baseMonthlyPrice) payload.quoteBaseMonthlyPrice = quoteData.baseMonthlyPrice;
+        if (quoteData.currentPeriodPrice) payload.quoteCurrentPeriodPrice = quoteData.currentPeriodPrice;
+        if (quoteData.discountDurationMonths) payload.quoteDiscountDurationMonths = quoteData.discountDurationMonths;
+        if (quoteData.couponCode) payload.quoteCouponCode = quoteData.couponCode;
+        if (quoteData.referrerId) payload.quoteReferrerId = quoteData.referrerId;
+      }
+      const response = await apiRequest("POST", "/api/my-company", payload);
       return response.json();
     },
     onSuccess: (data) => {
       sessionStorage.removeItem('sst_onboarding_workers');
+      sessionStorage.removeItem('sst_quote_data');
       localStorage.removeItem('sst_registration_company_name');
       localStorage.removeItem('sst_registration_email');
       localStorage.removeItem('sst_registration_username');
