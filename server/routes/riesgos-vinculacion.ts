@@ -164,6 +164,25 @@ export function registerRiesgosVinculacionRoutes(app: Express, requireAuth: any)
         return res.status(400).json({ error: "Debe proporcionar riesgoVialId" });
       }
       
+      const [existingVinculacion] = await db
+        .select()
+        .from(riesgosSstPesvVinculacion)
+        .where(and(
+          eq(riesgosSstPesvVinculacion.riesgoVialId, riesgoVialId),
+          eq(riesgosSstPesvVinculacion.companyId, effectiveCompanyId),
+          eq(riesgosSstPesvVinculacion.activo, 1)
+        ));
+      
+      if (existingVinculacion) {
+        return res.status(200).json({
+          message: "Este riesgo PESV ya está sincronizado en la matriz SST",
+          peligroIperc: existingVinculacion.peligroIpercId ? 
+            (await db.select().from(peligrosIperc).where(eq(peligrosIperc.id, existingVinculacion.peligroIpercId)))[0] : null,
+          vinculacion: existingVinculacion,
+          alreadyExists: true
+        });
+      }
+      
       // Handle "default" matrizIpercId - find or create a matriz for the company
       let matrizIpercId = rawMatrizIpercId;
       if (!matrizIpercId || matrizIpercId === "default") {
@@ -327,7 +346,15 @@ export function registerRiesgosVinculacionRoutes(app: Express, requireAuth: any)
           eq(riesgosSstPesvVinculacion.activo, 1)
         ));
       
-      res.json(vinculaciones);
+      const seen = new Set<string>();
+      const deduped = vinculaciones.filter(v => {
+        const key = v.vinculacion.riesgoVialId;
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      
+      res.json(deduped);
     } catch (error: any) {
       console.error("Error fetching IPERC peligros from PESV:", error);
       res.status(500).json({ error: "Error al obtener peligros IPERC de origen PESV" });
