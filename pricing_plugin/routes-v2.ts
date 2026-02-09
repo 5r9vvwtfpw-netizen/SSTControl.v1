@@ -650,6 +650,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
       const customer = await stripe.customers.create({
         email: customerEmail,
         name: customerName,
+        address: { country: 'CO' },
         metadata: {
           company_id: companyId,
           trabajadores: trabajadores.toString(),
@@ -664,7 +665,9 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
     // Crear line items para Stripe - SIEMPRE desglose dinámico real
     const lineItems: any[] = [];
 
-    // COP es zero-decimal currency en Stripe - NO multiplicar por 100
+    // COP NO es zero-decimal en Stripe: unit_amount debe ser en centavos (valor × 100)
+    const COP_MULTIPLIER = 100;
+
     // Item 1: SST - Trabajadores
     if (costoTrabajadores > 0) {
       lineItems.push({
@@ -674,7 +677,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
             name: 'SST - Licencia por Trabajadores',
             description: `${trabajadores} trabajadores × $${tarifaPorTrabajador.toLocaleString('es-CO')}/mes (Clase ${claseRiesgo})`,
           },
-          unit_amount: costoTrabajadores,
+          unit_amount: Math.round(costoTrabajadores * COP_MULTIPLIER),
           recurring: { interval: 'month' as const },
         },
         quantity: 1,
@@ -690,7 +693,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
             name: 'SST - Estándares Aplicables',
             description: `${estandaresAplicables} estándares × $8,000/mes (Resolución 0312/2019)`,
           },
-          unit_amount: costoEstandaresSst,
+          unit_amount: Math.round(costoEstandaresSst * COP_MULTIPLIER),
           recurring: { interval: 'month' as const },
         },
         quantity: 1,
@@ -707,7 +710,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
             name: 'PESV - Plan Estratégico de Seguridad Vial',
             description: `${pasosAplicablesPesv} pasos × $8,000/mes (${nivelLabel})`,
           },
-          unit_amount: costoPasosPesv,
+          unit_amount: Math.round(costoPasosPesv * COP_MULTIPLIER),
           recurring: { interval: 'month' as const },
         },
         quantity: 1,
@@ -723,7 +726,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
             name: 'Usuarios Adicionales',
             description: `${usuariosAdicionales} usuarios × $10,000/mes`,
           },
-          unit_amount: costoUsuariosAdicionales,
+          unit_amount: Math.round(costoUsuariosAdicionales * COP_MULTIPLIER),
           recurring: { interval: 'month' as const },
         },
         quantity: 1,
@@ -731,11 +734,13 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
     }
 
     // Crear sesión de checkout con 7 días de prueba gratis
+    // locale 'es-419' = español latinoamericano, país Colombia
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'subscription',
+      locale: 'es-419',
       success_url: successUrl,
       cancel_url: cancelUrl,
       allow_promotion_codes: true,
