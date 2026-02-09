@@ -667,28 +667,24 @@ export function registerBillingRoutes(app: Express) {
       if (!companyQuoteBase || companyQuoteBase <= 0) {
         console.log('[Billing] No quote found. Attempting auto-quote from landing page for company:', company?.id);
         
-        const LANDING_PAGE_API_KEY = process.env.LANDING_PAGE_API_KEY;
         const LANDING_PAGE_BASE_URL = process.env.LANDING_PAGE_BASE_URL || 'https://sst-colombia.com.co';
         
-        if (LANDING_PAGE_API_KEY && company) {
+        if (company) {
           try {
             const requestData = {
               company_name: company.name,
               employees: company.numberOfWorkers ?? 1,
               vehicles: (company as any).numberOfVehicles ?? 0,
               risk_level: company.riskLevel ?? "I",
-              ciiu_code: (company as any).ciiuCode ?? "",
-              coupon_code: companyCouponCode || null,
-              referrer_id: (company as any).quoteReferrerId || null,
+              coupon_code: companyCouponCode || undefined,
             };
 
             console.log('[Billing] Auto-quote request:', requestData);
 
-            const quoteResponse = await fetch(`${LANDING_PAGE_BASE_URL}/api/calculate-quote`, {
+            const quoteResponse = await fetch(`${LANDING_PAGE_BASE_URL}/api/recalculate`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${LANDING_PAGE_API_KEY}`,
               },
               body: JSON.stringify(requestData),
             });
@@ -697,8 +693,8 @@ export function registerBillingRoutes(app: Express) {
               const quoteResponseData = await quoteResponse.json();
               
               if (quoteResponseData.token) {
-                const { verifyQuote } = await import("../../plugins/landing-page-integration");
-                const verification = verifyQuote(quoteResponseData.token);
+                const { verifyRecalculateToken } = await import("../../plugins/landing-page-integration");
+                const verification = verifyRecalculateToken(quoteResponseData.token);
                 
                 if (verification.valid && verification.data) {
                   const quoteData = verification.data;

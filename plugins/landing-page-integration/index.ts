@@ -30,6 +30,7 @@ export { default as landingPageRouter } from "./routes";
 
 export {
   verifyQuote,
+  verifyRecalculateToken,
   getRawQuotePayload,
   getQuoteSummary,
 } from "./facade";

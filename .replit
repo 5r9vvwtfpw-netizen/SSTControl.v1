@@ -60,6 +60,7 @@ AWS_RDS_HOST = "database-1.cpm6200cuaih.sa-east-1.rds.amazonaws.com"
 AWS_RDS_PORT = "5432"
 AWS_RDS_USER = "postgres"
 AWS_RDS_DATABASE = "postgres"
+JWT_RECALCULATE_SECRET = "CQcG2mZNrdM4JZ8rDqGpTgV4IUGChqUFgl6qgo9Ga/Pf+kHivJydldC+ThZclPNg"
 
 [userenv.development]
 AUTO_VERIFY_EMAIL = "true"

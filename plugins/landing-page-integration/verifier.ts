@@ -61,9 +61,15 @@ function validatePayloadStructure(payload: unknown): payload is QuotePayload {
       metadata.vehicles < 0 || 
       metadata.vehicles > MAX_VEHICLES) return false;
   
-  if (metadata.coupon_code !== null && typeof metadata.coupon_code !== 'string') return false;
+  if (metadata.coupon_code !== undefined && metadata.coupon_code !== null && typeof metadata.coupon_code !== 'string') return false;
   
-  if (p.referral !== null) {
+  if (metadata.coupon !== undefined && metadata.coupon !== null) {
+    if (typeof metadata.coupon !== 'object') return false;
+    const coupon = metadata.coupon as Record<string, unknown>;
+    if (typeof coupon.code !== 'string') return false;
+  }
+  
+  if (p.referral !== null && p.referral !== undefined) {
     if (typeof p.referral !== 'object') return false;
     const referral = p.referral as Record<string, unknown>;
     if (typeof referral.referrer_id !== 'string') return false;

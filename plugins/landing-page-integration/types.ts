@@ -7,7 +7,7 @@
  * backward compatible to avoid breaking the integration.
  * 
  * @module plugins/landing-page-integration/types
- * @version 1.1.0
+ * @version 1.2.0
  */
 
 /**
@@ -29,6 +29,7 @@ export interface QuotePayload {
     coupon_code: string | null;
     ciiu_code?: string;
     standards_count?: number;
+    coupon?: CouponData | null;
   };
   referral: {
     referrer_id: string;
@@ -36,6 +37,19 @@ export interface QuotePayload {
   } | null;
   iat: number;
   exp: number;
+}
+
+/**
+ * Coupon data structure from /api/recalculate endpoint
+ */
+export interface CouponData {
+  code: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  discount_amount: number;
+  duration_months: number;
+  first_month_only: boolean;
+  coupon_type: string;
 }
 
 /**

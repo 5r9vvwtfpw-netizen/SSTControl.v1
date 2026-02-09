@@ -13,7 +13,7 @@
  * - New fields may be added but existing fields will not be removed
  * 
  * @module plugins/landing-page-integration/facade
- * @version 1.1.0
+ * @version 1.2.0
  */
 
 import type { 
@@ -24,12 +24,11 @@ import type {
 import { verifyJWT } from "./verifier";
 
 const jwtSecret = process.env.LANDING_PAGE_API_KEY || null;
+const recalculateSecret = process.env.JWT_RECALCULATE_SECRET || null;
 
 /**
- * STABLE INTERFACE: Verify a quote token from the landing page
- * 
- * @param token - The JWT token from ?quote= parameter
- * @returns QuoteVerificationResult with normalized data or error
+ * STABLE INTERFACE: Verify a quote token from the landing page (registration flow)
+ * Uses LANDING_PAGE_API_KEY secret
  */
 export function verifyQuote(token: string): QuoteVerificationResult {
   if (!jwtSecret) {
@@ -69,11 +68,48 @@ export function verifyQuote(token: string): QuoteVerificationResult {
 }
 
 /**
+ * STABLE INTERFACE: Verify a recalculation token from /api/recalculate
+ * Uses JWT_RECALCULATE_SECRET secret
+ */
+export function verifyRecalculateToken(token: string): QuoteVerificationResult {
+  if (!recalculateSecret) {
+    console.error("[LandingPagePlugin] JWT_RECALCULATE_SECRET not configured");
+    return {
+      valid: false,
+      data: null,
+      error: "JWT_RECALCULATE_SECRET no configurado"
+    };
+  }
+
+  if (!token || typeof token !== 'string') {
+    return {
+      valid: false,
+      data: null,
+      error: "Token de recalculación requerido"
+    };
+  }
+
+  try {
+    const quoteData = verifyJWT(token, recalculateSecret);
+    const normalized = normalizeQuoteData(quoteData);
+    
+    return {
+      valid: true,
+      data: normalized,
+      error: null
+    };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Error al verificar token de recalculación";
+    return {
+      valid: false,
+      data: null,
+      error: message
+    };
+  }
+}
+
+/**
  * STABLE INTERFACE: Get raw quote payload (for Stripe checkout)
- * 
- * @param token - The JWT token
- * @returns The raw QuotePayload
- * @throws Error if verification fails
  */
 export function getRawQuotePayload(token: string): QuotePayload {
   if (!jwtSecret) {
@@ -85,7 +121,6 @@ export function getRawQuotePayload(token: string): QuotePayload {
 
 /**
  * STABLE INTERFACE: Get a summary of quote data for logging
- * Does not expose sensitive information
  */
 export function getQuoteSummary(data: NormalizedQuoteData): string {
   const parts = [
@@ -116,6 +151,8 @@ function formatCOP(amount: number): string {
 }
 
 function normalizeQuoteData(quote: QuotePayload): NormalizedQuoteData {
+  const couponCode = quote.metadata.coupon?.code || quote.metadata.coupon_code || null;
+  
   return {
     companyName: quote.metadata.company_name || null,
     employees: quote.metadata.employees,
@@ -123,7 +160,7 @@ function normalizeQuoteData(quote: QuotePayload): NormalizedQuoteData {
     vehicles: quote.metadata.vehicles,
     ciiuCode: quote.metadata.ciiu_code || null,
     standardsCount: quote.metadata.standards_count || null,
-    couponCode: quote.metadata.coupon_code,
+    couponCode,
     baseMonthlyPrice: quote.sub_data.base_monthly_price,
     currentPeriodPrice: quote.sub_data.current_period_price,
     discountDurationMonths: quote.sub_data.discount_duration_months,

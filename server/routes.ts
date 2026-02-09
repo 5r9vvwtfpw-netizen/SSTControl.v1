@@ -2276,11 +2276,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Empresa no encontrada" });
       }
 
-      const LANDING_PAGE_API_KEY = process.env.LANDING_PAGE_API_KEY;
-      if (!LANDING_PAGE_API_KEY) {
-        return res.status(500).json({ error: "Integración con landing page no configurada" });
-      }
-
       const { numberOfWorkers, numberOfVehicles, ciiuCode, riskLevel } = req.body;
 
       const requestData = {
@@ -2288,9 +2283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         employees: numberOfWorkers ?? company.numberOfWorkers ?? 1,
         vehicles: numberOfVehicles ?? company.numberOfVehicles ?? 0,
         risk_level: riskLevel ?? company.riskLevel ?? "I",
-        ciiu_code: ciiuCode ?? company.ciiuCode ?? "",
-        coupon_code: (company as any).quoteCouponCode || null,
-        referrer_id: (company as any).quoteReferrerId || null,
+        coupon_code: (company as any).quoteCouponCode || undefined,
       };
 
       const LANDING_PAGE_BASE_URL = process.env.LANDING_PAGE_BASE_URL || 'https://sst-colombia.com.co';
@@ -2299,14 +2292,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         employees: requestData.employees,
         vehicles: requestData.vehicles,
         risk_level: requestData.risk_level,
-        ciiu_code: requestData.ciiu_code,
       });
 
-      const response = await fetch(`${LANDING_PAGE_BASE_URL}/api/calculate-quote`, {
+      const response = await fetch(`${LANDING_PAGE_BASE_URL}/api/recalculate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${LANDING_PAGE_API_KEY}`,
         },
         body: JSON.stringify(requestData),
       });
@@ -2327,8 +2318,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(502).json({ error: "Respuesta inválida de la landing page" });
       }
 
-      const { verifyQuote } = await import("../plugins/landing-page-integration");
-      const verification = verifyQuote(responseData.token);
+      const { verifyRecalculateToken } = await import("../plugins/landing-page-integration");
+      const verification = verifyRecalculateToken(responseData.token);
 
       if (!verification.valid || !verification.data) {
         console.error('[Quote-Recalculate] JWT verification failed:', verification.error);
@@ -2346,7 +2337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .where(eq(companies.id, companyId));
 
-      console.log(`[Quote-Recalculate] Updated company ${companyId}: base=$${quoteData.baseMonthlyPrice}, current=$${quoteData.currentPeriodPrice}`);
+      console.log(`[Quote-Recalculate] Updated company ${companyId}: base=\${quoteData.baseMonthlyPrice}, current=\${quoteData.currentPeriodPrice}`);
 
       res.json({
         success: true,
