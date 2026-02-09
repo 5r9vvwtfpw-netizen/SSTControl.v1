@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation, useRouter } from "wouter";
 import { Company, insertCompanySchema } from "@shared/schema";
@@ -125,6 +125,57 @@ export default function CompanyManagement() {
   const [pricingChangeDialogOpen, setPricingChangeDialogOpen] = useState(false);
   const [pendingPricingUpdate, setPendingPricingUpdate] = useState<{ changedFields: string[] } | null>(null);
   
+  const [livePrice, setLivePrice] = useState<{ base: number; current: number } | null>(null);
+  const [livePriceLoading, setLivePriceLoading] = useState(false);
+  const livePriceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchLivePrice = useCallback(async (companyId: string, data: CompanyFormData) => {
+    setLivePriceLoading(true);
+    try {
+      const res = await apiRequest("POST", `/api/companies/${companyId}/preview-quote`, {
+        numberOfWorkers: data.numberOfWorkers,
+        numberOfVehicles: data.numberOfVehicles,
+        riskLevel: data.riskLevel,
+        ciiuCode: data.ciiuCode,
+        name: data.name,
+      });
+      const result = await res.json();
+      if (result.success && result.newBaseMonthlyPrice) {
+        setLivePrice({ base: result.newBaseMonthlyPrice, current: result.newCurrentPeriodPrice || result.newBaseMonthlyPrice });
+      }
+    } catch {
+      setLivePrice(null);
+    } finally {
+      setLivePriceLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!editingCompany) {
+      setLivePrice(null);
+      return;
+    }
+    const hasChanges =
+      formData.numberOfWorkers !== (editingCompany.numberOfWorkers ?? 1) ||
+      formData.numberOfVehicles !== (editingCompany.numberOfVehicles ?? 0) ||
+      formData.ciiuCode !== (editingCompany.ciiuCode ?? "") ||
+      formData.riskLevel !== (editingCompany.riskLevel ?? "I");
+
+    if (!hasChanges) {
+      setLivePrice(null);
+      return;
+    }
+
+    if (livePriceTimerRef.current) clearTimeout(livePriceTimerRef.current);
+    livePriceTimerRef.current = setTimeout(() => {
+      fetchLivePrice(editingCompany.id, formData);
+    }, 800);
+
+    return () => {
+      if (livePriceTimerRef.current) clearTimeout(livePriceTimerRef.current);
+    };
+  }, [editingCompany, formData.numberOfWorkers, formData.numberOfVehicles, formData.ciiuCode, formData.riskLevel, fetchLivePrice]);
+
   // Estados para diagnóstico de empresas (superadmin)
   const [diagnosticoEmpresasOpen, setDiagnosticoEmpresasOpen] = useState(false);
   const [diagnosticoEmpresasData, setDiagnosticoEmpresasData] = useState<any>(null);
@@ -941,6 +992,49 @@ export default function CompanyManagement() {
                 </div>
               </div>
 
+              {editingCompany && (livePriceLoading || livePrice) && (
+                <div className="col-span-2 mt-2" data-testid="live-price-preview">
+                  <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CreditCard className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Vista previa del nuevo precio</span>
+                      </div>
+                      {livePriceLoading ? (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Consultando precio actualizado...
+                        </div>
+                      ) : livePrice ? (
+                        <div className="space-y-1">
+                          <p className="text-lg font-semibold" data-testid="text-live-price">
+                            ${livePrice.base.toLocaleString('es-CO')} COP/mes
+                          </p>
+                          {editingCompany.quoteBaseMonthlyPrice && (
+                            <p className="text-xs text-muted-foreground" data-testid="text-price-comparison">
+                              Precio actual: ${Number(editingCompany.quoteBaseMonthlyPrice).toLocaleString('es-CO')} COP/mes
+                              {livePrice.base > Number(editingCompany.quoteBaseMonthlyPrice) && (
+                                <span className="ml-2 text-amber-600 dark:text-amber-400">
+                                  (+${(livePrice.base - Number(editingCompany.quoteBaseMonthlyPrice)).toLocaleString('es-CO')} COP)
+                                </span>
+                              )}
+                              {livePrice.base < Number(editingCompany.quoteBaseMonthlyPrice) && (
+                                <span className="ml-2 text-green-600 dark:text-green-400">
+                                  (-${(Number(editingCompany.quoteBaseMonthlyPrice) - livePrice.base).toLocaleString('es-CO')} COP)
+                                </span>
+                              )}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Este precio se aplicará en la próxima factura al guardar los cambios.
+                          </p>
+                        </div>
+                      ) : null}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
               <DialogFooter>
                 <Button 
                   type="submit" 
@@ -1175,8 +1269,19 @@ export default function CompanyManagement() {
                     ))}
                   </ul>
                 </div>
+                {livePrice && (
+                  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm">
+                    <p className="font-medium text-blue-700 dark:text-blue-300 mb-1">Nuevo precio estimado:</p>
+                    <p className="text-lg font-semibold text-foreground">${livePrice.base.toLocaleString('es-CO')} COP/mes</p>
+                    {editingCompany?.quoteBaseMonthlyPrice && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Precio actual: ${Number(editingCompany.quoteBaseMonthlyPrice).toLocaleString('es-CO')} COP/mes
+                      </p>
+                    )}
+                  </div>
+                )}
                 <p className="text-sm text-muted-foreground">
-                  Se solicitará el nuevo precio a la landing page antes de guardar los cambios. El nuevo precio se reflejará en su <strong>próxima factura mensual</strong>. Si no es posible obtener el precio, los cambios no se guardarán.
+                  {livePrice ? 'El nuevo precio se reflejará en su' : 'Se solicitará el nuevo precio a la landing page antes de guardar los cambios. El nuevo precio se reflejará en su'} <strong>próxima factura mensual</strong>. Si no es posible obtener el precio, los cambios no se guardarán.
                 </p>
               </div>
             </AlertDialogDescription>

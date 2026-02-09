@@ -2268,6 +2268,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Recalcular cotización enviando datos a la landing page
+  app.post("/api/companies/:id/preview-quote", requirePermission("companies:edit"), async (req, res) => {
+    try {
+      const companyId = req.params.id;
+      const company = await storage.getCompany(companyId);
+      if (!company) {
+        return res.status(404).json({ error: "Empresa no encontrada" });
+      }
+
+      const { numberOfWorkers, numberOfVehicles, riskLevel, name } = req.body;
+
+      const requestData = {
+        company_name: name || company.name,
+        employees: numberOfWorkers ?? company.numberOfWorkers ?? 1,
+        vehicles: numberOfVehicles ?? company.numberOfVehicles ?? 0,
+        risk_level: riskLevel ?? company.riskLevel ?? "I",
+        coupon_code: (company as any).quoteCouponCode || undefined,
+      };
+
+      const LANDING_PAGE_BASE_URL = process.env.LANDING_PAGE_BASE_URL || 'https://sst-colombia.com.co';
+
+      const response = await fetch(`${LANDING_PAGE_BASE_URL}/api/recalculate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        return res.status(502).json({ error: "No se pudo obtener la cotización previa" });
+      }
+
+      const responseData = await response.json();
+
+      if (!responseData.token) {
+        return res.status(502).json({ error: "Respuesta inválida de la landing page" });
+      }
+
+      const { verifyRecalculateToken } = await import("../plugins/landing-page-integration");
+      const verification = verifyRecalculateToken(responseData.token);
+
+      if (!verification.valid || !verification.data) {
+        return res.status(502).json({ error: "No se pudo verificar la cotización recibida" });
+      }
+
+      res.json({
+        success: true,
+        newBaseMonthlyPrice: verification.data.baseMonthlyPrice,
+        newCurrentPeriodPrice: verification.data.currentPeriodPrice,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: "Error al consultar precio", details: error.message });
+    }
+  });
+
   app.post("/api/companies/:id/recalculate-quote", requirePermission("companies:edit"), async (req, res) => {
     try {
       const companyId = req.params.id;
