@@ -648,54 +648,56 @@ export function addSimpleTable(
   const margin = PDF_CONFIG.MARGIN;
   const pageWidth = doc.page.width;
   const tableWidth = pageWidth - margin * 2;
-  const rowHeight = 20;
+  const minRowHeight = 20;
+  const cellPadding = 4;
   const numCols = headers.length;
   
-  // Calcular anchos de columna
   const colWidths = options?.columnWidths || 
     headers.map(() => tableWidth / numCols);
   
   let currentY = options?.y ?? doc.y;
   
-  // Verificar espacio para al menos el header + 1 fila
-  currentY = checkPageBreak(doc, rowHeight * 2, currentY);
+  currentY = checkPageBreak(doc, minRowHeight * 2, currentY);
 
-  // Dibujar header
   const headerBgColor = options?.headerBgColor || PDF_COLORS.GREEN_PRIMARY;
   const headerTextColor = options?.headerTextColor || PDF_COLORS.WHITE;
   
-  doc.rect(margin, currentY, tableWidth, rowHeight).fill(headerBgColor);
+  doc.rect(margin, currentY, tableWidth, minRowHeight).fill(headerBgColor);
   
   doc.fontSize(8).font('Helvetica-Bold').fillColor(headerTextColor);
   let xPos = margin;
   headers.forEach((header, i) => {
-    doc.text(header, xPos + 4, currentY + 6, { width: colWidths[i] - 8, align: 'center' });
+    doc.text(header, xPos + cellPadding, currentY + 6, { width: colWidths[i] - cellPadding * 2, align: 'center' });
     xPos += colWidths[i];
   });
 
-  currentY += rowHeight;
+  currentY += minRowHeight;
 
-  // Dibujar filas
   doc.font('Helvetica').fillColor(PDF_COLORS.BLACK);
   
   for (const row of rows) {
-    // Verificar espacio para esta fila
-    currentY = checkPageBreak(doc, rowHeight, currentY);
+    doc.fontSize(7);
+    let maxCellHeight = minRowHeight;
+    const cellHeights = row.map((cell, i) => {
+      const textHeight = doc.heightOfString(cell || '', { width: colWidths[i] - cellPadding * 2 });
+      return textHeight + cellPadding * 2;
+    });
+    maxCellHeight = Math.max(minRowHeight, ...cellHeights);
+
+    currentY = checkPageBreak(doc, maxCellHeight, currentY);
     
-    // Fondo alternado
-    doc.rect(margin, currentY, tableWidth, rowHeight).stroke(PDF_COLORS.GRAY_BORDER);
+    doc.rect(margin, currentY, tableWidth, maxCellHeight).stroke(PDF_COLORS.GRAY_BORDER);
     
     xPos = margin;
     row.forEach((cell, i) => {
-      doc.fontSize(7).text(cell || '', xPos + 4, currentY + 6, { 
-        width: colWidths[i] - 8, 
+      doc.fontSize(7).text(cell || '', xPos + cellPadding, currentY + cellPadding, { 
+        width: colWidths[i] - cellPadding * 2, 
         align: 'left',
-        lineBreak: false,
       });
       xPos += colWidths[i];
     });
     
-    currentY += rowHeight;
+    currentY += maxCellHeight;
   }
 
   doc.y = currentY + 10;
