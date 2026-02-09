@@ -491,7 +491,7 @@ export default function PesvSiniestros() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="estimatedCost">Costo Estimado (COP)</Label>
+                    <Label htmlFor="estimatedCost">Costo Estimado ($)</Label>
                     <Input
                       id="estimatedCost"
                       type="number"
@@ -761,7 +761,7 @@ export default function PesvSiniestros() {
               {selectedIncident.estimatedCost && (
                 <div>
                   <p className="font-semibold">Costo Estimado:</p>
-                  <p className="text-sm">${selectedIncident.estimatedCost.toLocaleString()} COP</p>
+                  <p className="text-sm">${selectedIncident.estimatedCost.toLocaleString()}</p>
                 </div>
               )}
               {selectedIncident.rootCause && (

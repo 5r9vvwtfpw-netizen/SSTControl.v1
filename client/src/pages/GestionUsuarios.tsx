@@ -1032,7 +1032,7 @@ export default function GestionUsuarios() {
                 <div className="flex justify-between items-center">
                   <span className="font-medium">Costo por usuario adicional:</span>
                   <span className="text-lg font-bold text-primary">
-                    ${extraSeatPurchaseInfo?.pricePerSeatCop?.toLocaleString('es-CO')} COP/mes
+                    ${extraSeatPurchaseInfo?.pricePerSeatCop?.toLocaleString('es-CO')}/mes
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">

@@ -621,10 +621,9 @@ export default function Contratos() {
 
   const formatCurrency = (value: number | null | undefined) => {
     if (!value) return "-";
-    return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
+    return '$' + new Intl.NumberFormat("es-CO", {
       minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(value);
   };
 
@@ -766,7 +765,7 @@ export default function Contratos() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="salary">Salario Mensual (COP)</Label>
+                    <Label htmlFor="salary">Salario Mensual ($)</Label>
                     <Input
                       id="salary"
                       type="number"
@@ -1374,7 +1373,7 @@ export default function Contratos() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="bulkSalary">Salario Mensual (COP)</Label>
+                    <Label htmlFor="bulkSalary">Salario Mensual ($)</Label>
                     <Input
                       id="bulkSalary"
                       type="number"

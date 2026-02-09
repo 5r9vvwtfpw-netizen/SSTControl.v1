@@ -331,10 +331,9 @@ export default function RecomendacionesArl() {
 
   const formatCurrency = (amount: number | null) => {
     if (!amount) return "—";
-    return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
-      minimumFractionDigits: 0
+    return '$' + new Intl.NumberFormat("es-CO", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -736,7 +735,7 @@ export default function RecomendacionesArl() {
                       name="presupuesto"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Presupuesto (COP)</FormLabel>
+                          <FormLabel>Presupuesto ($)</FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 

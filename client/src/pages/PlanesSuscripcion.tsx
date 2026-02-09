@@ -79,10 +79,9 @@ export default function PlanesSuscripcion() {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
+    return '$' + new Intl.NumberFormat('es-CO', {
       minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(value);
   };
 
@@ -369,7 +368,7 @@ export default function PlanesSuscripcion() {
             )}
 
             <p className="text-xs text-center text-muted-foreground mt-2">
-              Facturacion mensual en COP. Cancela cuando quieras sin penalidad.
+              Facturacion mensual. Cancela cuando quieras sin penalidad.
             </p>
           </CardFooter>
         </Card>

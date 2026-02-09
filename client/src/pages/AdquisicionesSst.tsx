@@ -813,7 +813,7 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
                         name="presupuestoEstimado"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Presupuesto Estimado (COP)</FormLabel>
+                            <FormLabel>Presupuesto Estimado ($)</FormLabel>
                             <FormControl>
                               <CurrencyInput 
                                 value={field.value}
@@ -867,7 +867,7 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
                                   const disponible = recurso.presupuestoDisponible || 0;
                                   return (
                                     <SelectItem key={recurso.id} value={recurso.id}>
-                                      {nombre} - Inversión: ${inversion.toLocaleString('es-CO')} COP | Disponible: ${disponible.toLocaleString('es-CO')} COP
+                                      {nombre} - Inversión: ${inversion.toLocaleString('es-CO')} | Disponible: ${disponible.toLocaleString('es-CO')}
                                     </SelectItem>
                                   );
                                 })
@@ -890,7 +890,7 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
                             Presupuesto excedido
                           </p>
                           <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                            El presupuesto estimado (${presupuestoEstimado?.toLocaleString('es-CO')} COP) excede el saldo disponible del recurso financiero seleccionado (${selectedRecursoFinanciero?.presupuestoDisponible?.toLocaleString('es-CO')} COP)
+                            El presupuesto estimado ($${presupuestoEstimado?.toLocaleString('es-CO')}) excede el saldo disponible del recurso financiero seleccionado ($${selectedRecursoFinanciero?.presupuestoDisponible?.toLocaleString('es-CO')})
                           </p>
                         </div>
                       </div>
@@ -978,7 +978,7 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
                           <div className="text-sm">
                             <div className="font-medium">{recursoVinculado.nombreEquipo || recursoVinculado.objeto || "Recurso"}</div>
                             <div className="text-xs text-muted-foreground">
-                              Disponible: ${recursoVinculado.presupuestoDisponible?.toLocaleString('es-CO') || 0} COP
+                              Disponible: ${recursoVinculado.presupuestoDisponible?.toLocaleString('es-CO') || 0}
                             </div>
                           </div>
                         ) : (

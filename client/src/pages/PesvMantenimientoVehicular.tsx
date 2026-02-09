@@ -232,9 +232,7 @@ export default function PesvMantenimientoVehicular() {
 
   const formatCurrency = (amount: number | null | undefined) => {
     if (amount === null || amount === undefined) return "-";
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
+    return '$' + new Intl.NumberFormat('es-CO', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -400,7 +398,7 @@ export default function PesvMantenimientoVehicular() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="cost">Costo (COP)</Label>
+                    <Label htmlFor="cost">Costo ($)</Label>
                     <Input
                       id="cost"
                       type="number"

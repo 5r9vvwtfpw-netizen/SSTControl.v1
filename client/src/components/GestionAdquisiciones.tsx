@@ -195,10 +195,9 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
 
   const formatCurrency = (amount: number | null | undefined) => {
     if (!amount) return "$0";
-    return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
+    return '$' + new Intl.NumberFormat("es-CO", {
       minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -825,7 +824,7 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
                   name="precioUnitario"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Precio Unitario (COP)</FormLabel>
+                      <FormLabel>Precio Unitario ($)</FormLabel>
                       <FormControl>
                         <CurrencyInput 
                           value={field.value}

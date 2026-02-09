@@ -240,10 +240,9 @@ export default function AdminPromociones() {
 
   const formatCurrency = (value: string | number) => {
     const num = typeof value === "string" ? parseFloat(value) : value;
-    return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
+    return '$' + new Intl.NumberFormat("es-CO", {
       minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(num);
   };
 
@@ -636,7 +635,7 @@ export default function AdminPromociones() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="percentage">Porcentaje (%)</SelectItem>
-                    <SelectItem value="fixed_amount">Monto Fijo (COP)</SelectItem>
+                    <SelectItem value="fixed_amount">Monto Fijo ($)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

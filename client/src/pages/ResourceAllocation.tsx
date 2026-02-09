@@ -559,9 +559,7 @@ export default function ResourceAllocation() {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
+    return '$' + new Intl.NumberFormat('es-CO', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
@@ -1184,7 +1182,7 @@ export default function ResourceAllocation() {
                         name="inversionEstimada"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Inversión Estimada (COP) *</FormLabel>
+                            <FormLabel>Inversión Estimada ($) *</FormLabel>
                             <FormControl>
                               <CurrencyInput
                                 value={field.value ? parseInt(field.value.replace(/\D/g, ''), 10) : undefined}

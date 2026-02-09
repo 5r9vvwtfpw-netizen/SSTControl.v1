@@ -814,7 +814,7 @@ export default function DetallePlanTrabajo() {
                   name="recursosFinancieros"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Presupuesto (COP)</FormLabel>
+                      <FormLabel>Presupuesto ($)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"

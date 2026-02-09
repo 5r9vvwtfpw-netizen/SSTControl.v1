@@ -158,8 +158,8 @@ export function ContratoServiciosSaas({
               <h4 className="font-semibold mb-2">CLÁUSULA TERCERA - PRECIO Y FORMA DE PAGO</h4>
               <div className="text-muted-foreground space-y-2">
                 <p>
-                  El precio del servicio se determina según el plan contratado y el número de trabajadores 
-                  registrados en el sistema, con un valor de <strong>$26,000 COP por trabajador/mes</strong>, 
+                  El precio del servicio se determina según la cotización personalizada de la empresa, 
+                  calculada desde la landing page según su perfil empresarial, 
                   más el IVA correspondiente (19%).
                 </p>
                 <p>
