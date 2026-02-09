@@ -138,10 +138,9 @@ export default function Checkout() {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
+    return '$' + new Intl.NumberFormat('es-CO', {
       minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(value);
   };
 
@@ -341,7 +340,7 @@ export default function Checkout() {
                       {formatCurrency(quotePrice)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      COP / mes
+                      / mes
                     </div>
                   </div>
                 </div>

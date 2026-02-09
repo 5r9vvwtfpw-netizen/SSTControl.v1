@@ -552,8 +552,8 @@ export default function MiSuscripcion() {
 
             <h4>CLÁUSULA TERCERA - PRECIO</h4>
             <p>
-              El precio se determina según el plan contratado y el número de trabajadores registrados, 
-              con un valor de <strong>$26,000 COP por trabajador/mes</strong>, más IVA (19%).
+              El precio se determina según la cotización personalizada de su empresa, 
+              calculada desde la landing page según su perfil empresarial, más IVA (19%).
             </p>
 
             <h4>CLÁUSULA CUARTA - PROTECCIÓN DE DATOS (Ley 1581/2012)</h4>

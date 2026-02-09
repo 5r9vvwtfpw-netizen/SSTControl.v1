@@ -417,7 +417,7 @@ export default function CompanyManagement() {
             if (recalcResult?.success && recalcResult.newBaseMonthlyPrice) {
               toast({
                 title: "Precio actualizado",
-                description: `El nuevo precio mensual es $${recalcResult.newBaseMonthlyPrice.toLocaleString('es-CO')} COP. Se reflejará en su próxima factura.`,
+                description: `El nuevo precio mensual ha sido actualizado. Se reflejará en su próxima factura.`,
                 duration: 10000,
               });
             }
@@ -498,7 +498,7 @@ export default function CompanyManagement() {
             setTimeout(() => {
               toast({
                 title: "Información de facturación PESV",
-                description: `Su plan PESV pasó de $${migration.oldCostoMensual.toLocaleString('es-CO')} a $${migration.newCostoMensual.toLocaleString('es-CO')} COP/mes. La diferencia de $${migration.diferenciaMensual.toLocaleString('es-CO')} COP se aplicará automáticamente en su próxima factura mensual. No requiere acción adicional.`,
+                description: `Su plan PESV ha sido actualizado. La diferencia se aplicará automáticamente en su próxima factura mensual. No requiere acción adicional.`,
                 duration: 20000,
               });
             }, 2000);
@@ -506,7 +506,7 @@ export default function CompanyManagement() {
             setTimeout(() => {
               toast({
                 title: "Ajuste de facturación PESV",
-                description: `Su plan PESV se redujo a $${migration.newCostoMensual.toLocaleString('es-CO')} COP/mes. El ajuste se reflejará en su próxima factura mensual.`,
+                description: `Su plan PESV ha sido ajustado. El cambio se reflejará en su próxima factura mensual.`,
                 duration: 15000,
               });
             }, 2000);
@@ -1008,21 +1008,11 @@ export default function CompanyManagement() {
                       ) : livePrice ? (
                         <div className="space-y-1">
                           <p className="text-lg font-semibold" data-testid="text-live-price">
-                            ${livePrice.base.toLocaleString('es-CO')} COP/mes
+                            Nuevo precio disponible
                           </p>
                           {editingCompany.quoteBaseMonthlyPrice && (
                             <p className="text-xs text-muted-foreground" data-testid="text-price-comparison">
-                              Precio actual: ${Number(editingCompany.quoteBaseMonthlyPrice).toLocaleString('es-CO')} COP/mes
-                              {livePrice.base > Number(editingCompany.quoteBaseMonthlyPrice) && (
-                                <span className="ml-2 text-amber-600 dark:text-amber-400">
-                                  (+${(livePrice.base - Number(editingCompany.quoteBaseMonthlyPrice)).toLocaleString('es-CO')} COP)
-                                </span>
-                              )}
-                              {livePrice.base < Number(editingCompany.quoteBaseMonthlyPrice) && (
-                                <span className="ml-2 text-green-600 dark:text-green-400">
-                                  (-${(Number(editingCompany.quoteBaseMonthlyPrice) - livePrice.base).toLocaleString('es-CO')} COP)
-                                </span>
-                              )}
+                              El precio se actualizará al guardar los cambios
                             </p>
                           )}
                           <p className="text-xs text-muted-foreground">
@@ -1272,10 +1262,10 @@ export default function CompanyManagement() {
                 {livePrice && (
                   <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm">
                     <p className="font-medium text-blue-700 dark:text-blue-300 mb-1">Nuevo precio estimado:</p>
-                    <p className="text-lg font-semibold text-foreground">${livePrice.base.toLocaleString('es-CO')} COP/mes</p>
+                    <p className="text-lg font-semibold text-foreground">Nuevo precio calculado por la landing page</p>
                     {editingCompany?.quoteBaseMonthlyPrice && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Precio actual: ${Number(editingCompany.quoteBaseMonthlyPrice).toLocaleString('es-CO')} COP/mes
+                        El precio se actualizará automáticamente
                       </p>
                     )}
                   </div>

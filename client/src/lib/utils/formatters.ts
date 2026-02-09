@@ -4,17 +4,16 @@
  */
 
 /**
- * Formatea un número como moneda colombiana (COP)
+ * Formatea un número como precio (sin símbolo de moneda)
  */
 export const formatPrice = (price: number): string => 
-  new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
+  '$' + new Intl.NumberFormat('es-CO', {
     minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(price);
 
 /**
- * Formatea un número como moneda (alias de formatPrice)
+ * Formatea un número como precio (alias de formatPrice)
  */
 export const formatCurrency = formatPrice;
 
