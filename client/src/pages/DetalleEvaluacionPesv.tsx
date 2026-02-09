@@ -104,8 +104,7 @@ export default function DetalleEvaluacionPesv() {
 
   const saveRespuestaMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertRespuestaPasoPesvSchema>) => {
-      const pasoDb = pasosDb.find(p => p.codigo === selectedPaso?.codigo);
-      const dataWithPasoId = { ...data, pasoId: pasoDb?.id || data.pasoId };
+      const dataWithPasoId = { ...data, pasoId: selectedPaso?.codigo || data.pasoId };
       const res = await apiRequest("POST", `/api/evaluaciones-pesv/${id}/respuestas`, dataWithPasoId);
       return res.json();
     },
@@ -199,9 +198,7 @@ export default function DetalleEvaluacionPesv() {
   });
 
   const getRespuestaForPaso = (paso: PasoPesvData): RespuestaPasoPesv | undefined => {
-    const pasoDb = pasosDb.find(p => p.codigo === paso.codigo);
-    if (!pasoDb) return undefined;
-    return respuestas.find(r => r.pasoId === pasoDb.id);
+    return respuestas.find(r => r.pasoId === paso.codigo);
   };
 
   const pasosEvaluados = pasos.filter(p => getRespuestaForPaso(p)).length;
@@ -219,13 +216,12 @@ export default function DetalleEvaluacionPesv() {
     }
     
     setSelectedPaso(paso);
-    const pasoDb = pasosDb.find(p => p.codigo === paso.codigo);
-    const existing = respuestas.find(r => r.pasoId === pasoDb?.id);
+    const existing = respuestas.find(r => r.pasoId === paso.codigo);
     
     if (existing) {
       respuestaForm.reset({
         evaluacionId: id || "",
-        pasoId: pasoDb?.id || "",
+        pasoId: paso.codigo,
         cumple: existing.cumple,
         noAplica: existing.noAplica,
         observaciones: existing.observaciones || "",
@@ -248,7 +244,7 @@ export default function DetalleEvaluacionPesv() {
       if (autoEvidencias) newAutoFilled.evidencias = true;
       respuestaForm.reset({
         evaluacionId: id || "",
-        pasoId: pasoDb?.id || "",
+        pasoId: paso.codigo,
         cumple: 0,
         noAplica: 0,
         observaciones: "",
