@@ -659,9 +659,80 @@ export function registerBillingRoutes(app: Express) {
       // Solo se recalcula si la empresa cambia datos después (empleados, vehículos, CIIU).
       
       // Fuente de verdad: companies table (donde se guardó el precio del JWT al registrar)
-      const companyQuoteBase = company ? (company as any).quoteBaseMonthlyPrice : null;
-      const companyQuoteCurrent = company ? (company as any).quoteCurrentPeriodPrice : null;
-      const companyCouponCode = company ? (company as any).quoteCouponCode : null;
+      let companyQuoteBase = company ? (company as any).quoteBaseMonthlyPrice : null;
+      let companyQuoteCurrent = company ? (company as any).quoteCurrentPeriodPrice : null;
+      let companyCouponCode = company ? (company as any).quoteCouponCode : null;
+
+      // Si no hay cotización guardada, intentar obtener una automáticamente de la landing page
+      if (!companyQuoteBase || companyQuoteBase <= 0) {
+        console.log('[Billing] No quote found. Attempting auto-quote from landing page for company:', company?.id);
+        
+        const LANDING_PAGE_API_KEY = process.env.LANDING_PAGE_API_KEY;
+        const LANDING_PAGE_BASE_URL = process.env.LANDING_PAGE_BASE_URL || 'https://sst-colombia.com.co';
+        
+        if (LANDING_PAGE_API_KEY && company) {
+          try {
+            const requestData = {
+              company_name: company.name,
+              employees: company.numberOfWorkers ?? 1,
+              vehicles: (company as any).numberOfVehicles ?? 0,
+              risk_level: company.riskLevel ?? "I",
+              ciiu_code: (company as any).ciiuCode ?? "",
+              coupon_code: companyCouponCode || null,
+              referrer_id: (company as any).quoteReferrerId || null,
+            };
+
+            console.log('[Billing] Auto-quote request:', requestData);
+
+            const quoteResponse = await fetch(`${LANDING_PAGE_BASE_URL}/api/calculate-quote`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${LANDING_PAGE_API_KEY}`,
+              },
+              body: JSON.stringify(requestData),
+            });
+
+            if (quoteResponse.ok) {
+              const quoteResponseData = await quoteResponse.json();
+              
+              if (quoteResponseData.token) {
+                const { verifyQuote } = await import("../../plugins/landing-page-integration");
+                const verification = verifyQuote(quoteResponseData.token);
+                
+                if (verification.valid && verification.data) {
+                  const quoteData = verification.data;
+                  
+                  const { db } = await import("../db");
+                  const { eq } = await import("drizzle-orm");
+                  const schemaModule = await import("@shared/schema");
+                  
+                  await db.update(schemaModule.companies)
+                    .set({
+                      quoteBaseMonthlyPrice: quoteData.baseMonthlyPrice,
+                      quoteCurrentPeriodPrice: quoteData.currentPeriodPrice,
+                      quoteDiscountDurationMonths: quoteData.discountDurationMonths,
+                      quoteCouponCode: quoteData.couponCode,
+                    })
+                    .where(eq(schemaModule.companies.id, company.id));
+                  
+                  companyQuoteBase = quoteData.baseMonthlyPrice;
+                  companyQuoteCurrent = quoteData.currentPeriodPrice;
+                  companyCouponCode = quoteData.couponCode;
+                  
+                  console.log(`[Billing] Auto-quote successful: base=${companyQuoteBase}, current=${companyQuoteCurrent}`);
+                } else {
+                  console.warn('[Billing] Auto-quote JWT verification failed:', verification.error);
+                }
+              }
+            } else {
+              console.warn('[Billing] Auto-quote landing page error:', quoteResponse.status);
+            }
+          } catch (autoQuoteError: any) {
+            console.warn('[Billing] Auto-quote failed (non-blocking):', autoQuoteError.message);
+          }
+        }
+      }
 
       if (companyQuoteBase && companyQuoteBase > 0) {
         couponCode = companyCouponCode || undefined;
@@ -675,9 +746,10 @@ export function registerBillingRoutes(app: Express) {
           productDescription = `Plan ${plan.displayName || plan.name} - Primer mes (Cupón ${couponCode})`;
         }
       } else {
-        console.warn('[Billing] No quote price found in companies table. Company must get a quote from the landing page.');
+        console.warn('[Billing] No quote price found and auto-quote failed. Company must get a quote from the landing page.');
         return res.status(400).json({ 
-          error: 'Esta empresa no tiene una cotización de precio. Debe obtener una cotización desde la página de inicio (sst-colombia.com.co) antes de activar la suscripción.' 
+          error: 'No se pudo obtener una cotización de precio. Verifique la conexión con la página de inicio (sst-colombia.com.co) o intente nuevamente.',
+          needsQuote: true
         });
       }
 
