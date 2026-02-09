@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Building2, CheckCircle2, Loader2, Shield, MapPin, Phone, Mail, Sparkles, Briefcase, ArrowRight, ArrowLeft, AlertTriangle, Users, Factory } from "lucide-react";
+import { Building2, CheckCircle2, Loader2, Shield, MapPin, Phone, Mail, Sparkles, Briefcase, ArrowRight, ArrowLeft, AlertTriangle, Users, Factory, Pencil, Truck } from "lucide-react";
 import type { User } from "@shared/schema";
 import { calculateChapter } from "@shared/utils";
 import { CIIU_CODES, CIIU_SECTIONS } from "@/lib/ciiu-codes";
@@ -86,7 +86,17 @@ export default function CrearEmpresaCiiuFirst() {
   const queryClient = useQueryClient();
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const hasRegistrationData = typeof window !== 'undefined' && !!localStorage.getItem('sst_registration_ciiu');
+  const hasAllRegistrationData = typeof window !== 'undefined' && !!(
+    localStorage.getItem('sst_registration_ciiu') &&
+    localStorage.getItem('sst_registration_company_name') &&
+    localStorage.getItem('sst_registration_nit') &&
+    localStorage.getItem('sst_registration_city') &&
+    localStorage.getItem('sst_registration_address') &&
+    localStorage.getItem('sst_registration_phone') &&
+    localStorage.getItem('sst_registration_email')
+  );
   const [currentStep, setCurrentStep] = useState(hasRegistrationData ? 2 : 1);
+  const [editMode, setEditMode] = useState(false);
 
   const { data: user } = useQuery<User>({
     queryKey: ["/api/user"],
@@ -145,6 +155,13 @@ export default function CrearEmpresaCiiuFirst() {
   const watchedWorkers = form.watch("numberOfWorkers");
   const watchedCiiu = form.watch("ciiuCode");
   const watchedRisk = form.watch("riskLevel");
+  const watchedName = form.watch("name");
+  const watchedNit = form.watch("nit");
+  const watchedCity = form.watch("city");
+  const watchedAddress = form.watch("address");
+  const watchedPhone = form.watch("contactPhone");
+  const watchedEmail = form.watch("contactEmail");
+  const watchedVehicles = form.watch("numberOfVehicles");
 
   useEffect(() => {
     if (watchedCiiu) {
@@ -232,24 +249,32 @@ export default function CrearEmpresaCiiuFirst() {
             <Building2 className="h-8 w-8 text-primary" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight" data-testid="title-onboarding">
-            {currentStep === 1 ? "Identifica tu Actividad Económica" : "Completa los Datos de tu Empresa"}
+            {currentStep === 1 
+              ? "Identifica tu Actividad Económica" 
+              : (hasAllRegistrationData && !editMode)
+                ? "Confirma los Datos de tu Empresa"
+                : "Completa los Datos de tu Empresa"}
           </h1>
           <p className="text-muted-foreground max-w-md mx-auto">
             {currentStep === 1 
               ? "Tu código CIIU determina automáticamente el nivel de riesgo y los estándares que aplican según la Resolución 0312/2019"
-              : "Información requerida para cumplir con la normativa colombiana en SST"}
+              : (hasAllRegistrationData && !editMode)
+                ? "Verifica que la información sea correcta antes de crear tu empresa"
+                : "Información requerida para cumplir con la normativa colombiana en SST"}
           </p>
         </div>
 
-        <div className="flex items-center justify-center gap-2 mb-6">
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${currentStep >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-            1
+        {!(hasAllRegistrationData && !editMode && currentStep === 2) && (
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${currentStep >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              1
+            </div>
+            <div className={`w-16 h-1 rounded ${currentStep >= 2 ? 'bg-primary' : 'bg-muted'}`} />
+            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${currentStep >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              2
+            </div>
           </div>
-          <div className={`w-16 h-1 rounded ${currentStep >= 2 ? 'bg-primary' : 'bg-muted'}`} />
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${currentStep >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-            2
-          </div>
-        </div>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -416,6 +441,12 @@ export default function CrearEmpresaCiiuFirst() {
                       <Badge className={currentChapterInfo.bgColor}>
                         {currentChapterInfo.standards} estándares
                       </Badge>
+                      {(watchedVehicles || 0) > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          <Truck className="h-3 w-3 mr-1" />
+                          {watchedVehicles} vehículos (PESV)
+                        </Badge>
+                      )}
                       <Badge variant="secondary" className="text-xs">
                         <Sparkles className="h-3 w-3 mr-1" />
                         7 días gratis
@@ -424,6 +455,67 @@ export default function CrearEmpresaCiiuFirst() {
                   </CardContent>
                 </Card>
 
+                {hasAllRegistrationData && !editMode ? (
+                  <Card data-testid="card-confirmation">
+                    <CardHeader>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <CardTitle className="flex items-center gap-2">
+                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          Datos de tu Empresa
+                        </CardTitle>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setEditMode(true)}
+                          data-testid="button-edit-data"
+                        >
+                          <Pencil className="mr-2 h-3 w-3" />
+                          Editar datos
+                        </Button>
+                      </div>
+                      <CardDescription>
+                        Información registrada desde tu cuenta
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2 space-y-1">
+                          <p className="text-xs text-muted-foreground">Nombre de la Empresa</p>
+                          <p className="font-medium" data-testid="text-confirm-name">{watchedName}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">NIT</p>
+                          <p className="font-medium" data-testid="text-confirm-nit">{watchedNit}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Ciudad</p>
+                          <p className="font-medium" data-testid="text-confirm-city">{watchedCity}</p>
+                        </div>
+                        <div className="md:col-span-2 space-y-1">
+                          <p className="text-xs text-muted-foreground">Dirección</p>
+                          <p className="font-medium" data-testid="text-confirm-address">{watchedAddress}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" /> Teléfono</p>
+                          <p className="font-medium" data-testid="text-confirm-phone">{watchedPhone}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground flex items-center gap-1"><Mail className="h-3 w-3" /> Correo</p>
+                          <p className="font-medium" data-testid="text-confirm-email">{watchedEmail}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground flex items-center gap-1"><Briefcase className="h-3 w-3" /> CIIU</p>
+                          <p className="font-medium" data-testid="text-confirm-ciiu">{watchedCiiu}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground flex items-center gap-1"><Users className="h-3 w-3" /> Trabajadores</p>
+                          <p className="font-medium" data-testid="text-confirm-workers">{watchedWorkers}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
                 <Card data-testid="card-step2-company">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -566,6 +658,7 @@ export default function CrearEmpresaCiiuFirst() {
                     </div>
                   </CardContent>
                 </Card>
+                )}
 
                 <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium">
@@ -621,17 +714,31 @@ export default function CrearEmpresaCiiuFirst() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    size="lg"
-                    onClick={goToStep1}
-                    className="flex-1"
-                    data-testid="button-back-step1"
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Volver
-                  </Button>
+                  {editMode ? (
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      size="lg"
+                      onClick={() => setEditMode(false)}
+                      className="flex-1"
+                      data-testid="button-cancel-edit"
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Cancelar
+                    </Button>
+                  ) : (
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      size="lg"
+                      onClick={goToStep1}
+                      className="flex-1"
+                      data-testid="button-back-step1"
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Volver
+                    </Button>
+                  )}
                   <Button 
                     type="submit" 
                     className="flex-[2]" 
