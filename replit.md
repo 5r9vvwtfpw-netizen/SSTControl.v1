@@ -29,7 +29,7 @@ The PESV module manages evaluations according to Resolución 40595/2022, support
 
 When a company updates its `numberOfVehicles`, the system immediately detects PESV level changes and migrates active evaluations, updating the `nivel` and `numero_vehiculos` and adjusting steps. Billing for the cost difference is deferred to the next monthly invoice cycle.
 
-The billing system includes a validator for data integrity before invoice generation and a comprehensive pricing calculator (V2) integrating SST, PESV, and user licensing, with real-time cost breakdowns and Stripe checkout. The user licensing model includes one user per administrative role at no additional cost. A subscription blocking system manages user access based on subscription status, with Stripe webhooks updating statuses automatically.
+The billing system operates exclusively on quote-based pricing from the landing page JWT. There is no internal price calculation engine — all prices come from the landing page (`sst-colombia.com.co`). When a company updates pricing-affecting data (CIIU, workers, vehicles) after registration, the system sends the updated data to the landing page via `POST /api/calculate-quote`, receives a new JWT with the recalculated price, verifies it, and updates the company's quote fields. A confirmation dialog informs the user that the change will affect their next invoice. The user licensing model includes one user per administrative role at no additional cost. A subscription blocking system manages user access based on subscription status, with Stripe webhooks updating statuses automatically.
 
 A centralized Document Traceability System tracks all system-generated PDFs using a metadata-only approach. The system tracks SST objective progress and formal compliance, allowing linking SST Objectives with Resolución 0312/2019 Standards. The main Dashboard includes a consolidated PHVA cycle view with key metrics and alerts. The PESV Smart Forms System provides intelligent auto-fill capabilities to minimize manual data entry. Features for PESV Committee Traceability in the Worker Portal and dedicated hub pages for PESV Step 4 (P04) are included. Bidirectional traceability for SST and PESV training and PESV Training Notifications for Workers (Non-Drivers) are implemented.
 
@@ -42,8 +42,9 @@ The Landing Page Integration Plugin provides secure JWT verification for pricing
 - **It is only recalculated if the company changes data AFTER registration** (employees, vehicles, CIIU/risk).
 - Flow: Landing page calculates price → JWT token → saved in `companies` table during onboarding → read from `companies` table when charging.
 - **Source of truth**: `quoteBaseMonthlyPrice`, `quoteCurrentPeriodPrice`, `quoteCouponCode` fields in the `companies` table.
-- **Affected endpoints**: `billing.ts /activate` and `pricing_plugin/routes-v2.ts /create-checkout-v2` both first read from the `companies` table. If no quote (manually created company), only then do they use `plan.priceMonthly` as a fallback.
-- **NEVER calculate prices using `calculateCombinedPricing()` or similar when a quote is saved in companies.**
+- **Affected endpoints**: `billing.ts /activate` and `pricing_plugin/routes-v2.ts /create-checkout-v2` both read from the `companies` table. If no quote exists, the system returns an error requiring the company to obtain a quote from the landing page.
+- **Post-registration recalculation**: When a company changes pricing-affecting fields (CIIU, workers, vehicles), `POST /api/companies/:id/recalculate-quote` sends the new data to the landing page, receives a new JWT, and updates the quote fields. The UI shows a confirmation dialog before proceeding.
+- **NEVER calculate prices internally. All prices come from the landing page JWT.**
 
 ## External Dependencies
 

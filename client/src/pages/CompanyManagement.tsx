@@ -122,6 +122,8 @@ export default function CompanyManagement() {
   const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
+  const [pricingChangeDialogOpen, setPricingChangeDialogOpen] = useState(false);
+  const [pendingPricingUpdate, setPendingPricingUpdate] = useState<{ changedFields: string[] } | null>(null);
   
   // Estados para diagnóstico de empresas (superadmin)
   const [diagnosticoEmpresasOpen, setDiagnosticoEmpresasOpen] = useState(false);
@@ -184,6 +186,16 @@ export default function CompanyManagement() {
         description: error.message,
         variant: "destructive",
       });
+    },
+  });
+
+  const recalculateQuoteMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<CompanyFormData> }) => {
+      const res = await apiRequest("POST", `/api/companies/${id}/recalculate-quote`, data);
+      return res.json();
+    },
+    onError: (error: Error) => {
+      console.warn('[Quote-Recalculate] Error recalculating quote:', error.message);
     },
   });
 
@@ -305,15 +317,72 @@ export default function CompanyManagement() {
     onError: () => {},
   });
 
+  const detectPricingChanges = (): string[] => {
+    if (!editingCompany) return [];
+    const changes: string[] = [];
+    if (formData.numberOfWorkers !== (editingCompany.numberOfWorkers ?? 1)) {
+      changes.push(`Trabajadores: ${editingCompany.numberOfWorkers ?? 1} → ${formData.numberOfWorkers}`);
+    }
+    if (formData.numberOfVehicles !== (editingCompany.numberOfVehicles ?? 0)) {
+      changes.push(`Vehículos: ${editingCompany.numberOfVehicles ?? 0} → ${formData.numberOfVehicles}`);
+    }
+    if (formData.ciiuCode !== (editingCompany.ciiuCode ?? "")) {
+      changes.push(`Código CIIU: ${editingCompany.ciiuCode || 'Sin definir'} → ${formData.ciiuCode}`);
+    }
+    if (formData.riskLevel !== (editingCompany.riskLevel ?? "I")) {
+      changes.push(`Nivel de Riesgo: ${editingCompany.riskLevel || 'I'} → ${formData.riskLevel}`);
+    }
+    return changes;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (editingCompany) {
+      const pricingChanges = detectPricingChanges();
+      if (pricingChanges.length > 0) {
+        setPendingPricingUpdate({ changedFields: pricingChanges });
+        setPricingChangeDialogOpen(true);
+        return;
+      }
+    }
+
+    await executeUpdate();
+  };
+
+  const executeUpdate = async () => {
     let logoUploadFailed = false;
     let signatureUploadFailed = false;
     
     try {
       if (editingCompany) {
         const updateResult = await updateCompanyMutation.mutateAsync({ id: editingCompany.id, data: formData });
+
+        const hasPricingChanges = pendingPricingUpdate !== null;
+        if (hasPricingChanges) {
+          recalculateQuoteMutation.mutate(
+            { id: editingCompany.id, data: formData },
+            {
+              onSuccess: (result) => {
+                if (result?.success && result.newBaseMonthlyPrice) {
+                  toast({
+                    title: "Precio actualizado",
+                    description: `El nuevo precio mensual es $${result.newBaseMonthlyPrice.toLocaleString('es-CO')} COP. Se reflejará en su próxima factura.`,
+                    duration: 10000,
+                  });
+                }
+              },
+              onError: () => {
+                toast({
+                  title: "Aviso sobre precio",
+                  description: "No se pudo recalcular el precio automáticamente. El ajuste se realizará manualmente o en su próxima factura.",
+                  duration: 10000,
+                });
+              }
+            }
+          );
+          setPendingPricingUpdate(null);
+        }
         
         // Upload logo if a new file was selected (optional - don't fail if upload fails)
         if (logoFile) {
@@ -1083,6 +1152,56 @@ export default function CompanyManagement() {
       </div>
 
       {/* Delete Confirmation Dialog */}
+      <AlertDialog open={pricingChangeDialogOpen} onOpenChange={(open) => {
+        setPricingChangeDialogOpen(open);
+        if (!open) setPendingPricingUpdate(null);
+      }}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-amber-600" />
+              Cambio en la Facturación
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  Los siguientes cambios afectan el precio de su suscripción:
+                </p>
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm">
+                  <ul className="list-disc list-inside space-y-1 text-foreground">
+                    {pendingPricingUpdate?.changedFields.map((field, i) => (
+                      <li key={i}>{field}</li>
+                    ))}
+                  </ul>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  El nuevo precio se calculará automáticamente y se reflejará en su <strong>próxima factura mensual</strong>. No se realizará ningún cobro adicional inmediato.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              disabled={updateCompanyMutation.isPending || recalculateQuoteMutation.isPending}
+              data-testid="button-cancel-pricing-change"
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setPricingChangeDialogOpen(false);
+                executeUpdate();
+              }}
+              disabled={updateCompanyMutation.isPending || recalculateQuoteMutation.isPending}
+              data-testid="button-confirm-pricing-change"
+            >
+              {(updateCompanyMutation.isPending || recalculateQuoteMutation.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Confirmar y Actualizar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>

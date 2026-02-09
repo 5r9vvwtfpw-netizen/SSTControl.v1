@@ -2266,6 +2266,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+  // Recalcular cotización enviando datos a la landing page
+  app.post("/api/companies/:id/recalculate-quote", requirePermission("companies:edit"), async (req, res) => {
+    try {
+      const companyId = req.params.id;
+      const company = await storage.getCompany(companyId);
+      if (!company) {
+        return res.status(404).json({ error: "Empresa no encontrada" });
+      }
+
+      const LANDING_PAGE_API_KEY = process.env.LANDING_PAGE_API_KEY;
+      if (!LANDING_PAGE_API_KEY) {
+        return res.status(500).json({ error: "Integración con landing page no configurada" });
+      }
+
+      const { numberOfWorkers, numberOfVehicles, ciiuCode, riskLevel } = req.body;
+
+      const requestData = {
+        company_name: company.name,
+        employees: numberOfWorkers ?? company.numberOfWorkers ?? 1,
+        vehicles: numberOfVehicles ?? company.numberOfVehicles ?? 0,
+        risk_level: riskLevel ?? company.riskLevel ?? "I",
+        ciiu_code: ciiuCode ?? company.ciiuCode ?? "",
+        coupon_code: (company as any).quoteCouponCode || null,
+        referrer_id: (company as any).quoteReferrerId || null,
+      };
+
+      const LANDING_PAGE_BASE_URL = process.env.LANDING_PAGE_BASE_URL || 'https://sst-colombia.com.co';
+
+      console.log(`[Quote-Recalculate] Requesting recalculation for company ${companyId}:`, {
+        employees: requestData.employees,
+        vehicles: requestData.vehicles,
+        risk_level: requestData.risk_level,
+        ciiu_code: requestData.ciiu_code,
+      });
+
+      const response = await fetch(`${LANDING_PAGE_BASE_URL}/api/calculate-quote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${LANDING_PAGE_API_KEY}`,
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Quote-Recalculate] Landing page error (${response.status}):`, errorText);
+        return res.status(502).json({ 
+          error: "No se pudo obtener la cotización actualizada desde la landing page",
+          details: `Error ${response.status}`
+        });
+      }
+
+      const responseData = await response.json();
+
+      if (!responseData.token) {
+        console.error('[Quote-Recalculate] No token in landing page response');
+        return res.status(502).json({ error: "Respuesta inválida de la landing page" });
+      }
+
+      const { verifyQuote } = await import("../plugins/landing-page-integration");
+      const verification = verifyQuote(responseData.token);
+
+      if (!verification.valid || !verification.data) {
+        console.error('[Quote-Recalculate] JWT verification failed:', verification.error);
+        return res.status(502).json({ error: "No se pudo verificar la cotización recibida" });
+      }
+
+      const quoteData = verification.data;
+
+      await db.update(companies)
+        .set({
+          quoteBaseMonthlyPrice: quoteData.baseMonthlyPrice,
+          quoteCurrentPeriodPrice: quoteData.currentPeriodPrice,
+          quoteDiscountDurationMonths: quoteData.discountDurationMonths,
+          quoteCouponCode: quoteData.couponCode,
+        })
+        .where(eq(companies.id, companyId));
+
+      console.log(`[Quote-Recalculate] Updated company ${companyId}: base=$${quoteData.baseMonthlyPrice}, current=$${quoteData.currentPeriodPrice}`);
+
+      res.json({
+        success: true,
+        oldPrice: (company as any).quoteBaseMonthlyPrice || null,
+        newBaseMonthlyPrice: quoteData.baseMonthlyPrice,
+        newCurrentPeriodPrice: quoteData.currentPeriodPrice,
+        discountDurationMonths: quoteData.discountDurationMonths,
+        couponCode: quoteData.couponCode,
+      });
+    } catch (error: any) {
+      console.error('[Quote-Recalculate] Error:', error);
+      res.status(500).json({ error: "Error al recalcular cotización", details: error.message });
+    }
+  });
+
   app.delete("/api/companies/:id", requirePermission("companies:delete"), async (req, res) => {
     try {
       const company = await storage.getCompany(req.params.id);
