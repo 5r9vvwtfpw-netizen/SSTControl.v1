@@ -102,6 +102,12 @@ export default function CrearEmpresaCiiuFirst() {
     queryKey: ["/api/user"],
   });
 
+  useEffect(() => {
+    if (user?.companyId) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
+
   const searchParams = new URLSearchParams(window.location.search);
   const urlWorkers = searchParams.get("workers");
   const storedWorkers = typeof window !== 'undefined' ? sessionStorage.getItem('sst_onboarding_workers') : null;
