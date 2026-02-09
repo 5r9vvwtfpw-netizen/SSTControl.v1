@@ -356,33 +356,34 @@ export default function CompanyManagement() {
     
     try {
       if (editingCompany) {
-        const updateResult = await updateCompanyMutation.mutateAsync({ id: editingCompany.id, data: formData });
-
         const hasPricingChanges = pendingPricingUpdate !== null;
+
         if (hasPricingChanges) {
-          recalculateQuoteMutation.mutate(
-            { id: editingCompany.id, data: formData },
-            {
-              onSuccess: (result) => {
-                if (result?.success && result.newBaseMonthlyPrice) {
-                  toast({
-                    title: "Precio actualizado",
-                    description: `El nuevo precio mensual es $${result.newBaseMonthlyPrice.toLocaleString('es-CO')} COP. Se reflejará en su próxima factura.`,
-                    duration: 10000,
-                  });
-                }
-              },
-              onError: () => {
-                toast({
-                  title: "Aviso sobre precio",
-                  description: "No se pudo recalcular el precio automáticamente. El ajuste se realizará manualmente o en su próxima factura.",
-                  duration: 10000,
-                });
-              }
+          try {
+            const recalcResult = await recalculateQuoteMutation.mutateAsync(
+              { id: editingCompany.id, data: formData }
+            );
+            if (recalcResult?.success && recalcResult.newBaseMonthlyPrice) {
+              toast({
+                title: "Precio actualizado",
+                description: `El nuevo precio mensual es $${recalcResult.newBaseMonthlyPrice.toLocaleString('es-CO')} COP. Se reflejará en su próxima factura.`,
+                duration: 10000,
+              });
             }
-          );
+          } catch (recalcError: any) {
+            toast({
+              title: "No se pudo actualizar la empresa",
+              description: "No fue posible obtener el nuevo precio desde la landing page. Intente de nuevo más tarde o contacte soporte.",
+              variant: "destructive",
+              duration: 10000,
+            });
+            setPendingPricingUpdate(null);
+            return;
+          }
           setPendingPricingUpdate(null);
         }
+
+        const updateResult = await updateCompanyMutation.mutateAsync({ id: editingCompany.id, data: formData });
         
         // Upload logo if a new file was selected (optional - don't fail if upload fails)
         if (logoFile) {
@@ -1175,7 +1176,7 @@ export default function CompanyManagement() {
                   </ul>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  El nuevo precio se calculará automáticamente y se reflejará en su <strong>próxima factura mensual</strong>. No se realizará ningún cobro adicional inmediato.
+                  Se solicitará el nuevo precio a la landing page antes de guardar los cambios. El nuevo precio se reflejará en su <strong>próxima factura mensual</strong>. Si no es posible obtener el precio, los cambios no se guardarán.
                 </p>
               </div>
             </AlertDialogDescription>
