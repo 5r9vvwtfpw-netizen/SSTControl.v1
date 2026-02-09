@@ -93,8 +93,8 @@ export default function PlanesSuscripcion() {
   });
 
   const trialMutation = useMutation({
-    mutationFn: async ({ planId, trialDays }: { planId: string; trialDays: number }) => {
-      return await apiRequest('POST', '/api/billing/trial', { planId, trialDays });
+    mutationFn: async ({ trialDays }: { trialDays: number }) => {
+      return await apiRequest('POST', '/api/billing/trial', { trialDays });
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
@@ -114,8 +114,7 @@ export default function PlanesSuscripcion() {
   });
 
   const handleStartTrial = () => {
-    const planId = getPlanIdForWorkers(company?.numberOfWorkers || 1);
-    trialMutation.mutate({ planId, trialDays: 7 });
+    trialMutation.mutate({ trialDays: 7 });
   };
 
   const handleCheckout = () => {
@@ -467,9 +466,3 @@ export default function PlanesSuscripcion() {
   );
 }
 
-function getPlanIdForWorkers(numberOfWorkers: number): string {
-  if (numberOfWorkers <= 10) return "microempresa";
-  if (numberOfWorkers <= 49) return "pequena";
-  if (numberOfWorkers <= 199) return "mediana";
-  return "grande";
-}

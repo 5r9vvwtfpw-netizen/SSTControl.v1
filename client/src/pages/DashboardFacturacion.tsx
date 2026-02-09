@@ -73,13 +73,6 @@ type CompanyWithoutSubscription = {
   createdAt: Date;
 };
 
-type SubscriptionPlan = {
-  id: string;
-  name: string;
-  displayName: string;
-  priceMonthly: number;
-};
-
 export default function DashboardFacturacion() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -93,8 +86,6 @@ export default function DashboardFacturacion() {
     open: false,
     company: null
   });
-  const [selectedPlanId, setSelectedPlanId] = useState<string>("");
-
   // Verificación de acceso: Solo superadmin puede ver este dashboard
   if (user?.role !== 'superadmin') {
     return (
@@ -135,11 +126,6 @@ export default function DashboardFacturacion() {
     queryKey: ['/api/billing/admin/companies-without-subscription'],
   });
 
-  // Fetch subscription plans
-  const { data: plans } = useQuery<SubscriptionPlan[]>({
-    queryKey: ['/api/billing/plans'],
-  });
-
   // Assign trial mutation
   const assignTrialMutation = useMutation({
     mutationFn: async ({ companyId, planId, trialDays }: { companyId: string; planId: string; trialDays: number }) => {
@@ -159,7 +145,6 @@ export default function DashboardFacturacion() {
         description: data.message || "Suscripción trial asignada exitosamente",
       });
       setAssignTrialDialog({ open: false, company: null });
-      setSelectedPlanId("");
     },
     onError: (error: any) => {
       toast({
@@ -385,9 +370,9 @@ export default function DashboardFacturacion() {
               {filteredSubscriptions.map((sub) => (
                 <TableRow key={sub.id} data-testid={`row-subscription-${sub.id}`}>
                   <TableCell className="font-medium">{sub.companyName}</TableCell>
-                  <TableCell>{sub.planName}</TableCell>
+                  <TableCell>{sub.planId === 'sst_dinamico' ? 'Plan Din\u00e1mico' : sub.planName}</TableCell>
                   <TableCell>{getStatusBadge(sub.status)}</TableCell>
-                  <TableCell>{formatCurrency(sub.planPrice)}</TableCell>
+                  <TableCell>{sub.planId === 'sst_dinamico' ? 'Calculado' : formatCurrency(sub.planPrice)}</TableCell>
                   <TableCell>{formatDate(sub.createdAt)}</TableCell>
                   <TableCell>{formatDate(sub.currentPeriodEnd)}</TableCell>
                   <TableCell>
@@ -481,39 +466,25 @@ export default function DashboardFacturacion() {
       <AlertDialog open={assignTrialDialog.open} onOpenChange={(open) => setAssignTrialDialog({ ...assignTrialDialog, open })}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Asignar Período de Prueba</AlertDialogTitle>
+            <AlertDialogTitle>Asignar Per\u00edodo de Prueba</AlertDialogTitle>
             <AlertDialogDescription>
-              Asignar un período de prueba de 7 días a <strong>{assignTrialDialog.company?.name}</strong>.
-              Selecciona el plan que deseas asignar:
+              Asignar un per\u00edodo de prueba de 7 d\u00edas a <strong>{assignTrialDialog.company?.name}</strong> con el plan din\u00e1mico SST Colombia.
+              El precio se calcular\u00e1 autom\u00e1ticamente seg\u00fan el perfil de la empresa.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-4">
-            <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
-              <SelectTrigger data-testid="select-plan">
-                <SelectValue placeholder="Seleccionar plan" />
-              </SelectTrigger>
-              <SelectContent>
-                {plans?.map((plan) => (
-                  <SelectItem key={plan.id} value={plan.id}>
-                    {plan.displayName} - {formatCurrency(plan.priceMonthly)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
           <AlertDialogFooter>
             <AlertDialogCancel data-testid="button-assign-trial-cancel">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (assignTrialDialog.company && selectedPlanId) {
+                if (assignTrialDialog.company) {
                   assignTrialMutation.mutate({
                     companyId: assignTrialDialog.company.id,
-                    planId: selectedPlanId,
+                    planId: 'sst_dinamico',
                     trialDays: 7
                   });
                 }
               }}
-              disabled={!selectedPlanId || assignTrialMutation.isPending}
+              disabled={assignTrialMutation.isPending}
               data-testid="button-assign-trial-confirm"
             >
               {assignTrialMutation.isPending ? (

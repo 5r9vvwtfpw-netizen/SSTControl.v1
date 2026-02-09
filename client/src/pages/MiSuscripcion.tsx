@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Download, Calendar, CreditCard, FileText, Loader2, AlertCircle, AlertTriangle, TrendingUp, ArrowUpRight, ArrowDownRight, Check, ScrollText, Shield, Eye, XCircle } from "lucide-react";
+import { Download, Calendar, CreditCard, FileText, Loader2, AlertCircle, AlertTriangle, TrendingUp, ArrowUpRight, ArrowDownRight, Check, ScrollText, Shield, Eye, XCircle, Calculator } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { formatPrice, formatDate } from "@/lib/utils/formatters";
 import { SUBSCRIPTION_STATUS_CONFIGS, INVOICE_STATUS_CONFIGS, getBadgeConfig } from "@/lib/utils/badge-helpers";
@@ -139,6 +139,26 @@ export default function MiSuscripcion() {
   const { data: invoices, isLoading: isLoadingInvoices } = useQuery<Invoice[]>({
     queryKey: ['/api/billing/my-invoices'],
     enabled: !!user?.companyId,
+  });
+
+  const { data: company } = useQuery<{ numberOfWorkers: number; riskLevel: string; numberOfVehicles: number }>({
+    queryKey: ['/api/company/current'],
+    enabled: !!user?.companyId,
+  });
+
+  const { data: dynamicPricing } = useQuery<{ totales: { costoMensualTotal: number }; desgloseSst: { tarifaPorTrabajador: number; costoTrabajadores: number; estandaresAplicables: number; costoEstandares: number }; desglosePesv: { costoPesv: number; pasosAplicables: number } | null }>({
+    queryKey: ['/api/pricing-v2/calculate-combined-v2', company?.numberOfWorkers, company?.riskLevel, company?.numberOfVehicles],
+    queryFn: async () => {
+      if (!company) throw new Error('No company data');
+      const res = await apiRequest('POST', '/api/pricing-v2/calculate-combined-v2', {
+        trabajadores: company.numberOfWorkers || 1,
+        claseRiesgo: (company.riskLevel || 'I') as string,
+        vehiculos: company.numberOfVehicles || 0,
+        usuariosAdicionales: 0,
+      });
+      return res.json();
+    },
+    enabled: !!company,
   });
 
   // Fetch all available plans for upgrade/downgrade
@@ -399,14 +419,16 @@ export default function MiSuscripcion() {
               {getPaymentButtonText()}
             </Button>
           )}
-          <Button 
-            variant="outline" 
-            onClick={() => setChangePlanDialogOpen(true)}
-            data-testid="button-change-plan"
-          >
-            <TrendingUp className="h-4 w-4 mr-2" />
-            Cambiar plan
-          </Button>
+          {plan.id !== 'sst_dinamico' && (
+            <Button 
+              variant="outline" 
+              onClick={() => setChangePlanDialogOpen(true)}
+              data-testid="button-change-plan"
+            >
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Cambiar plan
+            </Button>
+          )}
         </div>
       </div>
 
@@ -452,8 +474,14 @@ export default function MiSuscripcion() {
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-2xl" data-testid="text-plan-name">{plan.displayName || plan.name}</CardTitle>
-              <CardDescription>{plan.description}</CardDescription>
+              <CardTitle className="text-2xl" data-testid="text-plan-name">
+                {plan.id === 'sst_dinamico' ? 'SST Colombia - Plan Personalizado' : (plan.displayName || plan.name)}
+              </CardTitle>
+              <CardDescription>
+                {plan.id === 'sst_dinamico' 
+                  ? 'Precio calculado din\u00e1micamente seg\u00fan el perfil de tu empresa' 
+                  : plan.description}
+              </CardDescription>
             </div>
             {getStatusBadge(subscription.status)}
           </div>
@@ -465,8 +493,14 @@ export default function MiSuscripcion() {
               <div>
                 <p className="text-sm font-medium">Precio mensual</p>
                 <p className="text-2xl font-bold" data-testid="text-price">
-                  {formatPrice(plan.priceMonthly)}
+                  {dynamicPricing ? formatPrice(dynamicPricing.totales.costoMensualTotal) : formatPrice(plan.priceMonthly)}
                 </p>
+                {dynamicPricing && (
+                  <p className="text-xs text-muted-foreground mt-1" data-testid="text-price-breakdown">
+                    Calculado seg\u00fan {company?.numberOfWorkers || 0} trabajadores, riesgo {company?.riskLevel || 'I'}
+                    {dynamicPricing.desglosePesv ? `, ${dynamicPricing.desglosePesv.pasosAplicables} pasos PESV` : ''}
+                  </p>
+                )}
               </div>
             </div>
 

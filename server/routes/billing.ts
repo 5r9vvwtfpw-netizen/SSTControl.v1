@@ -219,32 +219,31 @@ export function registerBillingRoutes(app: Express) {
    */
   app.post("/api/billing/trial", subscriptionMutationLimiter, requireAuth, async (req, res) => {
     try {
-      // Zod validation (Architect feedback)
       const trialRequestSchema = z.object({
-        planId: z.string().min(1, "Plan ID es requerido"),
         trialDays: z.number().refine(
           (val) => [7, 14, 30].includes(val),
           "Trial debe ser de 7, 14 o 30 días"
-        )
+        ).default(7)
       });
 
-      const validatedData = trialRequestSchema.parse(req.body);
+      const validatedData = trialRequestSchema.parse(req.body || {});
 
       const companyId = req.user!.companyId;
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
 
-      // Verificar que el plan existe
-      const plan = await storage.getSubscriptionPlan(validatedData.planId);
+      const { DYNAMIC_PLAN_ID } = await import("../seed-subscription-plans");
+      const dynamicPlanId = DYNAMIC_PLAN_ID;
+
+      const plan = await storage.getSubscriptionPlan(dynamicPlanId);
       if (!plan) {
-        return res.status(404).json({ error: "Plan no encontrado" });
+        return res.status(500).json({ error: "Plan dinámico no configurado. Contacte soporte." });
       }
 
-      // Anti-abuse validation now handled at storage layer (checks ANY subscription)
       const trialSubscription = await storage.createTrialSubscription(
         companyId,
-        validatedData.planId,
+        dynamicPlanId,
         validatedData.trialDays
       );
 
@@ -270,11 +269,11 @@ export function registerBillingRoutes(app: Express) {
   app.post("/api/billing/admin/assign-trial", subscriptionMutationLimiter, requireSuperadmin, async (req, res) => {
     try {
       const assignTrialSchema = z.object({
-        companyId: z.string().uuid("Company ID inválido"),
-        planId: z.string().uuid("Plan ID inválido"),
+        companyId: z.string().uuid("Company ID inv\u00e1lido"),
+        planId: z.string().min(1, "Plan ID inv\u00e1lido"),
         trialDays: z.number().refine(
           (val) => [7, 14, 30].includes(val),
-          "Trial debe ser de 7, 14 o 30 días"
+          "Trial debe ser de 7, 14 o 30 d\u00edas"
         ).default(7)
       });
 
@@ -676,10 +675,25 @@ export function registerBillingRoutes(app: Express) {
           productDescription = `Plan ${plan.displayName || plan.name} - Primer mes (Cupón ${couponCode})`;
         }
       } else {
-        // Fallback: solo para empresas que NO llegaron con token (ej: creadas manualmente o que cambiaron datos después)
-        amountInCOP = plan.priceMonthly;
-        quoteSource = 'plan_price_fallback';
-        console.log('[Billing] No quote price in companies table, using plan price as fallback:', amountInCOP);
+        const { getEstandaresAplicablesPorClase, getTarifaPorRiesgo, DEFAULT_PRICING_V2_CONFIG } = await import("../../pricing_plugin/calculate-v2");
+        const { calculateCombinedPricing, DEFAULT_PESV_PRICING_CONFIG } = await import("../../pricing_plugin/calculate-pesv");
+        
+        const workers = company?.numberOfWorkers || 1;
+        const riskLevel = (company?.riskLevel || 'I') as "I" | "II" | "III" | "IV" | "V";
+        const vehicles = company?.numberOfVehicles || 0;
+        const estandares = getEstandaresAplicablesPorClase(riskLevel, workers);
+        const tarifaTrabajador = getTarifaPorRiesgo(riskLevel, DEFAULT_PRICING_V2_CONFIG);
+        
+        const result = calculateCombinedPricing(
+          { trabajadores: workers, claseRiesgo: riskLevel, estandaresAplicables: estandares, vehiculos: vehicles },
+          tarifaTrabajador,
+          DEFAULT_PRICING_V2_CONFIG.tarifaPorEstandar,
+          DEFAULT_PESV_PRICING_CONFIG.tarifaPorPasoPesv
+        );
+        
+        amountInCOP = result.costoMensualTotal;
+        quoteSource = 'dynamic_v2_calculation';
+        console.log('[Billing] No quote price in companies table, using V2 dynamic calculation:', { workers, riskLevel, vehicles, estandares, amountInCOP });
       }
 
       const STRIPE_MIN_COP = 2000;
