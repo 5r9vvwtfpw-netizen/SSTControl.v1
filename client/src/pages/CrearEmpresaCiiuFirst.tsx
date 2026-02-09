@@ -85,6 +85,9 @@ export default function CrearEmpresaCiiuFirst() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [termsViewed, setTermsViewed] = useState(false);
+  const [policyViewed, setPolicyViewed] = useState(false);
+  const bothDocsViewed = termsViewed && policyViewed;
   const hasRegistrationData = typeof window !== 'undefined' && !!localStorage.getItem('sst_registration_ciiu');
   const hasAllRegistrationData = typeof window !== 'undefined' && !!(
     localStorage.getItem('sst_registration_ciiu') &&
@@ -683,20 +686,25 @@ export default function CrearEmpresaCiiuFirst() {
                     <Checkbox 
                       id="accept-terms" 
                       checked={acceptedTerms}
+                      disabled={!bothDocsViewed}
                       onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
                       data-testid="checkbox-accept-terms"
                       className="mt-0.5"
                     />
                     <Label 
                       htmlFor="accept-terms" 
-                      className="text-sm leading-relaxed cursor-pointer"
+                      className={`text-sm leading-relaxed ${bothDocsViewed ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
                     >
                       Acepto los{" "}
                       <a 
                         href="/terminos-servicio" 
                         target="_blank" 
-                        className="text-primary underline hover:text-primary/80"
-                        onClick={(e) => e.stopPropagation()}
+                        className={`underline ${termsViewed ? 'text-muted-foreground' : 'text-primary font-semibold'} hover:text-primary/80`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTermsViewed(true);
+                        }}
+                        data-testid="link-terms-of-service"
                       >
                         Términos de Servicio
                       </a>{" "}
@@ -704,15 +712,24 @@ export default function CrearEmpresaCiiuFirst() {
                       <a 
                         href="/terminos-servicio#propiedad-intelectual" 
                         target="_blank" 
-                        className="text-primary underline hover:text-primary/80"
-                        onClick={(e) => e.stopPropagation()}
+                        className={`underline ${policyViewed ? 'text-muted-foreground' : 'text-primary font-semibold'} hover:text-primary/80`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPolicyViewed(true);
+                        }}
+                        data-testid="link-ip-policy"
                       >
                         Política de Propiedad Intelectual
                       </a>{" "}
                       <span className="font-semibold">(DNDA 13-197-177)</span>
                     </Label>
                   </div>
-                  {!acceptedTerms && (
+                  {!bothDocsViewed && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 ml-6">
+                      Debes abrir y leer los documentos antes de aceptar los términos
+                    </p>
+                  )}
+                  {bothDocsViewed && !acceptedTerms && (
                     <p className="text-xs text-muted-foreground mt-2 ml-6">
                       Debes aceptar los términos para continuar
                     </p>
