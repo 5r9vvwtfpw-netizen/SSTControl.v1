@@ -141,24 +141,9 @@ export default function MiSuscripcion() {
     enabled: !!user?.companyId,
   });
 
-  const { data: company } = useQuery<{ numberOfWorkers: number; riskLevel: string; numberOfVehicles: number }>({
+  const { data: company } = useQuery<{ numberOfWorkers: number; riskLevel: string; numberOfVehicles: number; quoteBaseMonthlyPrice: number | null; quoteCurrentPeriodPrice: number | null; quoteCouponCode: string | null }>({
     queryKey: ['/api/company/current'],
     enabled: !!user?.companyId,
-  });
-
-  const { data: dynamicPricing } = useQuery<{ totales: { costoMensualTotal: number }; desgloseSst: { tarifaPorTrabajador: number; costoTrabajadores: number; estandaresAplicables: number; costoEstandares: number }; desglosePesv: { costoPesv: number; pasosAplicables: number } | null }>({
-    queryKey: ['/api/pricing-v2/calculate-combined-v2', company?.numberOfWorkers, company?.riskLevel, company?.numberOfVehicles],
-    queryFn: async () => {
-      if (!company) throw new Error('No company data');
-      const res = await apiRequest('POST', '/api/pricing-v2/calculate-combined-v2', {
-        trabajadores: company.numberOfWorkers || 1,
-        claseRiesgo: (company.riskLevel || 'I') as string,
-        vehiculos: company.numberOfVehicles || 0,
-        usuariosAdicionales: 0,
-      });
-      return res.json();
-    },
-    enabled: !!company,
   });
 
   // Fetch all available plans for upgrade/downgrade
@@ -493,12 +478,11 @@ export default function MiSuscripcion() {
               <div>
                 <p className="text-sm font-medium">Precio mensual</p>
                 <p className="text-2xl font-bold" data-testid="text-price">
-                  {dynamicPricing ? formatPrice(dynamicPricing.totales.costoMensualTotal) : formatPrice(plan.priceMonthly)}
+                  {company?.quoteBaseMonthlyPrice && company.quoteBaseMonthlyPrice > 0 ? formatPrice(company.quoteBaseMonthlyPrice) : formatPrice(plan.priceMonthly)}
                 </p>
-                {dynamicPricing && (
+                {company?.quoteBaseMonthlyPrice && company.quoteBaseMonthlyPrice > 0 && (
                   <p className="text-xs text-muted-foreground mt-1" data-testid="text-price-breakdown">
-                    Calculado seg\u00fan {company?.numberOfWorkers || 0} trabajadores, riesgo {company?.riskLevel || 'I'}
-                    {dynamicPricing.desglosePesv ? `, ${dynamicPricing.desglosePesv.pasosAplicables} pasos PESV` : ''}
+                    Precio acordado desde cotizacion
                   </p>
                 )}
               </div>

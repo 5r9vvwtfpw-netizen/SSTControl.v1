@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Check, Loader2, AlertCircle, CheckCircle, CreditCard, Shield, ArrowLeft, Scale, Users, FileCheck, Car, Hash, Building2 } from 'lucide-react';
+import { Check, Loader2, AlertCircle, CheckCircle, CreditCard, Shield, ArrowLeft, Scale, Users, Car, Hash, Building2 } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { ContratoServiciosSaas, ContractAcceptanceData } from '@/components/ContratoServiciosSaas';
@@ -27,38 +27,6 @@ interface CompanyData {
   quoteCurrentPeriodPrice: number | null;
   quoteDiscountDurationMonths: number | null;
   quoteCouponCode: string | null;
-}
-
-interface DynamicPricing {
-  empresa: {
-    trabajadores: number;
-    claseRiesgo: RiskLevel;
-    descripcionRiesgo: string;
-    vehiculos: number;
-  };
-  desgloseSst: {
-    tarifaPorTrabajador: number;
-    costoTrabajadores: number;
-    estandaresAplicables: number;
-    tarifaPorEstandar: number;
-    costoEstandares: number;
-    subtotalSst: number;
-  };
-  desglosePesv: {
-    nivelPesv: string;
-    descripcion: string;
-    pasosAplicables: number;
-    tarifaPorPaso: number;
-    costoPesv: number;
-  } | null;
-  totales: {
-    costoMensualTotal: number;
-    costoAnualTotal: number;
-    currency: string;
-  };
-  formula: string;
-  mensaje: string;
-  incluido: string[];
 }
 
 const riskLevelLabels: Record<RiskLevel, string> = {
@@ -93,27 +61,16 @@ export default function Checkout() {
     enabled: !!user?.companyId,
   });
 
-  const { data: pricing, isLoading: loadingPricing } = useQuery<DynamicPricing>({
-    queryKey: ['/api/pricing-v2/calculate-combined-v2', company?.id],
-    queryFn: async () => {
-      if (!company) throw new Error('No company data');
-      const res = await apiRequest('POST', '/api/pricing-v2/calculate-combined-v2', {
-        trabajadores: company.numberOfWorkers || 1,
-        claseRiesgo: (company.riskLevel || 'I') as RiskLevel,
-        vehiculos: company.numberOfVehicles || 0,
-        usuariosAdicionales: 0,
-      });
-      return res.json();
-    },
-    enabled: !!company && !success && !canceled,
-  });
-
   const isUpgradeFromFree = !currentSubscription || currentSubscription.status === 'trial' || currentSubscription.status === 'expired';
 
   const createCheckoutV2Mutation = useMutation({
     mutationFn: async (acceptanceData?: ContractAcceptanceData) => {
-      if (!company || !pricing) {
+      if (!company) {
         throw new Error('No se pudo cargar la informacion de la empresa');
+      }
+
+      if (!company.quoteBaseMonthlyPrice || company.quoteBaseMonthlyPrice <= 0) {
+        throw new Error('Tu empresa no tiene una cotizacion de precio. Visita sst-colombia.com.co para obtener una cotizacion.');
       }
 
       if (isUpgradeFromFree && !acceptanceData) {
@@ -126,10 +83,6 @@ export default function Checkout() {
 
       const res = await apiRequest('POST', '/api/pricing-v2/create-checkout-v2', {
         companyId: company.id,
-        trabajadores: company.numberOfWorkers || 1,
-        claseRiesgo: (company.riskLevel || 'I') as RiskLevel,
-        vehiculos: company.numberOfVehicles || 0,
-        usuariosAdicionales: 0,
         customerEmail: user?.email || user?.username || '',
         customerName: company.name,
         successUrl,
@@ -253,30 +206,54 @@ export default function Checkout() {
     );
   }
 
-  if (loadingCompany || loadingPricing) {
+  if (loadingCompany) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" data-testid="loader-checkout" />
-          <p className="text-muted-foreground">Calculando precio dinamico para tu empresa...</p>
+          <p className="text-muted-foreground">Cargando informacion de tu empresa...</p>
         </div>
       </div>
     );
   }
 
-  if (!company || !pricing) {
+  if (!company) {
     return (
       <div className="container mx-auto py-8 px-4 max-w-2xl">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            No se pudo cargar la informacion de tu empresa o calcular el precio. Por favor regresa a la pagina de planes.
+            No se pudo cargar la informacion de tu empresa. Por favor regresa a la pagina de planes.
           </AlertDescription>
         </Alert>
         <Button onClick={() => navigate('/planes-suscripcion')} className="mt-4" data-testid="button-back-to-plans">
           Ver Planes
         </Button>
+      </div>
+    );
+  }
+
+  const quotePrice = company.quoteBaseMonthlyPrice && company.quoteBaseMonthlyPrice > 0 ? company.quoteBaseMonthlyPrice : null;
+
+  if (!quotePrice) {
+    return (
+      <div className="container mx-auto py-8 px-4 max-w-2xl">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Sin cotizacion</AlertTitle>
+          <AlertDescription>
+            Tu empresa no tiene un precio cotizado. Visita <strong>sst-colombia.com.co</strong> para obtener una cotizacion personalizada antes de proceder al pago.
+          </AlertDescription>
+        </Alert>
+        <div className="flex gap-4 mt-4 flex-wrap">
+          <Button variant="outline" onClick={() => navigate('/planes-suscripcion')} data-testid="button-back-to-plans">
+            Volver
+          </Button>
+          <Button onClick={() => window.open('https://sst-colombia.com.co', '_blank')} data-testid="button-get-quote">
+            Obtener Cotizacion
+          </Button>
+        </div>
       </div>
     );
   }
@@ -310,7 +287,7 @@ export default function Checkout() {
           </h1>
         </div>
         <p className="text-muted-foreground" data-testid="text-checkout-subtitle">
-          Revisa el desglose de tu precio calculado por CIIU y procede al pago seguro
+          Revisa tu precio acordado y procede al pago seguro
         </p>
       </div>
 
@@ -336,149 +313,74 @@ export default function Checkout() {
               )}
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <h4 className="font-semibold text-sm flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-blue-600" />
-                  SST - Seguridad y Salud en el Trabajo
-                </h4>
-
-                <div className="flex justify-between text-sm" data-testid="row-checkout-workers">
-                  <span className="text-muted-foreground flex items-center gap-1">
-                    <Users className="h-3.5 w-3.5" />
-                    Trabajadores ({pricing.empresa.trabajadores})
-                  </span>
-                  <span className="font-medium">
-                    {formatCurrency(pricing.desgloseSst.costoTrabajadores)}
-                  </span>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center p-2 bg-muted rounded-lg">
+                  <Users className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                  <p className="text-lg font-bold">{company.numberOfWorkers || 1}</p>
+                  <p className="text-xs text-muted-foreground">Trabajadores</p>
                 </div>
-                <div className="text-xs text-muted-foreground pl-5">
-                  {pricing.empresa.trabajadores} x {formatCurrency(pricing.desgloseSst.tarifaPorTrabajador)}/mes (Clase {pricing.empresa.claseRiesgo})
+                <div className="text-center p-2 bg-muted rounded-lg">
+                  <Shield className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                  <p className="text-lg font-bold">{company.riskLevel || 'I'}</p>
+                  <p className="text-xs text-muted-foreground">Clase Riesgo</p>
                 </div>
-
-                <div className="flex justify-between text-sm" data-testid="row-checkout-standards">
-                  <span className="text-muted-foreground flex items-center gap-1">
-                    <FileCheck className="h-3.5 w-3.5" />
-                    Estandares Res. 0312 ({pricing.desgloseSst.estandaresAplicables})
-                  </span>
-                  <span className="font-medium">
-                    {formatCurrency(pricing.desgloseSst.costoEstandares)}
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground pl-5">
-                  {pricing.desgloseSst.estandaresAplicables} x {formatCurrency(pricing.desgloseSst.tarifaPorEstandar)}/mes
-                </div>
-
-                <div className="flex justify-between text-sm font-medium pt-1 border-t">
-                  <span>Subtotal SST</span>
-                  <span className="text-blue-600" data-testid="text-checkout-sst-subtotal">
-                    {formatCurrency(pricing.desgloseSst.subtotalSst)}
-                  </span>
+                <div className="text-center p-2 bg-muted rounded-lg">
+                  <Car className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                  <p className="text-lg font-bold">{company.numberOfVehicles || 0}</p>
+                  <p className="text-xs text-muted-foreground">Vehiculos</p>
                 </div>
               </div>
-
-              {pricing.desglosePesv && (
-                <>
-                  <Separator />
-                  <div className="space-y-3">
-                    <h4 className="font-semibold text-sm flex items-center gap-2">
-                      <Car className="h-4 w-4 text-violet-600" />
-                      PESV - Seguridad Vial
-                      <Badge variant="outline" className="text-xs bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
-                        {pricing.desglosePesv.descripcion}
-                      </Badge>
-                    </h4>
-
-                    <div className="flex justify-between text-sm" data-testid="row-checkout-pesv">
-                      <span className="text-muted-foreground flex items-center gap-1">
-                        <Car className="h-3.5 w-3.5" />
-                        Pasos PESV ({pricing.desglosePesv.pasosAplicables})
-                      </span>
-                      <span className="font-medium">
-                        {formatCurrency(pricing.desglosePesv.costoPesv)}
-                      </span>
-                    </div>
-                    <div className="text-xs text-muted-foreground pl-5">
-                      {pricing.desglosePesv.pasosAplicables} pasos x {formatCurrency(pricing.desglosePesv.tarifaPorPaso)}/mes ({pricing.empresa.vehiculos} vehiculos)
-                    </div>
-
-                    <div className="flex justify-between text-sm font-medium pt-1 border-t">
-                      <span>Subtotal PESV</span>
-                      <span className="text-violet-600" data-testid="text-checkout-pesv-subtotal">
-                        {formatCurrency(pricing.desglosePesv.costoPesv)}
-                      </span>
-                    </div>
-                  </div>
-                </>
-              )}
 
               <Separator />
 
               <div className="pt-2">
-                {company.quoteBaseMonthlyPrice && company.quoteBaseMonthlyPrice > 0 ? (
-                  <>
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-lg font-medium">Precio Acordado</span>
-                      <div className="text-right">
-                        <div className="text-3xl font-bold text-primary" data-testid="text-total-price">
-                          {formatCurrency(company.quoteBaseMonthlyPrice)}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          COP / mes
-                        </div>
-                      </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-lg font-medium">Precio Acordado</span>
+                  <div className="text-right">
+                    <div className="text-3xl font-bold text-primary" data-testid="text-total-price">
+                      {formatCurrency(quotePrice)}
                     </div>
-                    {company.quoteCurrentPeriodPrice !== null && company.quoteCurrentPeriodPrice !== undefined && company.quoteCurrentPeriodPrice < company.quoteBaseMonthlyPrice && (
-                      <div className="mt-2 p-2 rounded-md bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-green-700 dark:text-green-300 font-medium">
-                            Primer mes con descuento
-                            {company.quoteCouponCode && ` (${company.quoteCouponCode})`}
-                          </span>
-                          <span className="text-green-700 dark:text-green-300 font-bold">
-                            {formatCurrency(company.quoteCurrentPeriodPrice)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                      <span>Total anual</span>
-                      <span>{formatCurrency(company.quoteBaseMonthlyPrice * 12)} / ano</span>
+                    <div className="text-sm text-muted-foreground">
+                      COP / mes
                     </div>
-                    {pricing.totales.costoMensualTotal !== company.quoteBaseMonthlyPrice && (
-                      <div className="text-xs text-muted-foreground mt-1">
-                        <span className="line-through">{formatCurrency(pricing.totales.costoMensualTotal)}/mes</span>
-                        <span className="ml-1">(precio de lista)</span>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-lg font-medium">Total Mensual</span>
-                      <div className="text-right">
-                        <div className="text-3xl font-bold text-primary" data-testid="text-total-price">
-                          {formatCurrency(pricing.totales.costoMensualTotal)}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          COP / mes
-                        </div>
-                      </div>
+                  </div>
+                </div>
+                {company.quoteCurrentPeriodPrice !== null && company.quoteCurrentPeriodPrice !== undefined && company.quoteCurrentPeriodPrice < quotePrice && (
+                  <div className="mt-2 p-2 rounded-md bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-green-700 dark:text-green-300 font-medium">
+                        Primer mes con descuento
+                        {company.quoteCouponCode && ` (${company.quoteCouponCode})`}
+                      </span>
+                      <span className="text-green-700 dark:text-green-300 font-bold">
+                        {formatCurrency(company.quoteCurrentPeriodPrice)}
+                      </span>
                     </div>
-                    <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                      <span>Total anual</span>
-                      <span>{formatCurrency(pricing.totales.costoAnualTotal)} / ano</span>
-                    </div>
-                  </>
+                  </div>
                 )}
+                <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                  <span>Total anual</span>
+                  <span>{formatCurrency(quotePrice * 12)} / ano</span>
+                </div>
               </div>
 
               <div className="space-y-1 text-xs text-muted-foreground">
-                {pricing.incluido.slice(0, 4).map((item, i) => (
-                  <div key={i} className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-green-600 shrink-0" />
-                    <span>{item}</span>
-                  </div>
-                ))}
+                <div className="flex items-center gap-1.5">
+                  <Check className="h-3 w-3 text-green-600 shrink-0" />
+                  <span>Portal del Trabajador INCLUIDO</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Check className="h-3 w-3 text-green-600 shrink-0" />
+                  <span>Portal del Licenciado SST INCLUIDO</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Check className="h-3 w-3 text-green-600 shrink-0" />
+                  <span>Soporte tecnico ilimitado</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Check className="h-3 w-3 text-green-600 shrink-0" />
+                  <span>Cumplimiento Resolucion 0312/2019</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -555,7 +457,7 @@ export default function Checkout() {
               <div className="bg-primary/5 rounded-lg p-4 text-center">
                 <p className="text-sm text-muted-foreground">Se cobrara mensualmente</p>
                 <p className="text-2xl font-bold text-primary" data-testid="text-checkout-total">
-                  {formatCurrency(company.quoteBaseMonthlyPrice && company.quoteBaseMonthlyPrice > 0 ? company.quoteBaseMonthlyPrice : pricing.totales.costoMensualTotal)}
+                  {formatCurrency(quotePrice)}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Primer cobro despues de 7 dias de prueba
@@ -582,7 +484,7 @@ export default function Checkout() {
                 ) : (
                   <>
                     <CreditCard className="h-4 w-4 mr-2" />
-                    Proceder al Pago - {formatCurrency(company.quoteBaseMonthlyPrice && company.quoteBaseMonthlyPrice > 0 ? company.quoteBaseMonthlyPrice : pricing.totales.costoMensualTotal)}/mes
+                    Proceder al Pago - {formatCurrency(quotePrice)}/mes
                   </>
                 )}
               </Button>

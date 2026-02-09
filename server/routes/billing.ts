@@ -519,7 +519,7 @@ export function registerBillingRoutes(app: Express) {
               companyId: subscription.companyId,
               companyName: company?.name || 'Unknown',
               userId: req.user!.id,
-              amountToChargeCOP: amountInCOP.toString(),
+              amountToChargeCOP: chargeAmountCOP.toString(),
               proratedCredit: quote.proratedCredit.toString(),
             },
             success_url: `${baseUrl}/mi-cuenta?upgrade=success&session_id={CHECKOUT_SESSION_ID}`,
@@ -675,25 +675,10 @@ export function registerBillingRoutes(app: Express) {
           productDescription = `Plan ${plan.displayName || plan.name} - Primer mes (Cupón ${couponCode})`;
         }
       } else {
-        const { getEstandaresAplicablesPorClase, getTarifaPorRiesgo, DEFAULT_PRICING_V2_CONFIG } = await import("../../pricing_plugin/calculate-v2");
-        const { calculateCombinedPricing, DEFAULT_PESV_PRICING_CONFIG } = await import("../../pricing_plugin/calculate-pesv");
-        
-        const workers = company?.numberOfWorkers || 1;
-        const riskLevel = (company?.riskLevel || 'I') as "I" | "II" | "III" | "IV" | "V";
-        const vehicles = company?.numberOfVehicles || 0;
-        const estandares = getEstandaresAplicablesPorClase(riskLevel, workers);
-        const tarifaTrabajador = getTarifaPorRiesgo(riskLevel, DEFAULT_PRICING_V2_CONFIG);
-        
-        const result = calculateCombinedPricing(
-          { trabajadores: workers, claseRiesgo: riskLevel, estandaresAplicables: estandares, vehiculos: vehicles },
-          tarifaTrabajador,
-          DEFAULT_PRICING_V2_CONFIG.tarifaPorEstandar,
-          DEFAULT_PESV_PRICING_CONFIG.tarifaPorPasoPesv
-        );
-        
-        amountInCOP = result.costoMensualTotal;
-        quoteSource = 'dynamic_v2_calculation';
-        console.log('[Billing] No quote price in companies table, using V2 dynamic calculation:', { workers, riskLevel, vehicles, estandares, amountInCOP });
+        console.warn('[Billing] No quote price found in companies table. Company must get a quote from the landing page.');
+        return res.status(400).json({ 
+          error: 'Esta empresa no tiene una cotización de precio. Debe obtener una cotización desde la página de inicio (sst-colombia.com.co) antes de activar la suscripción.' 
+        });
       }
 
       const STRIPE_MIN_COP = 2000;
