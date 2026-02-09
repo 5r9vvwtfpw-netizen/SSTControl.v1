@@ -111,13 +111,18 @@ export default function DetalleEvaluacionPesv() {
     },
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", id, "respuestas"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", id] });
       setRespuestaDialogOpen(false);
       toast({
         title: "Respuesta guardada",
         description: "La respuesta del paso PESV se ha guardado exitosamente",
         className: "bg-green-50 border-green-200",
       });
+      try {
+        await apiRequest("POST", `/api/evaluaciones-pesv/${id}/recalcular`, {});
+        queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", id] });
+      } catch (e) {
+        console.warn("Error recalculando puntajes PESV:", e);
+      }
     },
     onError: (error: Error) => {
       toast({
