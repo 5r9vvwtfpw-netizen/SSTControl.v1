@@ -43341,7 +43341,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       let respuesta;
       if (existingRespuesta) {
-        // Actualizar respuesta existente
         [respuesta] = await db.update(respuestasPasosPesv)
           .set({
             ...validatedData,
@@ -43350,10 +43349,60 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           .where(eq(respuestasPasosPesv.id, existingRespuesta.id))
           .returning();
       } else {
-        // Crear nueva respuesta
         [respuesta] = await db.insert(respuestasPasosPesv)
           .values(validatedData)
           .returning();
+      }
+      
+      // Auto-recalcular puntajes de la evaluación después de guardar respuesta
+      try {
+        const todasRespuestas = await db.select()
+          .from(respuestasPasosPesv)
+          .where(eq(respuestasPasosPesv.evaluacionId, req.params.id));
+        
+        const pasosAplicables = PASOS_PESV.filter(p => {
+          switch (evaluacion.nivel) {
+            case 'basico': return p.aplicaBasico;
+            case 'estandar': return p.aplicaEstandar;
+            case 'avanzado': return p.aplicaAvanzado;
+            default: return true;
+          }
+        });
+        
+        const rMap = new Map(todasRespuestas.map(r => [r.pasoId, r]));
+        let ptTotal = 0, ptMaximo = 0;
+        const ptFase: Record<string, { ob: number; mx: number }> = {
+          planear: { ob: 0, mx: 0 }, hacer: { ob: 0, mx: 0 },
+          verificar: { ob: 0, mx: 0 }, actuar: { ob: 0, mx: 0 }
+        };
+        
+        for (const p of pasosAplicables) {
+          const r = rMap.get(p.codigo);
+          if (r && r.noAplica === 1) continue;
+          ptMaximo += p.puntajeMaximo;
+          const f = p.fase as keyof typeof ptFase;
+          if (ptFase[f]) ptFase[f].mx += p.puntajeMaximo;
+          if (r && r.cumple === 1) {
+            ptTotal += p.puntajeMaximo;
+            if (ptFase[f]) ptFase[f].ob += p.puntajeMaximo;
+          }
+        }
+        
+        const pctTotal = ptMaximo > 0 ? Math.round((ptTotal / ptMaximo) * 100) : 0;
+        await db.update(evaluacionesPesv)
+          .set({
+            puntajeTotal: ptTotal.toString(),
+            puntajeMaximo: ptMaximo.toString(),
+            porcentajeCumplimiento: pctTotal.toString(),
+            puntajePlanear: (ptFase.planear.mx > 0 ? Math.round((ptFase.planear.ob / ptFase.planear.mx) * 100) : 0).toString(),
+            puntajeHacer: (ptFase.hacer.mx > 0 ? Math.round((ptFase.hacer.ob / ptFase.hacer.mx) * 100) : 0).toString(),
+            puntajeVerificar: (ptFase.verificar.mx > 0 ? Math.round((ptFase.verificar.ob / ptFase.verificar.mx) * 100) : 0).toString(),
+            puntajeActuar: (ptFase.actuar.mx > 0 ? Math.round((ptFase.actuar.ob / ptFase.actuar.mx) * 100) : 0).toString(),
+            updatedAt: new Date(),
+          })
+          .where(eq(evaluacionesPesv.id, req.params.id));
+      } catch (recalcErr) {
+        console.error('Error auto-recalculando evaluación PESV:', recalcErr);
       }
       
       res.status(201).json(respuesta);
@@ -43453,7 +43502,19 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         .from(respuestasPasosPesv)
         .where(eq(respuestasPasosPesv.evaluacionId, req.params.id));
       
-      // Calcular puntajes
+      // Filtrar pasos aplicables según el nivel de la evaluación
+      const pasosAplicables = PASOS_PESV.filter(paso => {
+        switch (evaluacion.nivel) {
+          case 'basico': return paso.aplicaBasico;
+          case 'estandar': return paso.aplicaEstandar;
+          case 'avanzado': return paso.aplicaAvanzado;
+          default: return true;
+        }
+      });
+      
+      const respuestasMap = new Map(respuestas.map(r => [r.pasoId, r]));
+      
+      // Calcular puntajes iterando sobre TODOS los pasos aplicables (no solo los que tienen respuesta)
       let puntajeTotal = 0;
       let puntajeMaximo = 0;
       const puntajesPorFase: Record<string, { obtenido: number; maximo: number }> = {
@@ -43463,28 +43524,25 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         actuar: { obtenido: 0, maximo: 0 }
       };
       
-      // Obtener los pasos para asociar con fases
-      const pasos = PASOS_PESV;
-      const pasosMap = new Map(pasos.map(p => [p.codigo, p]));
-      
-      for (const respuesta of respuestas) {
-        const paso = pasosMap.get(respuesta.pasoId);
-        if (!paso) continue;
+      for (const paso of pasosAplicables) {
+        const respuesta = respuestasMap.get(paso.codigo);
         
-        // Si no aplica, no cuenta para el máximo
-        if (respuesta.noAplica === 1) continue;
+        // Si tiene respuesta y marcó "no aplica", no cuenta
+        if (respuesta && respuesta.noAplica === 1) continue;
         
-        // Usar cumple y el puntajeMaximo del paso para calcular
-        const pasoMaximo = paso.puntajeMaximo;
-        const pasoObtenido = respuesta.cumple === 1 ? pasoMaximo : 0;
-        
-        puntajeTotal += pasoObtenido;
-        puntajeMaximo += pasoMaximo;
-        
+        // El paso cuenta para el máximo (tenga o no respuesta)
+        puntajeMaximo += paso.puntajeMaximo;
         const fase = paso.fase as keyof typeof puntajesPorFase;
         if (puntajesPorFase[fase]) {
-          puntajesPorFase[fase].obtenido += pasoObtenido;
-          puntajesPorFase[fase].maximo += pasoMaximo;
+          puntajesPorFase[fase].maximo += paso.puntajeMaximo;
+        }
+        
+        // Solo suma al puntaje si tiene respuesta y cumple
+        if (respuesta && respuesta.cumple === 1) {
+          puntajeTotal += paso.puntajeMaximo;
+          if (puntajesPorFase[fase]) {
+            puntajesPorFase[fase].obtenido += paso.puntajeMaximo;
+          }
         }
       }
       
@@ -43492,7 +43550,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         ? Math.round((puntajeTotal / puntajeMaximo) * 100) 
         : 0;
       
-      // Calcular porcentajes por fase
       const puntajePlanear = puntajesPorFase.planear.maximo > 0 ? Math.round((puntajesPorFase.planear.obtenido / puntajesPorFase.planear.maximo) * 100) : 0;
       const puntajeHacer = puntajesPorFase.hacer.maximo > 0 ? Math.round((puntajesPorFase.hacer.obtenido / puntajesPorFase.hacer.maximo) * 100) : 0;
       const puntajeVerificar = puntajesPorFase.verificar.maximo > 0 ? Math.round((puntajesPorFase.verificar.obtenido / puntajesPorFase.verificar.maximo) * 100) : 0;
