@@ -102,56 +102,6 @@ export class StripeService {
     return this.createCustomer(data);
   }
 
-  async createCheckoutSession(data: {
-    customerId: string;
-    priceId: string;
-    successUrl: string;
-    cancelUrl: string;
-    metadata?: Record<string, string>;
-    trialPeriodDays?: number;
-    allowPromotionCodes?: boolean;
-  }): Promise<StripeCheckoutSession> {
-    return await retryWithBackoff(async () => {
-      const stripe = await this.getClient();
-
-      const sessionParams: Stripe.Checkout.SessionCreateParams = {
-        customer: data.customerId,
-        mode: 'subscription',
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price: data.priceId,
-            quantity: 1
-          }
-        ],
-        success_url: data.successUrl,
-        cancel_url: data.cancelUrl,
-        allow_promotion_codes: data.allowPromotionCodes ?? true,
-        metadata: data.metadata
-      };
-
-      if (data.trialPeriodDays) {
-        sessionParams.subscription_data = {
-          trial_period_days: data.trialPeriodDays
-        };
-      }
-
-      const session = await stripe.checkout.sessions.create(sessionParams);
-
-      logger.info({ sessionId: session.id }, 'Stripe checkout session created');
-
-      return {
-        sessionId: session.id,
-        url: session.url!
-      };
-    }, {
-      maxAttempts: 3,
-      initialDelayMs: 1000
-    }, {
-      operation: 'createCheckoutSession'
-    });
-  }
-
   /**
    * Crea un checkout con precio dinámico (price_data) en COP
    * Usado para checkouts desde landing page con precios del JWT
@@ -373,71 +323,6 @@ export class StripeService {
       hostedInvoiceUrl: invoice.hosted_invoice_url || undefined,
       invoicePdf: invoice.invoice_pdf || undefined
     }));
-  }
-
-  async createProduct(data: {
-    name: string;
-    description?: string;
-    metadata?: Record<string, string>;
-  }): Promise<string> {
-    const stripe = await this.getClient();
-    
-    const product = await stripe.products.create({
-      name: data.name,
-      description: data.description,
-      metadata: data.metadata
-    });
-
-    return product.id;
-  }
-
-  async createPrice(data: {
-    productId: string;
-    unitAmount: number;
-    currency: string;
-    interval: 'month' | 'year';
-    nickname?: string;
-  }): Promise<string> {
-    const stripe = await this.getClient();
-    
-    const price = await stripe.prices.create({
-      product: data.productId,
-      unit_amount: data.unitAmount,
-      currency: data.currency,
-      recurring: {
-        interval: data.interval
-      },
-      nickname: data.nickname
-    });
-
-    return price.id;
-  }
-
-  async listProducts(): Promise<Stripe.Product[]> {
-    const stripe = await this.getClient();
-    
-    const products = await stripe.products.list({
-      active: true,
-      limit: 100
-    });
-
-    return products.data;
-  }
-
-  async listPrices(productId?: string): Promise<Stripe.Price[]> {
-    const stripe = await this.getClient();
-    
-    const params: Stripe.PriceListParams = {
-      active: true,
-      limit: 100
-    };
-
-    if (productId) {
-      params.product = productId;
-    }
-
-    const prices = await stripe.prices.list(params);
-    return prices.data;
   }
 
   verifyWebhookSignature(payload: Buffer, signature: string, endpointSecret: string): Stripe.Event {
