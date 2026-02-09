@@ -27,9 +27,7 @@ import {
 import {
   calculatePesvPricing,
   calculateCombinedPricing,
-  getNivelPesv,
   getNivelPesvLabel,
-  getPasosAplicablesPorNivel,
   getDesglosePorFase,
   DEFAULT_PESV_PRICING_CONFIG,
   type NivelPesv,
@@ -605,69 +603,35 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
       successUrl, cancelUrl
     } = parsed.data;
 
-    // PRINCIPIO: El precio SIEMPRE viene del token/quote guardado en companies.
-    // NUNCA se recalcula durante registro ni checkout.
-    // Solo se recalcula si la empresa cambia datos después (empleados, vehículos, CIIU).
+    // PRINCIPIO V2: El precio SIEMPRE se calcula dinámicamente usando datos actuales
+    // Fórmula: (Trabajadores × Tarifa Riesgo) + (Estándares × $8,000) + (Pasos PESV × $8,000)
     
-    // Fuente de verdad: companies table (donde se guardó el precio del JWT al registrar)
-    const [companyRecord] = await db.select({
-      quoteBaseMonthlyPrice: companies.quoteBaseMonthlyPrice,
-      quoteCurrentPeriodPrice: companies.quoteCurrentPeriodPrice,
-      quoteDiscountDurationMonths: companies.quoteDiscountDurationMonths,
-      quoteCouponCode: companies.quoteCouponCode,
-    }).from(companies).where(eq(companies.id, companyId)).limit(1);
+    const estandaresAplicables = getEstandaresAplicablesPorClase(claseRiesgo, trabajadores);
+    const tarifaPorTrabajador = getTarifaPorRiesgo(claseRiesgo, DEFAULT_PRICING_V2_CONFIG);
 
-    const quoteBaseMonthlyPrice = companyRecord?.quoteBaseMonthlyPrice ?? null;
-    const quoteCurrentPeriodPrice = companyRecord?.quoteCurrentPeriodPrice ?? null;
-    const quoteDiscountDurationMonths = companyRecord?.quoteDiscountDurationMonths ?? null;
-    const quoteCouponCode = companyRecord?.quoteCouponCode ?? null;
+    const result = calculateCombinedPricing(
+      { trabajadores, claseRiesgo, estandaresAplicables, vehiculos },
+      tarifaPorTrabajador,
+      DEFAULT_PRICING_V2_CONFIG.tarifaPorEstandar,
+      DEFAULT_PESV_PRICING_CONFIG.tarifaPorPasoPesv
+    );
 
-    const useQuotePricing = quoteBaseMonthlyPrice !== null && quoteBaseMonthlyPrice > 0;
+    const costoTrabajadores = result.costoTrabajadores;
+    const costoEstandaresSst = result.costoEstandaresSst;
+    const costoPasosPesv = result.costoPasosPesv;
+    const tienePesv = result.tienePesv;
+    const nivelPesv: NivelPesv | null = result.nivelPesv ?? null;
+    const pasosAplicablesPesv = result.pasosAplicablesPesv ?? 0;
+    const costoUsuariosAdicionales = usuariosAdicionales * TARIFA_USUARIO_ADICIONAL;
+    const costoMensualTotal = result.costoMensualTotal + costoUsuariosAdicionales;
 
-    let costoMensualTotal: number;
-    let estandaresAplicables: number;
-    let nivelPesv: ReturnType<typeof getNivelPesv> | null = null;
-    let pasosAplicablesPesv = 0;
-    let tienePesv = false;
-    let costoTrabajadores = 0;
-    let costoEstandaresSst = 0;
-    let costoPasosPesv = 0;
-    
-    estandaresAplicables = getEstandaresAplicablesPorClase(claseRiesgo, trabajadores);
-    
-    if (useQuotePricing) {
-      // Quote existe: usar precio acordado, NO recalcular
-      logger.info({ companyId, quoteBaseMonthlyPrice, quoteCurrentPeriodPrice, quoteCouponCode }, 'Using agreed quote price from companies table - no recalculation');
-      costoMensualTotal = quoteBaseMonthlyPrice;
-      if (vehiculos > 0) {
-        nivelPesv = getNivelPesv(vehiculos);
-        tienePesv = true;
-        pasosAplicablesPesv = getPasosAplicablesPorNivel(nivelPesv);
-      }
-    } else {
-      // Sin quote: calcular precio dinámico (empresa creada manualmente o cambió datos)
-      logger.info({ companyId }, 'No quote price found - calculating dynamic price');
-      const tarifaPorTrabajador = getTarifaPorRiesgo(claseRiesgo, DEFAULT_PRICING_V2_CONFIG);
-      const result = calculateCombinedPricing(
-        { trabajadores, claseRiesgo, estandaresAplicables, vehiculos },
-        tarifaPorTrabajador,
-        DEFAULT_PRICING_V2_CONFIG.tarifaPorEstandar,
-        DEFAULT_PESV_PRICING_CONFIG.tarifaPorPasoPesv
-      );
-      costoTrabajadores = result.costoTrabajadores;
-      costoEstandaresSst = result.costoEstandaresSst;
-      costoPasosPesv = result.costoPasosPesv;
-      tienePesv = result.tienePesv;
-      nivelPesv = result.nivelPesv;
-      pasosAplicablesPesv = result.pasosAplicablesPesv;
-      const costoUsuariosAdicionales = usuariosAdicionales * TARIFA_USUARIO_ADICIONAL;
-      costoMensualTotal = result.costoMensualTotal + costoUsuariosAdicionales;
-    }
+    logger.info({
+      companyId, trabajadores, claseRiesgo, vehiculos, estandaresAplicables,
+      costoTrabajadores, costoEstandaresSst, costoPasosPesv, costoUsuariosAdicionales,
+      costoMensualTotal,
+    }, 'Dynamic pricing V2 calculated for checkout');
 
-    const finalMonthlyPrice = useQuotePricing ? quoteBaseMonthlyPrice! : costoMensualTotal;
-    const finalFirstMonthPrice = (useQuotePricing && quoteCurrentPeriodPrice !== null && quoteCurrentPeriodPrice <= quoteBaseMonthlyPrice!) 
-      ? quoteCurrentPeriodPrice 
-      : finalMonthlyPrice;
+    const finalMonthlyPrice = costoMensualTotal;
 
     // Inicializar Stripe
     const stripe = await getUncachableStripeClient();
@@ -697,106 +661,73 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
       stripeCustomerId = customer.id;
     }
 
-    // Crear line items para Stripe
+    // Crear line items para Stripe - SIEMPRE desglose dinámico real
     const lineItems: any[] = [];
 
-    const COP_MULTIPLIER = 100;
-
-    if (useQuotePricing) {
+    // COP es zero-decimal currency en Stripe - NO multiplicar por 100
+    // Item 1: SST - Trabajadores
+    if (costoTrabajadores > 0) {
       lineItems.push({
         price_data: {
           currency: 'cop',
           product_data: {
-            name: 'SST Colombia - Plan Integral',
-            description: `SST + ${vehiculos > 0 ? 'PESV' : ''} - ${trabajadores} trabajadores, Clase ${claseRiesgo}${vehiculos > 0 ? `, ${vehiculos} vehículos` : ''}`,
+            name: 'SST - Licencia por Trabajadores',
+            description: `${trabajadores} trabajadores × $${tarifaPorTrabajador.toLocaleString('es-CO')}/mes (Clase ${claseRiesgo})`,
           },
-          unit_amount: Math.round(quoteBaseMonthlyPrice! * COP_MULTIPLIER),
+          unit_amount: costoTrabajadores,
           recurring: { interval: 'month' as const },
         },
         quantity: 1,
       });
-    } else {
-      const tarifaPorTrabajador = getTarifaPorRiesgo(claseRiesgo, DEFAULT_PRICING_V2_CONFIG);
-      const costoUsuariosAdicionales = usuariosAdicionales * TARIFA_USUARIO_ADICIONAL;
-      
-      // Item 1: SST - Trabajadores
-      if (costoTrabajadores > 0) {
-        lineItems.push({
-          price_data: {
-            currency: 'cop',
-            product_data: {
-              name: 'SST - Licencia por Trabajadores',
-              description: `${trabajadores} trabajadores × $${tarifaPorTrabajador.toLocaleString('es-CO')}/mes (Clase ${claseRiesgo})`,
-            },
-            unit_amount: Math.round(costoTrabajadores * COP_MULTIPLIER),
-            recurring: { interval: 'month' },
-          },
-          quantity: 1,
-        });
-      }
-
-      // Item 2: SST - Estándares
-      if (costoEstandaresSst > 0) {
-        lineItems.push({
-          price_data: {
-            currency: 'cop',
-            product_data: {
-              name: 'SST - Estándares Aplicables',
-              description: `${estandaresAplicables} estándares × $8,000/mes (Resolución 0312/2019)`,
-            },
-            unit_amount: Math.round(costoEstandaresSst * COP_MULTIPLIER),
-            recurring: { interval: 'month' },
-          },
-          quantity: 1,
-        });
-      }
-
-      // Item 3: PESV - Pasos (si aplica)
-      if (tienePesv && costoPasosPesv > 0) {
-        const nivelLabel = getNivelPesvLabel(nivelPesv!);
-        lineItems.push({
-          price_data: {
-            currency: 'cop',
-            product_data: {
-              name: 'PESV - Plan Estratégico de Seguridad Vial',
-              description: `${pasosAplicablesPesv} pasos × $8,000/mes (${nivelLabel})`,
-            },
-            unit_amount: Math.round(costoPasosPesv * COP_MULTIPLIER),
-            recurring: { interval: 'month' },
-          },
-          quantity: 1,
-        });
-      }
-
-      // Item 4: Usuarios adicionales (si aplica)
-      if (usuariosAdicionales > 0 && costoUsuariosAdicionales > 0) {
-        lineItems.push({
-          price_data: {
-            currency: 'cop',
-            product_data: {
-              name: 'Usuarios Adicionales',
-              description: `${usuariosAdicionales} usuarios × $10,000/mes`,
-            },
-            unit_amount: Math.round(costoUsuariosAdicionales * COP_MULTIPLIER),
-            recurring: { interval: 'month' },
-          },
-          quantity: 1,
-        });
-      }
     }
 
-    // Si el primer mes tiene precio diferente (descuento de cupón), crear cupón en Stripe
-    let stripeDiscounts: any[] = [];
-    if (useQuotePricing && finalFirstMonthPrice < finalMonthlyPrice) {
-      const discountAmount = finalMonthlyPrice - finalFirstMonthPrice;
-      const coupon = await stripe.coupons.create({
-        amount_off: Math.round(discountAmount * COP_MULTIPLIER),
-        currency: 'cop',
-        duration: quoteDiscountDurationMonths && quoteDiscountDurationMonths > 1 ? 'repeating' : 'once',
-        duration_in_months: quoteDiscountDurationMonths && quoteDiscountDurationMonths > 1 ? quoteDiscountDurationMonths : undefined,
-        name: quoteCouponCode ? `Cupón ${quoteCouponCode}` : 'Descuento primer período',
+    // Item 2: SST - Estándares
+    if (costoEstandaresSst > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'cop',
+          product_data: {
+            name: 'SST - Estándares Aplicables',
+            description: `${estandaresAplicables} estándares × $8,000/mes (Resolución 0312/2019)`,
+          },
+          unit_amount: costoEstandaresSst,
+          recurring: { interval: 'month' as const },
+        },
+        quantity: 1,
       });
-      stripeDiscounts = [{ coupon: coupon.id }];
+    }
+
+    // Item 3: PESV - Pasos (si aplica)
+    if (tienePesv && costoPasosPesv > 0) {
+      const nivelLabel = getNivelPesvLabel(nivelPesv!);
+      lineItems.push({
+        price_data: {
+          currency: 'cop',
+          product_data: {
+            name: 'PESV - Plan Estratégico de Seguridad Vial',
+            description: `${pasosAplicablesPesv} pasos × $8,000/mes (${nivelLabel})`,
+          },
+          unit_amount: costoPasosPesv,
+          recurring: { interval: 'month' as const },
+        },
+        quantity: 1,
+      });
+    }
+
+    // Item 4: Usuarios adicionales (si aplica)
+    if (usuariosAdicionales > 0 && costoUsuariosAdicionales > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'cop',
+          product_data: {
+            name: 'Usuarios Adicionales',
+            description: `${usuariosAdicionales} usuarios × $10,000/mes`,
+          },
+          unit_amount: costoUsuariosAdicionales,
+          recurring: { interval: 'month' as const },
+        },
+        quantity: 1,
+      });
     }
 
     // Crear sesión de checkout con 7 días de prueba gratis
@@ -807,9 +738,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
       mode: 'subscription',
       success_url: successUrl,
       cancel_url: cancelUrl,
-      ...(stripeDiscounts.length > 0 
-        ? { discounts: stripeDiscounts }
-        : { allow_promotion_codes: true }),
+      allow_promotion_codes: true,
       subscription_data: {
         trial_period_days: 7,
         description: 'SST Colombia - Prueba gratis de 7 días',
@@ -817,16 +746,18 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
       metadata: {
         pricing_v2: 'true',
         company_id: companyId,
-        quote_pricing: useQuotePricing ? 'true' : 'false',
-        quote_base_monthly: useQuotePricing ? quoteBaseMonthlyPrice!.toString() : '',
-        quote_current_period: useQuotePricing ? (quoteCurrentPeriodPrice || '').toString() : '',
+        pricing_mode: 'dynamic_v2',
         trabajadores: trabajadores.toString(),
         clase_riesgo: claseRiesgo,
         estandares_aplicables: estandaresAplicables.toString(),
         vehiculos: vehiculos.toString(),
         nivel_pesv: nivelPesv || '',
-        pasos_pesv: (pasosAplicablesPesv || 0).toString(),
+        pasos_pesv: pasosAplicablesPesv.toString(),
         usuarios_adicionales: usuariosAdicionales.toString(),
+        costo_trabajadores: costoTrabajadores.toString(),
+        costo_estandares: costoEstandaresSst.toString(),
+        costo_pesv: costoPasosPesv.toString(),
+        costo_usuarios: costoUsuariosAdicionales.toString(),
         costo_mensual_total: finalMonthlyPrice.toString(),
       },
     });
@@ -856,11 +787,10 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
         costoTrabajadores,
         costoEstandares: costoEstandaresSst,
         costoPesv: costoPasosPesv,
-        costoUsuarios: useQuotePricing ? 0 : usuariosAdicionales * TARIFA_USUARIO_ADICIONAL,
+        costoUsuarios: costoUsuariosAdicionales,
         costoMensualTotal: finalMonthlyPrice,
         costoAnualTotal: finalMonthlyPrice * 12,
         currency: 'COP',
-        quotePricing: useQuotePricing,
       },
     });
   } catch (error: any) {
