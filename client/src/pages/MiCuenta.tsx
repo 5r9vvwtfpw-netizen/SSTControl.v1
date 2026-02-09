@@ -1,23 +1,14 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { 
   User, Building2, CreditCard, FileText, Download, Calendar, 
-  AlertCircle, Loader2, Mail, Phone, MapPin, Shield, Users,
-  TrendingUp, ArrowUpRight, ArrowDownRight, Check
+  AlertCircle, Loader2, Mail, Phone, MapPin, Shield, Users, Check
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -79,26 +70,6 @@ type CompanyData = {
   driverCount: number;
 };
 
-type PlanChangeQuote = {
-  changeType: string;
-  requiresPayment: boolean;
-  amountToCharge: number;
-  creditFromOldPlan: number;
-  chargeForNewPlan: number;
-  currentPlan: {
-    id: string;
-    name: string;
-    priceMonthly: number;
-  };
-  newPlan: {
-    id: string;
-    name: string;
-    priceMonthly: number;
-  };
-  validationErrors: string[];
-  validationWarnings: string[];
-};
-
 const FeatureItem = ({ children }: { children: React.ReactNode }) => (
   <div className="flex items-center gap-2">
     <Check className="h-4 w-4 text-primary" />
@@ -122,10 +93,6 @@ export default function MiCuenta() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("company");
-  const [changePlanDialogOpen, setChangePlanDialogOpen] = useState(false);
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [quote, setQuote] = useState<PlanChangeQuote | null>(null);
-  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
 
   const { data: companyData, isLoading: isLoadingCompany } = useQuery<CompanyData>({
     queryKey: ['/api/company/current'],
@@ -140,10 +107,6 @@ export default function MiCuenta() {
   const { data: invoices, isLoading: isLoadingInvoices } = useQuery<Invoice[]>({
     queryKey: ['/api/billing/my-invoices'],
     enabled: !!user?.companyId,
-  });
-
-  const { data: allPlans, isLoading: isLoadingPlans } = useQuery<SubscriptionPlan[]>({
-    queryKey: ['/api/billing/plans'],
   });
 
   const formatPrice = (price: number) => {
@@ -217,89 +180,6 @@ export default function MiCuenta() {
     link.click();
   };
 
-  const fetchQuote = async (planId: string) => {
-    if (!subscriptionData?.subscription.id) {
-      toast({
-        title: "Error",
-        description: "No hay suscripción activa",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoadingQuote(true);
-    try {
-      const response = await fetch(
-        `/api/billing/subscription/${subscriptionData.subscription.id}/change-plan/quote?newPlanId=${planId}`
-      );
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Error al obtener cotización");
-      }
-
-      const quoteData = await response.json();
-      setQuote(quoteData);
-    } catch (error: any) {
-      toast({
-        title: "Error al obtener cotización",
-        description: error.message,
-        variant: "destructive",
-      });
-      setQuote(null);
-    } finally {
-      setIsLoadingQuote(false);
-    }
-  };
-
-  const changePlanMutation = useMutation({
-    mutationFn: async (newPlanId: string) => {
-      if (!subscriptionData?.subscription.id) {
-        throw new Error("No hay suscripción activa");
-      }
-      
-      return await apiRequest(
-        "POST",
-        `/api/billing/subscription/${subscriptionData.subscription.id}/change-plan`,
-        { newPlanId }
-      );
-    },
-    onSuccess: async (data: any) => {
-      if (data.requiresPayment && data.paymentUrl) {
-        toast({
-          title: "Pago requerido",
-          description: "Redirigiendo a pasarela de pago...",
-        });
-        
-        setTimeout(() => {
-          window.location.href = data.paymentUrl;
-        }, 1500);
-      } else {
-        toast({
-          title: "¡Plan actualizado!",
-          description: data.message || "Tu plan ha sido cambiado exitosamente.",
-        });
-        
-        await queryClient.invalidateQueries({ queryKey: ['/api/billing/my-subscription'] });
-        setChangePlanDialogOpen(false);
-        setSelectedPlanId(null);
-        setQuote(null);
-      }
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error al cambiar plan",
-        description: error.message || "No se pudo cambiar el plan. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleCloseDialog = () => {
-    setChangePlanDialogOpen(false);
-    setSelectedPlanId(null);
-    setQuote(null);
-  };
 
   const activateSubscriptionMutation = useMutation({
     mutationFn: async () => {
@@ -514,10 +394,6 @@ export default function MiCuenta() {
                           )}
                           Pagar Ahora
                         </Button>
-                        <Button variant="outline" onClick={() => setChangePlanDialogOpen(true)} data-testid="button-upgrade-trial">
-                          <TrendingUp className="h-4 w-4 mr-2" />
-                          Cambiar Plan
-                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -546,14 +422,6 @@ export default function MiCuenta() {
                           <CreditCard className="h-4 w-4 mr-2" />
                         )}
                         Pagar Ahora
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setChangePlanDialogOpen(true)}
-                        data-testid="button-change-plan"
-                      >
-                        <TrendingUp className="h-4 w-4 mr-2" />
-                        Cambiar Plan
                       </Button>
                     </div>
                   </div>
@@ -716,216 +584,6 @@ export default function MiCuenta() {
         </TabsContent>
       </Tabs>
 
-      {/* Change Plan Dialog */}
-      <Dialog open={changePlanDialogOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Cambiar Plan de Suscripción
-            </DialogTitle>
-            <DialogDescription>
-              Selecciona un nuevo plan. Los upgrades requieren pago inmediato, los downgrades se aplicarán al final de tu período actual.
-            </DialogDescription>
-          </DialogHeader>
-
-          {isLoadingPlans ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-              {allPlans?.sort((a, b) => a.sortOrder - b.sortOrder).map((planOption) => {
-                const isCurrentPlan = planOption.id === subscriptionData?.plan.id;
-                const isSelected = selectedPlanId === planOption.id;
-                const isUpgrade = planOption.sortOrder > (subscriptionData?.plan.sortOrder || 0);
-                
-                return (
-                  <Card
-                    key={planOption.id}
-                    className={`cursor-pointer transition-all ${
-                      isCurrentPlan 
-                        ? 'border-primary bg-primary/5' 
-                        : isSelected 
-                          ? 'border-primary border-2' 
-                          : 'hover-elevate'
-                    }`}
-                    onClick={() => !isCurrentPlan && setSelectedPlanId(planOption.id)}
-                    data-testid={`card-plan-option-${planOption.name}`}
-                  >
-                    <CardHeader>
-                      <div className="flex justify-between items-start gap-2">
-                        <div>
-                          <CardTitle className="text-lg">{planOption.displayName || planOption.name}</CardTitle>
-                          <CardDescription className="text-sm mt-1">
-                            {planOption.tagline || planOption.description}
-                          </CardDescription>
-                        </div>
-                        {isCurrentPlan && (
-                          <Badge variant="default">Plan actual</Badge>
-                        )}
-                        {!isCurrentPlan && isUpgrade && (
-                          <Badge variant="secondary">
-                            <ArrowUpRight className="h-3 w-3 mr-1" />
-                            Upgrade
-                          </Badge>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-2xl font-bold">
-                            {formatPrice(planOption.priceMonthly / 100)}
-                          </p>
-                          <p className="text-sm text-muted-foreground">por mes</p>
-                        </div>
-                        <div className="space-y-2 text-sm">
-                          <FeatureItem>{getWorkerLimitText(planOption.maxWorkers)}</FeatureItem>
-                          <FeatureItem>{getSedesLimitText(planOption.maxSedes)}</FeatureItem>
-                          {planOption.hasAuditorias === 1 && (
-                            <FeatureItem>Auditorías Internas SST</FeatureItem>
-                          )}
-                          {planOption.hasPESV === 1 && (
-                            <FeatureItem>PESV completo</FeatureItem>
-                          )}
-                          {planOption.hasRevisionDireccion === 1 && (
-                            <FeatureItem>Revisión por Dirección</FeatureItem>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter>
-                      {isCurrentPlan ? (
-                        <Button variant="outline" disabled className="w-full">
-                          Plan actual
-                        </Button>
-                      ) : (
-                        <Button
-                          variant={isSelected ? "default" : "outline"}
-                          className="w-full"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedPlanId(planOption.id);
-                            fetchQuote(planOption.id);
-                          }}
-                          disabled={isLoadingQuote}
-                          data-testid={`button-select-plan-${planOption.name}`}
-                        >
-                          {isLoadingQuote && selectedPlanId === planOption.id ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Calculando...
-                            </>
-                          ) : isSelected ? (
-                            'Seleccionado'
-                          ) : (
-                            'Seleccionar'
-                          )}
-                        </Button>
-                      )}
-                    </CardFooter>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Proration Breakdown */}
-          {quote && selectedPlanId && (
-            <Card className="bg-muted/50">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  {quote.changeType === 'upgrade' ? (
-                    <ArrowUpRight className="h-4 w-4 text-primary" />
-                  ) : (
-                    <ArrowDownRight className="h-4 w-4 text-muted-foreground" />
-                  )}
-                  {quote.changeType === 'upgrade' ? 'Upgrade' : 'Downgrade'} de Plan
-                </CardTitle>
-                <CardDescription>
-                  {quote.changeType === 'upgrade' 
-                    ? 'El cargo será prorrateado basado en el tiempo restante de tu período actual.'
-                    : 'El crédito se aplicará en tu próxima factura.'
-                  }
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Plan actual ({quote.currentPlan.name})</span>
-                  <span>{formatPrice(quote.currentPlan.priceMonthly / 100)}/mes</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Nuevo plan ({quote.newPlan.name})</span>
-                  <span>{formatPrice(quote.newPlan.priceMonthly / 100)}/mes</span>
-                </div>
-                
-                <div className="border-t pt-3 space-y-2">
-                  {quote.creditFromOldPlan > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Crédito del plan actual</span>
-                      <span className="text-green-600 dark:text-green-400">
-                        -{formatPrice(quote.creditFromOldPlan / 100)}
-                      </span>
-                    </div>
-                  )}
-                  {quote.chargeForNewPlan > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Cargo prorrateado del nuevo plan</span>
-                      <span>{formatPrice(quote.chargeForNewPlan / 100)}</span>
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-between font-semibold border-t pt-2">
-                    <span>Total {quote.requiresPayment ? 'a pagar ahora' : 'de crédito'}</span>
-                    <span className={quote.requiresPayment ? 'text-primary' : 'text-green-600 dark:text-green-400'}>
-                      {quote.requiresPayment ? '' : '-'}{formatPrice(Math.abs(quote.amountToCharge) / 100)}
-                    </span>
-                  </div>
-                </div>
-
-                {quote.validationErrors && quote.validationErrors.length > 0 && (
-                  <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-md p-3 mt-3">
-                    <p className="text-sm text-red-800 dark:text-red-400">
-                      <strong>Error:</strong> {quote.validationErrors.join('. ')}
-                    </p>
-                  </div>
-                )}
-
-                {quote.validationWarnings && quote.validationWarnings.length > 0 && (
-                  <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900 rounded-md p-3 mt-3">
-                    <p className="text-sm text-yellow-800 dark:text-yellow-400">
-                      <strong>Advertencia:</strong> {quote.validationWarnings.join('. ')}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={handleCloseDialog}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={() => selectedPlanId && changePlanMutation.mutate(selectedPlanId)}
-              disabled={!selectedPlanId || !quote || changePlanMutation.isPending || (quote?.validationErrors?.length ?? 0) > 0}
-              data-testid="button-confirm-change-plan"
-            >
-              {changePlanMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Procesando...
-                </>
-              ) : quote?.requiresPayment ? (
-                `Pagar ${formatPrice(Math.abs(quote.amountToCharge) / 100)}`
-              ) : (
-                'Confirmar cambio'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

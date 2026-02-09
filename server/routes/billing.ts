@@ -370,215 +370,23 @@ export function registerBillingRoutes(app: Express) {
 
   /**
    * GET /api/billing/subscription/:id/change-plan/quote
-   * Obtener cotización de cambio de plan sin ejecutarlo
+   * DEPRECATED: El sistema usa precio dinamico desde la landing page (Token>Calculo)
+   * No hay cambio de plan - solo existe sst_dinamico con precio del JWT
    */
-  app.get("/api/billing/subscription/:id/change-plan/quote", billingRateLimiter, requireAuth, async (req, res) => {
-    try {
-      const subscriptionId = req.params.id;
-      const newPlanId = req.query.newPlanId as string;
-      const companyId = req.user!.companyId;
-
-      if (!companyId) {
-        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
-      }
-
-      if (!newPlanId) {
-        return res.status(400).json({ error: "newPlanId es requerido" });
-      }
-
-      // Verify subscription ownership
-      const subscription = await storage.getSubscription(subscriptionId);
-      if (!subscription || subscription.companyId !== companyId) {
-        return res.status(404).json({ error: "Suscripción no encontrada" });
-      }
-
-      // Get quote without executing the change
-      const quote = await storage.quotePlanChange({
-        subscriptionId,
-        newPlanId,
-        isAdminOverride: false
-      });
-
-      // Return quote details
-      res.json({
-        changeType: quote.changeType,
-        requiresPayment: quote.requiresPayment,
-        amountToCharge: quote.amountToCharge,
-        creditFromOldPlan: quote.creditFromOldPlan || 0,
-        chargeForNewPlan: quote.chargeForNewPlan || 0,
-        currentPlan: {
-          id: quote.oldPlan.id,
-          name: quote.oldPlan.displayName,
-          priceMonthly: quote.oldPlan.priceMonthly
-        },
-        newPlan: {
-          id: quote.newPlan.id,
-          name: quote.newPlan.displayName,
-          priceMonthly: quote.newPlan.priceMonthly
-        },
-        validationErrors: quote.validationErrors,
-        validationWarnings: quote.validationWarnings
-      });
-    } catch (error: any) {
-      console.error('Error getting plan change quote:', error);
-      res.status(500).json({ error: error.message || "Error al obtener cotización" });
-    }
+  app.get("/api/billing/subscription/:id/change-plan/quote", billingRateLimiter, requireAuth, async (_req, res) => {
+    res.status(410).json({ 
+      error: "Funcionalidad eliminada. El sistema usa precio dinamico calculado por la landing page (sst-colombia.com.co). Para actualizar tu precio, modifica los datos de tu empresa." 
+    });
   });
 
   /**
    * POST /api/billing/subscription/:id/change-plan
-   * Cambia el plan de una suscripción (upgrade/downgrade)
-   * Bloque 4 - Tarea 8: Sistema de Upgrade/Downgrade con Proration
-   * Permisos: admin (todas), coordinador_sst (su empresa)
+   * DEPRECATED: El sistema usa precio dinamico desde la landing page (Token>Calculo)
    */
-  app.post("/api/billing/subscription/:id/change-plan", subscriptionMutationLimiter, requireAuth, async (req, res) => {
-    try {
-      const subscriptionId = req.params.id;
-      
-      // Zod validation
-      const planChangeRequestSchema = z.object({
-        newPlanId: z.string().min(1, "Plan ID es requerido"),
-        isAdminOverride: z.boolean().optional().default(false)
-      });
-
-      const validatedData = planChangeRequestSchema.parse(req.body);
-
-      // Get subscription to verify ownership
-      const subscription = await storage.getSubscription(subscriptionId);
-      if (!subscription) {
-        return res.status(404).json({ error: "Suscripción no encontrada" });
-      }
-
-      // Check permissions: admin or owner company
-      const isAdmin = req.user!.role === 'admin';
-      const isOwner = req.user!.companyId === subscription.companyId;
-
-      if (!isAdmin && !isOwner) {
-        return res.status(403).json({ error: "No tiene permisos para modificar esta suscripción" });
-      }
-
-      // Admin override only allowed for actual admins
-      if (validatedData.isAdminOverride && !isAdmin) {
-        return res.status(403).json({ error: "Solo administradores pueden usar override" });
-      }
-
-      // Step 1: Quote plan change (validates + calculates WITHOUT mutating state)
-      const quote = await storage.quotePlanChange({
-        subscriptionId,
-        newPlanId: validatedData.newPlanId,
-        isAdminOverride: validatedData.isAdminOverride
-      });
-
-      // Block on validation errors
-      if (quote.validationErrors.length > 0) {
-        return res.status(400).json({ 
-          error: quote.validationErrors.join('; '),
-          warnings: quote.validationWarnings 
-        });
-      }
-
-      // Step 2: If requires payment, create Stripe Checkout session
-      if (quote.requiresPayment) {
-        try {
-          const stripe = await getUncachableStripeClient();
-          
-          // Get company info for metadata
-          const company = await storage.getCompany(subscription.companyId);
-          
-          // Build Stripe Checkout session - use APP_URL for production
-          const baseUrl = process.env.APP_URL || (process.env.REPLIT_DEV_DOMAIN 
-            ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-            : process.env.REPLIT_DOMAINS 
-              ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
-              : 'http://localhost:5000');
-          
-          const chargeAmountCOP = Math.max(116000, Math.round(quote.amountToCharge));
-          const upgradeStripeUnit = Math.round(chargeAmountCOP * 100);
-          
-          const session = await stripe.checkout.sessions.create({
-            mode: 'payment',
-            payment_method_types: ['card'],
-            line_items: [
-              {
-                price_data: {
-                  currency: 'cop',
-                  product_data: {
-                    name: `Upgrade a ${quote.newPlan.displayName}`,
-                    description: `Cambio de plan: ${quote.oldPlan.displayName} → ${quote.newPlan.displayName}`,
-                  },
-                  unit_amount: upgradeStripeUnit,
-                },
-                quantity: 1,
-              },
-            ],
-            metadata: {
-              type: 'plan_upgrade',
-              subscriptionId: subscriptionId,
-              oldPlanId: quote.oldPlan.id,
-              newPlanId: quote.newPlan.id,
-              companyId: subscription.companyId,
-              companyName: company?.name || 'Unknown',
-              userId: req.user!.id,
-              amountToChargeCOP: chargeAmountCOP.toString(),
-              proratedCredit: quote.proratedCredit.toString(),
-            },
-            success_url: `${baseUrl}/mi-cuenta?upgrade=success&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${baseUrl}/mi-cuenta?upgrade=cancelled`,
-            customer_email: req.user!.email || undefined,
-          });
-          
-          return res.status(200).json({
-            success: true,
-            requiresPayment: true,
-            changeType: quote.changeType,
-            amountToCharge: quote.amountToCharge,
-            paymentUrl: session.url,
-            sessionId: session.id,
-            message: 'Redirigiendo a pasarela de pago...',
-            warnings: quote.validationWarnings
-          });
-        } catch (stripeError: any) {
-          console.error('Stripe checkout session creation failed:', stripeError);
-          return res.status(500).json({
-            error: 'Error al crear sesión de pago: ' + (stripeError.message || 'Error desconocido'),
-            requiresPayment: true,
-            changeType: quote.changeType,
-            amountToCharge: quote.amountToCharge,
-          });
-        }
-      }
-
-      // Step 3: Apply plan change for free changes (downgrades)
-      const auditContext = getAuditContext(req);
-      const result = await storage.applyPlanChange({
-        subscriptionId,
-        newPlanId: validatedData.newPlanId,
-        requestedBy: req.user!.id,
-        requestedByRole: req.user!.role,
-        isAdminOverride: validatedData.isAdminOverride,
-        ipAddress: auditContext.ipAddress,
-        userAgent: auditContext.userAgent
-      });
-
-      // Downgrade or free upgrade - applied immediately
-      res.status(200).json({
-        success: true,
-        requiresPayment: false,
-        changeType: quote.changeType,
-        planChangeId: result.planChangeId,
-        message: quote.changeType === 'downgrade' 
-          ? 'Plan cambiado exitosamente. El crédito se aplicará en su próxima factura.'
-          : 'Plan cambiado exitosamente.',
-        warnings: quote.validationWarnings
-      });
-
-    } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: error.errors });
-      }
-      console.error('Error changing subscription plan:', error);
-      res.status(500).json({ error: error.message || "Error al cambiar plan" });
-    }
+  app.post("/api/billing/subscription/:id/change-plan", subscriptionMutationLimiter, requireAuth, async (_req, res) => {
+    res.status(410).json({ 
+      error: "Funcionalidad eliminada. El sistema usa precio dinamico calculado por la landing page (sst-colombia.com.co). Para actualizar tu precio, modifica los datos de tu empresa." 
+    });
   });
 
   // ============================================================================

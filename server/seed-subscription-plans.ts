@@ -67,236 +67,13 @@ const SUBSCRIPTION_PLANS = [
     isRecommended: 1,
     sortOrder: 0,
   },
-  {
-    id: "microempresa",
-    name: "microempresa",
-    displayName: "Microempresa",
-    description: "Plan ideal para microempresas con hasta 10 trabajadores. Cumplimiento del Capítulo I de la Resolución 0312/2019.",
-    tagline: "Empresas de 1 a 10 trabajadores",
-    priceMonthly: 60000,
-    priceYearly: 576000,  // 60,000 * 12 * 0.8 = 20% descuento anual
-    currency: "COP",
-    maxWorkers: 10,
-    maxUsers: 2,
-    maxCompanies: 1,
-    maxSedes: 1,
-    storageGB: 2,
-    features: [
-      "Gestión de trabajadores",
-      "Registro de accidentes e incidentes",
-      "Capacitaciones SST",
-      "Inspecciones básicas",
-      "Documentos SST esenciales",
-      "Soporte técnico por email"
-    ],
-    hasIPERCCompleto: 0,
-    hasAuditorias: 0,
-    hasPESV: 1, // PESV disponible para todos los planes - se cobra por vehículos (Res. 40595/2022)
-    hasRevisionDireccion: 0,
-    hasGestionCambios: 0,
-    hasMatrizLegal: 0,
-    hasObjetivosIndicadores: 0,
-    hasEvaluacionProveedores: 0,
-    hasComunicacionSST: 0,
-    hasAdquisicionesSST: 0,
-    hasDashboardsEjecutivos: 0,
-    hasPDFsNormativos: 1,
-    hasExamenesMedicos: 1,
-    hasMedicionesAmbientales: 0,
-    hasSustanciasQuimicas: 0,
-    hasCOPASST: 0,
-    hasComiteConvivencia: 0,
-    hasAPI: 0,
-    hasExportacionMasiva: 0,
-    hasWhiteLabel: 0,
-    hasSLA: 0,
-    hasGerenteCuenta: 0,
-    hasConsultoriaSST: 0,
-    horasConsultoriaMes: 0,
-    supportLevel: "email",
-    supportResponseTime: "48h",
-    capacitacionesAnuales: 0,
-    horasPorCapacitacion: 0,
-    trialDays: 7,
-    status: "active" as const,
-    isRecommended: 0,
-    sortOrder: 1,
-  },
-  {
-    id: "pequena",
-    name: "pequena",
-    displayName: "Pequeña Empresa",
-    description: "Plan para pequeñas empresas de 11 a 49 trabajadores. Cumplimiento del Capítulo II de la Resolución 0312/2019.",
-    tagline: "Empresas de 11 a 49 trabajadores",
-    priceMonthly: 264000,
-    priceYearly: 2534400,  // 264,000 * 12 * 0.8 = 20% descuento anual
-    currency: "COP",
-    maxWorkers: 49,
-    maxUsers: 5,
-    maxCompanies: 1,
-    maxSedes: 2,
-    storageGB: 5,
-    features: [
-      "Todo lo del plan Microempresa",
-      "IPERC completo con GTC-45",
-      "Auditorías internas SST",
-      "Matriz legal básica",
-      "Gestión de proveedores",
-      "Objetivos e indicadores SST",
-      "Soporte técnico prioritario"
-    ],
-    hasIPERCCompleto: 1,
-    hasAuditorias: 1,
-    hasPESV: 1, // PESV disponible para todos los planes - se cobra por vehículos (Res. 40595/2022)
-    hasRevisionDireccion: 0,
-    hasGestionCambios: 0,
-    hasMatrizLegal: 1,
-    hasObjetivosIndicadores: 1,
-    hasEvaluacionProveedores: 1,
-    hasComunicacionSST: 0,
-    hasAdquisicionesSST: 0,
-    hasDashboardsEjecutivos: 0,
-    hasPDFsNormativos: 1,
-    hasExamenesMedicos: 1,
-    hasMedicionesAmbientales: 0,
-    hasSustanciasQuimicas: 0,
-    hasCOPASST: 1,
-    hasComiteConvivencia: 0,
-    hasAPI: 0,
-    hasExportacionMasiva: 0,
-    hasWhiteLabel: 0,
-    hasSLA: 0,
-    hasGerenteCuenta: 0,
-    hasConsultoriaSST: 0,
-    horasConsultoriaMes: 0,
-    supportLevel: "chat_email",
-    supportResponseTime: "24h",
-    capacitacionesAnuales: 2,
-    horasPorCapacitacion: 2,
-    trialDays: 7,
-    status: "active" as const,
-    isRecommended: 1,
-    sortOrder: 2,
-  },
-  {
-    id: "mediana",
-    name: "mediana",
-    displayName: "Mediana Empresa",
-    description: "Plan completo para medianas empresas de 50 a 199 trabajadores. Cumplimiento total del Capítulo III de la Resolución 0312/2019.",
-    tagline: "Empresas de 50 a 199 trabajadores",
-    priceMonthly: 1100000,
-    priceYearly: 10560000,  // 1,100,000 * 12 * 0.8 = 20% descuento anual
-    currency: "COP",
-    maxWorkers: 199,
-    maxUsers: 10,
-    maxCompanies: 1,
-    maxSedes: 5,
-    storageGB: 15,
-    features: [
-      "Todo lo del plan Pequeña Empresa",
-      "Módulo PESV completo",
-      "Revisión por la Dirección",
-      "Gestión de cambios",
-      "Gestión de adquisiciones",
-      "Sistema de comunicaciones SST",
-      "Reportes avanzados",
-      "Compatible ISO 45001:2018"
-    ],
-    hasIPERCCompleto: 1,
-    hasAuditorias: 1,
-    hasPESV: 1,
-    hasRevisionDireccion: 1,
-    hasGestionCambios: 1,
-    hasMatrizLegal: 1,
-    hasObjetivosIndicadores: 1,
-    hasEvaluacionProveedores: 1,
-    hasComunicacionSST: 1,
-    hasAdquisicionesSST: 1,
-    hasDashboardsEjecutivos: 1,
-    hasPDFsNormativos: 1,
-    hasExamenesMedicos: 1,
-    hasMedicionesAmbientales: 1,
-    hasSustanciasQuimicas: 1,
-    hasCOPASST: 1,
-    hasComiteConvivencia: 1,
-    hasAPI: 0,
-    hasExportacionMasiva: 1,
-    hasWhiteLabel: 0,
-    hasSLA: 0,
-    hasGerenteCuenta: 0,
-    hasConsultoriaSST: 0,
-    horasConsultoriaMes: 0,
-    supportLevel: "phone",
-    supportResponseTime: "12h",
-    capacitacionesAnuales: 4,
-    horasPorCapacitacion: 2,
-    trialDays: 7,
-    status: "active" as const,
-    isRecommended: 0,
-    sortOrder: 3,
-  },
-  {
-    id: "grande",
-    name: "grande",
-    displayName: "Gran Empresa",
-    description: "Plan empresarial para grandes empresas con 200+ trabajadores. Cumplimiento total de la Resolución 0312/2019 y certificación ISO 45001:2018.",
-    tagline: "Empresas de 200+ trabajadores",
-    priceMonthly: 4000000,
-    priceYearly: 38400000,  // 4,000,000 * 12 * 0.8 = 20% descuento anual
-    currency: "COP",
-    maxWorkers: -1,
-    maxUsers: -1,
-    maxCompanies: 1,
-    maxSedes: -1,
-    storageGB: 50,
-    features: [
-      "Todo lo del plan Mediana Empresa",
-      "Usuarios ilimitados",
-      "Sedes ilimitadas",
-      "Acceso API completo",
-      "Consultor SST dedicado",
-      "Personalización de marca",
-      "Soporte 24/7",
-      "SLA garantizado 99.9%"
-    ],
-    hasIPERCCompleto: 1,
-    hasAuditorias: 1,
-    hasPESV: 1,
-    hasRevisionDireccion: 1,
-    hasGestionCambios: 1,
-    hasMatrizLegal: 1,
-    hasObjetivosIndicadores: 1,
-    hasEvaluacionProveedores: 1,
-    hasComunicacionSST: 1,
-    hasAdquisicionesSST: 1,
-    hasDashboardsEjecutivos: 1,
-    hasPDFsNormativos: 1,
-    hasExamenesMedicos: 1,
-    hasMedicionesAmbientales: 1,
-    hasSustanciasQuimicas: 1,
-    hasCOPASST: 1,
-    hasComiteConvivencia: 1,
-    hasAPI: 1,
-    hasExportacionMasiva: 1,
-    hasWhiteLabel: 1,
-    hasSLA: 1,
-    hasGerenteCuenta: 1,
-    hasConsultoriaSST: 1,
-    horasConsultoriaMes: 4,
-    supportLevel: "24_7",
-    supportResponseTime: "2h",
-    capacitacionesAnuales: 12,
-    horasPorCapacitacion: 2,
-    trialDays: 7,
-    status: "active" as const,
-    isRecommended: 0,
-    sortOrder: 4,
-  },
 ];
+
+const DEPRECATED_PLAN_IDS = ["microempresa", "pequena", "mediana", "grande"];
 
 export async function seedSubscriptionPlans(): Promise<void> {
   try {
-    logger.info("🔄 Verificando planes de suscripción en la base de datos...");
+    logger.info("Verificando planes de suscripcion en la base de datos...");
     
     for (const plan of SUBSCRIPTION_PLANS) {
       const existing = await db.select()
@@ -306,17 +83,34 @@ export async function seedSubscriptionPlans(): Promise<void> {
       
       if (existing.length === 0) {
         await db.insert(subscriptionPlans).values(plan);
-        logger.info(`✅ Plan de suscripción creado: ${plan.displayName} (${plan.id})`);
+        logger.info(`Plan de suscripcion creado: ${plan.displayName} (${plan.id})`);
       } else {
-        logger.info(`⏭️ Plan de suscripción ya existe: ${plan.displayName} (${plan.id})`);
+        await db.update(subscriptionPlans)
+          .set({ status: "active" })
+          .where(eq(subscriptionPlans.id, plan.id));
+        logger.info(`Plan de suscripcion verificado: ${plan.displayName} (${plan.id})`);
       }
     }
     
-    const allPlans = await db.select().from(subscriptionPlans);
-    logger.info(`📊 Total planes de suscripción en BD: ${allPlans.length}`);
+    for (const deprecatedId of DEPRECATED_PLAN_IDS) {
+      const existing = await db.select()
+        .from(subscriptionPlans)
+        .where(eq(subscriptionPlans.id, deprecatedId))
+        .limit(1);
+      
+      if (existing.length > 0 && existing[0].status === "active") {
+        await db.update(subscriptionPlans)
+          .set({ status: "archived" })
+          .where(eq(subscriptionPlans.id, deprecatedId));
+        logger.info(`Plan deprecado archivado: ${deprecatedId} (modelo Token>Calculo - precios vienen del JWT de la landing page)`);
+      }
+    }
+    
+    const activePlans = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.status, "active"));
+    logger.info(`Total planes activos en BD: ${activePlans.length}`);
     
   } catch (error) {
-    logger.error({ err: error }, "❌ Error al crear planes de suscripción");
+    logger.error({ err: error }, "Error al gestionar planes de suscripcion");
     throw error;
   }
 }
