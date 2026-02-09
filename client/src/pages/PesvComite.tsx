@@ -536,8 +536,8 @@ export default function PesvComite() {
           ) : integrantes.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">No hay integrantes registrados en el comité</div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
+            <div className="rounded-md border overflow-x-auto">
+              <Table className="min-w-[800px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nombre</TableHead>
@@ -564,11 +564,11 @@ export default function PesvComite() {
                       </TableCell>
                       <TableCell className="text-right">
                         {isAdmin && (
-                          <div className="flex gap-1 justify-end">
+                          <div className="flex gap-1 justify-end flex-wrap">
                             <Button variant="ghost" size="icon" onClick={() => handleEditIntegrante(integrante)} data-testid={`button-edit-integrante-${integrante.id}`}>
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleToggleEstado(integrante)} data-testid={`button-toggle-estado-${integrante.id}`}>
+                            <Button variant="ghost" size="sm" onClick={() => handleToggleEstado(integrante)} data-testid={`button-toggle-estado-${integrante.id}`}>
                               {integrante.estado === "activo" ? "Desactivar" : "Activar"}
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => { if (confirm("¿Eliminar este integrante?")) deleteIntegranteMutation.mutate(integrante.id); }} data-testid={`button-delete-integrante-${integrante.id}`}>
