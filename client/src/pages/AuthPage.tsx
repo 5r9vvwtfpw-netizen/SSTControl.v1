@@ -70,6 +70,7 @@ export default function AuthPage() {
     employees?: boolean;
     vehicles?: boolean;
   }>({});
+  const [quoteError, setQuoteError] = useState<string | null>(null);
 
   const searchParams = new URLSearchParams(window.location.search);
   const urlPlan = searchParams.get("plan");
@@ -78,51 +79,129 @@ export default function AuthPage() {
   const verified = searchParams.get("verified");
   const error = searchParams.get("error");
 
+  const applyQuoteData = (data: {
+    companyName?: string | null;
+    ciiuCode?: string | null;
+    employees?: number;
+    vehicles?: number;
+  }) => {
+    const filled: typeof quotePreFilled = {};
+    
+    if (data.companyName) {
+      setRegisterData(prev => ({ ...prev, fullName: data.companyName! }));
+      filled.companyName = true;
+    }
+    if (data.ciiuCode) {
+      setCompanyData(prev => ({ ...prev, ciiuCode: data.ciiuCode! }));
+      filled.ciiuCode = true;
+    }
+    if (data.employees && data.employees >= 1) {
+      setCompanyData(prev => ({ ...prev, numberOfWorkers: data.employees! }));
+      filled.employees = true;
+    }
+    if (data.vehicles !== undefined && data.vehicles !== null) {
+      setCompanyData(prev => ({ ...prev, numberOfVehicles: data.vehicles! }));
+      filled.vehicles = true;
+    }
+    
+    setQuotePreFilled(filled);
+    setActiveTab("register");
+  };
+
   useEffect(() => {
-    const verifyAndStoreQuote = async () => {
-      if (!urlQuote) return;
-      
+    const decodeJwtPayload = (token: string): Record<string, unknown> | null => {
       try {
-        const response = await fetch('/api/verify-quote', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: urlQuote })
-        });
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return payload;
+      } catch {
+        return null;
+      }
+    };
+
+    const extractQuoteFromPayload = (payload: Record<string, unknown>) => {
+      const metadata = payload.metadata as Record<string, unknown> | undefined;
+      const subData = payload.sub_data as Record<string, unknown> | undefined;
+      if (!metadata || !subData) return null;
+      
+      return {
+        companyName: (metadata.company_name as string) || null,
+        employees: metadata.employees as number,
+        riskLevel: metadata.risk_level as string,
+        vehicles: metadata.vehicles as number,
+        ciiuCode: (metadata.ciiu_code as string) || null,
+        couponCode: (metadata.coupon_code as string) || null,
+        baseMonthlyPrice: subData.base_monthly_price as number,
+        currentPeriodPrice: subData.current_period_price as number,
+        discountDurationMonths: subData.discount_duration_months as number,
+        currency: subData.currency as string,
+        referrerId: null,
+        standardsCount: null,
+      };
+    };
+
+    const processQuote = async () => {
+      if (urlQuote) {
+        const decoded = decodeJwtPayload(urlQuote);
+        let clientData: ReturnType<typeof extractQuoteFromPayload> = null;
         
-        if (response.ok) {
+        if (decoded) {
+          clientData = extractQuoteFromPayload(decoded);
+          if (clientData) {
+            localStorage.setItem('sst_quote_data', JSON.stringify(clientData));
+            localStorage.setItem('sst_quote_token', urlQuote);
+            applyQuoteData(clientData);
+          }
+        }
+
+        try {
+          const response = await fetch('/api/verify-quote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: urlQuote })
+          });
+          
           const result = await response.json();
-          if (result.valid && result.data) {
+          
+          if (response.ok && result.valid && result.data) {
             localStorage.setItem('sst_quote_data', JSON.stringify(result.data));
             localStorage.setItem('sst_quote_token', urlQuote);
-            
-            const filled: typeof quotePreFilled = {};
-            
-            if (result.data.companyName) {
-              setRegisterData(prev => ({ ...prev, fullName: result.data.companyName }));
-              filled.companyName = true;
+            applyQuoteData(result.data);
+            setQuoteError(null);
+            return;
+          } else {
+            console.error('[Quote] Verificación servidor falló:', result.error);
+            if (clientData) {
+              setQuoteError(null);
+            } else {
+              setQuoteError(result.error || "Error al verificar la cotización");
             }
-            if (result.data.ciiuCode) {
-              setCompanyData(prev => ({ ...prev, ciiuCode: result.data.ciiuCode }));
-              filled.ciiuCode = true;
-            }
-            if (result.data.employees) {
-              setCompanyData(prev => ({ ...prev, numberOfWorkers: result.data.employees }));
-              filled.employees = true;
-            }
-            if (result.data.vehicles !== undefined && result.data.vehicles !== null) {
-              setCompanyData(prev => ({ ...prev, numberOfVehicles: result.data.vehicles }));
-              filled.vehicles = true;
-            }
-            
-            setQuotePreFilled(filled);
+          }
+        } catch (err) {
+          console.error('[Quote] Error de red al verificar:', err);
+          if (!clientData) {
+            setQuoteError("Error de conexión al verificar la cotización");
+          }
+        }
+        return;
+      }
+      
+      try {
+        const savedData = localStorage.getItem('sst_quote_data');
+        if (savedData) {
+          const data = JSON.parse(savedData);
+          if (data && (data.companyName || data.ciiuCode || data.employees)) {
+            applyQuoteData(data);
+            return;
           }
         }
       } catch (err) {
-        console.error('[Quote] Error al verificar:', err);
+        console.error('[Quote] Error al leer datos guardados:', err);
       }
     };
     
-    verifyAndStoreQuote();
+    processQuote();
   }, [urlQuote]);
 
   useEffect(() => {
@@ -137,7 +216,8 @@ export default function AuthPage() {
 
   useEffect(() => {
     const mode = searchParams.get("mode");
-    if (mode === "register") {
+    const tab = searchParams.get("tab");
+    if (mode === "register" || tab === "register") {
       setActiveTab("register");
     }
     if (urlPlan || urlWorkers || urlQuote) {
@@ -207,6 +287,9 @@ export default function AuthPage() {
           localStorage.setItem('sst_registration_risk', calculatedRisk);
         }
         
+        localStorage.removeItem('sst_quote_data');
+        localStorage.removeItem('sst_quote_token');
+        
         setLoginData(prev => ({ ...prev, username: registerData.username }));
         setActiveTab("login");
         if (!data?.autoVerified) {
@@ -214,6 +297,7 @@ export default function AuthPage() {
         }
         setRegisterData({ username: "", password: "", fullName: "", email: "" });
         setCompanyData({ nit: "", city: "", ciiuCode: "", numberOfWorkers: 1, numberOfVehicles: 0, address: "", contactPhone: "" });
+        setQuotePreFilled({});
       },
     });
   };
@@ -344,6 +428,18 @@ export default function AuthPage() {
 
               <TabsContent value="register">
                 <form onSubmit={handleRegister} className="space-y-3">
+
+                  {quoteError && (
+                    <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950 py-2" data-testid="alert-quote-error">
+                      <AlertTriangle className="h-4 w-4 text-orange-600" />
+                      <AlertDescription className="text-xs text-orange-700 dark:text-orange-300">
+                        {quoteError}. Puedes registrarte manualmente o{" "}
+                        <a href="https://sst-colombia.com.co" target="_blank" rel="noopener noreferrer" className="underline font-medium">
+                          generar una nueva cotización
+                        </a>.
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
                   {Object.keys(quotePreFilled).length > 0 && (
                     <Alert className="border-green-500 bg-green-50 dark:bg-green-950 py-2" data-testid="alert-quote-prefilled">
