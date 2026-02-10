@@ -44659,7 +44659,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // ===== Tratamientos de Riesgos Viales Routes =====
   
-  // GET /api/tratamientos-riesgo-vial - List all treatments
+  // GET /api/tratamientos-riesgo-vial - List treatments (optional ?riesgoVialId= filter)
   app.get("/api/tratamientos-riesgo-vial", requireAuth, async (req, res) => {
     try {
       const effectiveCompanyId = getEffectiveCompanyId(req);
@@ -44667,9 +44667,16 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
       
+      const { riesgoVialId } = req.query;
+      
+      const conditions = [eq(tratamientosRiesgoVial.companyId, effectiveCompanyId)];
+      if (riesgoVialId && typeof riesgoVialId === "string") {
+        conditions.push(eq(tratamientosRiesgoVial.riesgoVialId, riesgoVialId));
+      }
+      
       const results = await db.select()
         .from(tratamientosRiesgoVial)
-        .where(eq(tratamientosRiesgoVial.companyId, effectiveCompanyId))
+        .where(and(...conditions))
         .orderBy(desc(tratamientosRiesgoVial.createdAt));
       
       res.json(results);
@@ -44678,6 +44685,25 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.status(500).json({ error: "Error al obtener los tratamientos" });
     }
   });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // POST /api/tratamientos-riesgo-vial - Create treatment
   app.post("/api/tratamientos-riesgo-vial", requireAuth, async (req, res) => {
@@ -44708,6 +44734,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         })
         .returning();
       
+      
+      // Auto-update riesgo estado to en_tratamiento if currently identified
+      if (riesgo.estado === "identificado" || riesgo.estado === "en_evaluacion") {
+        await db.update(riesgosViales)
+          .set({ estado: "en_tratamiento", updatedAt: sql`now()` })
+          .where(eq(riesgosViales.id, validatedData.riesgoVialId));
+      }
       res.status(201).json(result);
     } catch (error: any) {
       console.error("Error creating tratamiento riesgo vial:", error);

@@ -7,12 +7,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Search, Trash2, Edit, User, Car, Building, Cloud, AlertTriangle, ShieldPlus, Link2, FileDown } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Plus, Search, Trash2, Edit, User, Car, Building, Cloud, AlertTriangle, ShieldPlus, Link2, FileDown, CheckCircle2, Clock, CalendarDays, X } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { RiesgoVial, Worker, insertRiesgoVialSchema } from "@shared/schema";
+import { RiesgoVial, Worker, insertRiesgoVialSchema, TratamientoRiesgoVial } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -60,6 +61,37 @@ const NIVEL_RIESGO_CONFIG = {
   critico: { label: "Crítico", className: "bg-red-800/20 text-red-800 dark:text-red-300" },
 };
 
+const TIPO_TRATAMIENTO_CONFIG = {
+  evitar: { label: "Evitar", desc: "Eliminar la actividad que genera el riesgo" },
+  reducir: { label: "Reducir", desc: "Disminuir probabilidad o impacto" },
+  compartir: { label: "Compartir", desc: "Transferir a terceros o seguros" },
+  aceptar: { label: "Aceptar", desc: "Asumir el riesgo con monitoreo" },
+};
+
+const ESTADO_TRATAMIENTO_CONFIG: Record<string, { label: string; className: string }> = {
+  pendiente: { label: "Pendiente", className: "bg-gray-500/10 text-gray-700 dark:text-gray-400" },
+  en_progreso: { label: "En Progreso", className: "bg-blue-500/10 text-blue-700 dark:text-blue-400" },
+  implementado: { label: "Implementado", className: "bg-green-500/10 text-green-700 dark:text-green-400" },
+  cancelado: { label: "Cancelado", className: "bg-red-500/10 text-red-700 dark:text-red-400" },
+};
+
+const tratamientoFormSchema = z.object({
+  riesgoVialId: z.string().min(1),
+  tipoTratamiento: z.enum(["evitar", "reducir", "compartir", "aceptar"]),
+  descripcion: z.string().min(1, "La descripción es requerida"),
+  justificacion: z.string().optional().nullable(),
+  accionesRequeridas: z.string().optional().nullable(),
+  recursosNecesarios: z.string().optional().nullable(),
+  responsableId: z.string().optional().nullable(),
+  fechaInicio: z.string().optional().nullable(),
+  fechaLimite: z.string().optional().nullable(),
+  estado: z.string().default("pendiente"),
+  porcentajeAvance: z.coerce.number().min(0).max(100).default(0),
+  observaciones: z.string().optional().nullable(),
+});
+
+type TratamientoFormValues = z.infer<typeof tratamientoFormSchema>;
+
 const getRiskLevel = (valorRiesgo: number): string => {
   if (valorRiesgo <= 4) return "bajo";
   if (valorRiesgo <= 9) return "medio";
@@ -102,6 +134,10 @@ export default function MatrizRiesgosViales() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [riesgoToDelete, setRiesgoToDelete] = useState<RiesgoVial | null>(null);
   const [editingRiesgo, setEditingRiesgo] = useState<RiesgoVial | null>(null);
+  const [tratamientoDialogOpen, setTratamientoDialogOpen] = useState(false);
+  const [selectedRiesgoForTratamiento, setSelectedRiesgoForTratamiento] = useState<RiesgoVial | null>(null);
+  const [editingTratamiento, setEditingTratamiento] = useState<TratamientoRiesgoVial | null>(null);
+  const [tratamientoFormOpen, setTratamientoFormOpen] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -256,6 +292,151 @@ export default function MatrizRiesgosViales() {
       });
     },
   });
+
+  const tratamientoForm = useForm<TratamientoFormValues>({
+    resolver: zodResolver(tratamientoFormSchema),
+    defaultValues: {
+      riesgoVialId: "",
+      tipoTratamiento: "reducir",
+      descripcion: "",
+      justificacion: "",
+      accionesRequeridas: "",
+      recursosNecesarios: "",
+      responsableId: null,
+      fechaInicio: "",
+      fechaLimite: "",
+      estado: "pendiente",
+      porcentajeAvance: 0,
+      observaciones: "",
+    },
+  });
+
+  const { data: tratamientos = [], isLoading: loadingTratamientos } = useQuery<TratamientoRiesgoVial[]>({
+    queryKey: ["/api/tratamientos-riesgo-vial", selectedRiesgoForTratamiento?.id],
+    queryFn: async () => {
+      if (!selectedRiesgoForTratamiento) return [];
+      const res = await fetch(`/api/tratamientos-riesgo-vial?riesgoVialId=${selectedRiesgoForTratamiento.id}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error al cargar tratamientos");
+      return res.json();
+    },
+    enabled: !!selectedRiesgoForTratamiento,
+  });
+
+  const createTratamientoMutation = useMutation({
+    mutationFn: async (data: TratamientoFormValues) => {
+      const res = await apiRequest("POST", "/api/tratamientos-riesgo-vial", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tratamientos-riesgo-vial", selectedRiesgoForTratamiento?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/riesgos-viales"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/riesgos-viales/estadisticas"] });
+      setTratamientoFormOpen(false);
+      setEditingTratamiento(null);
+      tratamientoForm.reset();
+      toast({ title: "Tratamiento creado", description: "El tratamiento se ha registrado exitosamente", className: "bg-green-50 border-green-200" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateTratamientoMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<TratamientoFormValues> }) => {
+      const res = await apiRequest("PATCH", `/api/tratamientos-riesgo-vial/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tratamientos-riesgo-vial", selectedRiesgoForTratamiento?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/riesgos-viales"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/riesgos-viales/estadisticas"] });
+      setTratamientoFormOpen(false);
+      setEditingTratamiento(null);
+      tratamientoForm.reset();
+      toast({ title: "Tratamiento actualizado", description: "El tratamiento se ha actualizado exitosamente", className: "bg-green-50 border-green-200" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteTratamientoMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/tratamientos-riesgo-vial/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tratamientos-riesgo-vial", selectedRiesgoForTratamiento?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/riesgos-viales"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/riesgos-viales/estadisticas"] });
+      toast({ title: "Tratamiento eliminado", description: "El tratamiento se ha eliminado", className: "bg-green-50 border-green-200" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleTratamientoClick = (riesgo: RiesgoVial) => {
+    setSelectedRiesgoForTratamiento(riesgo);
+    setTratamientoDialogOpen(true);
+    setTratamientoFormOpen(false);
+    setEditingTratamiento(null);
+  };
+
+  const handleNewTratamiento = () => {
+    setEditingTratamiento(null);
+    tratamientoForm.reset({
+      riesgoVialId: selectedRiesgoForTratamiento?.id || "",
+      tipoTratamiento: "reducir",
+      descripcion: "",
+      justificacion: "",
+      accionesRequeridas: "",
+      recursosNecesarios: "",
+      responsableId: null,
+      fechaInicio: "",
+      fechaLimite: "",
+      estado: "pendiente",
+      porcentajeAvance: 0,
+      observaciones: "",
+    });
+    setTratamientoFormOpen(true);
+  };
+
+  const handleEditTratamiento = (tratamiento: TratamientoRiesgoVial) => {
+    setEditingTratamiento(tratamiento);
+    tratamientoForm.reset({
+      riesgoVialId: tratamiento.riesgoVialId,
+      tipoTratamiento: tratamiento.tipoTratamiento as "evitar" | "reducir" | "compartir" | "aceptar",
+      descripcion: tratamiento.descripcion,
+      justificacion: tratamiento.justificacion || "",
+      accionesRequeridas: tratamiento.accionesRequeridas || "",
+      recursosNecesarios: tratamiento.recursosNecesarios || "",
+      responsableId: tratamiento.responsableId || null,
+      fechaInicio: tratamiento.fechaInicio || "",
+      fechaLimite: tratamiento.fechaLimite || "",
+      estado: tratamiento.estado,
+      porcentajeAvance: tratamiento.porcentajeAvance || 0,
+      observaciones: tratamiento.observaciones || "",
+    });
+    setTratamientoFormOpen(true);
+  };
+
+  const onSubmitTratamiento = (values: TratamientoFormValues) => {
+    const cleanedValues = {
+      ...values,
+      fechaInicio: values.fechaInicio || null,
+      fechaLimite: values.fechaLimite || null,
+      justificacion: values.justificacion || null,
+      accionesRequeridas: values.accionesRequeridas || null,
+      recursosNecesarios: values.recursosNecesarios || null,
+      responsableId: values.responsableId || null,
+      observaciones: values.observaciones || null,
+    };
+    if (editingTratamiento) {
+      updateTratamientoMutation.mutate({ id: editingTratamiento.id, data: cleanedValues });
+    } else {
+      createTratamientoMutation.mutate(cleanedValues);
+    }
+  };
 
   const onSubmit = (values: FormValues) => {
     if (editingRiesgo) {
@@ -941,6 +1122,7 @@ export default function MatrizRiesgosViales() {
                       size="sm" 
                       variant="outline"
                       className="flex-1"
+                      onClick={() => handleTratamientoClick(riesgo)}
                       data-testid={`button-tratamiento-${riesgo.id}`}
                     >
                       <ShieldPlus className="h-4 w-4 mr-1" />
@@ -986,6 +1168,338 @@ export default function MatrizRiesgosViales() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={tratamientoDialogOpen} onOpenChange={(open) => {
+        setTratamientoDialogOpen(open);
+        if (!open) {
+          setTratamientoFormOpen(false);
+          setEditingTratamiento(null);
+          setSelectedRiesgoForTratamiento(null);
+        }
+      }}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldPlus className="h-5 w-5" />
+              Tratamiento del Riesgo
+            </DialogTitle>
+            {selectedRiesgoForTratamiento && (
+              <DialogDescription>
+                <span className="font-mono">{selectedRiesgoForTratamiento.codigo}</span> - {selectedRiesgoForTratamiento.nombre}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+
+          {selectedRiesgoForTratamiento && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {getNivelRiesgoBadge(selectedRiesgoForTratamiento.nivelRiesgo, selectedRiesgoForTratamiento.valorRiesgo)}
+                  {getEstadoBadge(selectedRiesgoForTratamiento.estado)}
+                  <Badge variant="secondary" className="text-xs" data-testid="badge-tratamientos-count">
+                    {tratamientos.length} tratamiento{tratamientos.length !== 1 ? "s" : ""}
+                  </Badge>
+                </div>
+                {!tratamientoFormOpen && (
+                  <Button size="sm" onClick={handleNewTratamiento} data-testid="button-new-tratamiento">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Nuevo Tratamiento
+                  </Button>
+                )}
+              </div>
+
+              {tratamientoFormOpen && (
+                <Card data-testid="card-tratamiento-form">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">
+                      {editingTratamiento ? "Editar Tratamiento" : "Nuevo Tratamiento"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Form {...tratamientoForm}>
+                      <form onSubmit={tratamientoForm.handleSubmit(onSubmitTratamiento)} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={tratamientoForm.control}
+                            name="tipoTratamiento"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Tipo de Tratamiento (ISO 31000)</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger data-testid="select-tipo-tratamiento">
+                                      <SelectValue placeholder="Seleccionar tipo" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {Object.entries(TIPO_TRATAMIENTO_CONFIG).map(([key, config]) => (
+                                      <SelectItem key={key} value={key}>
+                                        {config.label} - {config.desc}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={tratamientoForm.control}
+                            name="estado"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Estado</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger data-testid="select-estado-tratamiento">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {Object.entries(ESTADO_TRATAMIENTO_CONFIG).map(([key, config]) => (
+                                      <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
+                          control={tratamientoForm.control}
+                          name="descripcion"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Descripcion del Tratamiento *</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} placeholder="Describa las medidas de control o tratamiento a implementar..." data-testid="input-descripcion-tratamiento" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={tratamientoForm.control}
+                          name="justificacion"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Justificacion</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} value={field.value || ""} placeholder="Por que se eligio este tipo de tratamiento..." data-testid="input-justificacion-tratamiento" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={tratamientoForm.control}
+                          name="accionesRequeridas"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Acciones Requeridas</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} value={field.value || ""} placeholder="Liste las acciones necesarias para implementar el tratamiento..." data-testid="input-acciones-tratamiento" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={tratamientoForm.control}
+                          name="recursosNecesarios"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Recursos Necesarios</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} value={field.value || ""} placeholder="Recursos humanos, tecnicos, financieros necesarios..." data-testid="input-recursos-tratamiento" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={tratamientoForm.control}
+                            name="responsableId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Responsable</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || ""}>
+                                  <FormControl>
+                                    <SelectTrigger data-testid="select-responsable-tratamiento">
+                                      <SelectValue placeholder="Seleccionar responsable" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {workers.map((w) => (
+                                      <SelectItem key={w.id} value={String(w.id)}>
+                                        {w.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={tratamientoForm.control}
+                            name="porcentajeAvance"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Avance (%)</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min={0} max={100} {...field} data-testid="input-avance-tratamiento" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={tratamientoForm.control}
+                            name="fechaInicio"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Fecha de Inicio</FormLabel>
+                                <FormControl>
+                                  <Input type="date" {...field} value={field.value || ""} data-testid="input-fecha-inicio-tratamiento" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={tratamientoForm.control}
+                            name="fechaLimite"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Fecha Limite</FormLabel>
+                                <FormControl>
+                                  <Input type="date" {...field} value={field.value || ""} data-testid="input-fecha-limite-tratamiento" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
+                          control={tratamientoForm.control}
+                          name="observaciones"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Observaciones</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} value={field.value || ""} placeholder="Observaciones adicionales..." data-testid="input-observaciones-tratamiento" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="flex justify-end gap-2 pt-2">
+                          <Button type="button" variant="outline" onClick={() => { setTratamientoFormOpen(false); setEditingTratamiento(null); }} data-testid="button-cancel-tratamiento">
+                            Cancelar
+                          </Button>
+                          <Button
+                            type="submit"
+                            disabled={createTratamientoMutation.isPending || updateTratamientoMutation.isPending}
+                            data-testid="button-save-tratamiento"
+                          >
+                            {(createTratamientoMutation.isPending || updateTratamientoMutation.isPending) ? "Guardando..." : editingTratamiento ? "Actualizar" : "Crear Tratamiento"}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+              )}
+
+              {loadingTratamientos ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Cargando tratamientos...</p>
+              ) : tratamientos.length === 0 && !tratamientoFormOpen ? (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <ShieldPlus className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
+                    <p className="text-muted-foreground">No hay tratamientos definidos para este riesgo.</p>
+                    <p className="text-sm text-muted-foreground mt-1">Agregue medidas de control para reducir o eliminar el riesgo.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {tratamientos.map((t) => {
+                    const tipoConfig = TIPO_TRATAMIENTO_CONFIG[t.tipoTratamiento as keyof typeof TIPO_TRATAMIENTO_CONFIG];
+                    const estadoConfig = ESTADO_TRATAMIENTO_CONFIG[t.estado] || ESTADO_TRATAMIENTO_CONFIG.pendiente;
+                    const responsable = workers.find(w => String(w.id) === t.responsableId);
+                    return (
+                      <Card key={t.id} data-testid={`card-tratamiento-${t.id}`}>
+                        <CardContent className="pt-4 space-y-3">
+                          <div className="flex items-start justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant="outline">{tipoConfig?.label || t.tipoTratamiento}</Badge>
+                              <Badge className={estadoConfig.className}>{estadoConfig.label}</Badge>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button size="icon" variant="ghost" onClick={() => handleEditTratamiento(t)} data-testid={`button-edit-tratamiento-${t.id}`}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" onClick={() => deleteTratamientoMutation.mutate(t.id)} data-testid={`button-delete-tratamiento-${t.id}`}>
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-sm">{t.descripcion}</p>
+                          {t.accionesRequeridas && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">Acciones requeridas:</p>
+                              <p className="text-sm text-muted-foreground">{t.accionesRequeridas}</p>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                            {responsable && (
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                {responsable.name}
+                              </span>
+                            )}
+                            {t.fechaInicio && (
+                              <span className="flex items-center gap-1">
+                                <CalendarDays className="h-3 w-3" />
+                                Inicio: {t.fechaInicio}
+                              </span>
+                            )}
+                            {t.fechaLimite && (
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                Limite: {t.fechaLimite}
+                              </span>
+                            )}
+                          </div>
+                          {(t.porcentajeAvance !== null && t.porcentajeAvance !== undefined) && (
+                            <div className="flex items-center gap-2">
+                              <Progress value={t.porcentajeAvance} className="flex-1 h-2" />
+                              <span className="text-xs font-medium text-muted-foreground">{t.porcentajeAvance}%</span>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
