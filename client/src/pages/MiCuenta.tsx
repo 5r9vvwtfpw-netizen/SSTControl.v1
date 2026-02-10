@@ -609,9 +609,19 @@ export default function MiCuenta() {
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <span className="text-lg font-semibold" data-testid="text-next-billing-date">
-                          {subscriptionData.subscription.nextBillingDate
-                            ? formatDate(subscriptionData.subscription.nextBillingDate)
-                            : 'Pendiente'}
+                          {(() => {
+                            const lastPaymentDate = invoices && invoices.length > 0
+                              ? new Date(invoices[0].paidDate || invoices[0].issueDate)
+                              : null;
+                            if (lastPaymentDate) {
+                              const nextMonth = new Date(lastPaymentDate.getFullYear(), lastPaymentDate.getMonth() + 2, 0);
+                              return formatDate(nextMonth.toISOString());
+                            }
+                            if (subscriptionData.subscription.trialEndsAt) {
+                              return formatDate(subscriptionData.subscription.trialEndsAt);
+                            }
+                            return 'Pendiente';
+                          })()}
                         </span>
                       </div>
                     </div>
