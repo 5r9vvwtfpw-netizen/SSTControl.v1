@@ -283,7 +283,10 @@ app.post(
                         customerNit: company.nit || 'N/A',
                         customerEmail: company.contactEmail || '',
                         customerAddress: company.address || '',
-                        lineItems
+                        lineItems,
+                        snapshotCiiuCode: company.ciiuCode || null,
+                        snapshotNumberOfWorkers: company.numberOfWorkers ?? null,
+                        snapshotNumberOfVehicles: company.numberOfVehicles ?? null,
                       });
                       
                       logger.info({ 

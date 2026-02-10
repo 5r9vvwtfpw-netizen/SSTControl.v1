@@ -5846,6 +5846,10 @@ export const invoices = pgTable("invoices", {
   emailSentAt: timestamp("email_sent_at"),
   emailSentTo: text("email_sent_to"),
   
+  snapshotCiiuCode: text("snapshot_ciiu_code"),
+  snapshotNumberOfWorkers: integer("snapshot_number_of_workers"),
+  snapshotNumberOfVehicles: integer("snapshot_number_of_vehicles"),
+
   // Notes
   notes: text("notes"),
   

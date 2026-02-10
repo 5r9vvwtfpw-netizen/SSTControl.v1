@@ -52,6 +52,9 @@ type Invoice = {
   issueDate: string;
   dueDate: string;
   paidDate: string | null;
+  snapshotCiiuCode: string | null;
+  snapshotNumberOfWorkers: number | null;
+  snapshotNumberOfVehicles: number | null;
 };
 
 type MySubscriptionResponse = {
@@ -601,7 +604,7 @@ export default function MiCuenta() {
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Basado en CIIU {invoices[0].ciiuCode || companyData?.ciiuCode || 'N/A'}, {invoices[0].numberOfWorkers ?? companyData?.numberOfWorkers ?? companyData?.numWorkers ?? 0} empleados, {invoices[0].numberOfVehicles ?? companyData?.numberOfVehicles ?? 0} vehículos
+                          Basado en CIIU {invoices[0].snapshotCiiuCode || companyData?.ciiuCode || 'N/A'}, {invoices[0].snapshotNumberOfWorkers ?? companyData?.numberOfWorkers ?? companyData?.numWorkers ?? 0} empleados, {invoices[0].snapshotNumberOfVehicles ?? companyData?.numberOfVehicles ?? 0} vehículos
                         </p>
                       </div>
                     )}
