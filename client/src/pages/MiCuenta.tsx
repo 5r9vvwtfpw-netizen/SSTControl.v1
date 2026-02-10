@@ -592,7 +592,7 @@ export default function MiCuenta() {
                     {invoices && invoices.length > 0 && (
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-muted-foreground" data-testid="text-last-payment-date">
-                          Monto Pagado el {formatDate(invoices[0].paidDate || invoices[0].issueDate)}
+                          Ultimo monto cobrado el {formatDate(invoices[0].paidDate || invoices[0].issueDate)}
                         </label>
                         <div className="flex items-center gap-2">
                           <CreditCard className="h-4 w-4 text-muted-foreground" />
@@ -610,37 +610,30 @@ export default function MiCuenta() {
                     )}
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-muted-foreground">Próxima Fecha de Pago</label>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-lg font-semibold" data-testid="text-next-billing-date">
-                          {(() => {
-                            const lastPaymentDate = invoices && invoices.length > 0
-                              ? new Date(invoices[0].paidDate || invoices[0].issueDate)
-                              : null;
-                            if (lastPaymentDate) {
-                              const year = lastPaymentDate.getFullYear();
-                              const month = lastPaymentDate.getMonth();
-                              const day = lastPaymentDate.getDate();
-                              const nextMonth = month + 1;
-                              const nextYear = nextMonth > 11 ? year + 1 : year;
-                              const nextMonthNorm = nextMonth > 11 ? 0 : nextMonth;
-                              const daysInNextMonth = new Date(nextYear, nextMonthNorm + 1, 0).getDate();
-                              const nextDay = Math.min(day, daysInNextMonth);
-                              const next = new Date(nextYear, nextMonthNorm, nextDay);
-                              return formatDate(next.toISOString());
-                            }
-                            if (subscriptionData.subscription.trialEndsAt) {
-                              return formatDate(subscriptionData.subscription.trialEndsAt);
-                            }
-                            return 'Pendiente';
-                          })()}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-muted-foreground">Próximo Pago</label>
+                      <label className="text-sm font-medium text-muted-foreground">
+                        Próximo Pago{' '}
+                        {(() => {
+                          const lastPaymentDate = invoices && invoices.length > 0
+                            ? new Date(invoices[0].paidDate || invoices[0].issueDate)
+                            : null;
+                          if (lastPaymentDate) {
+                            const year = lastPaymentDate.getFullYear();
+                            const month = lastPaymentDate.getMonth();
+                            const day = lastPaymentDate.getDate();
+                            const nextMonth = month + 1;
+                            const nextYear = nextMonth > 11 ? year + 1 : year;
+                            const nextMonthNorm = nextMonth > 11 ? 0 : nextMonth;
+                            const daysInNextMonth = new Date(nextYear, nextMonthNorm + 1, 0).getDate();
+                            const nextDay = Math.min(day, daysInNextMonth);
+                            const next = new Date(nextYear, nextMonthNorm, nextDay);
+                            return formatDate(next.toISOString());
+                          }
+                          if (subscriptionData.subscription.trialEndsAt) {
+                            return formatDate(subscriptionData.subscription.trialEndsAt);
+                          }
+                          return '';
+                        })()}
+                      </label>
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
                         <span className="text-lg font-bold" data-testid="text-next-payment-amount">
