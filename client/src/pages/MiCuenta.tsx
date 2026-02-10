@@ -74,6 +74,9 @@ type CompanyData = {
   numberOfVehicles?: number;
   vehicleCount: number;
   driverCount: number;
+  quoteBaseMonthlyPrice?: number;
+  quoteCurrentPeriodPrice?: number;
+  quoteCouponCode?: string;
 };
 
 const FeatureItem = ({ children }: { children: React.ReactNode }) => (
@@ -513,9 +516,9 @@ export default function MiCuenta() {
                   <div className="flex flex-wrap justify-between items-start gap-4">
                     <div>
                       <CardTitle className="text-2xl" data-testid="text-plan-name">
-                        {subscriptionData.plan.displayName || subscriptionData.plan.name}
+                        Su Suscripción
                       </CardTitle>
-                      <CardDescription>{subscriptionData.plan.description}</CardDescription>
+                      <CardDescription>Información de facturación y precio de su plan</CardDescription>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       {paymentProcessing ? (
@@ -545,79 +548,82 @@ export default function MiCuenta() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    {subscriptionData.subscription.status === 'trial' ? (
-                      <div className="flex items-start gap-3">
-                        <CreditCard className="h-5 w-5 text-primary mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium">Durante la prueba</p>
-                          <p className="text-2xl font-bold text-primary" data-testid="text-price">
-                            GRATIS
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Después: {formatPrice(subscriptionData.plan.priceMonthly / 100)}/mes
-                          </p>
-                        </div>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-muted-foreground">Precio Mensual</label>
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                        {companyData?.quoteCouponCode ? (
+                          <div>
+                            <span className="text-lg font-bold" data-testid="text-price">
+                              {formatPrice((companyData?.quoteCurrentPeriodPrice ?? companyData?.quoteBaseMonthlyPrice ?? 0) / 100)}
+                            </span>
+                            <Badge variant="secondary" className="ml-2">
+                              Cupón: {companyData.quoteCouponCode}
+                            </Badge>
+                          </div>
+                        ) : (
+                          <span className="text-lg font-bold" data-testid="text-price">
+                            {formatPrice((companyData?.quoteBaseMonthlyPrice ?? 0) / 100)}
+                          </span>
+                        )}
                       </div>
-                    ) : (
-                      <div className="flex items-start gap-3">
-                        <CreditCard className="h-5 w-5 text-primary mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium">Precio mensual</p>
-                          <p className="text-2xl font-bold" data-testid="text-price">
-                            {formatPrice(subscriptionData.plan.priceMonthly / 100)}
-                          </p>
+                      <p className="text-xs text-muted-foreground">
+                        Basado en CIIU {companyData?.ciiuCode || 'N/A'}, {companyData?.numberOfWorkers ?? companyData?.numWorkers ?? 0} empleados, {companyData?.numberOfVehicles ?? 0} vehículos
+                      </p>
+                    </div>
+
+                    {subscriptionData.subscription.status === 'trial' && subscriptionData.subscription.trialEndsAt && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Prueba Gratuita Termina</label>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-lg font-semibold" data-testid="text-trial-ends">
+                            {formatDate(subscriptionData.subscription.trialEndsAt)}
+                          </span>
                         </div>
                       </div>
                     )}
 
                     {subscriptionData.subscription.nextBillingDate && (
-                      <div className="flex items-start gap-3">
-                        <Calendar className="h-5 w-5 text-primary mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium">Próxima facturación</p>
-                          <p className="text-lg font-semibold" data-testid="text-next-billing">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Próxima Facturación</label>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-lg font-semibold" data-testid="text-next-billing">
                             {formatDate(subscriptionData.subscription.nextBillingDate)}
-                          </p>
+                          </span>
                         </div>
                       </div>
                     )}
 
-                    {subscriptionData.subscription.trialEndsAt && subscriptionData.subscription.status === 'trial' && (
-                      <div className="flex items-start gap-3">
-                        <Calendar className="h-5 w-5 text-primary mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium">Prueba termina el</p>
-                          <p className="text-lg font-semibold" data-testid="text-trial-ends">
-                            {formatDate(subscriptionData.subscription.trialEndsAt)}
-                          </p>
+                    {invoices && invoices.length > 0 && (
+                      <>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-muted-foreground">Última Fecha de Pago</label>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-lg font-semibold" data-testid="text-last-payment-date">
+                              {formatDate(invoices[0].paidDate || invoices[0].issueDate)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
+
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-muted-foreground">Monto Pagado</label>
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-lg font-bold" data-testid="text-last-payment-amount">
+                              {formatPrice(invoices[0].total / 100)}
+                            </span>
+                            {companyData?.quoteCouponCode && (
+                              <Badge variant="outline">con cupón</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </>
                     )}
-                  </div>
-
-                  <Separator className="my-6" />
-
-                  {/* Plan Features */}
-                  <div>
-                    <h4 className="text-sm font-medium mb-3">Características del plan</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      <FeatureItem>{getWorkerLimitText(subscriptionData.plan.maxWorkers)}</FeatureItem>
-                      <FeatureItem>{getSedesLimitText(subscriptionData.plan.maxSedes)}</FeatureItem>
-                      {subscriptionData.plan.hasAuditorias === 1 && (
-                        <FeatureItem>Auditorías Internas SST</FeatureItem>
-                      )}
-                      {subscriptionData.plan.hasPESV === 1 && (
-                        <FeatureItem>PESV completo</FeatureItem>
-                      )}
-                      {subscriptionData.plan.hasRevisionDireccion === 1 && (
-                        <FeatureItem>Revisión por Dirección</FeatureItem>
-                      )}
-                      {subscriptionData.plan.hasDashboardsEjecutivos === 1 && (
-                        <FeatureItem>Tableros Ejecutivos</FeatureItem>
-                      )}
-                    </div>
                   </div>
                 </CardContent>
               </Card>
