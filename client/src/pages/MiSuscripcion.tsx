@@ -89,30 +89,19 @@ export default function MiSuscripcion() {
   const { toast } = useToast();
   const [contractDialogOpen, setContractDialogOpen] = useState(false);
 
-  console.log('[MiSuscripcion] Rendering, user:', user?.username, 'companyId:', user?.companyId);
-
-  const { data: subscriptionData, isLoading: isLoadingSubscription, error: subError } = useQuery<MySubscriptionResponse>({
+  const { data: subscriptionData, isLoading: isLoadingSubscription } = useQuery<MySubscriptionResponse>({
     queryKey: ['/api/billing/my-subscription'],
     enabled: !!user?.companyId,
   });
 
-  const { data: invoices, isLoading: isLoadingInvoices, error: invError } = useQuery<Invoice[]>({
+  const { data: invoices, isLoading: isLoadingInvoices } = useQuery<Invoice[]>({
     queryKey: ['/api/billing/my-invoices'],
     enabled: !!user?.companyId,
   });
 
-  const { data: company, error: companyError } = useQuery<{ numberOfWorkers: number; riskLevel: string; numberOfVehicles: number; quoteBaseMonthlyPrice: number | null; quoteCurrentPeriodPrice: number | null; quoteCouponCode: string | null }>({
+  const { data: company } = useQuery<{ numberOfWorkers: number; riskLevel: string; numberOfVehicles: number; quoteBaseMonthlyPrice: number | null; quoteCurrentPeriodPrice: number | null; quoteCouponCode: string | null }>({
     queryKey: ['/api/company/current'],
     enabled: !!user?.companyId,
-  });
-
-  console.log('[MiSuscripcion] Data state:', { 
-    isLoadingSubscription, subError: subError?.message,
-    isLoadingInvoices, invError: invError?.message,
-    companyError: companyError?.message,
-    hasSubscription: !!subscriptionData,
-    hasInvoices: !!invoices,
-    hasCompany: !!company
   });
 
   // State for activation loading

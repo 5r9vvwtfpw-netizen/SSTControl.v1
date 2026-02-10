@@ -38,23 +38,14 @@ export default function PlanesSuscripcion() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  console.log('[PlanesSuscripcion] Rendering, user:', user?.username, 'companyId:', user?.companyId);
-
-  const { data: company, isLoading: loadingCompany, error: companyError } = useQuery<CompanyData>({
+  const { data: company, isLoading: loadingCompany } = useQuery<CompanyData>({
     queryKey: ['/api/company/current'],
     enabled: !!user?.companyId,
   });
 
-  const { data: currentSubscription, error: subError } = useQuery<{ planId: string; status: string } | null>({
+  const { data: currentSubscription } = useQuery<{ planId: string; status: string } | null>({
     queryKey: ['/api/billing/subscription'],
     enabled: !!user?.companyId,
-  });
-
-  console.log('[PlanesSuscripcion] Data state:', {
-    loadingCompany, companyError: companyError?.message,
-    subError: subError?.message,
-    hasCompany: !!company,
-    hasSubscription: !!currentSubscription
   });
 
   const trialMutation = useMutation({

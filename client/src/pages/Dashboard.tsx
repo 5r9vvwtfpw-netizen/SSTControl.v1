@@ -25,10 +25,8 @@ interface StatsData {
 }
 
 export default function Dashboard() {
-  console.log("[Dashboard] Component mounting");
   const { user } = useAuth();
   const [, navigate] = useLocation();
-  console.log("[Dashboard] User:", user?.role, user?.companyId);
   
   // Redirect LSO users to their dedicated portal
   useEffect(() => {

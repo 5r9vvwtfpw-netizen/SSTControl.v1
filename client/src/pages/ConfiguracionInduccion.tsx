@@ -60,7 +60,6 @@ const defaultPregunta: PreguntaFormData = {
 };
 
 export default function ConfiguracionInduccion() {
-  console.log("[ConfiguracionInduccion] Component mounting");
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("contenidos");
   
