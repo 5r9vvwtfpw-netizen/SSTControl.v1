@@ -11,12 +11,97 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Eye, GraduationCap, Calendar, Clock, MapPin, Users } from "lucide-react";
+import { Plus, Eye, GraduationCap, Calendar, Clock, MapPin, Users, Sparkles, RefreshCw } from "lucide-react";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { EvaluacionPesv, RoadSafetyTraining } from "@shared/schema";
+
+interface PlantillaCapacitacion {
+  title: string;
+  description: string;
+  topics: string;
+  instructor: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+}
+
+const PLANTILLAS_CAPACITACION_PESV: PlantillaCapacitacion[] = [
+  {
+    title: "Seguridad vial y normas de tránsito vigentes",
+    description: "Capacitación sobre normativa de tránsito colombiana, Código Nacional de Tránsito (Ley 769/2002) y Resolución 40595/2022. Incluye señalización, derechos de vía y responsabilidades de conductores y peatones.",
+    topics: "Ley 769/2002 - Código Nacional de Tránsito; Resolución 40595/2022 - PESV; Señalización vial (preventiva, reglamentaria, informativa); Derechos de vía y prioridades; Infracciones y sanciones; Responsabilidades del conductor",
+    instructor: "Responsable PESV",
+    startTime: "08:00",
+    endTime: "10:00",
+    location: "Sala de capacitación - sede principal",
+  },
+  {
+    title: "Manejo defensivo y prevención de siniestros viales",
+    description: "Técnicas de conducción defensiva para prevenir accidentes de tránsito. Incluye distancias de seguridad, puntos ciegos, condiciones adversas y técnicas de frenado de emergencia conforme a la Resolución 40595/2022.",
+    topics: "Principios de conducción defensiva; Distancias de seguridad y tiempos de reacción; Manejo de puntos ciegos; Conducción en condiciones adversas (lluvia, niebla, noche); Técnicas de frenado de emergencia; Prevención de siniestros en zona urbana y rural",
+    instructor: "Instructor de seguridad vial certificado",
+    startTime: "08:00",
+    endTime: "12:00",
+    location: "Sala de capacitación - sede principal",
+  },
+  {
+    title: "Inspección preoperacional de vehículos",
+    description: "Procedimiento estandarizado de inspección preoperacional según la Resolución 40595/2022 Art. 16. Verificación de condiciones mecánicas, llantas, fluidos, luces, frenos y documentación del vehículo.",
+    topics: "Formato de inspección preoperacional; Verificación de llantas y presión; Estado de frenos y sistema de dirección; Niveles de fluidos (aceite, refrigerante, frenos); Luces y sistema eléctrico; Espejos y elementos de seguridad; Documentación del vehículo (SOAT, RTM, tarjeta de propiedad)",
+    instructor: "Coordinador de mantenimiento vehicular",
+    startTime: "07:00",
+    endTime: "09:00",
+    location: "Patio de vehículos",
+  },
+  {
+    title: "Uso correcto de elementos de protección personal vial",
+    description: "Capacitación sobre selección, uso y cuidado de EPP para actividades viales: cinturones, cascos para motociclistas, chalecos reflectivos y elementos de señalización de emergencia.",
+    topics: "Cinturón de seguridad - uso correcto; Casco para motociclistas - normativa NTC; Chalecos reflectivos y visibilidad; Kit de carretera (extintor, triángulos, botiquín); Señalización de emergencia en vía; Mantenimiento y reposición de EPP",
+    instructor: "Responsable PESV",
+    startTime: "09:00",
+    endTime: "11:00",
+    location: "Sala de capacitación - sede principal",
+  },
+  {
+    title: "Primeros auxilios en siniestros viales",
+    description: "Protocolo de atención inicial en caso de siniestro vial conforme a la Resolución 40595/2022 Art. 19. Incluye evaluación de la escena, triage, RCP básico y activación de servicios de emergencia.",
+    topics: "Evaluación segura de la escena del siniestro; Activación del sistema de emergencias (123, 125, línea de atención); Triage básico - priorización de víctimas; RCP básico y uso de DEA; Control de hemorragias; Inmovilización básica de fracturas; Cadena de custodia y reporte del siniestro",
+    instructor: "Profesional en atención prehospitalaria",
+    startTime: "08:00",
+    endTime: "12:00",
+    location: "Sala de capacitación - sede principal",
+  },
+  {
+    title: "Fatiga, somnolencia y consumo de sustancias psicoactivas",
+    description: "Prevención de riesgos por fatiga, somnolencia y consumo de alcohol o sustancias psicoactivas en la conducción. Marco legal colombiano y política de alcohol y drogas de la organización.",
+    topics: "Efectos de la fatiga y somnolencia en la conducción; Jornadas de conducción y descansos obligatorios; Ley 1696/2013 - Sanciones por conducción en estado de embriaguez; Política organizacional de alcohol y drogas; Pruebas de alcoholemia y controles; Medicamentos que afectan la conducción; Estrategias de prevención y autocuidado",
+    instructor: "Profesional en seguridad y salud en el trabajo",
+    startTime: "09:00",
+    endTime: "11:00",
+    location: "Sala de capacitación - sede principal",
+  },
+  {
+    title: "Plan de emergencias viales y rutas seguras",
+    description: "Socialización del plan de emergencias viales de la organización, identificación de rutas seguras, puntos críticos y protocolos de actuación ante siniestros viales conforme al PESV.",
+    topics: "Plan de emergencias viales de la organización; Rutas seguras identificadas; Puntos críticos y zonas de alto riesgo; Protocolo de actuación ante siniestro; Cadena de llamadas y contactos de emergencia; Reporte e investigación de siniestros; Lecciones aprendidas de incidentes anteriores",
+    instructor: "Responsable PESV",
+    startTime: "08:00",
+    endTime: "10:00",
+    location: "Sala de capacitación - sede principal",
+  },
+  {
+    title: "Seguridad vial para peatones y ciclistas",
+    description: "Capacitación dirigida al personal no conductor sobre seguridad vial como actores viales vulnerables: peatones, ciclistas y usuarios de transporte público, conforme a la Resolución 40595/2022.",
+    topics: "Derechos y deberes del peatón; Uso correcto de cruces peatonales y semáforos; Seguridad para ciclistas - Ley 1811/2016; Uso de elementos reflectivos y visibilidad; Seguridad en transporte público; Movilidad sostenible; Cultura vial y convivencia en la vía",
+    instructor: "Responsable PESV",
+    startTime: "10:00",
+    endTime: "12:00",
+    location: "Sala de capacitación - sede principal",
+  },
+];
 
 export default function PesvCapacitacionesEvaluacion() {
   const { evaluacionId } = useParams<{ evaluacionId: string }>();
@@ -24,6 +109,8 @@ export default function PesvCapacitacionesEvaluacion() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedTraining, setSelectedTraining] = useState<RoadSafetyTraining | null>(null);
+  const [autoFilled, setAutoFilled] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -93,6 +180,35 @@ export default function PesvCapacitacionesEvaluacion() {
       totalAttendees: 0,
       status: "programada",
     });
+    setAutoFilled(false);
+    setSelectedTemplate("");
+  };
+
+  const applyTemplate = (templateTitle: string) => {
+    const template = PLANTILLAS_CAPACITACION_PESV.find(t => t.title === templateTitle);
+    if (!template) return;
+
+    const today = new Date();
+    const nextMonth = new Date(today);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const dateStr = nextMonth.toISOString().split("T")[0];
+
+    const attendees = evaluacion?.numeroConductores || evaluacion?.numeroVehiculos || 10;
+
+    setFormData({
+      title: template.title,
+      description: template.description,
+      instructor: template.instructor,
+      trainingDate: dateStr,
+      startTime: template.startTime,
+      endTime: template.endTime,
+      location: template.location,
+      topics: template.topics,
+      totalAttendees: attendees,
+      status: "programada",
+    });
+    setAutoFilled(true);
+    setSelectedTemplate(templateTitle);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -137,7 +253,7 @@ export default function PesvCapacitacionesEvaluacion() {
             <GraduationCap className="h-5 w-5 text-primary" />
             <CardTitle>Capacitaciones en Seguridad Vial</CardTitle>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
               <Button data-testid="button-create-training">
                 <Plus className="h-4 w-4 mr-2" />
@@ -151,6 +267,52 @@ export default function PesvCapacitacionesEvaluacion() {
                   Complete los datos de la capacitación en seguridad vial
                 </DialogDescription>
               </DialogHeader>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="flex items-center gap-1">
+                    <Sparkles className="h-4 w-4 text-amber-500" />
+                    Auto-completar con plantilla
+                  </Label>
+                  {autoFilled && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetForm}
+                      data-testid="button-reset-form"
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Limpiar
+                    </Button>
+                  )}
+                </div>
+                <Select
+                  value={selectedTemplate}
+                  onValueChange={(value) => applyTemplate(value)}
+                >
+                  <SelectTrigger data-testid="select-template">
+                    <SelectValue placeholder="Seleccione una plantilla de capacitación..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PLANTILLAS_CAPACITACION_PESV.map((template) => (
+                      <SelectItem key={template.title} value={template.title}>
+                        {template.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {autoFilled && (
+                <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md p-3 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    Todos los campos han sido auto-completados. Revise y ajuste si es necesario, luego guarde.
+                  </p>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="title">Título</Label>
