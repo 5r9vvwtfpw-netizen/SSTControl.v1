@@ -421,6 +421,68 @@ export function registerBillingRoutes(app: Express) {
         });
       }
 
+      // GUARD: Check if there's already a recent successful Stripe session for this company
+      // This prevents duplicate payments when the user clicks "Pagar" again before the webhook updates the subscription
+      try {
+        const stripe = await getUncachableStripeClient();
+        const recentSessions = await stripe.checkout.sessions.list({
+          limit: 5,
+          created: {
+            gte: Math.floor((Date.now() - 30 * 60 * 1000) / 1000), // Last 30 minutes
+          },
+        });
+        
+        const duplicateSession = recentSessions.data.find(s => 
+          s.metadata?.companyId === subscription.companyId &&
+          s.metadata?.type === 'subscription_activation' &&
+          (s.payment_status === 'paid' || s.status === 'complete')
+        );
+        
+        if (duplicateSession) {
+          console.log('[Billing] Recent paid session found, preventing duplicate:', duplicateSession.id);
+          
+          // Force-update subscription to active since payment was confirmed
+          const now = new Date();
+          const nextBillingDate = new Date(now);
+          nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+          
+          await storage.updateSubscription(subscription.id, {
+            status: 'active',
+            currentPeriodStart: now,
+            currentPeriodEnd: nextBillingDate,
+            trialEnd: null,
+            lastPaymentDate: now,
+            nextPaymentDate: nextBillingDate,
+          });
+          
+          return res.status(200).json({
+            success: true,
+            alreadyActive: true,
+            message: 'Tu pago ya fue procesado exitosamente. Tu suscripción está activa.',
+          });
+        }
+        
+        // Also check for open/unpaid sessions to prevent creating duplicates
+        const pendingSession = recentSessions.data.find(s =>
+          s.metadata?.companyId === subscription.companyId &&
+          s.metadata?.type === 'subscription_activation' &&
+          s.status === 'open' &&
+          s.payment_status === 'unpaid'
+        );
+        
+        if (pendingSession && pendingSession.url) {
+          console.log('[Billing] Existing open checkout session found, reusing:', pendingSession.id);
+          return res.status(200).json({
+            success: true,
+            paymentUrl: pendingSession.url,
+            sessionId: pendingSession.id,
+            message: 'Redirigiendo a tu sesión de pago existente...',
+          });
+        }
+      } catch (checkError: any) {
+        console.warn('[Billing] Error checking recent sessions (continuing):', checkError.message);
+      }
+
       // Trial users CAN activate (convert trial → paid). Do NOT block them.
       // The TrialAlert button "Activar suscripción" appears for trial users
       // wanting to convert to paid before their trial expires.
@@ -446,7 +508,7 @@ export function registerBillingRoutes(app: Express) {
       console.log('[Billing] Company:', company?.name);
       
       console.log('[Billing] Getting Stripe client...');
-      const stripe = await getUncachableStripeClient();
+      const stripeClient = await getUncachableStripeClient();
       console.log('[Billing] Stripe client obtained');
       
       const baseUrl = process.env.APP_URL || (process.env.REPLIT_DEV_DOMAIN 
@@ -648,7 +710,7 @@ export function registerBillingRoutes(app: Express) {
       console.log('[Billing] Creating Stripe session. Source:', quoteSource, 'Amount:', amountInCOP, 'COP, stripeUnit:', stripeUnitAmount, ', baseUrl:', baseUrl);
       
       try {
-        const session = await stripe.checkout.sessions.create({
+        const session = await stripeClient.checkout.sessions.create({
           mode: 'payment',
           payment_method_types: ['card'],
           line_items: [

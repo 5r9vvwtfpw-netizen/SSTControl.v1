@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   User, Building2, CreditCard, FileText, Download, Calendar, 
-  AlertCircle, Loader2, Mail, Phone, MapPin, Shield, Users, Check
+  AlertCircle, Loader2, Mail, Phone, MapPin, Shield, Users, Check, CheckCircle
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -90,9 +91,39 @@ const getSedesLimitText = (maxSedes: number | null) => {
 
 export default function MiCuenta() {
   const [, navigate] = useLocation();
+  const searchParams = new URLSearchParams(useSearch());
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("company");
+  
+  const activationStatus = searchParams.get('activation');
+  const paymentSessionId = searchParams.get('session_id');
+  const [paymentProcessing, setPaymentProcessing] = useState(activationStatus === 'success');
+
+  useEffect(() => {
+    if (activationStatus === 'success') {
+      setPaymentProcessing(true);
+      setActiveTab("subscription");
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/my-subscription'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/my-invoices'] });
+      
+      const pollInterval = setInterval(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/billing/my-subscription'] });
+      }, 3000);
+      
+      const timeout = setTimeout(() => {
+        clearInterval(pollInterval);
+        setPaymentProcessing(false);
+      }, 30000);
+      
+      return () => {
+        clearInterval(pollInterval);
+        clearTimeout(timeout);
+      };
+    }
+  }, [activationStatus]);
 
   const { data: companyData, isLoading: isLoadingCompany } = useQuery<CompanyData>({
     queryKey: ['/api/company/current'],
@@ -192,10 +223,17 @@ export default function MiCuenta() {
         `/api/billing/subscription/${subscriptionData.subscription.id}/activate`,
         quoteToken ? { quoteToken } : {}
       );
-      return await res.json() as { paymentUrl?: string; error?: string; amount?: number; trial?: boolean; message?: string; trialDays?: number };
+      return await res.json() as { paymentUrl?: string; error?: string; amount?: number; trial?: boolean; message?: string; trialDays?: number; alreadyActive?: boolean };
     },
     onSuccess: (data) => {
-      if (data.trial) {
+      if (data.alreadyActive) {
+        toast({
+          title: "Suscripción activa",
+          description: data.message || "Tu suscripción ya está activa.",
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/billing/my-subscription'] });
+      } else if (data.trial) {
         toast({
           title: "Prueba gratuita activada",
           description: data.message || `${data.trialDays || 30} días de prueba gratis activados`,
@@ -242,11 +280,39 @@ export default function MiCuenta() {
     );
   }
 
+  const isSubscriptionActive = subscriptionData?.subscription.status === 'active';
+  
+  useEffect(() => {
+    if (paymentProcessing && isSubscriptionActive) {
+      setPaymentProcessing(false);
+      toast({
+        title: "Pago exitoso",
+        description: "Tu suscripción ha sido activada correctamente.",
+      });
+      window.history.replaceState({}, '', '/mi-cuenta');
+    }
+  }, [isSubscriptionActive, paymentProcessing, toast]);
+
   return (
     <div className="container mx-auto p-6 max-w-6xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold" data-testid="text-page-title">Mi Cuenta</h1>
       </div>
+
+      {paymentProcessing && !isSubscriptionActive && (
+        <Alert className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-300 dark:from-green-950/50 dark:to-emerald-950/50 dark:border-green-700" data-testid="alert-payment-processing">
+          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <AlertDescription className="flex items-center gap-3">
+            <div>
+              <span className="font-bold text-green-800 dark:text-green-200">Pago recibido exitosamente</span>
+              <p className="text-sm text-green-700 dark:text-green-300">
+                Tu pago ha sido procesado. Estamos activando tu suscripción, esto puede tomar unos segundos...
+              </p>
+            </div>
+            <Loader2 className="h-5 w-5 animate-spin text-green-600 dark:text-green-400 shrink-0" />
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full max-w-2xl grid-cols-3">
@@ -359,7 +425,7 @@ export default function MiCuenta() {
           ) : subscriptionData ? (
             <>
               {/* Trial Banner */}
-              {subscriptionData.subscription.status === 'trial' && subscriptionData.subscription.trialEndsAt && (
+              {subscriptionData.subscription.status === 'trial' && subscriptionData.subscription.trialEndsAt && !paymentProcessing && (
                 <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20" data-testid="card-trial-banner">
                   <CardContent className="pt-6">
                     <div className="flex flex-wrap items-center justify-between gap-4">
@@ -383,7 +449,7 @@ export default function MiCuenta() {
                       <div className="flex gap-2 flex-wrap">
                         <Button 
                           onClick={() => activateSubscriptionMutation.mutate()}
-                          disabled={activateSubscriptionMutation.isPending}
+                          disabled={activateSubscriptionMutation.isPending || paymentProcessing}
                           data-testid="button-pay-now"
                         >
                           {activateSubscriptionMutation.isPending ? (
@@ -409,19 +475,30 @@ export default function MiCuenta() {
                       <CardDescription>{subscriptionData.plan.description}</CardDescription>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      {getStatusBadge(subscriptionData.subscription.status)}
-                      <Button 
-                        onClick={() => activateSubscriptionMutation.mutate()}
-                        disabled={activateSubscriptionMutation.isPending}
-                        data-testid="button-pay-now-main"
-                      >
-                        {activateSubscriptionMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <CreditCard className="h-4 w-4 mr-2" />
-                        )}
-                        Pagar Ahora
-                      </Button>
+                      {paymentProcessing ? (
+                        <Badge variant="default" className="bg-green-600">
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          Procesando pago...
+                        </Badge>
+                      ) : (
+                        <>
+                          {getStatusBadge(subscriptionData.subscription.status)}
+                          {subscriptionData.subscription.status !== 'active' && (
+                            <Button 
+                              onClick={() => activateSubscriptionMutation.mutate()}
+                              disabled={activateSubscriptionMutation.isPending || paymentProcessing}
+                              data-testid="button-pay-now-main"
+                            >
+                              {activateSubscriptionMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <CreditCard className="h-4 w-4 mr-2" />
+                              )}
+                              Pagar Ahora
+                            </Button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 </CardHeader>

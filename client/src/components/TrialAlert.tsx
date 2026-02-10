@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { useSearch } from "wouter";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Clock, XCircle, CreditCard, Loader2 } from "lucide-react";
+import { AlertTriangle, Clock, XCircle, CreditCard, Loader2, CheckCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -23,6 +24,11 @@ export function TrialAlert() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isActivating, setIsActivating] = useState(false);
+  
+  const searchParams = new URLSearchParams(useSearch());
+  const activationStatus = searchParams.get('activation');
+  const paymentSuccess = searchParams.get('payment');
+  const isPaymentProcessing = activationStatus === 'success' || paymentSuccess === 'success';
 
   const { data: subscription } = useQuery<SubscriptionResponse>({
     queryKey: ['/api/billing/subscription'],
@@ -36,6 +42,20 @@ export function TrialAlert() {
   const trialEnd = subscription.trialEnd || subscription.trial_end;
 
   if (status === 'active') return null;
+
+  if (isPaymentProcessing) {
+    return (
+      <Alert className="mb-4 bg-gradient-to-r from-green-50 to-emerald-50 border-green-400 dark:from-green-950/50 dark:to-emerald-950/50 dark:border-green-600" data-testid="alert-payment-processing">
+        <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+        <AlertDescription className="flex items-center gap-3">
+          <span className="font-bold text-green-800 dark:text-green-200">
+            Pago recibido. Activando tu suscripción...
+          </span>
+          <Loader2 className="h-4 w-4 animate-spin text-green-600 dark:text-green-400" />
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   const handleActivateSubscription = async () => {
     if (!subscriptionId) {
@@ -56,7 +76,7 @@ export function TrialAlert() {
         quoteToken ? { quoteToken } : {}
       );
       
-      const data = await res.json() as { paymentUrl?: string; error?: string; success?: boolean };
+      const data = await res.json() as { paymentUrl?: string; error?: string; success?: boolean; alreadyActive?: boolean; message?: string };
       
       console.log("Activation response:", data);
       
@@ -66,6 +86,15 @@ export function TrialAlert() {
           description: data.error,
           variant: "destructive",
         });
+        return;
+      }
+
+      if (data.alreadyActive) {
+        toast({
+          title: "Suscripción activa",
+          description: data.message || "Tu suscripción ya está activa.",
+        });
+        window.location.reload();
         return;
       }
       
