@@ -7739,7 +7739,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
-      const validatedData = insertRoadSafetyTrainingSchema.parse(req.body);
+      const validatedData = insertRoadSafetyTrainingSchema.omit({ companyId: true }).parse(req.body);
       const training = await storage.createRoadSafetyTraining(validatedData, companyId);
       res.status(201).json(training);
     } catch (error: any) {
@@ -44285,7 +44285,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).send('No tienes acceso a esta evaluación');
       }
 
-      const validatedData = insertRoadSafetyTrainingSchema.parse(req.body);
+      const validatedData = insertRoadSafetyTrainingSchema.omit({ companyId: true }).parse(req.body);
       const training = await storage.createRoadSafetyTraining({
         ...validatedData,
         evaluacionPesvId: evaluacionId,
