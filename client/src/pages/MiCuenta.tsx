@@ -614,8 +614,16 @@ export default function MiCuenta() {
                               ? new Date(invoices[0].paidDate || invoices[0].issueDate)
                               : null;
                             if (lastPaymentDate) {
-                              const nextMonth = new Date(lastPaymentDate.getFullYear(), lastPaymentDate.getMonth() + 2, 0);
-                              return formatDate(nextMonth.toISOString());
+                              const year = lastPaymentDate.getFullYear();
+                              const month = lastPaymentDate.getMonth();
+                              const day = lastPaymentDate.getDate();
+                              const nextMonth = month + 1;
+                              const nextYear = nextMonth > 11 ? year + 1 : year;
+                              const nextMonthNorm = nextMonth > 11 ? 0 : nextMonth;
+                              const daysInNextMonth = new Date(nextYear, nextMonthNorm + 1, 0).getDate();
+                              const nextDay = Math.min(day, daysInNextMonth);
+                              const next = new Date(nextYear, nextMonthNorm, nextDay);
+                              return formatDate(next.toISOString());
                             }
                             if (subscriptionData.subscription.trialEndsAt) {
                               return formatDate(subscriptionData.subscription.trialEndsAt);
