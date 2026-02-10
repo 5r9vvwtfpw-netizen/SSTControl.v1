@@ -206,6 +206,7 @@ import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 
 const normativaAccidentes = [
   {
@@ -432,9 +433,10 @@ export default function Accidentes() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center gap-2">
         <BackToEvaluationButton />
         <BackToCronogramaButton />
+        <BackToPesvEvaluationButton />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
