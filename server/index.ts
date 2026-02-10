@@ -566,12 +566,14 @@ app.post(
                             : 'Crédito por ajuste de precio de empresa',
                         });
 
+                        const updatedInvoice = await stripeClientForInvoice.invoices.retrieve(draftInvoice.id);
                         logger.info({
                           invoiceId: draftInvoice.id,
                           companyId: matchingSub.companyId,
                           adjustment,
+                          newAmountDue: updatedInvoice.amount_due,
                           newExpectedTotal: expectedPrice,
-                        }, 'Invoice adjusted with corrective invoice item');
+                        }, 'Invoice adjusted with corrective invoice item - verified new total');
                       }
                     } else if (expectedPrice > 0) {
                       logger.info({
