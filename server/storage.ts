@@ -2673,7 +2673,99 @@ export class DbStorage implements IStorage {
   }
 
   async deleteUser(id: string): Promise<void> {
-    await db.delete(schema.users).where(eq(schema.users.id, id));
+    await db.transaction(async (tx) => {
+      // 1. Delete records from tables with NOT NULL references to users.id
+      await tx.delete(schema.historialComunicacionesSst).where(eq(schema.historialComunicacionesSst.userId, id));
+      await tx.delete(schema.auditLogs).where(eq(schema.auditLogs.userId, id));
+      await tx.delete(schema.sstDocumentAccessLog).where(eq(schema.sstDocumentAccessLog.userId, id));
+      await tx.delete(schema.providerAccessLogs).where(eq(schema.providerAccessLogs.providerId, id));
+      await tx.delete(schema.ticketStatusHistory).where(eq(schema.ticketStatusHistory.changedBy, id));
+      await tx.delete(schema.ticketResponses).where(eq(schema.ticketResponses.userId, id));
+      await tx.delete(schema.supportAccessEvents).where(eq(schema.supportAccessEvents.actorId, id));
+      await tx.delete(schema.supportAccessSessions).where(eq(schema.supportAccessSessions.supportUserId, id));
+      await tx.delete(schema.supportTickets).where(eq(schema.supportTickets.userId, id));
+      await tx.delete(schema.internalMessages).where(
+        or(eq(schema.internalMessages.senderId, id), eq(schema.internalMessages.receiverId, id))
+      );
+      await tx.delete(schema.licensedProfessionalAssignments).where(eq(schema.licensedProfessionalAssignments.userId, id));
+      await tx.delete(schema.copasstCursoAsignaciones).where(eq(schema.copasstCursoAsignaciones.asignadoPor, id));
+      await tx.delete(schema.comunicacionesSst).where(eq(schema.comunicacionesSst.enviadoPor, id));
+      await tx.delete(schema.planComunicacionSst).where(eq(schema.planComunicacionSst.elaboradoPor, id));
+
+      // 2. Set NULL on all nullable references to users.id using raw SQL for type safety
+      await tx.execute(sql`
+        UPDATE consent_records SET revoked_by = NULL WHERE revoked_by = ${id};
+        UPDATE consent_records SET recorded_by = NULL WHERE recorded_by = ${id};
+        UPDATE consent_records SET updated_by = NULL WHERE updated_by = ${id};
+        UPDATE arco_requests SET user_id = NULL WHERE user_id = ${id};
+        UPDATE arco_requests SET assigned_to = NULL WHERE assigned_to = ${id};
+        UPDATE arco_requests SET escalated_to = NULL WHERE escalated_to = ${id};
+        UPDATE arco_requests SET intake_recorded_by = NULL WHERE intake_recorded_by = ${id};
+        UPDATE arco_requests SET response_provided_by = NULL WHERE response_provided_by = ${id};
+        UPDATE arco_requests SET representative_verified_by = NULL WHERE representative_verified_by = ${id};
+        UPDATE health_conditions SET registered_by = NULL WHERE registered_by = ${id};
+        UPDATE plan_comunicacion_sst SET aprobado_por = NULL WHERE aprobado_por = ${id};
+        UPDATE plan_comunicacion_sst SET responsable_comunicacion_interna = NULL WHERE responsable_comunicacion_interna = ${id};
+        UPDATE plan_comunicacion_sst SET responsable_comunicacion_externa = NULL WHERE responsable_comunicacion_externa = ${id};
+        UPDATE plan_comunicacion_sst SET responsable_comunicacion_contratistas = NULL WHERE responsable_comunicacion_contratistas = ${id};
+        UPDATE lecturas_comunicacion SET user_id = NULL WHERE user_id = ${id};
+        UPDATE reportes_trabajadores SET reportado_por = NULL WHERE reportado_por = ${id};
+        UPDATE reportes_trabajadores SET asignado_a = NULL WHERE asignado_a = ${id};
+        UPDATE reportes_trabajadores SET respondido_por = NULL WHERE respondido_por = ${id};
+        UPDATE sociodemographic_diagnosis SET closed_by = NULL WHERE closed_by = ${id};
+        UPDATE support_tickets SET assigned_to = NULL WHERE assigned_to = ${id};
+        UPDATE support_tickets SET resolved_by = NULL WHERE resolved_by = ${id};
+        UPDATE support_access_sessions SET approved_by = NULL WHERE approved_by = ${id};
+        UPDATE inspecciones_peligros_vinculados SET verificado_por = NULL WHERE verificado_por = ${id};
+        UPDATE pesv_comite_actas SET creado_por = NULL WHERE creado_por = ${id};
+        UPDATE recomendaciones_arl_autoridades SET creado_por = NULL WHERE creado_por = ${id};
+        UPDATE recomendaciones_arl_autoridades SET actualizado_por = NULL WHERE actualizado_por = ${id};
+        UPDATE seguimiento_recomendaciones SET registrado_por = NULL WHERE registrado_por = ${id};
+        UPDATE matrices_iperc SET responsable_evaluacion_id = NULL WHERE responsable_evaluacion_id = ${id};
+        UPDATE matrices_iperc SET aprobado_por_id = NULL WHERE aprobado_por_id = ${id};
+        UPDATE peligros_iperc SET responsable_implementacion_id = NULL WHERE responsable_implementacion_id = ${id};
+        UPDATE peligros_trabajadores_asignacion SET asignado_por = NULL WHERE asignado_por = ${id};
+        UPDATE auditorias_internas SET auditorista_lider_id = NULL WHERE auditorista_lider_id = ${id};
+        UPDATE auditorias_internas SET responsable_auditado_id = NULL WHERE responsable_auditado_id = ${id};
+        UPDATE auditorias_internas SET aprobado_por_id = NULL WHERE aprobado_por_id = ${id};
+        UPDATE auditoria_auditores SET auditor_id = NULL WHERE auditor_id = ${id};
+        UPDATE auditoria_checklists SET evaluado_por_id = NULL WHERE evaluado_por_id = ${id};
+        UPDATE hallazgos_auditoria SET detectado_por_id = NULL WHERE detectado_por_id = ${id};
+        UPDATE hallazgos_auditoria SET responsable_area_id = NULL WHERE responsable_area_id = ${id};
+        UPDATE hallazgos_auditoria SET verificado_por_id = NULL WHERE verificado_por_id = ${id};
+        UPDATE planes_accion_auditoria SET responsable_id = NULL WHERE responsable_id = ${id};
+        UPDATE planes_accion_auditoria SET verificado_por_id = NULL WHERE verificado_por_id = ${id};
+        UPDATE revisiones_direccion SET aprobado_por = NULL WHERE aprobado_por = ${id};
+        UPDATE revisiones_direccion SET creado_por = NULL WHERE creado_por = ${id};
+        UPDATE participantes_revision SET user_id = NULL WHERE user_id = ${id};
+        UPDATE temas_revision SET responsable_presentacion = NULL WHERE responsable_presentacion = ${id};
+        UPDATE acciones_revision SET responsable = NULL WHERE responsable = ${id};
+        UPDATE acciones_revision SET verificado_por = NULL WHERE verificado_por = ${id};
+        UPDATE plan_change_history SET requested_by = NULL WHERE requested_by = ${id};
+        UPDATE sst_documents SET prepared_by = NULL WHERE prepared_by = ${id};
+        UPDATE sst_documents SET reviewed_by = NULL WHERE reviewed_by = ${id};
+        UPDATE sst_documents SET approved_by = NULL WHERE approved_by = ${id};
+        UPDATE sst_documents SET created_by = NULL WHERE created_by = ${id};
+        UPDATE sst_documents SET updated_by = NULL WHERE updated_by = ${id};
+        UPDATE sst_document_versions SET created_by = NULL WHERE created_by = ${id};
+        UPDATE sst_document_versions SET approved_by = NULL WHERE approved_by = ${id};
+        UPDATE document_worker_assignments SET assigned_by = NULL WHERE assigned_by = ${id};
+        UPDATE partes_interesadas SET responsable_comunicacion = NULL WHERE responsable_comunicacion = ${id};
+        UPDATE analisis_contexto SET elaborado_por = NULL WHERE elaborado_por = ${id};
+        UPDATE analisis_contexto SET aprobado_por = NULL WHERE aprobado_por = ${id};
+        UPDATE factores_contexto SET responsable_accion = NULL WHERE responsable_accion = ${id};
+        UPDATE acciones_mejora_contexto SET responsable_id = NULL WHERE responsable_id = ${id};
+        UPDATE mediciones_indicador_sv SET registrado_por = NULL WHERE registrado_por = ${id};
+        UPDATE objetivos_estandares_vinculacion SET created_by = NULL WHERE created_by = ${id};
+        UPDATE riesgos_sst_pesv_vinculacion SET vinculado_por = NULL WHERE vinculado_por = ${id};
+        UPDATE evaluaciones_pesv SET responsable_evaluacion_id = NULL WHERE responsable_evaluacion_id = ${id};
+        UPDATE evaluaciones_pesv SET aprobado_por_id = NULL WHERE aprobado_por_id = ${id};
+        UPDATE pesv_step_details SET responsable_implementacion_id = NULL WHERE responsable_implementacion_id = ${id};
+      `);
+
+      // 3. Finally delete the user
+      await tx.delete(schema.users).where(eq(schema.users.id, id));
+    });
   }
 
   // Worker methods (company-scoped for multi-tenant isolation)
