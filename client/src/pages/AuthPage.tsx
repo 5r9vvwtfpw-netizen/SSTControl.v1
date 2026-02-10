@@ -363,7 +363,7 @@ export default function AuthPage() {
                           <TooltipTrigger asChild>
                             <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
                           </TooltipTrigger>
-                          <TooltipContent>Importado de tu cotizaci&oacute;n</TooltipContent>
+                          <TooltipContent>Importado de tu cotización</TooltipContent>
                         </Tooltip>
                       )}
                     </Label>
@@ -394,13 +394,13 @@ export default function AuthPage() {
                   <div className="space-y-2">
                     <Label className="flex items-center gap-1">
                       <Briefcase className="h-3.5 w-3.5" />
-                      Actividad Econ&oacute;mica (CIIU) *
+                      Actividad Económica (CIIU) *
                       {quotePreFilled.ciiuCode && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
                           </TooltipTrigger>
-                          <TooltipContent>Importado de tu cotizaci&oacute;n</TooltipContent>
+                          <TooltipContent>Importado de tu cotización</TooltipContent>
                         </Tooltip>
                       )}
                     </Label>
@@ -438,7 +438,7 @@ export default function AuthPage() {
                             <TooltipTrigger asChild>
                               <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
                             </TooltipTrigger>
-                            <TooltipContent>Importado de tu cotizaci&oacute;n</TooltipContent>
+                            <TooltipContent>Importado de tu cotización</TooltipContent>
                           </Tooltip>
                         )}
                       </Label>
@@ -455,13 +455,13 @@ export default function AuthPage() {
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1">
                         <Truck className="h-3.5 w-3.5" />
-                        Veh&iacute;culos (PESV)
+                        Vehículos (PESV)
                         {quotePreFilled.vehicles && (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
                             </TooltipTrigger>
-                            <TooltipContent>Importado de tu cotizaci&oacute;n</TooltipContent>
+                            <TooltipContent>Importado de tu cotización</TooltipContent>
                           </Tooltip>
                         )}
                       </Label>
