@@ -113,6 +113,9 @@ export default function DetalleEvaluacionPesv() {
       return res.json();
     },
     onSuccess: async () => {
+      if (selectedPaso?.fase) {
+        setSelectedFase(selectedPaso.fase);
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", id, "respuestas"] });
       setRespuestaDialogOpen(false);
       toast({
