@@ -8,12 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, AlertCircle, CheckCircle2, Mail, XCircle, Sparkles, Eye, EyeOff, Building2, Briefcase, Users, MapPin, Phone, AlertTriangle, Truck } from "lucide-react";
+import { Shield, AlertCircle, CheckCircle2, Mail, XCircle, Sparkles, Eye, EyeOff, Building2, Briefcase, Users, MapPin, Phone, AlertTriangle, Truck, LinkIcon } from "lucide-react";
 import { Redirect, useLocation, Link } from "wouter";
 import sstLogoPath from "@assets/SST-Colombia-logo-3_1768408022586.png";
 import { CIIU_CODES, CIIU_SECTIONS } from "@/lib/ciiu-codes";
 import { getRiskLevelFromCiiu, getCiiuClassification } from "@shared/ciiu-risk-classification";
 import { calculateChapter } from "@shared/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const chapterInfo: Record<string, { name: string; standards: number; description: string }> = {
   "1": { name: "Estándares Mínimos", standards: 7, description: "Empresas de 1-10 trabajadores con Riesgo I, II o III" },
@@ -63,6 +64,12 @@ export default function AuthPage() {
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [quotePreFilled, setQuotePreFilled] = useState<{
+    companyName?: boolean;
+    ciiuCode?: boolean;
+    employees?: boolean;
+    vehicles?: boolean;
+  }>({});
 
   const searchParams = new URLSearchParams(window.location.search);
   const urlPlan = searchParams.get("plan");
@@ -88,18 +95,26 @@ export default function AuthPage() {
             localStorage.setItem('sst_quote_data', JSON.stringify(result.data));
             localStorage.setItem('sst_quote_token', urlQuote);
             
+            const filled: typeof quotePreFilled = {};
+            
             if (result.data.companyName) {
               setRegisterData(prev => ({ ...prev, fullName: result.data.companyName }));
+              filled.companyName = true;
             }
             if (result.data.ciiuCode) {
               setCompanyData(prev => ({ ...prev, ciiuCode: result.data.ciiuCode }));
+              filled.ciiuCode = true;
             }
             if (result.data.employees) {
               setCompanyData(prev => ({ ...prev, numberOfWorkers: result.data.employees }));
+              filled.employees = true;
             }
-            if (result.data.vehicles) {
+            if (result.data.vehicles !== undefined && result.data.vehicles !== null) {
               setCompanyData(prev => ({ ...prev, numberOfVehicles: result.data.vehicles }));
+              filled.vehicles = true;
             }
+            
+            setQuotePreFilled(filled);
           }
         }
       } catch (err) {
@@ -329,11 +344,28 @@ export default function AuthPage() {
 
               <TabsContent value="register">
                 <form onSubmit={handleRegister} className="space-y-3">
+
+                  {Object.keys(quotePreFilled).length > 0 && (
+                    <Alert className="border-green-500 bg-green-50 dark:bg-green-950 py-2" data-testid="alert-quote-prefilled">
+                      <LinkIcon className="h-4 w-4 text-green-600" />
+                      <AlertDescription className="text-xs text-green-700 dark:text-green-300">
+                        Datos importados de tu cotización en sst-colombia.com.co. Los campos marcados con <CheckCircle2 className="h-3 w-3 inline text-green-600" /> ya están pre-llenados. Solo completa los campos faltantes.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   
                   <div className="space-y-2">
                     <Label htmlFor="register-fullname" className="flex items-center gap-1">
                       <Building2 className="h-3.5 w-3.5" />
                       Nombre de empresa *
+                      {quotePreFilled.companyName && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                          </TooltipTrigger>
+                          <TooltipContent>Importado de tu cotizaci&oacute;n</TooltipContent>
+                        </Tooltip>
+                      )}
                     </Label>
                     <Input
                       id="register-fullname"
@@ -341,6 +373,7 @@ export default function AuthPage() {
                       value={registerData.fullName}
                       onChange={(e) => setRegisterData({ ...registerData, fullName: e.target.value })}
                       required
+                      className={quotePreFilled.companyName ? "border-green-300 dark:border-green-700" : ""}
                       data-testid="input-register-fullname"
                     />
                   </div>
@@ -361,13 +394,21 @@ export default function AuthPage() {
                   <div className="space-y-2">
                     <Label className="flex items-center gap-1">
                       <Briefcase className="h-3.5 w-3.5" />
-                      Actividad Económica (CIIU) *
+                      Actividad Econ&oacute;mica (CIIU) *
+                      {quotePreFilled.ciiuCode && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                          </TooltipTrigger>
+                          <TooltipContent>Importado de tu cotizaci&oacute;n</TooltipContent>
+                        </Tooltip>
+                      )}
                     </Label>
                     <Select 
                       value={companyData.ciiuCode} 
                       onValueChange={(val) => setCompanyData({ ...companyData, ciiuCode: val })}
                     >
-                      <SelectTrigger data-testid="select-register-ciiu">
+                      <SelectTrigger data-testid="select-register-ciiu" className={quotePreFilled.ciiuCode ? "border-green-300 dark:border-green-700" : ""}>
                         <SelectValue placeholder="Selecciona tu actividad económica" />
                       </SelectTrigger>
                       <SelectContent className="max-h-80">
@@ -392,6 +433,14 @@ export default function AuthPage() {
                       <Label className="flex items-center gap-1">
                         <Users className="h-3.5 w-3.5" />
                         Trabajadores *
+                        {quotePreFilled.employees && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                            </TooltipTrigger>
+                            <TooltipContent>Importado de tu cotizaci&oacute;n</TooltipContent>
+                          </Tooltip>
+                        )}
                       </Label>
                       <Input 
                         type="number"
@@ -399,13 +448,22 @@ export default function AuthPage() {
                         placeholder="Ej: 25" 
                         value={companyData.numberOfWorkers || ''}
                         onChange={(e) => setCompanyData({ ...companyData, numberOfWorkers: e.target.value === '' ? 1 : parseInt(e.target.value, 10) })}
+                        className={quotePreFilled.employees ? "border-green-300 dark:border-green-700" : ""}
                         data-testid="input-register-workers"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1">
                         <Truck className="h-3.5 w-3.5" />
-                        Vehículos (PESV)
+                        Veh&iacute;culos (PESV)
+                        {quotePreFilled.vehicles && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                            </TooltipTrigger>
+                            <TooltipContent>Importado de tu cotizaci&oacute;n</TooltipContent>
+                          </Tooltip>
+                        )}
                       </Label>
                       <Input 
                         type="number"
@@ -413,6 +471,7 @@ export default function AuthPage() {
                         placeholder="Ej: 5" 
                         value={companyData.numberOfVehicles || ''}
                         onChange={(e) => setCompanyData({ ...companyData, numberOfVehicles: e.target.value === '' ? 0 : parseInt(e.target.value, 10) })}
+                        className={quotePreFilled.vehicles ? "border-green-300 dark:border-green-700" : ""}
                         data-testid="input-register-vehicles"
                       />
                     </div>
