@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Check, X, MinusCircle, RefreshCcw, FileText, Car, ClipboardList, Hammer, CheckSquare, AlertCircle, ClipboardCheck, AlertTriangle, GraduationCap, ExternalLink, Users, Stethoscope, Wrench, Settings, BarChart3, Activity, Siren, AlertOctagon, LucideIcon, Sparkles, BookOpen, Wand2, CheckCircle2, FileCheck } from "lucide-react";
+import { ArrowLeft, Save, Check, X, MinusCircle, RefreshCcw, FileText, Car, ClipboardList, Hammer, CheckSquare, AlertCircle, ClipboardCheck, AlertTriangle, GraduationCap, ExternalLink, Users, Stethoscope, Wrench, Settings, BarChart3, Activity, Siren, AlertOctagon, LucideIcon, Sparkles, BookOpen, Wand2, CheckCircle2, FileCheck, Lock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Link } from "wouter";
@@ -22,6 +22,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation, useParams } from "wouter";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useCompanyContext } from "@/hooks/use-company-context";
+import { isModuleAllowedForChapter, type ChapterType } from "@shared/chapter-modules";
 import { NIVELES_PESV_LABELS, FASES_PESV_LABELS, FASES_PESV_COLORS, PASOS_PESV, PasoPesvData, ModuloSstUrl } from "@/data/pasos-pesv";
 
 type FasePHVA = "planear" | "hacer" | "verificar" | "actuar";
@@ -45,6 +48,7 @@ export default function DetalleEvaluacionPesv() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { companyChapter } = useCompanyContext();
   const [selectedFase, setSelectedFase] = useState<FasePHVA>("planear");
   const [selectedPaso, setSelectedPaso] = useState<PasoPesvData | null>(null);
   const [respuestaDialogOpen, setRespuestaDialogOpen] = useState(false);
@@ -1058,12 +1062,36 @@ export default function DetalleEvaluacionPesv() {
                   <div className="flex flex-col gap-2">
                     {selectedPaso.modulosSstUrls.map((modulo: ModuloSstUrl) => {
                       const IconComponent = modulo.icono ? ICONO_MAP[modulo.icono] : ExternalLink;
+                      const moduleAllowed = !companyChapter || isModuleAllowedForChapter(modulo.url, companyChapter as ChapterType);
+                      if (!moduleAllowed) {
+                        return (
+                          <Tooltip key={modulo.url}>
+                            <TooltipTrigger asChild>
+                              <div>
+                                <Button 
+                                  type="button" 
+                                  variant="outline"
+                                  className="w-full gap-2 opacity-50 cursor-not-allowed"
+                                  disabled
+                                  data-testid={`button-ir-sst-${modulo.url.replace('/', '')}`}
+                                >
+                                  <Lock className="h-4 w-4" />
+                                  Ir a {modulo.nombre}
+                                </Button>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Módulo no disponible en su plan actual</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      }
                       return (
                         <Link key={modulo.url} href={modulo.url}>
                           <Button 
                             type="button" 
                             variant="outline"
-                            className="w-full gap-2 border-blue-300 text-blue-700 font-medium"
+                            className="w-full gap-2 border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-400 font-medium"
                             data-testid={`button-ir-sst-${modulo.url.replace('/', '')}`}
                           >
                             {IconComponent && <IconComponent className="h-4 w-4" />}
