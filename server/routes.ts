@@ -45908,7 +45908,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(400).json({ error: "Se requiere companyId" });
       }
       
-      const validated = insertVehicleMaintenanceSchema.parse(req.body);
+      const validated = insertVehicleMaintenanceSchema.omit({ companyId: true }).parse(req.body);
       const maintenance = await storage.createVehicleMaintenance(validated, companyId);
       res.status(201).json(maintenance);
     } catch (error: any) {
