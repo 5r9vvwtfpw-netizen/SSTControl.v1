@@ -117,7 +117,7 @@ export default function PesvMonitoreoGps() {
     const data: InsertVehicleGpsTracking = {
       companyId: currentCompany.id,
       vehicleId: formData.vehicleId,
-      driverId: formData.driverId || undefined,
+      driverId: formData.driverId && formData.driverId !== "none" ? formData.driverId : undefined,
       trackingDate: formData.trackingDate,
       trackingTime: formData.trackingTime || undefined,
       latitude: formData.latitude || undefined,
@@ -279,7 +279,7 @@ export default function PesvMonitoreoGps() {
                         <SelectValue placeholder="Seleccione un conductor" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Sin conductor asignado</SelectItem>
+                        <SelectItem value="none">Sin conductor asignado</SelectItem>
                         {drivers.map((driver) => (
                           <SelectItem key={driver.id} value={driver.id}>
                             {driver.name} - {driver.licenseNumber}
