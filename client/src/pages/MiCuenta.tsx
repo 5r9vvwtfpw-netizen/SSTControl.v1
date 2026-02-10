@@ -9,7 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   User, Building2, CreditCard, FileText, Download, Calendar, 
-  AlertCircle, Loader2, Mail, Phone, MapPin, Shield, Users, Check, CheckCircle
+  AlertCircle, Loader2, Mail, Phone, MapPin, Shield, Users, Check, CheckCircle,
+  Car, Briefcase, MapPinned
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -65,8 +66,11 @@ type CompanyData = {
   address?: string;
   phone?: string;
   email?: string;
+  city?: string;
+  ciiuCode?: string;
   numWorkers: number;
   riskLevel: string;
+  numberOfVehicles?: number;
   vehicleCount: number;
   driverCount: number;
 };
@@ -361,6 +365,56 @@ export default function MiCuenta() {
                     </span>
                   </div>
 
+                  {companyData.ciiuCode && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-muted-foreground">Actividad Económica (CIIU)</label>
+                      <div className="flex items-center gap-2">
+                        <Briefcase className="h-4 w-4 text-muted-foreground" />
+                        <span data-testid="text-company-ciiu">{companyData.ciiuCode}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Nivel de Riesgo</label>
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-muted-foreground" />
+                      <Badge variant="outline" data-testid="badge-risk-level">
+                        Nivel {companyData.riskLevel}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Número de Empleados</label>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-lg font-medium" data-testid="text-num-workers">
+                        {companyData.numWorkers}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Número de Vehículos (PESV)</label>
+                    <div className="flex items-center gap-2">
+                      <Car className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-lg font-medium" data-testid="text-num-vehicles">
+                        {companyData.numberOfVehicles ?? 0}
+                      </span>
+                    </div>
+                  </div>
+
+                  {companyData.city && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-muted-foreground">Ciudad</label>
+                      <div className="flex items-center gap-2">
+                        <MapPinned className="h-4 w-4 text-muted-foreground" />
+                        <span data-testid="text-company-city">{companyData.city}</span>
+                      </div>
+                    </div>
+                  )}
+
                   {companyData.address && (
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-muted-foreground">Dirección</label>
@@ -390,20 +444,6 @@ export default function MiCuenta() {
                       </div>
                     </div>
                   )}
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">Nivel de Riesgo</label>
-                    <Badge variant="outline" data-testid="badge-risk-level">
-                      Nivel {companyData.riskLevel}
-                    </Badge>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">Número de Trabajadores</label>
-                    <span className="text-lg font-medium" data-testid="text-num-workers">
-                      {companyData.numWorkers}
-                    </span>
-                  </div>
                 </div>
               </CardContent>
             </Card>
