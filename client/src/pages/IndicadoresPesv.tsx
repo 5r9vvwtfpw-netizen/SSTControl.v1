@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Search, Trash2, Edit, TrendingUp, Target, BarChart3, Activity, Calendar, ChevronDown, ChevronUp, FileDown } from "lucide-react";
+import { Plus, Search, Trash2, Edit, TrendingUp, Target, BarChart3, Activity, Calendar, ChevronDown, ChevronUp, FileDown, Zap, CheckCircle2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -29,6 +29,114 @@ const FRECUENCIA_CONFIG = {
   semestral: { label: "Semestral", className: "bg-orange-500/10 text-orange-700 dark:text-orange-400" },
   anual: { label: "Anual", className: "bg-red-500/10 text-red-700 dark:text-red-400" },
 };
+
+interface PlantillaIndicador {
+  nombre: string;
+  descripcion: string;
+  formula: string;
+  unidadMedida: string;
+  frecuenciaMedicion: "mensual" | "trimestral" | "semestral" | "anual";
+  fuenteDatos: string;
+}
+
+const PLANTILLAS_SPI: PlantillaIndicador[] = [
+  {
+    nombre: "Tasa de siniestros viales",
+    descripcion: "Mide la cantidad de siniestros viales por cada 100 vehículos de la flota en un periodo determinado",
+    formula: "(Número de siniestros viales / Número total de vehículos) x 100",
+    unidadMedida: "Tasa por 100 vehículos",
+    frecuenciaMedicion: "mensual",
+    fuenteDatos: "Registro de siniestros viales y flota vehicular",
+  },
+  {
+    nombre: "Índice de severidad de siniestros",
+    descripcion: "Evalúa la gravedad promedio de los siniestros viales ocurridos, midiendo días perdidos por siniestro",
+    formula: "(Días perdidos por siniestros viales / Número de siniestros viales)",
+    unidadMedida: "Días/siniestro",
+    frecuenciaMedicion: "mensual",
+    fuenteDatos: "Registro de siniestros y ausentismo laboral",
+  },
+  {
+    nombre: "Tasa de mortalidad vial",
+    descripcion: "Mide la cantidad de víctimas mortales en siniestros viales respecto al total de trabajadores expuestos",
+    formula: "(Número de víctimas mortales / Total de trabajadores expuestos) x 100.000",
+    unidadMedida: "Tasa por 100.000",
+    frecuenciaMedicion: "anual",
+    fuenteDatos: "Registro de siniestros viales y nómina",
+  },
+  {
+    nombre: "Cumplimiento de inspecciones vehiculares",
+    descripcion: "Porcentaje de inspecciones preoperacionales realizadas respecto a las programadas",
+    formula: "(Inspecciones realizadas / Inspecciones programadas) x 100",
+    unidadMedida: "%",
+    frecuenciaMedicion: "mensual",
+    fuenteDatos: "Registro de inspecciones vehiculares",
+  },
+  {
+    nombre: "Cumplimiento del plan de capacitación vial",
+    descripcion: "Porcentaje de actividades de capacitación en seguridad vial ejecutadas respecto a las planeadas",
+    formula: "(Capacitaciones ejecutadas / Capacitaciones planeadas) x 100",
+    unidadMedida: "%",
+    frecuenciaMedicion: "trimestral",
+    fuenteDatos: "Plan de capacitación y registros de asistencia",
+  },
+  {
+    nombre: "Tasa de infracciones de tránsito",
+    descripcion: "Mide el número de infracciones de tránsito cometidas por conductores de la organización",
+    formula: "(Número de infracciones / Número de conductores) x 100",
+    unidadMedida: "Tasa por 100 conductores",
+    frecuenciaMedicion: "mensual",
+    fuenteDatos: "SIMIT y registros internos de conductores",
+  },
+  {
+    nombre: "Porcentaje de conductores con licencia vigente",
+    descripcion: "Proporción de conductores que cuentan con licencia de conducción vigente y adecuada para su categoría",
+    formula: "(Conductores con licencia vigente / Total de conductores) x 100",
+    unidadMedida: "%",
+    frecuenciaMedicion: "mensual",
+    fuenteDatos: "Base de datos de conductores y RUNT",
+  },
+  {
+    nombre: "Cumplimiento de mantenimiento preventivo",
+    descripcion: "Porcentaje de mantenimientos preventivos ejecutados respecto a los programados para la flota",
+    formula: "(Mantenimientos ejecutados / Mantenimientos programados) x 100",
+    unidadMedida: "%",
+    frecuenciaMedicion: "mensual",
+    fuenteDatos: "Plan de mantenimiento vehicular",
+  },
+  {
+    nombre: "Índice de frecuencia de siniestros viales",
+    descripcion: "Número de siniestros viales por cada millón de kilómetros recorridos por la flota",
+    formula: "(Número de siniestros / Kilómetros totales recorridos) x 1.000.000",
+    unidadMedida: "Siniestros por millón de km",
+    frecuenciaMedicion: "mensual",
+    fuenteDatos: "Registros de siniestros y control de kilometraje/GPS",
+  },
+  {
+    nombre: "Cobertura de exámenes médicos para conductores",
+    descripcion: "Porcentaje de conductores con exámenes médicos ocupacionales vigentes que incluyen evaluación de aptitud para conducir",
+    formula: "(Conductores con examen vigente / Total de conductores) x 100",
+    unidadMedida: "%",
+    frecuenciaMedicion: "semestral",
+    fuenteDatos: "Registros de salud ocupacional",
+  },
+  {
+    nombre: "Porcentaje de vehículos con documentación vigente",
+    descripcion: "Proporción de vehículos que cuentan con SOAT, revisión técnico-mecánica y seguros al día",
+    formula: "(Vehículos con documentación completa / Total de vehículos) x 100",
+    unidadMedida: "%",
+    frecuenciaMedicion: "mensual",
+    fuenteDatos: "Registro de documentación vehicular",
+  },
+  {
+    nombre: "Eficacia de acciones correctivas viales",
+    descripcion: "Porcentaje de acciones correctivas implementadas que eliminaron la causa raíz del siniestro o incidente vial",
+    formula: "(Acciones correctivas eficaces / Total de acciones implementadas) x 100",
+    unidadMedida: "%",
+    frecuenciaMedicion: "trimestral",
+    fuenteDatos: "Seguimiento de investigaciones de siniestros",
+  },
+];
 
 const formSchema = insertIndicadorSVSchema.extend({
   codigo: z.string().min(1, "El código es requerido"),
@@ -65,6 +173,9 @@ export default function IndicadoresPesv() {
   const [expandedIndicador, setExpandedIndicador] = useState<string | null>(null);
   const [medicionDialogOpen, setMedicionDialogOpen] = useState(false);
   const [indicadorForMedicion, setIndicadorForMedicion] = useState<IndicadorSV | null>(null);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [selectedPlantillas, setSelectedPlantillas] = useState<number[]>([]);
+  const [selectedPlantillaIdx, setSelectedPlantillaIdx] = useState<string>("none");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -156,6 +267,7 @@ export default function IndicadoresPesv() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/indicadores-sv"] });
       setDialogOpen(false);
+      setSelectedPlantillaIdx("none");
       form.reset();
       toast({
         title: "Indicador creado",
@@ -253,6 +365,54 @@ export default function IndicadoresPesv() {
     },
   });
 
+  const bulkCreateMutation = useMutation({
+    mutationFn: async (plantillas: PlantillaIndicador[]) => {
+      const existingCodes = indicadores.map((i) => i.codigo);
+      let counter = 1;
+      const results = [];
+      for (const plantilla of plantillas) {
+        let code = `SPI-${String(counter).padStart(3, "0")}`;
+        while (existingCodes.includes(code)) {
+          counter++;
+          code = `SPI-${String(counter).padStart(3, "0")}`;
+        }
+        existingCodes.push(code);
+        const data = {
+          codigo: code,
+          nombre: plantilla.nombre,
+          descripcion: plantilla.descripcion,
+          formula: plantilla.formula,
+          unidadMedida: plantilla.unidadMedida,
+          frecuenciaMedicion: plantilla.frecuenciaMedicion,
+          fuenteDatos: plantilla.fuenteDatos,
+          activo: 1,
+        };
+        const res = await apiRequest("POST", "/api/indicadores-sv", data);
+        results.push(await res.json());
+        counter++;
+      }
+      return results;
+    },
+    onSuccess: (results) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/indicadores-sv"] });
+      setBulkDialogOpen(false);
+      setSelectedPlantillas([]);
+      toast({
+        title: `${results.length} indicadores creados`,
+        description: "Los indicadores SPI se han registrado exitosamente desde las plantillas ISO 39001",
+        className: "bg-green-50 border-green-200",
+      });
+    },
+    onError: (error: Error) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/indicadores-sv"] });
+      toast({
+        title: "Error al crear indicadores",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (values: FormValues) => {
     if (editingIndicador) {
       updateMutation.mutate({ id: editingIndicador.id, data: values });
@@ -303,6 +463,7 @@ export default function IndicadoresPesv() {
   const handleDialogClose = (open: boolean) => {
     if (!open) {
       setEditingIndicador(null);
+      setSelectedPlantillaIdx("none");
       form.reset();
     }
     setDialogOpen(open);
@@ -326,6 +487,56 @@ export default function IndicadoresPesv() {
       activo: 1,
     });
     setDialogOpen(true);
+  };
+
+  const handleOpenBulkDialog = () => {
+    const existingNames = indicadores.map((i) => i.nombre.toLowerCase());
+    const availableIndices = PLANTILLAS_SPI
+      .map((_, idx) => idx)
+      .filter((idx) => !existingNames.includes(PLANTILLAS_SPI[idx].nombre.toLowerCase()));
+    setSelectedPlantillas(availableIndices);
+    setBulkDialogOpen(true);
+  };
+
+  const togglePlantilla = (idx: number) => {
+    setSelectedPlantillas((prev) =>
+      prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
+    );
+  };
+
+  const handleBulkCreate = () => {
+    const plantillasToCreate = selectedPlantillas.map((idx) => PLANTILLAS_SPI[idx]);
+    if (plantillasToCreate.length > 0) {
+      bulkCreateMutation.mutate(plantillasToCreate);
+    }
+  };
+
+  const plantillasDisponibles = useMemo(() => {
+    const existingNames = indicadores.map((i) => i.nombre.toLowerCase());
+    return PLANTILLAS_SPI.map((p, idx) => ({
+      ...p,
+      idx,
+      yaExiste: existingNames.includes(p.nombre.toLowerCase()),
+    }));
+  }, [indicadores]);
+
+  const handleSelectPlantillaForForm = (plantilla: PlantillaIndicador) => {
+    form.reset({
+      codigo: generateNextCode(),
+      nombre: plantilla.nombre,
+      descripcion: plantilla.descripcion,
+      formula: plantilla.formula,
+      unidadMedida: plantilla.unidadMedida,
+      frecuenciaMedicion: plantilla.frecuenciaMedicion,
+      fuenteDatos: plantilla.fuenteDatos,
+      factorDesempenoId: undefined,
+      valorMeta: undefined,
+      valorMinimo: undefined,
+      valorMaximo: undefined,
+      valorActual: undefined,
+      responsableId: undefined,
+      activo: 1,
+    });
   };
 
   const handleAddMedicion = (indicador: IndicadorSV) => {
@@ -454,9 +665,13 @@ export default function IndicadoresPesv() {
             <FileDown className="h-4 w-4 mr-2" />
             Descargar PDF
           </Button>
+          <Button variant="outline" onClick={handleOpenBulkDialog} data-testid="button-crear-desde-plantilla">
+            <Zap className="h-4 w-4 mr-2" />
+            Crear desde Plantillas ISO
+          </Button>
           <Button className="bg-green-600 hover:bg-green-700" onClick={handleAddIndicador} data-testid="button-agregar-indicador">
             <Plus className="h-4 w-4 mr-2" />
-            Agregar Indicador
+            Agregar Manual
           </Button>
         </div>
       </div>
@@ -535,14 +750,24 @@ export default function IndicadoresPesv() {
               {searchTerm ? "No se encontraron indicadores con ese criterio de búsqueda" : "No hay indicadores de seguridad vial registrados"}
             </p>
             {!searchTerm && (
-              <Button
-                className="mt-4 bg-green-600 hover:bg-green-700"
-                onClick={handleAddIndicador}
-                data-testid="button-crear-primer-indicador"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Crear primer indicador
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+                <Button
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={handleOpenBulkDialog}
+                  data-testid="button-crear-desde-plantilla-empty"
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Crear desde Plantillas ISO
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleAddIndicador}
+                  data-testid="button-crear-primer-indicador"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear manualmente
+                </Button>
+              </div>
             )}
           </Card>
         ) : (
@@ -725,6 +950,37 @@ export default function IndicadoresPesv() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {!editingIndicador && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Cargar desde plantilla ISO 39001</label>
+                  <Select
+                    onValueChange={(val) => {
+                      setSelectedPlantillaIdx(val);
+                      if (val !== "none") {
+                        const idx = parseInt(val);
+                        handleSelectPlantillaForForm(PLANTILLAS_SPI[idx]);
+                      }
+                    }}
+                    value={selectedPlantillaIdx}
+                  >
+                    <SelectTrigger data-testid="select-plantilla">
+                      <SelectValue placeholder="Seleccionar plantilla para auto-llenar..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Seleccionar plantilla...</SelectItem>
+                      {PLANTILLAS_SPI.map((p, idx) => (
+                        <SelectItem key={idx} value={String(idx)}>
+                          {p.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Seleccione una plantilla para auto-llenar todos los campos. Puede modificar los datos después.
+                  </p>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -1130,6 +1386,106 @@ export default function IndicadoresPesv() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
+        <DialogContent className="w-[95vw] max-w-[700px] max-h-[90vh] overflow-y-auto mx-auto">
+          <DialogHeader>
+            <DialogTitle>Crear Indicadores desde Plantillas ISO 39001</DialogTitle>
+            <DialogDescription>
+              Seleccione los indicadores SPI predefinidos que desea crear. Se generarán automáticamente con todos los campos completados.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
+              <span className="text-sm text-muted-foreground">
+                {selectedPlantillas.length} de {PLANTILLAS_SPI.length} seleccionados
+              </span>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const available = plantillasDisponibles.filter((p) => !p.yaExiste).map((p) => p.idx);
+                    setSelectedPlantillas(available);
+                  }}
+                  data-testid="button-seleccionar-todos"
+                >
+                  Seleccionar todos
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedPlantillas([])}
+                  data-testid="button-deseleccionar-todos"
+                >
+                  Deseleccionar todos
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+              {plantillasDisponibles.map((plantilla) => (
+                <div
+                  key={plantilla.idx}
+                  className={`flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
+                    plantilla.yaExiste
+                      ? "opacity-50 cursor-not-allowed border-muted"
+                      : selectedPlantillas.includes(plantilla.idx)
+                        ? "border-green-500 bg-green-500/5"
+                        : "hover-elevate"
+                  }`}
+                  onClick={() => !plantilla.yaExiste && togglePlantilla(plantilla.idx)}
+                  data-testid={`plantilla-item-${plantilla.idx}`}
+                >
+                  <div className="mt-0.5">
+                    {plantilla.yaExiste ? (
+                      <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                    ) : selectedPlantillas.includes(plantilla.idx) ? (
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium text-sm">{plantilla.nombre}</span>
+                      {plantilla.yaExiste && (
+                        <Badge className="bg-gray-500/10 text-gray-700 dark:text-gray-400">Ya existe</Badge>
+                      )}
+                      <Badge className={FRECUENCIA_CONFIG[plantilla.frecuenciaMedicion]?.className || ""}>
+                        {FRECUENCIA_CONFIG[plantilla.frecuenciaMedicion]?.label}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{plantilla.descripcion}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Unidad: {plantilla.unidadMedida} | Fuente: {plantilla.fuenteDatos}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setBulkDialogOpen(false)}
+              data-testid="button-cancelar-bulk"
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={handleBulkCreate}
+              disabled={selectedPlantillas.length === 0 || bulkCreateMutation.isPending}
+              data-testid="button-crear-seleccionados"
+            >
+              {bulkCreateMutation.isPending
+                ? "Creando..."
+                : `Crear ${selectedPlantillas.length} indicador${selectedPlantillas.length !== 1 ? "es" : ""}`
+              }
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
