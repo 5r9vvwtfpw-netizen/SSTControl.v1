@@ -475,6 +475,57 @@ export function registerBillingRoutes(app: Express) {
       if (!companyQuoteBase || companyQuoteBase <= 0) {
         console.log('[Billing] No quote found. Attempting auto-quote from landing page for company:', company?.id);
         
+        // Try to recover quote data from user's stored quote token (registered via landing page)
+        if (req.user) {
+          try {
+            const userRecord = await storage.getUser(req.user.id);
+            if (userRecord?.selectedPlan) {
+              const parsed = JSON.parse(userRecord.selectedPlan);
+              if (parsed.quoteToken) {
+                const { verifyQuote: verifyQuoteFn } = await import("../../plugins/landing-page-integration");
+                const verification = verifyQuoteFn(parsed.quoteToken);
+                if (verification.valid && verification.data) {
+                  companyQuoteBase = verification.data.baseMonthlyPrice;
+                  companyQuoteCurrent = verification.data.currentPeriodPrice;
+                  companyCouponCode = verification.data.couponCode;
+                  console.log('[Billing] Recovered quote from user token:', {
+                    base: companyQuoteBase, current: companyQuoteCurrent, coupon: companyCouponCode,
+                  });
+                  
+                  const { db: dbInstance } = await import("../db");
+                  const { eq: eqOp } = await import("drizzle-orm");
+                  const schemaModule = await import("@shared/schema");
+                  await dbInstance.update(schemaModule.companies)
+                    .set({
+                      quoteBaseMonthlyPrice: companyQuoteBase,
+                      quoteCurrentPeriodPrice: companyQuoteCurrent,
+                      quoteDiscountDurationMonths: verification.data.discountDurationMonths,
+                      quoteCouponCode: companyCouponCode,
+                    })
+                    .where(eqOp(schemaModule.companies.id, company!.id));
+                  console.log('[Billing] Saved recovered quote to company record');
+                } else {
+                  console.warn('[Billing] User quote token verification failed:', verification.error);
+                  if (!companyCouponCode) {
+                    const parts = parsed.quoteToken.split('.');
+                    if (parts.length === 3) {
+                      try {
+                        const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+                        if (payload.metadata?.coupon_code) {
+                          companyCouponCode = payload.metadata.coupon_code;
+                          console.log('[Billing] Recovered coupon from expired token for recalculation:', companyCouponCode);
+                        }
+                      } catch { /* ignore decode errors */ }
+                    }
+                  }
+                }
+              }
+            }
+          } catch {
+            // selectedPlan is not JSON or doesn't have quoteToken - ignore
+          }
+        }
+
         const LANDING_PAGE_BASE_URL = process.env.LANDING_PAGE_BASE_URL || 'https://sst-colombia.com.co';
         
         if (company) {

@@ -269,7 +269,8 @@ export default function AuthPage() {
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    registerMutation.mutate(registerData, {
+    const savedQuoteToken = localStorage.getItem('sst_quote_token') || undefined;
+    registerMutation.mutate({ ...registerData, quoteToken: savedQuoteToken }, {
       onSuccess: (data: any) => {
         sessionStorage.setItem('sst_new_registration', 'true');
         

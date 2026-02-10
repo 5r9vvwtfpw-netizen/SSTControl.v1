@@ -22,6 +22,7 @@ const registrationSchema = z.object({
   fullName: z.string().min(2, "El nombre debe tener al menos 2 caracteres").optional(),
   companyName: z.string().min(2, "El nombre de la empresa debe tener al menos 2 caracteres").optional(),
   plan: z.enum(["microempresa", "pequena", "mediana", "grande"]).optional().default("microempresa"),
+  quoteToken: z.string().optional(),
 });
 
 declare global {
@@ -115,7 +116,7 @@ export function setupAuth(app: Express) {
         const errors = validationResult.error.errors.map(e => e.message).join(", ");
         return res.status(400).json({ error: errors });
       }
-      const { username, password, email, fullName, companyName, plan } = validationResult.data;
+      const { username, password, email, fullName, companyName, plan, quoteToken } = validationResult.data;
 
       // Check if email already exists - handle intelligently for first-time company registration
       const existingEmailUser = await storage.getUserByEmail(email);
@@ -178,6 +179,8 @@ export function setupAuth(app: Express) {
       
       logger.info("Usuario superusuario creado (sin empresa - pendiente onboarding)");
 
+      const selectedPlanValue = quoteToken ? JSON.stringify({ plan, quoteToken }) : plan;
+
       // In development with AUTO_VERIFY_EMAIL, auto-verify the user
       if (isDevelopment && autoVerifyEmail) {
         await db.update(users)
@@ -185,8 +188,7 @@ export function setupAuth(app: Express) {
             emailVerifiedAt: new Date(),
             emailVerificationToken: null,
             emailVerificationExpires: null,
-            selectedPlan: plan,
-            // Note: trialEndsAt will be set when user creates their company
+            selectedPlan: selectedPlanValue,
           })
           .where(eq(users.id, user.id));
 
@@ -200,13 +202,11 @@ export function setupAuth(app: Express) {
         });
       }
 
-      // Update user with verification token and selected plan
-      // Note: trialEndsAt will be set when user creates their company
       await db.update(users)
         .set({
           emailVerificationToken: verificationToken,
           emailVerificationExpires: verificationExpires,
-          selectedPlan: plan,
+          selectedPlan: selectedPlanValue,
         })
         .where(eq(users.id, user.id));
 

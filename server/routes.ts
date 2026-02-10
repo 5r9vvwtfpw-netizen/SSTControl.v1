@@ -1835,6 +1835,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate company data with flexible schema
       const validatedData = onboardingCompanySchema.parse(bodyData);
       
+      // Server-side fallback: extract quote data from user's stored token
+      // This ensures quote data (prices, coupon) persists even if localStorage was lost
+      let quoteFromToken: NormalizedQuoteData | null = null;
+      if ((!validatedData.quoteBaseMonthlyPrice || !validatedData.quoteCouponCode) && user.selectedPlan) {
+        try {
+          const parsed = JSON.parse(user.selectedPlan);
+          if (parsed.quoteToken) {
+            const verification = verifyQuote(parsed.quoteToken);
+            if (verification.valid && verification.data) {
+              quoteFromToken = verification.data;
+              console.log('[ONBOARDING] Quote extraído del token del usuario:', {
+                base: quoteFromToken.baseMonthlyPrice,
+                current: quoteFromToken.currentPeriodPrice,
+                coupon: quoteFromToken.couponCode,
+              });
+            } else {
+              console.warn('[ONBOARDING] Quote token del usuario inválido/expirado:', verification.error);
+            }
+          }
+        } catch {
+          // selectedPlan is a plain string (old format), not JSON - ignore
+        }
+      }
+
       // Extract only the fields needed for company creation
       const companyData = {
         name: validatedData.name,
@@ -1846,11 +1870,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         riskLevel: validatedData.riskLevel as "I" | "II" | "III" | "IV" | "V",
         logoUrl: validatedData.logoUrl || null,
         numberOfVehicles: validatedData.numberOfVehicles || 0,
-        quoteBaseMonthlyPrice: validatedData.quoteBaseMonthlyPrice || null,
-        quoteCurrentPeriodPrice: validatedData.quoteCurrentPeriodPrice || null,
-        quoteDiscountDurationMonths: validatedData.quoteDiscountDurationMonths || null,
-        quoteCouponCode: validatedData.quoteCouponCode || null,
-        quoteReferrerId: validatedData.quoteReferrerId || null,
+        quoteBaseMonthlyPrice: validatedData.quoteBaseMonthlyPrice || quoteFromToken?.baseMonthlyPrice || null,
+        quoteCurrentPeriodPrice: validatedData.quoteCurrentPeriodPrice || quoteFromToken?.currentPeriodPrice || null,
+        quoteDiscountDurationMonths: validatedData.quoteDiscountDurationMonths || quoteFromToken?.discountDurationMonths || null,
+        quoteCouponCode: validatedData.quoteCouponCode || quoteFromToken?.couponCode || null,
+        quoteReferrerId: validatedData.quoteReferrerId || quoteFromToken?.referrerId || null,
         ciiuCode: validatedData.ciiuCode || null,
         city: validatedData.city || null,
       };
@@ -1887,7 +1911,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "grande": "grande",
       };
       
-      const rawSelectedPlan = user.selectedPlan || "microempresa";
+      let rawSelectedPlan = user.selectedPlan || "microempresa";
+      // Handle JSON format: { plan: "...", quoteToken: "..." }
+      try {
+        const parsed = JSON.parse(rawSelectedPlan);
+        if (parsed.plan) rawSelectedPlan = parsed.plan;
+      } catch {
+        // Not JSON - use as-is (plain plan string)
+      }
       const selectedPlan = planMapping[rawSelectedPlan] || "microempresa";
       
       let subscriptionCreated = false;
