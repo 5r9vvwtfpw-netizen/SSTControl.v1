@@ -360,9 +360,11 @@ export default function MiCuenta() {
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-muted-foreground">NIT</label>
-                    <span className="text-lg" data-testid="text-company-nit">
-                      {companyData.nit}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg" data-testid="text-company-nit">
+                        {companyData.nit}
+                      </span>
+                    </div>
                   </div>
 
                   {companyData.ciiuCode && (
