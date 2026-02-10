@@ -287,9 +287,6 @@ export default function AuthPage() {
           localStorage.setItem('sst_registration_risk', calculatedRisk);
         }
         
-        localStorage.removeItem('sst_quote_data');
-        localStorage.removeItem('sst_quote_token');
-        
         setLoginData(prev => ({ ...prev, username: registerData.username }));
         setActiveTab("login");
         if (!data?.autoVerified) {
