@@ -929,3 +929,12 @@ app.use(requireValidLicense);
     log(`serving on port ${port}`);
   });
 })();
+
+process.on('uncaughtException', (err) => {
+  logger.error({ err, type: 'uncaughtException' }, `[CRITICAL] Uncaught Exception: ${err.message}`);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  const msg = reason instanceof Error ? reason.message : String(reason);
+  logger.error({ reason: msg, type: 'unhandledRejection' }, `[CRITICAL] Unhandled Rejection: ${msg}`);
+});
