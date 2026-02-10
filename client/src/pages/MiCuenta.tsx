@@ -552,102 +552,73 @@ export default function MiCuenta() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-muted-foreground">Precio Mensual</label>
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                        {companyData?.quoteCouponCode ? (
-                          <div>
-                            <span className="text-lg font-bold" data-testid="text-price">
-                              {formatPrice((companyData?.quoteCurrentPeriodPrice ?? companyData?.quoteBaseMonthlyPrice ?? 0) / 100)}
-                            </span>
-                            <Badge variant="secondary" className="ml-2">
-                              Cupón: {companyData.quoteCouponCode}
-                            </Badge>
-                          </div>
-                        ) : (
-                          <span className="text-lg font-bold" data-testid="text-price">
-                            {formatPrice((companyData?.quoteBaseMonthlyPrice ?? 0) / 100)}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Basado en CIIU {companyData?.ciiuCode || 'N/A'}, {companyData?.numberOfWorkers ?? companyData?.numWorkers ?? 0} empleados, {companyData?.numberOfVehicles ?? 0} vehículos
-                      </p>
-                    </div>
+                  {subscriptionData.subscription.status === 'trial' && subscriptionData.subscription.trialEndsAt && (
+                    <Alert>
+                      <Calendar className="h-4 w-4" />
+                      <AlertDescription className="flex items-center flex-wrap gap-2">
+                        <span>Prueba gratuita activa hasta el <strong>{formatDate(subscriptionData.subscription.trialEndsAt)}</strong></span>
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
-                    {subscriptionData.subscription.status === 'trial' && subscriptionData.subscription.trialEndsAt && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted-foreground">Prueba Gratuita Termina</label>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-lg font-semibold" data-testid="text-trial-ends">
-                            {formatDate(subscriptionData.subscription.trialEndsAt)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {invoices && invoices.length > 0 && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted-foreground" data-testid="text-last-payment-date">
-                          Ultimo monto cobrado el {formatDate(invoices[0].paidDate || invoices[0].issueDate)}
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-lg font-bold" data-testid="text-last-payment-amount">
-                            {formatPrice(invoices[0].total / 100)}
-                          </span>
-                          {companyData?.quoteCouponCode && (
-                            <Badge variant="outline">con cupón</Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Basado en CIIU {invoices[0].snapshotCiiuCode || companyData?.ciiuCode || 'N/A'}, {invoices[0].snapshotNumberOfWorkers ?? companyData?.numberOfWorkers ?? companyData?.numWorkers ?? 0} empleados, {invoices[0].snapshotNumberOfVehicles ?? companyData?.numberOfVehicles ?? 0} vehículos
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-muted-foreground">
-                        Próximo Pago{' '}
-                        {(() => {
-                          const lastPaymentDate = invoices && invoices.length > 0
-                            ? new Date(invoices[0].paidDate || invoices[0].issueDate)
-                            : null;
-                          if (lastPaymentDate) {
-                            const year = lastPaymentDate.getFullYear();
-                            const month = lastPaymentDate.getMonth();
-                            const day = lastPaymentDate.getDate();
-                            const nextMonth = month + 1;
-                            const nextYear = nextMonth > 11 ? year + 1 : year;
-                            const nextMonthNorm = nextMonth > 11 ? 0 : nextMonth;
-                            const daysInNextMonth = new Date(nextYear, nextMonthNorm + 1, 0).getDate();
-                            const nextDay = Math.min(day, daysInNextMonth);
-                            const next = new Date(nextYear, nextMonthNorm, nextDay);
-                            return formatDate(next.toISOString());
-                          }
-                          if (subscriptionData.subscription.trialEndsAt) {
-                            return formatDate(subscriptionData.subscription.trialEndsAt);
-                          }
-                          return '';
-                        })()}
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-lg font-bold" data-testid="text-next-payment-amount">
-                          {formatPrice((companyData?.quoteCurrentPeriodPrice ?? companyData?.quoteBaseMonthlyPrice ?? 0) / 100)}
-                        </span>
+                  <div className="border rounded-md overflow-hidden" data-testid="table-subscription-quote">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="text-left p-3 font-medium text-muted-foreground">Concepto</th>
+                          <th className="text-right p-3 font-medium text-muted-foreground">Detalle</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        <tr>
+                          <td className="p-3 text-muted-foreground">Empresa</td>
+                          <td className="p-3 text-right font-medium" data-testid="text-quote-company">{companyData?.name || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 text-muted-foreground">CIIU</td>
+                          <td className="p-3 text-right font-medium" data-testid="text-quote-ciiu">{companyData?.ciiuCode || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 text-muted-foreground">Clase de Riesgo</td>
+                          <td className="p-3 text-right font-medium" data-testid="text-quote-risk">{companyData?.riskLevel || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 text-muted-foreground">Empleados</td>
+                          <td className="p-3 text-right font-medium" data-testid="text-quote-workers">{companyData?.numberOfWorkers ?? companyData?.numWorkers ?? 0}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 text-muted-foreground">Vehículos</td>
+                          <td className="p-3 text-right font-medium" data-testid="text-quote-vehicles">{companyData?.numberOfVehicles ?? 0}</td>
+                        </tr>
+                        <tr className="bg-muted/30">
+                          <td className="p-3 font-medium">Precio Base Mensual</td>
+                          <td className="p-3 text-right font-bold text-lg" data-testid="text-quote-base-price">
+                            {formatPrice(companyData?.quoteBaseMonthlyPrice ?? 0)}
+                          </td>
+                        </tr>
                         {companyData?.quoteCouponCode && (
-                          <Badge variant="outline">con cupón</Badge>
+                          <tr>
+                            <td className="p-3 text-muted-foreground">Cupón Aplicado</td>
+                            <td className="p-3 text-right">
+                              <Badge variant="secondary" data-testid="text-quote-coupon">{companyData.quoteCouponCode}</Badge>
+                            </td>
+                          </tr>
                         )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Basado en CIIU {companyData?.ciiuCode || 'N/A'}, {companyData?.numberOfWorkers ?? companyData?.numWorkers ?? 0} empleados, {companyData?.numberOfVehicles ?? 0} vehículos
-                      </p>
-                    </div>
+                        {companyData?.quoteCurrentPeriodPrice != null && companyData.quoteCurrentPeriodPrice !== (companyData?.quoteBaseMonthlyPrice ?? 0) && (
+                          <tr className="bg-primary/5">
+                            <td className="p-3 font-medium text-primary">Precio Período Actual</td>
+                            <td className="p-3 text-right font-bold text-lg text-primary" data-testid="text-quote-current-price">
+                              {formatPrice(companyData.quoteCurrentPeriodPrice)}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
+
+                  <p className="text-xs text-muted-foreground text-center" data-testid="text-quote-source">
+                    Cotización verificada desde sst-colombia.com.co
+                  </p>
                 </CardContent>
               </Card>
             </>
