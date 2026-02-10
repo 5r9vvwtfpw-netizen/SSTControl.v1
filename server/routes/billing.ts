@@ -706,8 +706,8 @@ export function registerBillingRoutes(app: Express) {
         });
       }
       
-      const stripeUnitAmount = Math.round(amountInCOP * 100);
-      console.log('[Billing] Creating Stripe session. Source:', quoteSource, 'Amount:', amountInCOP, 'COP, stripeUnit:', stripeUnitAmount, ', baseUrl:', baseUrl);
+      const stripeUnitAmount = Math.round(amountInCOP);
+      console.log('[Billing] Creating Stripe session. Source:', quoteSource, 'Amount:', amountInCOP, 'COP (zero-decimal), stripeUnit:', stripeUnitAmount, ', baseUrl:', baseUrl);
       
       try {
         const session = await stripeClient.checkout.sessions.create({

@@ -138,7 +138,7 @@ app.post(
                       ...existingMetadata,
                       stripeCustomerId: session.customer as string,
                       stripeSessionId: session.id,
-                      lastPaymentAmount: session.amount_total ? session.amount_total / 100 : 0
+                      lastPaymentAmount: session.amount_total || 0
                     }
                   };
                   
@@ -176,7 +176,7 @@ app.post(
                   await storage.updateSubscription(subscription.id, updateData);
                   
                   const plan = await storage.getSubscriptionPlan(subscription.planId);
-                  const amountPaid = session.amount_total ? session.amount_total / 100 : 0;
+                  const amountPaid = session.amount_total || 0;
                   
                   logger.info({ 
                     subscriptionId: subscription.id, 
@@ -253,16 +253,16 @@ app.post(
                     const company = await storage.getCompany(companyId);
                     if (company && plan) {
                       const invoiceNumber = await storage.getNextInvoiceNumber();
-                      const priceInCentavos = plan.priceMonthly;
+                      const priceInPesos = plan.priceMonthly;
                       const taxRate = 0.19; // 19% IVA Colombia
-                      const subtotal = Math.round(priceInCentavos / (1 + taxRate));
-                      const taxAmount = priceInCentavos - subtotal;
+                      const subtotal = Math.round(priceInPesos / (1 + taxRate));
+                      const taxAmount = priceInPesos - subtotal;
                       
                       const lineItems = JSON.stringify([{
                         description: `Suscripción ${plan.displayName || plan.name} - Mensual`,
                         quantity: 1,
-                        unitPrice: priceInCentavos,
-                        total: priceInCentavos
+                        unitPrice: priceInPesos,
+                        total: priceInPesos
                       }]);
                       
                       const invoice = await storage.createInvoice({
@@ -272,7 +272,7 @@ app.post(
                         status: 'paid',
                         subtotal,
                         taxAmount,
-                        total: priceInCentavos,
+                        total: priceInPesos,
                         currency: 'COP',
                         periodStart: now,
                         periodEnd: nextBillingDate,
@@ -293,7 +293,7 @@ app.post(
                         invoiceId: invoice.id, 
                         invoiceNumber,
                         companyId,
-                        total: priceInCentavos
+                        total: priceInPesos
                       }, 'Invoice created for payment');
                     }
                   } catch (invoiceError) {
@@ -427,6 +427,57 @@ app.post(
           } catch (subError) {
             logger.error({ err: subError }, 'Error updating pricing subscription status');
           }
+
+          // Sync subscription status with local subscriptions table
+          try {
+            const stripeCustomerIdForSync = typeof stripeSubscription.customer === 'string'
+              ? stripeSubscription.customer
+              : stripeSubscription.customer?.id;
+            
+            if (stripeCustomerIdForSync) {
+              const { subscriptions: subsTable } = await import('@shared/schema');
+              const { sql: sqlOp } = await import('drizzle-orm');
+              const [localSub] = await db
+                .select()
+                .from(subsTable)
+                .where(sqlOp`${subsTable.metadata}->>'stripeCustomerId' = ${stripeCustomerIdForSync}`)
+                .limit(1);
+
+              if (localSub) {
+                const statusMap: Record<string, string> = {
+                  'active': 'active',
+                  'trialing': 'trial',
+                  'past_due': 'past_due',
+                  'canceled': 'canceled',
+                  'unpaid': 'canceled',
+                  'incomplete': 'pending',
+                  'incomplete_expired': 'canceled'
+                };
+                const newStatus = statusMap[stripeSubscription.status] || localSub.status;
+                
+                const updatePayload: any = { status: newStatus };
+                if (stripeSubscription.current_period_start) {
+                  updatePayload.currentPeriodStart = new Date(stripeSubscription.current_period_start * 1000);
+                }
+                if (stripeSubscription.current_period_end) {
+                  updatePayload.currentPeriodEnd = new Date(stripeSubscription.current_period_end * 1000);
+                  updatePayload.nextPaymentDate = new Date(stripeSubscription.current_period_end * 1000);
+                }
+                if (stripeSubscription.cancel_at_period_end !== undefined) {
+                  updatePayload.cancelAtPeriodEnd = stripeSubscription.cancel_at_period_end ? 1 : 0;
+                }
+                
+                await storage.updateSubscription(localSub.id, updatePayload);
+                logger.info({
+                  localSubId: localSub.id,
+                  stripeSubId: stripeSubscription.id,
+                  newStatus
+                }, 'Local subscription synced with Stripe subscription update');
+              }
+            }
+          } catch (syncError) {
+            logger.error({ err: syncError }, 'Error syncing local subscription with Stripe update (non-critical)');
+          }
           break;
         case 'customer.subscription.deleted':
           const deletedSub = event.data.object;
@@ -452,6 +503,94 @@ app.post(
             logger.error({ err: cancelError }, 'Error blocking cancelled subscription');
           }
           break;
+        case 'invoice.created':
+          const draftInvoice = event.data.object;
+          logger.info({
+            invoiceId: draftInvoice.id,
+            subscriptionId: draftInvoice.subscription,
+            customerId: draftInvoice.customer,
+            amountDue: draftInvoice.amount_due,
+            currency: draftInvoice.currency,
+            status: draftInvoice.status,
+          }, 'Invoice created (draft) - verifying amount before finalization');
+
+          if (draftInvoice.subscription && draftInvoice.status === 'draft') {
+            try {
+              const stripeClientForInvoice = await getUncachableStripeClient();
+              const draftCustomerId = typeof draftInvoice.customer === 'string'
+                ? draftInvoice.customer
+                : (draftInvoice.customer as any)?.id;
+
+              if (draftCustomerId) {
+                const { subscriptions: subsTableInv } = await import('@shared/schema');
+                const { sql: sqlInv } = await import('drizzle-orm');
+                const [matchingSub] = await db
+                  .select()
+                  .from(subsTableInv)
+                  .where(sqlInv`${subsTableInv.metadata}->>'stripeCustomerId' = ${draftCustomerId}`)
+                  .limit(1);
+
+                if (matchingSub) {
+                  const invoiceCompany = await storage.getCompany(matchingSub.companyId);
+
+                  if (invoiceCompany) {
+                    const expectedPrice = Math.round(
+                      invoiceCompany.quoteCurrentPeriodPrice ??
+                      invoiceCompany.quoteBaseMonthlyPrice ??
+                      0
+                    );
+
+                    if (expectedPrice > 0 && draftInvoice.amount_due !== expectedPrice) {
+                      logger.warn({
+                        invoiceId: draftInvoice.id,
+                        companyId: matchingSub.companyId,
+                        stripeAmountDue: draftInvoice.amount_due,
+                        expectedAmountCOP: expectedPrice,
+                        difference: draftInvoice.amount_due - expectedPrice,
+                      }, 'Invoice amount mismatch detected - adjusting before finalization');
+
+                      const currentLineItems = draftInvoice.lines?.data || [];
+                      const currentTotal = currentLineItems.reduce(
+                        (sum: number, item: any) => sum + (item.amount || 0), 0
+                      );
+                      const adjustment = expectedPrice - currentTotal;
+
+                      if (adjustment !== 0) {
+                        await stripeClientForInvoice.invoiceItems.create({
+                          customer: draftCustomerId,
+                          invoice: draftInvoice.id,
+                          amount: adjustment,
+                          currency: 'cop',
+                          description: adjustment > 0
+                            ? 'Ajuste de precio por actualización de parámetros de empresa'
+                            : 'Crédito por ajuste de precio de empresa',
+                        });
+
+                        logger.info({
+                          invoiceId: draftInvoice.id,
+                          companyId: matchingSub.companyId,
+                          adjustment,
+                          newExpectedTotal: expectedPrice,
+                        }, 'Invoice adjusted with corrective invoice item');
+                      }
+                    } else if (expectedPrice > 0) {
+                      logger.info({
+                        invoiceId: draftInvoice.id,
+                        companyId: matchingSub.companyId,
+                        amountDue: draftInvoice.amount_due,
+                        expectedPrice,
+                      }, 'Invoice amount matches expected price - no adjustment needed');
+                    }
+                  }
+                }
+              }
+            } catch (invoiceAdjustError) {
+              logger.error({ err: invoiceAdjustError, invoiceId: draftInvoice.id },
+                'Error verifying/adjusting draft invoice amount (non-critical)');
+            }
+          }
+          break;
+        
         case 'invoice.paid':
           const paidInvoice = event.data.object;
           logger.info({ 

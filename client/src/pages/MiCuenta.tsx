@@ -560,7 +560,7 @@ export default function MiCuenta() {
                         {companyData?.quoteCouponCode ? (
                           <div>
                             <span className="text-lg font-bold" data-testid="text-price">
-                              {formatPrice((companyData?.quoteCurrentPeriodPrice ?? companyData?.quoteBaseMonthlyPrice ?? 0) / 100)}
+                              {formatPrice(companyData?.quoteCurrentPeriodPrice ?? companyData?.quoteBaseMonthlyPrice ?? 0)}
                             </span>
                             <Badge variant="secondary" className="ml-2">
                               Cupón: {companyData.quoteCouponCode}
@@ -568,7 +568,7 @@ export default function MiCuenta() {
                           </div>
                         ) : (
                           <span className="text-lg font-bold" data-testid="text-price">
-                            {formatPrice((companyData?.quoteBaseMonthlyPrice ?? 0) / 100)}
+                            {formatPrice(companyData?.quoteBaseMonthlyPrice ?? 0)}
                           </span>
                         )}
                       </div>
@@ -597,7 +597,7 @@ export default function MiCuenta() {
                         <div className="flex items-center gap-2">
                           <CreditCard className="h-4 w-4 text-muted-foreground" />
                           <span className="text-lg font-bold" data-testid="text-last-payment-amount">
-                            {formatPrice(invoices[0].total / 100)}
+                            {formatPrice(invoices[0].total)}
                           </span>
                           {companyData?.quoteCouponCode && (
                             <Badge variant="outline">con cupón</Badge>
@@ -637,7 +637,7 @@ export default function MiCuenta() {
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
                         <span className="text-lg font-bold" data-testid="text-next-payment-amount">
-                          {formatPrice((companyData?.quoteCurrentPeriodPrice ?? companyData?.quoteBaseMonthlyPrice ?? 0) / 100)}
+                          {formatPrice(companyData?.quoteCurrentPeriodPrice ?? companyData?.quoteBaseMonthlyPrice ?? 0)}
                         </span>
                         {companyData?.quoteCouponCode && (
                           <Badge variant="outline">con cupón</Badge>

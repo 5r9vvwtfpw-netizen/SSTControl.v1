@@ -357,7 +357,7 @@ export class StripeService {
                 name: `Usuario Adicional - ${data.role}`,
                 description: `Asiento adicional para el rol ${data.role} (facturación mensual)`
               },
-              unit_amount: Math.round(data.priceAmountCop * 100),
+              unit_amount: Math.round(data.priceAmountCop),
               recurring: {
                 interval: 'month'
               }
