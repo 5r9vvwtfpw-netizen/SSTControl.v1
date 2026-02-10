@@ -86,18 +86,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const error = new Error(data.error || "Error de inicio de sesión") as Error & { code?: string; canResend?: boolean; email?: string };
+        (error as any).code = data.code;
+        (error as any).canResend = data.canResend;
+        (error as any).email = data.email;
+        throw error;
+      }
+      return data;
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
-      // Navegación imperativa basada en rol y estado del usuario
       let destination: string;
       
       if (user.role === "trabajador") {
         destination = "/portal-empleados";
       } else if (user.role === "superusuario" && !user.companyId) {
-        // Superusuario sin empresa -> onboarding
         destination = "/crear-empresa";
       } else {
         destination = "/dashboard";
@@ -105,12 +116,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       window.location.href = destination;
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Error de inicio de sesión",
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: (error: Error & { code?: string; canResend?: boolean; email?: string }) => {
+      if ((error as any).code === "EMAIL_NOT_VERIFIED") {
+        toast({
+          title: "Verificación de correo pendiente",
+          description: error.message,
+          variant: "destructive",
+          duration: 10000,
+        });
+      } else {
+        toast({
+          title: "Error de inicio de sesión",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     },
   });
 

@@ -297,6 +297,18 @@ export function setupAuth(app: Express) {
           error: "Por favor use el portal de soporte para iniciar sesión" 
         });
       }
+
+      // Block login if email is not verified (except system-created accounts like admin/superadmin)
+      const systemRoles = ['admin', 'superadmin'];
+      if (!user.emailVerifiedAt && !systemRoles.includes(user.role)) {
+        logger.warn({ username: user.username }, "Login blocked - email not verified");
+        return res.status(403).json({ 
+          error: "Debes verificar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada (incluyendo Spam) para el enlace de verificación.",
+          code: "EMAIL_NOT_VERIFIED",
+          canResend: true,
+          email: user.email
+        });
+      }
       
       req.session.regenerate((err) => {
         if (err) {
@@ -335,6 +347,15 @@ export function setupAuth(app: Express) {
         logger.warn({ role: user.role }, "Support login rejected - not a support role");
         return res.status(403).json({ 
           error: "Este portal es exclusivo para personal de soporte" 
+        });
+      }
+
+      // Block login if email is not verified (superadmin exempt as system account)
+      if (!user.emailVerifiedAt && user.role !== 'superadmin') {
+        logger.warn({ username: user.username }, "Support login blocked - email not verified");
+        return res.status(403).json({ 
+          error: "Debes verificar tu correo electrónico antes de iniciar sesión.",
+          code: "EMAIL_NOT_VERIFIED"
         });
       }
       
