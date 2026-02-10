@@ -240,17 +240,21 @@ export default function DetalleEvaluacionPesv() {
       const autoEvidencias = paso.evidenciasRequeridas?.length
         ? paso.evidenciasRequeridas.join("; ")
         : "";
+      const autoObservaciones = paso.observacionesNoCumple || "";
+      const autoHallazgo = paso.hallazgoSugeridoNoCumple || "";
       if (autoModo) newAutoFilled.modoVerificacion = true;
       if (autoEvidencias) newAutoFilled.evidencias = true;
+      if (autoObservaciones) newAutoFilled.observaciones = true;
+      if (autoHallazgo) newAutoFilled.hallazgo = true;
       respuestaForm.reset({
         evaluacionId: id || "",
         pasoId: paso.codigo,
         cumple: 0,
         noAplica: 0,
-        observaciones: "",
+        observaciones: autoObservaciones,
         evidencias: autoEvidencias,
         modoVerificacion: autoModo,
-        hallazgo: "",
+        hallazgo: autoHallazgo,
         accidenteSstId: "",
         capacitacionSstId: "",
         inspeccionSstId: "",
@@ -658,6 +662,60 @@ export default function DetalleEvaluacionPesv() {
                 {selectedPaso.fundamentoNormativo}
               </AlertDescription>
             </Alert>
+          )}
+
+          {selectedPaso && !respuestas.find(r => r.pasoId === selectedPaso.codigo) && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+              <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <span className="text-sm text-amber-700 dark:text-amber-300">Todos los campos han sido auto-completados. Revise y ajuste si es necesario, luego guarde.</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="ml-auto gap-1 text-amber-600 dark:text-amber-400 flex-shrink-0"
+                onClick={() => {
+                  if (!selectedPaso) return;
+                  const currentCumple = respuestaForm.getValues("cumple");
+                  const currentNoAplica = respuestaForm.getValues("noAplica");
+                  const newAutoFilled: Record<string, boolean> = {};
+
+                  if (selectedPaso.modoVerificacionSugerido?.length) {
+                    respuestaForm.setValue("modoVerificacion", selectedPaso.modoVerificacionSugerido.join("; "));
+                    newAutoFilled.modoVerificacion = true;
+                  }
+                  if (selectedPaso.evidenciasRequeridas?.length) {
+                    respuestaForm.setValue("evidencias", selectedPaso.evidenciasRequeridas.join("; "));
+                    newAutoFilled.evidencias = true;
+                  }
+
+                  if (currentNoAplica === 1) {
+                    if (selectedPaso.justificacionNaSugerida) {
+                      respuestaForm.setValue("justificacionNa", selectedPaso.justificacionNaSugerida);
+                      newAutoFilled.justificacionNa = true;
+                    }
+                  } else if (currentCumple === 1) {
+                    if (selectedPaso.observacionesCumple) {
+                      respuestaForm.setValue("observaciones", selectedPaso.observacionesCumple);
+                      newAutoFilled.observaciones = true;
+                    }
+                  } else {
+                    if (selectedPaso.observacionesNoCumple) {
+                      respuestaForm.setValue("observaciones", selectedPaso.observacionesNoCumple);
+                      newAutoFilled.observaciones = true;
+                    }
+                    if (selectedPaso.hallazgoSugeridoNoCumple) {
+                      respuestaForm.setValue("hallazgo", selectedPaso.hallazgoSugeridoNoCumple);
+                      newAutoFilled.hallazgo = true;
+                    }
+                  }
+                  setAutoFilledFields(newAutoFilled);
+                }}
+                data-testid="button-autocompletar-todo"
+              >
+                <RefreshCcw className="h-3 w-3" />
+                Re-llenar
+              </Button>
+            </div>
           )}
 
           <Form {...respuestaForm}>
