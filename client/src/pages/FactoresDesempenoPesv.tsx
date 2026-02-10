@@ -7,8 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Search, Trash2, Edit, TrendingUp, TrendingDown, Minus, Target, Activity, Shield, AlertTriangle, FileDown } from "lucide-react";
-import { useState } from "react";
+import { Plus, Search, Trash2, Edit, TrendingUp, TrendingDown, Minus, Target, Activity, Shield, AlertTriangle, FileDown, Sparkles, Loader2, Wand2 } from "lucide-react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,6 +33,181 @@ const TENDENCIA_CONFIG = {
 };
 
 const ELEMENTOS_SUGERIDOS = ["Vehículo", "Conductor", "Vía", "Peatón", "Ciclista", "Entorno", "Organización"];
+
+interface FactorPredefinido {
+  nombre: string;
+  descripcion: string;
+  categoria: "exposicion_riesgo" | "resultado_final" | "resultado_intermedio" | "intervencion";
+  elementoRelacionado: string;
+  unidadMedida: string;
+  metaAnual: string;
+  valorBase: string;
+}
+
+const FACTORES_PREDEFINIDOS: FactorPredefinido[] = [
+  {
+    nombre: "Kilómetros recorridos por la flota",
+    descripcion: "Total de kilómetros recorridos por todos los vehículos de la empresa en el período. Factor clave de exposición según ISO 39001:2012 Cláusula 6.3.",
+    categoria: "exposicion_riesgo",
+    elementoRelacionado: "Vehículo",
+    unidadMedida: "km",
+    metaAnual: "0",
+    valorBase: "0",
+  },
+  {
+    nombre: "Horas de conducción acumuladas",
+    descripcion: "Total de horas de conducción de todos los conductores en el período. Mide la exposición temporal al riesgo vial.",
+    categoria: "exposicion_riesgo",
+    elementoRelacionado: "Conductor",
+    unidadMedida: "horas",
+    metaAnual: "0",
+    valorBase: "0",
+  },
+  {
+    nombre: "Número de viajes realizados",
+    descripcion: "Cantidad total de desplazamientos realizados por la flota vehicular en el período de medición.",
+    categoria: "exposicion_riesgo",
+    elementoRelacionado: "Vehículo",
+    unidadMedida: "viajes",
+    metaAnual: "0",
+    valorBase: "0",
+  },
+  {
+    nombre: "Número de conductores activos",
+    descripcion: "Cantidad de conductores que realizan desplazamientos laborales de forma activa en el período.",
+    categoria: "exposicion_riesgo",
+    elementoRelacionado: "Conductor",
+    unidadMedida: "personas",
+    metaAnual: "0",
+    valorBase: "0",
+  },
+  {
+    nombre: "Tasa de mortalidad vial",
+    descripcion: "Número de fallecidos en siniestros viales por cada 100 millones de kilómetros recorridos. Indicador principal de resultado final ISO 39001.",
+    categoria: "resultado_final",
+    elementoRelacionado: "Conductor",
+    unidadMedida: "por 100M km",
+    metaAnual: "0",
+    valorBase: "0",
+  },
+  {
+    nombre: "Número de siniestros viales con víctimas fatales",
+    descripcion: "Cantidad de siniestros viales que resultaron en al menos una persona fallecida durante el período.",
+    categoria: "resultado_final",
+    elementoRelacionado: "Vehículo",
+    unidadMedida: "siniestros",
+    metaAnual: "0",
+    valorBase: "0",
+  },
+  {
+    nombre: "Número de lesiones graves por siniestro vial",
+    descripcion: "Cantidad de personas con lesiones graves (incapacidad > 30 días) resultantes de siniestros viales laborales.",
+    categoria: "resultado_final",
+    elementoRelacionado: "Conductor",
+    unidadMedida: "lesiones",
+    metaAnual: "0",
+    valorBase: "0",
+  },
+  {
+    nombre: "Tasa de siniestralidad vial",
+    descripcion: "Número total de siniestros viales por cada millón de kilómetros recorridos por la flota.",
+    categoria: "resultado_intermedio",
+    elementoRelacionado: "Vehículo",
+    unidadMedida: "por 1M km",
+    metaAnual: "0",
+    valorBase: "0",
+  },
+  {
+    nombre: "Índice de infracciones de tránsito",
+    descripcion: "Número de infracciones de tránsito por cada 100 conductores activos en el período.",
+    categoria: "resultado_intermedio",
+    elementoRelacionado: "Conductor",
+    unidadMedida: "por 100 conductores",
+    metaAnual: "0",
+    valorBase: "0",
+  },
+  {
+    nombre: "Porcentaje de excesos de velocidad detectados",
+    descripcion: "Proporción de viajes o tramos en los que se detectaron excesos de velocidad respecto al total monitoreado.",
+    categoria: "resultado_intermedio",
+    elementoRelacionado: "Conductor",
+    unidadMedida: "%",
+    metaAnual: "0",
+    valorBase: "0",
+  },
+  {
+    nombre: "Tasa de siniestros con daños materiales",
+    descripcion: "Número de siniestros viales con solo daños materiales (sin lesiones personales) por millón de kilómetros.",
+    categoria: "resultado_intermedio",
+    elementoRelacionado: "Vehículo",
+    unidadMedida: "por 1M km",
+    metaAnual: "0",
+    valorBase: "0",
+  },
+  {
+    nombre: "Porcentaje de uso de cinturón de seguridad",
+    descripcion: "Proporción de conductores y pasajeros que utilizan correctamente el cinturón de seguridad durante los desplazamientos.",
+    categoria: "intervencion",
+    elementoRelacionado: "Conductor",
+    unidadMedida: "%",
+    metaAnual: "100",
+    valorBase: "0",
+  },
+  {
+    nombre: "Cumplimiento del plan de mantenimiento vehicular",
+    descripcion: "Porcentaje de mantenimientos preventivos realizados según el cronograma establecido para toda la flota.",
+    categoria: "intervencion",
+    elementoRelacionado: "Vehículo",
+    unidadMedida: "%",
+    metaAnual: "100",
+    valorBase: "0",
+  },
+  {
+    nombre: "Cobertura de capacitación en seguridad vial",
+    descripcion: "Porcentaje de conductores que completaron el programa de formación en seguridad vial en el período.",
+    categoria: "intervencion",
+    elementoRelacionado: "Conductor",
+    unidadMedida: "%",
+    metaAnual: "100",
+    valorBase: "0",
+  },
+  {
+    nombre: "Cumplimiento de inspecciones preoperacionales",
+    descripcion: "Porcentaje de inspecciones preoperacionales realizadas respecto al total programado para la flota.",
+    categoria: "intervencion",
+    elementoRelacionado: "Vehículo",
+    unidadMedida: "%",
+    metaAnual: "100",
+    valorBase: "0",
+  },
+  {
+    nombre: "Porcentaje de vehículos con documentación vigente",
+    descripcion: "Proporción de vehículos con SOAT, revisión técnico-mecánica y demás documentos al día.",
+    categoria: "intervencion",
+    elementoRelacionado: "Vehículo",
+    unidadMedida: "%",
+    metaAnual: "100",
+    valorBase: "0",
+  },
+  {
+    nombre: "Cobertura de exámenes médicos ocupacionales para conductores",
+    descripcion: "Porcentaje de conductores con exámenes médicos ocupacionales vigentes (aptitud para conducir).",
+    categoria: "intervencion",
+    elementoRelacionado: "Conductor",
+    unidadMedida: "%",
+    metaAnual: "100",
+    valorBase: "0",
+  },
+  {
+    nombre: "Porcentaje de conductores con licencia vigente y categoría apropiada",
+    descripcion: "Proporción de conductores que poseen licencia de conducción vigente y acorde al tipo de vehículo que operan.",
+    categoria: "intervencion",
+    elementoRelacionado: "Conductor",
+    unidadMedida: "%",
+    metaAnual: "100",
+    valorBase: "0",
+  },
+];
 
 const formSchema = insertFactorDesempenoSVSchema.extend({
   codigo: z.string().min(1, "El código es requerido"),
@@ -64,6 +239,8 @@ export default function FactoresDesempenoPesv() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [factorToDelete, setFactorToDelete] = useState<FactorDesempenoSV | null>(null);
   const [editingFactor, setEditingFactor] = useState<FactorDesempenoSV | null>(null);
+  const [generatingAll, setGeneratingAll] = useState(false);
+  const [confirmGenerateDialogOpen, setConfirmGenerateDialogOpen] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -100,13 +277,95 @@ export default function FactoresDesempenoPesv() {
     }, {} as Record<string, number>),
   };
 
-  const generateNextCode = () => {
-    const existingCodes = factores.map(f => f.codigo);
+  const generateNextCode = (existingCodesOverride?: string[]) => {
+    const existingCodes = existingCodesOverride || factores.map(f => f.codigo);
     let nextNumber = 1;
     while (existingCodes.includes(`SPF-${String(nextNumber).padStart(3, '0')}`)) {
       nextNumber++;
     }
     return `SPF-${String(nextNumber).padStart(3, '0')}`;
+  };
+
+  const getAvailablePredefinidos = useCallback(() => {
+    const existingNames = new Set(factores.map(f => f.nombre.toLowerCase()));
+    return FACTORES_PREDEFINIDOS.filter(fp => !existingNames.has(fp.nombre.toLowerCase()));
+  }, [factores]);
+
+  const handleSelectPredefinido = (nombreFactor: string) => {
+    const factor = FACTORES_PREDEFINIDOS.find(fp => fp.nombre === nombreFactor);
+    if (!factor) return;
+    form.setValue("nombre", factor.nombre);
+    form.setValue("descripcion", factor.descripcion);
+    form.setValue("categoria", factor.categoria);
+    form.setValue("elementoRelacionado", factor.elementoRelacionado);
+    form.setValue("unidadMedida", factor.unidadMedida);
+    form.setValue("metaAnual", factor.metaAnual);
+    form.setValue("valorBase", factor.valorBase);
+    form.setValue("valorActual", "0");
+    form.setValue("tendencia", "estable");
+  };
+
+  const handleGenerateAllFactors = async () => {
+    setConfirmGenerateDialogOpen(false);
+    const available = getAvailablePredefinidos();
+    if (available.length === 0) {
+      toast({
+        title: "Factores ya registrados",
+        description: "Todos los factores estándar ISO 39001 ya están registrados.",
+      });
+      return;
+    }
+    setGeneratingAll(true);
+    let created = 0;
+    let errors = 0;
+    try {
+      const existingCodes = factores.map(f => f.codigo);
+      for (const factor of available) {
+        try {
+          const code = generateNextCode(existingCodes);
+          existingCodes.push(code);
+          await apiRequest("POST", "/api/factores-desempeno-sv", {
+            codigo: code,
+            nombre: factor.nombre,
+            descripcion: factor.descripcion,
+            categoria: factor.categoria,
+            elementoRelacionado: factor.elementoRelacionado,
+            unidadMedida: factor.unidadMedida,
+            metaAnual: factor.metaAnual,
+            valorBase: factor.valorBase,
+            valorActual: "0",
+            tendencia: "estable",
+            observaciones: "",
+          });
+          created++;
+        } catch {
+          errors++;
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/factores-desempeno-sv"] });
+      if (errors === 0) {
+        toast({
+          title: "Factores generados",
+          description: `Se crearon ${created} factores estándar ISO 39001 exitosamente.`,
+          className: "bg-green-50 border-green-200",
+        });
+      } else {
+        toast({
+          title: "Generación parcial",
+          description: `Se crearon ${created} factores. ${errors} no se pudieron crear.`,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      queryClient.invalidateQueries({ queryKey: ["/api/factores-desempeno-sv"] });
+      toast({
+        title: "Error al generar factores",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingAll(false);
+    }
   };
 
   const createMutation = useMutation({
@@ -309,6 +568,24 @@ export default function FactoresDesempenoPesv() {
             <FileDown className="h-4 w-4 mr-2" />
             Descargar PDF
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => setConfirmGenerateDialogOpen(true)}
+            disabled={generatingAll || getAvailablePredefinidos().length === 0}
+            data-testid="button-generar-todos-factores"
+          >
+            {generatingAll ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4 mr-2" />
+            )}
+            {generatingAll 
+              ? "Generando..." 
+              : getAvailablePredefinidos().length === 0 
+                ? "Todos generados" 
+                : `Generar ${getAvailablePredefinidos().length} Factores ISO`
+            }
+          </Button>
           <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild>
               <Button className="bg-green-600 hover:bg-green-700" onClick={handleOpenNewDialog} data-testid="button-agregar-factor">
@@ -328,6 +605,32 @@ export default function FactoresDesempenoPesv() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {!editingFactor && getAvailablePredefinidos().length > 0 && (
+                  <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Wand2 className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Auto-completar desde catálogo ISO 39001</span>
+                    </div>
+                    <Select onValueChange={handleSelectPredefinido}>
+                      <SelectTrigger data-testid="select-factor-predefinido">
+                        <SelectValue placeholder="Seleccionar factor predefinido para auto-completar..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailablePredefinidos().map((fp) => (
+                          <SelectItem key={fp.nombre} value={fp.nombre}>
+                            <span className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                [{CATEGORIA_CONFIG[fp.categoria]?.label}]
+                              </span>
+                              {fp.nombre}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -336,7 +639,7 @@ export default function FactoresDesempenoPesv() {
                       <FormItem>
                         <FormLabel>Código *</FormLabel>
                         <FormControl>
-                          <Input placeholder="SPF-001" {...field} data-testid="input-codigo" />
+                          <Input placeholder="SPF-001" {...field} readOnly className="bg-muted" data-testid="input-codigo" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -763,6 +1066,28 @@ export default function FactoresDesempenoPesv() {
               data-testid="button-confirm-delete"
             >
               Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmGenerateDialogOpen} onOpenChange={setConfirmGenerateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Generar factores estándar ISO 39001</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se crearán automáticamente <strong>{getAvailablePredefinidos().length} factores de desempeño</strong> basados en el estándar ISO 39001:2012 (Cláusula 6.3). Incluye factores de exposición al riesgo, resultados finales, resultados intermedios e intervenciones. Los valores base se inicializarán en 0 y podrá editarlos después.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-generate">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleGenerateAllFactors}
+              className="bg-green-600 hover:bg-green-700"
+              data-testid="button-confirm-generate"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Generar factores
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
