@@ -120,7 +120,7 @@ export default function PesvCapacitacionesEvaluacion() {
     endTime: "",
     location: "",
     topics: "",
-    totalAttendees: 0,
+    totalAttendees: "",
     status: "programada" as const,
   });
 
@@ -177,7 +177,7 @@ export default function PesvCapacitacionesEvaluacion() {
       endTime: "",
       location: "",
       topics: "",
-      totalAttendees: 0,
+      totalAttendees: "",
       status: "programada",
     });
     setAutoFilled(false);
@@ -204,7 +204,7 @@ export default function PesvCapacitacionesEvaluacion() {
       endTime: template.endTime,
       location: template.location,
       topics: template.topics,
-      totalAttendees: attendees,
+      totalAttendees: String(attendees),
       status: "programada",
     });
     setAutoFilled(true);
@@ -213,7 +213,11 @@ export default function PesvCapacitacionesEvaluacion() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createTrainingMutation.mutate(formData);
+    const payload = {
+      ...formData,
+      totalAttendees: parseInt(formData.totalAttendees) || 0,
+    };
+    createTrainingMutation.mutate(payload as any);
   };
 
   const getStatusBadge = (status: string) => {
@@ -419,10 +423,10 @@ export default function PesvCapacitacionesEvaluacion() {
                   <Label htmlFor="totalAttendees">Asistentes Esperados</Label>
                   <Input
                     id="totalAttendees"
-                    type="number"
-                    min="0"
+                    inputMode="numeric"
                     value={formData.totalAttendees}
-                    onChange={(e) => setFormData({ ...formData, totalAttendees: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, totalAttendees: e.target.value })}
+                    placeholder="Ej: 10"
                     data-testid="input-total-attendees"
                   />
                 </div>
