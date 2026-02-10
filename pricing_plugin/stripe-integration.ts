@@ -86,7 +86,7 @@ export async function createPricingCheckoutSession(params: CreatePricingCheckout
     }
   }
 
-  const unitAmount = Math.round(pricing.monthlyCost);
+  const unitAmount = Math.round(pricing.monthlyCost * 100);
 
   const session = await stripe.checkout.sessions.create({
     customer: stripeCustomerId,

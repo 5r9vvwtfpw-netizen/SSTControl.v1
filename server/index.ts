@@ -138,7 +138,7 @@ app.post(
                       ...existingMetadata,
                       stripeCustomerId: session.customer as string,
                       stripeSessionId: session.id,
-                      lastPaymentAmount: session.amount_total || 0
+                      lastPaymentAmount: session.amount_total ? Math.round(session.amount_total / 100) : 0
                     }
                   };
                   
@@ -332,7 +332,7 @@ app.post(
                             stripeCustomerId: session.customer as string,
                             stripeSessionId: session.id,
                             recoveredFromWebhook: true,
-                            lastPaymentAmount: session.amount_total || 0
+                            lastPaymentAmount: session.amount_total ? Math.round(session.amount_total / 100) : 0
                           }
                         });
                         
@@ -534,11 +534,12 @@ app.post(
                   const invoiceCompany = await storage.getCompany(matchingSub.companyId);
 
                   if (invoiceCompany) {
-                    const expectedPrice = Math.round(
+                    const expectedPriceCOP = Math.round(
                       invoiceCompany.quoteCurrentPeriodPrice ??
                       invoiceCompany.quoteBaseMonthlyPrice ??
                       0
                     );
+                    const expectedPrice = expectedPriceCOP * 100;
 
                     if (expectedPrice > 0 && draftInvoice.amount_due !== expectedPrice) {
                       logger.warn({

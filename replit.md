@@ -37,6 +37,15 @@ The Promotions Plugin operates as an independent Sidecar Architecture module, ha
 
 The Landing Page Integration Plugin provides secure JWT verification for pricing quotes from the external landing page (`sst-colombia.com.co`). It follows Sidecar Architecture principles, providing a stable facade interface, a kill switch, type-safe contracts, and backward compatibility for legacy tokens. The quote verification flow ensures data integrity during registration and checkout by using HMAC-SHA256 signed JWTs. Prices are *not* recalculated; the app trusts the signed JWT. Trial subscriptions unlock all features for the duration of the trial.
 
+### CRITICAL RULE: COP Currency in Stripe
+- **COP (Colombian Peso) is NOT a zero-decimal currency in Stripe.** It is a standard two-decimal currency.
+- **To charge X COP, send `unit_amount = X * 100` to Stripe** (multiply by 100, same as USD).
+- Example: To charge 201,000 COP → `unit_amount = 20,100,000`
+- **When receiving amounts from Stripe webhooks** (e.g., `amount_total`, `amount_due`), divide by 100 to get COP.
+- **Internal storage** (companies table, invoices) stores amounts in COP (not centavos).
+- **The `pricing_plugin/routes-v2.ts`** already uses `COP_MULTIPLIER = 100` correctly.
+- **All other Stripe integration points** must also multiply by 100 before sending to Stripe.
+
 ### CRITICAL RULE: Pricing Principle (Token > Calculation)
 - **The price ALWAYS comes from the JWT token from the landing page. It is NEVER recalculated during registration or checkout.**
 - **It is only recalculated if the company changes data AFTER registration** (employees, vehicles, CIIU/risk).

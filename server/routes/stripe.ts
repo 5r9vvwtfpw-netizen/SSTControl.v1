@@ -244,7 +244,7 @@ export function registerStripeRoutes(app: Express) {
           currency: 'cop',
           productName,
           productDescription: 'Suscripción mensual SST Colombia - Primer mes gratis',
-          unitAmount: Math.round(baseMonthlyPrice),
+          unitAmount: Math.round(baseMonthlyPrice * 100),
           successUrl: validatedData.successUrl || `${baseUrl}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: validatedData.cancelUrl || `${baseUrl}/mi-suscripcion?payment=cancelled`,
           metadata,
@@ -269,7 +269,7 @@ export function registerStripeRoutes(app: Express) {
           productDescription: hasPartialDiscount 
             ? `Suscripción mensual SST Colombia - Precio promocional por ${discountDurationMonths} mes(es)`
             : 'Suscripción mensual SST Colombia',
-          unitAmount: Math.round(priceToCharge),
+          unitAmount: Math.round(priceToCharge * 100),
           successUrl: validatedData.successUrl || `${baseUrl}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: validatedData.cancelUrl || `${baseUrl}/mi-suscripcion?payment=cancelled`,
           metadata,

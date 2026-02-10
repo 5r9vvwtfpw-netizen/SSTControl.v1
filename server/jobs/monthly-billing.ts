@@ -86,7 +86,7 @@ export async function processMonthlyBilling() {
               issuedDate: invoice.issueDate, // Correct field name
               dueDate: invoice.dueDate,
               status: invoice.status,
-              amount: invoice.total, // COP is zero-decimal, total is already in pesos
+              amount: invoice.total,
               currency: invoice.currency,
               billingPeriodStart: invoice.periodStart,
               billingPeriodEnd: invoice.periodEnd,
@@ -123,7 +123,7 @@ export async function processMonthlyBilling() {
               await emailService.sendInvoiceEmail({
                 to: recipient,
                 invoiceNumber: invoice.invoiceNumber,
-                amount: invoice.total, // COP is zero-decimal, total is already in pesos
+                amount: invoice.total,
                 currency: invoice.currency,
                 issuedDate: invoice.issueDate, // Correct field name
                 dueDate: invoice.dueDate,
