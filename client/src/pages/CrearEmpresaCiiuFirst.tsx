@@ -13,9 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Building2, CheckCircle2, Loader2, Shield, MapPin, Phone, Mail, Sparkles, Briefcase, ArrowRight, ArrowLeft, AlertTriangle, Users, Factory, Pencil, Truck } from "lucide-react";
+import { Building2, CheckCircle2, Loader2, Shield, MapPin, Phone, Mail, Sparkles, Briefcase, ArrowRight, ArrowLeft, AlertTriangle, Users, Factory, Pencil, Truck, FileText } from "lucide-react";
 import type { User } from "@shared/schema";
 import { calculateChapter } from "@shared/utils";
 import { CIIU_CODES, CIIU_SECTIONS } from "@/lib/ciiu-codes";
@@ -88,6 +90,15 @@ export default function CrearEmpresaCiiuFirst() {
   const [termsViewed, setTermsViewed] = useState(false);
   const [policyViewed, setPolicyViewed] = useState(false);
   const bothDocsViewed = termsViewed && policyViewed;
+  const [legalDialogOpen, setLegalDialogOpen] = useState(false);
+  const [legalDialogType, setLegalDialogType] = useState<"terms" | "ip-policy" | "privacy">("terms");
+
+  const openLegalDialog = (type: "terms" | "ip-policy" | "privacy") => {
+    setLegalDialogType(type);
+    setLegalDialogOpen(true);
+    if (type === "terms") setTermsViewed(true);
+    if (type === "ip-policy") setPolicyViewed(true);
+  };
   const hasRegistrationData = typeof window !== 'undefined' && !!localStorage.getItem('sst_registration_ciiu');
   const hasAllRegistrationData = typeof window !== 'undefined' && !!(
     localStorage.getItem('sst_registration_ciiu') &&
@@ -696,31 +707,31 @@ export default function CrearEmpresaCiiuFirst() {
                       className={`text-sm leading-relaxed ${bothDocsViewed ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
                     >
                       Acepto los{" "}
-                      <a 
-                        href="/terminos-servicio" 
-                        target="_blank" 
+                      <button
+                        type="button"
                         className={`underline ${termsViewed ? 'text-muted-foreground' : 'text-primary font-semibold'} hover:text-primary/80`}
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
-                          setTermsViewed(true);
+                          openLegalDialog("terms");
                         }}
                         data-testid="link-terms-of-service"
                       >
                         Términos de Servicio
-                      </a>{" "}
+                      </button>{" "}
                       y la{" "}
-                      <a 
-                        href="/terminos-servicio#propiedad-intelectual" 
-                        target="_blank" 
+                      <button
+                        type="button"
                         className={`underline ${policyViewed ? 'text-muted-foreground' : 'text-primary font-semibold'} hover:text-primary/80`}
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
-                          setPolicyViewed(true);
+                          openLegalDialog("ip-policy");
                         }}
                         data-testid="link-ip-policy"
                       >
                         Política de Propiedad Intelectual
-                      </a>{" "}
+                      </button>{" "}
                       <span className="font-semibold">(DNDA 13-197-177)</span>
                     </Label>
                   </div>
@@ -790,38 +801,284 @@ export default function CrearEmpresaCiiuFirst() {
         <div className="text-center text-xs text-muted-foreground space-y-1">
           <p>
             Al crear tu empresa, aceptas los{" "}
-            <a 
-              href="/terminos-servicio" 
-              target="_blank"
+            <button
+              type="button"
               className="underline hover:text-foreground font-medium"
+              onClick={() => openLegalDialog("terms")}
               data-testid="link-terms-register"
             >
               Términos de Servicio
-            </a>,{" "}
+            </button>,{" "}
             la{" "}
-            <a 
-              href="/politica-privacidad" 
-              target="_blank"
+            <button
+              type="button"
               className="underline hover:text-foreground"
+              onClick={() => openLegalDialog("privacy")}
               data-testid="link-privacy-register"
             >
               Política de Privacidad
-            </a>{" "}
+            </button>{" "}
             y la{" "}
-            <a 
-              href="/terminos-servicio#propiedad-intelectual" 
-              target="_blank"
+            <button
+              type="button"
               className="underline hover:text-foreground"
+              onClick={() => openLegalDialog("ip-policy")}
               data-testid="link-intellectual-property-register"
             >
               Política de Propiedad Intelectual
-            </a>
+            </button>
           </p>
           <p className="text-muted-foreground/70">
             SST Colombia - Todos los derechos reservados
           </p>
         </div>
       </div>
+
+      <Dialog open={legalDialogOpen} onOpenChange={setLegalDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0" data-testid="dialog-legal-document">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+            <div className="flex items-center gap-2">
+              {legalDialogType === "privacy" ? (
+                <Shield className="h-5 w-5 text-primary shrink-0" />
+              ) : (
+                <FileText className="h-5 w-5 text-primary shrink-0" />
+              )}
+              <DialogTitle className="text-xl">
+                {legalDialogType === "terms" && "Términos y Condiciones de Servicio"}
+                {legalDialogType === "ip-policy" && "Propiedad Intelectual y Protección de Activos Digitales"}
+                {legalDialogType === "privacy" && "Política de Privacidad"}
+              </DialogTitle>
+            </div>
+            <DialogDescription>
+              SST Colombia - Última actualización: 11 de noviembre de 2025
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1 px-6 py-4" data-testid="dialog-legal-scroll-area">
+            <div className="space-y-6 text-sm">
+              {legalDialogType === "terms" && (
+                <>
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">1. Aceptación de los Términos</h2>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Al acceder y utilizar la plataforma SST Colombia (en adelante, "la Plataforma"), 
+                      el usuario (en adelante, "el Cliente") acepta estar obligado por estos Términos y 
+                      Condiciones de Servicio, todas las leyes y regulaciones aplicables, y acepta que es 
+                      responsable del cumplimiento de todas las leyes locales aplicables.
+                    </p>
+                  </section>
+                  <Separator />
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">2. Definiciones</h2>
+                    <div className="space-y-2 text-muted-foreground">
+                      <p><strong>2.1 Plataforma:</strong> Sistema web SST Colombia para gestión de Sistemas de Gestión de Seguridad y Salud en el Trabajo (SG-SST).</p>
+                      <p><strong>2.2 Cliente:</strong> Empresa o persona jurídica que contrata los servicios de la Plataforma.</p>
+                      <p><strong>2.3 Usuario:</strong> Persona autorizada por el Cliente para acceder a la Plataforma.</p>
+                      <p><strong>2.4 Datos Personales:</strong> Información de trabajadores y empleados almacenada en la Plataforma según Ley 1581/2012.</p>
+                      <p><strong>2.5 SG-SST:</strong> Sistema de Gestión de la Seguridad y Salud en el Trabajo según Decreto 1072/2015.</p>
+                    </div>
+                  </section>
+                  <Separator />
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">3. Descripción del Servicio</h2>
+                    <div className="space-y-3 text-muted-foreground">
+                      <p><strong>3.1 Servicios Incluidos:</strong></p>
+                      <ul className="list-disc pl-6 space-y-1">
+                        <li>Gestión de información de trabajadores y datos ocupacionales</li>
+                        <li>Registro y seguimiento de accidentes e incidentes laborales (FURAT/FUREL)</li>
+                        <li>Matrices de identificación de peligros y evaluación de riesgos (IPERC)</li>
+                        <li>Gestión de capacitaciones y exámenes médicos ocupacionales</li>
+                        <li>Auditorías internas y revisiones por dirección</li>
+                        <li>Dashboards ejecutivos del ciclo PHVA</li>
+                        <li>Generación de reportes normativos para autoridades competentes</li>
+                        <li>Almacenamiento seguro en la nube con respaldos diarios</li>
+                      </ul>
+                      <p><strong>3.2 Nivel de Servicio:</strong></p>
+                      <ul className="list-disc pl-6 space-y-1">
+                        <li>Disponibilidad objetivo: 99.5% mensual</li>
+                        <li>Mantenimientos programados: Se notificarán con 48 horas de anticipación</li>
+                        <li>Soporte técnico: Horario laboral Colombia (Lunes a Viernes 8:00-17:00)</li>
+                      </ul>
+                    </div>
+                  </section>
+                  <Separator />
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">4. Obligaciones del Cliente</h2>
+                    <div className="space-y-2 text-muted-foreground">
+                      <p><strong>4.1 Uso Apropiado:</strong> El Cliente se compromete a usar la Plataforma exclusivamente para fines relacionados con la gestión de SST conforme a la legislación colombiana.</p>
+                      <p><strong>4.2 Información Veraz:</strong> El Cliente garantiza que toda la información ingresada en la Plataforma es veraz, actualizada y completa.</p>
+                      <p><strong>4.3 Seguridad de Credenciales:</strong> El Cliente es responsable de mantener la confidencialidad de sus credenciales de acceso.</p>
+                      <p><strong>4.4 Cumplimiento Legal:</strong> El Cliente se compromete a cumplir con toda la normatividad SST colombiana vigente.</p>
+                    </div>
+                  </section>
+                  <Separator />
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">5. Propiedad Intelectual</h2>
+                    <div className="space-y-3 text-muted-foreground">
+                      <div className="bg-primary/5 p-3 rounded-lg border border-primary/20">
+                        <p><strong>5.1 PROPIEDAD INTELECTUAL:</strong> El Software, incluyendo su código fuente, arquitectura de datos, interfaces de usuario, diseños, y la metodología de filtrado lógico de estándares, son propiedad exclusiva de SST Colombia S.A.S.</p>
+                      </div>
+                      <p><strong>5.2 Registro Legal:</strong> Protegidos por las leyes de derecho de autor con registro oficial ante la DNDA bajo el número 13-197-177.</p>
+                      <p><strong>5.3 Licencia de Uso:</strong> Se otorga al Cliente una licencia no exclusiva, no transferible y revocable.</p>
+                    </div>
+                  </section>
+                  <Separator />
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">6. Protección de Datos Personales</h2>
+                    <div className="space-y-2 text-muted-foreground">
+                      <p><strong>6.1 Marco Legal:</strong> El tratamiento se rige por la Ley 1581 de 2012, Decreto 1377 de 2013 y el GDPR.</p>
+                      <p><strong>6.2</strong> El Cliente actúa como Responsable del Tratamiento de los datos personales de sus trabajadores.</p>
+                      <p><strong>6.3</strong> SST Colombia actúa como Encargado del Tratamiento bajo instrucciones documentadas del Cliente.</p>
+                      <p><strong>6.6 Seguridad:</strong> Cifrado TLS 1.3 y AES-256, RBAC, auditoría completa, respaldos diarios encriptados.</p>
+                    </div>
+                  </section>
+                  <Separator />
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">7. Tarifas y Pagos</h2>
+                    <div className="space-y-2 text-muted-foreground">
+                      <p><strong>7.1</strong> Los servicios se facturan mensualmente o anualmente según el plan contratado.</p>
+                      <p><strong>7.3</strong> Renovación automática salvo notificación de cancelación con 30 días de anticipación.</p>
+                      <p><strong>7.5</strong> SST Colombia se reserva el derecho de suspender el acceso tras 15 días de mora en el pago.</p>
+                    </div>
+                  </section>
+                  <Separator />
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">8-13. Disposiciones Adicionales</h2>
+                    <div className="space-y-2 text-muted-foreground">
+                      <p><strong>Cancelación:</strong> El Cliente puede cancelar con 30 días de anticipación. Tras terminación, tiene 30 días para exportar sus datos.</p>
+                      <p><strong>Limitación de Responsabilidad:</strong> La Plataforma se proporciona "tal cual". SST Colombia no será responsable por daños indirectos superiores al monto pagado en los últimos 12 meses.</p>
+                      <p><strong>Ley Aplicable:</strong> Estos Términos se rigen por las leyes de la República de Colombia. Jurisdicción: Bogotá D.C.</p>
+                      <p><strong>Modificaciones:</strong> Los cambios materiales se notificarán por correo electrónico con 30 días de anticipación.</p>
+                    </div>
+                  </section>
+                  <Separator />
+                  <section className="bg-muted/50 p-4 rounded-lg">
+                    <h2 className="text-lg font-semibold mb-3">Declaración de Aceptación</h2>
+                    <p className="text-muted-foreground leading-relaxed">
+                      <strong>AL CREAR UNA CUENTA Y UTILIZAR LA PLATAFORMA SST COLOMBIA, USTED RECONOCE HABER LEÍDO, 
+                      COMPRENDIDO Y ACEPTADO ESTOS TÉRMINOS Y CONDICIONES DE SERVICIO EN SU TOTALIDAD.</strong>
+                    </p>
+                  </section>
+                </>
+              )}
+
+              {legalDialogType === "ip-policy" && (
+                <>
+                  <section>
+                    <div className="bg-primary/5 p-3 rounded-lg border border-primary/20">
+                      <p className="text-muted-foreground"><strong>PROPIEDAD INTELECTUAL:</strong> El Cliente reconoce y acepta que el Software, incluyendo pero no limitado a su código fuente, arquitectura de datos, interfaces de usuario, diseños, y muy especialmente <strong>la metodología de filtrado lógico de estándares y la curaduría legal de contenidos basada en la Resolución 0312 de 2019</strong>, son propiedad exclusiva de SST Colombia S.A.S.</p>
+                    </div>
+                  </section>
+                  <Separator />
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">Registro Legal</h2>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Dichos activos se encuentran protegidos por las leyes de derecho de autor y tratados internacionales, contando con el <strong>registro oficial ante la Dirección Nacional de Derecho de Autor (DNDA) bajo el número 13-197-177</strong>.
+                    </p>
+                  </section>
+                  <Separator />
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">Licencia de Uso</h2>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Se otorga al Cliente una licencia no exclusiva, no transferible y revocable para usar la Plataforma durante la vigencia del contrato.
+                    </p>
+                  </section>
+                  <Separator />
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">Propiedad de Datos</h2>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Los datos ingresados por el Cliente permanecen como propiedad del Cliente. SST Colombia actúa únicamente como procesador de datos según GDPR Art. 28 y Ley 1581/2012.
+                    </p>
+                  </section>
+                  <Separator />
+                  <section>
+                    <div className="bg-destructive/10 p-3 rounded-lg border border-destructive/30">
+                      <p className="font-semibold text-destructive mb-2">PROHIBICIÓN DE INGENIERÍA INVERSA</p>
+                      <p className="text-muted-foreground mb-2">Queda expresamente prohibido al Cliente, a sus empleados, contratistas o cualquier tercero relacionado:</p>
+                      <ul className="list-disc pl-6 space-y-1 text-muted-foreground">
+                        <li>Intentar descompilar, descifrar o realizar ingeniería inversa para extraer la lógica de asignación de estándares.</li>
+                        <li>Utilizar scripts, "bots" o técnicas de scraping para la extracción masiva de la base de datos de estándares curados.</li>
+                        <li>Duplicar la estructura funcional del software para el desarrollo de productos competidores.</li>
+                        <li>Copiar, modificar, distribuir o crear obras derivadas del Software sin autorización expresa.</li>
+                      </ul>
+                    </div>
+                  </section>
+                  <Separator />
+                  <section>
+                    <div className="bg-amber-500/10 p-3 rounded-lg border border-amber-500/30">
+                      <p className="text-muted-foreground"><strong>Consecuencias por Infracción:</strong> Cualquier infracción dará lugar a las <strong>acciones civiles y penales correspondientes</strong> conforme a la Ley 23 de 1982 (Derechos de Autor) y Código Penal Colombiano, así como a la <strong>terminación inmediata del servicio sin lugar a reembolsos</strong>.</p>
+                    </div>
+                  </section>
+                </>
+              )}
+
+              {legalDialogType === "privacy" && (
+                <>
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">Política de Privacidad y Protección de Datos</h2>
+                    <p className="text-muted-foreground leading-relaxed">
+                      SST Colombia S.A.S. se compromete a proteger la privacidad de los usuarios de la plataforma, en cumplimiento de la Ley 1581 de 2012 (Ley de Protección de Datos Personales) y su Decreto Reglamentario 1377 de 2013.
+                    </p>
+                  </section>
+                  <Separator />
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">Datos que Recopilamos</h2>
+                    <div className="space-y-2 text-muted-foreground">
+                      <p><strong>Datos de la Empresa:</strong> Razón social, NIT, dirección, teléfono, correo electrónico, número de trabajadores, código CIIU, nivel de riesgo ARL.</p>
+                      <p><strong>Datos de Trabajadores:</strong> Nombres, identificación, cargos, datos de contacto, información de salud ocupacional, historial de capacitaciones.</p>
+                      <p><strong>Datos de Uso:</strong> Registros de acceso, acciones realizadas en la plataforma, información técnica del dispositivo.</p>
+                    </div>
+                  </section>
+                  <Separator />
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">Finalidades del Tratamiento</h2>
+                    <ul className="list-disc pl-6 space-y-1 text-muted-foreground">
+                      <li>Gestión del Sistema de Seguridad y Salud en el Trabajo (SG-SST)</li>
+                      <li>Cumplimiento de obligaciones legales (Resolución 0312/2019, Decreto 1072/2015)</li>
+                      <li>Generación de reportes para autoridades competentes</li>
+                      <li>Mejora continua del servicio y soporte técnico</li>
+                    </ul>
+                  </section>
+                  <Separator />
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">Medidas de Seguridad</h2>
+                    <ul className="list-disc pl-6 space-y-1 text-muted-foreground">
+                      <li>Cifrado de datos en tránsito (TLS 1.3) y en reposo (AES-256-GCM)</li>
+                      <li>Control de acceso basado en roles (RBAC) con múltiples niveles de autorización</li>
+                      <li>Auditoría completa de operaciones sobre datos regulados</li>
+                      <li>Respaldos diarios encriptados con retención de 20 años</li>
+                      <li>Derivación de claves por campo para datos sensibles</li>
+                    </ul>
+                  </section>
+                  <Separator />
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">Derechos del Titular</h2>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Conforme a la Ley 1581/2012, los titulares de datos personales tienen derecho a: Acceso, Rectificación, Cancelación y Oposición (derechos ARCO). Para ejercer estos derechos, contactar a: dpo@sst-colombia.com
+                    </p>
+                  </section>
+                  <Separator />
+                  <section>
+                    <h2 className="text-lg font-semibold mb-3">Contacto</h2>
+                    <div className="space-y-1 text-muted-foreground">
+                      <p><strong>Oficial de Protección de Datos:</strong> dpo@sst-colombia.com</p>
+                      <p><strong>Soporte:</strong> soporte@sst-colombia.com</p>
+                    </div>
+                  </section>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="px-6 py-4 border-t shrink-0 flex justify-end">
+            <Button
+              variant="default"
+              onClick={() => setLegalDialogOpen(false)}
+              data-testid="button-close-legal-dialog"
+            >
+              Cerrar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
