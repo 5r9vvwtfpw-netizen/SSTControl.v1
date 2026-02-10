@@ -462,22 +462,22 @@ export function registerBillingRoutes(app: Express) {
           });
         }
         
-        // Also check for open/unpaid sessions to prevent creating duplicates
-        const pendingSession = recentSessions.data.find(s =>
+        // Expire any open/unpaid sessions for this company so a fresh one is created
+        // with the latest price (user may have changed employees/vehicles/CIIU)
+        const pendingSessions = recentSessions.data.filter(s =>
           s.metadata?.companyId === subscription.companyId &&
           s.metadata?.type === 'subscription_activation' &&
           s.status === 'open' &&
           s.payment_status === 'unpaid'
         );
         
-        if (pendingSession && pendingSession.url) {
-          console.log('[Billing] Existing open checkout session found, reusing:', pendingSession.id);
-          return res.status(200).json({
-            success: true,
-            paymentUrl: pendingSession.url,
-            sessionId: pendingSession.id,
-            message: 'Redirigiendo a tu sesión de pago existente...',
-          });
+        for (const oldSession of pendingSessions) {
+          try {
+            await stripe.checkout.sessions.expire(oldSession.id);
+            console.log('[Billing] Expired stale checkout session:', oldSession.id);
+          } catch (expireErr: any) {
+            console.warn('[Billing] Could not expire session', oldSession.id, expireErr.message);
+          }
         }
       } catch (checkError: any) {
         console.warn('[Billing] Error checking recent sessions (continuing):', checkError.message);
