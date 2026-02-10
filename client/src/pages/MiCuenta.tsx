@@ -586,18 +586,6 @@ export default function MiCuenta() {
                       </div>
                     )}
 
-                    {subscriptionData.subscription.nextBillingDate && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted-foreground">Próxima Facturación</label>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-lg font-semibold" data-testid="text-next-billing">
-                            {formatDate(subscriptionData.subscription.nextBillingDate)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
                     {invoices && invoices.length > 0 && (
                       <>
                         <div className="space-y-2">
@@ -624,6 +612,27 @@ export default function MiCuenta() {
                         </div>
                       </>
                     )}
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-muted-foreground">Próximo Pago</label>
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-lg font-bold" data-testid="text-next-payment-amount">
+                          {formatPrice((companyData?.quoteCurrentPeriodPrice ?? companyData?.quoteBaseMonthlyPrice ?? 0) / 100)}
+                        </span>
+                        {companyData?.quoteCouponCode && (
+                          <Badge variant="outline">con cupón</Badge>
+                        )}
+                      </div>
+                      {subscriptionData.subscription.nextBillingDate && (
+                        <p className="text-xs text-muted-foreground">
+                          Fecha: {formatDate(subscriptionData.subscription.nextBillingDate)}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Basado en CIIU {companyData?.ciiuCode || 'N/A'}, {companyData?.numberOfWorkers ?? companyData?.numWorkers ?? 0} empleados, {companyData?.numberOfVehicles ?? 0} vehículos
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
