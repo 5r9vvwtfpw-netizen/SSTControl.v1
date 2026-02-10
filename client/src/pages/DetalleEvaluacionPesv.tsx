@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
+import { setPesvEvaluacionContext } from "@/components/BackToPesvEvaluationButton";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -54,6 +55,12 @@ export default function DetalleEvaluacionPesv() {
   const [respuestaDialogOpen, setRespuestaDialogOpen] = useState(false);
   const [autoFilledFields, setAutoFilledFields] = useState<Record<string, boolean>>({});
   const [finalizarDialogOpen, setFinalizarDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      setPesvEvaluacionContext(id);
+    }
+  }, [id]);
 
   const { data: evaluacion, isLoading: loadingEvaluacion } = useQuery<EvaluacionPesv>({
     queryKey: ["/api/evaluaciones-pesv", id],

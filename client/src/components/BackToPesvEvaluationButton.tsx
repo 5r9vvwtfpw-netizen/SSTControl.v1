@@ -1,6 +1,29 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { Link, useLocation, useParams } from "wouter";
+
+const PESV_EVAL_STORAGE_KEY = "active_pesv_evaluacion_id";
+
+export function setPesvEvaluacionContext(evaluacionId: string) {
+  try {
+    sessionStorage.setItem(PESV_EVAL_STORAGE_KEY, evaluacionId);
+  } catch {}
+}
+
+export function clearPesvEvaluacionContext() {
+  try {
+    sessionStorage.removeItem(PESV_EVAL_STORAGE_KEY);
+  } catch {}
+}
+
+function getPesvEvaluacionContext(): string | null {
+  try {
+    return sessionStorage.getItem(PESV_EVAL_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
 
 interface BackToPesvEvaluationButtonProps {
   className?: string;
@@ -9,8 +32,13 @@ interface BackToPesvEvaluationButtonProps {
 export function BackToPesvEvaluationButton({ className = "" }: BackToPesvEvaluationButtonProps) {
   const [location, setLocation] = useLocation();
   const params = useParams<{ evaluacionId?: string }>();
-  
-  const evaluacionId = params.evaluacionId || extractEvaluacionIdFromPath(location);
+  const [storedEvalId, setStoredEvalId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setStoredEvalId(getPesvEvaluacionContext());
+  }, []);
+
+  const evaluacionId = params.evaluacionId || extractEvaluacionIdFromPath(location) || storedEvalId;
   
   if (evaluacionId) {
     return (
