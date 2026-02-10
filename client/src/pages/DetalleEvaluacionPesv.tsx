@@ -1064,27 +1064,7 @@ export default function DetalleEvaluacionPesv() {
                       const IconComponent = modulo.icono ? ICONO_MAP[modulo.icono] : ExternalLink;
                       const moduleAllowed = !companyChapter || isModuleAllowedForChapter(modulo.url, companyChapter as ChapterType);
                       if (!moduleAllowed) {
-                        return (
-                          <Tooltip key={modulo.url}>
-                            <TooltipTrigger asChild>
-                              <div>
-                                <Button 
-                                  type="button" 
-                                  variant="outline"
-                                  className="w-full gap-2 opacity-50 cursor-not-allowed"
-                                  disabled
-                                  data-testid={`button-ir-sst-${modulo.url.replace('/', '')}`}
-                                >
-                                  <Lock className="h-4 w-4" />
-                                  Ir a {modulo.nombre}
-                                </Button>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Módulo no disponible en su plan actual</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        );
+                        return null;
                       }
                       return (
                         <Link key={modulo.url} href={modulo.url}>
