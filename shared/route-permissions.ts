@@ -21,6 +21,7 @@ export const routePermissions: Record<string, Permission[]> = {
   // Configuración - Administración
   "/dashboard-facturacion": ["billing:global_view"], // Solo superadmin (proveedor SaaS)
   "/mi-cuenta": [], // Accesible para todos los usuarios autenticados
+  "/mi-suscripcion": [], // Accesible para todos los usuarios autenticados
   "/planes-suscripcion": [], // Accesible para todos los usuarios autenticados
   "/checkout": [], // Accesible para todos los usuarios autenticados
   "/tickets-soporte": [], // Accesible para todos los usuarios autenticados
