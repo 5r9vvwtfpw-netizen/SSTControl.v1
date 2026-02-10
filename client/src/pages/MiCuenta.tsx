@@ -68,7 +68,8 @@ type CompanyData = {
   email?: string;
   city?: string;
   ciiuCode?: string;
-  numWorkers: number;
+  numWorkers?: number;
+  numberOfWorkers?: number;
   riskLevel: string;
   numberOfVehicles?: number;
   vehicleCount: number;
@@ -392,7 +393,7 @@ export default function MiCuenta() {
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       <span className="text-lg font-medium" data-testid="text-num-workers">
-                        {companyData.numWorkers}
+                        {companyData.numberOfWorkers ?? companyData.numWorkers ?? 0}
                       </span>
                     </div>
                   </div>
