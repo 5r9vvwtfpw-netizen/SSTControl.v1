@@ -588,7 +588,9 @@ export default function MiCuenta() {
 
                     {invoices && invoices.length > 0 && (
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted-foreground">Monto Pagado</label>
+                        <label className="text-sm font-medium text-muted-foreground" data-testid="text-last-payment-date">
+                          Monto Pagado el {formatDate(invoices[0].paidDate || invoices[0].issueDate)}
+                        </label>
                         <div className="flex items-center gap-2">
                           <CreditCard className="h-4 w-4 text-muted-foreground" />
                           <span className="text-lg font-bold" data-testid="text-last-payment-amount">
@@ -598,8 +600,8 @@ export default function MiCuenta() {
                             <Badge variant="outline">con cupón</Badge>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground" data-testid="text-last-payment-date">
-                          Última fecha de pago: {formatDate(invoices[0].paidDate || invoices[0].issueDate)}
+                        <p className="text-xs text-muted-foreground">
+                          Basado en CIIU {invoices[0].ciiuCode || companyData?.ciiuCode || 'N/A'}, {invoices[0].numberOfWorkers ?? companyData?.numberOfWorkers ?? companyData?.numWorkers ?? 0} empleados, {invoices[0].numberOfVehicles ?? companyData?.numberOfVehicles ?? 0} vehículos
                         </p>
                       </div>
                     )}
