@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Trash2, ArrowLeft, MapPin, Gauge, AlertTriangle, Info, Navigation } from "lucide-react";
+import { Plus, Search, Trash2, ArrowLeft, MapPin, Gauge, AlertTriangle, Info, Navigation, Radio, Lock } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import L from "leaflet";
@@ -116,6 +116,81 @@ export default function PesvMonitoreoGps() {
       });
     },
   });
+
+  const autoPopulateFromVehicle = (vehicleId: string) => {
+    const vehicleRecords = trackingRecords
+      .filter((r) => r.vehicleId === vehicleId)
+      .sort((a, b) => {
+        const tA = `${a.trackingDate} ${a.trackingTime || "00:00"}`;
+        const tB = `${b.trackingDate} ${b.trackingTime || "00:00"}`;
+        return tB.localeCompare(tA);
+      });
+
+    const latest = vehicleRecords[0];
+    if (latest) {
+      const speed = latest.speed ?? "";
+      const maxSpeed = latest.maxSpeedAllowed ?? "";
+      const isExceeded = speed !== "" && maxSpeed !== "" && Number(speed) > Number(maxSpeed);
+
+      setFormData((prev) => ({
+        ...prev,
+        vehicleId,
+        trackingDate: latest.trackingDate || new Date().toISOString().split("T")[0],
+        trackingTime: latest.trackingTime || "",
+        latitude: latest.latitude || "",
+        longitude: latest.longitude || "",
+        speed: speed,
+        maxSpeedAllowed: maxSpeed,
+        speedExceeded: isExceeded ? 1 : 0,
+        engineStatus: (latest.engineStatus as "encendido" | "apagado" | "ralenti" | "") || "",
+        geofenceAlert: latest.geofenceAlert ?? 0,
+        alertType: isExceeded ? "Exceso de Velocidad Detectado" : (latest.alertType || ""),
+        observations: latest.observations || "",
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        vehicleId,
+        trackingDate: new Date().toISOString().split("T")[0],
+        trackingTime: "",
+        latitude: "",
+        longitude: "",
+        speed: "",
+        maxSpeedAllowed: "",
+        speedExceeded: 0,
+        engineStatus: "",
+        geofenceAlert: 0,
+        alertType: "",
+        observations: "",
+      }));
+    }
+  };
+
+  const handleSpeedChange = (newSpeed: string) => {
+    const speed = newSpeed === "" ? "" : Number(newSpeed);
+    const maxSpeed = formData.maxSpeedAllowed === "" ? "" : Number(formData.maxSpeedAllowed);
+    const isExceeded = speed !== "" && maxSpeed !== "" && Number(speed) > Number(maxSpeed);
+
+    setFormData((prev) => ({
+      ...prev,
+      speed: newSpeed === "" ? "" : newSpeed,
+      speedExceeded: isExceeded ? 1 : 0,
+      alertType: isExceeded ? "Exceso de Velocidad Detectado" : (prev.alertType === "Exceso de Velocidad Detectado" ? "" : prev.alertType),
+    }));
+  };
+
+  const handleMaxSpeedChange = (newMaxSpeed: string) => {
+    const speed = formData.speed === "" ? "" : Number(formData.speed);
+    const maxSpeed = newMaxSpeed === "" ? "" : Number(newMaxSpeed);
+    const isExceeded = speed !== "" && maxSpeed !== "" && Number(speed) > Number(maxSpeed);
+
+    setFormData((prev) => ({
+      ...prev,
+      maxSpeedAllowed: newMaxSpeed === "" ? "" : newMaxSpeed,
+      speedExceeded: isExceeded ? 1 : 0,
+      alertType: isExceeded ? "Exceso de Velocidad Detectado" : (prev.alertType === "Exceso de Velocidad Detectado" ? "" : prev.alertType),
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -508,14 +583,19 @@ export default function PesvMonitoreoGps() {
           }}>
             <DialogTrigger asChild>
               <Button data-testid="button-add-tracking">
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Registro GPS
+                <Radio className="h-4 w-4 mr-2" />
+                Vista de Monitoreo
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="dialog-tracking">
               <DialogHeader>
-                <DialogTitle>Registrar Monitoreo GPS</DialogTitle>
-                <DialogDescription>Complete los datos del registro de monitoreo GPS/Velocidad</DialogDescription>
+                <DialogTitle className="flex items-center gap-2">
+                  <Radio className="h-5 w-5" />
+                  Vista de Monitoreo GPS
+                </DialogTitle>
+                <DialogDescription>
+                  Seleccione un vehículo para cargar automáticamente sus últimos datos GPS. Los campos de ubicación son de solo lectura para garantizar la integridad ante el PESV.
+                </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4" data-testid="form-gps-tracking">
                 <div className="grid grid-cols-2 gap-4">
@@ -523,10 +603,12 @@ export default function PesvMonitoreoGps() {
                     <Label htmlFor="vehicleId">Vehículo *</Label>
                     <Select
                       value={formData.vehicleId}
-                      onValueChange={(value) => setFormData({ ...formData, vehicleId: value })}
+                      onValueChange={(value) => {
+                        autoPopulateFromVehicle(value);
+                      }}
                     >
                       <SelectTrigger id="vehicleId" data-testid="select-vehicle">
-                        <SelectValue placeholder="Seleccione un vehículo" />
+                        <SelectValue placeholder="Seleccione un vehículo para cargar datos" />
                       </SelectTrigger>
                       <SelectContent>
                         {vehicles.map((vehicle) => (
@@ -582,25 +664,35 @@ export default function PesvMonitoreoGps() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="latitude">Latitud</Label>
+                    <Label htmlFor="latitude" className="flex items-center gap-1.5">
+                      Latitud
+                      <Lock className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground font-normal">(solo lectura - dato GPS)</span>
+                    </Label>
                     <Input
                       id="latitude"
                       type="text"
                       value={formData.latitude}
-                      onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                      placeholder="Ej: 4.7110"
+                      readOnly
+                      className="bg-muted/50 cursor-not-allowed"
+                      placeholder="Se carga automáticamente del GPS"
                       data-testid="input-latitude"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="longitude">Longitud</Label>
+                    <Label htmlFor="longitude" className="flex items-center gap-1.5">
+                      Longitud
+                      <Lock className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground font-normal">(solo lectura - dato GPS)</span>
+                    </Label>
                     <Input
                       id="longitude"
                       type="text"
                       value={formData.longitude}
-                      onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                      placeholder="Ej: -74.0721"
+                      readOnly
+                      className="bg-muted/50 cursor-not-allowed"
+                      placeholder="Se carga automáticamente del GPS"
                       data-testid="input-longitude"
                     />
                   </div>
@@ -612,7 +704,7 @@ export default function PesvMonitoreoGps() {
                       type="number"
                       min="0"
                       value={formData.speed}
-                      onChange={(e) => setFormData({ ...formData, speed: e.target.value === "" ? "" : e.target.value })}
+                      onChange={(e) => handleSpeedChange(e.target.value)}
                       placeholder="Velocidad registrada"
                       data-testid="input-speed"
                     />
@@ -625,11 +717,29 @@ export default function PesvMonitoreoGps() {
                       type="number"
                       min="0"
                       value={formData.maxSpeedAllowed}
-                      onChange={(e) => setFormData({ ...formData, maxSpeedAllowed: e.target.value === "" ? "" : e.target.value })}
+                      onChange={(e) => handleMaxSpeedChange(e.target.value)}
                       placeholder="Límite de velocidad"
                       data-testid="input-max-speed"
                     />
                   </div>
+
+                  {formData.speedExceeded === 1 && (
+                    <div className="col-span-2">
+                      <Alert className="border-destructive/50 bg-destructive/5">
+                        <AlertTriangle className="h-4 w-4 text-destructive" />
+                        <AlertTitle className="text-destructive">Exceso de Velocidad Detectado</AlertTitle>
+                        <AlertDescription className="text-destructive/80">
+                          {formData.speed && formData.maxSpeedAllowed ? (
+                            <>
+                              Velocidad registrada: <strong>{formData.speed} km/h</strong> — Límite permitido: <strong>{formData.maxSpeedAllowed} km/h</strong> — Exceso: <strong>+{Number(formData.speed) - Number(formData.maxSpeedAllowed)} km/h</strong>
+                            </>
+                          ) : (
+                            "Se ha detectado un exceso de velocidad."
+                          )}
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label htmlFor="engineStatus">Estado del Motor</Label>
@@ -649,13 +759,24 @@ export default function PesvMonitoreoGps() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="alertType">Tipo de Alerta</Label>
+                    <Label htmlFor="alertType" className="flex items-center gap-1.5">
+                      Tipo de Alerta
+                      {formData.speedExceeded === 1 && (
+                        <Badge variant="destructive" className="text-xs">Auto-detectado</Badge>
+                      )}
+                    </Label>
                     <Input
                       id="alertType"
                       type="text"
                       value={formData.alertType}
-                      onChange={(e) => setFormData({ ...formData, alertType: e.target.value })}
-                      placeholder="Ej: Exceso de velocidad, Salida de geocerca"
+                      onChange={(e) => {
+                        if (formData.speedExceeded !== 1) {
+                          setFormData({ ...formData, alertType: e.target.value });
+                        }
+                      }}
+                      readOnly={formData.speedExceeded === 1}
+                      className={formData.speedExceeded === 1 ? "bg-destructive/5 border-destructive/30 text-destructive font-medium cursor-not-allowed" : ""}
+                      placeholder="Se detecta automáticamente por velocidad"
                       data-testid="input-alert-type"
                     />
                   </div>
@@ -666,11 +787,11 @@ export default function PesvMonitoreoGps() {
                         <Checkbox
                           id="speedExceeded"
                           checked={formData.speedExceeded === 1}
-                          onCheckedChange={(checked) => setFormData({ ...formData, speedExceeded: checked ? 1 : 0 })}
+                          disabled
                           data-testid="checkbox-speed-exceeded"
                         />
                         <Label htmlFor="speedExceeded" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                          Exceso de Velocidad
+                          Exceso de Velocidad <span className="text-xs text-muted-foreground">(automático)</span>
                         </Label>
                       </div>
                       
