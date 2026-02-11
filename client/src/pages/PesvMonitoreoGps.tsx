@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Trash2, ArrowLeft, MapPin, Gauge, AlertTriangle, Info, Navigation, Radio, Lock } from "lucide-react";
+import { Plus, Search, Trash2, ArrowLeft, MapPin, Gauge, AlertTriangle, Info, Navigation, Radio, Lock, CalendarDays, TrendingUp, CheckCircle2, XCircle } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import L from "leaflet";
@@ -32,6 +32,7 @@ export default function PesvMonitoreoGps() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMapVehicleId, setSelectedMapVehicleId] = useState<string>("");
+  const [summaryDate, setSummaryDate] = useState(new Date().toISOString().split("T")[0]);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -534,6 +535,102 @@ export default function PesvMonitoreoGps() {
     );
   });
 
+  const dailySummary = useMemo(() => {
+    const dayRecords = trackingRecords.filter((r) => r.trackingDate === summaryDate);
+
+    const byVehicle = new Map<string, {
+      vehicleId: string;
+      plate: string;
+      brand: string;
+      model: string;
+      totalRecords: number;
+      lastTime: string | null;
+      lastLat: string | null;
+      lastLng: string | null;
+      lastEngineStatus: string | null;
+      maxSpeed: number;
+      avgSpeed: number;
+      speedLimit: number | null;
+      speedExceededCount: number;
+      geofenceAlertCount: number;
+      alertTypes: string[];
+      activeAlertCount: number;
+      worstSeverity: string | null;
+    }>();
+
+    for (const record of dayRecords) {
+      const vehicle = vehicles.find((v) => v.id === record.vehicleId);
+      const existing = byVehicle.get(record.vehicleId);
+
+      if (!existing) {
+        const vehicleAlerts = activeAlerts.filter(
+          (a) => a.vehicleId === record.vehicleId &&
+            (a.status === "abierta" || a.status === "en_revision" || a.status === "accion_correctiva")
+        );
+        const worstSev = vehicleAlerts.length > 0
+          ? (vehicleAlerts.some((a) => a.severity === "critica") ? "critica"
+            : vehicleAlerts.some((a) => a.severity === "grave") ? "grave"
+            : vehicleAlerts.some((a) => a.severity === "moderada") ? "moderada"
+            : "leve")
+          : null;
+
+        byVehicle.set(record.vehicleId, {
+          vehicleId: record.vehicleId,
+          plate: vehicle?.plate || "Desconocido",
+          brand: vehicle?.brand || "",
+          model: vehicle?.model || "",
+          totalRecords: 1,
+          lastTime: record.trackingTime,
+          lastLat: record.latitude,
+          lastLng: record.longitude,
+          lastEngineStatus: record.engineStatus,
+          maxSpeed: record.speed ?? 0,
+          avgSpeed: record.speed ?? 0,
+          speedLimit: record.maxSpeedAllowed,
+          speedExceededCount: record.speedExceeded === 1 ? 1 : 0,
+          geofenceAlertCount: record.geofenceAlert === 1 ? 1 : 0,
+          alertTypes: record.alertType ? [record.alertType] : [],
+          activeAlertCount: vehicleAlerts.length,
+          worstSeverity: worstSev,
+        });
+      } else {
+        existing.totalRecords += 1;
+        if (record.speed !== null && record.speed !== undefined) {
+          if (record.speed > existing.maxSpeed) existing.maxSpeed = record.speed;
+          existing.avgSpeed = ((existing.avgSpeed * (existing.totalRecords - 1)) + record.speed) / existing.totalRecords;
+        }
+        if (record.speedExceeded === 1) existing.speedExceededCount += 1;
+        if (record.geofenceAlert === 1) existing.geofenceAlertCount += 1;
+        if (record.alertType && !existing.alertTypes.includes(record.alertType)) {
+          existing.alertTypes.push(record.alertType);
+        }
+        const recTime = record.trackingTime || "00:00";
+        const existTime = existing.lastTime || "00:00";
+        if (recTime > existTime) {
+          existing.lastTime = record.trackingTime;
+          existing.lastLat = record.latitude;
+          existing.lastLng = record.longitude;
+          existing.lastEngineStatus = record.engineStatus;
+          existing.speedLimit = record.maxSpeedAllowed;
+        }
+      }
+    }
+
+    return Array.from(byVehicle.values()).sort((a, b) => {
+      if (a.speedExceededCount > 0 && b.speedExceededCount === 0) return -1;
+      if (b.speedExceededCount > 0 && a.speedExceededCount === 0) return 1;
+      return b.totalRecords - a.totalRecords;
+    });
+  }, [trackingRecords, vehicles, activeAlerts, summaryDate]);
+
+  const summaryTotals = useMemo(() => {
+    const total = dailySummary.length;
+    const withExcess = dailySummary.filter((v) => v.speedExceededCount > 0).length;
+    const withAlerts = dailySummary.filter((v) => v.activeAlertCount > 0).length;
+    const totalRecords = dailySummary.reduce((sum, v) => sum + v.totalRecords, 0);
+    return { total, withExcess, withAlerts, totalRecords };
+  }, [dailySummary]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-4">
@@ -922,6 +1019,163 @@ export default function PesvMonitoreoGps() {
           </Table>
         </div>
       )}
+
+      <Card data-testid="card-daily-summary">
+        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <CalendarDays className="h-5 w-5" />
+              Resumen Diario de Monitoreo
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Estado consolidado de todos los vehículos para el día seleccionado
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Input
+              type="date"
+              value={summaryDate}
+              onChange={(e) => setSummaryDate(e.target.value)}
+              className="w-[180px]"
+              data-testid="input-summary-date"
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="flex items-center gap-3 rounded-md border px-3 py-2.5">
+              <div className="rounded-md bg-primary/10 p-2">
+                <Navigation className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <div className="text-xl font-bold" data-testid="text-summary-vehicles">{summaryTotals.total}</div>
+                <div className="text-xs text-muted-foreground">Vehículos</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-md border px-3 py-2.5">
+              <div className="rounded-md bg-muted p-2">
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div>
+                <div className="text-xl font-bold" data-testid="text-summary-records">{summaryTotals.totalRecords}</div>
+                <div className="text-xs text-muted-foreground">Registros GPS</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-md border px-3 py-2.5">
+              <div className="rounded-md bg-destructive/10 p-2">
+                <Gauge className="h-4 w-4 text-destructive" />
+              </div>
+              <div>
+                <div className="text-xl font-bold" data-testid="text-summary-exceeded">{summaryTotals.withExcess}</div>
+                <div className="text-xs text-muted-foreground">Con exceso vel.</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-md border px-3 py-2.5">
+              <div className="rounded-md bg-orange-100 dark:bg-orange-900/30 p-2">
+                <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <div className="text-xl font-bold" data-testid="text-summary-alerts">{summaryTotals.withAlerts}</div>
+                <div className="text-xs text-muted-foreground">Alertas activas</div>
+              </div>
+            </div>
+          </div>
+
+          {dailySummary.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground text-sm">
+              No hay registros GPS para el {summaryDate}.
+            </div>
+          ) : (
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Vehículo</TableHead>
+                    <TableHead className="text-center">Registros</TableHead>
+                    <TableHead className="text-center">Últ. Hora</TableHead>
+                    <TableHead className="text-center">Vel. Máx</TableHead>
+                    <TableHead className="text-center">Vel. Prom</TableHead>
+                    <TableHead className="text-center">Límite</TableHead>
+                    <TableHead className="text-center">Excesos</TableHead>
+                    <TableHead className="text-center">Motor</TableHead>
+                    <TableHead className="text-center">Estado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dailySummary.map((row) => {
+                    const hasIssue = row.speedExceededCount > 0 || row.activeAlertCount > 0;
+                    return (
+                      <TableRow key={row.vehicleId} className={hasIssue ? "bg-destructive/5" : ""} data-testid={`row-summary-${row.vehicleId}`}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${hasIssue ? "bg-destructive" : "bg-green-500"}`} />
+                            <div>
+                              <div className="font-medium">{row.plate}</div>
+                              <div className="text-xs text-muted-foreground">{row.brand} {row.model}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="secondary">{row.totalRecords}</Badge>
+                        </TableCell>
+                        <TableCell className="text-center text-sm text-muted-foreground">
+                          {row.lastTime || "-"}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className={`font-medium ${row.speedExceededCount > 0 ? "text-destructive" : ""}`}>
+                            {row.maxSpeed > 0 ? `${row.maxSpeed} km/h` : "-"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center text-sm">
+                          {row.avgSpeed > 0 ? `${Math.round(row.avgSpeed)} km/h` : "-"}
+                        </TableCell>
+                        <TableCell className="text-center text-sm text-muted-foreground">
+                          {row.speedLimit !== null && row.speedLimit !== undefined ? `${row.speedLimit} km/h` : "-"}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {row.speedExceededCount > 0 ? (
+                            <Badge variant="destructive" data-testid={`badge-exceeded-${row.vehicleId}`}>
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              {row.speedExceededCount}
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">0</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center text-sm">
+                          {row.lastEngineStatus === "encendido" ? (
+                            <span className="text-green-600 dark:text-green-400">Encendido</span>
+                          ) : row.lastEngineStatus === "apagado" ? (
+                            <span className="text-muted-foreground">Apagado</span>
+                          ) : row.lastEngineStatus === "ralenti" ? (
+                            <span className="text-orange-600 dark:text-orange-400">Ralentí</span>
+                          ) : "-"}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {hasIssue ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <XCircle className="h-4 w-4 text-destructive" />
+                              {row.worstSeverity && (
+                                <Badge variant="destructive" className="text-xs">
+                                  {row.worstSeverity === "critica" ? "Crítica" : row.worstSeverity === "grave" ? "Grave" : row.worstSeverity === "moderada" ? "Moderada" : "Leve"}
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center">
+                              <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <style>{`
         @keyframes pulse-ring {
