@@ -33,8 +33,8 @@ export default function PesvSiniestrosEvaluacion() {
     type: "colision" as const,
     severity: "solo-danos" as const,
     description: "",
-    injuries: 0,
-    fatalities: 0,
+    injuries: "" as number | string,
+    fatalities: "" as number | string,
   });
 
   const { data: evaluacion, isLoading: evaluacionLoading } = useQuery<EvaluacionPesv>({
@@ -98,14 +98,18 @@ export default function PesvSiniestrosEvaluacion() {
       type: "colision",
       severity: "solo-danos",
       description: "",
-      injuries: 0,
-      fatalities: 0,
+      injuries: "",
+      fatalities: "",
     });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createIncidentMutation.mutate(formData);
+    createIncidentMutation.mutate({
+      ...formData,
+      injuries: formData.injuries === '' ? 0 : Number(formData.injuries),
+      fatalities: formData.fatalities === '' ? 0 : Number(formData.fatalities),
+    });
   };
 
   const getVehiclePlate = (vehicleId: string) => {
@@ -295,7 +299,7 @@ export default function PesvSiniestrosEvaluacion() {
                       type="number"
                       min="0"
                       value={formData.injuries}
-                      onChange={(e) => setFormData({ ...formData, injuries: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => setFormData({ ...formData, injuries: e.target.value === '' ? '' : e.target.value })}
                       data-testid="input-injuries"
                     />
                   </div>
@@ -306,7 +310,7 @@ export default function PesvSiniestrosEvaluacion() {
                       type="number"
                       min="0"
                       value={formData.fatalities}
-                      onChange={(e) => setFormData({ ...formData, fatalities: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => setFormData({ ...formData, fatalities: e.target.value === '' ? '' : e.target.value })}
                       data-testid="input-fatalities"
                     />
                   </div>
