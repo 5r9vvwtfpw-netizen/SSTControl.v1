@@ -8,9 +8,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Search, Trash2, ArrowLeft, MapPin, Gauge, AlertTriangle, Info } from "lucide-react";
-import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Search, Trash2, ArrowLeft, MapPin, Gauge, AlertTriangle, Info, Navigation } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { VehicleGpsTracking, InsertVehicleGpsTracking, insertVehicleGpsTrackingSchema, Vehicle, Driver } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
@@ -28,6 +31,10 @@ export default function PesvMonitoreoGps() {
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedMapVehicleId, setSelectedMapVehicleId] = useState<string>("");
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
   const [formData, setFormData] = useState({
     vehicleId: "",
     driverId: "",
@@ -178,6 +185,105 @@ export default function PesvMonitoreoGps() {
     };
     return labels[status] || status;
   };
+
+  const lastKnownLocation = useMemo(() => {
+    if (!selectedMapVehicleId) return null;
+    const vehicleRecords = trackingRecords
+      .filter((r) => r.vehicleId === selectedMapVehicleId && r.latitude && r.longitude)
+      .sort((a, b) => {
+        const dateA = `${a.trackingDate} ${a.trackingTime || "00:00"}`;
+        const dateB = `${b.trackingDate} ${b.trackingTime || "00:00"}`;
+        return dateB.localeCompare(dateA);
+      });
+    if (vehicleRecords.length === 0) return null;
+    const latest = vehicleRecords[0];
+    const lat = parseFloat(latest.latitude!);
+    const lng = parseFloat(latest.longitude!);
+    if (isNaN(lat) || isNaN(lng)) return null;
+    return {
+      lat,
+      lng,
+      speed: latest.speed,
+      maxSpeed: latest.maxSpeedAllowed,
+      date: latest.trackingDate,
+      time: latest.trackingTime,
+      engineStatus: latest.engineStatus,
+      speedExceeded: latest.speedExceeded === 1,
+    };
+  }, [selectedMapVehicleId, trackingRecords]);
+
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    if (!mapRef.current) {
+      mapRef.current = L.map(mapContainerRef.current, {
+        center: [4.7110, -74.0721],
+        zoom: 6,
+        zoomControl: true,
+      });
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
+      }).addTo(mapRef.current);
+    }
+
+    if (markerRef.current) {
+      markerRef.current.remove();
+      markerRef.current = null;
+    }
+
+    if (lastKnownLocation) {
+      const { lat, lng, speed, maxSpeed, date, time, engineStatus, speedExceeded } = lastKnownLocation;
+      const vehicle = vehicles.find((v) => v.id === selectedMapVehicleId);
+      const plateLabel = vehicle ? vehicle.plate : "Vehículo";
+
+      const iconHtml = `<div style="
+        background: ${speedExceeded ? "#ef4444" : "#3b82f6"};
+        width: 32px; height: 32px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      "><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg></div>`;
+
+      const customIcon = L.divIcon({
+        html: iconHtml,
+        className: "",
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -20],
+      });
+
+      const popupContent = `
+        <div style="font-family: system-ui; min-width: 180px;">
+          <div style="font-weight: 700; font-size: 14px; margin-bottom: 6px;">${plateLabel}</div>
+          <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">${date}${time ? ` ${time}` : ""}</div>
+          ${speed !== null && speed !== undefined ? `<div style="margin-bottom: 4px;"><strong>Velocidad:</strong> ${speed} km/h${maxSpeed ? ` / ${maxSpeed} km/h` : ""}</div>` : ""}
+          ${speedExceeded ? '<div style="color: #ef4444; font-weight: 600; margin-bottom: 4px;">Exceso de velocidad</div>' : ""}
+          ${engineStatus ? `<div><strong>Motor:</strong> ${engineStatus === "encendido" ? "Encendido" : engineStatus === "apagado" ? "Apagado" : "Ralentí"}</div>` : ""}
+          <div style="font-size: 11px; color: #9ca3af; margin-top: 6px;">${lat.toFixed(5)}, ${lng.toFixed(5)}</div>
+        </div>
+      `;
+
+      markerRef.current = L.marker([lat, lng], { icon: customIcon })
+        .addTo(mapRef.current!)
+        .bindPopup(popupContent)
+        .openPopup();
+
+      mapRef.current!.setView([lat, lng], 14, { animate: true });
+    } else {
+      mapRef.current!.setView([4.7110, -74.0721], 6, { animate: true });
+    }
+
+    return () => {};
+  }, [lastKnownLocation, selectedMapVehicleId, vehicles]);
+
+  useEffect(() => {
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, []);
 
   const filteredRecords = trackingRecords.filter((record) => {
     const searchLower = searchTerm.toLowerCase();
@@ -532,6 +638,59 @@ export default function PesvMonitoreoGps() {
           </Table>
         </div>
       )}
+
+      <Card data-testid="card-vehicle-map">
+        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Navigation className="h-5 w-5" />
+            Ubicación del Vehículo
+          </CardTitle>
+          <Select
+            value={selectedMapVehicleId}
+            onValueChange={setSelectedMapVehicleId}
+          >
+            <SelectTrigger className="w-[280px]" data-testid="select-map-vehicle">
+              <SelectValue placeholder="Seleccione un vehículo" />
+            </SelectTrigger>
+            <SelectContent>
+              {vehicles.map((vehicle) => (
+                <SelectItem key={vehicle.id} value={vehicle.id}>
+                  {vehicle.plate} - {vehicle.brand} {vehicle.model}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardHeader>
+        <CardContent>
+          {selectedMapVehicleId && !lastKnownLocation && (
+            <div className="text-center py-4 text-muted-foreground text-sm mb-2">
+              No se encontraron registros GPS con coordenadas para este vehículo.
+            </div>
+          )}
+          {selectedMapVehicleId && lastKnownLocation && (
+            <div className="flex flex-wrap items-center gap-4 mb-3 text-sm">
+              <Badge variant={lastKnownLocation.speedExceeded ? "destructive" : "secondary"} data-testid="badge-map-speed">
+                <Gauge className="h-3 w-3 mr-1" />
+                {lastKnownLocation.speed !== null && lastKnownLocation.speed !== undefined
+                  ? `${lastKnownLocation.speed} km/h`
+                  : "Sin datos"}
+              </Badge>
+              <span className="text-muted-foreground">
+                {lastKnownLocation.date}{lastKnownLocation.time ? ` ${lastKnownLocation.time}` : ""}
+              </span>
+              <span className="text-muted-foreground">
+                {lastKnownLocation.lat.toFixed(5)}, {lastKnownLocation.lng.toFixed(5)}
+              </span>
+            </div>
+          )}
+          <div
+            ref={mapContainerRef}
+            data-testid="map-container"
+            className="rounded-md border overflow-hidden"
+            style={{ height: "400px", width: "100%" }}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }
