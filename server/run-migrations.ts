@@ -12,6 +12,7 @@ import { createPesvTables } from './migrations/create-pesv-tables';
 import { syncQuoteColumns } from './migrations/sync-quote-columns';
 import { syncInvoiceSnapshotColumns } from './migrations/sync-invoice-snapshot-columns';
 import { syncVehicleMaintenancesColumns } from './migrations/sync-vehicle-maintenances-columns';
+import { createSstSpeedAlerts } from './migrations/create-sst-speed-alerts';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -35,6 +36,7 @@ export async function runMigrations() {
     await syncQuoteColumns();
     await syncInvoiceSnapshotColumns();
     await syncVehicleMaintenancesColumns();
+    await createSstSpeedAlerts();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

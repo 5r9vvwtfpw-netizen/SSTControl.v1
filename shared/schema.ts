@@ -10418,6 +10418,39 @@ export const insertVehicleGpsTrackingSchema = createInsertSchema(vehicleGpsTrack
 export type InsertVehicleGpsTracking = z.infer<typeof insertVehicleGpsTrackingSchema>;
 export type VehicleGpsTracking = typeof vehicleGpsTracking.$inferSelect;
 
+// ==================== Alertas de Velocidad SST ====================
+export const speedAlertSeverityEnum = pgEnum("speed_alert_severity", ["leve", "moderada", "grave", "critica"]);
+export const speedAlertStatusEnum = pgEnum("speed_alert_status", ["abierta", "en_revision", "cerrada", "accion_correctiva"]);
+
+export const sstSpeedAlerts = pgTable("sst_speed_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  vehicleId: varchar("vehicle_id").notNull().references(() => vehicles.id),
+  driverId: varchar("driver_id").references(() => drivers.id),
+  gpsTrackingId: varchar("gps_tracking_id").references(() => vehicleGpsTracking.id),
+  alertDate: date("alert_date").notNull(),
+  alertTime: text("alert_time"),
+  registeredSpeed: integer("registered_speed").notNull(),
+  maxAllowedSpeed: integer("max_allowed_speed").notNull(),
+  speedDifference: integer("speed_difference").notNull(),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
+  severity: speedAlertSeverityEnum("severity").notNull(),
+  status: speedAlertStatusEnum("status").notNull().default("abierta"),
+  source: text("source").notNull().default("manual"),
+  correctiveAction: text("corrective_action"),
+  responsiblePerson: text("responsible_person"),
+  closedAt: timestamp("closed_at"),
+  closedBy: varchar("closed_by"),
+  observations: text("observations"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const insertSstSpeedAlertSchema = createInsertSchema(sstSpeedAlerts)
+  .omit({ id: true, createdAt: true });
+export type InsertSstSpeedAlert = z.infer<typeof insertSstSpeedAlertSchema>;
+export type SstSpeedAlert = typeof sstSpeedAlerts.$inferSelect;
+
 // ==================== Rutas Seguras - H08 ====================
 // Resolución 40595/2022 - Definición de rutas seguras con análisis de riesgos
 

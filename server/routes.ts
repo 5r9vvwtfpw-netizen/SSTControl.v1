@@ -219,6 +219,8 @@ import {
   roadSafetyWorkerAttendees,
   insertVehicleMaintenanceSchema,
   insertVehicleGpsTrackingSchema,
+  sstSpeedAlerts,
+  insertSstSpeedAlertSchema,
   insertSafeRouteSchema,
   roadSafetyTrainings,
   workers,
@@ -45968,6 +45970,54 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+
+  // ========== Helper: Detección automática de exceso de velocidad y alerta SST ==========
+  async function checkAndCreateSpeedAlert(
+    tracking: { id: string; vehicleId: string; driverId?: string | null; trackingDate: string; trackingTime?: string | null; speed?: number | null; maxSpeedAllowed?: number | null; latitude?: string | null; longitude?: string | null; observations?: string | null },
+    companyId: string,
+    source: string = "manual"
+  ) {
+    if (tracking.speed === null || tracking.speed === undefined || tracking.maxSpeedAllowed === null || tracking.maxSpeedAllowed === undefined) return null;
+    if (tracking.maxSpeedAllowed === 0) return null;
+    if (tracking.speed <= tracking.maxSpeedAllowed) return null;
+
+    const diff = tracking.speed - tracking.maxSpeedAllowed;
+    const pct = (diff / tracking.maxSpeedAllowed) * 100;
+
+    let severity: "leve" | "moderada" | "grave" | "critica";
+    if (pct <= 10) severity = "leve";
+    else if (pct <= 25) severity = "moderada";
+    else if (pct <= 50) severity = "grave";
+    else severity = "critica";
+
+    const vehicleInfo = await storage.getVehicleById(tracking.vehicleId);
+    const plate = vehicleInfo?.plate || tracking.vehicleId;
+
+    try {
+      const alert = await storage.createSstSpeedAlert({
+        companyId,
+        vehicleId: tracking.vehicleId,
+        driverId: tracking.driverId || undefined,
+        gpsTrackingId: tracking.id,
+        alertDate: tracking.trackingDate,
+        alertTime: tracking.trackingTime || undefined,
+        registeredSpeed: tracking.speed,
+        maxAllowedSpeed: tracking.maxSpeedAllowed,
+        speedDifference: diff,
+        latitude: tracking.latitude || undefined,
+        longitude: tracking.longitude || undefined,
+        severity,
+        source,
+        observations: `Exceso de velocidad detectado: ${tracking.speed} km/h (límite: ${tracking.maxSpeedAllowed} km/h, exceso: +${diff} km/h, ${pct.toFixed(0)}%). Vehículo: ${plate}. ${tracking.observations || ""}`.trim(),
+      }, companyId);
+      console.log(`[SST Speed Alert] Alerta ${severity} creada para vehículo ${plate}: ${tracking.speed}/${tracking.maxSpeedAllowed} km/h (+${diff} km/h)`);
+      return alert;
+    } catch (err) {
+      console.error("[SST Speed Alert] Error creando alerta:", err);
+      return null;
+    }
+  }
+
   // POST /api/vehicle-gps-tracking - Create a new GPS tracking record
   app.post("/api/vehicle-gps-tracking", requirePermission("vehicles:create"), async (req, res) => {
     try {
@@ -45984,7 +46034,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       const validated = insertVehicleGpsTrackingSchema.parse(req.body);
+      
+      if (validated.speed && validated.maxSpeedAllowed && validated.speed > validated.maxSpeedAllowed) {
+        validated.speedExceeded = 1;
+      }
+      
       const tracking = await storage.createVehicleGpsTracking(validated, companyId);
+      
+      await checkAndCreateSpeedAlert(tracking, companyId, "formulario");
+      
       res.status(201).json(tracking);
     } catch (error: any) {
       console.error("Error creating GPS tracking record:", error);
@@ -46180,7 +46238,16 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           });
 
           const tracking = await storage.createVehicleGpsTracking(validatedGpsData, vehicle.companyId);
-          results.push({ id: tracking.id, vehicleId: vehicle.id, plate: vehicle.plate, status: "created" });
+          
+          const speedAlert = await checkAndCreateSpeedAlert(tracking, vehicle.companyId, "webhook_gps");
+          
+          results.push({ 
+            id: tracking.id, 
+            vehicleId: vehicle.id, 
+            plate: vehicle.plate, 
+            status: "created",
+            ...(speedAlert ? { speedAlert: { id: speedAlert.id, severity: speedAlert.severity } } : {})
+          });
         } catch (recordError: any) {
           errors.push({ record, error: recordError.message || "Error procesando registro" });
         }
@@ -46198,6 +46265,80 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     } catch (error: any) {
       console.error("[GPS Webhook] Error general:", error);
       res.status(500).json({ error: "Error interno procesando datos GPS" });
+    }
+  });
+
+  // ========== SST Speed Alerts - Alertas de exceso de velocidad ==========
+
+  app.get("/api/sst-speed-alerts", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const companyId = isAdmin && req.query.companyId ? String(req.query.companyId) : userCompanyId;
+      
+      if (!companyId) {
+        return res.status(400).json({ error: "Se requiere companyId" });
+      }
+      
+      const alerts = await storage.getSstSpeedAlerts(companyId);
+      res.json(alerts);
+    } catch (error: any) {
+      console.error("Error fetching speed alerts:", error);
+      res.status(500).json({ error: error.message || "Error al obtener alertas de velocidad" });
+    }
+  });
+
+  app.get("/api/sst-speed-alerts/:id", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const alert = await storage.getSstSpeedAlert(req.params.id);
+      if (!alert) {
+        return res.status(404).json({ error: "Alerta no encontrada" });
+      }
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      if (!isAdmin && alert.companyId !== req.user!.companyId) {
+        return res.status(403).json({ error: "No tiene permiso para ver esta alerta" });
+      }
+      res.json(alert);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/sst-speed-alerts/:id", requirePermission("vehicles:create"), async (req, res) => {
+    try {
+      const alert = await storage.getSstSpeedAlert(req.params.id);
+      if (!alert) {
+        return res.status(404).json({ error: "Alerta no encontrada" });
+      }
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      if (!isAdmin && alert.companyId !== req.user!.companyId) {
+        return res.status(403).json({ error: "No tiene permiso para modificar esta alerta" });
+      }
+
+      const validStatuses = ["abierta", "en_revision", "cerrada", "accion_correctiva"];
+      const { status, correctiveAction, responsiblePerson, observations } = req.body;
+      const updateData: any = {};
+      
+      if (status) {
+        if (!validStatuses.includes(status)) {
+          return res.status(400).json({ error: `Estado inválido. Valores permitidos: ${validStatuses.join(", ")}` });
+        }
+        updateData.status = status;
+      }
+      if (correctiveAction !== undefined) updateData.correctiveAction = correctiveAction;
+      if (responsiblePerson !== undefined) updateData.responsiblePerson = responsiblePerson;
+      if (observations !== undefined) updateData.observations = observations;
+      
+      if (status === "cerrada") {
+        updateData.closedAt = new Date();
+        updateData.closedBy = req.user!.id;
+      }
+      
+      const updated = await storage.updateSstSpeedAlert(req.params.id, updateData);
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating speed alert:", error);
+      res.status(400).json({ error: error.message || "Error al actualizar alerta" });
     }
   });
 

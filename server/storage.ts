@@ -662,6 +662,12 @@ export interface IStorage {
   createVehicleGpsTracking(data: schema.InsertVehicleGpsTracking, companyId: string): Promise<schema.VehicleGpsTracking>;
   deleteVehicleGpsTracking(id: string): Promise<void>;
 
+  // SST Speed Alerts - Alertas automáticas de exceso de velocidad
+  getSstSpeedAlerts(companyId: string): Promise<schema.SstSpeedAlert[]>;
+  getSstSpeedAlert(id: string): Promise<schema.SstSpeedAlert | undefined>;
+  createSstSpeedAlert(data: schema.InsertSstSpeedAlert, companyId: string): Promise<schema.SstSpeedAlert>;
+  updateSstSpeedAlert(id: string, data: Partial<schema.InsertSstSpeedAlert>): Promise<schema.SstSpeedAlert>;
+
   // PESV - Safe Routes (Res. 40595/2022 - H08)
   getSafeRoutes(companyId: string): Promise<schema.SafeRoute[]>;
   getSafeRoute(id: string): Promise<schema.SafeRoute | undefined>;
@@ -16992,6 +16998,37 @@ export class DbStorage implements IStorage {
   async deleteVehicleGpsTracking(id: string): Promise<void> {
     await db.delete(schema.vehicleGpsTracking)
       .where(eq(schema.vehicleGpsTracking.id, id));
+  }
+
+  // ==================== SST Speed Alerts ====================
+
+  async getSstSpeedAlerts(companyId: string): Promise<schema.SstSpeedAlert[]> {
+    return await db.select()
+      .from(schema.sstSpeedAlerts)
+      .where(eq(schema.sstSpeedAlerts.companyId, companyId))
+      .orderBy(desc(schema.sstSpeedAlerts.createdAt));
+  }
+
+  async getSstSpeedAlert(id: string): Promise<schema.SstSpeedAlert | undefined> {
+    const [alert] = await db.select()
+      .from(schema.sstSpeedAlerts)
+      .where(eq(schema.sstSpeedAlerts.id, id));
+    return alert;
+  }
+
+  async createSstSpeedAlert(data: schema.InsertSstSpeedAlert, companyId: string): Promise<schema.SstSpeedAlert> {
+    const [created] = await db.insert(schema.sstSpeedAlerts)
+      .values({ ...data, companyId })
+      .returning();
+    return created;
+  }
+
+  async updateSstSpeedAlert(id: string, data: Partial<schema.InsertSstSpeedAlert>): Promise<schema.SstSpeedAlert> {
+    const [updated] = await db.update(schema.sstSpeedAlerts)
+      .set(data)
+      .where(eq(schema.sstSpeedAlerts.id, id))
+      .returning();
+    return updated;
   }
 
   // ==================== PESV - Safe Routes (Res. 40595/2022 - H08) ====================
