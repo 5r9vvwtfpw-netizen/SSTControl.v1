@@ -112,17 +112,6 @@ export default function IndicadoresAccidentalidad() {
   
   const companyId = selectedCompany?.id || user?.companyId;
   
-  // Esperar a que el contexto de empresa esté listo
-  if (isCompanyLoading) {
-    return (
-      <div className="container mx-auto py-6 flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
-          <p className="text-muted-foreground">Cargando...</p>
-        </div>
-      </div>
-    );
-  }
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
   
@@ -276,6 +265,17 @@ export default function IndicadoresAccidentalidad() {
     const n = typeof num === "string" ? parseFloat(num) : num;
     return isNaN(n) ? "—" : n.toFixed(2);
   };
+
+  if (isCompanyLoading || isLoading) {
+    return (
+      <div className="container mx-auto py-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+          <p className="text-muted-foreground text-sm">Cargando indicadores...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">

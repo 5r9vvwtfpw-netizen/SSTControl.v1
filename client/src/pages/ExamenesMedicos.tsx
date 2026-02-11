@@ -116,7 +116,7 @@ export default function ExamenesMedicos() {
     }
   };
 
-  const { data: exams = [], isLoading } = useQuery<MedicalExam[]>({
+  const { data: exams = [], isLoading, error: examsError } = useQuery<MedicalExam[]>({
     queryKey: ["/api/medical-exams"],
   });
 
@@ -337,8 +337,25 @@ export default function ExamenesMedicos() {
   const alerts = getExamAlerts();
   const hasAlerts = alerts.totalAlerts > 0;
 
+  if (examsError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <AlertCircle className="h-8 w-8 text-destructive" />
+        <p className="text-muted-foreground">Error al cargar exámenes médicos</p>
+        <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/medical-exams"] })} data-testid="button-retry-exams">
+          Reintentar
+        </Button>
+      </div>
+    );
+  }
+
   if (isLoading) {
-    return <div className="flex items-center justify-center h-64">Cargando...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-2">
+        <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent" />
+        <p className="text-muted-foreground text-sm">Cargando exámenes médicos...</p>
+      </div>
+    );
   }
 
   return (
