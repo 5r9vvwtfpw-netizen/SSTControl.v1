@@ -722,6 +722,8 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Listas de verificación',
       'Informes de hallazgos'
     ],
+    moduloPesvUrl: '/pesv/evaluacion/:evaluacionId/auditorias',
+    moduloPesvNombre: 'Auditorías PESV',
     modulosSstRelacionados: ['auditorias'],
     modoVerificacionSugerido: ['Revisión de programa anual de auditorías', 'Verificación de informes de auditoría', 'Revisión de plan de acciones correctivas'],
     hallazgoSugeridoNoCumple: 'No se evidencian auditorías periódicas al PESV con programa, informes y plan de acciones correctivas según Art. 26 de la Resolución 40595/2022.',
