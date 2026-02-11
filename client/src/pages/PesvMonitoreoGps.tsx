@@ -14,7 +14,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { VehicleGpsTracking, InsertVehicleGpsTracking, insertVehicleGpsTrackingSchema, Vehicle, Driver } from "@shared/schema";
+import { VehicleGpsTracking, InsertVehicleGpsTracking, insertVehicleGpsTrackingSchema, Vehicle, Driver, SstSpeedAlert } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
@@ -35,6 +35,9 @@ export default function PesvMonitoreoGps() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+  const realtimeMapRef = useRef<HTMLDivElement>(null);
+  const realtimeMapInstanceRef = useRef<L.Map | null>(null);
+  const realtimeMarkersRef = useRef<L.Marker[]>([]);
   const [formData, setFormData] = useState({
     vehicleId: "",
     driverId: "",
@@ -61,6 +64,11 @@ export default function PesvMonitoreoGps() {
 
   const { data: drivers = [] } = useQuery<Driver[]>({
     queryKey: ["/api/drivers"],
+  });
+
+  const { data: activeAlerts = [] } = useQuery<SstSpeedAlert[]>({
+    queryKey: ["/api/sst-speed-alerts"],
+    refetchInterval: 30000,
   });
 
   const createTrackingMutation = useMutation({
@@ -276,11 +284,166 @@ export default function PesvMonitoreoGps() {
     return () => {};
   }, [lastKnownLocation, selectedMapVehicleId, vehicles]);
 
+  const vehiclesWithLocation = useMemo(() => {
+    const openAlertVehicleIds = new Set(
+      activeAlerts
+        .filter((a) => a.status === "abierta" || a.status === "en_revision" || a.status === "accion_correctiva")
+        .map((a) => a.vehicleId)
+    );
+
+    const vehicleMap = new Map<string, {
+      vehicleId: string;
+      plate: string;
+      brand: string;
+      model: string;
+      lat: number;
+      lng: number;
+      speed: number | null;
+      maxSpeed: number | null;
+      date: string;
+      time: string | null;
+      engineStatus: string | null;
+      hasActiveAlert: boolean;
+      alertSeverity: string | null;
+      alertCount: number;
+    }>();
+
+    for (const record of trackingRecords) {
+      if (!record.latitude || !record.longitude) continue;
+      const lat = parseFloat(record.latitude);
+      const lng = parseFloat(record.longitude);
+      if (isNaN(lat) || isNaN(lng)) continue;
+
+      const existing = vehicleMap.get(record.vehicleId);
+      const recordTimestamp = `${record.trackingDate} ${record.trackingTime || "00:00"}`;
+      const existingTimestamp = existing ? `${existing.date} ${existing.time || "00:00"}` : "";
+
+      if (!existing || recordTimestamp > existingTimestamp) {
+        const vehicle = vehicles.find((v) => v.id === record.vehicleId);
+        const vehicleAlerts = activeAlerts.filter(
+          (a) => a.vehicleId === record.vehicleId &&
+            (a.status === "abierta" || a.status === "en_revision" || a.status === "accion_correctiva")
+        );
+        const worstSeverity = vehicleAlerts.length > 0
+          ? (vehicleAlerts.some((a) => a.severity === "critica") ? "critica"
+            : vehicleAlerts.some((a) => a.severity === "grave") ? "grave"
+            : vehicleAlerts.some((a) => a.severity === "moderada") ? "moderada"
+            : "leve")
+          : null;
+
+        vehicleMap.set(record.vehicleId, {
+          vehicleId: record.vehicleId,
+          plate: vehicle?.plate || "Desconocido",
+          brand: vehicle?.brand || "",
+          model: vehicle?.model || "",
+          lat, lng,
+          speed: record.speed,
+          maxSpeed: record.maxSpeedAllowed,
+          date: record.trackingDate,
+          time: record.trackingTime,
+          engineStatus: record.engineStatus,
+          hasActiveAlert: openAlertVehicleIds.has(record.vehicleId),
+          alertSeverity: worstSeverity,
+          alertCount: vehicleAlerts.length,
+        });
+      }
+    }
+    return Array.from(vehicleMap.values());
+  }, [trackingRecords, vehicles, activeAlerts]);
+
+  useEffect(() => {
+    if (!realtimeMapRef.current) return;
+
+    if (!realtimeMapInstanceRef.current) {
+      realtimeMapInstanceRef.current = L.map(realtimeMapRef.current, {
+        center: [4.7110, -74.0721],
+        zoom: 6,
+        zoomControl: true,
+      });
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
+      }).addTo(realtimeMapInstanceRef.current);
+    }
+
+    realtimeMarkersRef.current.forEach((m) => m.remove());
+    realtimeMarkersRef.current = [];
+
+    const bounds: L.LatLngExpression[] = [];
+
+    for (const v of vehiclesWithLocation) {
+      const color = v.hasActiveAlert ? "#ef4444" : "#3b82f6";
+      const pulseRing = v.hasActiveAlert
+        ? `<div style="position:absolute;top:-6px;left:-6px;width:44px;height:44px;border-radius:50%;border:2px solid ${color};animation:pulse-ring 1.5s ease-out infinite;opacity:0;"></div>`
+        : "";
+
+      const iconHtml = `<div style="position:relative;">
+        ${pulseRing}
+        <div style="
+          background:${color};width:32px;height:32px;border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);
+          position:relative;z-index:2;
+        "><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg></div>
+      </div>`;
+
+      const customIcon = L.divIcon({
+        html: iconHtml,
+        className: "",
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -20],
+      });
+
+      const severityLabels: Record<string, string> = {
+        leve: "Leve", moderada: "Moderada", grave: "Grave", critica: "Crítica",
+      };
+      const alertInfo = v.hasActiveAlert
+        ? `<div style="color:#ef4444;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:4px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+            ${v.alertCount} alerta${v.alertCount > 1 ? "s" : ""} activa${v.alertCount > 1 ? "s" : ""} (${v.alertSeverity ? severityLabels[v.alertSeverity] || v.alertSeverity : ""})
+          </div>`
+        : '<div style="color:#22c55e;font-weight:500;margin-bottom:4px;">Sin alertas activas</div>';
+
+      const engineLabel = v.engineStatus === "encendido" ? "Encendido" : v.engineStatus === "apagado" ? "Apagado" : v.engineStatus === "ralenti" ? "Ralentí" : null;
+
+      const popupContent = `
+        <div style="font-family:system-ui;min-width:200px;">
+          <div style="font-weight:700;font-size:14px;margin-bottom:2px;">${v.plate}</div>
+          <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">${v.brand} ${v.model}</div>
+          ${alertInfo}
+          ${v.speed !== null && v.speed !== undefined ? `<div style="margin-bottom:4px;"><strong>Velocidad:</strong> ${v.speed} km/h${v.maxSpeed ? ` / ${v.maxSpeed} km/h` : ""}</div>` : ""}
+          ${engineLabel ? `<div style="margin-bottom:4px;"><strong>Motor:</strong> ${engineLabel}</div>` : ""}
+          <div style="font-size:11px;color:#9ca3af;margin-top:6px;">${v.date}${v.time ? ` ${v.time}` : ""} &mdash; ${v.lat.toFixed(5)}, ${v.lng.toFixed(5)}</div>
+        </div>
+      `;
+
+      const marker = L.marker([v.lat, v.lng], { icon: customIcon })
+        .addTo(realtimeMapInstanceRef.current!)
+        .bindPopup(popupContent);
+
+      realtimeMarkersRef.current.push(marker);
+      bounds.push([v.lat, v.lng]);
+    }
+
+    if (bounds.length > 1) {
+      realtimeMapInstanceRef.current!.fitBounds(L.latLngBounds(bounds as L.LatLngExpression[]), { padding: [40, 40], maxZoom: 14 });
+    } else if (bounds.length === 1) {
+      realtimeMapInstanceRef.current!.setView(bounds[0] as L.LatLngExpression, 14);
+    } else {
+      realtimeMapInstanceRef.current!.setView([4.7110, -74.0721], 6);
+    }
+  }, [vehiclesWithLocation]);
+
   useEffect(() => {
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
+      }
+      if (realtimeMapInstanceRef.current) {
+        realtimeMapInstanceRef.current.remove();
+        realtimeMapInstanceRef.current = null;
       }
     };
   }, []);
@@ -638,6 +801,89 @@ export default function PesvMonitoreoGps() {
           </Table>
         </div>
       )}
+
+      <style>{`
+        @keyframes pulse-ring {
+          0% { transform: scale(1); opacity: 0.6; }
+          100% { transform: scale(1.8); opacity: 0; }
+        }
+      `}</style>
+
+      <Card data-testid="card-realtime-monitor">
+        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <MapPin className="h-5 w-5" />
+              Monitor en Tiempo Real
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Todos los vehículos con su última posición conocida. Se actualiza cada 30 segundos.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5 text-sm">
+              <div className="w-3 h-3 rounded-full bg-[#3b82f6] border-2 border-white shadow-sm" />
+              <span className="text-muted-foreground">Normal</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-sm">
+              <div className="w-3 h-3 rounded-full bg-[#ef4444] border-2 border-white shadow-sm" />
+              <span className="text-muted-foreground">Con alerta</span>
+            </div>
+            <Badge variant="secondary" data-testid="badge-vehicle-count">
+              {vehiclesWithLocation.length} vehículo{vehiclesWithLocation.length !== 1 ? "s" : ""}
+            </Badge>
+            {vehiclesWithLocation.filter((v) => v.hasActiveAlert).length > 0 && (
+              <Badge variant="destructive" data-testid="badge-alert-count">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                {vehiclesWithLocation.filter((v) => v.hasActiveAlert).length} con alerta
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {vehiclesWithLocation.length === 0 && (
+            <div className="text-center py-4 text-muted-foreground text-sm mb-2">
+              No hay vehículos con registros GPS y coordenadas disponibles.
+            </div>
+          )}
+          <div
+            ref={realtimeMapRef}
+            data-testid="realtime-map-container"
+            className="rounded-md border overflow-hidden"
+            style={{ height: "500px", width: "100%" }}
+          />
+          {vehiclesWithLocation.filter((v) => v.hasActiveAlert).length > 0 && (
+            <div className="mt-4 space-y-2">
+              <h4 className="text-sm font-medium text-destructive flex items-center gap-1.5">
+                <AlertTriangle className="h-4 w-4" />
+                Vehículos con alertas activas
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {vehiclesWithLocation.filter((v) => v.hasActiveAlert).map((v) => (
+                  <div
+                    key={v.vehicleId}
+                    className="flex items-center justify-between gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm"
+                    data-testid={`alert-vehicle-${v.vehicleId}`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-2.5 h-2.5 rounded-full bg-destructive shrink-0" />
+                      <span className="font-medium truncate">{v.plate}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {v.speed !== null && v.speed !== undefined && (
+                        <span className="text-muted-foreground">{v.speed} km/h</span>
+                      )}
+                      <Badge variant="destructive" className="text-xs">
+                        {v.alertSeverity === "critica" ? "Crítica" : v.alertSeverity === "grave" ? "Grave" : v.alertSeverity === "moderada" ? "Moderada" : "Leve"}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card data-testid="card-vehicle-map">
         <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
