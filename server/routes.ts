@@ -45232,11 +45232,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const validatedData = schema.insertMedicionIndicadorSVSchema.parse({
         ...req.body,
         indicadorId: req.params.id,
-        companyId: effectiveCompanyId,
       });
       
       const [result] = await db.insert(schema.medicionesIndicadorSV)
-        .values(validatedData)
+        .values({ ...validatedData, companyId: effectiveCompanyId })
         .returning();
       
       res.status(201).json(result);
