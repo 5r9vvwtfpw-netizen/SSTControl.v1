@@ -1,6 +1,6 @@
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,14 +11,47 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, AlertTriangle, Shield, Plus, Eye, Calendar, ClipboardCheck, ExternalLink, Search, FileDown } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Shield, Plus, Eye, Calendar, ClipboardCheck, ExternalLink, Search, FileDown, Zap, Lightbulb } from "lucide-react";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { EvaluacionPesv, AccionMejoraPesv } from "@shared/schema";
+import { PASOS_PESV } from "@/data/pasos-pesv";
+
+interface RespuestaPesv {
+  id: string;
+  pasoId: string;
+  cumple: number | null;
+  noAplica: number | null;
+  hallazgo: string | null;
+  observaciones: string | null;
+}
+
+interface AutoFillSource {
+  field: string;
+  source: string;
+  label: string;
+}
+
+function AutoFillBadge({ source, label }: { source: string; label: string }) {
+  const config: Record<string, { bg: string; text: string }> = {
+    hallazgo: { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-300" },
+    usuario: { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-300" },
+    auto: { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-700 dark:text-amber-300" },
+    evaluacion: { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-700 dark:text-purple-300" },
+  };
+  const c = config[source] || config.auto;
+  return (
+    <Badge className={`${c.bg} ${c.text} text-[10px] px-1.5 py-0 ml-1 no-default-active-elevate`} data-testid={`badge-autofill-${source}`}>
+      <Zap className="h-2.5 w-2.5 mr-0.5" />
+      {label}
+    </Badge>
+  );
+}
 
 const TIPO_ACCION_OPTIONS = [
   { value: "correctiva", label: "Correctiva" },
@@ -94,6 +127,7 @@ function getFuenteLabel(fuente: string | null) {
 export default function PesvMejoraContinua() {
   const { evaluacionId } = useParams<{ evaluacionId: string }>();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleDownloadPdf = (url: string, filename: string) => {
     const link = document.createElement('a');
@@ -110,6 +144,7 @@ export default function PesvMejoraContinua() {
   const [selectedAccion, setSelectedAccion] = useState<AccionMejoraPesv | null>(null);
   const [estadoUpdate, setEstadoUpdate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [autoFillSources, setAutoFillSources] = useState<AutoFillSource[]>([]);
   const [formData, setFormData] = useState({
     descripcion: "",
     tipoAccion: "correctiva",
@@ -139,6 +174,88 @@ export default function PesvMejoraContinua() {
     },
     enabled: !!evaluacionId,
   });
+
+  const { data: respuestasPesv = [] } = useQuery<RespuestaPesv[]>({
+    queryKey: ["/api/evaluaciones-pesv", evaluacionId, "respuestas"],
+    queryFn: async () => {
+      const res = await fetch(`/api/evaluaciones-pesv/${evaluacionId}/respuestas`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!evaluacionId,
+  });
+
+  const hallazgosNoCumple = respuestasPesv
+    .filter((r) => r.cumple === 0 && !r.noAplica)
+    .map((r) => {
+      const paso = PASOS_PESV.find((p) => p.codigo === r.pasoId);
+      return {
+        pasoId: r.pasoId,
+        pasoNombre: paso?.nombre || r.pasoId,
+        hallazgo: r.hallazgo || "",
+        observaciones: r.observaciones || "",
+        fase: paso?.fase || "planear",
+      };
+    });
+
+  const getDefaultFechaLimite = useCallback(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().split("T")[0];
+  }, []);
+
+  const applyAutoFill = useCallback(() => {
+    const sources: AutoFillSource[] = [];
+    const updates: Partial<typeof formData> = {};
+
+    if (user) {
+      const nombre = user.fullName || user.username;
+      updates.responsable = nombre;
+      sources.push({ field: "responsable", source: "usuario", label: "Usuario activo" });
+    }
+
+    updates.fechaLimite = getDefaultFechaLimite();
+    sources.push({ field: "fechaLimite", source: "auto", label: "30 dias" });
+
+    setFormData((prev) => ({ ...prev, ...updates }));
+    setAutoFillSources(sources);
+  }, [user, getDefaultFechaLimite]);
+
+  useEffect(() => {
+    if (dialogOpen) {
+      applyAutoFill();
+    }
+  }, [dialogOpen, applyAutoFill]);
+
+  const applyHallazgoSuggestion = (h: typeof hallazgosNoCumple[0]) => {
+    const desc = h.hallazgo
+      ? `[${h.pasoId}] ${h.hallazgo}`
+      : `Acción correctiva para paso ${h.pasoId} - ${h.pasoNombre}`;
+    const obs = h.observaciones ? `Hallazgo en ${h.pasoId} (${h.pasoNombre}): ${h.observaciones}` : "";
+    
+    setFormData((prev) => ({
+      ...prev,
+      descripcion: desc,
+      tipoAccion: "correctiva",
+      prioridad: "alta",
+      fuenteHallazgo: "auditoria",
+      observaciones: obs,
+    }));
+    setAutoFillSources((prev) => [
+      ...prev.filter((s) => !["descripcion", "tipoAccion", "prioridad", "fuenteHallazgo", "observaciones"].includes(s.field)),
+      { field: "descripcion", source: "hallazgo", label: `Hallazgo ${h.pasoId}` },
+      { field: "tipoAccion", source: "evaluacion", label: "No cumple" },
+      { field: "prioridad", source: "evaluacion", label: "No cumple" },
+      { field: "fuenteHallazgo", source: "evaluacion", label: "Evaluacion" },
+      ...(obs ? [{ field: "observaciones", source: "hallazgo", label: `Paso ${h.pasoId}` }] : []),
+    ]);
+  };
+
+  const getAutoFillBadge = (field: string) => {
+    const src = autoFillSources.find((s) => s.field === field);
+    if (!src) return null;
+    return <AutoFillBadge source={src.source} label={src.label} />;
+  };
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -205,6 +322,7 @@ export default function PesvMejoraContinua() {
       fechaLimite: "",
       observaciones: "",
     });
+    setAutoFillSources([]);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -380,18 +498,56 @@ export default function PesvMejoraContinua() {
                   </DialogTrigger>
                   <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Registrar Acción de Mejora</DialogTitle>
+                      <DialogTitle className="flex items-center gap-2">
+                        Registrar Acción de Mejora
+                        <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px] no-default-active-elevate" data-testid="badge-smart-form">
+                          <Zap className="h-2.5 w-2.5 mr-0.5" />
+                          Smart Form
+                        </Badge>
+                      </DialogTitle>
                       <DialogDescription>
-                        Registre una nueva acción de mejora continua para el PESV
+                        Formulario inteligente con auto-llenado y trazabilidad PESV
                       </DialogDescription>
                     </DialogHeader>
+
+                    {hallazgosNoCumple.length > 0 && (
+                      <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 p-3 space-y-2" data-testid="section-hallazgos-sugeridos">
+                        <div className="flex items-center gap-2">
+                          <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                          <span className="text-sm font-medium">Sugerencias desde evaluación ({hallazgosNoCumple.length} hallazgos)</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {hallazgosNoCumple.map((h) => (
+                            <Button
+                              key={h.pasoId}
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => applyHallazgoSuggestion(h)}
+                              className="text-xs"
+                              data-testid={`button-sugerencia-${h.pasoId}`}
+                            >
+                              <AlertTriangle className="h-3 w-3 mr-1 text-red-500" />
+                              {h.pasoId} - {h.pasoNombre.length > 25 ? h.pasoNombre.substring(0, 25) + "..." : h.pasoNombre}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="descripcion">Descripción *</Label>
+                        <div className="flex items-center flex-wrap gap-1">
+                          <Label htmlFor="descripcion">Descripción *</Label>
+                          {getAutoFillBadge("descripcion")}
+                        </div>
                         <Textarea
                           id="descripcion"
                           value={formData.descripcion}
-                          onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                          onChange={(e) => {
+                            setFormData({ ...formData, descripcion: e.target.value });
+                            setAutoFillSources((prev) => prev.filter((s) => s.field !== "descripcion"));
+                          }}
                           placeholder="Describa la acción de mejora..."
                           required
                           data-testid="textarea-descripcion"
@@ -400,10 +556,16 @@ export default function PesvMejoraContinua() {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="tipoAccion">Tipo de Acción</Label>
+                          <div className="flex items-center flex-wrap gap-1">
+                            <Label htmlFor="tipoAccion">Tipo de Acción</Label>
+                            {getAutoFillBadge("tipoAccion")}
+                          </div>
                           <Select
                             value={formData.tipoAccion}
-                            onValueChange={(value) => setFormData({ ...formData, tipoAccion: value })}
+                            onValueChange={(value) => {
+                              setFormData({ ...formData, tipoAccion: value });
+                              setAutoFillSources((prev) => prev.filter((s) => s.field !== "tipoAccion"));
+                            }}
                           >
                             <SelectTrigger data-testid="select-tipo-accion">
                               <SelectValue placeholder="Seleccione tipo" />
@@ -418,10 +580,16 @@ export default function PesvMejoraContinua() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="prioridad">Prioridad</Label>
+                          <div className="flex items-center flex-wrap gap-1">
+                            <Label htmlFor="prioridad">Prioridad</Label>
+                            {getAutoFillBadge("prioridad")}
+                          </div>
                           <Select
                             value={formData.prioridad}
-                            onValueChange={(value) => setFormData({ ...formData, prioridad: value })}
+                            onValueChange={(value) => {
+                              setFormData({ ...formData, prioridad: value });
+                              setAutoFillSources((prev) => prev.filter((s) => s.field !== "prioridad"));
+                            }}
                           >
                             <SelectTrigger data-testid="select-prioridad">
                               <SelectValue placeholder="Seleccione prioridad" />
@@ -438,10 +606,16 @@ export default function PesvMejoraContinua() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="fuenteHallazgo">Fuente del Hallazgo</Label>
+                        <div className="flex items-center flex-wrap gap-1">
+                          <Label htmlFor="fuenteHallazgo">Fuente del Hallazgo</Label>
+                          {getAutoFillBadge("fuenteHallazgo")}
+                        </div>
                         <Select
                           value={formData.fuenteHallazgo}
-                          onValueChange={(value) => setFormData({ ...formData, fuenteHallazgo: value })}
+                          onValueChange={(value) => {
+                            setFormData({ ...formData, fuenteHallazgo: value });
+                            setAutoFillSources((prev) => prev.filter((s) => s.field !== "fuenteHallazgo"));
+                          }}
                         >
                           <SelectTrigger data-testid="select-fuente-hallazgo">
                             <SelectValue placeholder="Seleccione fuente" />
@@ -458,37 +632,62 @@ export default function PesvMejoraContinua() {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="responsable">Responsable</Label>
+                          <div className="flex items-center flex-wrap gap-1">
+                            <Label htmlFor="responsable">Responsable</Label>
+                            {getAutoFillBadge("responsable")}
+                          </div>
                           <Input
                             id="responsable"
                             value={formData.responsable}
-                            onChange={(e) => setFormData({ ...formData, responsable: e.target.value })}
+                            onChange={(e) => {
+                              setFormData({ ...formData, responsable: e.target.value });
+                              setAutoFillSources((prev) => prev.filter((s) => s.field !== "responsable"));
+                            }}
                             placeholder="Nombre del responsable"
                             data-testid="input-responsable"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="fechaLimite">Fecha Limite</Label>
+                          <div className="flex items-center flex-wrap gap-1">
+                            <Label htmlFor="fechaLimite">Fecha Limite</Label>
+                            {getAutoFillBadge("fechaLimite")}
+                          </div>
                           <Input
                             id="fechaLimite"
                             type="date"
                             value={formData.fechaLimite}
-                            onChange={(e) => setFormData({ ...formData, fechaLimite: e.target.value })}
+                            onChange={(e) => {
+                              setFormData({ ...formData, fechaLimite: e.target.value });
+                              setAutoFillSources((prev) => prev.filter((s) => s.field !== "fechaLimite"));
+                            }}
                             data-testid="input-fecha-limite"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="observaciones">Observaciones</Label>
+                        <div className="flex items-center flex-wrap gap-1">
+                          <Label htmlFor="observaciones">Observaciones</Label>
+                          {getAutoFillBadge("observaciones")}
+                        </div>
                         <Textarea
                           id="observaciones"
                           value={formData.observaciones}
-                          onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
+                          onChange={(e) => {
+                            setFormData({ ...formData, observaciones: e.target.value });
+                            setAutoFillSources((prev) => prev.filter((s) => s.field !== "observaciones"));
+                          }}
                           placeholder="Observaciones adicionales (opcional)"
                           data-testid="textarea-observaciones"
                         />
                       </div>
+
+                      {autoFillSources.length > 0 && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1" data-testid="text-autofill-info">
+                          <Zap className="h-3 w-3" />
+                          <span>Campos auto-completados con trazabilidad. Puede modificarlos manualmente.</span>
+                        </div>
+                      )}
 
                       <DialogFooter>
                         <Button
