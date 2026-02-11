@@ -757,6 +757,19 @@ export default function PesvMonitoreoGps() {
           </CardContent>
         </Card>
       )}
+
+      {!showGpsGuide && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowGpsGuide(true)}
+          className="border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400"
+          data-testid="button-show-gps-guide"
+        >
+          <Cable className="h-4 w-4 mr-2" />
+          Ver guía de conexión GPS
+        </Button>
+      )}
       
       <TrazabilidadPesvBanner codigoPaso="H07" compacto />
       
