@@ -402,7 +402,7 @@ export default function PesvMejoraContinua() {
                 </p>
               </div>
             </div>
-            <Link href="/plan-mejoramiento">
+            <Link href="/plan-mejoramiento-contexto">
               <Button variant="outline" size="sm" data-testid="button-link-plan-mejoramiento">
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Ver Plan de Mejoramiento SST
