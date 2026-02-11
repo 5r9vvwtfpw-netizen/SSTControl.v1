@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Trash2, ArrowLeft, MapPin, Gauge, AlertTriangle, Info, Navigation, Radio, Lock, CalendarDays, TrendingUp, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, Search, Trash2, ArrowLeft, MapPin, Gauge, AlertTriangle, Info, Navigation, Radio, Lock, CalendarDays, TrendingUp, CheckCircle2, XCircle, Wifi, Cable, Copy, Check } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import L from "leaflet";
@@ -33,6 +33,8 @@ export default function PesvMonitoreoGps() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMapVehicleId, setSelectedMapVehicleId] = useState<string>("");
   const [summaryDate, setSummaryDate] = useState(new Date().toISOString().split("T")[0]);
+  const [webhookCopied, setWebhookCopied] = useState(false);
+  const [showGpsGuide, setShowGpsGuide] = useState(true);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -650,14 +652,107 @@ export default function PesvMonitoreoGps() {
         </div>
       </div>
 
-      <Alert className="bg-blue-50 border-blue-200">
-        <Info className="h-4 w-4 text-blue-600" />
-        <AlertTitle className="text-blue-800">Información importante</AlertTitle>
-        <AlertDescription className="text-blue-700">
+      <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
+        <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <AlertTitle className="text-blue-800 dark:text-blue-300">Información importante</AlertTitle>
+        <AlertDescription className="text-blue-700 dark:text-blue-400">
           Este módulo solo aplica para niveles Estándar y Avanzado del PESV. Permite registrar datos de 
           monitoreo GPS, velocidad y alertas de geocerca para el control de la flota vehicular.
         </AlertDescription>
       </Alert>
+
+      {showGpsGuide && (
+        <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20" data-testid="card-gps-guide">
+          <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 pb-3">
+            <div className="flex items-start gap-3">
+              <div className="rounded-md bg-amber-100 dark:bg-amber-900/40 p-2 mt-0.5">
+                <Cable className="h-5 w-5 text-amber-700 dark:text-amber-400" />
+              </div>
+              <div>
+                <CardTitle className="text-base text-amber-900 dark:text-amber-200">
+                  Conecte su proveedor GPS para activar el monitoreo automático
+                </CardTitle>
+                <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                  Para cumplir con la Resolución 40595/2022, este módulo requiere datos de un proveedor GPS con dispositivos instalados en sus vehículos.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowGpsGuide(false)}
+              className="shrink-0 text-amber-600 dark:text-amber-400"
+              data-testid="button-close-gps-guide"
+            >
+              <XCircle className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="flex items-start gap-3 rounded-md border border-amber-200 dark:border-amber-800 bg-white dark:bg-background px-3 py-3">
+                <div className="rounded-full bg-amber-100 dark:bg-amber-900/40 w-7 h-7 flex items-center justify-center shrink-0 text-sm font-bold text-amber-700 dark:text-amber-400">1</div>
+                <div>
+                  <div className="font-medium text-sm">Contrate un proveedor GPS</div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Elija un proveedor certificado (SkyPatrol, Ubicar, GPSTrackit, Securitrac, u otro) que instale dispositivos GPS en sus vehículos.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-md border border-amber-200 dark:border-amber-800 bg-white dark:bg-background px-3 py-3">
+                <div className="rounded-full bg-amber-100 dark:bg-amber-900/40 w-7 h-7 flex items-center justify-center shrink-0 text-sm font-bold text-amber-700 dark:text-amber-400">2</div>
+                <div>
+                  <div className="font-medium text-sm">Comparta la URL del Webhook</div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Entregue a su proveedor la siguiente URL para que configure el envío automático de datos GPS a su plataforma SST.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-md border border-amber-200 dark:border-amber-800 bg-white dark:bg-background px-3 py-3">
+                <div className="rounded-full bg-amber-100 dark:bg-amber-900/40 w-7 h-7 flex items-center justify-center shrink-0 text-sm font-bold text-amber-700 dark:text-amber-400">3</div>
+                <div>
+                  <div className="font-medium text-sm">Monitoreo automático</div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Una vez conectado, los datos de ubicación, velocidad y alertas llegarán automáticamente. No requiere intervención manual.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-white dark:bg-background p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Wifi className="h-4 w-4 text-amber-700 dark:text-amber-400" />
+                <span className="text-sm font-medium">URL del Webhook GPS</span>
+                <Badge variant="secondary" className="text-xs">Para su proveedor</Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-muted rounded-md px-3 py-2 text-sm font-mono break-all" data-testid="text-webhook-url">
+                  {window.location.origin}/api/webhooks/gps
+                </code>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/gps`);
+                    setWebhookCopied(true);
+                    setTimeout(() => setWebhookCopied(false), 2000);
+                    toast({
+                      title: "URL copiada",
+                      description: "La URL del webhook GPS se ha copiado al portapapeles. Compártala con su proveedor GPS.",
+                      className: "bg-yellow-50 border-yellow-200",
+                    });
+                  }}
+                  data-testid="button-copy-webhook"
+                >
+                  {webhookCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Su proveedor GPS debe configurar esta URL como destino para el envío de datos. El sistema acepta formato JSON con campos en español o inglés (placa/plate, velocidad/speed, latitud/lat, etc.).
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       
       <TrazabilidadPesvBanner codigoPaso="H07" compacto />
       
