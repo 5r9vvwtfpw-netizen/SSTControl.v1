@@ -11,12 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Eye, AlertTriangle, Calendar, MapPin, Car, User } from "lucide-react";
+import { Plus, Eye, AlertTriangle, Calendar, MapPin, Car, User, Navigation, Sparkles } from "lucide-react";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { EvaluacionPesv, RoadIncident, Vehicle, Driver } from "@shared/schema";
+import { EvaluacionPesv, RoadIncident, Vehicle, Driver, VehicleGpsTracking } from "@shared/schema";
 
 export default function PesvSiniestrosEvaluacion() {
   const { evaluacionId } = useParams<{ evaluacionId: string }>();
@@ -24,6 +24,7 @@ export default function PesvSiniestrosEvaluacion() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState<RoadIncident | null>(null);
+  const [locationFromGps, setLocationFromGps] = useState(false);
   const [formData, setFormData] = useState({
     vehicleId: "",
     driverId: "",
@@ -65,6 +66,10 @@ export default function PesvSiniestrosEvaluacion() {
     queryKey: ["/api/drivers"],
   });
 
+  const { data: gpsRecords = [] } = useQuery<VehicleGpsTracking[]>({
+    queryKey: ["/api/vehicle-gps-tracking"],
+  });
+
   const createIncidentMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const res = await apiRequest("POST", `/api/evaluaciones-pesv/${evaluacionId}/siniestros`, data);
@@ -101,6 +106,43 @@ export default function PesvSiniestrosEvaluacion() {
       injuries: "",
       fatalities: "",
     });
+    setLocationFromGps(false);
+  };
+
+  const getLatestGpsForVehicle = (vehicleId: string) => {
+    const vehicleRecords = gpsRecords
+      .filter(r => r.vehicleId === vehicleId && r.latitude && r.longitude)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return vehicleRecords.length > 0 ? vehicleRecords[0] : null;
+  };
+
+  const handleVehicleChange = (vehicleId: string) => {
+    const updates: Partial<typeof formData> = { vehicleId };
+    const latestGps = getLatestGpsForVehicle(vehicleId);
+    if (latestGps) {
+      updates.location = `Lat: ${latestGps.latitude}, Lon: ${latestGps.longitude}${latestGps.observations ? ` - ${latestGps.observations}` : ''}`;
+      setLocationFromGps(true);
+      if (latestGps.driverId) {
+        updates.driverId = latestGps.driverId;
+      }
+    } else {
+      setLocationFromGps(false);
+    }
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
+
+  const handleDialogOpen = (open: boolean) => {
+    setDialogOpen(open);
+    if (open) {
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      const timeStr = now.toTimeString().slice(0, 5);
+      setFormData(prev => ({
+        ...prev,
+        incidentDate: prev.incidentDate || dateStr,
+        incidentTime: prev.incidentTime || timeStr,
+      }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -169,7 +211,7 @@ export default function PesvSiniestrosEvaluacion() {
             <AlertTriangle className="h-5 w-5 text-destructive" />
             <CardTitle>Siniestros Viales</CardTitle>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={dialogOpen} onOpenChange={handleDialogOpen}>
             <DialogTrigger asChild>
               <Button data-testid="button-create-incident">
                 <Plus className="h-4 w-4 mr-2" />
@@ -189,7 +231,7 @@ export default function PesvSiniestrosEvaluacion() {
                     <Label htmlFor="vehicleId">Vehículo</Label>
                     <Select
                       value={formData.vehicleId}
-                      onValueChange={(value) => setFormData({ ...formData, vehicleId: value })}
+                      onValueChange={handleVehicleChange}
                     >
                       <SelectTrigger data-testid="select-vehicle">
                         <SelectValue placeholder="Seleccione vehículo" />
@@ -224,7 +266,13 @@ export default function PesvSiniestrosEvaluacion() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="incidentDate">Fecha</Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="incidentDate">Fecha</Label>
+                      <Badge variant="outline" className="text-xs gap-1 text-amber-600 border-amber-300">
+                        <Sparkles className="h-3 w-3" />
+                        Auto
+                      </Badge>
+                    </div>
                     <Input
                       id="incidentDate"
                       type="date"
@@ -234,7 +282,13 @@ export default function PesvSiniestrosEvaluacion() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="incidentTime">Hora</Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="incidentTime">Hora</Label>
+                      <Badge variant="outline" className="text-xs gap-1 text-amber-600 border-amber-300">
+                        <Sparkles className="h-3 w-3" />
+                        Auto
+                      </Badge>
+                    </div>
                     <Input
                       id="incidentTime"
                       type="time"
@@ -245,14 +299,31 @@ export default function PesvSiniestrosEvaluacion() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="location">Ubicación</Label>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="location">Ubicación</Label>
+                    {locationFromGps && (
+                      <Badge variant="outline" className="text-xs gap-1 text-emerald-600 border-emerald-300">
+                        <Navigation className="h-3 w-3" />
+                        GPS
+                      </Badge>
+                    )}
+                  </div>
                   <Input
                     id="location"
                     value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, location: e.target.value });
+                      if (locationFromGps) setLocationFromGps(false);
+                    }}
                     placeholder="Dirección o lugar del siniestro"
                     data-testid="input-location"
                   />
+                  {locationFromGps && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Sparkles className="h-3 w-3 text-emerald-500" />
+                      Ubicación obtenida del último registro GPS del vehículo
+                    </p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
