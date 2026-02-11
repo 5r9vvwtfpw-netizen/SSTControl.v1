@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,19 +15,42 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import {
   Plus, Search, FileText, Edit2, Trash2, AlertCircle, Clock,
-  CheckCircle2, Target, TrendingUp, Filter, Download, CalendarIcon, ArrowLeft
+  CheckCircle2, Target, TrendingUp, Filter, Download, CalendarIcon, ArrowLeft, Zap, Lightbulb
 } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AccionMejoraContexto, insertAccionMejoraContextoSchema, User } from "@shared/schema";
+import { AccionMejoraContexto, insertAccionMejoraContextoSchema, User, FactorContexto, AnalisisContexto } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+
+interface AutoFillSource {
+  field: string;
+  source: string;
+  label: string;
+}
+
+function AutoFillBadge({ source, label }: { source: string; label: string }) {
+  const config: Record<string, { bg: string; text: string }> = {
+    foda: { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-300" },
+    usuario: { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-300" },
+    auto: { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-700 dark:text-amber-300" },
+    contexto: { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-700 dark:text-purple-300" },
+  };
+  const c = config[source] || config.auto;
+  return (
+    <Badge className={`${c.bg} ${c.text} text-[10px] px-1.5 py-0 ml-1 no-default-active-elevate`} data-testid={`badge-autofill-${source}`}>
+      <Zap className="h-2.5 w-2.5 mr-0.5" />
+      {label}
+    </Badge>
+  );
+}
 
 const estadosAccion = [
   { value: "pendiente", label: "Pendiente", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" },
@@ -74,12 +97,14 @@ interface PlanConsolidadoResponse {
 
 export default function PlanMejoramientoContexto() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstado, setFilterEstado] = useState<string>("todos");
   const [filterPrioridad, setFilterPrioridad] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAccion, setEditingAccion] = useState<AccionMejoraContexto | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [autoFillSources, setAutoFillSources] = useState<AutoFillSource[]>([]);
 
   const form = useForm<AccionFormData>({
     resolver: zodResolver(accionFormSchema),
@@ -98,6 +123,16 @@ export default function PlanMejoramientoContexto() {
     },
   });
 
+  const getAutoFillBadge = useCallback((field: string) => {
+    const src = autoFillSources.find((s) => s.field === field);
+    if (!src) return null;
+    return <AutoFillBadge source={src.source} label={src.label} />;
+  }, [autoFillSources]);
+
+  const clearAutoFill = useCallback((field: string) => {
+    setAutoFillSources((prev) => prev.filter((s) => s.field !== field));
+  }, []);
+
   const { data: planConsolidado, isLoading: isLoadingPlan } = useQuery<PlanConsolidadoResponse>({
     queryKey: ["/api/plan-mejoramiento-consolidado"],
   });
@@ -109,6 +144,53 @@ export default function PlanMejoramientoContexto() {
   const { data: usuarios = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
+
+  const { data: analisisContextoList = [] } = useQuery<AnalisisContexto[]>({
+    queryKey: ["/api/analisis-contexto"],
+  });
+
+  const latestAnalisisId = useMemo(() => {
+    if (analisisContextoList.length === 0) return null;
+    const sorted = [...analisisContextoList].sort((a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    return sorted[0]?.id || null;
+  }, [analisisContextoList]);
+
+  const { data: factoresContexto = [] } = useQuery<FactorContexto[]>({
+    queryKey: [`/api/analisis-contexto/${latestAnalisisId}/factores`],
+    enabled: !!latestAnalisisId,
+  });
+
+  const factoresAccionables = useMemo(() => {
+    return factoresContexto.filter(
+      (f) => (f.esDebilidad === 1 || f.esAmenaza === 1) && f.estado !== "controlado"
+    );
+  }, [factoresContexto]);
+
+  const applyFactorSuggestion = useCallback((factor: FactorContexto) => {
+    const tipo = factor.esDebilidad ? "debilidad" : "amenaza";
+    const prioridad = factor.nivelImpacto === "alto" ? "alta" : factor.nivelImpacto === "bajo" ? "baja" : "media";
+    const accionTexto = factor.accionesRequeridas?.length
+      ? factor.accionesRequeridas[0]
+      : `Tratar ${tipo}: ${factor.descripcion.substring(0, 80)}`;
+
+    form.setValue("accion", accionTexto);
+    form.setValue("tipoFoda", tipo as "debilidad" | "amenaza");
+    form.setValue("prioridad", prioridad as "alta" | "media" | "baja");
+    form.setValue("hallazgoDescripcion", factor.descripcion);
+    form.setValue("descripcion", factor.impactoSst || "");
+
+    const sources: AutoFillSource[] = [
+      ...autoFillSources.filter((s) => !["accion", "tipoFoda", "prioridad", "hallazgoDescripcion", "descripcion"].includes(s.field)),
+      { field: "accion", source: "foda", label: `Factor FODA` },
+      { field: "tipoFoda", source: "contexto", label: tipo === "debilidad" ? "Debilidad" : "Amenaza" },
+      { field: "prioridad", source: "contexto", label: `Impacto ${factor.nivelImpacto}` },
+      { field: "hallazgoDescripcion", source: "foda", label: "Factor FODA" },
+      ...(factor.impactoSst ? [{ field: "descripcion", source: "foda" as const, label: "Impacto SST" }] : []),
+    ];
+    setAutoFillSources(sources);
+  }, [form, autoFillSources]);
 
   const createMutation = useMutation({
     mutationFn: async (data: AccionFormData) => {
@@ -186,12 +268,24 @@ export default function PlanMejoramientoContexto() {
       });
     } else {
       setEditingAccion(null);
+      const sources: AutoFillSource[] = [];
+
+      const fechaLimiteDefault = new Date();
+      fechaLimiteDefault.setDate(fechaLimiteDefault.getDate() + 30);
+      sources.push({ field: "fechaLimite", source: "auto", label: "30 dias" });
+
+      let responsableIdDefault: string | null = null;
+      if (user) {
+        responsableIdDefault = user.id;
+        sources.push({ field: "responsableId", source: "usuario", label: "Usuario activo" });
+      }
+
       form.reset({
         accion: "",
         descripcion: "",
         tipoFoda: "debilidad",
-        responsableId: null,
-        fechaLimite: null,
+        responsableId: responsableIdDefault,
+        fechaLimite: fechaLimiteDefault,
         fechaCierre: null,
         prioridad: "media",
         estado: "pendiente",
@@ -199,6 +293,7 @@ export default function PlanMejoramientoContexto() {
         origenHallazgo: "analisis_contexto",
         hallazgoDescripcion: "",
       });
+      setAutoFillSources(sources);
     }
     setDialogOpen(true);
   };
@@ -463,10 +558,42 @@ export default function PlanMejoramientoContexto() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
               {editingAccion ? "Editar Acción de Mejora" : "Nueva Acción de Mejora"}
+              {!editingAccion && (
+                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px] no-default-active-elevate" data-testid="badge-smart-form">
+                  <Zap className="h-2.5 w-2.5 mr-0.5" />
+                  Smart Form
+                </Badge>
+              )}
             </DialogTitle>
           </DialogHeader>
+
+          {!editingAccion && factoresAccionables.length > 0 && (
+            <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 p-3 space-y-2" data-testid="section-sugerencias-foda">
+              <div className="flex items-center gap-2">
+                <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <span className="text-sm font-medium">Sugerencias desde Análisis FODA ({factoresAccionables.length})</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {factoresAccionables.slice(0, 6).map((f) => (
+                  <Button
+                    key={f.id}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyFactorSuggestion(f)}
+                    className="text-xs"
+                    data-testid={`button-sugerencia-factor-${f.id}`}
+                  >
+                    <AlertCircle className="h-3 w-3 mr-1 text-red-500" />
+                    {f.esDebilidad ? "D" : "A"}: {f.descripcion.length > 30 ? f.descripcion.substring(0, 30) + "..." : f.descripcion}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -474,11 +601,15 @@ export default function PlanMejoramientoContexto() {
                 name="accion"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Acción *</FormLabel>
+                    <div className="flex items-center flex-wrap gap-1">
+                      <FormLabel>Acción *</FormLabel>
+                      {getAutoFillBadge("accion")}
+                    </div>
                     <FormControl>
                       <Input 
                         placeholder="Describa la acción de mejora" 
-                        {...field} 
+                        {...field}
+                        onChange={(e) => { field.onChange(e); clearAutoFill("accion"); }}
                         data-testid="input-accion"
                       />
                     </FormControl>
@@ -492,12 +623,16 @@ export default function PlanMejoramientoContexto() {
                 name="descripcion"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Descripción</FormLabel>
+                    <div className="flex items-center flex-wrap gap-1">
+                      <FormLabel>Descripción</FormLabel>
+                      {getAutoFillBadge("descripcion")}
+                    </div>
                     <FormControl>
                       <Textarea
                         placeholder="Descripción detallada de la acción"
                         {...field}
                         value={field.value || ""}
+                        onChange={(e) => { field.onChange(e); clearAutoFill("descripcion"); }}
                         data-testid="input-descripcion"
                       />
                     </FormControl>
@@ -512,8 +647,11 @@ export default function PlanMejoramientoContexto() {
                   name="tipoFoda"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tipo FODA</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <div className="flex items-center flex-wrap gap-1">
+                        <FormLabel>Tipo FODA</FormLabel>
+                        {getAutoFillBadge("tipoFoda")}
+                      </div>
+                      <Select onValueChange={(val) => { field.onChange(val); clearAutoFill("tipoFoda"); }} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-tipo-foda">
                             <SelectValue placeholder="Seleccione el tipo" />
@@ -537,8 +675,11 @@ export default function PlanMejoramientoContexto() {
                   name="prioridad"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Prioridad</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <div className="flex items-center flex-wrap gap-1">
+                        <FormLabel>Prioridad</FormLabel>
+                        {getAutoFillBadge("prioridad")}
+                      </div>
+                      <Select onValueChange={(val) => { field.onChange(val); clearAutoFill("prioridad"); }} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-prioridad">
                             <SelectValue placeholder="Seleccione la prioridad" />
@@ -564,9 +705,12 @@ export default function PlanMejoramientoContexto() {
                   name="responsableId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Responsable</FormLabel>
+                      <div className="flex items-center flex-wrap gap-1">
+                        <FormLabel>Responsable</FormLabel>
+                        {getAutoFillBadge("responsableId")}
+                      </div>
                       <Select 
-                        onValueChange={(val) => field.onChange(val === "__unassigned__" ? null : val)} 
+                        onValueChange={(val) => { field.onChange(val === "__unassigned__" ? null : val); clearAutoFill("responsableId"); }} 
                         value={field.value || "__unassigned__"}
                       >
                         <FormControl>
@@ -620,7 +764,10 @@ export default function PlanMejoramientoContexto() {
                   name="fechaLimite"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel>Fecha Límite</FormLabel>
+                      <div className="flex items-center flex-wrap gap-1">
+                        <FormLabel>Fecha Límite</FormLabel>
+                        {getAutoFillBadge("fechaLimite")}
+                      </div>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
@@ -715,12 +862,16 @@ export default function PlanMejoramientoContexto() {
                 name="hallazgoDescripcion"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Descripción del Hallazgo</FormLabel>
+                    <div className="flex items-center flex-wrap gap-1">
+                      <FormLabel>Descripción del Hallazgo</FormLabel>
+                      {getAutoFillBadge("hallazgoDescripcion")}
+                    </div>
                     <FormControl>
                       <Textarea
                         placeholder="Describa el hallazgo que originó esta acción"
                         {...field}
                         value={field.value || ""}
+                        onChange={(e) => { field.onChange(e); clearAutoFill("hallazgoDescripcion"); }}
                         data-testid="input-hallazgo"
                       />
                     </FormControl>
@@ -728,6 +879,13 @@ export default function PlanMejoramientoContexto() {
                   </FormItem>
                 )}
               />
+
+              {autoFillSources.length > 0 && !editingAccion && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1" data-testid="text-autofill-info">
+                  <Zap className="h-3 w-3" />
+                  <span>Campos auto-completados con trazabilidad. Puede modificarlos manualmente.</span>
+                </div>
+              )}
 
               <DialogFooter>
                 <Button 
