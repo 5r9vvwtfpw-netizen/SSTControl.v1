@@ -398,6 +398,85 @@ export function PHVANavigation() {
         }
       }
     }
+
+    const routeSectionMap: Record<string, PHVASection> = {
+      "/trabajadores": "planear",
+      "/perfiles-cargo": "planear",
+      "/afiliaciones-ssss": "planear",
+      "/evaluaciones-sst": "planear",
+      "/estandares-sst": "planear",
+      "/politicas-sst": "planear",
+      "/politica-sst": "planear",
+      "/asignacion-recursos": "planear",
+      "/designacion-responsable": "planear",
+      "/asignar-lso-externo": "planear",
+      "/programa-capacitacion-anual": "planear",
+      "/planes-trabajo-anual": "planear",
+      "/iperc": "planear",
+      "/plan-emergencias": "planear",
+      "/matriz-legal": "planear",
+      "/objetivos-sst": "planear",
+      "/partes-interesadas": "planear",
+      "/analisis-contexto": "planear",
+      "/plan-mejoramiento-contexto": "planear",
+      "/copasst": "planear",
+      "/copasst-gestion": "planear",
+      "/copasst-cms": "planear",
+      "/comite-convivencia-actas": "planear",
+      "/conservacion-documentos": "planear",
+      "/comunicacion-sst": "planear",
+      "/perfil-sociodemografico": "planear",
+
+      "/dashboard-hacer": "hacer",
+      "/capacitaciones": "hacer",
+      "/capacitacion-copasst": "hacer",
+      "/registros-induccion": "hacer",
+      "/configuracion-induccion": "hacer",
+      "/curso-50-horas": "hacer",
+      "/inspecciones": "hacer",
+      "/entrega-epp": "hacer",
+      "/examenes-medicos": "hacer",
+      "/mediciones-ambientales": "hacer",
+      "/conservacion-auditiva": "hacer",
+      "/sustancias-quimicas": "hacer",
+      "/vigilancia-epidemiologica": "hacer",
+      "/actividades-promocion-prevencion": "hacer",
+      "/estilos-vida-saludable": "hacer",
+      "/medidas": "hacer",
+      "/salud": "hacer",
+      "/accidentes": "hacer",
+      "/investigacion-accidentes": "hacer",
+      "/arbol-causas": "hacer",
+      "/ausentismo-laboral": "hacer",
+      "/evaluacion-proveedores": "hacer",
+      "/gestion-cambios": "hacer",
+      "/adquisiciones-sst": "hacer",
+      "/contratos": "hacer",
+      "/trabajadores-alto-riesgo": "hacer",
+
+      "/dashboard-verificar": "verificar",
+      "/indicadores-accidentalidad": "verificar",
+      "/indicador-ili-incidentes": "verificar",
+      "/indicador-frecuencia-severidad": "verificar",
+      "/indicador-mortalidad": "verificar",
+      "/indicador-prevalencia": "verificar",
+      "/indicador-incidencia": "verificar",
+      "/indicador-ausentismo": "verificar",
+      "/copasst-evaluaciones": "verificar",
+      "/auditorias-internas": "verificar",
+      "/informes": "verificar",
+
+      "/dashboard-actuar": "actuar",
+      "/revisiones-direccion": "actuar",
+      "/recomendaciones-arl": "actuar",
+    };
+
+    for (const [routePrefix, section] of Object.entries(routeSectionMap)) {
+      if (location === routePrefix || location.startsWith(routePrefix + "/")) {
+        return section;
+      }
+    }
+
     return "configuracion";
   };
 
