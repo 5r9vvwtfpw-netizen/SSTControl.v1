@@ -663,6 +663,8 @@ export const PASOS_PESV: PasoPesvData[] = [
       'Gráficos de tendencias'
     ],
     modulosSstRelacionados: ['indicadores'],
+    moduloPesvUrl: '/pesv/indicadores',
+    moduloPesvNombre: 'Indicadores PESV',
     modoVerificacionSugerido: ['Revisión de tablero de indicadores', 'Verificación de mediciones periódicas', 'Revisión de análisis de tendencias'],
     hallazgoSugeridoNoCumple: 'No se evidencian indicadores de desempeño del PESV definidos con medición periódica y análisis de tendencias según Art. 24 de la Resolución 40595/2022.',
     observacionesCumple: 'Se verifican indicadores de desempeño definidos con medición periódica, análisis de tendencias y reportes de seguimiento conforme a la Resolución 40595/2022.',
