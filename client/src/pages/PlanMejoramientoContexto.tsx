@@ -29,6 +29,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 
 interface AutoFillSource {
   field: string;
@@ -327,9 +328,12 @@ export default function PlanMejoramientoContexto() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <BackToEvaluationButton />
-        <BackToCronogramaButton />
+        <div className="flex items-center gap-2 flex-wrap">
+          <BackToPesvEvaluationButton />
+          <BackToCronogramaButton />
+        </div>
       </div>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
