@@ -306,9 +306,11 @@ export default function PesvMonitoreoGps() {
         center: [4.7110, -74.0721],
         zoom: 6,
         zoomControl: true,
+        attributionControl: false,
       });
+      L.control.attribution({ prefix: false }).addTo(mapRef.current);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        attribution: '© OpenStreetMap',
         maxZoom: 19,
       }).addTo(mapRef.current);
     }
@@ -437,9 +439,11 @@ export default function PesvMonitoreoGps() {
         center: [4.7110, -74.0721],
         zoom: 6,
         zoomControl: true,
+        attributionControl: false,
       });
+      L.control.attribution({ prefix: false }).addTo(realtimeMapInstanceRef.current);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        attribution: '© OpenStreetMap',
         maxZoom: 19,
       }).addTo(realtimeMapInstanceRef.current);
     }
