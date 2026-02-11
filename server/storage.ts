@@ -575,6 +575,7 @@ export interface IStorage {
   getAllVehicles(): Promise<Vehicle[]>; // For admin: get all vehicles from all companies
   getVehicle(id: string, companyId: string): Promise<Vehicle | undefined>;
   getVehicleById(id: string): Promise<Vehicle | undefined>; // For admin: get vehicle by id without company filter
+  getVehicleByPlate(plate: string): Promise<Vehicle | undefined>;
   createVehicle(vehicle: InsertVehicle, companyId: string): Promise<Vehicle>;
   updateVehicle(id: string, vehicle: Partial<InsertVehicle>, companyId: string): Promise<Vehicle | undefined>;
   deleteVehicle(id: string, companyId: string): Promise<void>;
@@ -4160,6 +4161,13 @@ export class DbStorage implements IStorage {
   async getVehicleById(id: string): Promise<Vehicle | undefined> {
     const [vehicle] = await db.select().from(schema.vehicles)
       .where(eq(schema.vehicles.id, id));
+    return vehicle;
+  }
+
+  async getVehicleByPlate(plate: string): Promise<Vehicle | undefined> {
+    const normalized = plate.toUpperCase().replace(/[\s-]/g, '');
+    const [vehicle] = await db.select().from(schema.vehicles)
+      .where(sql`UPPER(REPLACE(REPLACE(${schema.vehicles.plate}, ' ', ''), '-', '')) = ${normalized}`);
     return vehicle;
   }
 

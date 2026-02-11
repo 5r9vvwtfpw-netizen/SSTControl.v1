@@ -46003,6 +46003,226 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+
+  // ========== WEBHOOK GPS - Recepción automática de datos de proveedores GPS ==========
+  
+  const gpsWebhookRecordSchema = z.object({
+    plate: z.string().optional(),
+    placa: z.string().optional(),
+    vehiclePlate: z.string().optional(),
+    vehicle_plate: z.string().optional(),
+    licensePlate: z.string().optional(),
+    license_plate: z.string().optional(),
+    deviceId: z.string().optional(),
+    device_id: z.string().optional(),
+    imei: z.string().optional(),
+    gpsDeviceId: z.string().optional(),
+    latitude: z.union([z.string(), z.number()]).optional(),
+    lat: z.union([z.string(), z.number()]).optional(),
+    latitud: z.union([z.string(), z.number()]).optional(),
+    longitude: z.union([z.string(), z.number()]).optional(),
+    lng: z.union([z.string(), z.number()]).optional(),
+    lon: z.union([z.string(), z.number()]).optional(),
+    longitud: z.union([z.string(), z.number()]).optional(),
+    speed: z.union([z.string(), z.number()]).optional(),
+    velocidad: z.union([z.string(), z.number()]).optional(),
+    spd: z.union([z.string(), z.number()]).optional(),
+    maxSpeed: z.union([z.string(), z.number()]).optional(),
+    max_speed: z.union([z.string(), z.number()]).optional(),
+    maxSpeedAllowed: z.union([z.string(), z.number()]).optional(),
+    velocidadMaxima: z.union([z.string(), z.number()]).optional(),
+    velocidad_maxima: z.union([z.string(), z.number()]).optional(),
+    speedLimit: z.union([z.string(), z.number()]).optional(),
+    engineStatus: z.string().optional(),
+    engine_status: z.string().optional(),
+    engine: z.string().optional(),
+    motor: z.string().optional(),
+    estadoMotor: z.string().optional(),
+    estado_motor: z.string().optional(),
+    alertType: z.string().optional(),
+    alert_type: z.string().optional(),
+    tipoAlerta: z.string().optional(),
+    tipo_alerta: z.string().optional(),
+    alarm: z.string().optional(),
+    alarma: z.string().optional(),
+    geofenceAlert: z.union([z.boolean(), z.number(), z.string()]).optional(),
+    geofence_alert: z.union([z.boolean(), z.number(), z.string()]).optional(),
+    geofence: z.union([z.boolean(), z.number(), z.string()]).optional(),
+    geocerca: z.union([z.boolean(), z.number(), z.string()]).optional(),
+    observations: z.string().optional(),
+    observaciones: z.string().optional(),
+    obs: z.string().optional(),
+    notes: z.string().optional(),
+    notas: z.string().optional(),
+    date: z.string().optional(),
+    fecha: z.string().optional(),
+    trackingDate: z.string().optional(),
+    timestamp: z.string().optional(),
+    time: z.string().optional(),
+    hora: z.string().optional(),
+    trackingTime: z.string().optional(),
+    timestamp_time: z.string().optional(),
+  }).passthrough();
+
+  const gpsWebhookPayloadSchema = z.union([
+    gpsWebhookRecordSchema,
+    z.array(gpsWebhookRecordSchema),
+  ]);
+
+  app.post("/api/webhooks/gps", async (req, res) => {
+    try {
+      const apiKey = req.headers["x-api-key"] || req.headers["authorization"]?.replace("Bearer ", "");
+      const expectedKey = process.env.GPS_WEBHOOK_API_KEY;
+      
+      if (!expectedKey) {
+        if (process.env.NODE_ENV === "production") {
+          console.error("[GPS Webhook] GPS_WEBHOOK_API_KEY no configurada en producción. Webhook deshabilitado.");
+          return res.status(503).json({ error: "Webhook no configurado. Contacte al administrador." });
+        }
+      } else if (apiKey !== expectedKey) {
+        console.warn("[GPS Webhook] Intento de acceso no autorizado desde IP:", req.ip);
+        return res.status(401).json({ error: "API key inválida" });
+      }
+      
+      const parsed = gpsWebhookPayloadSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Formato de datos inválido", details: parsed.error.issues });
+      }
+
+      const records = Array.isArray(parsed.data) ? parsed.data : [parsed.data];
+      const results: any[] = [];
+      const errors: any[] = [];
+
+      for (const record of records) {
+        try {
+          const plate = record.plate || record.placa || record.vehiclePlate || record.vehicle_plate || record.licensePlate || record.license_plate;
+          const deviceId = record.deviceId || record.device_id || record.imei || record.gpsDeviceId;
+          
+          if (!plate && !deviceId) {
+            errors.push({ record, error: "Se requiere placa del vehículo (plate/placa) o ID del dispositivo (deviceId/imei)" });
+            continue;
+          }
+
+          let vehicle = null;
+          if (plate) {
+            vehicle = await storage.getVehicleByPlate(String(plate));
+          }
+          
+          if (!vehicle) {
+            errors.push({ 
+              record, 
+              error: `Vehículo no encontrado${plate ? ` con placa: ${plate}` : ""}${deviceId ? ` con dispositivo: ${deviceId}` : ""}` 
+            });
+            continue;
+          }
+
+          const lat = record.latitude || record.lat || record.latitud;
+          const lng = record.longitude || record.lng || record.lon || record.longitud;
+          const speed = record.speed || record.velocidad || record.spd;
+          const maxSpeed = record.maxSpeed || record.max_speed || record.maxSpeedAllowed || record.velocidadMaxima || record.velocidad_maxima || record.speedLimit;
+          const engineRaw = record.engineStatus || record.engine_status || record.engine || record.motor || record.estadoMotor || record.estado_motor;
+          const alertType = record.alertType || record.alert_type || record.tipoAlerta || record.tipo_alerta || record.alarm || record.alarma;
+          const obs = record.observations || record.observaciones || record.obs || record.notes || record.notas;
+          const time = record.time || record.hora || record.trackingTime || record.timestamp_time;
+          const dateRaw = record.date || record.fecha || record.trackingDate || record.timestamp;
+
+          let engineStatus: "encendido" | "apagado" | "ralenti" | undefined = undefined;
+          if (engineRaw !== undefined && engineRaw !== null) {
+            const engineStr = String(engineRaw).toLowerCase().trim();
+            if (["encendido", "on", "running", "1", "true", "engine_on"].includes(engineStr)) {
+              engineStatus = "encendido";
+            } else if (["apagado", "off", "stopped", "0", "false", "engine_off"].includes(engineStr)) {
+              engineStatus = "apagado";
+            } else if (["ralenti", "idle", "idling", "ralentí"].includes(engineStr)) {
+              engineStatus = "ralenti";
+            }
+          }
+
+          const speedNum = speed !== undefined && speed !== null ? Number(speed) : undefined;
+          const maxSpeedNum = maxSpeed !== undefined && maxSpeed !== null ? Number(maxSpeed) : undefined;
+          const speedExceeded = (speedNum && maxSpeedNum && speedNum > maxSpeedNum) ? 1 : 0;
+
+          let trackingDate: string;
+          if (dateRaw) {
+            const d = new Date(dateRaw);
+            trackingDate = isNaN(d.getTime()) ? new Date().toISOString().split("T")[0] : d.toISOString().split("T")[0];
+          } else {
+            trackingDate = new Date().toISOString().split("T")[0];
+          }
+
+          let trackingTime: string | undefined = undefined;
+          if (time) {
+            trackingTime = String(time).substring(0, 5);
+          } else if (dateRaw) {
+            const d = new Date(dateRaw);
+            if (!isNaN(d.getTime())) {
+              trackingTime = d.toISOString().substring(11, 16);
+            }
+          }
+
+          const geofenceRaw = record.geofenceAlert || record.geofence_alert || record.geofence || record.geocerca;
+          const geofenceAlert = geofenceRaw ? 1 : 0;
+
+          const validatedGpsData = insertVehicleGpsTrackingSchema.parse({
+            companyId: vehicle.companyId,
+            vehicleId: vehicle.id,
+            trackingDate,
+            trackingTime,
+            latitude: lat !== undefined && lat !== null ? String(lat) : undefined,
+            longitude: lng !== undefined && lng !== null ? String(lng) : undefined,
+            speed: speedNum,
+            maxSpeedAllowed: maxSpeedNum,
+            speedExceeded,
+            engineStatus,
+            geofenceAlert,
+            alertType: alertType ? String(alertType) : undefined,
+            observations: obs ? String(obs) : (deviceId ? `GPS Device: ${deviceId}` : undefined),
+          });
+
+          const tracking = await storage.createVehicleGpsTracking(validatedGpsData, vehicle.companyId);
+          results.push({ id: tracking.id, vehicleId: vehicle.id, plate: vehicle.plate, status: "created" });
+        } catch (recordError: any) {
+          errors.push({ record, error: recordError.message || "Error procesando registro" });
+        }
+      }
+
+      const statusCode = errors.length === 0 ? 201 : (results.length > 0 ? 207 : 400);
+      console.log(`[GPS Webhook] Procesados: ${results.length} exitosos, ${errors.length} errores`);
+      
+      res.status(statusCode).json({
+        processed: results.length,
+        errors: errors.length,
+        results,
+        ...(errors.length > 0 ? { errorDetails: errors } : {}),
+      });
+    } catch (error: any) {
+      console.error("[GPS Webhook] Error general:", error);
+      res.status(500).json({ error: "Error interno procesando datos GPS" });
+    }
+  });
+
+  // GET /api/webhooks/gps/status - Verificar estado del webhook
+  app.get("/api/webhooks/gps/status", async (_req, res) => {
+    res.json({ 
+      status: "active",
+      endpoint: "/api/webhooks/gps",
+      method: "POST",
+      auth: process.env.GPS_WEBHOOK_API_KEY ? "API Key requerida (header X-Api-Key)" : "Sin autenticación (configurar GPS_WEBHOOK_API_KEY para proteger)",
+      fieldMapping: {
+        required: "plate | placa | vehiclePlate | licensePlate (uno obligatorio)",
+        optional: {
+          coordinates: "latitude/lat/latitud, longitude/lng/lon/longitud",
+          speed: "speed/velocidad, maxSpeed/velocidadMaxima/speedLimit",
+          engine: "engineStatus/motor/estadoMotor (valores: on/off/idle/encendido/apagado/ralenti)",
+          alerts: "alertType/tipoAlerta/alarma, geofenceAlert/geocerca",
+          time: "date/fecha/timestamp, time/hora",
+          notes: "observations/observaciones/notes"
+        }
+      },
+      supportsArray: true,
+    });
+  });
+
   // ========== PESV - Safe Routes (Res. 40595/2022 - H08) ==========
 
   // GET /api/safe-routes - List all safe routes
