@@ -1524,11 +1524,11 @@ export default function Trabajadores() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="indefinido">Indefinido</SelectItem>
-                              <SelectItem value="fijo">Fijo</SelectItem>
-                              <SelectItem value="temporal">Temporal</SelectItem>
-                              <SelectItem value="obra-labor">Obra o Labor</SelectItem>
-                              <SelectItem value="aprendizaje">Aprendizaje</SelectItem>
+                              <SelectItem value="indefinido">Término Indefinido (CST Art. 47)</SelectItem>
+                              <SelectItem value="fijo">Término Fijo (CST Art. 46)</SelectItem>
+                              <SelectItem value="temporal">Temporal / Transitorio (CST Art. 6)</SelectItem>
+                              <SelectItem value="obra-labor">Obra o Labor Determinada (CST Art. 45)</SelectItem>
+                              <SelectItem value="aprendizaje">Aprendizaje (Ley 789/2002)</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -2199,11 +2199,11 @@ export default function Trabajadores() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="indefinido">Indefinido</SelectItem>
-                        <SelectItem value="fijo">Fijo</SelectItem>
-                        <SelectItem value="temporal">Temporal</SelectItem>
-                        <SelectItem value="obra-labor">Obra o Labor</SelectItem>
-                        <SelectItem value="aprendizaje">Aprendizaje</SelectItem>
+                        <SelectItem value="indefinido">Término Indefinido (CST Art. 47)</SelectItem>
+                        <SelectItem value="fijo">Término Fijo (CST Art. 46)</SelectItem>
+                        <SelectItem value="temporal">Temporal / Transitorio (CST Art. 6)</SelectItem>
+                        <SelectItem value="obra-labor">Obra o Labor Determinada (CST Art. 45)</SelectItem>
+                        <SelectItem value="aprendizaje">Aprendizaje (Ley 789/2002)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

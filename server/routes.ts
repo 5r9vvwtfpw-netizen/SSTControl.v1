@@ -3433,7 +3433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { 'Campo': 'Email', 'Descripción': 'Correo electrónico', 'Requerido': 'No', 'Valores Válidos': 'email@dominio.com', 'Ejemplo': 'juan.perez@empresa.com' },
         { 'Campo': 'Cargo', 'Descripción': 'Cargo del trabajador', 'Requerido': 'Sí', 'Valores Válidos': 'Texto libre', 'Ejemplo': 'Operario de Producción' },
         { 'Campo': 'Departamento', 'Descripción': 'Área de trabajo', 'Requerido': 'Sí', 'Valores Válidos': 'Texto libre', 'Ejemplo': 'Producción' },
-        { 'Campo': 'Tipo de Contrato', 'Descripción': 'Tipo de contrato laboral según CST Colombia', 'Requerido': 'Sí', 'Valores Válidos': 'indefinido, fijo, temporal, obra-labor, aprendizaje, ocasional, servicios', 'Ejemplo': 'indefinido' },
+        { 'Campo': 'Tipo de Contrato', 'Descripción': 'Tipo de contrato laboral según CST Colombia. Acepta texto libre: el sistema reconoce automáticamente variaciones como "término indefinido", "a término fijo", "obra o labor", "OPS", "prestación de servicios", "pasante", etc.', 'Requerido': 'Sí', 'Valores Válidos': 'Texto libre (ej: indefinido, fijo, temporal, obra o labor, aprendizaje, prestación de servicios)', 'Ejemplo': 'indefinido' },
         { 'Campo': 'Fecha de Inicio', 'Descripción': 'Fecha de inicio del contrato', 'Requerido': 'Sí', 'Valores Válidos': 'AAAA-MM-DD o DD/MM/AAAA', 'Ejemplo': '2024-01-15' },
         { 'Campo': 'Fecha de Fin', 'Descripción': 'Fecha fin del contrato (vacío si indefinido)', 'Requerido': 'No', 'Valores Válidos': 'AAAA-MM-DD o vacío', 'Ejemplo': '2025-01-15' },
         { 'Campo': 'Estado', 'Descripción': 'Estado del trabajador', 'Requerido': 'Sí', 'Valores Válidos': 'activo, inactivo, retirado', 'Ejemplo': 'activo' },
@@ -3441,10 +3441,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { 'Campo': 'ARL', 'Descripción': 'Administradora de Riesgos Laborales', 'Requerido': 'No', 'Valores Válidos': 'Nombre de la ARL', 'Ejemplo': 'Positiva ARL' },
         { 'Campo': 'AFP', 'Descripción': 'Fondo de Pensiones', 'Requerido': 'No', 'Valores Válidos': 'Nombre de la AFP', 'Ejemplo': 'Porvenir' },
         { 'Campo': 'CCF', 'Descripción': 'Caja de Compensación Familiar', 'Requerido': 'No', 'Valores Válidos': 'Nombre de la CCF', 'Ejemplo': 'Comfenalco' },
-        { 'Campo': 'Género', 'Descripción': 'Género (Estándar 3.1.1 Res. 0312/2019)', 'Requerido': 'No', 'Valores Válidos': 'masculino, femenino, otro, prefiero_no_decir', 'Ejemplo': 'masculino' },
+        { 'Campo': 'Género', 'Descripción': 'Género (Estándar 3.1.1 Res. 0312/2019). Acepta texto libre: hombre, mujer, masculino, femenino, M, F, etc.', 'Requerido': 'No', 'Valores Válidos': 'Texto libre (ej: masculino, femenino, hombre, mujer)', 'Ejemplo': 'masculino' },
         { 'Campo': 'Fecha de Nacimiento', 'Descripción': 'Fecha de nacimiento (Estándar 3.1.1)', 'Requerido': 'No', 'Valores Válidos': 'AAAA-MM-DD', 'Ejemplo': '1990-05-15' },
-        { 'Campo': 'Nivel Educativo', 'Descripción': 'Nivel educativo (Estándar 3.1.1)', 'Requerido': 'No', 'Valores Válidos': 'ninguno, primaria, secundaria, tecnico, tecnologo, profesional, especializacion, maestria, doctorado', 'Ejemplo': 'profesional' },
-        { 'Campo': 'Estado Civil', 'Descripción': 'Estado civil (Estándar 3.1.1)', 'Requerido': 'No', 'Valores Válidos': 'soltero, casado, union_libre, divorciado, viudo, separado', 'Ejemplo': 'casado' }
+        { 'Campo': 'Nivel Educativo', 'Descripción': 'Nivel educativo (Estándar 3.1.1). Acepta texto libre: bachiller, universitario, especialista, posgrado, ingeniero, etc. El sistema normaliza automáticamente.', 'Requerido': 'No', 'Valores Válidos': 'Texto libre (ej: profesional, bachiller, técnico, especialización, maestría)', 'Ejemplo': 'profesional' },
+        { 'Campo': 'Estado Civil', 'Descripción': 'Estado civil (Estándar 3.1.1). Acepta texto libre: soltera, casada, conviviente, etc.', 'Requerido': 'No', 'Valores Válidos': 'Texto libre (ej: soltero, casado, unión libre, divorciado)', 'Ejemplo': 'casado' }
       ];
       const instructionsSheet = XLSX.utils.json_to_sheet(instructions);
       
