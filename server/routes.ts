@@ -10186,6 +10186,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         position: worker?.position || designation.position,
       };
       
+      // Resolve license number with multiple fallbacks
+      if (!designation.licenciaSstNumero) {
+        // Fallback 1: Check if worker has a user account with license info
+        if (worker) {
+          const [workerUser] = await db.select().from(schema.users).where(eq(schema.users.workerId, worker.id)).limit(1);
+          if (workerUser?.sstLicenseNumber) {
+            designation.licenciaSstNumero = workerUser.sstLicenseNumber;
+          }
+        }
+        // Fallback 2: Check licensed_professional_assignments for the company
+        if (!designation.licenciaSstNumero) {
+          const [lpa] = await db.select().from(schema.licensedProfessionalAssignments)
+            .where(and(eq(schema.licensedProfessionalAssignments.companyId, companyId), eq(schema.licensedProfessionalAssignments.isActive, true)))
+            .limit(1);
+          if (lpa) {
+            if (lpa.externalLsoLicenseNumber) {
+              designation.licenciaSstNumero = lpa.externalLsoLicenseNumber;
+            } else if (lpa.userId) {
+              const [lsoUser] = await db.select().from(schema.users).where(eq(schema.users.id, lpa.userId)).limit(1);
+              if (lsoUser?.sstLicenseNumber) {
+                designation.licenciaSstNumero = lsoUser.sstLicenseNumber;
+              }
+            }
+          }
+        }
+      }
+      
       if (isAdmin) {
         // For external LSO, get companyId from designation; for worker, from worker record
         companyId = worker?.companyId || designation.companyId;
