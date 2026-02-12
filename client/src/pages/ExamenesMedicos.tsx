@@ -369,12 +369,14 @@ export default function ExamenesMedicos() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Exámenes Médicos Ocupacionales</h1>
           <p className="text-muted-foreground">Gestión de exámenes según Resolución 1843/2025</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={() => {}}>
-          <Button data-testid="button-add-exam" onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Programar Examen
-          </Button>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto [&>button.absolute]:hidden" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} onFocusOutside={(e) => e.preventDefault()} onEscapeKeyDown={() => { setDialogOpen(false); setEditingExam(null); resetForm(); }}>
+        <Button data-testid="button-add-exam" onClick={() => setDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Programar Examen
+        </Button>
+        {dialogOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="fixed inset-0 bg-black/80" onClick={() => { setDialogOpen(false); setEditingExam(null); resetForm(); }} />
+            <div className="relative z-50 w-full max-w-4xl max-h-[90vh] overflow-y-auto border bg-background p-6 shadow-lg rounded-lg mx-4">
             <button
               type="button"
               className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 z-10"
@@ -384,12 +386,12 @@ export default function ExamenesMedicos() {
               <X className="h-4 w-4" />
               <span className="sr-only">Cerrar</span>
             </button>
-            <DialogHeader>
-              <DialogTitle>{editingExam ? "Editar Examen" : "Programar Examen Médico"}</DialogTitle>
-              <DialogDescription>
+            <div className="flex flex-col space-y-1.5 text-left mb-4">
+              <h2 className="text-lg font-semibold leading-none tracking-tight">{editingExam ? "Editar Examen" : "Programar Examen Médico"}</h2>
+              <p className="text-sm text-muted-foreground">
                 Complete la información del examen médico ocupacional
-              </DialogDescription>
-            </DialogHeader>
+              </p>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -734,8 +736,9 @@ export default function ExamenesMedicos() {
                 </Button>
               </div>
             </form>
-          </DialogContent>
-        </Dialog>
+            </div>
+          </div>
+        )}
       </div>
 
       <AutomationAssistant
