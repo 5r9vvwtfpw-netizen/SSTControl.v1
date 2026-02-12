@@ -10211,28 +10211,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Priorizar campo city, fallback a extracción de dirección
       const city = company.city || extractCity(company.address);
       
-      doc.fontSize(9).text(
-        `En la ciudad de ${city}, a los ${formattedDate}, la empresa ${company.name}, identificada con NIT ${company.nit || '____________'}, en cumplimiento de lo establecido en el artículo 8 del Decreto 1072 de 2015 y la Resolución 0312 de 2019, procede a designar formalmente al siguiente funcionario como:`,
-        margin, currentY, { width: contentWidth, align: 'justify' }
-      );
+      // Determine if this is an LSO designation for enhanced PDF - use explicit flags
+      const isLsoDesignation = isExternalLso || designation.isExternalLso === true || (designation.licenciaSstNumero && designation.licenciaSstNumero.length > 0);
+      
+      // LSO-specific enhanced intro paragraph
+      if (isLsoDesignation) {
+        doc.fontSize(9).text(
+          `En la ciudad de ${city}, a los ${formattedDate}, la empresa ${company.name}, identificada con NIT ${company.nit || '____________'}, en cumplimiento de lo establecido en el Decreto 1072 de 2015 (Libro 2, Parte 2, Título 4, Capítulo 6), la Resolución 0312 de 2019, la Ley 1562 de 2012 y demás normas concordantes del Sistema General de Riesgos Laborales, procede a designar formalmente al siguiente profesional para la dirección, administración y ejecución del Sistema de Gestión de la Seguridad y Salud en el Trabajo (SG-SST):`,
+          margin, currentY, { width: contentWidth, align: 'justify' }
+        );
+      } else {
+        doc.fontSize(9).text(
+          `En la ciudad de ${city}, a los ${formattedDate}, la empresa ${company.name}, identificada con NIT ${company.nit || '____________'}, en cumplimiento de lo establecido en el artículo 8 del Decreto 1072 de 2015 y la Resolución 0312 de 2019, procede a designar formalmente al siguiente funcionario como:`,
+          margin, currentY, { width: contentWidth, align: 'justify' }
+        );
+      }
       
       currentY = doc.y + 15;
       
       // Position box
+      const positionTitle = isLsoDesignation 
+        ? 'PROFESIONAL LICENCIADO EN SEGURIDAD Y SALUD EN EL TRABAJO'
+        : (designation.position || '').toUpperCase();
       doc.rect(margin, currentY, contentWidth, 30).fill('#f0f0f0').stroke();
-      doc.fillColor('black').fontSize(9).font('Helvetica-Bold').text(designation.position.toUpperCase(), margin, currentY + 8, { align: 'center', lineBreak: false });
+      doc.fillColor('black').fontSize(9).font('Helvetica-Bold').text(positionTitle, margin, currentY + 8, { align: 'center', lineBreak: false });
       
       currentY += 50;
       
-      // Worker info box - SST-2025-0012: Fixed layout overlap issue
+      // Worker info box
       const workerBoxStartY = currentY;
       const workerBoxPadding = 10;
       
-      // Draw section title first
-      doc.fontSize(8).font('Helvetica-Bold').text('DATOS DEL DESIGNADO', margin + workerBoxPadding, workerBoxStartY + workerBoxPadding);
+      doc.fontSize(8).font('Helvetica-Bold').text(isLsoDesignation ? 'DATOS DEL PROFESIONAL DESIGNADO' : 'DATOS DEL DESIGNADO', margin + workerBoxPadding, workerBoxStartY + workerBoxPadding);
       currentY = doc.y + 6;
       
-      // Worker data fields - use doc.y to track actual position
       doc.font('Helvetica');
       doc.text(`Nombre Completo: ${designeeInfo.name}`, margin + workerBoxPadding, currentY);
       currentY = doc.y + 4;
@@ -10240,7 +10252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`Documento de Identidad: CC ${designeeInfo.identificationNumber}`, margin + workerBoxPadding, currentY);
       currentY = doc.y + 4;
       
-      doc.text(`Cargo: ${designeeInfo.position}`, margin + workerBoxPadding, currentY);
+      doc.text(`Cargo: ${designeeInfo.position || (isLsoDesignation ? 'Profesional Licenciado SST' : 'No especificado')}`, margin + workerBoxPadding, currentY);
       currentY = doc.y + 4;
       
       // License info
@@ -10250,71 +10262,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`Licencia SST: ${licenciaInfo}`, margin + workerBoxPadding, currentY);
       currentY = doc.y + 4;
       
-      // Formation level and 50h course
       const nivelInfo = designation.nivelFormacion || 'No registrado';
       const curso50Info = designation.curso50Horas 
         ? `Sí${designation.curso50HorasFecha ? ` (${new Date(designation.curso50HorasFecha).toLocaleDateString('es-CO')})` : ''}`
         : 'No';
       doc.text(`Nivel de Formación: ${nivelInfo} | Curso 50 horas: ${curso50Info}`, margin + workerBoxPadding, currentY);
+      currentY = doc.y + 4;
       
-      // Calculate actual box height based on rendered content
-      const workerBoxEndY = doc.y + workerBoxPadding;
-      const workerBoxHeight = workerBoxEndY - workerBoxStartY;
-      
-      // Draw box around content after knowing the actual height
-      doc.rect(margin, workerBoxStartY, contentWidth, workerBoxHeight).stroke();
-      
-      // Set currentY after the box with proper spacing for next section
-      currentY = workerBoxEndY + 15;
-      
-      // Responsibilities section - SST-2025-0012: Use doc.y for proper positioning
-      doc.fontSize(9).font('Helvetica-Bold').text('RESPONSABILIDADES ASIGNADAS:', margin, currentY);
-      currentY = doc.y + 8;
-      
-      doc.font('Helvetica').fontSize(9);
-      const responsibilities = designation.responsibilities || [];
-      for (const resp of responsibilities) {
-        // Check if we need a page break before rendering
-        const respHeight = doc.heightOfString(`• ${resp}`, { width: contentWidth - 20 });
-        if (currentY + respHeight > doc.page.height - 80) {
-          doc.addPage();
-          // Reset font after page break to maintain consistent text size
-          doc.font('Helvetica').fontSize(7).fillColor('#000000');
-          currentY = 50;
-        }
-        doc.text(`• ${resp}`, margin + 10, currentY, { width: contentWidth - 20 });
+      if (isLsoDesignation) {
+        doc.text(`Modalidad de Vinculación: ${isExternalLso ? 'Contratista Externo (Prestación de Servicios)' : 'Empleado Directo'}`, margin + workerBoxPadding, currentY);
         currentY = doc.y + 4;
       }
       
-      currentY += 3;
+      const workerBoxEndY = doc.y + workerBoxPadding;
+      const workerBoxHeight = workerBoxEndY - workerBoxStartY;
+      doc.rect(margin, workerBoxStartY, contentWidth, workerBoxHeight).stroke();
+      currentY = workerBoxEndY + 15;
+      
+      // For LSO, add normative framework section before responsibilities
+      if (isLsoDesignation) {
+        checkPageSpace(doc, 80);
+        doc.fontSize(9).font('Helvetica-Bold').text('MARCO NORMATIVO:', margin, currentY);
+        currentY = doc.y + 6;
+        doc.font('Helvetica').fontSize(8);
+        const normas = [
+          'Ley 1562 de 2012 - Sistema General de Riesgos Laborales.',
+          'Decreto 1072 de 2015 - Decreto Único Reglamentario del Sector Trabajo, Libro 2, Parte 2, Título 4, Capítulo 6.',
+          'Resolución 0312 de 2019 - Estándares Mínimos del SG-SST.',
+          'Resolución 4927 de 2016 - Curso obligatorio de 50 horas en SST.',
+          'Resolución 1111 de 2017 y demás normas concordantes.'
+        ];
+        for (const norma of normas) {
+          doc.text(`  - ${norma}`, margin + 10, currentY, { width: contentWidth - 20 });
+          currentY = doc.y + 3;
+        }
+        currentY += 8;
+      }
+      
+      // Responsibilities section
+      doc.fontSize(9).font('Helvetica-Bold').text(isLsoDesignation ? 'FUNCIONES Y RESPONSABILIDADES DEL PROFESIONAL SST:' : 'RESPONSABILIDADES ASIGNADAS:', margin, currentY);
+      currentY = doc.y + 8;
+      
+      const respFontSize = 8;
+      doc.font('Helvetica').fontSize(respFontSize);
+      const responsibilities = designation.responsibilities || [];
+      let respNum = 1;
+      for (const resp of responsibilities) {
+        const respText = isLsoDesignation ? `${respNum}. ${resp}` : `• ${resp}`;
+        const respHeight = doc.heightOfString(respText, { width: contentWidth - 20 });
+        if (currentY + respHeight > doc.page.height - 80) {
+          doc.addPage();
+          doc.font('Helvetica').fontSize(respFontSize).fillColor('#000000');
+          currentY = 50;
+        }
+        doc.text(respText, margin + 10, currentY, { width: contentWidth - 20, align: 'justify' });
+        currentY = doc.y + 4;
+        respNum++;
+      }
+      
+      currentY += 5;
+      
+      // For LSO, add employer obligations section
+      if (isLsoDesignation) {
+        checkPageSpace(doc, 100);
+        if (currentY > doc.page.height - 120) {
+          doc.addPage();
+          doc.font('Helvetica').fontSize(8).fillColor('#000000');
+          currentY = 50;
+        }
+        doc.fontSize(9).font('Helvetica-Bold').text('OBLIGACIONES DEL EMPLEADOR:', margin, currentY);
+        currentY = doc.y + 6;
+        doc.font('Helvetica').fontSize(8);
+        const obligaciones = [
+          'Suministrar al profesional designado los recursos financieros, técnicos y el personal necesario para el diseño, implementación, revisión, evaluación y mejora del SG-SST.',
+          'Garantizar al profesional designado el acceso a todas las áreas, procesos e información de la empresa necesarios para el cumplimiento de sus funciones.',
+          'Facilitar la participación de los trabajadores en las actividades programadas por el profesional SST.',
+          'Asegurar que el profesional SST cuente con la autoridad y el respaldo de la alta dirección para la toma de decisiones en materia de SST.',
+          'Responder por la implementación del SG-SST como obligación del empleador, sin que la designación del profesional le exima de su responsabilidad legal.'
+        ];
+        let oblNum = 1;
+        for (const obl of obligaciones) {
+          const oblText = `${oblNum}. ${obl}`;
+          const oblHeight = doc.heightOfString(oblText, { width: contentWidth - 20 });
+          if (currentY + oblHeight > doc.page.height - 80) {
+            doc.addPage();
+            doc.font('Helvetica').fontSize(8).fillColor('#000000');
+            currentY = 50;
+          }
+          doc.text(oblText, margin + 10, currentY, { width: contentWidth - 20, align: 'justify' });
+          currentY = doc.y + 4;
+          oblNum++;
+        }
+        currentY += 5;
+      }
       
       // Authority paragraph
-      checkPageSpace(doc, 60);
+      checkPageSpace(doc, 80);
+      if (currentY > doc.page.height - 100) {
+        doc.addPage();
+        doc.font('Helvetica').fontSize(8).fillColor('#000000');
+        currentY = 50;
+      }
       
-      doc.fontSize(8).text(
-        `El designado tendrá la autoridad y el respaldo de la alta dirección para tomar decisiones en materia de seguridad y salud en el trabajo, asignar recursos y solicitar la colaboración de todas las áreas de la organización para el cumplimiento de sus funciones.`,
-        margin, currentY, { width: contentWidth, align: 'justify' }
-      );
+      if (isLsoDesignation) {
+        doc.fontSize(8).text(
+          `El profesional designado tendrá la autoridad y el respaldo de la alta dirección para tomar decisiones en materia de seguridad y salud en el trabajo, asignar recursos y solicitar la colaboración de todas las áreas de la organización para el cumplimiento de sus funciones. La presente designación se realiza en cumplimiento del artículo 2.2.4.6.8 del Decreto 1072 de 2015 y los estándares mínimos establecidos en la Resolución 0312 de 2019.`,
+          margin, currentY, { width: contentWidth, align: 'justify' }
+        );
+      } else {
+        doc.fontSize(8).text(
+          `El designado tendrá la autoridad y el respaldo de la alta dirección para tomar decisiones en materia de seguridad y salud en el trabajo, asignar recursos y solicitar la colaboración de todas las áreas de la organización para el cumplimiento de sus funciones.`,
+          margin, currentY, { width: contentWidth, align: 'justify' }
+        );
+      }
       
       currentY = doc.y + 15;
       
       // Signature section
+      checkPageSpace(doc, 120);
+      if (currentY > doc.page.height - 130) {
+        doc.addPage();
+        doc.font('Helvetica').fontSize(8).fillColor('#000000');
+        currentY = 50;
+      }
       
       doc.fontSize(8).text('En constancia de lo anterior, se firma la presente acta:', margin, currentY, { lineBreak: false });
       currentY += 50;
       
       const signatureWidth = (contentWidth - 40) / 2;
       
-      // Left signature (Company Representative)
       doc.text('_________________________________', margin, currentY, { lineBreak: false });
       doc.text('_________________________________', margin + signatureWidth + 40, currentY, { lineBreak: false });
       currentY += 14;
       
       doc.font('Helvetica-Bold').text('REPRESENTANTE LEGAL', margin, currentY, { lineBreak: false });
-      doc.text('RESPONSABLE DESIGNADO', margin + signatureWidth + 40, currentY, { lineBreak: false });
+      doc.text(isLsoDesignation ? 'PROFESIONAL SST DESIGNADO' : 'RESPONSABLE DESIGNADO', margin + signatureWidth + 40, currentY, { lineBreak: false });
       currentY += 12;
       
-      doc.font('Helvetica').fontSize(9);
+      doc.font('Helvetica').fontSize(8);
       const repLegalName = company.legalRepName || '________________________';
       const repLegalId = company.legalRepId || '___________________________';
       const repLegalPosition = company.legalRepPosition || '__________________________';
@@ -10327,16 +10412,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`C.C.: ${designeeInfo.identificationNumber}`, margin + signatureWidth + 40, currentY, { lineBreak: false });
       currentY += 12;
       
-      // Licencia SST del responsable designado
       const licenciaResponsable = designation.licenciaSstNumero 
         ? `Licencia SST No. ${designation.licenciaSstNumero}`
         : 'Licencia SST: ___________________';
       doc.text(`Cargo: ${repLegalPosition}`, margin, currentY, { lineBreak: false });
       doc.text(licenciaResponsable, margin + signatureWidth + 40, currentY, { lineBreak: false });
       
-      // Standard signature footer (handles page space automatically)
-      // Este documento ya tiene sus propias firmas específicas
-      // Finalize PDF
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'acta-designacion-pdf');
