@@ -1371,24 +1371,6 @@ export default function PesvRutasSeguras() {
                 </form>
               </DialogContent>
             </Dialog>
-            <Button
-              variant="outline"
-              onClick={() => setConfirmGenerateDialogOpen(true)}
-              disabled={isGenerating || availableCount === 0}
-              data-testid="button-generar-todas-rutas"
-            >
-              {isGenerating ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Zap className="h-4 w-4 mr-2" />
-              )}
-              {isGenerating
-                ? "Generando rutas..."
-                : availableCount === 0
-                  ? "Todas las rutas generadas"
-                  : `Generar ${availableCount} Rutas Colombia`
-              }
-            </Button>
           </>
         )}
       </div>
@@ -1430,7 +1412,7 @@ export default function PesvRutasSeguras() {
             ) : filteredRoutes.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center" data-testid="text-no-routes">
-                  No se encontraron rutas seguras. Use el botón "Generar Rutas Colombia" para crear automáticamente las rutas principales del país.
+                  No se encontraron rutas seguras. Use el botón "Nueva Ruta Segura" para agregar rutas desde el catálogo colombiano.
                 </TableCell>
               </TableRow>
             ) : (
