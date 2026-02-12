@@ -26780,20 +26780,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const actividades = await storage.getActividadesPlanTrabajo(req.params.id, companyId);
       
-      // Obtener matrices IPERC y peligros para el resumen
       const matrices = await storage.getMatricesIperc(companyId);
       const activeMatriz = matrices.find(m => m.estado === 'aprobada' || m.estado === 'en-revision') || matrices[0];
       let peligros: any[] = [];
       if (activeMatriz) {
         peligros = await storage.getPeligrosIperc(activeMatriz.id, companyId);
       }
-      const totalPages = actividades.length > 0 ? 2 : 1;
+
       const doc = new PDFDocument({ 
-        margin: 40, 
-        size: 'LETTER'
+        margin: PDF_CONFIG.MARGIN, 
+        size: PDF_CONFIG.PAGE_SIZE
       });
       
-      // Add trial watermark if subscription is in trial period
       const plantra_subscription = await storage.getSubscriptionByCompany(companyId);
       const plantra_trialStatus = getTrialStatus(plantra_subscription?.status || 'trial', plantra_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, plantra_trialStatus.requiresWatermark);
@@ -26802,22 +26800,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="plan-trabajo-anual-${plan.anio}.pdf"`);
       doc.pipe(res);
 
-      const margin = 40;
+      const margin = PDF_CONFIG.MARGIN;
       const pageWidth = doc.page.width;
       const pageHeight = doc.page.height;
       const contentWidth = pageWidth - 2 * margin;
       
-      // Load company logo and signers for standardized PDF
       const logo = await loadCompanyLogo(company.logoUrl);
       const signers = await getSignersForCompany(companyId);
 
-      // Helper para agregar pie de página
-      const addPageFooter = (pageNum: number) => {
-        doc.fontSize(8).font('Helvetica').fillColor('#666666')
-          .text(`Página ${pageNum} de ${totalPages}`, margin, pageHeight - 25, { width: contentWidth, align: 'center' });
-      };
-
-      // Add standardized header (ISO 45001:2018)
+      // ==================== PÁGINA 1: RESUMEN ====================
       let currentY = await addStandardHeader({
         doc,
         company: {
@@ -26834,56 +26825,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logoBuffer: logo
       });
 
-      currentY += 10;
+      currentY += 5;
 
-      // Objetivo General
+      // Sección: Objetivo General
       if (plan.objetivoGeneral) {
-        doc.rect(margin, currentY, contentWidth, 70).stroke('#1e7e34');
-        doc.rect(margin, currentY, contentWidth, 18).fill('#1e7e34');
-        doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff')
-          .text('OBJETIVO GENERAL', margin + 10, currentY + 4);
-        doc.fontSize(8).font('Helvetica').fillColor('#000000')
-          .text(plan.objetivoGeneral, margin + 10, currentY + 24, { width: contentWidth - 20, align: 'justify' });
-        currentY += 80;
+        currentY = addSectionBar(doc, 'OBJETIVO GENERAL', currentY);
+        doc.fontSize(8).font('Helvetica').fillColor(PDF_COLORS.BLACK)
+          .text(plan.objetivoGeneral, margin + 10, currentY, { width: contentWidth - 20, align: 'justify' });
+        currentY = doc.y + 15;
       }
 
-      // Resumen Ejecutivo
-      doc.rect(margin, currentY, contentWidth, 85).stroke('#1e7e34');
-      doc.rect(margin, currentY, contentWidth, 18).fill('#1e7e34');
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff')
-        .text('RESUMEN EJECUTIVO', margin + 10, currentY + 4);
-      currentY += 24;
+      // Sección: Resumen Ejecutivo
+      currentY = addSectionBar(doc, 'RESUMEN EJECUTIVO', currentY);
 
       const actividadesPendientes = actividades.filter((a: any) => a.estado === 'pendiente').length;
       const actividadesEnProgreso = actividades.filter((a: any) => a.estado === 'en-proceso').length;
       const actividadesCompletadas = actividades.filter((a: any) => a.estado === 'completada').length;
       const porcentajeCumplimiento = actividades.length > 0 ? Math.round((actividadesCompletadas / actividades.length) * 100) : 0;
 
-      const col1X = margin + 15;
+      const col1X = margin + 10;
       const col2X = margin + contentWidth / 2 + 10;
-      
-      doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Total de Actividades:', col1X, currentY);
-      doc.font('Helvetica').text(actividades.length.toString(), col1X + 100, currentY);
-      doc.font('Helvetica-Bold').text('Cumplimiento:', col2X, currentY);
-      doc.font('Helvetica').text(`${porcentajeCumplimiento}%`, col2X + 110, currentY);
-      
-      currentY += 15;
-      doc.font('Helvetica-Bold').text('Completadas:', col1X, currentY);
-      doc.font('Helvetica').text(actividadesCompletadas.toString(), col1X + 100, currentY);
-      doc.font('Helvetica-Bold').text('Pendientes:', col2X, currentY);
-      doc.font('Helvetica').text(actividadesPendientes.toString(), col2X + 110, currentY);
-      
-      currentY += 15;
-      doc.font('Helvetica-Bold').text('En Progreso:', col1X, currentY);
-      doc.font('Helvetica').text(actividadesEnProgreso.toString(), col1X + 100, currentY);
+      const labelWidth = 130;
 
-      currentY += 20;
+      const resumenData = [
+        [{ label: 'Total de Actividades:', value: actividades.length.toString() }, { label: 'Cumplimiento:', value: `${porcentajeCumplimiento}%` }],
+        [{ label: 'Completadas:', value: actividadesCompletadas.toString() }, { label: 'Pendientes:', value: actividadesPendientes.toString() }],
+        [{ label: 'En Progreso:', value: actividadesEnProgreso.toString() }, { label: '', value: '' }],
+      ];
 
-      // Distribución por Programa SST
-      doc.rect(margin, currentY, contentWidth, 18).fill('#1e7e34');
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff')
-        .text('DISTRIBUCIÓN POR PROGRAMA SST', margin + 10, currentY + 4);
-      currentY += 24;
+      resumenData.forEach(row => {
+        row.forEach((item, colIdx) => {
+          if (!item.label) return;
+          const xPos = colIdx === 0 ? col1X : col2X;
+          doc.fontSize(8).font('Helvetica-Bold').fillColor(PDF_COLORS.BLACK)
+            .text(item.label, xPos, currentY, { continued: false });
+          doc.fontSize(8).font('Helvetica').fillColor(PDF_COLORS.BLACK)
+            .text(item.value, xPos + labelWidth, currentY);
+        });
+        currentY += 14;
+      });
+
+      currentY += 5;
+
+      // Sección: Distribución por Programa SST
+      currentY = addSectionBar(doc, 'DISTRIBUCIÓN POR PROGRAMA SST', currentY);
 
       const programas = [
         { id: 'medicina-preventiva', nombre: 'Medicina Preventiva' },
@@ -26895,6 +26880,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { id: 'seguridad-vial', nombre: 'Seguridad Vial' },
         { id: 'vigilancia-epidemiologica', nombre: 'Vigilancia Epidemiológica' },
         { id: 'inspeccion', nombre: 'Inspecciones' },
+        { id: 'epp', nombre: 'Elementos de Protección Personal' },
         { id: 'otro', nombre: 'Gestión General' },
       ];
 
@@ -26910,107 +26896,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const xPos = isLeftColumn ? col1X : col2X;
         const yPos = isLeftColumn ? progCol1Y : progCol2Y;
 
-        doc.fontSize(7).font('Helvetica').fillColor('#1e7e34').text('●', xPos - 8, yPos);
-        doc.fillColor('#000000').text(`${programa.nombre}: `, xPos, yPos, { continued: true });
+        doc.fontSize(7).font('Helvetica').fillColor(PDF_COLORS.BLACK)
+          .text(`${programa.nombre}: `, xPos, yPos, { continued: true });
         doc.font('Helvetica-Bold').text(`${actividadesPrograma.length} actividades`);
 
         if (isLeftColumn) { progCol1Y += 13; } else { progCol2Y += 13; }
         progIndex++;
       });
 
-      // Sección RESUMEN MATRIZ IPER (solo si hay datos)
+      currentY = Math.max(progCol1Y, progCol2Y) + 10;
+
+      // Sección: Resumen Matriz IPER (solo si hay datos)
       if (peligros.length > 0) {
-        currentY = Math.max(progCol1Y, progCol2Y) + 15;
+        currentY = addSectionBar(doc, 'RESUMEN MATRIZ IPER', currentY);
+
+        doc.fontSize(8).font('Helvetica-Bold').fillColor(PDF_COLORS.BLACK)
+          .text('Total Peligros Identificados:', col1X, currentY);
+        doc.font('Helvetica').text(peligros.length.toString(), col1X + 150, currentY);
         
-        doc.rect(margin, currentY, contentWidth, 18).fill('#1e7e34');
-        doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff')
-          .text('RESUMEN MATRIZ IPER', margin + 10, currentY + 4);
-        currentY += 20;
-        doc.fillColor('#000000');
+        doc.font('Helvetica-Bold').text('Matriz Activa:', col2X, currentY);
+        doc.font('Helvetica').text(activeMatriz?.nombre || 'N/A', col2X + 90, currentY);
         
-        // Estadísticas por nivel de riesgo
+        currentY += 18;
+        
         const riesgoAlto = peligros.filter((p: any) => p.nivelRiesgo === 'alto' || p.nivelRiesgo === 'muy-alto').length;
         const riesgoMedio = peligros.filter((p: any) => p.nivelRiesgo === 'medio').length;
         const riesgoBajo = peligros.filter((p: any) => p.nivelRiesgo === 'bajo').length;
         const riesgoTrivial = peligros.filter((p: any) => p.nivelRiesgo === 'trivial').length;
         
-        // Estadísticas de controles
         const controlesImplementados = peligros.filter((p: any) => p.estadoImplementacion === 'implementado').length;
         const controlesPendientes = peligros.filter((p: any) => p.estadoImplementacion === 'pendiente').length;
         const controlesEnProceso = peligros.filter((p: any) => p.estadoImplementacion === 'en_proceso').length;
         
-        // Mostrar en dos columnas
-        doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000')
-          .text('Total Peligros Identificados:', col1X, currentY);
-        doc.font('Helvetica').text(peligros.length.toString(), col1X + 140, currentY);
-        
-        doc.font('Helvetica-Bold').text('Matriz Activa:', col2X, currentY);
-        doc.font('Helvetica').text(activeMatriz?.nombre || 'N/A', col2X + 80, currentY);
-        
-        currentY += 15;
-        
-        // Niveles de riesgo con colores
-        doc.font('Helvetica-Bold').text('Distribución por Nivel de Riesgo:', col1X, currentY);
+        doc.fontSize(8).font('Helvetica-Bold').text('Distribución por Nivel de Riesgo:', col1X, currentY);
         currentY += 14;
         
         doc.fontSize(7).font('Helvetica');
-        // Riesgo Alto - círculo rojo
         doc.circle(col1X + 3, currentY + 3, 3).fill('#dc3545');
-        doc.fillColor('#000000').text(`Riesgo Alto/Muy Alto: ${riesgoAlto}`, col1X + 10, currentY);
-        // Riesgo Medio - círculo naranja
+        doc.fillColor(PDF_COLORS.BLACK).text(`Riesgo Alto/Muy Alto: ${riesgoAlto}`, col1X + 10, currentY);
         doc.circle(col2X + 3, currentY + 3, 3).fill('#fd7e14');
-        doc.fillColor('#000000').text(`Riesgo Medio: ${riesgoMedio}`, col2X + 10, currentY);
+        doc.fillColor(PDF_COLORS.BLACK).text(`Riesgo Medio: ${riesgoMedio}`, col2X + 10, currentY);
         
         currentY += 14;
-        
-        // Riesgo Bajo - círculo amarillo oscuro (más visible)
         doc.circle(col1X + 3, currentY + 3, 3).fill('#e6a700');
-        doc.fillColor('#000000').text(`Riesgo Bajo: ${riesgoBajo}`, col1X + 10, currentY);
-        // Riesgo Trivial - círculo verde
+        doc.fillColor(PDF_COLORS.BLACK).text(`Riesgo Bajo: ${riesgoBajo}`, col1X + 10, currentY);
         doc.circle(col2X + 3, currentY + 3, 3).fill('#28a745');
-        doc.fillColor('#000000').text(`Riesgo Trivial: ${riesgoTrivial}`, col2X + 10, currentY);
+        doc.fillColor(PDF_COLORS.BLACK).text(`Riesgo Trivial: ${riesgoTrivial}`, col2X + 10, currentY);
         
-        currentY += 12;
-        
-        // Estado de controles
-        doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Estado de Controles:', col1X, currentY);
+        currentY += 18;
+        doc.fontSize(8).font('Helvetica-Bold').fillColor(PDF_COLORS.BLACK).text('Estado de Controles:', col1X, currentY);
         currentY += 12;
         
         doc.fontSize(7).font('Helvetica');
         doc.text(`Implementados: ${controlesImplementados}`, col1X, currentY);
-        doc.text(`En Proceso: ${controlesEnProceso}`, col1X + 100, currentY);
+        doc.text(`En Proceso: ${controlesEnProceso}`, col1X + 120, currentY);
         doc.text(`Pendientes: ${controlesPendientes}`, col2X, currentY);
-        
-        currentY += 10;
       }
-
-      // Firmas al pie
-      const footerY = pageHeight - 90;
-      const sigColWidth = contentWidth / 3;
-      
-      doc.rect(margin, footerY, contentWidth, 50).stroke('#1e7e34');
-      doc.moveTo(margin + sigColWidth, footerY).lineTo(margin + sigColWidth, footerY + 50).stroke('#1e7e34');
-      doc.moveTo(margin + sigColWidth * 2, footerY).lineTo(margin + sigColWidth * 2, footerY + 50).stroke('#1e7e34');
-
-      doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e7e34')
-        .text('ELABORÓ', margin, footerY + 6, { width: sigColWidth, align: 'center' })
-        .text('REVISÓ', margin + sigColWidth, footerY + 6, { width: sigColWidth, align: 'center' })
-        .text('APROBÓ', margin + sigColWidth * 2, footerY + 6, { width: sigColWidth, align: 'center' });
-
-      doc.fontSize(7).font('Helvetica').fillColor('#000000')
-        .text(plan.responsableElaboracion || 'Responsable SST', margin, footerY + 22, { width: sigColWidth, align: 'center' })
-        .text(plan.aprobadoPor || 'Representante Legal', margin + sigColWidth, footerY + 22, { width: sigColWidth, align: 'center' })
-        .text('Alta Dirección', margin + sigColWidth * 2, footerY + 22, { width: sigColWidth, align: 'center' });
-
-      addPageFooter(1);
 
       // ==================== PÁGINA 2: CRONOGRAMA ====================
       if (actividades.length > 0) {
         doc.addPage();
-          // Reset font after page break to maintain consistent text size
-          doc.font('Helvetica').fontSize(7).fillColor('#000000');
+        doc.font('Helvetica').fontSize(7).fillColor(PDF_COLORS.BLACK);
         
-        // Agregar encabezado en página 2
         currentY = await addStandardHeader({
           doc,
           company: {
@@ -27022,15 +26969,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           documentTitle: 'PLAN DE TRABAJO ANUAL SG-SST',
           documentCode: `SST-PTA-${plan.anio}`,
-          version: '1.0',
-          date: new Date(),
+          version: plan.version || '1.0',
+          date: new Date(plan.fechaElaboracion),
           logoBuffer: logo,
         });
-        currentY += 10;
+        currentY += 5;
 
-        doc.fontSize(12).font('Helvetica-Bold').fillColor('#1e7e34')
-          .text('CRONOGRAMA DE ACTIVIDADES', margin, currentY, { width: contentWidth, align: 'center' });
-        currentY += 30;
+        currentY = addSectionBar(doc, 'CRONOGRAMA DE ACTIVIDADES', currentY);
 
         const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
         const mesesIds = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -27040,9 +26985,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const rowHeight = 11;
         const headerHeight = 16;
 
-        // Encabezado de tabla
-        doc.rect(margin, currentY, contentWidth, headerHeight).fill('#1e7e34');
-        doc.fontSize(6).font('Helvetica-Bold').fillColor('#ffffff')
+        doc.rect(margin, currentY, contentWidth, headerHeight).fill(PDF_COLORS.GREEN_PRIMARY);
+        doc.fontSize(6).font('Helvetica-Bold').fillColor(PDF_COLORS.WHITE)
           .text('ACTIVIDAD', margin + 3, currentY + 4, { width: actColWidth - 6 });
         
         meses.forEach((mes, i) => {
@@ -27051,29 +26995,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         currentY += headerHeight;
 
-        // Filas de actividades (limitar a 45 para caber en la página)
-        const actividadesLimitadas = actividades.slice(0, 45);
-        actividadesLimitadas.forEach((actividad: any, index: number) => {
-          const bgColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
-          doc.rect(margin, currentY, contentWidth, rowHeight).fill(bgColor).stroke('#e0e0e0');
+        const maxActividades = Math.min(actividades.length, 45);
+        for (let index = 0; index < maxActividades; index++) {
+          const actividad = actividades[index] as any;
+          const bgColor = index % 2 === 0 ? PDF_COLORS.GRAY_LIGHT : PDF_COLORS.WHITE;
+          doc.rect(margin, currentY, contentWidth, rowHeight).fill(bgColor).stroke(PDF_COLORS.GRAY_BORDER);
           
           let nombreActividad = actividad.actividad || actividad.nombre || actividad.descripcion || 'Sin nombre';
-          if (nombreActividad.length > 60) {
-            nombreActividad = nombreActividad.substring(0, 57) + '...';
+          if (nombreActividad.length > 65) {
+            nombreActividad = nombreActividad.substring(0, 62) + '...';
           }
-          doc.fontSize(5.5).font('Helvetica').fillColor('#000000')
+          doc.fontSize(5.5).font('Helvetica').fillColor(PDF_COLORS.BLACK)
             .text(nombreActividad, margin + 2, currentY + 2, { width: actColWidth - 4 });
           
           const mesIndex = mesesIds.indexOf(actividad.mes);
           if (mesIndex >= 0) {
             const checkX = margin + actColWidth + mesIndex * mesColWidth + mesColWidth / 2 - 2;
-            const estadoColor = actividad.estado === 'completada' ? '#1e7e34' : 
+            const estadoColor = actividad.estado === 'completada' ? PDF_COLORS.GREEN_PRIMARY : 
                                actividad.estado === 'en-proceso' ? '#f59e0b' : '#3b82f6';
-            doc.fontSize(6).fillColor(estadoColor).text('●', checkX, currentY + 2);
+            doc.fontSize(6).fillColor(estadoColor).text('\u25CF', checkX, currentY + 2);
           }
           
           currentY += rowHeight;
-        });
+        }
 
         if (actividades.length > 45) {
           currentY += 8;
@@ -27081,21 +27025,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .text(`... y ${actividades.length - 45} actividades más`, margin, currentY);
         }
 
-        // Leyenda
-        currentY += 20;
-        doc.fontSize(7).font('Helvetica-Bold').fillColor('#000000').text('Leyenda:', margin, currentY);
-        doc.fontSize(6).font('Helvetica');
-        doc.fillColor('#3b82f6').text('●', margin + 50, currentY);
-        doc.fillColor('#000000').text(' Pendiente', margin + 58, currentY);
-        doc.fillColor('#f59e0b').text('●', margin + 110, currentY);
-        doc.fillColor('#000000').text(' En Progreso', margin + 118, currentY);
-        doc.fillColor('#1e7e34').text('●', margin + 180, currentY);
-        doc.fillColor('#000000').text(' Completada', margin + 188, currentY);
-
-        addPageFooter(2);
+        currentY += 15;
+        doc.fontSize(7).font('Helvetica-Bold').fillColor(PDF_COLORS.BLACK).text('Leyenda:', margin, currentY);
+        currentY += 12;
+        doc.fontSize(7).font('Helvetica');
+        
+        const legendItems = [
+          { color: '#3b82f6', label: 'Pendiente' },
+          { color: '#f59e0b', label: 'En Progreso' },
+          { color: PDF_COLORS.GREEN_PRIMARY, label: 'Completada' },
+        ];
+        
+        legendItems.forEach((item, i) => {
+          const legendX = margin + i * 120;
+          doc.circle(legendX + 4, currentY + 3, 3).fill(item.color);
+          doc.fillColor(PDF_COLORS.BLACK).text(item.label, legendX + 12, currentY);
+        });
       }
 
-      // Add signature footer (no LSO required for management reports)
       addSignatureFooter(doc, signers, false);
 
       doc.end();
