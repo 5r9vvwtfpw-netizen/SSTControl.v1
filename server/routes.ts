@@ -1435,7 +1435,7 @@ function hasCompanyAdminAccess(role: UserRole): boolean {
  * @returns true if user can access all medical data
  */
 function canAccessMedicalData(role: UserRole): boolean {
-  return role === 'superadmin' || role === 'admin' || role === 'coordinador_salud';
+  return role === 'superadmin' || role === 'superusuario' || role === 'admin' || role === 'coordinador_salud';
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
