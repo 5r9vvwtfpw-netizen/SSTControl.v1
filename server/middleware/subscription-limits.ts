@@ -257,8 +257,13 @@ export function checkWorkerLimit() {
           }
         }
       } else {
-        // Sin suscripción válida: usar límites por defecto del Plan Esencial
-        workerLimit = DEFAULT_ESENCIAL_LIMITS.maxWorkers;
+        // Sin suscripción válida: bloquear acceso
+        // Nadie puede operar en el sistema sin una suscripción activa o trial
+        return res.status(403).json({
+          error: "Suscripción requerida",
+          message: "No tienes una suscripción activa. Debes activar tu suscripción para registrar trabajadores.",
+          subscriptionRequired: true
+        });
       }
 
       // Si el plan permite trabajadores ilimitados, continuar
@@ -514,7 +519,17 @@ export async function canAddWorkers(companyId: string, count: number): Promise<{
       }
     }
   } else {
-    workerLimit = DEFAULT_ESENCIAL_LIMITS.maxWorkers;
+    // Sin suscripción válida: no se permite agregar trabajadores
+    const currentWorkers = await storage.getWorkers(companyId);
+    const activeWorkers = currentWorkers.filter((w: Worker) => 
+      w.status === 'activo' || w.status === 'inactivo'
+    );
+    return {
+      allowed: false,
+      currentCount: activeWorkers.length,
+      limit: 0,
+      remaining: 0
+    };
   }
   
   const currentWorkers = await storage.getWorkers(companyId);
