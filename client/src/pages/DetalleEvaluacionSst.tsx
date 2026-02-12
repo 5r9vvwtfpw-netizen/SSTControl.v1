@@ -987,6 +987,33 @@ export default function DetalleEvaluacionSst() {
         );
       })()}
 
+      {/* Banner de guía - siempre visible como punto de partida para trabajar la evaluación */}
+      <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mt-4">
+          <div className="flex items-start gap-3">
+            <Lightbulb className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                ¡Comience por su Plan de Trabajo Anual!
+              </h4>
+              <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+                Según la Resolución 0312/2019, el Plan de Trabajo Anual es el eje central para organizar todas sus actividades SST.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  size="sm" 
+                  variant="default"
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => setLocation('/planes-trabajo-anual')}
+                  data-testid="button-ir-plan-anual"
+                >
+                  <Target className="h-4 w-4 mr-2" />
+                  Ir al Plan de Trabajo Anual
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       {/* Calendario del Ministerio de Trabajo */}
       <MinisterioFechasCard compact />
       <ComplianceAlertPopup />
@@ -1104,33 +1131,6 @@ export default function DetalleEvaluacionSst() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Banner de guía - siempre visible como punto de partida para trabajar la evaluación */}
-      <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
-          <div className="flex items-start gap-3">
-            <Lightbulb className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-            <div className="flex-1">
-              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
-                ¡Comience por su Plan de Trabajo Anual!
-              </h4>
-              <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
-                Según la Resolución 0312/2019, el Plan de Trabajo Anual es el eje central para organizar todas sus actividades SST.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button 
-                  size="sm" 
-                  variant="default"
-                  className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() => setLocation('/planes-trabajo-anual')}
-                  data-testid="button-ir-plan-anual"
-                >
-                  <Target className="h-4 w-4 mr-2" />
-                  Ir al Plan de Trabajo Anual
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
 
       <Tabs value={selectedComponente || componentes[0]?.id} onValueChange={setSelectedComponente}>
         <div className="overflow-x-auto">
