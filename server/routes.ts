@@ -9777,30 +9777,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // MEDICAL EXAMS ROUTES - Exámenes Médicos Ocupacionales
   
   app.get("/api/medical-exams", requireAuth, async (req, res) => {
-    const userRole = req.user!.role;
-    const companyId = getEffectiveCompanyId(req);
-    
-    if (!companyId) {
-      return res.status(403).send("Usuario no asociado a una empresa");
-    }
-    
-    // Role-based access control for medical data (Ley 1581/2012 - Habeas Data)
-    // Only admin and coordinador_salud can view all medical exams
-    if (!canAccessMedicalData(userRole)) {
-      // If trabajador, only return their own medical exams
-      if (userRole === 'trabajador' && req.user!.workerId) {
-        const exams = await storage.getMedicalExamsByWorker(req.user!.workerId, companyId);
-        return res.json(exams);
+    try {
+      const userRole = req.user!.role;
+      const companyId = getEffectiveCompanyId(req);
+      
+      console.log(`[DEBUG-MEDICAL-EXAMS] role=${userRole} companyId=${companyId} userCompanyId=${req.user!.companyId} headerCompanyId=${req.headers['x-company-id']}`);
+      
+      if (!companyId) {
+        return res.status(403).send("Usuario no asociado a una empresa");
       }
-      // responsable_sst and other roles cannot access detailed medical data
-      return res.status(403).json({ 
-        error: "No tiene permisos para ver datos médicos. Contacte al Coordinador de Salud Ocupacional." 
-      });
+      
+      // Role-based access control for medical data (Ley 1581/2012 - Habeas Data)
+      // Only admin and coordinador_salud can view all medical exams
+      if (!canAccessMedicalData(userRole)) {
+        // If trabajador, only return their own medical exams
+        if (userRole === 'trabajador' && req.user!.workerId) {
+          const exams = await storage.getMedicalExamsByWorker(req.user!.workerId, companyId);
+          return res.json(exams);
+        }
+        // responsable_sst and other roles cannot access detailed medical data
+        return res.status(403).json({ 
+          error: "No tiene permisos para ver datos médicos. Contacte al Coordinador de Salud Ocupacional." 
+        });
+      }
+      
+      // Full access for admin/coordinador_salud/superadmin
+      const exams = await storage.getMedicalExams(companyId);
+      console.log(`[DEBUG-MEDICAL-EXAMS] Found ${exams.length} exams for company ${companyId}`);
+      res.json(exams);
+    } catch (error: any) {
+      console.error(`[ERROR-MEDICAL-EXAMS] ${error.message}`, error.stack);
+      res.status(500).json({ error: "Error interno al cargar exámenes médicos" });
     }
-    
-    // Full access for admin/coordinador_salud
-    const exams = await storage.getMedicalExams(companyId);
-    res.json(exams);
   });
 
   app.get("/api/medical-exams/:id", requireAuth, async (req, res) => {
