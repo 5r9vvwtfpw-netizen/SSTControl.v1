@@ -42,12 +42,12 @@ export const ACTIVIDADES_PLAN_TRABAJO_SST: ActividadPredefinida[] = [
     ciclo: "planear",
     programa: "identificacion-peligros",
     actividad: "Actualización de la Matriz de Identificación de Peligros, Evaluación y Valoración de Riesgos (IPERC)",
-    objetivo: "Identificar y valorar los peligros y riesgos presentes en las actividades laborales",
+    objetivo: "Identificar y valorar los peligros y riesgos presentes en las actividades laborales según metodología actualizada",
     meta: "100% de áreas de trabajo evaluadas",
     indicador: "(Áreas evaluadas / Total áreas) × 100",
     mesesSugeridos: ["agosto"],
     cargo: "COPASST",
-    baseNormativa: "Decreto 1072/2015, Art. 2.2.4.6.15; GTC-45"
+    baseNormativa: "Decreto 1072/2015, Art. 2.2.4.6.15; GTC-45; Resolución 2607/2024"
   },
   {
     ciclo: "planear",
@@ -286,12 +286,12 @@ export const ACTIVIDADES_PLAN_TRABAJO_SST: ActividadPredefinida[] = [
     ciclo: "hacer",
     programa: "medicina-preventiva",
     actividad: "Exámenes Médicos Ocupacionales Periódicos",
-    objetivo: "Realizar exámenes periódicos a todos los trabajadores",
-    meta: "100% de trabajadores con examen periódico",
+    objetivo: "Realizar exámenes periódicos a todos los trabajadores (mínimo cada 3 años; mayor frecuencia para riesgos altos)",
+    meta: "100% de trabajadores con examen periódico vigente",
     indicador: "(Trabajadores examinados / Total trabajadores) × 100",
     mesesSugeridos: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
     cargo: "Responsable SG-SST",
-    baseNormativa: "Resolución 2346/2007"
+    baseNormativa: "Resolución 2346/2007; Resolución 1843/2025"
   },
   {
     ciclo: "hacer",
@@ -340,13 +340,13 @@ export const ACTIVIDADES_PLAN_TRABAJO_SST: ActividadPredefinida[] = [
   {
     ciclo: "hacer",
     programa: "medicina-preventiva",
-    actividad: "Seguimiento de Exámenes Médicos (Ingreso, Periódicos, Retiro)",
-    objetivo: "Controlar la realización de exámenes ocupacionales",
-    meta: "100% de exámenes registrados",
+    actividad: "Seguimiento de Exámenes Médicos (Ingreso, Periódicos, Retiro, Post-incapacidad, Reincorporación)",
+    objetivo: "Controlar la realización de exámenes ocupacionales incluyendo post-incapacidad (>30 días) y reincorporación (>90 días ausencia no médica)",
+    meta: "100% de exámenes registrados y al día",
     indicador: "(Exámenes realizados / Exámenes requeridos) × 100",
     mesesSugeridos: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
     cargo: "Responsable SG-SST",
-    baseNormativa: "Resolución 2346/2007"
+    baseNormativa: "Resolución 2346/2007; Resolución 1843/2025"
   },
   {
     ciclo: "hacer",
@@ -683,12 +683,12 @@ export const ACTIVIDADES_PLAN_TRABAJO_SST: ActividadPredefinida[] = [
     ciclo: "hacer",
     programa: "medicina-preventiva",
     actividad: "Seguimiento a Restricciones y Recomendaciones Médicas Laborales",
-    objetivo: "Dar cumplimiento a las restricciones y recomendaciones emitidas por el médico ocupacional",
-    meta: "100% de restricciones con seguimiento documentado",
+    objetivo: "Dar cumplimiento a las restricciones y recomendaciones emitidas por el médico ocupacional (implementar en máximo 20 días)",
+    meta: "100% de restricciones implementadas dentro de 20 días",
     indicador: "(Restricciones cumplidas / Total restricciones) × 100",
     mesesSugeridos: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
     cargo: "Responsable SG-SST",
-    baseNormativa: "Resolución 0312/2019, Estándar 3.1.7; Decreto 1072/2015"
+    baseNormativa: "Resolución 0312/2019, Estándar 3.1.7; Decreto 1072/2015; Resolución 1843/2025"
   },
   {
     ciclo: "hacer",
@@ -721,7 +721,7 @@ export const ACTIVIDADES_PLAN_TRABAJO_SST: ActividadPredefinida[] = [
     indicador: "(Procedimientos documentados / Tareas críticas identificadas) × 100",
     mesesSugeridos: ["febrero", "marzo"],
     cargo: "Responsable SG-SST",
-    baseNormativa: "Decreto 1072/2015, Art. 2.2.4.6.24; Resolución 1409/2012; Resolución 0312/2019, Estándar 4.1.2"
+    baseNormativa: "Decreto 1072/2015, Art. 2.2.4.6.24; Resolución 4272/2021; Resolución 1409/2012; Resolución 0312/2019, Estándar 4.1.2"
   },
   {
     ciclo: "hacer",
@@ -790,10 +790,69 @@ export const ACTIVIDADES_PLAN_TRABAJO_SST: ActividadPredefinida[] = [
     mesesSugeridos: ["junio", "diciembre"],
     cargo: "Responsable SG-SST",
     baseNormativa: "Decreto 1072/2015, Art. 2.2.4.6.8; Resolución 0312/2019"
+  },
+
+  // ==================== VI. ACTIVIDADES NORMATIVA 2024-2025 (5 actividades) ====================
+  // Resolución 2607/2024, Resolución 1843/2025, Resolución 908/2025, Resolución 4272/2021
+
+  {
+    ciclo: "hacer",
+    programa: "medicina-preventiva",
+    actividad: "Exámenes Médicos Post-Incapacidad y de Reincorporación",
+    objetivo: "Realizar examen médico ocupacional tras incapacidad >30 días o ausencia no médica >90 días antes de reincorporar al trabajador",
+    meta: "100% de trabajadores reincorporados con examen médico",
+    indicador: "(Exámenes post-incapacidad realizados / Reincorporaciones requeridas) × 100",
+    mesesSugeridos: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Resolución 1843/2025, Art. 8-9"
+  },
+  {
+    ciclo: "hacer",
+    programa: "medicina-preventiva",
+    actividad: "Informe Anual de Diagnóstico de Condiciones de Salud por IPS",
+    objetivo: "Gestionar la entrega del informe anual de diagnóstico de condiciones de salud elaborado por la IPS prestadora",
+    meta: "Informe recibido en diciembre de cada año",
+    indicador: "Informe entregado por IPS (Sí/No)",
+    mesesSugeridos: ["noviembre", "diciembre"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Resolución 1843/2025, Art. 12"
+  },
+  {
+    ciclo: "hacer",
+    programa: "medicina-preventiva",
+    actividad: "Prohibición de Pruebas Discriminatorias y Control de Pruebas Restringidas",
+    objetivo: "Asegurar que no se realicen pruebas de embarazo, VIH ni serología como condición laboral, y que pruebas de alcohol/sustancias solo se apliquen a cargos con riesgo para terceros",
+    meta: "Política documentada y socializada",
+    indicador: "Política implementada (Sí/No); 0 pruebas prohibidas realizadas",
+    mesesSugeridos: ["enero"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Resolución 1843/2025, Art. 15-16"
+  },
+  {
+    ciclo: "planear",
+    programa: "identificacion-peligros",
+    actividad: "Actualización de Política SST y Objetivos según Resolución 2607/2024",
+    objetivo: "Revisar y actualizar la política y objetivos del SG-SST conforme a la nueva resolución de identificación de peligros",
+    meta: "Política y objetivos actualizados y divulgados",
+    indicador: "Política actualizada (Sí/No)",
+    mesesSugeridos: ["enero", "febrero"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Resolución 2607/2024; Decreto 1072/2015, Art. 2.2.4.6.5-6"
+  },
+  {
+    ciclo: "hacer",
+    programa: "otro",
+    actividad: "Gestión del Cambio en SST (Evaluación de Impacto de Cambios Internos y Externos)",
+    objetivo: "Evaluar el impacto sobre SST de cambios en procesos, instalaciones, maquinaria, métodos de trabajo o normatividad",
+    meta: "100% de cambios significativos con evaluación de impacto SST",
+    indicador: "(Cambios evaluados / Total cambios significativos) × 100",
+    mesesSugeridos: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Decreto 1072/2015, Art. 2.2.4.6.26; Resolución 2607/2024"
   }
 ];
 
-export const OBJETIVO_GENERAL_PLAN_TRABAJO = "Planificar, implementar, verificar y mejorar las actividades del Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST) para garantizar ambientes de trabajo seguros y saludables, cumpliendo con la normatividad colombiana vigente (Decreto 1072/2015 y Resolución 0312/2019).";
+export const OBJETIVO_GENERAL_PLAN_TRABAJO = "Planificar, implementar, verificar y mejorar las actividades del Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST) para garantizar ambientes de trabajo seguros y saludables, cumpliendo con la normatividad colombiana vigente (Decreto 1072/2015, Resolución 0312/2019, Resolución 2607/2024 y Resolución 1843/2025).";
 
 export const ALCANCE_PLAN_TRABAJO = "Este plan de trabajo aplica a todos los trabajadores directos, contratistas, subcontratistas, proveedores y visitantes que desarrollen actividades en las instalaciones de la empresa o en representación de la misma.";
 
