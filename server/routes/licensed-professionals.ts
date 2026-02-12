@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { requireAuth, requirePermission } from "../auth";
 import { db } from "../db";
 import * as schema from "@shared/schema";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import { hasPermission, hasGlobalAccess } from "@shared/permissions";
 import type { Request } from "express";
 import multer from "multer";
@@ -864,6 +864,96 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     } catch (error: any) {
       console.error('[PATCH /api/portal-licenciado/license] Error:', error.message);
       res.status(500).json({ message: "Error al actualizar datos de licencia", error: error.message });
+    }
+  });
+
+  // GET /api/portal-licenciado/pesv/evaluaciones - PESV evaluations for all assigned companies
+  app.get("/api/portal-licenciado/pesv/evaluaciones", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      
+      const assignments = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+      
+      if (assignments.length === 0) {
+        return res.json([]);
+      }
+      
+      const companyIds = assignments.map(a => a.companyId);
+      
+      const evaluaciones = await db.select({
+        id: schema.evaluacionesPesv.id,
+        companyId: schema.evaluacionesPesv.companyId,
+        companyName: schema.companies.name,
+        companyNit: schema.companies.nit,
+        anio: schema.evaluacionesPesv.anio,
+        nivel: schema.evaluacionesPesv.nivel,
+        estado: schema.evaluacionesPesv.estado,
+        puntajePlanear: schema.evaluacionesPesv.puntajePlanear,
+        puntajeHacer: schema.evaluacionesPesv.puntajeHacer,
+        puntajeVerificar: schema.evaluacionesPesv.puntajeVerificar,
+        puntajeActuar: schema.evaluacionesPesv.puntajeActuar,
+        puntajeTotal: schema.evaluacionesPesv.puntajeTotal,
+        puntajeMaximo: schema.evaluacionesPesv.puntajeMaximo,
+        porcentajeCumplimiento: schema.evaluacionesPesv.porcentajeCumplimiento,
+        numeroVehiculos: schema.evaluacionesPesv.numeroVehiculos,
+        numeroConductores: schema.evaluacionesPesv.numeroConductores,
+        responsableNombre: schema.evaluacionesPesv.responsableNombre,
+        responsableCargo: schema.evaluacionesPesv.responsableCargo,
+        observaciones: schema.evaluacionesPesv.observaciones,
+        createdAt: schema.evaluacionesPesv.createdAt,
+        updatedAt: schema.evaluacionesPesv.updatedAt,
+      })
+      .from(schema.evaluacionesPesv)
+      .innerJoin(schema.companies, eq(schema.evaluacionesPesv.companyId, schema.companies.id))
+      .where(inArray(schema.evaluacionesPesv.companyId, companyIds))
+      .orderBy(desc(schema.evaluacionesPesv.anio), desc(schema.evaluacionesPesv.createdAt));
+      
+      res.json(evaluaciones);
+    } catch (error: any) {
+      console.error('[GET /api/portal-licenciado/pesv/evaluaciones] Error:', error.message);
+      res.status(500).json({ message: "Error al obtener evaluaciones PESV", error: error.message });
+    }
+  });
+
+  // GET /api/portal-licenciado/pesv/evaluaciones/:id/respuestas - PESV step responses for a specific evaluation
+  app.get("/api/portal-licenciado/pesv/evaluaciones/:id/respuestas", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const evaluacionId = req.params.id;
+      
+      const [evaluacion] = await db.select()
+        .from(schema.evaluacionesPesv)
+        .where(eq(schema.evaluacionesPesv.id, evaluacionId));
+      
+      if (!evaluacion) {
+        return res.status(404).json({ message: "Evaluación PESV no encontrada" });
+      }
+      
+      const hasAccess = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.companyId, evaluacion.companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+      
+      if (hasAccess.length === 0) {
+        return res.status(403).json({ message: "No tiene acceso a esta evaluación" });
+      }
+      
+      const respuestas = await db.select()
+        .from(schema.respuestasPasosPesv)
+        .where(eq(schema.respuestasPasosPesv.evaluacionId, evaluacionId));
+      
+      res.json(respuestas);
+    } catch (error: any) {
+      console.error('[GET /api/portal-licenciado/pesv/evaluaciones/:id/respuestas] Error:', error.message);
+      res.status(500).json({ message: "Error al obtener respuestas PESV", error: error.message });
     }
   });
 

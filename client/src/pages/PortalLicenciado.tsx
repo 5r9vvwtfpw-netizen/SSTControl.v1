@@ -47,7 +47,12 @@ import {
   XCircle,
   Upload,
   Loader2,
-  Pencil
+  Pencil,
+  Car,
+  ChevronDown,
+  ChevronRight,
+  Eye,
+  BarChart3
 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -144,7 +149,7 @@ export default function PortalLicenciado() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="dashboard" data-testid="tab-dashboard">
             <Building2 className="h-4 w-4 mr-2" />
             Panel
@@ -156,6 +161,10 @@ export default function PortalLicenciado() {
           <TabsTrigger value="documentos" data-testid="tab-documentos">
             <FileCheck className="h-4 w-4 mr-2" />
             Documentos
+          </TabsTrigger>
+          <TabsTrigger value="pesv" data-testid="tab-pesv-auditoria">
+            <Car className="h-4 w-4 mr-2" />
+            PESV
           </TabsTrigger>
           <TabsTrigger value="licencia" data-testid="tab-licencia">
             <Award className="h-4 w-4 mr-2" />
@@ -173,6 +182,10 @@ export default function PortalLicenciado() {
 
         <TabsContent value="documentos" className="mt-6">
           <DocumentosTab />
+        </TabsContent>
+
+        <TabsContent value="pesv" className="mt-6">
+          <PesvAuditoriaTab />
         </TabsContent>
 
         <TabsContent value="licencia" className="mt-6">
@@ -549,6 +562,277 @@ function DocumentosTab() {
         </Table>
       </CardContent>
     </Card>
+  );
+}
+
+interface PesvEvaluacion {
+  id: string;
+  companyId: string;
+  companyName: string;
+  companyNit: string;
+  anio: number;
+  nivel: string;
+  estado: string;
+  puntajePlanear: number | null;
+  puntajeHacer: number | null;
+  puntajeVerificar: number | null;
+  puntajeActuar: number | null;
+  puntajeTotal: number | null;
+  puntajeMaximo: number | null;
+  porcentajeCumplimiento: number | null;
+  numeroVehiculos: number | null;
+  numeroConductores: number | null;
+  responsableNombre: string | null;
+  responsableCargo: string | null;
+  observaciones: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+interface RespuestaPesv {
+  id: string;
+  evaluacionId: string;
+  pasoId: string;
+  cumple: number | null;
+  noAplica: number | null;
+  justificacionNa: string | null;
+  modoVerificacion: string | null;
+  evidencias: string | null;
+  observaciones: string | null;
+  hallazgo: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+const PESV_NIVEL_LABELS: Record<string, string> = {
+  basico: "Basico",
+  estandar: "Estandar",
+  avanzado: "Avanzado",
+};
+
+const PESV_ESTADO_LABELS: Record<string, string> = {
+  "en-progreso": "En Progreso",
+  en_progreso: "En Progreso",
+  completada: "Completada",
+  cerrada: "Cerrada",
+};
+
+const PESV_FASES = [
+  { key: "planear", label: "Planear", color: "bg-blue-500" },
+  { key: "hacer", label: "Hacer", color: "bg-green-500" },
+  { key: "verificar", label: "Verificar", color: "bg-amber-500" },
+  { key: "actuar", label: "Actuar", color: "bg-purple-500" },
+];
+
+const PESV_PASOS_NAMES: Record<string, { nombre: string; fase: string }> = {
+  P01: { nombre: "Conformacion del equipo de trabajo", fase: "planear" },
+  P02: { nombre: "Politica de seguridad vial", fase: "planear" },
+  P03: { nombre: "Diagnostico / Caracterizacion", fase: "planear" },
+  P04: { nombre: "Clasificacion del riesgo", fase: "planear" },
+  P05: { nombre: "Objetivos y metas", fase: "planear" },
+  P06: { nombre: "Plan anual de trabajo", fase: "planear" },
+  P07: { nombre: "Indicadores de gestion", fase: "planear" },
+  P08: { nombre: "Presupuesto", fase: "planear" },
+  H01: { nombre: "Competencia de conductores", fase: "hacer" },
+  H02: { nombre: "Infraestructura segura", fase: "hacer" },
+  H03: { nombre: "Vehiculos seguros", fase: "hacer" },
+  H04: { nombre: "Atencion a victimas", fase: "hacer" },
+  H05: { nombre: "Comportamientos seguros", fase: "hacer" },
+  H06: { nombre: "Velocidad segura", fase: "hacer" },
+  H07: { nombre: "Rutas seguras y desplazamientos", fase: "hacer" },
+  H08: { nombre: "Registro y analisis de siniestros", fase: "hacer" },
+  H09: { nombre: "Investigacion de siniestros", fase: "hacer" },
+  H10: { nombre: "Capacitacion y sensibilizacion", fase: "hacer" },
+  H11: { nombre: "Planes de accion de riesgos viales", fase: "hacer" },
+  V01: { nombre: "Seguimiento y medicion", fase: "verificar" },
+  V02: { nombre: "Auditorias internas", fase: "verificar" },
+  V03: { nombre: "Revision por la alta direccion", fase: "verificar" },
+  A01: { nombre: "Mejora continua", fase: "actuar" },
+  A02: { nombre: "Acciones correctivas y preventivas", fase: "actuar" },
+};
+
+function PesvAuditoriaTab() {
+  const [expandedEval, setExpandedEval] = useState<string | null>(null);
+
+  const { data: evaluaciones, isLoading } = useQuery<PesvEvaluacion[]>({
+    queryKey: ["/api/portal-licenciado/pesv/evaluaciones"],
+  });
+
+  const { data: respuestas, isLoading: loadingRespuestas } = useQuery<RespuestaPesv[]>({
+    queryKey: ["/api/portal-licenciado/pesv/evaluaciones", expandedEval, "respuestas"],
+    enabled: !!expandedEval,
+    queryFn: async () => {
+      const res = await fetch(`/api/portal-licenciado/pesv/evaluaciones/${expandedEval}/respuestas`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error al obtener respuestas");
+      return res.json();
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-40 w-full" />
+      </div>
+    );
+  }
+
+  if (!evaluaciones || evaluaciones.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center">
+          <Car className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <p className="text-muted-foreground">
+            No hay evaluaciones PESV disponibles para sus empresas asignadas.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const toggleExpand = (evalId: string) => {
+    setExpandedEval(prev => prev === evalId ? null : evalId);
+  };
+
+  const getCumpleBadge = (cumple: number | null, noAplica: number | null) => {
+    if (noAplica === 1) return <Badge variant="secondary">N/A</Badge>;
+    if (cumple === null) return <Badge variant="outline">Sin evaluar</Badge>;
+    if (cumple === 1) return <Badge className="bg-green-600 text-white">Cumple</Badge>;
+    return <Badge variant="destructive">No Cumple</Badge>;
+  };
+
+  const getProgressColor = (pct: number | null) => {
+    if (pct === null) return "bg-muted";
+    if (pct >= 80) return "bg-green-500";
+    if (pct >= 50) return "bg-amber-500";
+    return "bg-red-500";
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-2">
+        <BarChart3 className="h-5 w-5 text-muted-foreground" />
+        <h2 className="text-lg font-semibold">Evaluaciones PESV - Empresas Asignadas</h2>
+        <Badge variant="secondary">{evaluaciones.length}</Badge>
+      </div>
+
+      {evaluaciones.map((ev) => {
+        const isExpanded = expandedEval === ev.id;
+        const pct = ev.porcentajeCumplimiento ?? 0;
+
+        return (
+          <Card key={ev.id} data-testid={`card-pesv-eval-${ev.id}`}>
+            <CardHeader
+              className="cursor-pointer flex flex-row items-center justify-between gap-4 pb-3"
+              onClick={() => toggleExpand(ev.id)}
+              data-testid={`button-expand-eval-${ev.id}`}
+            >
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <CardTitle className="text-base">{ev.companyName}</CardTitle>
+                  <Badge variant="outline">{ev.companyNit}</Badge>
+                  <Badge variant="secondary">{PESV_NIVEL_LABELS[ev.nivel] || ev.nivel}</Badge>
+                  <Badge variant={ev.estado === "completada" ? "default" : "outline"}>
+                    {PESV_ESTADO_LABELS[ev.estado] || ev.estado}
+                  </Badge>
+                </div>
+                <CardDescription>
+                  Periodo {ev.anio} {ev.numeroVehiculos != null ? `| ${ev.numeroVehiculos} vehiculos` : ""} {ev.numeroConductores != null ? `| ${ev.numeroConductores} conductores` : ""}
+                </CardDescription>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="text-right min-w-[80px]">
+                  <div className="text-lg font-bold">{pct}%</div>
+                  <div className="text-xs text-muted-foreground">
+                    {ev.puntajeTotal ?? 0}/{ev.puntajeMaximo ?? 0} pts
+                  </div>
+                </div>
+                <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${getProgressColor(pct)}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                {isExpanded ? <ChevronDown className="h-5 w-5 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 text-muted-foreground" />}
+              </div>
+            </CardHeader>
+
+            {isExpanded && (
+              <CardContent className="pt-0 space-y-4">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  {PESV_FASES.map((fase) => {
+                    const key = `puntaje${fase.key.charAt(0).toUpperCase() + fase.key.slice(1)}` as keyof PesvEvaluacion;
+                    const puntaje = (ev[key] as number | null) ?? 0;
+                    return (
+                      <div key={fase.key} className="text-center" data-testid={`text-pesv-fase-${fase.key}`}>
+                        <div className={`text-xs font-medium mb-1`}>{fase.label}</div>
+                        <div className="text-lg font-bold">{puntaje}</div>
+                        <div className={`h-1 rounded-full mt-1 ${fase.color} opacity-70`} />
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {ev.responsableNombre && (
+                  <div className="text-sm text-muted-foreground">
+                    Responsable: <span className="font-medium text-foreground">{ev.responsableNombre}</span>
+                    {ev.responsableCargo && ` - ${ev.responsableCargo}`}
+                  </div>
+                )}
+
+                {loadingRespuestas ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-6 w-full" />
+                    <Skeleton className="h-6 w-full" />
+                    <Skeleton className="h-6 w-full" />
+                  </div>
+                ) : respuestas && respuestas.length > 0 ? (
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2">Detalle por Paso</h4>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[80px]">Paso</TableHead>
+                          <TableHead>Nombre</TableHead>
+                          <TableHead className="w-[100px]">Estado</TableHead>
+                          <TableHead className="w-[80px] text-right">Resultado</TableHead>
+                          <TableHead>Observaciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {respuestas
+                          .sort((a, b) => (a.pasoId || "").localeCompare(b.pasoId || ""))
+                          .map((r) => (
+                            <TableRow key={r.id} data-testid={`row-pesv-respuesta-${r.pasoId}`}>
+                              <TableCell className="font-mono font-medium">{r.pasoId}</TableCell>
+                              <TableCell className="text-sm">
+                                {PESV_PASOS_NAMES[r.pasoId]?.nombre || r.pasoId}
+                              </TableCell>
+                              <TableCell>{getCumpleBadge(r.cumple, r.noAplica)}</TableCell>
+                              <TableCell className="text-right font-medium">
+                                {r.cumple === 1 ? "Si" : r.noAplica === 1 ? "N/A" : "No"}
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                                {r.observaciones || r.hallazgo || "-"}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No hay respuestas registradas para esta evaluacion.
+                  </p>
+                )}
+              </CardContent>
+            )}
+          </Card>
+        );
+      })}
+    </div>
   );
 }
 
