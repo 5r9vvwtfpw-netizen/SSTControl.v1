@@ -11,8 +11,8 @@ router.post("/check-in", async (req: Request, res: Response) => {
   }
 
   try {
-    const { email } = req.body || {};
-    const result = await checkIn(email);
+    const { email, prospectEmail } = req.body || {};
+    const result = await checkIn(email || prospectEmail);
     return res.json(result);
   } catch (error: any) {
     if (error.message === "NO_ROOMS_AVAILABLE") {

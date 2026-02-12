@@ -61,6 +61,7 @@ AWS_RDS_PORT = "5432"
 AWS_RDS_USER = "postgres"
 AWS_RDS_DATABASE = "postgres"
 JWT_RECALCULATE_SECRET = "CQcG2mZNrdM4JZ8rDqGpTgV4IUGChqUFgl6qgo9Ga/Pf+kHivJydldC+ThZclPNg"
+ENABLE_DEMO_MODE = "true"
 
 [userenv.development]
 AUTO_VERIFY_EMAIL = "true"

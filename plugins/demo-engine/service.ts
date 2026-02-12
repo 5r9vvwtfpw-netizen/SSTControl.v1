@@ -26,20 +26,15 @@ const TABLES_TO_CLONE = [
 
 const CHILD_TABLES_TO_CLONE = [
   { table: "sst_evaluation_items", parentTable: "sst_evaluations", parentKey: "evaluation_id" },
-  { table: "actividad_plan_trabajo", parentTable: "planes_trabajo_anual", parentKey: "plan_trabajo_id" },
 ];
 
-const ALL_DEMO_TABLES_TO_WIPE = [
-  "sst_evidence",
-  "sst_evaluation_items",
+const TABLES_WITH_COMPANY_ID_TO_WIPE = [
   "sst_evaluations",
-  "actividad_plan_trabajo",
   "planes_trabajo_anual",
   "medical_exams",
   "health_conditions",
   "accidents",
   "trainings",
-  "training_attendees",
   "inspections",
   "preventive_measures",
   "occupational_diseases",
@@ -50,6 +45,12 @@ const ALL_DEMO_TABLES_TO_WIPE = [
   "job_profiles",
   "politicas_sst",
   "workers",
+];
+
+const CHILD_TABLES_TO_WIPE = [
+  { table: "sst_evidence", parentTable: "sst_evaluation_items", parentKey: "evaluation_item_id", grandParentTable: "sst_evaluations", grandParentKey: "evaluation_id" },
+  { table: "sst_evaluation_items", parentTable: "sst_evaluations", parentKey: "evaluation_id" },
+  { table: "training_attendees", parentTable: "trainings", parentKey: "training_id" },
 ];
 
 function getNextExpiry(): Date {
@@ -104,7 +105,25 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
   logger.info(`[DemoEngine] Resetting company ${targetCompanyId} from Golden Master ${GOLDEN_MASTER_COMPANY_ID}`);
 
   await db.transaction(async (tx) => {
-    for (const table of ALL_DEMO_TABLES_TO_WIPE) {
+    for (const child of CHILD_TABLES_TO_WIPE) {
+      if ('grandParentTable' in child && child.grandParentTable) {
+        await tx.execute(sql.raw(
+          `DELETE FROM "${child.table}" WHERE "${child.parentKey}" IN (
+            SELECT id FROM "${child.parentTable}" WHERE "${(child as any).grandParentKey}" IN (
+              SELECT id FROM "${child.grandParentTable}" WHERE company_id = '${targetCompanyId}'
+            )
+          )`
+        ));
+      } else {
+        await tx.execute(sql.raw(
+          `DELETE FROM "${child.table}" WHERE "${child.parentKey}" IN (
+            SELECT id FROM "${child.parentTable}" WHERE company_id = '${targetCompanyId}'
+          )`
+        ));
+      }
+    }
+
+    for (const table of TABLES_WITH_COMPANY_ID_TO_WIPE) {
       await tx.execute(sql.raw(
         `DELETE FROM "${table}" WHERE company_id = '${targetCompanyId}'`
       ));
@@ -117,7 +136,8 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
     const masterResult = await tx.execute(sql.raw(
       `SELECT * FROM companies WHERE id = '${GOLDEN_MASTER_COMPANY_ID}'`
     ));
-    const masterCompany = (masterResult as any)[0];
+    const masterRows = (masterResult as any).rows || masterResult;
+    const masterCompany = masterRows[0];
 
     if (!masterCompany) {
       throw new Error(`[DemoEngine] Golden Master company ${GOLDEN_MASTER_COMPANY_ID} not found`);
@@ -126,7 +146,8 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
     const existingResult = await tx.execute(sql.raw(
       `SELECT id FROM companies WHERE id = '${targetCompanyId}'`
     ));
-    const existingTarget = (existingResult as any)[0];
+    const existingRows = (existingResult as any).rows || existingResult;
+    const existingTarget = existingRows[0];
 
     if (existingTarget) {
       await tx.execute(sql.raw(`
@@ -160,11 +181,27 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
       `));
     }
 
+    const workerOverrides: Record<string, string> = {
+      id: "gen_random_uuid() as id",
+      company_id: `'${targetCompanyId}' as company_id`,
+      identification_number: "gen_random_uuid()||'-'||substring(md5(random()::text),1,6) as identification_number",
+      email: "gen_random_uuid()||'@demo.sst.co' as email",
+      contract_number: "gen_random_uuid()||'-C' as contract_number",
+    };
+
+    const defaultOverrides: Record<string, string> = {
+      id: "gen_random_uuid() as id",
+      company_id: `'${targetCompanyId}' as company_id`,
+    };
+
     for (const table of TABLES_TO_CLONE) {
-      const hasIdColumn = true;
+      const columns = await getTableColumns(tx, table);
+      const overrides = table === "workers" ? workerOverrides : defaultOverrides;
+      const selectCols = buildCloneSelect(columns, [], overrides);
+      
       await tx.execute(sql.raw(`
-        INSERT INTO "${table}" 
-        SELECT gen_random_uuid() as id, '${targetCompanyId}' as company_id, ${getColumnsExceptIdAndCompany(table)}
+        INSERT INTO "${table}" (${columns.map(c => `"${c}"`).join(", ")})
+        SELECT ${selectCols}
         FROM "${table}" 
         WHERE company_id = '${GOLDEN_MASTER_COMPANY_ID}'
       `));
@@ -180,17 +217,23 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
         LIMIT 1
       `));
 
-      if ((parentIdMap as any).length > 0) {
-        const oldParentId = (parentIdMap as any)[0].old_id;
-        const newParentId = (parentIdMap as any)[0].new_id;
+      const parentIdRows = (parentIdMap as any).rows || parentIdMap;
+      if (parentIdRows.length > 0) {
+        const oldParentId = parentIdRows[0].old_id;
+        const newParentId = parentIdRows[0].new_id;
+
+        const childColumns = await getTableColumns(tx, child.table);
+        const childOverrides: Record<string, string> = {
+          id: "gen_random_uuid() as id",
+          [child.parentKey]: `'${newParentId}' as "${child.parentKey}"`,
+        };
+        const childSelectCols = buildCloneSelect(childColumns, [], childOverrides);
 
         await tx.execute(sql.raw(`
-          INSERT INTO "${child.table}"
-          SELECT gen_random_uuid() as id, 
-                 '${newParentId}' as ${child.parentKey},
-                 ${getChildColumnsExcept(child.table, child.parentKey)}
+          INSERT INTO "${child.table}" (${childColumns.map(c => `"${c}"`).join(", ")})
+          SELECT ${childSelectCols}
           FROM "${child.table}"
-          WHERE ${child.parentKey} = '${oldParentId}'
+          WHERE "${child.parentKey}" = '${oldParentId}'
         `));
       }
     }
@@ -199,78 +242,21 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
   logger.info(`[DemoEngine] Company ${targetCompanyId} reset complete`);
 }
 
-function getColumnsExceptIdAndCompany(table: string): string {
-  const columnMaps: Record<string, string[]> = {
-    workers: [
-      "gen_random_uuid()||'-'||substring(md5(random()::text),1,6) as identification_number",
-      "name", "gen_random_uuid()||'@demo.sst.co' as email", "position", "department",
-      "contract_type", "gen_random_uuid()||'-C' as contract_number",
-      "start_date", "end_date", "status", "job_profile_id",
-      "gender", "birth_date", "education_level", "civil_status",
-      "eps_nombre", "arl_nombre", "afp_nombre", "ccf_nombre",
-      "photo_url", "created_at",
-    ],
-    job_profiles: [
-      "name", "description", "risk_level", "physical_requirements",
-      "mental_requirements", "required_ppe", "required_exams",
-      "created_at",
-    ],
-    responsible_designations: [
-      "worker_id", "designation_type", "designation_date", "document_url",
-      "observations", "status", "is_external_lso", "external_lso_name",
-      "external_lso_identification_number", "licencia_sst_titular",
-      "licencia_sst_numero", "licencia_sst_vigencia", "curso_50_horas",
-      "curso_50_horas_fecha", "created_at",
-    ],
-    resource_allocations: [
-      "period_year", "resource_type", "description", "planned_budget",
-      "executed_budget", "status", "evidence_url", "observations", "created_at",
-    ],
-    sst_evaluations: [
-      "standard_type", "title", "description", "evaluation_date",
-      "evaluator", "total_score", "max_total_score", "compliance_percentage",
-      "status", "observations", "elaborado_por_id", "autorizado_por_id",
-      "aprobado_por_id", "created_at",
-    ],
-    politicas_sst: [
-      "titulo", "contenido", "fecha_aprobacion", "fecha_revision",
-      "version", "estado", "aprobado_por", "revisado_por",
-      "documento_url", "firma_representante_legal", "firma_responsable_sst",
-      "created_at",
-    ],
-    planes_trabajo_anual: [
-      "year", "title", "description", "status", "porcentaje_avance",
-      "created_at",
-    ],
-    afiliaciones_ssss: [
-      "worker_id", "tipo_afiliacion", "entidad_nombre", "numero_afiliacion",
-      "fecha_afiliacion", "fecha_vencimiento", "estado", "documento_url",
-      "observations", "created_at",
-    ],
-  };
-
-  const cols = columnMaps[table];
-  if (!cols) {
-    return "*";
-  }
-  return cols.join(", ");
+async function getTableColumns(tx: any, tableName: string): Promise<string[]> {
+  const result = await tx.execute(sql.raw(`
+    SELECT column_name FROM information_schema.columns 
+    WHERE table_name = '${tableName}' AND table_schema = 'public'
+    ORDER BY ordinal_position
+  `));
+  const rows = (result as any).rows || result;
+  return rows.map((r: any) => r.column_name);
 }
 
-function getChildColumnsExcept(table: string, parentKey: string): string {
-  const columnMaps: Record<string, string[]> = {
-    sst_evaluation_items: [
-      "item_id", "score", "observations", "evidence_url", "created_at",
-    ],
-    actividad_plan_trabajo: [
-      "estandar_id", "nombre_actividad", "descripcion", "responsable",
-      "fecha_inicio", "fecha_fin", "mes_programado", "estado",
-      "porcentaje_avance", "evidencia_url", "observaciones", "created_at",
-    ],
-  };
-
-  const cols = columnMaps[table];
-  if (!cols) return "*";
-  return cols.join(", ");
+function buildCloneSelect(columns: string[], excludeCols: string[], overrides: Record<string, string>): string {
+  return columns
+    .filter(c => !excludeCols.includes(c))
+    .map(c => overrides[c] || `"${c}"`)
+    .join(", ");
 }
 
 export async function checkIn(prospectEmail?: string): Promise<CheckInResponse> {
@@ -291,7 +277,8 @@ export async function checkIn(prospectEmail?: string): Promise<CheckInResponse> 
       LIMIT 1
     `));
 
-    const room = (rooms as any)[0];
+    const roomRows = (rooms as any).rows || rooms;
+    const room = roomRows[0];
     if (!room) {
       return null;
     }
@@ -350,8 +337,9 @@ export async function checkIn(prospectEmail?: string): Promise<CheckInResponse> 
     const subscriptionCheck = await db.execute(sql.raw(
       `SELECT id FROM pricing_plugin_subscriptions WHERE customer_id = '${result.companyId}' LIMIT 1`
     ));
+    const subRows = (subscriptionCheck as any).rows || subscriptionCheck;
 
-    if ((subscriptionCheck as any).length === 0) {
+    if (subRows.length === 0) {
       await db.execute(sql.raw(`
         INSERT INTO pricing_plugin_subscriptions 
           (id, customer_id, employee_count, tier, monthly_cost, price_per_license, minimum_fee, status, subscription_status, trial_ends_at)
@@ -423,7 +411,9 @@ export async function runHousekeeping(): Promise<{ resetCount: number; errorCoun
     ORDER BY room_id
   `));
 
-  const roomsToReset = [...(expiredRooms as any), ...(errorRooms as any)];
+  const expiredRows = (expiredRooms as any).rows || expiredRooms;
+  const errorRows = (errorRooms as any).rows || errorRooms;
+  const roomsToReset = [...expiredRows, ...errorRows];
   let resetCount = 0;
   let errorCount = 0;
 
@@ -478,5 +468,5 @@ export async function getDemoRoomStatus(): Promise<any[]> {
     `SELECT room_id, company_id, demo_username, status, assigned_prospect_email, expires_at, last_reset_at, error_message, updated_at
      FROM demo_room_bookings ORDER BY room_id`
   ));
-  return rooms as any;
+  return (rooms as any).rows || rooms;
 }
