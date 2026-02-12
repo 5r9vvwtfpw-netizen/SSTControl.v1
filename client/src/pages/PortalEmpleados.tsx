@@ -1237,6 +1237,16 @@ function MiContratoTab() {
           </div>
 
           <div className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground">Cargo</p>
+            <p className="text-base">{contract.position || "No especificado"}</p>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground">Departamento</p>
+            <p className="text-base">{contract.department || "No especificado"}</p>
+          </div>
+
+          <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Jornada Laboral</p>
             <p className="text-base">{contract.workSchedule || "No especificado"}</p>
           </div>
