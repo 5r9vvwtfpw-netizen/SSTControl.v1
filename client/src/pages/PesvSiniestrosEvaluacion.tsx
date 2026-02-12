@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -211,20 +211,20 @@ export default function PesvSiniestrosEvaluacion() {
             <AlertTriangle className="h-5 w-5 text-destructive" />
             <CardTitle>Siniestros Viales</CardTitle>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={handleDialogOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="button-create-incident">
-                <Plus className="h-4 w-4 mr-2" />
-                Registrar Siniestro
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Registrar Siniestro Vial</DialogTitle>
-                <DialogDescription>
-                  Complete los datos del siniestro vial
-                </DialogDescription>
-              </DialogHeader>
+          {!dialogOpen && (
+            <Button data-testid="button-create-incident" onClick={() => handleDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Registrar Siniestro
+            </Button>
+          )}
+        </CardHeader>
+        {dialogOpen && (
+          <CardContent>
+            <div className="border rounded-md p-4 mb-4 bg-muted/30">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-base">Registrar Siniestro Vial</h3>
+                <p className="text-sm text-muted-foreground">Complete los datos del siniestro vial</p>
+              </div>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -396,18 +396,18 @@ export default function PesvSiniestrosEvaluacion() {
                     data-testid="textarea-description"
                   />
                 </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>
                     Cancelar
                   </Button>
                   <Button type="submit" disabled={createIncidentMutation.isPending} data-testid="button-submit-incident">
                     {createIncidentMutation.isPending ? "Guardando..." : "Guardar"}
                   </Button>
-                </DialogFooter>
+                </div>
               </form>
-            </DialogContent>
-          </Dialog>
-        </CardHeader>
+            </div>
+          </CardContent>
+        )}
         <CardContent>
           {isLoading ? (
             <div className="space-y-2">
