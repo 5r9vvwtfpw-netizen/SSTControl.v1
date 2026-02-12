@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Plus, Search, Eye, Trash2, ArrowLeft, FileDown } from "lucide-react";
+import { Plus, Search, Eye, Trash2, ArrowLeft, FileDown, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { PesvAudit, insertPesvAuditSchema } from "@shared/schema";
@@ -63,10 +64,10 @@ type AuditFormData = {
 };
 
 const initialFormData: AuditFormData = {
-  auditDate: "",
+  auditDate: new Date().toISOString().split('T')[0],
   auditor: "",
   auditorEntity: "",
-  scope: "",
+  scope: "Auditoría anual del Plan Estratégico de Seguridad Vial (PESV) según Resolución 40595/2022. Evaluación integral de los 24 pasos del ciclo PHVA.",
   step1Leader: 0,
   step2Committee: 0,
   step3Policy: 0,
@@ -165,15 +166,20 @@ export default function PesvAuditorias() {
     const total = allSteps.reduce((a, b) => a + b, 0);
     const avgAll = Math.round(total / allSteps.length);
 
+    let autoResult: "cumple" | "cumple-parcialmente" | "no-cumple" = "no-cumple";
+    if (avgAll >= 80) autoResult = "cumple";
+    else if (avgAll >= 50) autoResult = "cumple-parcialmente";
+
     setFormData(prev => ({
       ...prev,
       policyCompliance: avgPlanear,
-      planningCompliance: avgPlanear, // Same as policy for consistency
+      planningCompliance: avgPlanear,
       implementationCompliance: avgHacer,
       verificationCompliance: avgVerificar,
       improvementCompliance: avgActuar,
       totalScore: total,
       compliancePercentage: avgAll,
+      result: autoResult,
     }));
   }, [
     formData.step1Leader, formData.step2Committee, formData.step3Policy, formData.step4Leadership,
@@ -285,21 +291,49 @@ export default function PesvAuditorias() {
     return audit.auditor.toLowerCase().includes(searchLower);
   });
 
+  const scoreOptions = [0, 25, 50, 75, 100];
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "text-green-700 dark:text-green-400";
+    if (score >= 50) return "text-yellow-700 dark:text-yellow-400";
+    if (score > 0) return "text-red-700 dark:text-red-400";
+    return "text-muted-foreground";
+  };
+
+  const applyScoreToGroup = (steps: (keyof AuditFormData)[], score: number) => {
+    setFormData(prev => {
+      const updated = { ...prev };
+      steps.forEach(s => { (updated as any)[s] = score; });
+      return updated;
+    });
+  };
+
+  const planearSteps: (keyof AuditFormData)[] = ["step1Leader", "step2Committee", "step3Policy", "step4Leadership", "step5Diagnosis", "step6RiskAssessment", "step7Objectives", "step8CriticalRisks"];
+  const hacerSteps: (keyof AuditFormData)[] = ["step9AnnualPlan", "step10Training", "step11Fatigue", "step12Emergency", "step13Investigation", "step14SafeRoads", "step15DriverSelection", "step16VehicleInspection", "step17Maintenance", "step18ChangeManagement", "step19Procurement"];
+  const verificarSteps: (keyof AuditFormData)[] = ["step20Indicators", "step21Supervision", "step22Audit"];
+  const actuarSteps: (keyof AuditFormData)[] = ["step23Improvement", "step24Communication"];
+
   const StepInput = ({ step, label, value }: { step: keyof AuditFormData; label: string; value: number }) => (
-    <div className="space-y-2">
-      <Label htmlFor={step} className="text-sm">{label}</Label>
-      <Input
-        id={step}
-        type="number"
-        min="0"
-        max="100"
-        value={value === 0 ? '' : value}
-        onChange={(e) => updateStep(step, e.target.value === '' ? '' as any : parseInt(e.target.value, 10))}
-        onBlur={(e) => { if (e.target.value === '') updateStep(step, 0); }}
-        required
-        className="h-9"
-        data-testid={`input-${step}`}
-      />
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={step} className="text-sm leading-tight">{label}</Label>
+        <span className={`text-sm font-bold tabular-nums ${getScoreColor(value)}`} data-testid={`text-score-${step}`}>{value}%</span>
+      </div>
+      <div className="flex gap-1">
+        {scoreOptions.map(s => (
+          <Button
+            key={s}
+            type="button"
+            size="sm"
+            variant={value === s ? "default" : "outline"}
+            className="flex-1 text-xs tabular-nums"
+            onClick={() => updateStep(step, s)}
+            data-testid={`button-score-${step}-${s}`}
+          >
+            {s}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 
@@ -421,13 +455,24 @@ export default function PesvAuditorias() {
                     <p className="text-xs text-muted-foreground">Calificación 0-100 para cada paso</p>
                   </div>
 
-                  <Accordion type="multiple" className="w-full">
+                  <Accordion type="multiple" defaultValue={["planear"]} className="w-full">
                     <AccordionItem value="planear">
                       <AccordionTrigger className="text-sm font-semibold">
-                        1. PLANEAR (8 pasos) - Promedio: {formData.policyCompliance}%
+                        <span className="flex items-center gap-2">
+                          1. PLANEAR (8 pasos)
+                          <Badge variant="secondary" className="text-xs">{formData.policyCompliance}%</Badge>
+                        </span>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <div className="grid grid-cols-2 gap-4 pt-4">
+                        <div className="flex flex-wrap items-center gap-1 mb-3 pt-2">
+                          <span className="text-xs text-muted-foreground mr-1">Aplicar a todos:</span>
+                          {scoreOptions.map(s => (
+                            <Button key={s} type="button" size="sm" variant="outline" className="text-xs" onClick={() => applyScoreToGroup(planearSteps, s)} data-testid={`button-bulk-planear-${s}`}>
+                              <Zap className="h-3 w-3 mr-1" />{s}
+                            </Button>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
                           <StepInput step="step1Leader" label="Paso 1: Líder del PESV" value={formData.step1Leader} />
                           <StepInput step="step2Committee" label="Paso 2: Comité de Seguridad Vial" value={formData.step2Committee} />
                           <StepInput step="step3Policy" label="Paso 3: Política de Seguridad Vial" value={formData.step3Policy} />
@@ -442,10 +487,21 @@ export default function PesvAuditorias() {
 
                     <AccordionItem value="hacer">
                       <AccordionTrigger className="text-sm font-semibold">
-                        2. HACER (11 pasos) - Promedio: {formData.implementationCompliance}%
+                        <span className="flex items-center gap-2">
+                          2. HACER (11 pasos)
+                          <Badge variant="secondary" className="text-xs">{formData.implementationCompliance}%</Badge>
+                        </span>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <div className="grid grid-cols-2 gap-4 pt-4">
+                        <div className="flex flex-wrap items-center gap-1 mb-3 pt-2">
+                          <span className="text-xs text-muted-foreground mr-1">Aplicar a todos:</span>
+                          {scoreOptions.map(s => (
+                            <Button key={s} type="button" size="sm" variant="outline" className="text-xs" onClick={() => applyScoreToGroup(hacerSteps, s)} data-testid={`button-bulk-hacer-${s}`}>
+                              <Zap className="h-3 w-3 mr-1" />{s}
+                            </Button>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
                           <StepInput step="step9AnnualPlan" label="Paso 9: Plan anual de trabajo" value={formData.step9AnnualPlan} />
                           <StepInput step="step10Training" label="Paso 10: Competencia y formación" value={formData.step10Training} />
                           <StepInput step="step11Fatigue" label="Paso 11: Fatiga y somnolencia" value={formData.step11Fatigue} />
@@ -463,10 +519,21 @@ export default function PesvAuditorias() {
 
                     <AccordionItem value="verificar">
                       <AccordionTrigger className="text-sm font-semibold">
-                        3. VERIFICAR (3 pasos) - Promedio: {formData.verificationCompliance}%
+                        <span className="flex items-center gap-2">
+                          3. VERIFICAR (3 pasos)
+                          <Badge variant="secondary" className="text-xs">{formData.verificationCompliance}%</Badge>
+                        </span>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <div className="grid grid-cols-2 gap-4 pt-4">
+                        <div className="flex flex-wrap items-center gap-1 mb-3 pt-2">
+                          <span className="text-xs text-muted-foreground mr-1">Aplicar a todos:</span>
+                          {scoreOptions.map(s => (
+                            <Button key={s} type="button" size="sm" variant="outline" className="text-xs" onClick={() => applyScoreToGroup(verificarSteps, s)} data-testid={`button-bulk-verificar-${s}`}>
+                              <Zap className="h-3 w-3 mr-1" />{s}
+                            </Button>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
                           <StepInput step="step20Indicators" label="Paso 20: Indicadores mínimos" value={formData.step20Indicators} />
                           <StepInput step="step21Supervision" label="Paso 21: Supervisión del PESV" value={formData.step21Supervision} />
                           <StepInput step="step22Audit" label="Paso 22: Auditoría anual (obligatoria)" value={formData.step22Audit} />
@@ -476,10 +543,21 @@ export default function PesvAuditorias() {
 
                     <AccordionItem value="actuar">
                       <AccordionTrigger className="text-sm font-semibold">
-                        4. ACTUAR (2 pasos) - Promedio: {formData.improvementCompliance}%
+                        <span className="flex items-center gap-2">
+                          4. ACTUAR (2 pasos)
+                          <Badge variant="secondary" className="text-xs">{formData.improvementCompliance}%</Badge>
+                        </span>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <div className="grid grid-cols-2 gap-4 pt-4">
+                        <div className="flex flex-wrap items-center gap-1 mb-3 pt-2">
+                          <span className="text-xs text-muted-foreground mr-1">Aplicar a todos:</span>
+                          {scoreOptions.map(s => (
+                            <Button key={s} type="button" size="sm" variant="outline" className="text-xs" onClick={() => applyScoreToGroup(actuarSteps, s)} data-testid={`button-bulk-actuar-${s}`}>
+                              <Zap className="h-3 w-3 mr-1" />{s}
+                            </Button>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
                           <StepInput step="step23Improvement" label="Paso 23: Mejora continua" value={formData.step23Improvement} />
                           <StepInput step="step24Communication" label="Paso 24: Comunicación y participación" value={formData.step24Communication} />
                         </div>
@@ -507,7 +585,10 @@ export default function PesvAuditorias() {
 
                 <div className="grid grid-cols-1 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="result">Resultado de la Auditoría *</Label>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="result">Resultado de la Auditoría *</Label>
+                      <span className="text-xs text-muted-foreground">(auto-detectado por promedio)</span>
+                    </div>
                     <Select
                       value={formData.result}
                       onValueChange={(value: any) => setFormData({ ...formData, result: value })}
@@ -516,9 +597,9 @@ export default function PesvAuditorias() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="cumple">Cumple</SelectItem>
-                        <SelectItem value="cumple-parcialmente">Cumple Parcialmente</SelectItem>
-                        <SelectItem value="no-cumple">No Cumple</SelectItem>
+                        <SelectItem value="cumple">Cumple (80%+)</SelectItem>
+                        <SelectItem value="cumple-parcialmente">Cumple Parcialmente (50-79%)</SelectItem>
+                        <SelectItem value="no-cumple">No Cumple (&lt;50%)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
