@@ -1105,9 +1105,8 @@ export default function DetalleEvaluacionSst() {
         </DialogContent>
       </Dialog>
 
-      {/* Banner de guía para evaluación inicial */}
-      {esEvaluacionInicial && (
-        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+      {/* Banner de guía - siempre visible como punto de partida para trabajar la evaluación */}
+      <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
           <div className="flex items-start gap-3">
             <Lightbulb className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
@@ -1132,7 +1131,6 @@ export default function DetalleEvaluacionSst() {
             </div>
           </div>
         </div>
-      )}
 
       <Tabs value={selectedComponente || componentes[0]?.id} onValueChange={setSelectedComponente}>
         <div className="overflow-x-auto">
