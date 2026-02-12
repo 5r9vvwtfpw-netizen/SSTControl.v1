@@ -3557,63 +3557,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return undefined;
       };
 
-      // Normalización de sinónimos para campos enum - evita errores de importación por términos coloquiales
+      // Función auxiliar para quitar acentos/tildes y caracteres especiales
+      const removeAccents = (str: string): string => {
+        return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      };
+
+      // Normalización de sinónimos para campos enum - acepta cualquier léxico empresarial
       const normalizeEducationLevel = (value: string | undefined): string | undefined => {
         if (!value) return undefined;
-        const normalized = value.toLowerCase().trim();
+        const raw = value.toLowerCase().trim();
+        const normalized = removeAccents(raw);
         const synonyms: Record<string, string> = {
           'bachiller': 'secundaria', 'bachillerato': 'secundaria', 'bachiller academico': 'secundaria',
           'bachiller tecnico': 'secundaria', 'media': 'secundaria', 'media vocacional': 'secundaria',
           '11': 'secundaria', 'once': 'secundaria',
-          'basica primaria': 'primaria', 'elemental': 'primaria',
-          'tecnico laboral': 'tecnico', 'tecnico profesional': 'tecnico',
-          'tecnologia': 'tecnologo', 'tecnologico': 'tecnologo',
+          'basica primaria': 'primaria', 'elemental': 'primaria', 'basica': 'primaria',
+          'tecnico laboral': 'tecnico', 'tecnico profesional': 'tecnico', 'tecnico': 'tecnico',
+          'tecnologia': 'tecnologo', 'tecnologico': 'tecnologo', 'tecnologo': 'tecnologo',
           'universitario': 'profesional', 'pregrado': 'profesional', 'licenciatura': 'profesional',
-          'ingenieria': 'profesional', 'ingeniero': 'profesional',
-          'especialista': 'especializacion', 'posgrado': 'especializacion',
-          'magister': 'maestria', 'master': 'maestria', 'msc': 'maestria',
-          'doctor': 'doctorado', 'phd': 'doctorado',
-          'sin estudios': 'ninguno', 'sin educacion': 'ninguno', 'n/a': 'ninguno', 'no aplica': 'ninguno'
+          'ingenieria': 'profesional', 'ingeniero': 'profesional', 'profesional': 'profesional',
+          'especialista': 'especializacion', 'posgrado': 'especializacion', 'especializacion': 'especializacion',
+          'postgrado': 'especializacion', 'post-grado': 'especializacion',
+          'magister': 'maestria', 'master': 'maestria', 'msc': 'maestria', 'maestria': 'maestria',
+          'doctor': 'doctorado', 'phd': 'doctorado', 'doctorado': 'doctorado',
+          'sin estudios': 'ninguno', 'sin educacion': 'ninguno', 'n/a': 'ninguno', 
+          'no aplica': 'ninguno', 'ninguno': 'ninguno', 'ninguna': 'ninguno',
+          'primaria': 'primaria', 'secundaria': 'secundaria'
         };
-        return synonyms[normalized] || normalized;
+        const validValues = ['ninguno', 'primaria', 'secundaria', 'tecnico', 'tecnologo', 'profesional', 'especializacion', 'maestria', 'doctorado'];
+        // Intentar coincidencia exacta sin acentos
+        if (synonyms[normalized]) return synonyms[normalized];
+        // Intentar coincidencia parcial
+        for (const [key, val] of Object.entries(synonyms)) {
+          if (normalized.includes(key) || key.includes(normalized)) return val;
+        }
+        // Si el valor ya es uno de los válidos (sin acentos), usarlo
+        if (validValues.includes(normalized)) return normalized;
+        // Valor libre no reconocido: aceptar sin bloquear (usar undefined para que el campo quede vacío)
+        return undefined;
       };
 
       const normalizeGender = (value: string | undefined): string | undefined => {
         if (!value) return undefined;
-        const normalized = value.toLowerCase().trim();
+        const normalized = removeAccents(value.toLowerCase().trim());
         const synonyms: Record<string, string> = {
           'hombre': 'masculino', 'mujer': 'femenino', 'm': 'masculino', 'f': 'femenino',
-          'male': 'masculino', 'female': 'femenino', 'no especifica': 'prefiero_no_decir', 'no responde': 'prefiero_no_decir'
+          'masculino': 'masculino', 'femenino': 'femenino', 'otro': 'otro',
+          'male': 'masculino', 'female': 'femenino', 'no especifica': 'prefiero_no_decir', 
+          'no responde': 'prefiero_no_decir', 'prefiero no decir': 'prefiero_no_decir',
+          'prefiero_no_decir': 'prefiero_no_decir', 'no binario': 'otro', 'nb': 'otro'
         };
-        return synonyms[normalized] || normalized;
+        const validValues = ['masculino', 'femenino', 'otro', 'prefiero_no_decir'];
+        if (synonyms[normalized]) return synonyms[normalized];
+        if (validValues.includes(normalized)) return normalized;
+        return undefined;
       };
 
       const normalizeCivilStatus = (value: string | undefined): string | undefined => {
         if (!value) return undefined;
-        const normalized = value.toLowerCase().trim();
+        const normalized = removeAccents(value.toLowerCase().trim());
         const synonyms: Record<string, string> = {
-          'soltero/a': 'soltero', 'soltera': 'soltero', 'casado/a': 'casado', 'casada': 'casado',
-          'union libre': 'union_libre', 'unión libre': 'union_libre', 'conviviente': 'union_libre',
-          'divorciado/a': 'divorciado', 'divorciada': 'divorciado', 'viudo/a': 'viudo', 'viuda': 'viudo',
-          'separado/a': 'separado', 'separada': 'separado'
+          'soltero': 'soltero', 'soltera': 'soltero', 'soltero/a': 'soltero',
+          'casado': 'casado', 'casada': 'casado', 'casado/a': 'casado',
+          'union libre': 'union_libre', 'union_libre': 'union_libre', 'conviviente': 'union_libre',
+          'divorciado': 'divorciado', 'divorciada': 'divorciado', 'divorciado/a': 'divorciado',
+          'viudo': 'viudo', 'viuda': 'viudo', 'viudo/a': 'viudo',
+          'separado': 'separado', 'separada': 'separado', 'separado/a': 'separado'
         };
-        return synonyms[normalized] || normalized;
+        const validValues = ['soltero', 'casado', 'union_libre', 'divorciado', 'viudo', 'separado'];
+        if (synonyms[normalized]) return synonyms[normalized];
+        if (validValues.includes(normalized)) return normalized;
+        return undefined;
       };
 
+      // El enum de workers en la BD solo permite: indefinido, fijo, temporal, obra-labor, aprendizaje
+      // Todos los demás valores se mapean al más cercano para no bloquear la importación
       const normalizeContractType = (value: string | undefined): string | undefined => {
         if (!value) return undefined;
-        const normalized = value.toLowerCase().trim();
+        const normalized = removeAccents(value.toLowerCase().trim());
         const synonyms: Record<string, string> = {
-          'termino fijo': 'fijo', 'término fijo': 'fijo', 'a término fijo': 'fijo',
-          'termino indefinido': 'indefinido', 'término indefinido': 'indefinido', 'a término indefinido': 'indefinido',
-          'obra labor': 'obra_labor', 'obra o labor': 'obra_labor', 'por obra o labor': 'obra_labor',
-          'prestacion servicios': 'prestacion_servicios', 'prestación de servicios': 'prestacion_servicios',
-          'contrato de prestación de servicios': 'prestacion_servicios', 'ops': 'prestacion_servicios',
-          'practicas': 'aprendizaje', 'pasante': 'aprendizaje', 'pasantia': 'aprendizaje', 'practicante': 'aprendizaje',
-          'ocasional': 'ocasional', 'transitorio': 'ocasional', 'accidental': 'ocasional',
-          'servicios': 'servicios', 'civil': 'servicios'
+          'indefinido': 'indefinido', 'termino indefinido': 'indefinido', 'a termino indefinido': 'indefinido',
+          'planta': 'indefinido', 'nomina': 'indefinido', 'contrato laboral': 'indefinido',
+          'fijo': 'fijo', 'termino fijo': 'fijo', 'a termino fijo': 'fijo',
+          'temporal': 'temporal', 'transitorio': 'temporal', 'accidental': 'temporal',
+          'ocasional': 'temporal',
+          'obra labor': 'obra-labor', 'obra o labor': 'obra-labor', 'por obra o labor': 'obra-labor',
+          'obra-labor': 'obra-labor', 'obra_labor': 'obra-labor',
+          'prestacion servicios': 'indefinido', 'prestacion de servicios': 'indefinido',
+          'contrato de prestacion de servicios': 'indefinido', 'ops': 'indefinido',
+          'prestacion_servicios': 'indefinido', 'servicios': 'indefinido', 'civil': 'indefinido',
+          'practicas': 'aprendizaje', 'pasante': 'aprendizaje', 'pasantia': 'aprendizaje', 
+          'practicante': 'aprendizaje', 'aprendizaje': 'aprendizaje', 'aprendiz': 'aprendizaje'
         };
-        return synonyms[normalized] || normalized;
+        const validValues = ['indefinido', 'fijo', 'temporal', 'obra-labor', 'aprendizaje'];
+        if (synonyms[normalized]) return synonyms[normalized];
+        for (const [key, val] of Object.entries(synonyms)) {
+          if (normalized.includes(key) || key.includes(normalized)) return val;
+        }
+        if (validValues.includes(normalized)) return normalized;
+        return 'indefinido';
       };
 
       // Helper function to transform Zod validation errors to user-friendly Spanish messages (SST-2026-0017)
@@ -3760,16 +3802,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             throw new Error('Faltan campos requeridos (Nombre, Cargo, Departamento, Tipo de Contrato, Fecha de Inicio)');
           }
 
-          // Validate contract type
-          const validContractTypes = ['indefinido', 'fijo', 'temporal', 'obra-labor', 'aprendizaje', 'ocasional', 'servicios', 'prestacion_servicios'];
-          if (!validContractTypes.includes(workerData.contractType)) {
-            throw new Error(`Tipo de contrato inválido. Debe ser: ${validContractTypes.join(', ')}`);
-          }
-
-          // Validate status
+          // Normalizar estado si no es válido
           const validStatuses = ['activo', 'inactivo', 'retirado'];
           if (!validStatuses.includes(workerData.status)) {
-            throw new Error(`Estado inválido. Debe ser: ${validStatuses.join(', ')}`);
+            const normalizedStatus = removeAccents(workerData.status);
+            if (validStatuses.includes(normalizedStatus)) {
+              workerData.status = normalizedStatus;
+            } else {
+              workerData.status = 'activo';
+            }
           }
 
           // Validate and format dates
@@ -3788,8 +3829,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
 
-          // Validate using Zod schema
-          const validatedData = insertWorkerSchema.parse(workerData);
+          // Validate using Zod schema - si falla por campos enum, limpiarlos y reintentar
+          let validatedData: any;
+          const firstTry = insertWorkerSchema.safeParse(workerData);
+          if (firstTry.success) {
+            validatedData = firstTry.data;
+          } else {
+            const enumFields = ['educationLevel', 'civilStatus', 'gender', 'contractType'];
+            const failedEnumFields = firstTry.error.issues
+              .filter(issue => issue.code === 'invalid_enum_value' && enumFields.includes(issue.path[0] as string))
+              .map(issue => issue.path[0] as string);
+            
+            if (failedEnumFields.length > 0) {
+              const cleanedData = { ...workerData };
+              for (const field of failedEnumFields) {
+                if (field === 'contractType') {
+                  (cleanedData as any)[field] = 'indefinido';
+                } else {
+                  (cleanedData as any)[field] = undefined;
+                }
+              }
+              const secondTry = insertWorkerSchema.safeParse(cleanedData);
+              if (secondTry.success) {
+                validatedData = secondTry.data;
+              } else {
+                throw secondTry.error;
+              }
+            } else {
+              throw firstTry.error;
+            }
+          }
           
           // Create worker
           const newWorker = await storage.createWorker(validatedData, companyId);
