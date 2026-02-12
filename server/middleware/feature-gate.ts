@@ -65,7 +65,7 @@ const FEATURE_GATE_RULES: FeatureGateRule[] = [
 
   { pathPrefix: "/api/gestion-cambios", featureKey: "hasGestionCambios", featureName: "Gestión de Cambios", requiredPlan: "Mediana Empresa" },
 
-  { pathPrefix: "/api/examenes-medicos", featureKey: "hasExamenesMedicos", featureName: "Exámenes Médicos Ocupacionales", requiredPlan: "Mediana Empresa" },
+  { pathPrefix: "/api/medical-exams", featureKey: "hasExamenesMedicos", featureName: "Exámenes Médicos Ocupacionales", requiredPlan: "Mediana Empresa" },
 
   { pathPrefix: "/api/evaluacion-proveedores", featureKey: "hasEvaluacionProveedores", featureName: "Evaluación de Proveedores", requiredPlan: "Mediana Empresa" },
 
@@ -76,8 +76,6 @@ const FEATURE_GATE_RULES: FeatureGateRule[] = [
   { pathPrefix: "/api/comunicaciones-sst", featureKey: "hasComunicacionSST", featureName: "Comunicaciones SST", requiredPlan: "Mediana Empresa" },
   { pathPrefix: "/api/plan-comunicacion-sst", featureKey: "hasComunicacionSST", featureName: "Plan de Comunicación SST", requiredPlan: "Mediana Empresa" },
   { pathPrefix: "/api/lecturas-comunicacion", featureKey: "hasComunicacionSST", featureName: "Lecturas de Comunicación SST", requiredPlan: "Mediana Empresa" },
-
-  { pathPrefix: "/api/examenes-medicos-ocu", featureKey: "hasExamenesMedicos", featureName: "Exámenes Médicos Ocupacionales", requiredPlan: "Mediana Empresa" },
 ];
 
 const GLOBAL_ACCESS_ROLES = ["superadmin", "admin", "soporte"];
