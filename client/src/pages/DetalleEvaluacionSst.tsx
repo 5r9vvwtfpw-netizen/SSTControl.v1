@@ -180,63 +180,7 @@ export default function DetalleEvaluacionSst() {
         });
       }
 
-      // Crear automáticamente Acción de Mejora cuando el estándar es "No cumple"
-      const isNoCumple = variables.cumple === 0 && variables.noAplica === 0;
-      const isCumple = variables.cumple === 1;
-      
-      if (isNoCumple && selectedEstandar) {
-        // Verificar que no exista ya una acción para este estándar
-        const existingAccion = acciones.find(a => a.respuestaEstandarId === result.response.id);
-        if (!existingAccion) {
-          // Determinar prioridad basada en el peso del estándar
-          const puntajeMaximo = getPuntajeMaximoEstandar(selectedEstandar);
-          const prioridad = puntajeMaximo >= 4 ? "alta" : puntajeMaximo >= 2 ? "media" : "baja";
-          
-          // Crear la acción de mejora automáticamente
-          const accionData = {
-            evaluacionId: id || "",
-            respuestaEstandarId: result.response.id,
-            descripcionAccion: `Incumplimiento del Estándar ${selectedEstandar.numeroEstandar} - ${selectedEstandar.nombre}`,
-            objetivo: `Lograr el cumplimiento del estándar ${selectedEstandar.numeroEstandar} según los requisitos de la Resolución 0312/2019`,
-            tipoAccion: "correctiva" as const,
-            prioridad: prioridad as "alta" | "media" | "baja",
-            responsable: getResponsibleName(),
-            areaResponsable: "SST",
-            recursosNecesarios: "",
-            fechaInicio: new Date(),
-            fechaCompromiso: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 días
-            estado: "pendiente" as const,
-            porcentajeAvance: 0,
-            indicadorEficacia: "Cumplimiento del estándar en próxima evaluación",
-            resultadoEsperado: "Estándar cumplido al 100%",
-          };
-          
-          createAutoAccionMutation.mutate(accionData);
-        }
-      }
-      
-      // Completar automáticamente la acción cuando el estándar cambia a "Cumple"
-      if (isCumple) {
-        const accionAsociada = acciones.find(a => a.respuestaEstandarId === result.response.id);
-        if (accionAsociada && accionAsociada.estado !== 'completada' && accionAsociada.estado !== 'verificada') {
-          // Completar la acción automáticamente
-          apiRequest("PATCH", `/api/acciones-mejora/${accionAsociada.id}`, {
-            estado: 'completada',
-            porcentajeAvance: 100,
-            fechaCierre: new Date(),
-            resultadoObtenido: 'Estándar cumplido - verificado en evaluación SST'
-          }).then(() => {
-            queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-sst", id, "acciones"] });
-            toast({
-              title: "Acción completada automáticamente",
-              description: "La acción de mejora se ha marcado como completada al cumplir el estándar",
-              className: "bg-green-50 border-green-200",
-            });
-          }).catch(err => {
-            console.error('Error al completar acción:', err);
-          });
-        }
-      }
+      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-sst", id, "acciones"] });
     },
     onError: (error: Error) => {
       toast({
@@ -266,29 +210,6 @@ export default function DetalleEvaluacionSst() {
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Mutación separada para crear acciones automáticamente (sin afectar el diálogo)
-  const createAutoAccionMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof insertAccionMejoraSchema>) => {
-      const res = await apiRequest("POST", `/api/evaluaciones-sst/${id}/acciones`, data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-sst", id, "acciones"] });
-      toast({
-        title: "Acción de mejora creada automáticamente",
-        description: "Se ha generado una acción correctiva para el estándar no cumplido",
-        className: "bg-blue-50 border-blue-200",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error al crear acción automática",
         description: error.message,
         variant: "destructive",
       });

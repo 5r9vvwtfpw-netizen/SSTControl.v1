@@ -23933,6 +23933,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  async function autoGestionarAccionMejora(
+    evaluacionId: string, 
+    respuestaId: string, 
+    estandarId: string, 
+    cumple: number | null | undefined, 
+    noAplica: number | null | undefined, 
+    companyId: string
+  ) {
+    try {
+      const isNoCumple = cumple === 0 && (noAplica === 0 || noAplica === null || noAplica === undefined);
+      const isCumple = cumple === 1;
+
+      const acciones = await storage.getAccionesMejora(evaluacionId, companyId);
+      const existingAccion = acciones.find(a => a.respuestaEstandarId === respuestaId);
+
+      if (isNoCumple && !existingAccion) {
+        const estandar = await storage.getEstandarSst(estandarId);
+        if (!estandar) return;
+
+        const evaluacion = await storage.getEvaluacionSstById(evaluacionId);
+        const componente = await db.select().from(schema.componentesSst)
+          .where(eq(schema.componentesSst.id, estandar.componenteId))
+          .limit(1);
+
+        let prioridad: "alta" | "media" | "baja" | "critica" = "media";
+        if (componente[0] && componente[0].pesoTotal >= 20) {
+          prioridad = "alta";
+        }
+
+        const fechaCompromiso = new Date();
+        fechaCompromiso.setMonth(fechaCompromiso.getMonth() + 3);
+
+        await storage.createAccionMejora({
+          evaluacionId,
+          respuestaEstandarId: respuestaId,
+          descripcionAccion: `Incumplimiento del Estándar ${estandar.numeroEstandar} - ${estandar.nombre}`,
+          objetivo: `Lograr el cumplimiento del estándar ${estandar.numeroEstandar} según los requisitos de la Resolución 0312/2019`,
+          tipoAccion: "correctiva",
+          prioridad,
+          responsable: evaluacion?.responsableNombre || "Responsable SST",
+          areaResponsable: "SST",
+          recursosNecesarios: "",
+          fechaInicio: new Date(),
+          fechaCompromiso,
+          estado: "pendiente",
+          porcentajeAvance: 0,
+          indicadorEficacia: "Cumplimiento del estándar en próxima evaluación",
+          resultadoEsperado: `Estándar ${estandar.numeroEstandar} implementado y documentado`,
+        }, companyId);
+
+        console.log(`[AutoAccion] Acción de mejora creada automáticamente para estándar ${estandar.numeroEstandar} (evaluación ${evaluacionId})`);
+      }
+
+      if (isCumple && existingAccion && existingAccion.estado !== 'completada' && existingAccion.estado !== 'verificada') {
+        await storage.updateAccionMejora(existingAccion.id, {
+          estado: 'completada',
+          porcentajeAvance: 100,
+          fechaCierre: new Date(),
+          resultadoObtenido: 'Estándar cumplido - verificado en evaluación SST',
+        }, companyId);
+
+        console.log(`[AutoAccion] Acción ${existingAccion.id} completada automáticamente al cumplir estándar (evaluación ${evaluacionId})`);
+      }
+    } catch (err) {
+      console.error('[AutoAccion] Error en gestión automática de acción de mejora:', err);
+    }
+  }
+
   // POST /api/evaluaciones-sst/:id/respuestas - Crear respuesta de estándar
   app.post('/api/evaluaciones-sst/:id/respuestas', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
@@ -23959,6 +24027,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const respuesta = await storage.createRespuestaEstandar(validatedData, companyId);
+
+      await autoGestionarAccionMejora(
+        req.params.id, respuesta.id, validatedData.estandarId,
+        validatedData.cumple, validatedData.noAplica, companyId
+      );
+
       res.status(201).json(respuesta);
     } catch (error: any) {
       console.error('Error creating respuesta estándar:', error);
@@ -23969,16 +24043,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/respuestas-estandares/:id - Actualizar respuesta de estándar
   app.patch('/api/respuestas-estandares/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
-        return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      let companyId: string;
+      if (isAdmin) {
+        const requestedCompanyId = req.body.companyId || req.user!.companyId;
+        if (!requestedCompanyId) {
+          return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+        }
+        companyId = requestedCompanyId as string;
+      } else {
+        if (!req.user!.companyId) {
+          return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+        }
+        companyId = req.user!.companyId;
       }
-      const companyId = req.user!.companyId;
       const validatedData = insertRespuestaEstandarSchema.partial().parse(req.body);
       
       const respuesta = await storage.updateRespuestaEstandar(req.params.id, validatedData, companyId);
       
       if (!respuesta) {
         return res.status(404).send('Respuesta no encontrada');
+      }
+
+      if (validatedData.cumple !== undefined) {
+        await autoGestionarAccionMejora(
+          respuesta.evaluacionId, respuesta.id, respuesta.estandarId,
+          respuesta.cumple, respuesta.noAplica, companyId
+        );
       }
       
       res.json(respuesta);
