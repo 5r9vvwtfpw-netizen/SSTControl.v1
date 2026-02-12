@@ -43,6 +43,7 @@ import path from "path";
 import { promotionsRouter } from "../plugins/promotions";
 import { handlePromotionsWebhook } from "../plugins/promotions/webhook-handler";
 import { landingPageRouter } from "../plugins/landing-page-integration";
+import { demoEngineRouter, initializeDemoRooms, startDemoHousekeepingCron, isDemoEnabled } from "../plugins/demo-engine";
 
 const app = express();
 
@@ -867,6 +868,23 @@ app.use(requireValidLicense);
     logger.info("✅ Plugin Landing Page Integration montado en /api/plugins/landing-page");
   } catch (error) {
     logger.warn({ err: error }, "⚠️ Plugin Landing Page no disponible (no crítico)");
+  }
+
+  // Demo Engine Plugin (Sidecar - Hotel Room Model)
+  try {
+    if (isDemoEnabled()) {
+      const { runDemoEngineMigration } = await import("../plugins/demo-engine/migration");
+      await runDemoEngineMigration();
+      await initializeDemoRooms();
+      app.use("/api/demo", demoEngineRouter);
+      startDemoHousekeepingCron();
+      logger.info("✅ Demo Engine montado en /api/demo (ENABLE_DEMO_MODE=true)");
+    } else {
+      app.use("/api/demo", (_req, res) => res.status(404).json({ error: "Not found" }));
+      logger.info("⏸️ Demo Engine deshabilitado (ENABLE_DEMO_MODE != true)");
+    }
+  } catch (error) {
+    logger.warn({ err: error }, "⚠️ Demo Engine no disponible (no crítico)");
   }
 
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
