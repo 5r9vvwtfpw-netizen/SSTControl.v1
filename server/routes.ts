@@ -26547,6 +26547,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Capacitación a brigadas
         { minChapter: 3, ciclo: "hacer", programa: "capacitacion", actividad: "Capacitación a Brigada de Emergencias", objetivo: "Entrenar brigadistas", meta: "100% brigadistas capacitados", cargo: "Responsable SG-SST", meses: ["abril", "octubre"] },
+        
+        // =====================================================
+        // ACTIVIDADES COMPLEMENTARIAS NORMATIVAS (14 actividades)
+        // Decreto 1072/2015, Resolución 0312/2019, Resolución 2646/2008, Resolución 2764/2022
+        // =====================================================
+        
+        { minChapter: 2, ciclo: "planear", programa: "otro", actividad: "Rendición de Cuentas del SG-SST", objetivo: "Informar sobre desempeño del SG-SST a todos los niveles", meta: "1 rendición anual documentada", cargo: "Responsable SG-SST", meses: ["diciembre"] },
+        { minChapter: 2, ciclo: "hacer", programa: "higiene-seguridad", actividad: "Manejo y Eliminación de Residuos Sólidos, Líquidos y Gaseosos", objetivo: "Gestionar residuos generados en el trabajo", meta: "Plan de manejo de residuos implementado", cargo: "Responsable SG-SST", meses: ["febrero", "agosto"] },
+        { minChapter: 2, ciclo: "hacer", programa: "higiene-seguridad", actividad: "Elaboración de Procedimientos de Trabajo Seguro (Alturas, Espacios Confinados)", objetivo: "Documentar procedimientos para tareas de alto riesgo", meta: "100% tareas críticas con procedimiento documentado", cargo: "Responsable SG-SST", meses: ["febrero", "marzo"] },
+        { minChapter: 2, ciclo: "hacer", programa: "higiene-seguridad", actividad: "Programa de Orden y Aseo (5S)", objetivo: "Mantener lugares de trabajo organizados y seguros", meta: "Inspecciones mensuales de orden y aseo", cargo: "Responsable SG-SST", meses: ["enero", "abril", "julio", "octubre"] },
+        { minChapter: 2, ciclo: "hacer", programa: "riesgo-psicosocial", actividad: "Aplicación de Batería de Riesgo Psicosocial", objetivo: "Evaluar factores de riesgo psicosocial e intervenir", meta: "100% trabajadores evaluados", cargo: "Responsable SG-SST", meses: ["abril", "mayo"] },
+        { minChapter: 2, ciclo: "hacer", programa: "medicina-preventiva", actividad: "Seguimiento a Restricciones y Recomendaciones Médicas Laborales", objetivo: "Implementar restricciones médicas dentro de 20 días", meta: "100% restricciones cumplidas", cargo: "Responsable SG-SST", meses: ["marzo", "junio", "septiembre", "diciembre"] },
+        { minChapter: 2, ciclo: "verificar", programa: "otro", actividad: "Evaluación de Cumplimiento de Requisitos Legales en SST", objetivo: "Verificar cumplimiento de normatividad vigente", meta: "Evaluación semestral documentada", cargo: "Responsable SG-SST", meses: ["junio", "diciembre"] },
+        { minChapter: 2, ciclo: "verificar", programa: "otro", actividad: "Auditoría Interna Anual del SG-SST", objetivo: "Verificar cumplimiento y eficacia del SG-SST", meta: "1 auditoría anual documentada", cargo: "Responsable SG-SST", meses: ["octubre", "noviembre"] },
+        { minChapter: 2, ciclo: "verificar", programa: "otro", actividad: "Investigación de Incidentes, AT y Enfermedades Laborales", objetivo: "Investigar causas y definir acciones correctivas", meta: "100% eventos investigados en 15 días hábiles", cargo: "Responsable SG-SST", meses: ["enero", "abril", "julio", "octubre"] },
+        { minChapter: 2, ciclo: "actuar", programa: "otro", actividad: "Seguimiento a Programas del SG-SST", objetivo: "Verificar avance y cumplimiento de programas", meta: "Seguimiento trimestral documentado", cargo: "Responsable SG-SST", meses: ["marzo", "junio", "septiembre", "diciembre"] },
+        { minChapter: 2, ciclo: "actuar", programa: "otro", actividad: "Acciones Correctivas, Preventivas y de Mejora", objetivo: "Implementar mejoras basadas en hallazgos del SG-SST", meta: "100% acciones cerradas en plazo", cargo: "Responsable SG-SST", meses: ["marzo", "junio", "septiembre", "diciembre"] },
+        { minChapter: 2, ciclo: "hacer", programa: "higiene-seguridad", actividad: "Mediciones Ambientales e Higiénicas Ampliadas", objetivo: "Evaluar agentes físicos, químicos y biológicos", meta: "100% áreas críticas con mediciones", cargo: "Responsable SG-SST", meses: ["abril", "octubre"] },
+        { minChapter: 2, ciclo: "hacer", programa: "capacitacion", actividad: "Programa de Inducción y Reinducción en SST", objetivo: "Capacitar trabajadores nuevos y actualizar conocimientos", meta: "100% trabajadores con inducción/reinducción", cargo: "Responsable SG-SST", meses: ["enero", "julio"] },
+        { minChapter: 2, ciclo: "hacer", programa: "medicina-preventiva", actividad: "Seguimiento y Análisis del Ausentismo Laboral", objetivo: "Analizar tendencias de ausentismo y definir acciones", meta: "Informe trimestral de ausentismo", cargo: "Responsable SG-SST", meses: ["marzo", "junio", "septiembre", "diciembre"] },
+        
+        // =====================================================
+        // ACTIVIDADES NORMATIVA 2024-2025 (5 actividades)
+        // Resolución 2607/2024, Resolución 1843/2025, Resolución 4272/2021
+        // =====================================================
+        
+        { minChapter: 1, ciclo: "hacer", programa: "medicina-preventiva", actividad: "Exámenes Médicos Post-Incapacidad y de Reincorporación", objetivo: "Realizar examen médico tras incapacidad >30 días antes de reincorporar", meta: "100% reincorporaciones con examen médico", cargo: "Responsable SG-SST", meses: ["enero", "abril", "julio", "octubre"] },
+        { minChapter: 2, ciclo: "hacer", programa: "medicina-preventiva", actividad: "Informe Anual de Diagnóstico de Condiciones de Salud por IPS", objetivo: "Gestionar entrega del informe anual de condiciones de salud", meta: "Informe recibido en diciembre", cargo: "Responsable SG-SST", meses: ["noviembre", "diciembre"] },
+        { minChapter: 1, ciclo: "hacer", programa: "medicina-preventiva", actividad: "Prohibición de Pruebas Discriminatorias y Control de Pruebas Restringidas", objetivo: "Asegurar que no se realicen pruebas de embarazo, VIH como condición laboral", meta: "Política documentada y socializada", cargo: "Responsable SG-SST", meses: ["enero"] },
+        { minChapter: 2, ciclo: "planear", programa: "identificacion-peligros", actividad: "Actualización de Política SST y Objetivos según Resolución 2607/2024", objetivo: "Revisar política y objetivos conforme a nueva resolución de peligros", meta: "Política y objetivos actualizados y divulgados", cargo: "Responsable SG-SST", meses: ["enero", "febrero"] },
+        { minChapter: 2, ciclo: "hacer", programa: "otro", actividad: "Gestión del Cambio en SST", objetivo: "Evaluar impacto SST de cambios en procesos, instalaciones o normatividad", meta: "100% cambios significativos con evaluación SST", cargo: "Responsable SG-SST", meses: ["enero", "abril", "julio", "octubre"] },
       ] as const;
       
       const mesesOrden = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
