@@ -382,7 +382,7 @@ export default function ExamenesMedicos() {
               Programar Examen
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
             <DialogHeader>
               <DialogTitle>{editingExam ? "Editar Examen" : "Programar Examen Médico"}</DialogTitle>
               <DialogDescription>
