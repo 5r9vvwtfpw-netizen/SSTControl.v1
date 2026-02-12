@@ -553,7 +553,7 @@ export default function DetallePlanTrabajo() {
                     <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Asistente Inteligente de Plan de Trabajo</h3>
                     <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
                       Genere automáticamente un calendario completo de actividades SST basado en el Decreto 1072/2015, 
-                      Resolución 0312/2019 y GTC-45. Incluye 55 actividades organizadas por ciclo PHVA.
+                      Resolución 0312/2019 y GTC-45. Las actividades se generan según el tipo de empresa y se organizan por ciclo PHVA.
                     </p>
                     <Button
                       onClick={() => generateCalendarMutation.mutate()}
