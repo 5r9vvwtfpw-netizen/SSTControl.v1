@@ -87,7 +87,7 @@ export default function EvaluacionesSst() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [evaluacionToDelete, setEvaluacionToDelete] = useState<EvaluacionSst | null>(null);
-  const [importarAnterior, setImportarAnterior] = useState(true);
+  const [importarAnterior, setImportarAnterior] = useState(false);
 
   const isSuperAdmin = user?.role === "superadmin";
   
