@@ -1169,7 +1169,7 @@ export const insertRoadSafetyAttendeeSchema = createInsertSchema(roadSafetyAtten
 export type InsertRoadSafetyAttendee = z.infer<typeof insertRoadSafetyAttendeeSchema>;
 export type RoadSafetyAttendee = typeof roadSafetyAttendees.$inferSelect;
 
-export const insertPesvAuditSchema = createInsertSchema(pesvAudits).omit({ id: true, createdAt: true });
+export const insertPesvAuditSchema = createInsertSchema(pesvAudits).omit({ id: true, createdAt: true, companyId: true });
 export type InsertPesvAudit = z.infer<typeof insertPesvAuditSchema>;
 export type PesvAudit = typeof pesvAudits.$inferSelect;
 
