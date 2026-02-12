@@ -9778,7 +9778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/medical-exams", requireAuth, async (req, res) => {
     const userRole = req.user!.role;
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
@@ -9805,7 +9805,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/medical-exams/:id", requireAuth, async (req, res) => {
     const userRole = req.user!.role;
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
@@ -9836,7 +9836,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/medical-exams/worker/:workerId", requireAuth, async (req, res) => {
     const userRole = req.user!.role;
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
@@ -9878,8 +9878,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = worker.companyId;
       } else {
-        // Non-admin: use their own companyId
-        companyId = req.user!.companyId || "";
+        // Non-admin: use effective companyId (supports superadmin X-Company-Id header)
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -9958,8 +9958,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = existingExam.companyId;
       } else {
-        // Non-admin: use their own companyId
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -9989,8 +9988,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       companyId = existingExam.companyId;
     } else {
-      // Non-admin: use their own companyId
-      companyId = req.user!.companyId || "";
+      companyId = getEffectiveCompanyId(req) || "";
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
