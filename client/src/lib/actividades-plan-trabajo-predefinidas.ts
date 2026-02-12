@@ -626,6 +626,170 @@ export const ACTIVIDADES_PLAN_TRABAJO_SST: ActividadPredefinida[] = [
     mesesSugeridos: ["marzo", "junio", "septiembre", "diciembre"],
     cargo: "Responsable SG-SST",
     baseNormativa: "Decreto 1072/2015, Art. 2.2.4.6.33-34"
+  },
+
+  // ==================== V. ACTIVIDADES COMPLEMENTARIAS NORMATIVAS (14 actividades) ====================
+  // Agregadas para cumplimiento integral de Decreto 1072/2015, Resolución 0312/2019,
+  // Resolución 2646/2008, Resolución 2764/2022, Resolución 2346/2007, Resolución 1401/2007, Ley 9/1979
+
+  // --- PLANEAR ---
+  {
+    ciclo: "planear",
+    programa: "otro",
+    actividad: "Rendición de Cuentas del SG-SST",
+    objetivo: "Informar a todos los niveles de la organización sobre el desempeño del SG-SST",
+    meta: "1 rendición de cuentas anual documentada",
+    indicador: "Rendición de cuentas realizada (Sí/No)",
+    mesesSugeridos: ["diciembre"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Decreto 1072/2015, Art. 2.2.4.6.8; Resolución 0312/2019, Estándar 1.2.1"
+  },
+
+  // --- HACER ---
+  {
+    ciclo: "hacer",
+    programa: "capacitacion",
+    actividad: "Programa de Inducción y Reinducción en SST",
+    objetivo: "Capacitar a trabajadores nuevos y actualizar conocimientos de los existentes en SST",
+    meta: "100% de trabajadores con inducción/reinducción",
+    indicador: "(Trabajadores inducidos / Total trabajadores nuevos) × 100",
+    mesesSugeridos: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Decreto 1072/2015, Art. 2.2.4.6.11; Resolución 0312/2019, Estándar 1.1.6"
+  },
+  {
+    ciclo: "hacer",
+    programa: "higiene-seguridad",
+    actividad: "Mediciones Ambientales e Higiénicas (Ruido, Iluminación, Temperatura, Químicos)",
+    objetivo: "Realizar mediciones de agentes físicos, químicos y biológicos en el ambiente laboral",
+    meta: "100% de áreas críticas con mediciones realizadas",
+    indicador: "(Mediciones realizadas / Mediciones programadas) × 100",
+    mesesSugeridos: ["abril", "octubre"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Resolución 0312/2019, Estándar 2.7.1; Decreto 1072/2015, Art. 2.2.4.6.24"
+  },
+  {
+    ciclo: "hacer",
+    programa: "medicina-preventiva",
+    actividad: "Custodia y Archivo de Historias Clínicas Ocupacionales",
+    objetivo: "Garantizar la custodia, confidencialidad y disponibilidad de las historias clínicas ocupacionales",
+    meta: "100% de historias clínicas bajo custodia segura",
+    indicador: "(HC custodiadas / Total HC) × 100",
+    mesesSugeridos: ["enero", "julio"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Resolución 2346/2007, Art. 17; Resolución 0312/2019, Estándar 3.1.2"
+  },
+  {
+    ciclo: "hacer",
+    programa: "medicina-preventiva",
+    actividad: "Seguimiento a Restricciones y Recomendaciones Médicas Laborales",
+    objetivo: "Dar cumplimiento a las restricciones y recomendaciones emitidas por el médico ocupacional",
+    meta: "100% de restricciones con seguimiento documentado",
+    indicador: "(Restricciones cumplidas / Total restricciones) × 100",
+    mesesSugeridos: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Resolución 0312/2019, Estándar 3.1.7; Decreto 1072/2015"
+  },
+  {
+    ciclo: "hacer",
+    programa: "higiene-seguridad",
+    actividad: "Verificación de Agua Potable, Servicios Sanitarios y Disposición de Basuras",
+    objetivo: "Garantizar condiciones higiénicas básicas en los lugares de trabajo",
+    meta: "Verificación semestral documentada",
+    indicador: "(Verificaciones realizadas / 2) × 100",
+    mesesSugeridos: ["marzo", "septiembre"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Ley 9/1979; Resolución 0312/2019, Estándar 3.2.2"
+  },
+  {
+    ciclo: "hacer",
+    programa: "higiene-seguridad",
+    actividad: "Manejo y Eliminación de Residuos Sólidos, Líquidos y Gaseosos",
+    objetivo: "Implementar procedimientos de manejo seguro de residuos generados en el trabajo",
+    meta: "Plan de manejo de residuos implementado",
+    indicador: "Plan implementado (Sí/No)",
+    mesesSugeridos: ["febrero", "agosto"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Ley 9/1979; Resolución 0312/2019, Estándar 3.2.3"
+  },
+  {
+    ciclo: "hacer",
+    programa: "higiene-seguridad",
+    actividad: "Elaboración de Procedimientos de Trabajo Seguro (Alturas, Espacios Confinados, Eléctricos, Caliente)",
+    objetivo: "Documentar e implementar procedimientos para tareas de alto riesgo",
+    meta: "100% de tareas críticas con procedimiento documentado",
+    indicador: "(Procedimientos documentados / Tareas críticas identificadas) × 100",
+    mesesSugeridos: ["febrero", "marzo"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Decreto 1072/2015, Art. 2.2.4.6.24; Resolución 1409/2012; Resolución 0312/2019, Estándar 4.1.2"
+  },
+  {
+    ciclo: "hacer",
+    programa: "inspeccion",
+    actividad: "Programa de Mantenimiento Preventivo de Instalaciones, Equipos y Herramientas",
+    objetivo: "Garantizar el buen estado y funcionamiento de instalaciones y equipos",
+    meta: "100% de mantenimientos programados ejecutados",
+    indicador: "(Mantenimientos ejecutados / Mantenimientos programados) × 100",
+    mesesSugeridos: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Resolución 0312/2019, Estándar 4.2.1; Decreto 1072/2015"
+  },
+  {
+    ciclo: "hacer",
+    programa: "higiene-seguridad",
+    actividad: "Programa de Orden y Aseo (5S)",
+    objetivo: "Mantener los lugares de trabajo organizados, limpios y seguros",
+    meta: "Inspecciones mensuales de orden y aseo realizadas",
+    indicador: "(Inspecciones realizadas / 12) × 100",
+    mesesSugeridos: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Decreto 1072/2015; Resolución 2400/1979"
+  },
+  {
+    ciclo: "hacer",
+    programa: "riesgo-psicosocial",
+    actividad: "Aplicación de la Batería de Riesgo Psicosocial y Programa de Intervención",
+    objetivo: "Evaluar factores de riesgo psicosocial e implementar acciones de intervención",
+    meta: "100% de trabajadores evaluados; programa de intervención implementado",
+    indicador: "(Trabajadores evaluados / Total trabajadores) × 100",
+    mesesSugeridos: ["abril", "mayo"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Resolución 2646/2008; Resolución 2764/2022; Decreto 1072/2015"
+  },
+
+  // --- VERIFICAR ---
+  {
+    ciclo: "verificar",
+    programa: "otro",
+    actividad: "Auditoría Interna Anual del SG-SST",
+    objetivo: "Verificar el cumplimiento y eficacia del SG-SST mediante auditoría planificada",
+    meta: "1 auditoría anual completa documentada",
+    indicador: "Auditoría realizada (Sí/No); hallazgos documentados",
+    mesesSugeridos: ["octubre", "noviembre"],
+    cargo: "Auditor interno / Responsable SG-SST",
+    baseNormativa: "Decreto 1072/2015, Art. 2.2.4.6.29-30; Resolución 0312/2019, Estándar 6.1.1"
+  },
+  {
+    ciclo: "verificar",
+    programa: "otro",
+    actividad: "Investigación de Incidentes, Accidentes de Trabajo y Enfermedades Laborales",
+    objetivo: "Investigar causas de los eventos de salud laboral y definir acciones correctivas",
+    meta: "100% de eventos investigados dentro de los 15 días hábiles",
+    indicador: "(Eventos investigados / Total eventos reportados) × 100",
+    mesesSugeridos: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Resolución 1401/2007; Decreto 1072/2015, Art. 2.2.4.6.32"
+  },
+  {
+    ciclo: "verificar",
+    programa: "otro",
+    actividad: "Evaluación de Cumplimiento de Requisitos Legales en SST",
+    objetivo: "Verificar periódicamente el cumplimiento de la normatividad vigente aplicable",
+    meta: "Evaluación semestral de cumplimiento legal documentada",
+    indicador: "(Requisitos cumplidos / Total requisitos aplicables) × 100",
+    mesesSugeridos: ["junio", "diciembre"],
+    cargo: "Responsable SG-SST",
+    baseNormativa: "Decreto 1072/2015, Art. 2.2.4.6.8; Resolución 0312/2019"
   }
 ];
 
