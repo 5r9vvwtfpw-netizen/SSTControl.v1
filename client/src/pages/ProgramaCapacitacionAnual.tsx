@@ -94,6 +94,11 @@ export default function ProgramaCapacitacionAnual() {
   const [selectedCapacitacion, setSelectedCapacitacion] = useState<typeof CAPACITACIONES_OBLIGATORIAS[0] | null>(null);
   const [templatePreFill, setTemplatePreFill] = useState<TemplatePreFillData | null>(null);
 
+  const { data: companyData } = useQuery<{ numberOfVehicles?: number | null }>({
+    queryKey: ["/api/company/current"],
+  });
+  const hasPesv = (companyData?.numberOfVehicles ?? 0) > 0;
+
   // Get estándar 1.2.1 data for AutomationAssistant
   const estandar121 = useMemo(() => getEstandarByCodigo('1.2.1'), []);
 
@@ -264,11 +269,15 @@ export default function ProgramaCapacitacionAnual() {
         compact={true}
       />
 
-      {/* Trazabilidad PESV - Capacitaciones de Seguridad Vial */}
-      <TrazabilidadCapacitacionesSstPesvBanner direccion="sst-to-pesv" />
-      
-      {/* Resumen de Capacitaciones PESV */}
-      <CapacitacionesPesvResumen />
+      {hasPesv && (
+        <>
+          {/* Trazabilidad PESV - Capacitaciones de Seguridad Vial */}
+          <TrazabilidadCapacitacionesSstPesvBanner direccion="sst-to-pesv" />
+          
+          {/* Resumen de Capacitaciones PESV */}
+          <CapacitacionesPesvResumen />
+        </>
+      )}
 
       {/* Programs List */}
       <Card>
