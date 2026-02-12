@@ -765,14 +765,6 @@ export default function DetalleEvaluacionSst() {
         <div className="flex items-center gap-2 flex-wrap">
           {getNivelBadge(evaluacion.nivelCumplimiento, evaluacion.porcentajeCumplimiento)}
           <Button 
-            variant="outline"
-            onClick={() => setLocation(`/planes-trabajo-anual?from=evaluation&evaluationId=${id}`)}
-            data-testid="button-plan-trabajo-anual"
-          >
-            <Target className="h-4 w-4 mr-2" />
-            Plan de Trabajo Anual
-          </Button>
-          <Button 
             variant="default" 
             onClick={handleDownloadMinisterioReport} 
             data-testid="button-export-ministerio"
