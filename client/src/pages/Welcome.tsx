@@ -61,21 +61,6 @@ export default function Welcome() {
       <section className="relative min-h-screen flex flex-col overflow-hidden bg-gradient-to-br from-primary via-primary/95 to-primary/85">
         <div className="absolute inset-0 bg-black/20" />
         
-        <div className="relative z-10 container mx-auto px-6 py-4">
-          <div className="flex justify-end items-center gap-3">
-            <Button 
-              asChild 
-              variant="ghost" 
-              className="text-white hover:bg-white/10 hover:text-white"
-              data-testid="button-login-header"
-            >
-              <Link href="/login">
-                <LogIn className="w-4 h-4 mr-2" />
-                Iniciar Sesión
-              </Link>
-            </Button>
-          </div>
-        </div>
 
         <div className="relative z-10 flex-1 flex items-center justify-center">
           <div className="container mx-auto px-6 py-8 md:py-16">
