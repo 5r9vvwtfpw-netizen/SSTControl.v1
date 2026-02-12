@@ -23,7 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Activity, Calendar, User, Stethoscope, AlertCircle, CheckCircle2, Clock, FileText, Bell, AlertTriangle, Eye, EyeOff, Mail, CalendarDays, Upload, Loader2, File, Trash2 } from "lucide-react";
+import { Plus, Activity, Calendar, User, Stethoscope, AlertCircle, CheckCircle2, Clock, FileText, Bell, AlertTriangle, Eye, EyeOff, Mail, CalendarDays, Upload, Loader2, File, Trash2, X } from "lucide-react";
 import { Link } from "wouter";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { differenceInDays, addDays, isAfter, isBefore, parseISO } from "date-fns";
@@ -369,20 +369,21 @@ export default function ExamenesMedicos() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Exámenes Médicos Ocupacionales</h1>
           <p className="text-muted-foreground">Gestión de exámenes según Resolución 1843/2025</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={(open) => {
-          setDialogOpen(open);
-          if (!open) {
-            setEditingExam(null);
-            resetForm();
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-exam">
-              <Plus className="h-4 w-4 mr-2" />
-              Programar Examen
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
+        <Dialog open={dialogOpen} onOpenChange={() => {}}>
+          <Button data-testid="button-add-exam" onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Programar Examen
+          </Button>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto [&>button.absolute]:hidden" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} onFocusOutside={(e) => e.preventDefault()} onEscapeKeyDown={() => { setDialogOpen(false); setEditingExam(null); resetForm(); }}>
+            <button
+              type="button"
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 z-10"
+              onClick={() => { setDialogOpen(false); setEditingExam(null); resetForm(); }}
+              data-testid="button-close-dialog"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
             <DialogHeader>
               <DialogTitle>{editingExam ? "Editar Examen" : "Programar Examen Médico"}</DialogTitle>
               <DialogDescription>
