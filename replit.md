@@ -55,6 +55,36 @@ The Landing Page Integration Plugin provides secure JWT verification for pricing
 - **Post-registration recalculation**: When a company changes pricing-affecting fields (CIIU, workers, vehicles), `POST /api/companies/:id/recalculate-quote` sends the new data to the landing page, receives a new JWT, and updates the quote fields. The UI shows a confirmation dialog before proceeding.
 - **NEVER calculate prices internally. All prices come from the landing page JWT.**
 
+### CRITICAL RULE: Excel Worker Import — Flexible Normalization (DO NOT REMOVE)
+**Location**: `server/routes.ts`, endpoint `POST /api/companies/:companyId/workers/import`
+**Last verified**: February 2026
+
+The Excel worker import system uses a **tolerant normalization pipeline** that accepts free-text input from users and maps it to valid database enum values. This was implemented because clients use many different terms for the same concept (e.g., "término indefinido", "planta", "nómina" all mean the same contract type).
+
+**Core functions (all inside the import endpoint handler):**
+1. **`removeAccents(str)`** — Strips accents/tildes using Unicode NFD normalization. Essential because Colombian users write "técnico", "tecnólogo", "práctica" with accents.
+2. **`normalizeContractType(value)`** — Maps free text to 5 DB enum values: `indefinido`, `fijo`, `temporal`, `obra-labor`, `aprendizaje`. Includes synonyms like "OPS", "prestación de servicios", "pasante", "nómina", "planta". **Default: `indefinido`** if unrecognized. The DB enum in `shared/schema.ts` (`contractTypeEnum`) only allows these 5 values.
+3. **`normalizeEducationLevel(value)`** — Maps to: `ninguno`, `primaria`, `secundaria`, `tecnico`, `tecnologo`, `profesional`, `especializacion`, `maestria`, `doctorado`. Includes synonyms like "bachiller", "universitario", "ingeniero", "posgrado", "PhD". Uses partial matching. **Default: `undefined`** (field left empty) if unrecognized.
+4. **`normalizeGender(value)`** — Maps to: `masculino`, `femenino`, `otro`, `prefiero_no_decir`. Accepts "M", "F", "hombre", "mujer", "male", "female". **Default: `undefined`** if unrecognized.
+5. **`normalizeCivilStatus(value)`** — Maps to: `soltero`, `casado`, `union_libre`, `divorciado`, `viudo`, `separado`. Accepts gendered variants ("soltera", "casada", "viuda"). **Default: `undefined`** if unrecognized.
+6. **Status normalization** — `activo`, `inactivo`, `retirado`. Uses `removeAccents()`. **Default: `activo`** if unrecognized.
+
+**Validation strategy (safeParse with retry):**
+- First pass: Zod `safeParse` validates the worker data.
+- If validation fails due to enum fields: a retry pass sets invalid optional enum fields (`educationLevel`, `civilStatus`, `gender`) to `undefined` and invalid `contractType` to `"indefinido"`, then re-validates.
+- This ensures **no row is rejected** due to vocabulary variations. Only truly invalid data (missing required fields, bad dates) causes rejection.
+
+**Template instructions** (`GET /api/companies/:companyId/workers/template`):
+- All enum fields are documented as "Texto libre" with examples.
+- The template explicitly tells users the system normalizes automatically.
+
+**WHY this matters:**
+- Colombian companies use diverse vocabulary: HR departments write "contrato a término indefinido", payroll systems export "INDEFINIDO", accountants write "planta".
+- Without normalization, imports fail for valid data, causing client frustration.
+- **DO NOT add strict enum validation to these fields in the import pipeline.**
+- **DO NOT remove the normalization functions or the safeParse retry logic.**
+- If new contract types or education levels are added to the DB schema, update the corresponding normalization function's `synonyms` map and `validValues` array.
+
 ## External Dependencies
 
 -   **PostgreSQL (Neon/AWS RDS)**: Relational database.
