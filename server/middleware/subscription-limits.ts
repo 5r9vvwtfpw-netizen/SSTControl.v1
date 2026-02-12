@@ -226,19 +226,34 @@ export function checkWorkerLimit() {
       const subscription = await storage.getSubscriptionByCompany(targetCompanyId);
       
       // Determinar el límite real de trabajadores:
-      // 1. PRIORIDAD: subscription.workersPurchased (cantidad que el cliente PAGÓ)
-      // 2. FALLBACK: plan.maxWorkers (para suscripciones antiguas sin workersPurchased)
+      // TRIAL: usar company.number_of_workers (lo que declaró al registrarse) para que
+      //   el cliente pueda probar el sistema con todos sus trabajadores
+      // ACTIVE: usar workersPurchased (cantidad que el cliente PAGÓ)
+      // FALLBACK: plan.maxWorkers (para suscripciones antiguas sin workersPurchased)
       let workerLimit: number | null = null;
       
       if (subscription && (subscription.status === 'active' || subscription.status === 'trial')) {
-        // Si tiene workersPurchased definido, usar ese límite
-        if (subscription.workersPurchased && subscription.workersPurchased > 0) {
-          workerLimit = subscription.workersPurchased;
+        if (subscription.status === 'trial') {
+          // En período de prueba: permitir el número de trabajadores que la empresa declaró
+          const company = await storage.getCompany(targetCompanyId);
+          const declaredWorkers = company?.numberOfWorkers;
+          if (declaredWorkers && declaredWorkers > 0) {
+            workerLimit = declaredWorkers;
+          } else {
+            // Fallback del plan si la empresa no tiene número de trabajadores declarado
+            const plan = await storage.getSubscriptionPlan(subscription.planId);
+            workerLimit = plan ? (plan.maxWorkers === -1 ? null : plan.maxWorkers) : 50;
+          }
         } else {
-          // Fallback: obtener límite del plan (para suscripciones sin workersPurchased)
-          const plan = await storage.getSubscriptionPlan(subscription.planId);
-          if (plan) {
-            workerLimit = plan.maxWorkers === -1 ? null : plan.maxWorkers;
+          // Suscripción activa: usar workersPurchased (lo que pagó)
+          if (subscription.workersPurchased && subscription.workersPurchased > 0) {
+            workerLimit = subscription.workersPurchased;
+          } else {
+            // Fallback: obtener límite del plan (para suscripciones antiguas sin workersPurchased)
+            const plan = await storage.getSubscriptionPlan(subscription.planId);
+            if (plan) {
+              workerLimit = plan.maxWorkers === -1 ? null : plan.maxWorkers;
+            }
           }
         }
       } else {
@@ -476,14 +491,38 @@ export async function canAddWorkers(companyId: string, count: number): Promise<{
   limit: number | null;
   remaining: number | null;
 }> {
-  const limits = await getCompanyLimits(companyId);
+  // Obtener suscripción para determinar el límite correcto
+  const subscription = await storage.getSubscriptionByCompany(companyId);
+  let workerLimit: number | null = null;
+  
+  if (subscription && (subscription.status === 'active' || subscription.status === 'trial')) {
+    if (subscription.status === 'trial') {
+      const company = await storage.getCompany(companyId);
+      const declaredWorkers = company?.numberOfWorkers;
+      if (declaredWorkers && declaredWorkers > 0) {
+        workerLimit = declaredWorkers;
+      } else {
+        const limits = await getCompanyLimits(companyId);
+        workerLimit = limits.maxWorkers;
+      }
+    } else {
+      if (subscription.workersPurchased && subscription.workersPurchased > 0) {
+        workerLimit = subscription.workersPurchased;
+      } else {
+        const limits = await getCompanyLimits(companyId);
+        workerLimit = limits.maxWorkers;
+      }
+    }
+  } else {
+    workerLimit = DEFAULT_ESENCIAL_LIMITS.maxWorkers;
+  }
+  
   const currentWorkers = await storage.getWorkers(companyId);
   const activeWorkers = currentWorkers.filter((w: Worker) => 
     w.status === 'activo' || w.status === 'inactivo'
   );
 
-  // Si el plan permite trabajadores ilimitados
-  if (limits.maxWorkers === null) {
+  if (workerLimit === null) {
     return {
       allowed: true,
       currentCount: activeWorkers.length,
@@ -492,13 +531,13 @@ export async function canAddWorkers(companyId: string, count: number): Promise<{
     };
   }
 
-  const remaining = limits.maxWorkers - activeWorkers.length;
+  const remaining = workerLimit - activeWorkers.length;
   const allowed = count <= remaining;
 
   return {
     allowed,
     currentCount: activeWorkers.length,
-    limit: limits.maxWorkers,
+    limit: workerLimit,
     remaining: Math.max(0, remaining)
   };
 }
