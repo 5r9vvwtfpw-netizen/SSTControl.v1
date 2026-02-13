@@ -161,6 +161,8 @@ import { ChapterGate } from "@/components/ChapterGate";
 import { TrialAlert } from "@/components/TrialAlert";
 import { SubscriptionBlockedModal } from "@/components/SubscriptionBlockedModal";
 import { useSubscriptionCheck } from "@/hooks/useSubscriptionCheck";
+import AdminVideosAyuda from "@/pages/AdminVideosAyuda";
+import HelpVideoButton from "@/components/HelpVideoButton";
 
 // Componente que decide si mostrar Welcome o Dashboard según autenticación
 function HomeGateway() {
@@ -272,6 +274,7 @@ function Router() {
       <ProtectedRoute path="/admin-tickets" component={AdminTicketsSoporte} />
       <ProtectedRoute path="/admin-usuarios-soporte" component={AdminUsuariosSoporte} />
       <ProtectedRoute path="/admin-promociones" component={AdminPromociones} />
+      <ProtectedRoute path="/admin-videos-ayuda" component={AdminVideosAyuda} />
       <ProtectedRoute path="/mensajes-internos" component={MensajesInternos} />
       <ProtectedRoute path="/accesos-soporte" component={AccesosSoporte} />
       <ProtectedRoute path="/planes-suscripcion" component={PlanesSuscripcion} />
@@ -481,6 +484,7 @@ function AuthenticatedLayout() {
   return (
     <SubscriptionGate>
       <AdminLayout />
+      <HelpVideoButton />
     </SubscriptionGate>
   );
 }

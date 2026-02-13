@@ -46925,6 +46925,83 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  app.get("/api/help-videos", requireAuth, async (req, res) => {
+    try {
+      const videos = await storage.getActiveHelpVideos();
+      res.json(videos);
+    } catch (error: any) {
+      res.status(500).json({ error: "Error al obtener videos de ayuda" });
+    }
+  });
+
+  app.get("/api/help-videos/by-route", requireAuth, async (req, res) => {
+    try {
+      const route = req.query.route as string;
+      if (!route) {
+        return res.status(400).json({ error: "Se requiere el parámetro 'route'" });
+      }
+      const video = await storage.getHelpVideoByRoute(route);
+      if (!video) {
+        return res.status(200).json({ video: null });
+      }
+      res.json({ video });
+    } catch (error: any) {
+      res.status(500).json({ error: "Error al obtener video de ayuda" });
+    }
+  });
+
+  app.post("/api/help-videos", requireRole(["superadmin", "admin", "superusuario"]), async (req, res) => {
+    try {
+      const parsed = schema.insertHelpVideoSchema.parse(req.body);
+      const video = await storage.createHelpVideo(parsed);
+      res.status(201).json(video);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Datos inválidos", details: error.errors });
+      }
+      if (error.code === "23505") {
+        return res.status(409).json({ error: "Ya existe un video configurado para esta ruta" });
+      }
+      res.status(500).json({ error: "Error al crear video de ayuda" });
+    }
+  });
+
+  app.patch("/api/help-videos/:id", requireRole(["superadmin", "admin", "superusuario"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "ID inválido" });
+      }
+      const parsed = schema.insertHelpVideoSchema.partial().parse(req.body);
+      const video = await storage.updateHelpVideo(id, parsed);
+      if (!video) {
+        return res.status(404).json({ error: "Video no encontrado" });
+      }
+      res.json(video);
+    } catch (error: any) {
+      if (error.code === "23505") {
+        return res.status(409).json({ error: "Ya existe un video configurado para esta ruta" });
+      }
+      res.status(500).json({ error: "Error al actualizar video de ayuda" });
+    }
+  });
+
+  app.delete("/api/help-videos/:id", requireRole(["superadmin", "admin", "superusuario"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "ID inválido" });
+      }
+      const deleted = await storage.deleteHelpVideo(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Video no encontrado" });
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: "Error al eliminar video de ayuda" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Initialize WebSocket for real-time notifications
   initializeWebSocket(httpServer);

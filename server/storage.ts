@@ -365,6 +365,8 @@ import type {
   InsertDocumentAcknowledgment,
   CompanyExtraSeats,
   InsertCompanyExtraSeats,
+  HelpVideo,
+  InsertHelpVideo,
 } from "@shared/schema";
 import { eq, desc, asc, and, or, lt, lte, gte, sql, inArray, isNotNull, isNull, count } from "drizzle-orm";
 import session from "express-session";
@@ -2072,6 +2074,13 @@ export interface IStorage {
   getPcaProgramByYear(year: number, companyId: string): Promise<PcaProgram | undefined>;
   createPcaProgram(program: InsertPcaProgram, companyId: string): Promise<PcaProgram>;
   updatePcaProgram(id: string, program: Partial<InsertPcaProgram>, companyId: string): Promise<PcaProgram | undefined>;
+
+  getHelpVideos(): Promise<HelpVideo[]>;
+  getActiveHelpVideos(): Promise<HelpVideo[]>;
+  getHelpVideoByRoute(route: string): Promise<HelpVideo | undefined>;
+  createHelpVideo(data: InsertHelpVideo): Promise<HelpVideo>;
+  updateHelpVideo(id: number, data: Partial<InsertHelpVideo>): Promise<HelpVideo | undefined>;
+  deleteHelpVideo(id: number): Promise<boolean>;
 }
 
 export class DbStorage implements IStorage {
@@ -17065,6 +17074,40 @@ export class DbStorage implements IStorage {
   async deleteSafeRoute(id: string): Promise<void> {
     await db.delete(schema.safeRoutes)
       .where(eq(schema.safeRoutes.id, id));
+  }
+
+  async getHelpVideos(): Promise<HelpVideo[]> {
+    return await db.select().from(schema.helpVideos).orderBy(asc(schema.helpVideos.moduleName));
+  }
+
+  async getActiveHelpVideos(): Promise<HelpVideo[]> {
+    return await db.select().from(schema.helpVideos)
+      .where(eq(schema.helpVideos.isActive, true))
+      .orderBy(asc(schema.helpVideos.moduleName));
+  }
+
+  async getHelpVideoByRoute(route: string): Promise<HelpVideo | undefined> {
+    const [video] = await db.select().from(schema.helpVideos)
+      .where(and(eq(schema.helpVideos.moduleRoute, route), eq(schema.helpVideos.isActive, true)));
+    return video;
+  }
+
+  async createHelpVideo(data: InsertHelpVideo): Promise<HelpVideo> {
+    const [created] = await db.insert(schema.helpVideos).values(data).returning();
+    return created;
+  }
+
+  async updateHelpVideo(id: number, data: Partial<InsertHelpVideo>): Promise<HelpVideo | undefined> {
+    const [updated] = await db.update(schema.helpVideos)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(schema.helpVideos.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteHelpVideo(id: number): Promise<boolean> {
+    const result = await db.delete(schema.helpVideos).where(eq(schema.helpVideos.id, id)).returning();
+    return result.length > 0;
   }
 }
 

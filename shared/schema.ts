@@ -10494,3 +10494,18 @@ export const insertSafeRouteSchema = createInsertSchema(safeRoutes)
   });
 export type InsertSafeRoute = z.infer<typeof insertSafeRouteSchema>;
 export type SafeRoute = typeof safeRoutes.$inferSelect;
+
+export const helpVideos = pgTable("help_videos", {
+  id: serial("id").primaryKey(),
+  moduleRoute: varchar("module_route", { length: 255 }).notNull().unique(),
+  moduleName: varchar("module_name", { length: 255 }).notNull(),
+  videoUrl: text("video_url").notNull(),
+  videoTitle: varchar("video_title", { length: 255 }).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertHelpVideoSchema = createInsertSchema(helpVideos).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertHelpVideo = z.infer<typeof insertHelpVideoSchema>;
+export type HelpVideo = typeof helpVideos.$inferSelect;
