@@ -27,6 +27,7 @@ import {
   Globe,
   Target,
   Gift,
+  CirclePlay,
 } from "lucide-react";
 import {
   Sidebar,
@@ -74,6 +75,7 @@ const menuItems: Array<{
   { title: "Mi Cuenta", url: "/mi-cuenta", icon: UserCircle },
   { title: "Empresas", url: "/empresas", icon: Building2, requiredPermissions: ["companies:view"] },
   { title: "Promociones", url: "/admin-promociones", icon: Gift, superadminOnly: true },
+  { title: "Videos de Ayuda", url: "/admin-videos-ayuda", icon: CirclePlay, superadminOnly: true },
   { title: "Usuarios", url: "/usuarios", icon: Users, requiredPermissions: ["users:view"] },
   { title: "Perfiles de Cargo", url: "/perfiles-cargo", icon: Briefcase, requiredPermissions: ["job_profiles:view"] },
   { title: "Exámenes Médicos", url: "/examenes-medicos", icon: Stethoscope, requiredPermissions: ["medical_exams:view"] },
