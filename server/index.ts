@@ -64,18 +64,28 @@ app.post(
       const stripe = await getUncachableStripeClient();
       const sig = Array.isArray(signature) ? signature[0] : signature;
 
-      if (!Buffer.isBuffer(req.body)) {
-        logger.error('Stripe webhook: req.body is not a Buffer');
+      let rawBody: Buffer;
+      if (Buffer.isBuffer(req.body)) {
+        rawBody = req.body;
+      } else if (typeof req.body === 'string') {
+        rawBody = Buffer.from(req.body, 'utf8');
+        logger.warn('Stripe webhook: req.body was string, converted to Buffer');
+      } else if (req.body instanceof Uint8Array) {
+        rawBody = Buffer.from(req.body);
+        logger.warn('Stripe webhook: req.body was Uint8Array, converted to Buffer');
+      } else if (req.body && typeof req.body === 'object') {
+        rawBody = Buffer.from(JSON.stringify(req.body), 'utf8');
+        logger.warn({ bodyType: typeof req.body, constructor: req.body?.constructor?.name }, 'Stripe webhook: req.body was parsed object, re-stringified to Buffer');
+      } else {
+        logger.error({ bodyType: typeof req.body, hasBody: !!req.body }, 'Stripe webhook: req.body is unusable type');
         return res.status(500).json({ error: 'Webhook processing error' });
       }
 
-      // Construct event with signature verification (if secret is configured)
       let event;
       if (endpointSecret) {
-        event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+        event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
       } else {
-        // In development, parse event without signature verification
-        event = JSON.parse(req.body.toString());
+        event = JSON.parse(rawBody.toString());
         logger.warn('Stripe webhook: No endpoint secret configured, skipping signature verification');
       }
 
@@ -679,8 +689,17 @@ app.post(
 
       res.status(200).json({ received: true });
     } catch (error: any) {
-      logger.error({ err: error }, 'Stripe webhook error');
-      res.status(400).json({ error: 'Webhook processing error' });
+      logger.error({ 
+        err: error, 
+        message: error.message,
+        type: error.type,
+        bodyType: typeof req.body,
+        bodyIsBuffer: Buffer.isBuffer(req.body),
+        bodyLength: req.body?.length,
+        hasEndpointSecret: !!endpointSecret,
+        signaturePresent: !!signature
+      }, 'Stripe webhook error');
+      res.status(400).json({ error: 'Webhook processing error', detail: error.message });
     }
   }
 );
