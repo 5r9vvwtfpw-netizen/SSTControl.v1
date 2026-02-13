@@ -1,0 +1,62 @@
+Build functional tests for the main app that validate the Hotel Room demo session works end to end after landing page verification.
+
+Scope
+- After POST /api/demo/verify, backend allocates a room and returns redirectUrl that logs the prospect into the main app.
+- The main app must enforce:
+  - Access only if the room is OCCUPIED.
+  - Session is tied to the assigned prospect.
+  - Access denied after expires_at.
+- Housekeeping resets expired rooms and access becomes invalid.
+
+Tooling
+- Use Playwright for E2E UI tests plus API-level tests using Supertest (or equivalent) for direct endpoint checks.
+
+Test setup
+- Add TEST_MODE to allow manipulating demo room expiry safely:
+  - Option A. test hook endpoint POST /api/test/demo/expire-room?room_id=...
+  - Option B. set expires_at to now minus 1 minute for a given prospect.
+- All /api/test/* endpoints must be gated behind TEST_MODE and never enabled in production.
+
+Test cases to implement
+
+1) Verify redirectUrl logs into the main app
+- Use backend test flow to obtain redirectUrl for a new prospect:
+  - Call POST /api/demo/request (test mode).
+  - Obtain token from test hook.
+  - Call POST /api/demo/verify with token.
+- Open redirectUrl in browser.
+- Assert dashboard loads and user is authenticated.
+- Assert the session is demo scoped (for example a banner “Demo” or company_id between 1001 and 1010 visible somewhere, or an API call returns the active company_id).
+
+2) Session binding enforcement
+- Confirm that a token for prospect A cannot be used to access prospect B’s room.
+- If possible, allocate two prospects. Try to reuse redirectUrl or token across users.
+- Expect 401/403.
+
+3) Expiry enforcement
+- Allocate a demo session.
+- Force expiry using test hook or by setting expires_at to past.
+- Refresh the dashboard or call a protected endpoint.
+- Expect immediate denial (401) with “Demo expired” behavior and a UI message.
+
+4) Housekeeping reset validity
+- Allocate a demo session and force expiry.
+- Trigger housekeeping in test mode:
+  - Option A. call POST /api/test/demo/run-housekeeping once
+  - Option B. directly invoke the housekeeping function in test runner.
+- Assert room status becomes AVAILABLE.
+- Assert company data is reset from master (pick one deterministic record that exists in master and should exist after reset).
+- Assert old credentials or token no longer work.
+
+5) Concurrency safety (API test)
+- Fire 20 parallel requests to allocate rooms for 20 different prospects.
+- Assert at most 10 allocations succeed with 200.
+- The rest must return 503 or 429 with Retry-After.
+- Assert no room is allocated twice.
+
+Deliverables
+- E2E test suite for the main app.
+- API concurrency test.
+- Minimal test hooks under /api/test/* gated by TEST_MODE.
+- README with commands to run tests.
+- Ens

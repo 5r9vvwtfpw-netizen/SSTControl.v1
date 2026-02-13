@@ -902,6 +902,12 @@ app.use(requireValidLicense);
       app.use("/api/demo", (_req, res) => res.status(404).json({ error: "Not found" }));
       logger.info("⏸️ Demo Engine deshabilitado (ENABLE_DEMO_MODE != true)");
     }
+
+    if (process.env.TEST_MODE === "true" && process.env.NODE_ENV !== "production") {
+      const { default: testHooksRouter } = await import("../plugins/demo-engine/test-hooks");
+      app.use("/api/test", testHooksRouter);
+      logger.info("⚠️ TEST MODE ENABLED - Test hooks mounted at /api/test/*");
+    }
   } catch (error) {
     logger.warn({ err: error }, "⚠️ Demo Engine no disponible (no crítico)");
   }
