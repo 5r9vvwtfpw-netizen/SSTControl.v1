@@ -1,0 +1,107 @@
+Hola:	
+ 
+ 
+ 
+ 
+Hemos tenido problemas para enviar peticiones en modo activo a un punto de conexión de webhooks asociado con tu cuenta liscencia. Stripe envía eventos de webhooks a tu servidor para informarte sobre la actividad que hay en tu cuenta de Stripe, por ejemplo, si se ha hecho una transferencia o se ha creado una factura.	
+ 
+ 
+ 
+ 
+La URL del punto de conexión de webhooks que falla es: https://sst-colombia.com/api/stripe/webhook	
+ 
+ 
+ 
+ 
+Tú o alguien de tu equipo ha configurado tu cuenta de Stripe para enviar eventos a esa URL. Puedes cambiar los puntos de conexión del webhook de tu cuenta en el Dashboard.	
+ 
+ 
+ 
+ 
+En la mayoría de los casos, el fallo de un webhook no afectará a tus pagos ni a tus transferencias. Sin embargo, debes tener en cuenta lo siguiente:	
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Si usas suscripciones, nosotros dependemos de tu punto de conexión de webhooks para poder informarte de las facturas nuevas. Estas facturas pueden tardar en llegar hasta tres días si tu punto de conexión no las puede recibir correctamente.
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Si usas Checkout y dependes del evento checkout.session.completed como parte de tu proceso para completar la compra, debes revisar los pagos efectivizados para asegurarte de que has completado las últimas compras.
+
+ 
+ 
+ 
+ 
+ 
+Hemos intentado enviar notificaciones de eventos a este punto de conexión 13 veces desde que se produjo el primer error el 10 de febrero de 2026, 10:49:18 UTC. Si este punto de conexión es importante para tu aplicación, intenta solucionar el problema. Si no lo necesitas, puedes eliminarlo de tu configuración de webhooks de Stripe. Dejaremos de enviar notificaciones a este punto de conexión de webhooks a partir del 19 de febrero de 2026, 10:49:18 UTC.	
+ 
+ 
+ 
+ 
+Este es el resumen de errores que hemos recibido al intentar enviarte los eventos del webhook:	
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+13 requests had other errors while sending the webhook event.	
+ 
+ 
+ 
+ 
+ 
+Debes enviar un mensaje de respuesta HTTP con un código de estado entre 200 y 299 para que Stripe considere que el evento del webhook se entregó correctamente.	
+ 
+ 
+ 
+ 
+Para obtener más información sobre estos errores y revisar la actividad reciente de tu cuenta, consulta el conjunto completo de eventos y registros de solicitudes en el Dashboard.	
+ 
+ 
+ 
+ 
+Si deseas tener información más detallada sobre el uso de los webhooks, te recomendamos que consultes nuestra documentación.	
+ 
+ 
+ 
+ 
+— El equipo de Stripe	
+ 
+ 
+ 
+ 
+ 
+Este mensaje está relacionado con tu cuenta de liscencia de Stripe.
+ID de cuenta: acct_1SYv1FDfB6j9EFjH
+¿Necesitas referirte a este mensaje? Utiliza este ID: em_xzpeuyoi4xdnheklguze0mcypogu7a	
+ 
+ 
+ 
+Stripe Payments UK Limited es una empresa registrada en Inglaterra y Gales. Número de registro: 08480771. Oficina registrada: 9th Floor, 107 Cheapside, Londres, EC2V 6DN	
+ 
+ 
+ 
+Actualmente estás suscrito a los correos electrónicos de «Fallos de webhook». Para darte de baja, gestiona tus preferencias de comunicación .	
+ 
+ 
+ 
+ 
