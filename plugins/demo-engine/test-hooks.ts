@@ -4,6 +4,10 @@ import { sql } from "drizzle-orm";
 import { runHousekeeping } from "./service";
 import logger from "../../server/lib/logger";
 
+function extractRows(result: any): any[] {
+  return (result as any).rows || result;
+}
+
 const router = Router();
 
 function isTestMode(): boolean {
@@ -24,12 +28,12 @@ router.post("/demo/expire-room", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "roomId is required" });
     }
     
-    await db.execute(sql.raw(`
+    await db.execute(sql`
       UPDATE demo_room_bookings 
       SET expires_at = now() - interval '1 minute',
           updated_at = now()
-      WHERE room_id = '${roomId.replace(/'/g, "''")}'
-    `));
+      WHERE room_id = ${roomId}
+    `);
     
     return res.json({ success: true, message: `Room ${roomId} expired` });
   } catch (error: any) {
@@ -50,11 +54,11 @@ router.post("/demo/run-housekeeping", async (req: Request, res: Response) => {
 
 router.get("/demo/room-status", async (req: Request, res: Response) => {
   try {
-    const rooms = await db.execute(sql.raw(
-      `SELECT room_id, company_id, demo_username, status, assigned_prospect_email, assigned_session_token, expires_at, last_reset_at, error_message, updated_at
-       FROM demo_room_bookings ORDER BY room_id`
-    ));
-    const rows = (rooms as any).rows || rooms;
+    const rooms = await db.execute(sql`
+      SELECT room_id, company_id, demo_username, status, assigned_prospect_email, assigned_session_token, expires_at, last_reset_at, error_message, updated_at
+       FROM demo_room_bookings ORDER BY room_id
+    `);
+    const rows = extractRows(rooms);
     return res.json({ rooms: rows });
   } catch (error: any) {
     logger.error({ err: error }, "[TestHooks] room-status failed");
@@ -69,7 +73,7 @@ router.post("/demo/force-available", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "roomId is required" });
     }
     
-    await db.execute(sql.raw(`
+    await db.execute(sql`
       UPDATE demo_room_bookings 
       SET status = 'available',
           assigned_prospect_email = NULL,
@@ -77,17 +81,15 @@ router.post("/demo/force-available", async (req: Request, res: Response) => {
           expires_at = NULL,
           error_message = NULL,
           updated_at = now()
-      WHERE room_id = '${roomId.replace(/'/g, "''")}'
-    `));
+      WHERE room_id = ${roomId}
+    `);
     
-    const roomResult = await db.execute(sql.raw(
-      `SELECT company_id FROM demo_room_bookings WHERE room_id = '${roomId.replace(/'/g, "''")}'`
-    ));
-    const roomRows = (roomResult as any).rows || roomResult;
+    const roomResult = await db.execute(sql`
+      SELECT company_id FROM demo_room_bookings WHERE room_id = ${roomId}
+    `);
+    const roomRows = extractRows(roomResult);
     if (roomRows[0]) {
-      await db.execute(sql.raw(
-        `DELETE FROM users WHERE company_id = '${roomRows[0].company_id}'`
-      ));
+      await db.execute(sql`DELETE FROM users WHERE company_id = ${roomRows[0].company_id}`);
     }
     
     return res.json({ success: true, message: `Room ${roomId} forced to available` });

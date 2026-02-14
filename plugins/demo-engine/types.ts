@@ -11,7 +11,6 @@ export const DEMO_COMPANY_IDS = [
 ] as const;
 
 export const GOLDEN_MASTER_COMPANY_ID = process.env.DEMO_GOLDEN_MASTER_ID || "demo-golden-master";
-export const GOLDEN_MASTER_USER_ID = "demo-golden-master-admin";
 
 export type DemoRoomId = typeof DEMO_ROOM_IDS[number];
 export type DemoCompanyId = typeof DEMO_COMPANY_IDS[number];
@@ -42,12 +41,6 @@ export interface CheckInResponse {
 
 export function isDemoEnabled(): boolean {
   return process.env.ENABLE_DEMO_MODE === "true";
-}
-
-export function assertSafeDemoCompanyId(companyId: string): void {
-  if (!DEMO_COMPANY_IDS.includes(companyId as DemoCompanyId) && companyId !== GOLDEN_MASTER_COMPANY_ID) {
-    throw new Error(`[DEMO SAFETY] Company ID ${companyId} is NOT a demo company. Operation blocked.`);
-  }
 }
 
 export function assertSafeDemoRoomCompanyId(companyId: string): void {
