@@ -48,7 +48,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { findBestMatch, type Message } from "@/components/ChatbotAsistente";
+import { searchChatbot, type Message } from "@/components/ChatbotAsistente";
 import { NotificationBell } from "@/components/NotificationBell";
 
 type PHVASection = "configuracion" | "planear" | "hacer" | "verificar" | "actuar";
@@ -266,23 +266,21 @@ export function PHVANavigation() {
     setChatInput("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      const match = findBestMatch(messageText);
-      
+    searchChatbot(messageText).then((response) => {
       let botResponse: Message;
-      
-      if (match) {
+
+      if (response.success && response.result) {
         botResponse = {
           id: `bot-${Date.now()}`,
-          content: match.answer,
+          content: response.result.answer,
           isBot: true,
           timestamp: new Date(),
-          images: match.images,
+          images: response.result.images,
         };
       } else {
         botResponse = {
           id: `bot-${Date.now()}`,
-          content: "No encontré una respuesta exacta a tu pregunta. Intenta reformular tu pregunta usando palabras clave más específicas.\n\nPuedes preguntarme sobre: trabajadores, capacitaciones, accidentes, inspecciones, IPERC, COPASST, normativa, EPP, y más.",
+          content: response.defaultResponse || "No encontré una respuesta exacta a tu pregunta. Intenta reformular tu pregunta usando palabras clave más específicas.\n\nPuedes preguntarme sobre: trabajadores, capacitaciones, accidentes, inspecciones, IPERC, COPASST, normativa, EPP, y más.",
           isBot: true,
           timestamp: new Date(),
         };
@@ -290,7 +288,15 @@ export function PHVANavigation() {
 
       setChatMessages(prev => [...prev, botResponse]);
       setIsTyping(false);
-    }, 600);
+    }).catch(() => {
+      setChatMessages(prev => [...prev, {
+        id: `bot-${Date.now()}`,
+        content: "Hubo un error al buscar la respuesta. Por favor intenta de nuevo.",
+        isBot: true,
+        timestamp: new Date(),
+      }]);
+      setIsTyping(false);
+    });
   };
 
   const handleChatKeyPress = (e: React.KeyboardEvent) => {

@@ -63,6 +63,7 @@ AWS_RDS_DATABASE = "postgres"
 JWT_RECALCULATE_SECRET = "CQcG2mZNrdM4JZ8rDqGpTgV4IUGChqUFgl6qgo9Ga/Pf+kHivJydldC+ThZclPNg"
 ENABLE_DEMO_MODE = "true"
 DEMO_GOLDEN_MASTER_ID = "80e8ceec-1ed9-45ff-8970-9f0bf095709a"
+ENABLE_CHATBOT = "true"
 
 [userenv.development]
 AUTO_VERIFY_EMAIL = "true"
