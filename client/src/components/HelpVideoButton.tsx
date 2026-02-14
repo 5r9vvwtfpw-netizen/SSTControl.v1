@@ -53,15 +53,15 @@ export default function HelpVideoButton() {
 
   return (
     <>
-      <Button
-        size="icon"
-        className="fixed bottom-20 right-6 z-50 rounded-full shadow-lg"
+      <button
+        className="fixed bottom-20 right-6 z-[60] flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-4 py-2 shadow-lg hover:opacity-90 transition-opacity"
         onClick={() => setModalOpen(true)}
         data-testid="button-help-video"
         title="Ver video de ayuda"
       >
         <CirclePlay className="h-5 w-5" />
-      </Button>
+        <span className="text-sm font-medium">Video Ayuda</span>
+      </button>
 
       {modalOpen && (
         <div
