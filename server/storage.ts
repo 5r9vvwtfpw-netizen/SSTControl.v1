@@ -2777,6 +2777,24 @@ export class DbStorage implements IStorage {
         UPDATE evaluaciones_pesv SET responsable_evaluacion_id = NULL WHERE responsable_evaluacion_id = ${id};
         UPDATE evaluaciones_pesv SET aprobado_por_id = NULL WHERE aprobado_por_id = ${id};
         UPDATE pesv_step_details SET responsable_implementacion_id = NULL WHERE responsable_implementacion_id = ${id};
+        UPDATE chatbot_questions SET user_id = NULL WHERE user_id = ${id};
+        UPDATE no_conformidades SET created_by_id = NULL WHERE created_by_id = ${id};
+        UPDATE no_conformidades SET detectado_por_id = NULL WHERE detectado_por_id = ${id};
+        UPDATE no_conformidades SET responsable_area_id = NULL WHERE responsable_area_id = ${id};
+        UPDATE no_conformidades SET verificada_por_id = NULL WHERE verificada_por_id = ${id};
+        UPDATE oportunidades_mejora SET created_by_id = NULL WHERE created_by_id = ${id};
+        UPDATE oportunidades_mejora SET identificado_por_id = NULL WHERE identificado_por_id = ${id};
+        UPDATE oportunidades_mejora SET responsable_id = NULL WHERE responsable_id = ${id};
+        UPDATE oportunidades_mejora SET aprobada_por = NULL WHERE aprobada_por = ${id};
+        UPDATE acciones_correctivas SET created_by_id = NULL WHERE created_by_id = ${id};
+        UPDATE acciones_correctivas SET responsable_id = NULL WHERE responsable_id = ${id};
+        UPDATE acciones_correctivas SET verificado_por_id = NULL WHERE verificado_por_id = ${id};
+        UPDATE lso_professionals SET user_id = NULL WHERE user_id = ${id};
+        UPDATE lso_invitations SET invited_by = NULL WHERE invited_by = ${id};
+        UPDATE lso_company_assignments SET assigned_by = NULL WHERE assigned_by = ${id};
+        UPDATE lso_company_assignments SET unassigned_by = NULL WHERE unassigned_by = ${id};
+        UPDATE lso_registrations SET reviewed_by = NULL WHERE reviewed_by = ${id};
+        UPDATE sociodemographic_diagnosis_periods SET closed_by = NULL WHERE closed_by = ${id};
       `);
 
       // 3. Finally delete the user

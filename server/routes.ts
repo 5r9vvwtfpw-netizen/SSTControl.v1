@@ -6595,8 +6595,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteUser(req.params.id);
       res.sendStatus(204);
     } catch (error: any) {
-      console.error('Error deleting support user:', error);
-      res.status(500).send("Error al eliminar usuario de soporte");
+      console.error('Error deleting support user:', error?.message || error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      res.status(500).json({ error: "Error al eliminar usuario de soporte", details: error?.message });
     }
   });
 
