@@ -31,15 +31,17 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const MODULE_LIST = [
+  { route: "/", name: "Inicio", group: "SST" },
   { route: "/dashboard", name: "Dashboard", group: "SST" },
   { route: "/trabajadores", name: "Trabajadores", group: "SST" },
   { route: "/perfiles-cargo", name: "Perfiles de Cargo", group: "SST" },
   { route: "/asignacion-recursos", name: "Asignación de Recursos", group: "SST" },
   { route: "/designacion-responsable", name: "Designación del Responsable", group: "SST" },
+  { route: "/asignar-lso-externo", name: "Asignar LSO Externo", group: "SST" },
   { route: "/capacitaciones", name: "Capacitaciones", group: "SST" },
   { route: "/programa-capacitacion-anual", name: "Programa de Capacitación Anual", group: "SST" },
   { route: "/curso-50-horas", name: "Curso 50 Horas SST", group: "SST" },
-  { route: "/registros-induccion", name: "Registros de Inducción", group: "SST" },
+  { route: "/configuracion-induccion", name: "Configuración de Inducción", group: "SST" },
   { route: "/inspecciones", name: "Inspecciones", group: "SST" },
   { route: "/accidentes", name: "Accidentes e Incidentes", group: "SST" },
   { route: "/investigacion-accidentes", name: "Investigación de Accidentes", group: "SST" },
@@ -66,6 +68,12 @@ const MODULE_LIST = [
   { route: "/planes-trabajo-anual", name: "Planes de Trabajo Anual", group: "SST" },
   { route: "/objetivos-sst", name: "Objetivos SST", group: "SST" },
   { route: "/indicadores-accidentalidad", name: "Indicadores de Accidentalidad", group: "SST" },
+  { route: "/indicador-ili-incidentes", name: "Indicador ILI - Incidentes", group: "SST" },
+  { route: "/indicador-frecuencia-severidad", name: "Indicador Frecuencia y Severidad", group: "SST" },
+  { route: "/indicador-mortalidad", name: "Indicador de Mortalidad", group: "SST" },
+  { route: "/indicador-prevalencia", name: "Indicador de Prevalencia", group: "SST" },
+  { route: "/indicador-incidencia", name: "Indicador de Incidencia", group: "SST" },
+  { route: "/indicador-ausentismo", name: "Indicador de Ausentismo", group: "SST" },
   { route: "/matriz-legal", name: "Matriz Legal", group: "SST" },
   { route: "/auditorias-internas", name: "Auditorías Internas", group: "SST" },
   { route: "/revisiones-direccion", name: "Revisión por la Dirección", group: "SST" },
@@ -74,8 +82,9 @@ const MODULE_LIST = [
   { route: "/gestion-cambios", name: "Gestión de Cambios", group: "SST" },
   { route: "/adquisiciones-sst", name: "Adquisiciones SST", group: "SST" },
   { route: "/comunicacion-sst", name: "Comunicación SST", group: "SST" },
-  { route: "/copasst-gestion", name: "COPASST", group: "SST" },
+  { route: "/copasst-gestion", name: "COPASST - Gestión", group: "SST" },
   { route: "/capacitacion-copasst", name: "Capacitación COPASST", group: "SST" },
+  { route: "/copasst-cms", name: "COPASST - CMS", group: "SST" },
   { route: "/copasst-evaluaciones", name: "Evaluaciones 360° COPASST", group: "SST" },
   { route: "/comite-convivencia-actas", name: "Comité de Convivencia - Actas", group: "SST" },
   { route: "/partes-interesadas", name: "Partes Interesadas", group: "SST" },
@@ -84,7 +93,19 @@ const MODULE_LIST = [
   { route: "/conservacion-documentos", name: "Conservación de Documentos", group: "SST" },
   { route: "/informes", name: "Informes", group: "SST" },
   { route: "/portal-empleados", name: "Portal del Empleado", group: "SST" },
+  { route: "/mensajes-internos", name: "Mensajes Internos", group: "SST" },
+  { route: "/tickets-soporte", name: "Tickets de Soporte", group: "SST" },
   { route: "/mi-suscripcion", name: "Mi Suscripción", group: "SST" },
+  { route: "/mi-cuenta", name: "Mi Cuenta", group: "SST" },
+  { route: "/solicitudes-arco", name: "Solicitudes ARCO", group: "SST" },
+  { route: "/configuracion-notificaciones", name: "Configuración de Notificaciones", group: "SST" },
+  { route: "/dashboard-hacer", name: "Dashboard - Hacer", group: "SST" },
+  { route: "/dashboard-verificar", name: "Dashboard - Verificar", group: "SST" },
+  { route: "/dashboard-actuar", name: "Dashboard - Actuar", group: "SST" },
+  { route: "/empresas", name: "Gestión de Empresas", group: "Administración" },
+  { route: "/usuarios", name: "Gestión de Usuarios", group: "Administración" },
+  { route: "/profesionales-licenciados", name: "Profesionales Licenciados", group: "Administración" },
+  { route: "/portal-licenciado", name: "Portal del Licenciado", group: "Administración" },
   { route: "/pesv", name: "PESV - Panel Principal", group: "PESV" },
   { route: "/pesv/vehiculos", name: "PESV - Vehículos", group: "PESV" },
   { route: "/pesv/conductores", name: "PESV - Conductores", group: "PESV" },
@@ -360,12 +381,13 @@ export default function AdminVideosAyuda() {
                     <SelectValue placeholder="Seleccione un módulo" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
-                    {["SST", "PESV"].map((group) => {
+                    {["SST", "PESV", "Administración"].map((group) => {
                       const groupModules = availableModules.filter((m) => m.group === group);
                       if (groupModules.length === 0) return null;
+                      const groupLabel = group === "SST" ? "Módulos SST" : group === "PESV" ? "Módulos PESV" : "Módulos Administración";
                       return (
                         <div key={group}>
-                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{group === "SST" ? "Módulos SST" : "Módulos PESV"}</div>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{groupLabel}</div>
                           {groupModules.map((mod) => (
                             <SelectItem key={mod.route} value={mod.route} data-testid={`option-module-${mod.route}`}>
                               {mod.name}
