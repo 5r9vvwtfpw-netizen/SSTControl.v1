@@ -46967,7 +46967,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (error.code === "23505") {
         return res.status(409).json({ error: "Ya existe un video configurado para esta ruta" });
       }
-      res.status(500).json({ error: "Error al crear video de ayuda" });
+      console.error("[HELP-VIDEO] Error creating:", error);
+      res.status(500).json({ error: "Error al crear video de ayuda", details: error.message });
     }
   });
 
