@@ -890,26 +890,34 @@ app.use(requireValidLicense);
   }
 
   // Demo Engine Plugin (Sidecar - Hotel Room Model)
-  try {
-    if (isDemoEnabled()) {
+  if (isDemoEnabled()) {
+    try {
       const { runDemoEngineMigration } = await import("../plugins/demo-engine/migration");
       await runDemoEngineMigration();
-      await initializeDemoRooms();
-      app.use("/api/demo", demoEngineRouter);
-      startDemoHousekeepingCron();
-      logger.info("✅ Demo Engine montado en /api/demo (ENABLE_DEMO_MODE=true)");
-    } else {
-      app.use("/api/demo", (_req, res) => res.status(404).json({ error: "Not found" }));
-      logger.info("⏸️ Demo Engine deshabilitado (ENABLE_DEMO_MODE != true)");
+    } catch (migrationError) {
+      logger.warn({ err: migrationError }, "⚠️ Demo Engine migration failed (non-critical)");
     }
+    try {
+      await initializeDemoRooms();
+    } catch (initError) {
+      logger.warn({ err: initError }, "⚠️ Demo Engine room initialization failed (non-critical)");
+    }
+    app.use("/api/demo", demoEngineRouter);
+    startDemoHousekeepingCron();
+    logger.info("✅ Demo Engine montado en /api/demo (ENABLE_DEMO_MODE=true)");
+  } else {
+    app.use("/api/demo", (_req, res) => res.status(404).json({ error: "Not found" }));
+    logger.info("⏸️ Demo Engine deshabilitado (ENABLE_DEMO_MODE != true)");
+  }
 
-    if (process.env.TEST_MODE === "true" && process.env.NODE_ENV !== "production") {
+  if (process.env.TEST_MODE === "true" && process.env.NODE_ENV !== "production") {
+    try {
       const { default: testHooksRouter } = await import("../plugins/demo-engine/test-hooks");
       app.use("/api/test", testHooksRouter);
       logger.info("⚠️ TEST MODE ENABLED - Test hooks mounted at /api/test/*");
+    } catch (testError) {
+      logger.warn({ err: testError }, "⚠️ Test hooks not available");
     }
-  } catch (error) {
-    logger.warn({ err: error }, "⚠️ Demo Engine no disponible (no crítico)");
   }
 
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
