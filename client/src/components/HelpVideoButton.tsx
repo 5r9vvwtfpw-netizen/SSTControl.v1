@@ -54,13 +54,12 @@ export default function HelpVideoButton() {
   return (
     <>
       <Button
-        variant="outline"
         onClick={() => setModalOpen(true)}
         data-testid="button-help-video"
         title="Ver video de ayuda"
-        className="gap-2"
+        className="gap-2 bg-red-600 hover:bg-red-700 text-white border-red-600"
       >
-        <CirclePlay className="h-4 w-4 text-red-500" />
+        <CirclePlay className="h-4 w-4" />
         Video de Ayuda
       </Button>
 
