@@ -350,14 +350,8 @@ export function setupAuth(app: Express) {
         });
       }
 
-      // Block login if email is not verified (superadmin exempt as system account)
-      if (!user.emailVerifiedAt && user.role !== 'superadmin') {
-        logger.warn({ username: user.username }, "Support login blocked - email not verified");
-        return res.status(403).json({ 
-          error: "Debes verificar tu correo electrónico antes de iniciar sesión.",
-          code: "EMAIL_NOT_VERIFIED"
-        });
-      }
+      // Support users are created by superadmin directly - no email verification needed
+      // Only regular users need email verification through the main login flow
       
       req.session.regenerate((err) => {
         if (err) {
