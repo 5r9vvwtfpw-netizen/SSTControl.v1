@@ -30,12 +30,17 @@ function toYouTubeEmbedUrl(url: string): string {
   return url;
 }
 
+const ROUTE_ALIASES: Record<string, string> = {
+  "/": "/dashboard",
+};
+
 export default function HelpVideoButton() {
   const [location] = useLocation();
   const { user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
 
-  const encodedRoute = encodeURIComponent(location);
+  const resolvedRoute = ROUTE_ALIASES[location] || location;
+  const encodedRoute = encodeURIComponent(resolvedRoute);
   const { data } = useQuery<{ video: HelpVideo | null }>({
     queryKey: [`/api/help-videos/by-route?route=${encodedRoute}`],
     enabled: !!user,
