@@ -10507,6 +10507,21 @@ export const helpVideos = pgTable("help_videos", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const chatbotQuestions = pgTable("chatbot_questions", {
+  id: serial("id").primaryKey(),
+  companyId: varchar("company_id").references(() => companies.id),
+  userId: varchar("user_id").references(() => users.id),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  tokensUsed: integer("tokens_used"),
+  responseTimeMs: integer("response_time_ms"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const insertChatbotQuestionSchema = createInsertSchema(chatbotQuestions).omit({ id: true, createdAt: true });
+export type InsertChatbotQuestion = z.infer<typeof insertChatbotQuestionSchema>;
+export type ChatbotQuestion = typeof chatbotQuestions.$inferSelect;
+
 export const insertHelpVideoSchema = createInsertSchema(helpVideos).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertHelpVideo = z.infer<typeof insertHelpVideoSchema>;
 export type HelpVideo = typeof helpVideos.$inferSelect;
