@@ -66,6 +66,7 @@ ENABLE_DEMO_MODE = "true"
 [userenv.development]
 AUTO_VERIFY_EMAIL = "true"
 TEST_MODE = "true"
+DEMO_GOLDEN_MASTER_ID = "8be87733-e323-4386-917f-aed929b9dae5"
 
 [userenv.production]
 NODE_ENV = "production"
