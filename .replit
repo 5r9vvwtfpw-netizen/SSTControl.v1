@@ -65,6 +65,7 @@ ENABLE_DEMO_MODE = "true"
 
 [userenv.development]
 AUTO_VERIFY_EMAIL = "true"
+TEST_MODE = "true"
 
 [userenv.production]
 NODE_ENV = "production"
