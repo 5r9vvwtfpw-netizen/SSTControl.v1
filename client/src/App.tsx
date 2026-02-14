@@ -383,6 +383,9 @@ function AdminLayout() {
         <main className="flex-1 overflow-auto bg-background">
           <div className="container mx-auto px-6 py-6">
             <TrialAlert />
+            <div className="flex justify-end mb-2">
+              <HelpVideoButton />
+            </div>
             <ChapterGate>
               <Router />
             </ChapterGate>
@@ -487,7 +490,6 @@ function AuthenticatedLayout() {
   return (
     <SubscriptionGate>
       <AdminLayout />
-      <HelpVideoButton />
     </SubscriptionGate>
   );
 }

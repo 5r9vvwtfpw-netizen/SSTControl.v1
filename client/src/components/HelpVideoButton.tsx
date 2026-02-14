@@ -37,7 +37,12 @@ export default function HelpVideoButton() {
 
   const encodedRoute = encodeURIComponent(location);
   const { data } = useQuery<{ video: HelpVideo | null }>({
-    queryKey: [`/api/help-videos/by-route?route=${encodedRoute}`],
+    queryKey: ["/api/help-videos/by-route", encodedRoute],
+    queryFn: async () => {
+      const res = await fetch(`/api/help-videos/by-route?route=${encodedRoute}`);
+      if (!res.ok) throw new Error("Failed to fetch help video");
+      return res.json();
+    },
     enabled: !!user,
     retry: false,
   });
@@ -49,13 +54,14 @@ export default function HelpVideoButton() {
   return (
     <>
       <Button
-        size="icon"
-        className="fixed bottom-20 right-6 z-50 rounded-full shadow-lg"
+        variant="outline"
         onClick={() => setModalOpen(true)}
         data-testid="button-help-video"
         title="Ver video de ayuda"
+        className="gap-2"
       >
-        <CirclePlay className="h-5 w-5" />
+        <CirclePlay className="h-4 w-4 text-red-500" />
+        Video de Ayuda
       </Button>
 
       {modalOpen && (
