@@ -1247,6 +1247,11 @@ function MiContratoTab() {
           </div>
 
           <div className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground">Salario</p>
+            <p className="text-base">{contract.salary && contract.salary > 0 ? formatCurrency(contract.salary) : "No especificado"}</p>
+          </div>
+
+          <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Jornada Laboral</p>
             <p className="text-base">{contract.workSchedule || "No especificado"}</p>
           </div>
