@@ -68,6 +68,7 @@ AUTO_VERIFY_EMAIL = "true"
 
 [userenv.production]
 NODE_ENV = "production"
+DEMO_GOLDEN_MASTER_ID = "8be87733-e323-4386-917f-aed929b9dae5"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-1a32e428-68e0-4edd-a4f5-f7aa98c8512e"

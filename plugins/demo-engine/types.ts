@@ -10,7 +10,7 @@ export const DEMO_COMPANY_IDS = [
   "demo-company-room-010",
 ] as const;
 
-export const GOLDEN_MASTER_COMPANY_ID = "8be87733-e323-4386-917f-aed929b9dae5";
+export const GOLDEN_MASTER_COMPANY_ID = process.env.DEMO_GOLDEN_MASTER_ID || "demo-golden-master";
 export const GOLDEN_MASTER_USER_ID = "demo-golden-master-admin";
 
 export type DemoRoomId = typeof DEMO_ROOM_IDS[number];

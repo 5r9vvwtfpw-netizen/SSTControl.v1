@@ -74,29 +74,39 @@ export async function initializeDemoRooms(): Promise<void> {
 
   logger.info("[DemoEngine] Initializing demo rooms...");
 
+  let initialized = 0;
+  let existing = 0;
+
   for (let i = 0; i < DEMO_ROOM_IDS.length; i++) {
     const roomId = DEMO_ROOM_IDS[i];
     const companyId = DEMO_COMPANY_IDS[i];
     const demoUsername = `demo${i + 1}`;
 
-    const [existing] = await db
-      .select()
-      .from(demoRoomBookings)
-      .where(eq(demoRoomBookings.roomId, roomId))
-      .limit(1);
+    try {
+      const [existingRoom] = await db
+        .select()
+        .from(demoRoomBookings)
+        .where(eq(demoRoomBookings.roomId, roomId))
+        .limit(1);
 
-    if (!existing) {
-      await db.insert(demoRoomBookings).values({
-        roomId,
-        companyId,
-        demoUsername,
-        status: "available",
-      });
-      logger.info(`[DemoEngine] Room ${roomId} initialized`);
+      if (!existingRoom) {
+        await db.insert(demoRoomBookings).values({
+          roomId,
+          companyId,
+          demoUsername,
+          status: "available",
+        });
+        initialized++;
+        logger.info(`[DemoEngine] Room ${roomId} initialized`);
+      } else {
+        existing++;
+      }
+    } catch (err: any) {
+      logger.error(`[DemoEngine] Failed to initialize room ${roomId}: ${err.message}`);
     }
   }
 
-  logger.info("[DemoEngine] All demo rooms ready");
+  logger.info(`[DemoEngine] All demo rooms ready (${initialized} new, ${existing} existing)`);
 }
 
 export async function resetCompanyData(targetCompanyId: string): Promise<void> {
