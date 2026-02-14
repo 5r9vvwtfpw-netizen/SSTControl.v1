@@ -462,3 +462,34 @@ export async function getDemoRoomStatus(): Promise<any[]> {
   `);
   return extractRows(rooms);
 }
+
+export async function getDemoHealthDiagnostics(): Promise<Record<string, any>> {
+  const gmId = GOLDEN_MASTER_COMPANY_ID;
+  const gmPreview = gmId.length > 8 ? `${gmId.substring(0, 8)}...${gmId.substring(gmId.length - 4)}` : gmId;
+
+  const companyResult = await db.execute(sql`SELECT id, name FROM companies WHERE id = ${gmId}`);
+  const companyRows = extractRows(companyResult);
+  const gmFound = companyRows.length > 0;
+  const gmName = gmFound ? (companyRows[0] as any).name : null;
+
+  let workerCount = 0;
+  if (gmFound) {
+    const wResult = await db.execute(sql`SELECT count(*) as cnt FROM workers WHERE company_id = ${gmId}`);
+    workerCount = parseInt(extractRows(wResult)[0]?.cnt || "0", 10);
+  }
+
+  const isProduction = process.env.NODE_ENV === "production";
+  const dbType = isProduction && process.env.AWS_RDS_HOST ? "AWS_RDS" : "Neon";
+
+  return {
+    enabled: true,
+    database: dbType,
+    goldenMaster: {
+      idPreview: gmPreview,
+      idLength: gmId.length,
+      foundInDatabase: gmFound,
+      companyName: gmName,
+      workerCount,
+    },
+  };
+}

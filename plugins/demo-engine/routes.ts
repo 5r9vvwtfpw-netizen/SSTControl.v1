@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { isDemoEnabled } from "./types";
-import { checkIn, getDemoRoomStatus, runHousekeeping } from "./service";
+import { checkIn, getDemoRoomStatus, runHousekeeping, getDemoHealthDiagnostics } from "./service";
 import logger from "../../server/lib/logger";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -88,14 +88,13 @@ router.get("/health", async (_req: Request, res: Response) => {
     return res.status(404).json({ error: "Not found" });
   }
 
-  const gmId = process.env.DEMO_GOLDEN_MASTER_ID || "(not set)";
-  const gmPreview = gmId.length > 8 ? `${gmId.substring(0, 8)}...${gmId.substring(gmId.length - 4)}` : gmId;
-  return res.json({
-    enabled: true,
-    goldenMasterConfigured: gmId !== "(not set)" && gmId !== "demo-golden-master",
-    goldenMasterIdPreview: gmPreview,
-    goldenMasterIdLength: gmId.length,
-  });
+  try {
+    const diagnostics = await getDemoHealthDiagnostics();
+    return res.json(diagnostics);
+  } catch (error: any) {
+    logger.error({ err: error }, "[DemoEngine] Health check error");
+    return res.status(500).json({ error: "Health check failed", message: error.message });
+  }
 });
 
 export default router;
