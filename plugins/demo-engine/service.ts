@@ -147,10 +147,20 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
       `SELECT * FROM companies WHERE id = '${GOLDEN_MASTER_COMPANY_ID}'`
     ));
     const masterRows = (masterResult as any).rows || masterResult;
-    const masterCompany = masterRows[0];
+    let masterCompany = masterRows[0];
 
     if (!masterCompany) {
-      throw new Error(`[DemoEngine] Golden Master company ${GOLDEN_MASTER_COMPANY_ID} not found`);
+      logger.warn(`[DemoEngine] Golden Master ${GOLDEN_MASTER_COMPANY_ID} not found, using fallback defaults`);
+      masterCompany = {
+        name: "Empresa Demo SST",
+        nit: "900000000-0",
+        city: "Bogota",
+        ciiu_code: "4711",
+        address: "Calle Demo 123",
+        number_of_workers: 8,
+        risk_level: "I",
+        calculated_chapter: "1",
+      };
     }
 
     const existingResult = await tx.execute(sql.raw(

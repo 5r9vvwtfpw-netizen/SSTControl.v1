@@ -62,8 +62,35 @@ router.post("/debug-checkin", async (req: Request, res: Response) => {
   }
 
   try {
+    const { db } = await import("../../server/db");
+    const { sql } = await import("drizzle-orm");
+
+    const goldenMasterId = process.env.DEMO_GOLDEN_MASTER_ID || "demo-golden-master";
+    const gmResult = await db.execute(sql.raw(
+      `SELECT id, name FROM companies WHERE id = '${goldenMasterId}' LIMIT 1`
+    ));
+    const gmRows = (gmResult as any).rows || gmResult;
+
+    const allCompanies = await db.execute(sql.raw(
+      `SELECT id, name FROM companies ORDER BY name LIMIT 20`
+    ));
+    const allRows = (allCompanies as any).rows || allCompanies;
+
+    const dbInfo = {
+      goldenMasterId,
+      goldenMasterFound: gmRows.length > 0,
+      goldenMaster: gmRows[0] || null,
+      companiesInDb: allRows,
+      nodeEnv: process.env.NODE_ENV,
+      dbType: process.env.AWS_RDS_HOST ? "AWS RDS" : "Neon",
+    };
+
+    if (email === "list-companies") {
+      return res.json(dbInfo);
+    }
+
     const result = await checkIn(email || "debug@sst-colombia.com");
-    return res.json(result);
+    return res.json({ ...result, dbInfo });
   } catch (error: any) {
     return res.status(500).json({
       error: "Check-in failed",
@@ -85,9 +112,23 @@ router.post("/force-init", async (req: Request, res: Response) => {
 
   try {
     const { initializeDemoRooms } = await import("./service");
+    const { db } = await import("../../server/db");
+    const { sql } = await import("drizzle-orm");
+
+    await db.execute(sql.raw(`
+      UPDATE demo_room_bookings 
+      SET status = 'available', 
+          error_message = NULL,
+          assigned_prospect_email = NULL,
+          assigned_session_token = NULL,
+          expires_at = NULL,
+          updated_at = now()
+      WHERE status IN ('error', 'resetting')
+    `));
+
     await initializeDemoRooms();
     const rooms = await getDemoRoomStatus();
-    return res.json({ message: "Demo rooms initialized", rooms });
+    return res.json({ message: "Demo rooms initialized (errors cleared)", rooms });
   } catch (error: any) {
     logger.error({ err: error }, "[DemoEngine] Force init error");
     return res.status(500).json({ error: "Initialization failed", detail: error.message });
