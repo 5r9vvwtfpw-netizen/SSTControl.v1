@@ -78,16 +78,33 @@ export async function initializeDemoRooms(): Promise<void> {
 
   logger.info("[DemoEngine] Initializing demo rooms...");
 
-  const values = DEMO_ROOM_IDS.map((roomId, i) => ({
-    roomId,
-    companyId: DEMO_COMPANY_IDS[i],
-    demoUsername: `demo${i + 1}`,
-    status: "available" as const,
-  }));
+  try {
+    const values = DEMO_ROOM_IDS.map((roomId, i) => ({
+      roomId,
+      companyId: DEMO_COMPANY_IDS[i],
+      demoUsername: `demo${i + 1}`,
+      status: "available" as const,
+    }));
 
-  await db.insert(demoRoomBookings).values(values).onConflictDoNothing();
+    await db.insert(demoRoomBookings).values(values).onConflictDoNothing();
+  } catch (ormError: any) {
+    logger.warn({ err: ormError.message }, "[DemoEngine] ORM insert failed, using raw SQL fallback");
 
-  logger.info(`[DemoEngine] All demo rooms ready`);
+    for (let i = 0; i < DEMO_ROOM_IDS.length; i++) {
+      const roomId = DEMO_ROOM_IDS[i];
+      const companyId = DEMO_COMPANY_IDS[i];
+      const username = `demo${i + 1}`;
+      await db.execute(sql`
+        INSERT INTO demo_room_bookings (room_id, company_id, demo_username, status, updated_at)
+        VALUES (${roomId}, ${companyId}, ${username}, 'available', now())
+        ON CONFLICT (room_id) DO NOTHING
+      `);
+    }
+  }
+
+  const countResult = await db.execute(sql`SELECT count(*) as cnt FROM demo_room_bookings`);
+  const countRows = extractRows(countResult);
+  logger.info({ roomCount: countRows[0]?.cnt || countRows[0]?.count || 0 }, "[DemoEngine] All demo rooms ready");
 }
 
 export async function resetCompanyData(targetCompanyId: string): Promise<void> {
