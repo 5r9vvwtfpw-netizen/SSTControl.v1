@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { X, Send, Loader2, User, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import chatbotAvatar from "@assets/image_1771096045630.png";
+import chatbotAvatar from "@assets/image_1771096260727.png";
 
 interface ChatMessage {
   role: "user" | "assistant";
