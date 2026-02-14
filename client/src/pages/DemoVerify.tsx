@@ -1,39 +1,58 @@
 import { useEffect, useState, useRef } from "react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
 
-const MAX_RETRIES = 15;
+const MAX_RETRIES = 10;
 const RETRY_DELAY_MS = 3000;
 
 export default function DemoVerify() {
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "redirecting" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const [statusMessage, setStatusMessage] = useState("Preparando tu demo...");
   const retryCountRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const redirectedRef = useRef(false);
 
-  const token = new URLSearchParams(window.location.search).get("token");
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token");
+  const errorParam = params.get("error");
+  const statusParam = params.get("status");
 
   useEffect(() => {
+    if (errorParam) {
+      setStatus("error");
+      setErrorMessage(decodeURIComponent(errorParam));
+      return;
+    }
+
     if (!token) {
       setStatus("error");
       setErrorMessage("No se proporcionó un token de verificación.");
       return;
     }
 
-    retryCountRef.current = 0;
-    verifyToken(token);
+    if (statusParam === "preparing") {
+      retryCountRef.current = 0;
+      pollUntilReady(token);
+      return;
+    }
+
+    if (!redirectedRef.current) {
+      redirectedRef.current = true;
+      setStatus("redirecting");
+      setStatusMessage("Iniciando sesión...");
+      window.location.href = `/api/demo/verify-redirect?token=${encodeURIComponent(token)}`;
+    }
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [token]);
+  }, [token, errorParam, statusParam]);
 
-  async function verifyToken(tokenValue: string) {
+  async function pollUntilReady(tokenValue: string) {
     setStatus("loading");
-    setErrorMessage("");
+    setStatusMessage(`Preparando tu demo... (${retryCountRef.current + 1}/${MAX_RETRIES})`);
 
     try {
       const response = await fetch("/api/demo/verify", {
@@ -45,21 +64,22 @@ export default function DemoVerify() {
 
       const data = await response.json();
 
-      if (data.success) {
-        setStatus("success");
-        setStatusMessage("Redirigiendo al panel de control...");
-        await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 500);
+      if (response.status === 202 && data.retry) {
+        if (retryCountRef.current < MAX_RETRIES) {
+          retryCountRef.current++;
+          const delay = (data.retryAfter || 3) * 1000;
+          timerRef.current = setTimeout(() => pollUntilReady(tokenValue), delay);
+          return;
+        }
+        setStatus("error");
+        setErrorMessage("La demo tardó demasiado en prepararse. Intente de nuevo.");
         return;
       }
 
-      if (data.retry && retryCountRef.current < MAX_RETRIES) {
-        retryCountRef.current++;
-        setStatusMessage(`Preparando tu demo... (${retryCountRef.current}/${MAX_RETRIES})`);
-        const delay = (data.retryAfter || 3) * 1000;
-        timerRef.current = setTimeout(() => verifyToken(tokenValue), delay);
+      if (data.success || response.ok) {
+        setStatus("redirecting");
+        setStatusMessage("Iniciando sesión...");
+        window.location.href = `/api/demo/verify-redirect?token=${encodeURIComponent(tokenValue)}`;
         return;
       }
 
@@ -69,7 +89,7 @@ export default function DemoVerify() {
       if (retryCountRef.current < MAX_RETRIES) {
         retryCountRef.current++;
         setStatusMessage(`Reconectando... (${retryCountRef.current}/${MAX_RETRIES})`);
-        timerRef.current = setTimeout(() => verifyToken(tokenValue), RETRY_DELAY_MS);
+        timerRef.current = setTimeout(() => pollUntilReady(tokenValue), RETRY_DELAY_MS);
         return;
       }
       setStatus("error");
@@ -79,8 +99,11 @@ export default function DemoVerify() {
 
   function handleManualRetry() {
     if (!token) return;
+    redirectedRef.current = false;
     retryCountRef.current = 0;
-    verifyToken(token);
+    setStatus("redirecting");
+    setStatusMessage("Iniciando sesión...");
+    window.location.href = `/api/demo/verify-redirect?token=${encodeURIComponent(token)}`;
   }
 
   return (
@@ -88,13 +111,13 @@ export default function DemoVerify() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle data-testid="text-demo-verify-title">
-            {status === "loading" && "Preparando tu demo..."}
+            {(status === "loading" || status === "redirecting") && "Preparando tu demo..."}
             {status === "success" && "Demo lista"}
             {status === "error" && "Error de verificación"}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
-          {status === "loading" && (
+          {(status === "loading" || status === "redirecting") && (
             <div className="flex flex-col items-center gap-3" data-testid="status-loading">
               <Loader2 className="h-10 w-10 animate-spin text-primary" />
               <p className="text-muted-foreground text-sm text-center">

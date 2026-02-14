@@ -196,6 +196,103 @@ async function initializeRoomsViaRawSql() {
   logger.info("[DemoEngine] Auto-initialized 10 demo rooms via health check");
 }
 
+async function findRoomAndUser(token: string): Promise<{ error?: string; status?: number; retry?: boolean; retryAfter?: number; room?: any; demoUser?: any }> {
+  if (!token || typeof token !== "string") {
+    return { error: "Token requerido", status: 400 };
+  }
+
+  logger.info({ tokenLength: token.length, tokenPreview: token.substring(0, 8) + "..." }, "[DemoEngine] Verify attempt");
+
+  const roomResult = await db.execute(sql`
+    SELECT * FROM demo_room_bookings
+    WHERE assigned_session_token = ${token}
+    LIMIT 1
+  `);
+
+  const roomRows = extractRows(roomResult);
+  const room = roomRows[0];
+
+  if (!room) {
+    logger.warn({ tokenPreview: token.substring(0, 8) + "..." }, "[DemoEngine] Verify failed - token not found in any room");
+    return { error: "Token inválido o expirado", status: 401 };
+  }
+
+  logger.info({ roomId: room.room_id, status: room.status, expiresAt: room.expires_at }, "[DemoEngine] Room found for token");
+
+  if (room.status === "resetting") {
+    return { error: "La demo se está preparando. Espere un momento...", status: 202, retry: true, retryAfter: 3 };
+  }
+
+  if (room.status !== "occupied") {
+    return { error: "Token inválido o expirado", status: 401 };
+  }
+
+  if (room.expires_at && new Date(room.expires_at) < new Date()) {
+    return { error: "La demo ha expirado", status: 401 };
+  }
+
+  const companyId = room.company_id;
+  const userResult = await db.execute(sql`
+    SELECT * FROM users WHERE company_id = ${companyId} AND role = 'admin' LIMIT 1
+  `);
+  const userRows = extractRows(userResult);
+  const demoUser = userRows[0];
+
+  if (!demoUser) {
+    logger.error({ companyId, roomId: room.room_id }, "[DemoEngine] No admin user found for demo company");
+    return { error: "Error al preparar la demo. La sala aún no está lista.", status: 500 };
+  }
+
+  return { room, demoUser };
+}
+
+router.get("/verify-redirect", async (req: Request, res: Response) => {
+  if (!isDemoEnabled()) {
+    return res.status(404).json({ error: "Not found" });
+  }
+
+  try {
+    const token = req.query.token as string;
+    const result = await findRoomAndUser(token);
+
+    if (result.error) {
+      if (result.retry) {
+        return res.redirect(`/demo/verify?token=${encodeURIComponent(token)}&status=preparing`);
+      }
+      return res.redirect(`/demo/verify?error=${encodeURIComponent(result.error)}`);
+    }
+
+    const { room, demoUser } = result;
+
+    req.session.regenerate((regenErr) => {
+      if (regenErr) {
+        logger.error({ err: regenErr }, "[DemoEngine] Session regeneration error during verify-redirect");
+        return res.redirect(`/demo/verify?error=${encodeURIComponent("Error al crear la sesión")}`);
+      }
+
+      req.logIn(demoUser as any, (loginErr) => {
+        if (loginErr) {
+          logger.error({ err: loginErr }, "[DemoEngine] Login error during verify-redirect");
+          return res.redirect(`/demo/verify?error=${encodeURIComponent("Error al iniciar sesión")}`);
+        }
+
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            logger.error({ err: saveErr }, "[DemoEngine] Session save error during verify-redirect");
+            return res.redirect(`/demo/verify?error=${encodeURIComponent("Error al guardar la sesión")}`);
+          }
+
+          logger.info({ roomId: room.room_id, companyId: room.company_id, username: demoUser.username, sessionId: req.sessionID }, "[DemoEngine] Auto-login via verify-redirect successful");
+          return res.redirect("/");
+        });
+      });
+    });
+  } catch (error: any) {
+    logger.error({ err: error, stack: error.stack }, "[DemoEngine] Verify-redirect error");
+    return res.redirect(`/demo/verify?error=${encodeURIComponent("Error al verificar el token")}`);
+  }
+});
+
 router.post("/verify", async (req: Request, res: Response) => {
   if (!isDemoEnabled()) {
     return res.status(404).json({ error: "Not found" });
@@ -203,85 +300,48 @@ router.post("/verify", async (req: Request, res: Response) => {
 
   try {
     const { token } = req.body || {};
+    const result = await findRoomAndUser(token);
 
-    if (!token || typeof token !== "string") {
-      return res.status(400).json({ success: false, error: "Token requerido" });
-    }
-
-    logger.info({ tokenLength: token.length, tokenPreview: token.substring(0, 8) + "..." }, "[DemoEngine] Verify attempt");
-
-    const roomResult = await db.execute(sql`
-      SELECT * FROM demo_room_bookings
-      WHERE assigned_session_token = ${token}
-      LIMIT 1
-    `);
-
-    const roomRows = extractRows(roomResult);
-    const room = roomRows[0];
-
-    if (!room) {
-      logger.warn({ tokenPreview: token.substring(0, 8) + "..." }, "[DemoEngine] Verify failed - token not found in any room");
-      return res.status(401).json({ success: false, error: "Token inválido o expirado" });
-    }
-
-    logger.info({ roomId: room.room_id, status: room.status, expiresAt: room.expires_at }, "[DemoEngine] Room found for token");
-
-    if (room.status === "resetting") {
-      return res.status(202).json({
+    if (result.error) {
+      return res.status(result.status || 500).json({
         success: false,
-        error: "La demo se está preparando. Espere un momento...",
-        retry: true,
-        retryAfter: 3,
+        error: result.error,
+        ...(result.retry ? { retry: true, retryAfter: result.retryAfter } : {}),
       });
     }
 
-    if (room.status !== "occupied") {
-      logger.warn({ roomId: room.room_id, status: room.status }, "[DemoEngine] Verify failed - room not in occupied status");
-      return res.status(401).json({ success: false, error: "Token inválido o expirado" });
-    }
+    const { room, demoUser } = result;
 
-    if (room.expires_at && new Date(room.expires_at) < new Date()) {
-      logger.warn({ roomId: room.room_id, expiresAt: room.expires_at }, "[DemoEngine] Verify failed - token expired");
-      return res.status(401).json({ success: false, error: "La demo ha expirado" });
-    }
-
-    const companyId = room.company_id;
-
-    const userResult = await db.execute(sql`
-      SELECT * FROM users WHERE company_id = ${companyId} AND role = 'admin' LIMIT 1
-    `);
-
-    const userRows = extractRows(userResult);
-    const demoUser = userRows[0];
-
-    if (!demoUser) {
-      logger.error({ companyId, roomId: room.room_id }, "[DemoEngine] No admin user found for demo company");
-      return res.status(500).json({ success: false, error: "Error al preparar la demo. La sala aún no está lista." });
-    }
-
-    req.session.regenerate((err) => {
-      if (err) {
-        logger.error({ err }, "[DemoEngine] Session regeneration error during verify");
+    req.session.regenerate((regenErr) => {
+      if (regenErr) {
+        logger.error({ err: regenErr }, "[DemoEngine] Session regeneration error during verify");
         return res.status(500).json({ success: false, error: "Error al crear la sesión" });
       }
 
-      req.logIn(demoUser as any, (err) => {
-        if (err) {
-          logger.error({ err }, "[DemoEngine] Login error during verify");
+      req.logIn(demoUser as any, (loginErr) => {
+        if (loginErr) {
+          logger.error({ err: loginErr }, "[DemoEngine] Login error during verify");
           return res.status(500).json({ success: false, error: "Error al iniciar sesión" });
         }
 
-        logger.info({ roomId: room.room_id, companyId, username: demoUser.username }, "[DemoEngine] Auto-login via verify token successful");
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            logger.error({ err: saveErr }, "[DemoEngine] Session save error during verify");
+            return res.status(500).json({ success: false, error: "Error al guardar la sesión" });
+          }
 
-        return res.json({
-          success: true,
-          user: {
-            id: demoUser.id,
-            username: demoUser.username,
-            role: demoUser.role,
-            fullName: demoUser.full_name,
-            companyId: demoUser.company_id,
-          },
+          logger.info({ roomId: room.room_id, companyId: room.company_id, username: demoUser.username, sessionId: req.sessionID }, "[DemoEngine] Auto-login via verify token successful");
+
+          return res.json({
+            success: true,
+            user: {
+              id: demoUser.id,
+              username: demoUser.username,
+              role: demoUser.role,
+              fullName: demoUser.full_name,
+              companyId: demoUser.company_id,
+            },
+          });
         });
       });
     });

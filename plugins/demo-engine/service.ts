@@ -387,7 +387,7 @@ export async function checkIn(prospectEmail?: string): Promise<CheckInResponse> 
       password,
       expiresAt: expiresAt.toISOString(),
       message: `Demo lista. Ingrese con usuario "${result.demoUsername}" y contraseña "${password}". Expira a las 2:00 AM hora Colombia.`,
-      verifyUrl: `/demo/verify?token=${result.sessionToken}`,
+      verifyUrl: `/api/demo/verify-redirect?token=${result.sessionToken}`,
     };
   } catch (error: any) {
     logger.error({ err: error, roomId: result.roomId }, "[DemoEngine] Check-in reset failed");
