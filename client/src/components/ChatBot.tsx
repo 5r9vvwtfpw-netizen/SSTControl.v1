@@ -184,35 +184,70 @@ export function ChatBot() {
 
       const decoder = new TextDecoder();
       let assistantContent = "";
+      let pendingUpdate = false;
+      let rafId: number | null = null;
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+      const flushUpdate = () => {
+        pendingUpdate = false;
+        rafId = null;
+        const snapshot = assistantContent;
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: "assistant", content: snapshot };
+          return updated;
+        });
+      };
+
+      let partial = "";
+      const processLine = (line: string) => {
+        if (!line.startsWith("data: ")) return;
+        try {
+          const data = JSON.parse(line.slice(6));
+          if (data.done) return;
+          if (data.error) throw new Error(data.error);
+          if (data.content) {
+            assistantContent += data.content;
+            if (!pendingUpdate) {
+              pendingUpdate = true;
+              rafId = requestAnimationFrame(flushUpdate);
+            }
+          }
+        } catch {}
+      };
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split("\n")) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const data = JSON.parse(line.slice(6));
-            if (data.done) break;
-            if (data.error) throw new Error(data.error);
-            if (data.content) {
-              assistantContent += data.content;
-              setMessages((prev) => {
-                const updated = [...prev];
-                updated[updated.length - 1] = { role: "assistant", content: assistantContent };
-                return updated;
-              });
-            }
-          } catch {}
+        partial += decoder.decode(value, { stream: true });
+        const lines = partial.split("\n");
+        partial = lines.pop() || "";
+        for (const line of lines) {
+          processLine(line);
         }
       }
+
+      if (partial.trim()) {
+        processLine(partial);
+      }
+
+      if (rafId) cancelAnimationFrame(rafId);
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { role: "assistant", content: assistantContent };
+        return updated;
+      });
     } catch (error: any) {
       if (error.name === "AbortError") return;
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: error.message || "Lo siento, ocurrio un error. Intenta de nuevo." },
-      ]);
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant" && last.content === "") {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: "assistant", content: error.message || "Lo siento, ocurrió un error. Intenta de nuevo." };
+          return updated;
+        }
+        return [...prev, { role: "assistant", content: error.message || "Lo siento, ocurrió un error. Intenta de nuevo." }];
+      });
     } finally {
       setIsLoading(false);
       abortRef.current = null;
@@ -227,7 +262,21 @@ export function ChatBot() {
   };
 
   const handleClear = () => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
     setMessages([]);
+    setIsLoading(false);
+  };
+
+  const handleClose = () => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+      setIsLoading(false);
+    }
+    setIsOpen(false);
   };
 
   const showEmptyState = messages.length === 0;
@@ -314,7 +363,7 @@ export function ChatBot() {
                   variant="ghost"
                   data-testid="button-chatbot-close"
                   className="text-white/80 no-default-hover-elevate"
-                  onClick={() => setIsOpen(false)}
+                  onClick={handleClose}
                 >
                   <X className="h-4 w-4" />
                 </Button>

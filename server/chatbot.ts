@@ -7,7 +7,14 @@ import { chatbotQuestions, companies } from "@shared/schema";
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  timeout: 30000,
+  maxRetries: 1,
 });
+
+const promptCache = new Map<string, { prompt: string; expiresAt: number }>();
+const PROMPT_CACHE_TTL = 5 * 60 * 1000;
+const companyNameCache = new Map<string, { name: string; expiresAt: number }>();
+const COMPANY_CACHE_TTL = 10 * 60 * 1000;
 
 const APP_KNOWLEDGE_BASE = `
 === BASE DE CONOCIMIENTO: PLATAFORMA SST COLOMBIA ===
@@ -420,6 +427,9 @@ export function registerChatbotRoutes(app: Express, requireAuth?: RequestHandler
   }
 
   app.post("/api/chatbot/ask", ...middlewares, async (req: Request, res: Response) => {
+    let aborted = false;
+    req.on("close", () => { aborted = true; });
+
     try {
       const { question, conversationHistory } = req.body;
       if (!question || typeof question !== "string" || question.trim().length === 0) {
@@ -444,14 +454,33 @@ export function registerChatbotRoutes(app: Express, requireAuth?: RequestHandler
 
       let companyName: string | undefined;
       if (companyId) {
-        try {
-          const [company] = await db.select({ name: companies.name }).from(companies).where(eq(companies.id, companyId)).limit(1);
-          companyName = company?.name;
-        } catch {}
+        const now = Date.now();
+        const cached = companyNameCache.get(companyId);
+        if (cached && now < cached.expiresAt) {
+          companyName = cached.name;
+        } else {
+          try {
+            const [company] = await db.select({ name: companies.name }).from(companies).where(eq(companies.id, companyId)).limit(1);
+            companyName = company?.name;
+            if (companyName) {
+              companyNameCache.set(companyId, { name: companyName, expiresAt: now + COMPANY_CACHE_TTL });
+            }
+          } catch {}
+        }
       }
 
       const startTime = Date.now();
-      const systemPrompt = buildSystemPrompt(userRole, companyName);
+
+      const cacheKey = `${userRole}:${companyName || ""}`;
+      const now = Date.now();
+      let systemPrompt: string;
+      const cachedPrompt = promptCache.get(cacheKey);
+      if (cachedPrompt && now < cachedPrompt.expiresAt) {
+        systemPrompt = cachedPrompt.prompt;
+      } else {
+        systemPrompt = buildSystemPrompt(userRole, companyName);
+        promptCache.set(cacheKey, { prompt: systemPrompt, expiresAt: now + PROMPT_CACHE_TTL });
+      }
 
       const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
         { role: "system", content: systemPrompt },
@@ -464,6 +493,8 @@ export function registerChatbotRoutes(app: Express, requireAuth?: RequestHandler
 
       messages.push({ role: "user", content: question.trim() });
 
+      if (aborted) return;
+
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
@@ -473,14 +504,15 @@ export function registerChatbotRoutes(app: Express, requireAuth?: RequestHandler
         model: "gpt-4o-mini",
         messages,
         stream: true,
-        max_tokens: 1500,
-        temperature: 0.7,
+        max_tokens: 1000,
+        temperature: 0.3,
       });
 
       let fullResponse = "";
       let tokensUsed = 0;
 
       for await (const chunk of stream) {
+        if (aborted) break;
         const content = chunk.choices[0]?.delta?.content || "";
         if (content) {
           fullResponse += content;
@@ -493,23 +525,22 @@ export function registerChatbotRoutes(app: Express, requireAuth?: RequestHandler
 
       const responseTimeMs = Date.now() - startTime;
 
-      try {
-        await db.insert(chatbotQuestions).values({
-          companyId,
-          userId,
-          question: question.trim(),
-          answer: fullResponse,
-          tokensUsed: tokensUsed || null,
-          responseTimeMs,
-        });
-      } catch (logErr) {
-        console.error("Error logging chatbot question:", logErr);
-      }
+      db.insert(chatbotQuestions).values({
+        companyId,
+        userId,
+        question: question.trim(),
+        answer: fullResponse,
+        tokensUsed: tokensUsed || null,
+        responseTimeMs,
+      }).catch(() => {});
 
-      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-      res.end();
+      if (!aborted) {
+        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+        res.end();
+      }
     } catch (error: any) {
-      console.error("Chatbot error:", error);
+      if (aborted) return;
+      console.error("Chatbot error:", error?.message || error);
       if (res.headersSent) {
         res.write(`data: ${JSON.stringify({ error: "Error al procesar tu pregunta. Intenta de nuevo." })}\n\n`);
         res.end();
