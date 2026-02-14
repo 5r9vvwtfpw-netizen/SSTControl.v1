@@ -1376,11 +1376,12 @@ export type InsertJobProfile = z.infer<typeof insertJobProfileSchema>;
 export type JobProfile = typeof jobProfiles.$inferSelect;
 
 export const insertContractSchema = createInsertSchema(contracts)
-  .omit({ id: true, createdAt: true, companyId: true, salary: true })
+  .omit({ id: true, createdAt: true, companyId: true })
   .extend({
     workerId: z.string().min(1, "Debe seleccionar un trabajador"),
-    contractNumber: z.string().optional(), // Auto-generated if not provided
+    contractNumber: z.string().optional(),
     position: z.string().min(1, "El cargo es obligatorio"),
+    salary: z.number().optional(),
   });
 export type InsertContract = z.infer<typeof insertContractSchema>;
 export type Contract = typeof contracts.$inferSelect;

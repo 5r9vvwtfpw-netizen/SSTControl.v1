@@ -9303,6 +9303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             position: contractData.position || worker.position,
             department: contractData.department || worker.department,
             workSchedule: contractData.workSchedule || null,
+            salary: contractData.salary ? Number(contractData.salary) : undefined,
             arlRate: contractData.arlRate || null,
             additionalClauses: contractData.additionalClauses || null,
             jobProfileId: contractData.jobProfileId || null,
