@@ -83,4 +83,19 @@ router.post("/force-reset", async (req: Request, res: Response) => {
   }
 });
 
+router.get("/health", async (_req: Request, res: Response) => {
+  if (!isDemoEnabled()) {
+    return res.status(404).json({ error: "Not found" });
+  }
+
+  const gmId = process.env.DEMO_GOLDEN_MASTER_ID || "(not set)";
+  const gmPreview = gmId.length > 8 ? `${gmId.substring(0, 8)}...${gmId.substring(gmId.length - 4)}` : gmId;
+  return res.json({
+    enabled: true,
+    goldenMasterConfigured: gmId !== "(not set)" && gmId !== "demo-golden-master",
+    goldenMasterIdPreview: gmPreview,
+    goldenMasterIdLength: gmId.length,
+  });
+});
+
 export default router;
