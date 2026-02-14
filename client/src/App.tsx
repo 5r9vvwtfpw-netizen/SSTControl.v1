@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { Footer, FooterMinimal } from "@/components/Footer";
+import { ChatBot } from "@/components/ChatBot";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import Trabajadores from "@/pages/Trabajadores";
@@ -498,6 +499,7 @@ export default function App() {
         <AuthProvider>
           <AuthenticatedLayout />
         </AuthProvider>
+        <ChatBot />
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

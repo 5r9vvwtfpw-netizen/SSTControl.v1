@@ -35,6 +35,7 @@ import lsoDirectoryJwtRoutes from "./routes/lso-directory-jwt";
 import { legalDocsPdfService } from "./services/legal-docs-pdf";
 import { verifyQuote, getQuoteSummary, type NormalizedQuoteData } from "../plugins/landing-page-integration";
 import { registerInduccionVirtualRoutes } from "./induccion-virtual-routes";
+import { registerChatbotRoutes } from "./chatbot";
 import { checkWorkerLimit, checkUserLimit } from "./middleware/subscription-limits";
 import { calcularIndicador, parsePeriodoToDateRange } from "./indicadores-calculators";
 import { z } from "zod";
@@ -43358,6 +43359,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   
   // Stripe payment routes (new payment provider)
   registerStripeRoutes(app);
+
+  // Chatbot AI routes
+  registerChatbotRoutes(app, requireAuth);
 
   // PRICING PLUGIN - Módulo de Precios por Tier (PLUG-IN)
   

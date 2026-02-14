@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, RequestHandler } from "express";
 import OpenAI from "openai";
 import { db } from "./db";
 import { chatbotQuestions } from "@shared/schema";
@@ -43,6 +43,9 @@ El sistema SST Colombia tiene los siguientes módulos principales:
 - Informes: Generación de reportes y estadísticas
 - Medidas Preventivas: Gestión de acciones preventivas y correctivas`;
 
+const MAX_HISTORY_MESSAGES = 6;
+const MAX_CONTENT_LENGTH = 2000;
+
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT = 20;
 const RATE_WINDOW_MS = 60 * 60 * 1000;
@@ -59,20 +62,47 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
-export function registerChatbotRoutes(app: Express): void {
-  app.post("/api/chatbot/ask", async (req: Request, res: Response) => {
+function sanitizeHistory(history: any[]): { role: "user" | "assistant"; content: string }[] {
+  if (!Array.isArray(history)) return [];
+  return history
+    .slice(-MAX_HISTORY_MESSAGES)
+    .filter(
+      (msg) =>
+        msg &&
+        typeof msg === "object" &&
+        (msg.role === "user" || msg.role === "assistant") &&
+        typeof msg.content === "string" &&
+        msg.content.length <= MAX_CONTENT_LENGTH
+    )
+    .map((msg) => ({
+      role: msg.role as "user" | "assistant",
+      content: msg.content.trim(),
+    }));
+}
+
+export function registerChatbotRoutes(app: Express, requireAuth?: RequestHandler): void {
+  const middlewares: RequestHandler[] = [];
+  if (requireAuth) {
+    middlewares.push(requireAuth);
+  }
+
+  app.post("/api/chatbot/ask", ...middlewares, async (req: Request, res: Response) => {
     try {
       const { question, conversationHistory } = req.body;
       if (!question || typeof question !== "string" || question.trim().length === 0) {
         return res.status(400).json({ error: "La pregunta es requerida" });
       }
-      if (question.length > 2000) {
+      if (question.length > MAX_CONTENT_LENGTH) {
         return res.status(400).json({ error: "La pregunta es demasiado larga (máximo 2000 caracteres)" });
       }
 
       const user = (req as any).user;
-      const userId = user?.id || "anonymous";
-      const companyId = user?.companyId || null;
+      if (!user?.id) {
+        return res.status(401).json({ error: "Debes iniciar sesión para usar el asistente" });
+      }
+
+      const userId = user.id;
+      const companyId = user.companyId || null;
 
       if (!checkRateLimit(userId)) {
         return res.status(429).json({ error: "Has alcanzado el límite de preguntas por hora. Intenta más tarde." });
@@ -84,13 +114,9 @@ export function registerChatbotRoutes(app: Express): void {
         { role: "system", content: SYSTEM_PROMPT },
       ];
 
-      if (Array.isArray(conversationHistory)) {
-        const recentHistory = conversationHistory.slice(-6);
-        for (const msg of recentHistory) {
-          if (msg.role === "user" || msg.role === "assistant") {
-            messages.push({ role: msg.role, content: msg.content });
-          }
-        }
+      const sanitized = sanitizeHistory(conversationHistory);
+      for (const msg of sanitized) {
+        messages.push(msg);
       }
 
       messages.push({ role: "user", content: question.trim() });
@@ -127,7 +153,7 @@ export function registerChatbotRoutes(app: Express): void {
       try {
         await db.insert(chatbotQuestions).values({
           companyId,
-          userId: user?.id || null,
+          userId,
           question: question.trim(),
           answer: fullResponse,
           tokensUsed: tokensUsed || null,
