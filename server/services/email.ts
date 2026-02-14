@@ -621,6 +621,101 @@ export class EmailService {
   }
 
   /**
+   * Send credentials email to new support staff user
+   */
+  async sendSupportUserCredentials(params: {
+    to: string;
+    username: string;
+    password: string;
+    fullName?: string;
+  }): Promise<{ success: boolean; error?: string }> {
+    const { to, username, password, fullName } = params;
+    const displayName = fullName || username;
+
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #3b82f6; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+    .content { background: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px; }
+    .credentials-box { background: #e8f4fd; border: 2px solid #3b82f6; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .credentials-box h3 { margin-top: 0; color: #3b82f6; }
+    .credential-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #d0e8f7; }
+    .credential-label { font-weight: bold; color: #555; }
+    .credential-value { font-family: monospace; font-size: 1.1em; color: #1e40af; font-weight: bold; }
+    .warning-box { background: #fff3cd; border: 1px solid #ffc107; color: #856404; padding: 15px; border-radius: 5px; margin: 20px 0; }
+    .button { display: inline-block; background: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+    .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Acceso al Portal de Soporte SST</h1>
+    </div>
+    <div class="content">
+      <p>Estimado/a <strong>${displayName}</strong>,</p>
+      
+      <p>Se ha creado su cuenta de acceso al <strong>Portal de Soporte de SST Colombia</strong>. A continuacion encontrara sus credenciales de acceso:</p>
+      
+      <div class="credentials-box">
+        <h3>Credenciales de Acceso</h3>
+        <div class="credential-row">
+          <span class="credential-label">Usuario:</span>
+          <span class="credential-value">${username}</span>
+        </div>
+        <div class="credential-row">
+          <span class="credential-label">Contrasena:</span>
+          <span class="credential-value">${password}</span>
+        </div>
+      </div>
+
+      <div class="warning-box">
+        <strong>Importante:</strong> Le recomendamos cambiar su contrasena despues de su primer inicio de sesion para mantener la seguridad de su cuenta.
+      </div>
+
+      <p>Desde el portal de soporte podra:</p>
+      <ul>
+        <li>Ver y gestionar tickets de soporte</li>
+        <li>Responder consultas de clientes</li>
+        <li>Cambiar estados y asignar tickets</li>
+      </ul>
+
+      <p><strong>URL de acceso:</strong> <a href="${APP_URL}/soporte/login">${APP_URL}/soporte/login</a></p>
+
+      <div class="footer">
+        <p><strong>SST Colombia - Equipo de Soporte</strong></p>
+        <p style="font-size: 0.85em; color: #999;">
+          Este es un correo automatico. No responder a este mensaje.
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    try {
+      await resend.emails.send({
+        from: FROM_EMAIL,
+        to,
+        subject: `Credenciales de Acceso - Portal de Soporte SST Colombia`,
+        html: emailHtml
+      });
+
+      console.log(`Support user credentials email sent to ${to} for user ${username}`);
+      return { success: true };
+    } catch (error) {
+      console.error('Error sending support user credentials email:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  /**
    * Send new support ticket notification to support staff
    */
   async sendNewTicketNotification(params: {

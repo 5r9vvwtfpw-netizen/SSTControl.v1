@@ -6550,6 +6550,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         supportSpecialties: supportSpecialties || null,
       });
 
+
+      // Send credentials email if email provided
+      if (email) {
+        try {
+          await emailService.sendSupportUserCredentials({
+            to: email,
+            username,
+            password,
+            fullName: fullName || undefined,
+          });
+        } catch (emailError) {
+          console.error("Error sending support user credentials email:", emailError);
+        }
+      }
       res.status(201).json(stripPassword(user));
     } catch (error: any) {
       console.error('Error creating support user:', error);
