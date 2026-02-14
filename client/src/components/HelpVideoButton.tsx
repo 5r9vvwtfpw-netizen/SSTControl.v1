@@ -6,6 +6,30 @@ import { Button } from "@/components/ui/button";
 import { CirclePlay, X } from "lucide-react";
 import type { HelpVideo } from "@shared/schema";
 
+function toYouTubeEmbedUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    let videoId: string | null = null;
+
+    if (parsed.hostname === "youtu.be") {
+      videoId = parsed.pathname.slice(1);
+    } else if (parsed.hostname.includes("youtube.com")) {
+      if (parsed.pathname.startsWith("/embed/")) {
+        return url;
+      }
+      if (parsed.pathname.startsWith("/shorts/")) {
+        videoId = parsed.pathname.replace("/shorts/", "");
+      }
+      videoId = videoId || parsed.searchParams.get("v");
+    }
+
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+  } catch {}
+  return url;
+}
+
 export default function HelpVideoButton() {
   const [location] = useLocation();
   const { user } = useAuth();
@@ -60,8 +84,9 @@ export default function HelpVideoButton() {
             <div className="p-4">
               <div className="aspect-video w-full">
                 <iframe
-                  src={video.videoUrl}
+                  src={toYouTubeEmbedUrl(video.videoUrl)}
                   className="w-full h-full rounded-md border"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                   title={video.videoTitle}
                   data-testid="iframe-help-video"

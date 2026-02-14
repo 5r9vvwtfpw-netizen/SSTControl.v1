@@ -193,7 +193,7 @@ export default function AdminVideosAyuda() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold" data-testid="text-page-title">Videos de Ayuda por Módulo</h1>
-          <p className="text-muted-foreground">Configure videos tutoriales de Guidde para cada módulo de la aplicación.</p>
+          <p className="text-muted-foreground">Configure videos tutoriales de YouTube para cada módulo de la aplicación.</p>
         </div>
         <Button onClick={openCreate} data-testid="button-add-video">
           <Plus className="h-4 w-4 mr-2" />
@@ -301,7 +301,7 @@ export default function AdminVideosAyuda() {
             <p className="text-sm text-muted-foreground mt-1">
               {editingVideo
                 ? "Modifique los datos del video de ayuda."
-                : "Configure un video tutorial de Guidde para un módulo."}
+                : "Configure un video tutorial de YouTube para un módulo."}
             </p>
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
@@ -334,10 +334,10 @@ export default function AdminVideosAyuda() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="video-url">URL del Video (Guidde)</Label>
+                <Label htmlFor="video-url">URL del Video (YouTube)</Label>
                 <Input
                   id="video-url"
-                  placeholder="https://app.guidde.com/share/..."
+                  placeholder="https://www.youtube.com/watch?v=..."
                   value={formData.videoUrl}
                   onChange={(e) => setFormData((prev) => ({ ...prev, videoUrl: e.target.value }))}
                   data-testid="input-video-url"
