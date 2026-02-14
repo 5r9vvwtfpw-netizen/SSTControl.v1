@@ -225,6 +225,23 @@ export default function AdminUsuariosSoporte() {
       return;
     }
 
+    if (!newUserData.email || !newUserData.email.trim()) {
+      toast({
+        title: "Error",
+        description: "El email es obligatorio para crear un usuario de soporte",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newUserData.email)) {
+      toast({
+        title: "Error",
+        description: "Por favor ingrese un email válido",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validar nombre completo si está presente
     if (newUserData.fullName) {
       if (newUserData.fullName.length > 50) {
@@ -448,13 +465,14 @@ export default function AdminUsuariosSoporte() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">Email *</Label>
                     <Input
                       id="email"
                       type="email"
                       placeholder="ej: maria@empresa.com"
                       value={newUserData.email}
                       onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                      required
                       data-testid="input-support-email"
                     />
                   </div>

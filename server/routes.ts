@@ -6530,8 +6530,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { username, password, fullName, email, supportSpecialties } = req.body;
 
-      if (!username || !password) {
-        return res.status(400).send("Se requiere nombre de usuario y contraseña");
+      if (!username || !password || !email) {
+        return res.status(400).send("Se requiere nombre de usuario, contraseña y email");
       }
 
       const existingUser = await storage.getUserByUsername(username);
