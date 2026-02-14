@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { MessageCircle, X, Send, Loader2, User, Trash2 } from "lucide-react";
+import { useState, useRef, useEffect, useCallback, Fragment } from "react";
+import { MessageCircle, X, Send, Loader2, User, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import chatbotAvatar from "@assets/image_1771096260727.png";
 
@@ -8,7 +8,27 @@ interface ChatMessage {
   content: string;
 }
 
-function renderMarkdown(text: string): JSX.Element {
+function inlineFormat(str: string): (string | JSX.Element)[] {
+  const parts: (string | JSX.Element)[] = [];
+  let remaining = str;
+  let inlineKey = 0;
+  while (remaining.length > 0) {
+    const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
+    if (boldMatch && boldMatch.index !== undefined) {
+      if (boldMatch.index > 0) {
+        parts.push(remaining.slice(0, boldMatch.index));
+      }
+      parts.push(<strong key={`b${inlineKey++}`} className="font-semibold">{boldMatch[1]}</strong>);
+      remaining = remaining.slice(boldMatch.index + boldMatch[0].length);
+    } else {
+      parts.push(remaining);
+      break;
+    }
+  }
+  return parts;
+}
+
+function parseMarkdownLines(text: string): JSX.Element {
   const lines = text.split("\n");
   const elements: JSX.Element[] = [];
   let listItems: string[] = [];
@@ -30,31 +50,15 @@ function renderMarkdown(text: string): JSX.Element {
     }
   };
 
-  const inlineFormat = (str: string): (string | JSX.Element)[] => {
-    const parts: (string | JSX.Element)[] = [];
-    let remaining = str;
-    let inlineKey = 0;
-    while (remaining.length > 0) {
-      const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
-      if (boldMatch && boldMatch.index !== undefined) {
-        if (boldMatch.index > 0) {
-          parts.push(remaining.slice(0, boldMatch.index));
-        }
-        parts.push(<strong key={`b${inlineKey++}`} className="font-semibold">{boldMatch[1]}</strong>);
-        remaining = remaining.slice(boldMatch.index + boldMatch[0].length);
-      } else {
-        parts.push(remaining);
-        break;
-      }
-    }
-    return parts;
-  };
-
   for (const line of lines) {
+    const headingMatch = line.match(/^###\s+(.*)/);
     const olMatch = line.match(/^\d+\.\s+(.*)/);
     const ulMatch = line.match(/^\s*[-•]\s+(.*)/);
 
-    if (olMatch) {
+    if (headingMatch) {
+      flushList();
+      elements.push(<p key={key++} className="font-semibold mt-2 mb-0.5">{inlineFormat(headingMatch[1])}</p>);
+    } else if (olMatch) {
       if (listType === "ul") flushList();
       listType = "ol";
       listItems.push(olMatch[1]);
@@ -74,6 +78,48 @@ function renderMarkdown(text: string): JSX.Element {
   flushList();
 
   return <div className="space-y-0.5">{elements}</div>;
+}
+
+function ExpandableMessage({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const separator = /\n\s*Leer más\.{3}\s*\n/i;
+  const match = text.match(separator);
+
+  if (!match || match.index === undefined) {
+    return parseMarkdownLines(text);
+  }
+
+  const shortPart = text.slice(0, match.index).trim();
+  const detailPart = text.slice(match.index + match[0].length).trim();
+
+  return (
+    <div className="space-y-1">
+      {parseMarkdownLines(shortPart)}
+      {!expanded ? (
+        <button
+          onClick={() => setExpanded(true)}
+          className="flex items-center gap-1 text-[#357947] dark:text-green-400 text-xs font-medium mt-1 cursor-pointer hover:underline"
+          data-testid="button-read-more"
+        >
+          <ChevronDown className="h-3 w-3" />
+          Leer más...
+        </button>
+      ) : (
+        <>
+          <div className="border-t border-slate-200 dark:border-slate-600 my-1.5" />
+          {parseMarkdownLines(detailPart)}
+          <button
+            onClick={() => setExpanded(false)}
+            className="flex items-center gap-1 text-[#357947] dark:text-green-400 text-xs font-medium mt-1 cursor-pointer hover:underline"
+            data-testid="button-read-less"
+          >
+            <ChevronUp className="h-3 w-3" />
+            Leer menos
+          </button>
+        </>
+      )}
+    </div>
+  );
 }
 
 const SUGGESTIONS = [
@@ -324,7 +370,7 @@ export function ChatBot() {
                     }`}
                     data-testid={`chatbot-message-${msg.role}-${i}`}
                   >
-                    {msg.role === "assistant" ? renderMarkdown(msg.content) : msg.content}
+                    {msg.role === "assistant" ? <ExpandableMessage text={msg.content} /> : msg.content}
                   </div>
                   {msg.role === "user" && (
                     <div className="h-7 w-7 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center shrink-0 mt-0.5">
