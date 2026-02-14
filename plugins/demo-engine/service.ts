@@ -499,9 +499,14 @@ export async function getDemoHealthDiagnostics(): Promise<Record<string, any>> {
   const isProduction = process.env.NODE_ENV === "production";
   const dbType = isProduction && process.env.AWS_RDS_HOST ? "AWS_RDS" : "Neon";
 
+  const roomResult = await db.execute(sql`SELECT room_id, status FROM demo_room_bookings ORDER BY room_id`);
+  const rooms = extractRows(roomResult);
+
   return {
     enabled: true,
     database: dbType,
+    roomCount: rooms.length,
+    rooms: rooms.map((r: any) => ({ id: r.room_id, status: r.status })),
     goldenMaster: {
       idPreview: gmPreview,
       idLength: gmId.length,

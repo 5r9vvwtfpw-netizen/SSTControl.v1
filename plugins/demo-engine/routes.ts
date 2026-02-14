@@ -73,6 +73,14 @@ router.post("/check-in", async (req: Request, res: Response) => {
       }
     }
 
+    const countCheck = await db.execute(sql`SELECT count(*) as cnt FROM demo_room_bookings`);
+    const countRows = extractRows(countCheck);
+    const roomCount = parseInt(countRows[0]?.cnt || countRows[0]?.count || "0", 10);
+    if (roomCount === 0) {
+      logger.info("[DemoEngine] No rooms in DB during check-in, auto-initializing...");
+      await initializeRoomsViaRawSql();
+    }
+
     const result = await checkIn(inputEmail || undefined);
 
     const appUrl = process.env.APP_URL || process.env.VITE_APP_URL || "";
@@ -146,6 +154,19 @@ router.get("/health", async (_req: Request, res: Response) => {
   }
 
   try {
+    const countResult = await db.execute(sql`SELECT count(*) as cnt FROM demo_room_bookings`);
+    const countRows = extractRows(countResult);
+    const roomCount = parseInt(countRows[0]?.cnt || countRows[0]?.count || "0", 10);
+
+    if (roomCount === 0) {
+      logger.info("[DemoEngine] Health check: No rooms found, auto-initializing...");
+      try {
+        await initializeRoomsViaRawSql();
+      } catch (initErr: any) {
+        logger.error({ err: initErr }, "[DemoEngine] Auto-init failed during health check");
+      }
+    }
+
     const diagnostics = await getDemoHealthDiagnostics();
     return res.json(diagnostics);
   } catch (error: any) {
@@ -153,6 +174,27 @@ router.get("/health", async (_req: Request, res: Response) => {
     return res.status(500).json({ error: "Health check failed", message: error.message });
   }
 });
+
+async function initializeRoomsViaRawSql() {
+  const ROOM_IDS = [
+    "demo-room-001", "demo-room-002", "demo-room-003", "demo-room-004", "demo-room-005",
+    "demo-room-006", "demo-room-007", "demo-room-008", "demo-room-009", "demo-room-010",
+  ];
+  const COMPANY_IDS = [
+    "demo-company-room-001", "demo-company-room-002", "demo-company-room-003",
+    "demo-company-room-004", "demo-company-room-005", "demo-company-room-006",
+    "demo-company-room-007", "demo-company-room-008", "demo-company-room-009",
+    "demo-company-room-010",
+  ];
+  for (let i = 0; i < ROOM_IDS.length; i++) {
+    await db.execute(sql`
+      INSERT INTO demo_room_bookings (room_id, company_id, demo_username, status, updated_at)
+      VALUES (${ROOM_IDS[i]}, ${COMPANY_IDS[i]}, ${`demo${i + 1}`}, 'available', now())
+      ON CONFLICT (room_id) DO NOTHING
+    `);
+  }
+  logger.info("[DemoEngine] Auto-initialized 10 demo rooms via health check");
+}
 
 router.post("/verify", async (req: Request, res: Response) => {
   if (!isDemoEnabled()) {
