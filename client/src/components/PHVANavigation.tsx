@@ -18,7 +18,6 @@ import {
   Car
 } from "lucide-react";
 import safetyHelmetAvatar from "@assets/generated_images/safety_helmet_avatar_icon.png";
-import { ChatbotWidget } from "@/plugins/chatbot-asistente/ChatbotWidget";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
@@ -587,7 +586,6 @@ export function PHVANavigation() {
                 <p className="opacity-80 text-[10px]">{roleLabels[user?.role || "trabajador"]}</p>
               </div>
               
-              <ChatbotWidget />
               <Button
                 variant="ghost"
                 size="sm"

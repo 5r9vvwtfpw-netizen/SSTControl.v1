@@ -44,7 +44,7 @@ import { promotionsRouter } from "../plugins/promotions";
 import { handlePromotionsWebhook } from "../plugins/promotions/webhook-handler";
 import { landingPageRouter } from "../plugins/landing-page-integration";
 import { demoEngineRouter, initializeDemoRooms, startDemoHousekeepingCron, isDemoEnabled } from "../plugins/demo-engine";
-import { chatbotRouter, isChatbotEnabled } from "../plugins/chatbot-asistente";
+
 
 const app = express();
 
@@ -890,17 +890,6 @@ app.use(requireValidLicense);
     logger.warn({ err: error }, "⚠️ Plugin Landing Page no disponible (no crítico)");
   }
 
-  // Chatbot Asistente Plugin (Sidecar - Knowledge Base Search)
-  if (isChatbotEnabled()) {
-    try {
-      app.use("/api/plugins/chatbot", chatbotRouter);
-      logger.info("✅ Plugin Chatbot Asistente montado en /api/plugins/chatbot");
-    } catch (error) {
-      logger.warn({ err: error }, "⚠️ Plugin Chatbot Asistente no disponible (no crítico)");
-    }
-  } else {
-    logger.info("⏭️ Plugin Chatbot Asistente deshabilitado");
-  }
 
   // Demo Engine Plugin (Sidecar - Hotel Room Model)
   if (isDemoEnabled()) {
