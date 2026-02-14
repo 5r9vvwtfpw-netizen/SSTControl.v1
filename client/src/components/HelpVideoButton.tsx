@@ -30,17 +30,12 @@ function toYouTubeEmbedUrl(url: string): string {
   return url;
 }
 
-const ROUTE_ALIASES: Record<string, string> = {
-  "/": "/dashboard",
-};
-
 export default function HelpVideoButton() {
   const [location] = useLocation();
   const { user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
 
-  const resolvedRoute = ROUTE_ALIASES[location] || location;
-  const encodedRoute = encodeURIComponent(resolvedRoute);
+  const encodedRoute = encodeURIComponent(location);
   const { data } = useQuery<{ video: HelpVideo | null }>({
     queryKey: [`/api/help-videos/by-route?route=${encodedRoute}`],
     enabled: !!user,
@@ -53,15 +48,15 @@ export default function HelpVideoButton() {
 
   return (
     <>
-      <button
-        className="fixed bottom-20 right-6 z-[60] flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-4 py-2 shadow-lg hover:opacity-90 transition-opacity"
+      <Button
+        size="icon"
+        className="fixed bottom-20 right-6 z-50 rounded-full shadow-lg"
         onClick={() => setModalOpen(true)}
         data-testid="button-help-video"
         title="Ver video de ayuda"
       >
         <CirclePlay className="h-5 w-5" />
-        <span className="text-sm font-medium">Video Ayuda</span>
-      </button>
+      </Button>
 
       {modalOpen && (
         <div
