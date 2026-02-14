@@ -115,10 +115,11 @@ router.post("/verify", async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: "Token requerido" });
     }
 
+    logger.info({ tokenLength: token.length, tokenPreview: token.substring(0, 8) + "..." }, "[DemoEngine] Verify attempt");
+
     const roomResult = await db.execute(sql`
       SELECT * FROM demo_room_bookings
       WHERE assigned_session_token = ${token}
-        AND status = 'occupied'
       LIMIT 1
     `);
 
@@ -126,11 +127,29 @@ router.post("/verify", async (req: Request, res: Response) => {
     const room = roomRows[0];
 
     if (!room) {
+      logger.warn({ tokenPreview: token.substring(0, 8) + "..." }, "[DemoEngine] Verify failed - token not found in any room");
+      return res.status(401).json({ success: false, error: "Token inválido o expirado" });
+    }
+
+    logger.info({ roomId: room.room_id, status: room.status, expiresAt: room.expires_at }, "[DemoEngine] Room found for token");
+
+    if (room.status === "resetting") {
+      return res.status(202).json({
+        success: false,
+        error: "La demo se está preparando. Espere un momento...",
+        retry: true,
+        retryAfter: 3,
+      });
+    }
+
+    if (room.status !== "occupied") {
+      logger.warn({ roomId: room.room_id, status: room.status }, "[DemoEngine] Verify failed - room not in occupied status");
       return res.status(401).json({ success: false, error: "Token inválido o expirado" });
     }
 
     if (room.expires_at && new Date(room.expires_at) < new Date()) {
-      return res.status(401).json({ success: false, error: "Token inválido o expirado" });
+      logger.warn({ roomId: room.room_id, expiresAt: room.expires_at }, "[DemoEngine] Verify failed - token expired");
+      return res.status(401).json({ success: false, error: "La demo ha expirado" });
     }
 
     const companyId = room.company_id;
@@ -143,8 +162,8 @@ router.post("/verify", async (req: Request, res: Response) => {
     const demoUser = userRows[0];
 
     if (!demoUser) {
-      logger.error({ companyId }, "[DemoEngine] No admin user found for demo company");
-      return res.status(500).json({ success: false, error: "Error al preparar la demo" });
+      logger.error({ companyId, roomId: room.room_id }, "[DemoEngine] No admin user found for demo company");
+      return res.status(500).json({ success: false, error: "Error al preparar la demo. La sala aún no está lista." });
     }
 
     req.session.regenerate((err) => {
@@ -159,7 +178,7 @@ router.post("/verify", async (req: Request, res: Response) => {
           return res.status(500).json({ success: false, error: "Error al iniciar sesión" });
         }
 
-        logger.info({ roomId: room.room_id, companyId }, "[DemoEngine] Auto-login via verify token successful");
+        logger.info({ roomId: room.room_id, companyId, username: demoUser.username }, "[DemoEngine] Auto-login via verify token successful");
 
         return res.json({
           success: true,

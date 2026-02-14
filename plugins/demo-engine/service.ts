@@ -282,7 +282,7 @@ export async function checkIn(prospectEmail?: string): Promise<CheckInResponse> 
     const roomId = room.room_id;
     const companyId = room.company_id;
     const demoUsername = room.demo_username;
-    const sessionToken = randomBytes(16).toString("hex");
+    const sessionToken = randomBytes(48).toString("base64url");
 
     await tx.execute(sql`
       UPDATE demo_room_bookings 
