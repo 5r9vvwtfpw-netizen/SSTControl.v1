@@ -172,66 +172,65 @@ Accesible desde la pestaña "PESV" en la barra de navegación.
 - **Revisión por la Dirección PESV** → Revisión gerencial del PESV.
 - **Auditorías PESV** → Auditorías del sistema de gestión vial.
 
-## FUNCIONALIDADES CLAVE
+## FLUJO PRINCIPAL DEL SISTEMA - TODO PARTE DE LA EVALUACIÓN INICIAL
 
-### Crear una Empresa
+IMPORTANTE: En SST Colombia, el punto de partida para llegar al 100% de cumplimiento es la **Evaluación Inicial** (Resolución 0312/2019). NO se navega directamente a los módulos desde el menú para gestionar el cumplimiento. El flujo correcto es:
+
+### Paso 1: Configurar la Empresa
 1. Ir a Configuración → Empresas → "Crear Empresa"
-2. Paso 1: Ingresar código CIIU, NIT, razón social, datos de contacto. El sistema clasifica automáticamente el nivel de riesgo ARL y el capítulo aplicable de Resolución 0312/2019.
-3. Paso 2: Confirmar datos y crear. Se genera automáticamente la estructura de la empresa.
+2. Ingresar código CIIU, NIT, razón social, datos de contacto
+3. El sistema clasifica automáticamente el nivel de riesgo ARL y el capítulo aplicable (I, II o III)
 
-### Agregar Trabajadores
+### Paso 2: Agregar Trabajadores
 1. Ir a Planear → Personal → Trabajadores
-2. Opción A: Clic "Agregar Trabajador" → llenar formulario con datos personales, cargo, contrato, afiliaciones → Guardar.
-3. Opción B: Clic "Importar Excel" → descargar plantilla → llenar datos de todos los trabajadores → subir archivo. El sistema normaliza automáticamente los datos.
+2. Opción A: Clic "Agregar Trabajador" → llenar formulario → Guardar
+3. Opción B: Clic "Importar Excel" → descargar plantilla → llenar datos → subir archivo
 
-### Realizar una Evaluación SST
+### Paso 3: Crear la Evaluación Inicial (CENTRO DEL SISTEMA)
 1. Ir a Planear → Gestión Integral → Evaluación Inicial
 2. Clic "Nueva Evaluación" → seleccionar año
-3. Completar cada estándar según el capítulo de la empresa (I, II o III)
-4. El sistema calcula automáticamente el porcentaje de cumplimiento
-5. Se puede generar PDF del informe de evaluación
+3. La evaluación muestra TODOS los estándares aplicables según el capítulo de la empresa
+4. Cada estándar tiene un estado (Cumple, No Cumple, No Aplica, Justifica No Cumplimiento)
+5. **Desde cada estándar** hay botones y enlaces que llevan directamente al módulo correspondiente para completar la evidencia
 
-### Registrar un Accidente
-1. Ir a Hacer → Accidentes
-2. Clic "Reportar Accidente" → llenar datos del accidente (fecha, hora, lugar, descripción, lesión, parte del cuerpo)
-3. El sistema genera código de seguimiento automático
-4. Luego se puede investigar desde "Investigación de Accidentes"
+### Paso 4: Completar Estándares DESDE la Evaluación
+El flujo correcto para cumplir cada estándar es:
+1. Abrir la Evaluación Inicial
+2. Revisar el estándar que se quiere cumplir (ej: "Capacitación en SST")
+3. Hacer clic en el enlace o botón que aparece en ese estándar → el sistema te lleva al módulo correspondiente (ej: Capacitaciones)
+4. Completar la actividad en el módulo (registrar la capacitación, subir evidencia, etc.)
+5. Volver a la Evaluación → el estándar se actualiza automáticamente mostrando el cumplimiento
 
-### Programar Capacitaciones
-1. Ir a Hacer → Capacitaciones
-2. Clic "Nueva Capacitación" → definir tema, fecha, instructor, trabajadores convocados
-3. Después de la capacitación: registrar asistencia, evaluación, evidencias
-4. Se puede vincular al Programa de Capacitación Anual
+### Ejemplos del flujo correcto:
+- **Para registrar un accidente**: Abrir Evaluación Inicial → buscar el estándar de "Reporte e Investigación de Accidentes" → desde allí ir al módulo de Accidentes → registrar el accidente → volver a la evaluación
+- **Para programar capacitaciones**: Abrir Evaluación Inicial → buscar el estándar de "Capacitación en SST" → desde allí ir al módulo de Capacitaciones → programar la capacitación → volver a la evaluación
+- **Para entregar EPP**: Abrir Evaluación Inicial → buscar el estándar de "EPP" → desde allí ir al módulo de Entrega de EPP → registrar la entrega → volver a la evaluación
+- **Para registrar inspecciones**: Abrir Evaluación Inicial → buscar el estándar de "Inspecciones" → desde allí ir al módulo de Inspecciones → crear inspección → volver a la evaluación
+- **Para gestionar COPASST**: Abrir Evaluación Inicial → buscar el estándar de "COPASST/Vigía" → desde allí ir al módulo de COPASST → registrar actas y conformación → volver a la evaluación
 
-### Registrar Inspecciones
-1. Ir a Hacer → Inspecciones
-2. Clic "Nueva Inspección" → seleccionar tipo (locativa, equipos, EPP, orden y aseo)
-3. Llenar lista de verificación → registrar hallazgos
-4. Generar acciones correctivas si se encuentran no conformidades
+### Paso 5: Plan Anual de Trabajo
+1. Desde la Evaluación Inicial se puede generar un Plan Anual de Trabajo
+2. El plan organiza todas las actividades necesarias en un cronograma mensual
+3. Las actividades del plan están vinculadas a los estándares de la evaluación
+4. Se puede hacer seguimiento del avance mes a mes desde el cronograma
 
-### Entregar EPP
-1. Ir a Hacer → Entrega de EPP
-2. Clic "Registrar Entrega" → seleccionar trabajador → marcar EPP entregados
-3. El trabajador puede ver su historial de EPP desde el Portal de Empleados
+### Paso 6: Verificar el Cumplimiento
+1. La Evaluación Inicial calcula automáticamente el porcentaje de cumplimiento
+2. Los indicadores (ILI, Frecuencia, Severidad, Mortalidad, etc.) se calculan automáticamente basado en los datos registrados
+3. Se pueden ver desde Verificar → Indicadores de Accidentalidad
 
-### Gestionar COPASST
-1. Ir a Hacer → COPASST
-2. Registrar conformación del comité (miembros, período)
-3. Crear actas de reuniones mensuales
-4. Registrar capacitaciones del COPASST
+### Paso 7: Actuar (Mejora Continua)
+1. Las no conformidades detectadas generan acciones correctivas
+2. Se pueden crear planes de mejoramiento desde la Evaluación
+3. Las revisiones por la dirección evalúan el desempeño general del SG-SST
 
-### Ver Indicadores
-1. Ir a Verificar → Indicadores de Accidentalidad
-2. Seleccionar el indicador deseado (ILI, Frecuencia, Severidad, Mortalidad, etc.)
-3. El sistema calcula automáticamente basado en los accidentes reportados y horas trabajadas
+### Meta: 100% Cumplimiento
+El porcentaje de cumplimiento se calcula automáticamente en la Evaluación Inicial. Para llegar al 100%, hay que completar TODOS los estándares aplicables al capítulo de la empresa. El sistema muestra claramente qué estándares faltan y desde cada uno se puede ir directamente al módulo correspondiente.
 
-### Generar Informes PDF
-1. Ir a Configuración → Informes (o desde cada módulo individual)
-2. Seleccionar tipo de informe
-3. Los PDFs incluyen automáticamente el logo de la empresa y formato corporativo
+## OTRAS FUNCIONALIDADES
 
 ### Suscripciones y Pagos
-- **Ver planes** → /planes-suscripcion: Comparar planes disponibles con sus características
+- **Ver planes** → /planes-suscripcion: Comparar planes disponibles
 - **Checkout** → /checkout: Proceso de pago con Stripe
 - **Mi Suscripción** → /mi-suscripcion: Ver estado actual, renovar, cambiar plan
 - Algunos módulos requieren suscripción activa (marcados con "Requiere suscripción")
@@ -352,7 +351,7 @@ Tu rol es ayudar a usuarios del sistema con:
 Reglas importantes:
 1. Responde SIEMPRE en español colombiano, de manera profesional y clara.
 2. Sé conciso pero completo. Usa listas y pasos numerados cuando sea apropiado.
-3. Cuando el usuario pregunte cómo hacer algo en la plataforma, da instrucciones EXACTAS de navegación usando las pestañas PHVA. Por ejemplo: "Haz clic en la pestaña Hacer en la barra superior → selecciona Capacitaciones del menú desplegable".
+3. REGLA FUNDAMENTAL: Cuando el usuario pregunte cómo hacer algo relacionado con cumplimiento SST (registrar accidentes, capacitaciones, inspecciones, EPP, COPASST, etc.), SIEMPRE indica que el punto de partida es la **Evaluación Inicial**. El flujo correcto es: abrir la Evaluación Inicial → buscar el estándar correspondiente → desde allí ir al módulo. NUNCA digas "Ir a Hacer → Accidentes" o "Ir a Hacer → Capacitaciones" directamente. Todo se gestiona DESDE la Evaluación Inicial.
 4. Cuando cites normativa, menciona el artículo o resolución específica.
 5. No inventes funcionalidades que no existen en el sistema. Solo menciona lo que está en la base de conocimiento.
 6. Mantén un tono amigable y profesional.
@@ -361,6 +360,7 @@ Reglas importantes:
 9. Cuando menciones módulos que requieren suscripción, indícalo al usuario.
 10. Adapta tu respuesta al rol del usuario: si es trabajador guíalo al Portal de Empleados, si es LSO al Portal del Licenciado, si es admin/responsable dale instrucciones completas.
 11. IMPORTANTE: Solo indica al usuario cómo llegar a funciones que SU ROL puede ver. No lo envíes a módulos que no tiene acceso.
+12. Recuerda: La Evaluación Inicial es el CENTRO del sistema. Todo fluye desde allí. El Plan Anual de Trabajo se genera desde la evaluación y organiza las actividades en cronograma mensual.
 ${userContext}
 
 ${APP_KNOWLEDGE_BASE}`;
