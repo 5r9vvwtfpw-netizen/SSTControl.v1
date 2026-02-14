@@ -50,6 +50,27 @@ router.get("/status", async (req: Request, res: Response) => {
   }
 });
 
+router.post("/force-init", async (req: Request, res: Response) => {
+  if (!isDemoEnabled()) {
+    return res.status(404).json({ error: "Not found" });
+  }
+
+  const { secret } = req.body || {};
+  if (secret !== process.env.JWT_RECALCULATE_SECRET) {
+    return res.status(403).json({ error: "Not authorized" });
+  }
+
+  try {
+    const { initializeDemoRooms } = await import("./service");
+    await initializeDemoRooms();
+    const rooms = await getDemoRoomStatus();
+    return res.json({ message: "Demo rooms initialized", rooms });
+  } catch (error: any) {
+    logger.error({ err: error }, "[DemoEngine] Force init error");
+    return res.status(500).json({ error: "Initialization failed", detail: error.message });
+  }
+});
+
 router.post("/force-reset", async (req: Request, res: Response) => {
   if (!isDemoEnabled()) {
     return res.status(404).json({ error: "Not found" });
