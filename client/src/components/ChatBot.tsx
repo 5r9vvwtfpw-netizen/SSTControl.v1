@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, Fragment } from "react";
 import { MessageCircle, X, Send, Loader2, User, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
 import chatbotAvatar from "@assets/image_1771096260727.png";
 
 interface ChatMessage {
@@ -130,6 +131,7 @@ const SUGGESTIONS = [
 ];
 
 export function ChatBot() {
+  const { data: user } = useQuery<any>({ queryKey: ["/api/user"] });
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -152,6 +154,8 @@ export function ChatBot() {
       inputRef.current.focus();
     }
   }, [isOpen]);
+
+  if (!user) return null;
 
   const sendMessage = async (text: string) => {
     const trimmed = text.trim();
