@@ -1,7 +1,8 @@
 import type { Express, Request, Response, RequestHandler } from "express";
 import OpenAI from "openai";
+import { eq } from "drizzle-orm";
 import { db } from "./db";
-import { chatbotQuestions } from "@shared/schema";
+import { chatbotQuestions, companies } from "@shared/schema";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -248,17 +249,98 @@ Los trabajadores acceden al portal con sus credenciales y pueden:
 - **Chatbot**: Este asistente virtual para resolver dudas rápidas
 - **Videos de Ayuda**: Tutoriales disponibles dentro de la plataforma
 
+## VISIBILIDAD POR ROL (Qué ve cada usuario)
+
+### Superadmin / Admin / Superusuario / Responsable SST
+Acceso completo: Ven TODAS las pestañas PHVA (Configuración, Planear, Hacer, Verificar, Actuar) y PESV. Pueden crear, editar y eliminar en todos los módulos. El Superadmin puede además ver todas las empresas y el panel de facturación global. El Superusuario puede gestionar la suscripción de su empresa.
+
+### Coordinador SST
+Ve: Dashboard, Planear (trabajadores, evaluaciones, planes, COPASST, políticas, IPERC, plan emergencias), Hacer (capacitaciones, inspecciones, EPP, accidentes, medidas), Verificar (indicadores, estándares, informes), Actuar (mejora continua). Puede crear y editar en la mayoría de módulos. También tiene acceso a PESV si la empresa tiene vehículos.
+
+### Coordinador de Salud Ocupacional
+Ve: Dashboard, trabajadores (solo ver), accidentes (ver y crear), exámenes médicos, historias clínicas, incapacidades, reportes de seguridad social, vigilancia epidemiológica. Es el único rol (además de admin) que puede acceder a datos médicos sensibles.
+
+### Coordinador RRHH
+Ve: Dashboard, trabajadores (crear y editar), perfiles de cargo, contratos, capacitaciones (crear y editar), exámenes médicos, informes de personal. NO ve inspecciones ni medidas preventivas en detalle.
+
+### LSO (Licenciado en Salud Ocupacional)
+Tiene su propio portal especial → /portal-licenciado. NO ve el menú PHVA normal. Su portal muestra las empresas asignadas con acceso de solo lectura a evaluaciones, estándares, accidentes, capacitaciones, inspecciones. Puede firmar y aprobar documentos SST.
+
+### Supervisor
+Ve: Dashboard, trabajadores (solo ver), accidentes (ver y crear), inspecciones (crear y editar), medidas preventivas (crear y editar). Enfocado en operaciones de su área.
+
+### Vigía SST
+Similar al supervisor pero para empresas pequeñas (<10 trabajadores). Ve: trabajadores, accidentes, capacitaciones, inspecciones, medidas, evaluaciones SST. Puede crear y editar en accidentes, capacitaciones e inspecciones.
+
+### Jefe de Personal
+Acceso de solo consulta: Ve trabajadores, accidentes, capacitaciones, inspecciones, medidas, evaluaciones, vehículos, conductores, perfiles de cargo, contratos, exámenes médicos. NO puede crear ni editar.
+
+### Auditor Interno
+Ve: Todo en modo consulta (similar a jefe_personal), más la capacidad de crear y editar evaluaciones SST y auditorías PESV. Enfocado en verificación de cumplimiento.
+
+### Trabajador
+Solo ve el **Portal de Empleados** → /portal-empleados. Desde allí puede:
+- Ver su información personal
+- Ver sus capacitaciones asignadas
+- Ver historial de entrega de EPP
+- Ver su contrato y exámenes médicos propios
+- Crear reportes/solicitudes
+- Acceder a la inducción virtual
+NO ve las pestañas PHVA ni ningún módulo de gestión.
+
+### Soporte
+Acceso limitado: Solo Dashboard básico para resolver incidencias de usuarios.
+
+## MÓDULOS POR TAMAÑO DE EMPRESA (Capítulos Resolución 0312/2019)
+Los módulos visibles también dependen del plan de suscripción/tamaño de la empresa:
+
+### Capítulo I - Microempresa (1-10 trabajadores, Riesgo I/II/III) - 7 estándares
+Módulos disponibles: Dashboard, Trabajadores, Afiliaciones, Designación Responsable, Asignación Recursos, Capacitaciones, Inducción, COPASST/Vigía, Comité de Convivencia, Evaluaciones SST, Accidentes, Investigación, Árbol de Causas, Ausentismo, EPP, Perfil Sociodemográfico, Perfiles de Cargo, Estándares SST, Políticas SST, Programa Capacitación Anual, Curso 50 Horas, Planes de Trabajo, Exámenes Médicos, IPERC, Medidas Preventivas, Recomendaciones ARL.
+
+### Capítulo II - Pequeña Empresa (11-50 trabajadores, Riesgo I/II/III) - 21 estándares
+Todo lo de Capítulo I MÁS: Trabajadores Alto Riesgo, Objetivos SST, Matriz Legal, Conservación de Documentos, Comunicación SST, Indicadores (Frecuencia, Severidad, ILI, Mortalidad, Ausentismo, Prevalencia, Incidencia), Inspecciones, Mediciones Ambientales, Conservación Auditiva, Plan de Emergencias, Actividades de Promoción, Estilos de Vida Saludable, Informes, Salud Ocupacional.
+
+### Capítulo III - Mediana/Gran Empresa (>50 trabajadores o Riesgo IV/V) - 61 estándares
+Todo lo de Capítulo II MÁS: Evaluación de Proveedores, Gestión de Cambios, Adquisiciones SST, Sustancias Químicas, Vigilancia Epidemiológica, PESV completo (Vehículos, Conductores, Inspecciones, Siniestros, Capacitaciones, Auditorías), Auditorías Internas, Revisiones por la Dirección.
+
 ## NORMATIVA REFERENCIAL
-- **Resolución 0312 de 2019**: Estándares Mínimos del SG-SST
+- **Resolución 0312 de 2019**: Estándares Mínimos del SG-SST (Capítulos I, II, III según tamaño y riesgo)
 - **Decreto 1072 de 2015**: Decreto Único Reglamentario del Sector Trabajo (Libro 2, Parte 2, Título 4, Capítulo 6)
 - **ISO 45001:2018**: Sistema de Gestión de la Seguridad y Salud en el Trabajo
 - **Resolución 40595 de 2022**: Plan Estratégico de Seguridad Vial (PESV)
 - **Ley 1562 de 2012**: Sistema General de Riesgos Laborales
 - **Resolución 1401 de 2007**: Investigación de Accidentes de Trabajo
 - **Ley 1581 de 2012**: Protección de Datos Personales
+- **Ley 1010 de 2006**: Acoso Laboral (Comité de Convivencia obligatorio)
 `;
 
-const SYSTEM_PROMPT = `Eres el asistente virtual de SST Colombia, un sistema de gestión de Seguridad y Salud en el Trabajo.
+const ROLE_LABELS: Record<string, string> = {
+  superadmin: "Super Administrador",
+  admin: "Gerente General",
+  soporte: "Soporte Técnico",
+  superusuario: "Super Usuario",
+  responsable_sst: "Responsable SST",
+  coordinador_salud: "Coordinador de Salud Ocupacional",
+  lso: "Licenciado en Salud Ocupacional",
+  coordinador_sst: "Coordinador SST",
+  coordinador_rrhh: "Coordinador RRHH",
+  jefe_personal: "Jefe de Personal",
+  supervisor: "Supervisor",
+  vigia_sst: "Vigía SST",
+  auditor_interno: "Auditor Interno SG-SST",
+  trabajador: "Trabajador",
+  coordinador_pesv: "Coordinador PESV",
+  conductor: "Conductor",
+  asistente_sst: "Asistente SST",
+};
+
+function buildSystemPrompt(userRole: string, companyName?: string): string {
+  const roleLabel = ROLE_LABELS[userRole] || userRole;
+  const userContext = companyName
+    ? `\n\nCONTEXTO DEL USUARIO ACTUAL:\n- Rol: ${roleLabel}\n- Empresa: ${companyName}\nCuando guíes al usuario, ten en cuenta su rol. Solo menciona módulos y acciones que su rol puede ver y realizar según la sección "VISIBILIDAD POR ROL". Si pregunta por algo que su rol no puede hacer, explícale amablemente quién en su empresa puede hacerlo (ej: "Esa función está disponible para el Responsable SST o el Coordinador SST de tu empresa").`
+    : `\n\nCONTEXTO DEL USUARIO ACTUAL:\n- Rol: ${roleLabel}\nCuando guíes al usuario, ten en cuenta su rol. Solo menciona módulos y acciones que su rol puede ver y realizar según la sección "VISIBILIDAD POR ROL".`;
+
+  return `Eres el asistente virtual de SST Colombia, un sistema de gestión de Seguridad y Salud en el Trabajo.
 
 Tu rol es ayudar a usuarios del sistema con:
 - Navegación y uso de la plataforma SST Colombia (conoces cada módulo, ruta y funcionalidad)
@@ -270,16 +352,19 @@ Tu rol es ayudar a usuarios del sistema con:
 Reglas importantes:
 1. Responde SIEMPRE en español colombiano, de manera profesional y clara.
 2. Sé conciso pero completo. Usa listas y pasos numerados cuando sea apropiado.
-3. Cuando el usuario pregunte cómo hacer algo en la plataforma, da instrucciones paso a paso con las rutas exactas de navegación (ej: "Ve a la pestaña Hacer → Capacitaciones").
+3. Cuando el usuario pregunte cómo hacer algo en la plataforma, da instrucciones EXACTAS de navegación usando las pestañas PHVA. Por ejemplo: "Haz clic en la pestaña Hacer en la barra superior → selecciona Capacitaciones del menú desplegable".
 4. Cuando cites normativa, menciona el artículo o resolución específica.
 5. No inventes funcionalidades que no existen en el sistema. Solo menciona lo que está en la base de conocimiento.
 6. Mantén un tono amigable y profesional.
-7. Si no sabes algo específico, indica que el usuario puede crear un ticket de soporte desde Configuración → Tickets de Soporte.
+7. Si no sabes algo específico, indica que el usuario puede crear un ticket de soporte desde el ícono de engranaje → Tickets de Soporte.
 8. Si la pregunta no está relacionada con SST o la plataforma, redirige amablemente al tema.
 9. Cuando menciones módulos que requieren suscripción, indícalo al usuario.
-10. Adapta tu respuesta al contexto: si el usuario parece nuevo, sé más detallado; si parece experimentado, sé más directo.
+10. Adapta tu respuesta al rol del usuario: si es trabajador guíalo al Portal de Empleados, si es LSO al Portal del Licenciado, si es admin/responsable dale instrucciones completas.
+11. IMPORTANTE: Solo indica al usuario cómo llegar a funciones que SU ROL puede ver. No lo envíes a módulos que no tiene acceso.
+${userContext}
 
 ${APP_KNOWLEDGE_BASE}`;
+}
 
 const MAX_HISTORY_MESSAGES = 6;
 const MAX_CONTENT_LENGTH = 2000;
@@ -341,15 +426,25 @@ export function registerChatbotRoutes(app: Express, requireAuth?: RequestHandler
 
       const userId = user.id;
       const companyId = user.companyId || null;
+      const userRole = user.role || "trabajador";
 
       if (!checkRateLimit(userId)) {
         return res.status(429).json({ error: "Has alcanzado el límite de preguntas por hora. Intenta más tarde." });
       }
 
+      let companyName: string | undefined;
+      if (companyId) {
+        try {
+          const [company] = await db.select({ name: companies.name }).from(companies).where(eq(companies.id, companyId)).limit(1);
+          companyName = company?.name;
+        } catch {}
+      }
+
       const startTime = Date.now();
+      const systemPrompt = buildSystemPrompt(userRole, companyName);
 
       const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
       ];
 
       const sanitized = sanitizeHistory(conversationHistory);
