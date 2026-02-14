@@ -31,34 +31,79 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const MODULE_LIST = [
-  { route: "/dashboard", name: "Dashboard" },
-  { route: "/trabajadores", name: "Trabajadores" },
-  { route: "/capacitaciones", name: "Capacitaciones" },
-  { route: "/inspecciones", name: "Inspecciones" },
-  { route: "/accidentes", name: "Accidentes" },
-  { route: "/examenes-medicos", name: "Exámenes Médicos" },
-  { route: "/entrega-epp", name: "Entrega de EPP" },
-  { route: "/evaluaciones-sst", name: "Evaluaciones SST" },
-  { route: "/iperc", name: "IPERC - Matriz de Riesgos" },
-  { route: "/politicas-sst", name: "Políticas SST" },
-  { route: "/plan-emergencias", name: "Plan de Emergencias" },
-  { route: "/programa-capacitacion-anual", name: "Programa de Capacitación Anual" },
-  { route: "/copasst", name: "COPASST" },
-  { route: "/vigilancia-epidemiologica", name: "Vigilancia Epidemiológica" },
-  { route: "/mediciones-ambientales", name: "Mediciones Ambientales" },
-  { route: "/sustancias-quimicas", name: "Sustancias Químicas" },
-  { route: "/ausentismo-laboral", name: "Ausentismo Laboral" },
-  { route: "/planes-trabajo-anual", name: "Planes de Trabajo Anual" },
-  { route: "/auditorias-internas", name: "Auditorías Internas" },
-  { route: "/pesv", name: "PESV - Seguridad Vial" },
-  { route: "/indicadores-accidentalidad", name: "Indicadores de Accidentalidad" },
-  { route: "/objetivos-sst", name: "Objetivos SST" },
-  { route: "/matriz-legal", name: "Matriz Legal" },
-  { route: "/perfiles-cargo", name: "Perfiles de Cargo" },
-  { route: "/portal-empleados", name: "Portal del Empleado" },
-  { route: "/conservacion-documentos", name: "Conservación de Documentos" },
-  { route: "/informes", name: "Informes" },
-  { route: "/mi-suscripcion", name: "Mi Suscripción" },
+  { route: "/dashboard", name: "Dashboard", group: "SST" },
+  { route: "/trabajadores", name: "Trabajadores", group: "SST" },
+  { route: "/perfiles-cargo", name: "Perfiles de Cargo", group: "SST" },
+  { route: "/asignacion-recursos", name: "Asignación de Recursos", group: "SST" },
+  { route: "/designacion-responsable", name: "Designación del Responsable", group: "SST" },
+  { route: "/capacitaciones", name: "Capacitaciones", group: "SST" },
+  { route: "/programa-capacitacion-anual", name: "Programa de Capacitación Anual", group: "SST" },
+  { route: "/curso-50-horas", name: "Curso 50 Horas SST", group: "SST" },
+  { route: "/registros-induccion", name: "Registros de Inducción", group: "SST" },
+  { route: "/inspecciones", name: "Inspecciones", group: "SST" },
+  { route: "/accidentes", name: "Accidentes e Incidentes", group: "SST" },
+  { route: "/investigacion-accidentes", name: "Investigación de Accidentes", group: "SST" },
+  { route: "/arbol-causas", name: "Árbol de Causas", group: "SST" },
+  { route: "/examenes-medicos", name: "Exámenes Médicos", group: "SST" },
+  { route: "/afiliaciones-ssss", name: "Afiliaciones SSSS", group: "SST" },
+  { route: "/trabajadores-alto-riesgo", name: "Trabajadores de Alto Riesgo", group: "SST" },
+  { route: "/entrega-epp", name: "Entrega de EPP", group: "SST" },
+  { route: "/medidas", name: "Medidas Preventivas", group: "SST" },
+  { route: "/salud", name: "Salud Ocupacional", group: "SST" },
+  { route: "/vigilancia-epidemiologica", name: "Vigilancia Epidemiológica", group: "SST" },
+  { route: "/perfil-sociodemografico", name: "Perfil Sociodemográfico", group: "SST" },
+  { route: "/actividades-promocion-prevencion", name: "Actividades de Promoción y Prevención", group: "SST" },
+  { route: "/estilos-vida-saludable", name: "Estilos de Vida Saludable", group: "SST" },
+  { route: "/conservacion-auditiva", name: "Conservación Auditiva", group: "SST" },
+  { route: "/mediciones-ambientales", name: "Mediciones Ambientales", group: "SST" },
+  { route: "/sustancias-quimicas", name: "Sustancias Químicas", group: "SST" },
+  { route: "/ausentismo-laboral", name: "Ausentismo Laboral", group: "SST" },
+  { route: "/estandares-sst", name: "Estándares SST", group: "SST" },
+  { route: "/evaluaciones-sst", name: "Evaluaciones SST", group: "SST" },
+  { route: "/iperc", name: "IPERC - Matriz de Riesgos", group: "SST" },
+  { route: "/politicas-sst", name: "Políticas SST", group: "SST" },
+  { route: "/plan-emergencias", name: "Plan de Emergencias", group: "SST" },
+  { route: "/planes-trabajo-anual", name: "Planes de Trabajo Anual", group: "SST" },
+  { route: "/objetivos-sst", name: "Objetivos SST", group: "SST" },
+  { route: "/indicadores-accidentalidad", name: "Indicadores de Accidentalidad", group: "SST" },
+  { route: "/matriz-legal", name: "Matriz Legal", group: "SST" },
+  { route: "/auditorias-internas", name: "Auditorías Internas", group: "SST" },
+  { route: "/revisiones-direccion", name: "Revisión por la Dirección", group: "SST" },
+  { route: "/recomendaciones-arl", name: "Recomendaciones ARL", group: "SST" },
+  { route: "/evaluacion-proveedores", name: "Evaluación de Proveedores", group: "SST" },
+  { route: "/gestion-cambios", name: "Gestión de Cambios", group: "SST" },
+  { route: "/adquisiciones-sst", name: "Adquisiciones SST", group: "SST" },
+  { route: "/comunicacion-sst", name: "Comunicación SST", group: "SST" },
+  { route: "/copasst-gestion", name: "COPASST", group: "SST" },
+  { route: "/capacitacion-copasst", name: "Capacitación COPASST", group: "SST" },
+  { route: "/copasst-evaluaciones", name: "Evaluaciones 360° COPASST", group: "SST" },
+  { route: "/comite-convivencia-actas", name: "Comité de Convivencia - Actas", group: "SST" },
+  { route: "/partes-interesadas", name: "Partes Interesadas", group: "SST" },
+  { route: "/analisis-contexto", name: "Análisis de Contexto", group: "SST" },
+  { route: "/plan-mejoramiento-contexto", name: "Plan de Mejoramiento (Contexto)", group: "SST" },
+  { route: "/conservacion-documentos", name: "Conservación de Documentos", group: "SST" },
+  { route: "/informes", name: "Informes", group: "SST" },
+  { route: "/portal-empleados", name: "Portal del Empleado", group: "SST" },
+  { route: "/mi-suscripcion", name: "Mi Suscripción", group: "SST" },
+  { route: "/pesv", name: "PESV - Panel Principal", group: "PESV" },
+  { route: "/pesv/vehiculos", name: "PESV - Vehículos", group: "PESV" },
+  { route: "/pesv/conductores", name: "PESV - Conductores", group: "PESV" },
+  { route: "/pesv/inspecciones", name: "PESV - Inspecciones Vehiculares", group: "PESV" },
+  { route: "/pesv/siniestros", name: "PESV - Siniestros Viales", group: "PESV" },
+  { route: "/pesv/capacitaciones", name: "PESV - Capacitaciones Viales", group: "PESV" },
+  { route: "/pesv/auditorias", name: "PESV - Auditorías", group: "PESV" },
+  { route: "/pesv/evaluaciones", name: "PESV - Evaluaciones", group: "PESV" },
+  { route: "/pesv/mantenimiento", name: "PESV - Mantenimiento Vehicular", group: "PESV" },
+  { route: "/pesv/monitoreo-gps", name: "PESV - Monitoreo GPS", group: "PESV" },
+  { route: "/pesv/rutas-seguras", name: "PESV - Rutas Seguras", group: "PESV" },
+  { route: "/pesv/matriz-riesgos", name: "PESV - Matriz de Riesgos Viales", group: "PESV" },
+  { route: "/pesv/contexto-organizacional", name: "PESV - Contexto Organizacional", group: "PESV" },
+  { route: "/pesv/indicadores", name: "PESV - Indicadores", group: "PESV" },
+  { route: "/pesv/factores-desempeno", name: "PESV - Factores de Desempeño", group: "PESV" },
+  { route: "/pesv/comite", name: "PESV - Comité de Seguridad Vial", group: "PESV" },
+  { route: "/pesv/liderazgo", name: "PESV - Liderazgo y Compromiso", group: "PESV" },
+  { route: "/pesv/mejora-continua", name: "PESV - Mejora Continua", group: "PESV" },
+  { route: "/pesv/revision-direccion", name: "PESV - Revisión por la Dirección", group: "PESV" },
 ];
 
 export default function AdminVideosAyuda() {
@@ -314,12 +359,21 @@ export default function AdminVideosAyuda() {
                   <SelectTrigger data-testid="select-module">
                     <SelectValue placeholder="Seleccione un módulo" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {availableModules.map((mod) => (
-                      <SelectItem key={mod.route} value={mod.route} data-testid={`option-module-${mod.route}`}>
-                        {mod.name}
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="max-h-[300px]">
+                    {["SST", "PESV"].map((group) => {
+                      const groupModules = availableModules.filter((m) => m.group === group);
+                      if (groupModules.length === 0) return null;
+                      return (
+                        <div key={group}>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{group === "SST" ? "Módulos SST" : "Módulos PESV"}</div>
+                          {groupModules.map((mod) => (
+                            <SelectItem key={mod.route} value={mod.route} data-testid={`option-module-${mod.route}`}>
+                              {mod.name}
+                            </SelectItem>
+                          ))}
+                        </div>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
