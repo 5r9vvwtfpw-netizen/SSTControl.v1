@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import jwt from "jsonwebtoken";
 import { isDemoEnabled } from "./types";
 import { checkIn, getDemoRoomStatus, runHousekeeping, getDemoHealthDiagnostics } from "./service";
 import logger from "../../server/lib/logger";
@@ -12,6 +13,34 @@ function extractRows(result: any): any[] {
   return (result as any).rows || result;
 }
 
+function extractEmailFromJwt(authHeader: string | undefined): { email: string } | { error: string } {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return { error: "Authorization header with Bearer token required" };
+  }
+
+  const token = authHeader.substring(7);
+  const secret = process.env.JWT_RECALCULATE_SECRET;
+
+  if (!secret) {
+    logger.error("[DemoEngine] JWT_RECALCULATE_SECRET not configured");
+    return { error: "Server configuration error" };
+  }
+
+  try {
+    const payload = jwt.verify(token, secret, { algorithms: ["HS256"] }) as any;
+    const email = payload.email;
+
+    if (!email || typeof email !== "string") {
+      return { error: "JWT payload must contain email field" };
+    }
+
+    return { email };
+  } catch (err: any) {
+    logger.warn({ err: err.message }, "[DemoEngine] JWT verification failed");
+    return { error: "Invalid or expired JWT token" };
+  }
+}
+
 const router = Router();
 
 router.post("/check-in", async (req: Request, res: Response) => {
@@ -20,8 +49,20 @@ router.post("/check-in", async (req: Request, res: Response) => {
   }
 
   try {
-    const { email, prospectEmail } = req.body || {};
-    const inputEmail = email || prospectEmail;
+    const authHeader = req.headers.authorization;
+    let inputEmail: string | undefined;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const jwtResult = extractEmailFromJwt(authHeader);
+      if ("error" in jwtResult) {
+        return res.status(401).json({ error: jwtResult.error });
+      }
+      inputEmail = jwtResult.email;
+      logger.info({ email: inputEmail }, "[DemoEngine] Check-in via JWT from landing page");
+    } else {
+      const { email, prospectEmail } = req.body || {};
+      inputEmail = email || prospectEmail || undefined;
+    }
 
     if (inputEmail !== undefined && inputEmail !== null && inputEmail !== "") {
       if (typeof inputEmail !== "string" || inputEmail.length > MAX_EMAIL_LENGTH || !EMAIL_REGEX.test(inputEmail)) {
@@ -33,7 +74,17 @@ router.post("/check-in", async (req: Request, res: Response) => {
     }
 
     const result = await checkIn(inputEmail || undefined);
-    return res.json(result);
+
+    const appUrl = process.env.APP_URL || process.env.VITE_APP_URL || "";
+    const fullVerifyUrl = appUrl ? `${appUrl}${result.verifyUrl}` : result.verifyUrl;
+
+    return res.json({
+      ...result,
+      token: result.verifyUrl?.split("token=")[1] || "",
+      verifyUrl: fullVerifyUrl,
+      email: inputEmail || null,
+      resent: false,
+    });
   } catch (error: any) {
     if (error.message === "NO_ROOMS_AVAILABLE") {
       return res.status(503).json({
