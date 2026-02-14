@@ -9,10 +9,10 @@ interface ChatMessage {
 }
 
 const SUGGESTIONS = [
-  "¿Que es el SG-SST?",
-  "¿Como cumplo la Resolucion 0312?",
+  "¿Como agrego trabajadores?",
+  "¿Como hago una evaluacion SST?",
+  "¿Donde registro un accidente?",
   "¿Que es el ciclo PHVA?",
-  "¿Que multas aplican en 2026?",
 ];
 
 export function ChatBot() {
