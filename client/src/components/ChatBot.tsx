@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { MessageCircle, X, Send, Loader2, Bot, User, Trash2 } from "lucide-react";
+import { X, Send, Loader2, User, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import chatbotAvatar from "@assets/image_1771096045630.png";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -99,7 +100,6 @@ export function ChatBot() {
               });
             }
           } catch (parseErr) {
-            // ignore parse errors from partial chunks
           }
         }
       }
@@ -137,17 +137,24 @@ export function ChatBot() {
   return (
     <>
       <div
-        className="fixed bottom-6 right-6 z-50"
+        className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-1"
         style={{ visibility: isOpen ? "hidden" : "visible" }}
       >
-        <Button
-          size="icon"
+        <span className="bg-background text-foreground text-xs font-semibold px-3 py-1 rounded-md shadow-md border">
+          Preguntame
+        </span>
+        <button
           data-testid="button-chatbot-open"
-          className="rounded-full shadow-lg"
+          className="w-16 h-16 rounded-full shadow-lg overflow-visible border-2 border-white dark:border-gray-700 bg-white dark:bg-gray-800 p-0 cursor-pointer transition-transform hover:scale-105 active:scale-95"
           onClick={() => setIsOpen(true)}
+          aria-label="Abrir asistente virtual"
         >
-          <MessageCircle className="h-5 w-5" />
-        </Button>
+          <img
+            src={chatbotAvatar}
+            alt="Asistente SST Colombia"
+            className="w-full h-full rounded-full object-cover"
+          />
+        </button>
       </div>
 
       <div
@@ -159,9 +166,13 @@ export function ChatBot() {
         }}
       >
         <Card className="flex flex-col h-full overflow-hidden">
-          <div className="flex items-center justify-between gap-2 px-4 py-3 border-b bg-primary text-primary-foreground rounded-t-md">
+          <div className="flex items-center justify-between gap-2 px-4 py-2 border-b bg-[#2d7a3a] text-white rounded-t-md">
             <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5 shrink-0" />
+              <img
+                src={chatbotAvatar}
+                alt="Asistente"
+                className="h-8 w-8 rounded-full border border-white/30 object-cover shrink-0"
+              />
               <span className="font-semibold text-sm">Asistente SST Colombia</span>
             </div>
             <div className="flex items-center gap-1">
@@ -169,7 +180,7 @@ export function ChatBot() {
                 size="icon"
                 variant="ghost"
                 data-testid="button-chatbot-clear"
-                className="h-8 w-8 text-primary-foreground/80 no-default-hover-elevate"
+                className="text-white/80 no-default-hover-elevate"
                 onClick={handleClear}
               >
                 <Trash2 className="h-4 w-4" />
@@ -178,7 +189,7 @@ export function ChatBot() {
                 size="icon"
                 variant="ghost"
                 data-testid="button-chatbot-close"
-                className="h-8 w-8 text-primary-foreground/80 no-default-hover-elevate"
+                className="text-white/80 no-default-hover-elevate"
                 onClick={() => setIsOpen(false)}
               >
                 <X className="h-4 w-4" />
@@ -193,14 +204,16 @@ export function ChatBot() {
                 className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 {msg.role === "assistant" && (
-                  <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <Bot className="h-4 w-4 text-primary" />
-                  </div>
+                  <img
+                    src={chatbotAvatar}
+                    alt="Asistente"
+                    className="h-7 w-7 rounded-full object-cover shrink-0 mt-0.5"
+                  />
                 )}
                 <div
                   className={`rounded-lg px-3 py-2 text-sm max-w-[80%] whitespace-pre-wrap ${
                     msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-[#2d7a3a] text-white"
                       : "bg-muted text-foreground"
                   }`}
                   data-testid={`chatbot-message-${msg.role}-${i}`}
@@ -240,6 +253,7 @@ export function ChatBot() {
               <Button
                 size="icon"
                 data-testid="button-chatbot-send"
+                className="bg-[#2d7a3a] text-white border-[#256b30]"
                 onClick={handleSend}
                 disabled={isLoading || !input.trim()}
               >
