@@ -46940,12 +46940,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!route) {
         return res.status(400).json({ error: "Se requiere el parámetro 'route'" });
       }
+      res.set("Cache-Control", "no-cache, no-store, must-revalidate");
       const video = await storage.getHelpVideoByRoute(route);
+      console.log(`[HelpVideo] Route: ${route}, Found: ${!!video}, Title: ${video?.videoTitle || 'null'}`); 
       if (!video) {
         return res.status(200).json({ video: null });
       }
       res.json({ video });
     } catch (error: any) {
+      console.error('[HelpVideo] Error:', error.message);
       res.status(500).json({ error: "Error al obtener video de ayuda" });
     }
   });
