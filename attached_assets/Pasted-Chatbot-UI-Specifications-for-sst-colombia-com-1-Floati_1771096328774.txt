@@ -1,0 +1,39 @@
+Chatbot UI Specifications for sst-colombia.com
+
+1. Floating Button (bottom-right corner)
+
+Fixed position: bottom: 24px, right: 16px (mobile) / right: 24px (desktop)
+Round green button: 56x56px, background #357947, rounded-full
+Default state: Shows a chat bubble icon (MessageCircle)
+On hover: The icon fades out (opacity 0) and the avatar image (the worker with green helmet) fades in (opacity 100%) filling the entire button as a circular image. Transition: opacity 200ms
+A "Pregúntame" tooltip label appears above the button on hover (white background, green text, rounded-full pill shape, fades in with opacity transition)
+When chat is open, the button shows an X close icon instead
+2. Chat Window
+
+Opens above the floating button with a slide-up + scale animation (Framer Motion: from opacity:0, y:20, scale:0.95 to full)
+Size: width: calc(100vw - 2rem) on mobile, 380px on desktop. Height: 500px
+White background, rounded-2xl corners, shadow-2xl, border slate-200
+Layout is a flex column: header → scrollable messages → input bar
+3. Header Bar
+
+Background: #357947 (green), white text
+Left side: small circular avatar (24x24), bot name "Asistente SST-Colombia™", subtitle "Experto en SG-SST" in smaller green-100 text
+Right side: X close button with hover effect
+4. Message Area (scrollable)
+
+flex-1 overflow-y-auto — this is what allows scrolling through all messages/paragraphs
+Background: slate-50
+Empty state: Shows larger avatar (64x64), greeting text, and 4 clickable suggestion buttons (white bordered pills)
+Assistant messages: White bubble with slate border, rounded-2xl with flat bottom-left corner. Avatar (28x28) shown to the left. Text renders markdown-style: bold, numbered lists, bullet lists, URLs as green links, and special action buttons
+User messages: Green bubble (#357947), white text, rounded-2xl with flat bottom-right corner. Gray user icon to the right
+Auto-scrolls to bottom on new messages
+5. Input Bar
+
+Bottom of window, white background, top border
+Auto-expanding textarea (starts at 1 row, grows to max 96px), with green focus ring
+Round green send button (36x36px) to the right
+Enter sends, Shift+Enter adds new line
+6. Avatar Image
+
+The character image (worker with green safety helmet) is used as /images/chatbot-avatar.png
+Used in: floating button hover state, chat header, empty state, and next to each assistant message
