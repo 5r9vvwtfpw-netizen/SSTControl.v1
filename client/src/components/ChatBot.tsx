@@ -8,6 +8,74 @@ interface ChatMessage {
   content: string;
 }
 
+function renderMarkdown(text: string): JSX.Element {
+  const lines = text.split("\n");
+  const elements: JSX.Element[] = [];
+  let listItems: string[] = [];
+  let listType: "ol" | "ul" | null = null;
+  let key = 0;
+
+  const flushList = () => {
+    if (listItems.length > 0 && listType) {
+      const Tag = listType;
+      elements.push(
+        <Tag key={key++} className={`${listType === "ol" ? "list-decimal" : "list-disc"} pl-5 my-1 space-y-0.5`}>
+          {listItems.map((item, i) => (
+            <li key={i}>{inlineFormat(item)}</li>
+          ))}
+        </Tag>
+      );
+      listItems = [];
+      listType = null;
+    }
+  };
+
+  const inlineFormat = (str: string): (string | JSX.Element)[] => {
+    const parts: (string | JSX.Element)[] = [];
+    let remaining = str;
+    let inlineKey = 0;
+    while (remaining.length > 0) {
+      const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
+      if (boldMatch && boldMatch.index !== undefined) {
+        if (boldMatch.index > 0) {
+          parts.push(remaining.slice(0, boldMatch.index));
+        }
+        parts.push(<strong key={`b${inlineKey++}`} className="font-semibold">{boldMatch[1]}</strong>);
+        remaining = remaining.slice(boldMatch.index + boldMatch[0].length);
+      } else {
+        parts.push(remaining);
+        break;
+      }
+    }
+    return parts;
+  };
+
+  for (const line of lines) {
+    const olMatch = line.match(/^\d+\.\s+(.*)/);
+    const ulMatch = line.match(/^\s*[-•]\s+(.*)/);
+
+    if (olMatch) {
+      if (listType === "ul") flushList();
+      listType = "ol";
+      listItems.push(olMatch[1]);
+    } else if (ulMatch) {
+      if (listType === "ol") flushList();
+      listType = "ul";
+      listItems.push(ulMatch[1]);
+    } else {
+      flushList();
+      if (line.trim() === "") {
+        elements.push(<div key={key++} className="h-2" />);
+      } else {
+        elements.push(<p key={key++} className="my-0.5">{inlineFormat(line)}</p>);
+      }
+    }
+  }
+  flushList();
+
+  return <div className="space-y-0.5">{elements}</div>;
+}
+
 const SUGGESTIONS = [
   "¿Como agrego trabajadores?",
   "¿Como hago una evaluacion SST?",
@@ -249,14 +317,14 @@ export function ChatBot() {
                     />
                   )}
                   <div
-                    className={`px-3 py-2 text-sm max-w-[80%] whitespace-pre-wrap ${
+                    className={`px-3 py-2 text-sm max-w-[80%] ${
                       msg.role === "user"
-                        ? "bg-[#357947] text-white rounded-2xl rounded-br-sm"
+                        ? "bg-[#357947] text-white rounded-2xl rounded-br-sm whitespace-pre-wrap"
                         : "bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-600 rounded-2xl rounded-bl-sm"
                     }`}
                     data-testid={`chatbot-message-${msg.role}-${i}`}
                   >
-                    {msg.content}
+                    {msg.role === "assistant" ? renderMarkdown(msg.content) : msg.content}
                   </div>
                   {msg.role === "user" && (
                     <div className="h-7 w-7 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center shrink-0 mt-0.5">
