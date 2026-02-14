@@ -120,6 +120,8 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
     const masterRows = extractRows(masterResult);
     let masterCompany = masterRows[0];
 
+    logger.info(`[DemoEngine] Golden Master query result: ${masterRows.length} rows found for ID "${GOLDEN_MASTER_COMPANY_ID}"`);
+
     if (!masterCompany) {
       logger.warn(`[DemoEngine] Golden Master ${GOLDEN_MASTER_COMPANY_ID} not found, using fallback defaults`);
       masterCompany = {
@@ -187,6 +189,11 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
       const overrides = table === "workers" ? workerOverrides : defaultOverrides;
       const selectCols = buildCloneSelect(columns, [], overrides);
       
+      const countResult = await tx.execute(sql.raw(`SELECT count(*) as cnt FROM "${table}" WHERE company_id = '${GOLDEN_MASTER_COMPANY_ID}'`));
+      const countRows = extractRows(countResult);
+      const sourceCount = countRows[0]?.cnt || 0;
+      logger.info(`[DemoEngine] Cloning table "${table}": ${sourceCount} source rows from Golden Master`);
+
       await tx.execute(sql.raw(`
         INSERT INTO "${table}" (${columns.map(c => `"${c}"`).join(", ")})
         SELECT ${selectCols}
