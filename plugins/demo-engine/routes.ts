@@ -23,10 +23,11 @@ router.post("/check-in", async (req: Request, res: Response) => {
       });
     }
 
-    logger.error({ err: error }, "[DemoEngine] Check-in error");
+    logger.error({ err: error, stack: error.stack }, "[DemoEngine] Check-in error");
     return res.status(500).json({
       error: "Demo check-in failed",
       message: "Error al inicializar la demo. Por favor intente de nuevo.",
+      debug: process.env.NODE_ENV !== "production" ? error.message : undefined,
     });
   }
 });
@@ -47,6 +48,28 @@ router.get("/status", async (req: Request, res: Response) => {
   } catch (error: any) {
     logger.error({ err: error }, "[DemoEngine] Status error");
     return res.status(500).json({ error: "Failed to get demo status" });
+  }
+});
+
+router.post("/debug-checkin", async (req: Request, res: Response) => {
+  if (!isDemoEnabled()) {
+    return res.status(404).json({ error: "Not found" });
+  }
+
+  const { secret, email } = req.body || {};
+  if (secret !== process.env.JWT_RECALCULATE_SECRET) {
+    return res.status(403).json({ error: "Not authorized" });
+  }
+
+  try {
+    const result = await checkIn(email || "debug@sst-colombia.com");
+    return res.json(result);
+  } catch (error: any) {
+    return res.status(500).json({
+      error: "Check-in failed",
+      message: error.message,
+      stack: error.stack?.split("\n").slice(0, 5),
+    });
   }
 });
 
