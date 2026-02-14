@@ -163,6 +163,7 @@ import { SubscriptionBlockedModal } from "@/components/SubscriptionBlockedModal"
 import { useSubscriptionCheck } from "@/hooks/useSubscriptionCheck";
 import AdminVideosAyuda from "@/pages/AdminVideosAyuda";
 import HelpVideoButton from "@/components/HelpVideoButton";
+import DemoVerify from "@/pages/DemoVerify";
 
 // Componente que decide si mostrar Welcome o Dashboard según autenticación
 function HomeGateway() {
@@ -325,6 +326,7 @@ function Router() {
       <Route path="/politica-privacidad-proveedor" component={PoliticaPrivacidadProveedor} />
       <Route path="/acuerdo-procesamiento-datos" component={AcuerdoProcesamientoDatos} />
       <ProtectedRoute path="/documentos-legales" component={DocumentosLegalesPdf} />
+      <Route path="/demo/verify" component={DemoVerify} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/login" component={LoginEmpresa} />
       <Route path="/soporte/login" component={LoginSoporte} />

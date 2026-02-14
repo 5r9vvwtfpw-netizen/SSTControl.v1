@@ -2,9 +2,15 @@ import { Router, Request, Response } from "express";
 import { isDemoEnabled } from "./types";
 import { checkIn, getDemoRoomStatus, runHousekeeping, getDemoHealthDiagnostics } from "./service";
 import logger from "../../server/lib/logger";
+import { db } from "../../server/db";
+import { sql } from "drizzle-orm";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_EMAIL_LENGTH = 255;
+
+function extractRows(result: any): any[] {
+  return (result as any).rows || result;
+}
 
 const router = Router();
 
@@ -94,6 +100,82 @@ router.get("/health", async (_req: Request, res: Response) => {
   } catch (error: any) {
     logger.error({ err: error }, "[DemoEngine] Health check error");
     return res.status(500).json({ error: "Health check failed", message: error.message });
+  }
+});
+
+router.post("/verify", async (req: Request, res: Response) => {
+  if (!isDemoEnabled()) {
+    return res.status(404).json({ error: "Not found" });
+  }
+
+  try {
+    const { token } = req.body || {};
+
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({ success: false, error: "Token requerido" });
+    }
+
+    const roomResult = await db.execute(sql`
+      SELECT * FROM demo_room_bookings
+      WHERE assigned_session_token = ${token}
+        AND status = 'occupied'
+      LIMIT 1
+    `);
+
+    const roomRows = extractRows(roomResult);
+    const room = roomRows[0];
+
+    if (!room) {
+      return res.status(401).json({ success: false, error: "Token inválido o expirado" });
+    }
+
+    if (room.expires_at && new Date(room.expires_at) < new Date()) {
+      return res.status(401).json({ success: false, error: "Token inválido o expirado" });
+    }
+
+    const companyId = room.company_id;
+
+    const userResult = await db.execute(sql`
+      SELECT * FROM users WHERE company_id = ${companyId} AND role = 'admin' LIMIT 1
+    `);
+
+    const userRows = extractRows(userResult);
+    const demoUser = userRows[0];
+
+    if (!demoUser) {
+      logger.error({ companyId }, "[DemoEngine] No admin user found for demo company");
+      return res.status(500).json({ success: false, error: "Error al preparar la demo" });
+    }
+
+    req.session.regenerate((err) => {
+      if (err) {
+        logger.error({ err }, "[DemoEngine] Session regeneration error during verify");
+        return res.status(500).json({ success: false, error: "Error al crear la sesión" });
+      }
+
+      req.logIn(demoUser as any, (err) => {
+        if (err) {
+          logger.error({ err }, "[DemoEngine] Login error during verify");
+          return res.status(500).json({ success: false, error: "Error al iniciar sesión" });
+        }
+
+        logger.info({ roomId: room.room_id, companyId }, "[DemoEngine] Auto-login via verify token successful");
+
+        return res.json({
+          success: true,
+          user: {
+            id: demoUser.id,
+            username: demoUser.username,
+            role: demoUser.role,
+            fullName: demoUser.full_name,
+            companyId: demoUser.company_id,
+          },
+        });
+      });
+    });
+  } catch (error: any) {
+    logger.error({ err: error, stack: error.stack }, "[DemoEngine] Verify error");
+    return res.status(500).json({ success: false, error: "Error al verificar el token" });
   }
 });
 

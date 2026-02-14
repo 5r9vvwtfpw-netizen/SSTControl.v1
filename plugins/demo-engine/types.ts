@@ -37,6 +37,7 @@ export interface CheckInResponse {
   password: string;
   expiresAt: string;
   message: string;
+  verifyUrl: string;
 }
 
 export function isDemoEnabled(): boolean {
