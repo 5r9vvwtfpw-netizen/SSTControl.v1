@@ -38656,30 +38656,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         // Don't fail the request if notification fails
       }
 
-      // Send email notification to support staff
-      try {
-        const supportUsersEmail = await storage.getUsersByRoleGlobal("soporte");
-        const superadminsEmail = await storage.getUsersByRoleGlobal("superadmin");
-        const allStaffEmail = [...supportUsersEmail, ...superadminsEmail];
-        
-        for (const staffMember of allStaffEmail) {
-          if (staffMember.email) {
-            await emailService.sendNewTicketNotification({
-              to: staffMember.email,
-              ticketId: ticket.id,
-              ticketNumber: ticket.ticketNumber,
-              subject: ticket.subject,
-              priority: ticket.priority || "media",
-              companyName: company?.name || "Sin empresa",
-              userName: user.fullName || user.username,
-              createdAt: ticket.createdAt || new Date(),
-            });
-          }
-        }
-      } catch (emailError) {
-        console.error("Error sending ticket email notifications:", emailError);
-      }
-
       res.status(201).json(ticket);
     } catch (error: any) {
       console.error('Error creating support ticket:', error);
