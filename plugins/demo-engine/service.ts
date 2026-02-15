@@ -314,6 +314,8 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
         continue;
       }
 
+      const roomNum = extractRoomNumber(targetCompanyId);
+      let contractSeq = 0;
       const transformedRows = tableData.rows.map(row => {
         const overrides: Record<string, (val: any) => any> = {
           company_id: () => targetCompanyId,
@@ -326,7 +328,6 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
         }
 
         if (p1.extraOverrides?.includes("identification_number")) {
-          const roomNum = extractRoomNumber(targetCompanyId);
           overrides.identification_number = (orig: string | null) => {
             if (!orig) return null;
             const clean = orig.replace(/^GM-/, "");
@@ -334,7 +335,6 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
           };
         }
         if (p1.extraOverrides?.includes("email")) {
-          const roomNum = extractRoomNumber(targetCompanyId);
           overrides.email = (orig: string | null) => {
             if (!orig) return null;
             const clean = orig.replace(".gm@", "@").replace(".gm.", ".");
@@ -343,8 +343,6 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
           };
         }
         if (p1.extraOverrides?.includes("contract_number")) {
-          const roomNum = extractRoomNumber(targetCompanyId);
-          let contractSeq = 0;
           overrides.contract_number = (orig: string | null) => {
             if (!orig) return null;
             contractSeq++;
@@ -378,6 +376,8 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
         continue;
       }
 
+      const roomNum = extractRoomNumber(targetCompanyId);
+      let p2ContractSeq = 0;
       const transformedRows = tableData.rows.map(row => {
         const newId = randomUuid();
         const overrides: Record<string, (val: any) => any> = {
@@ -392,8 +392,13 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
         }
 
         if (p2.table === "contracts") {
-          overrides.contract_number = () => `CONT-DEMO-${newId.substring(0, 8)}`;
-          overrides.identification_number = (origId: string | null) => origId ? `DEMO-${origId}-${randomBytes(3).toString("hex")}` : null;
+          p2ContractSeq++;
+          overrides.contract_number = () => `CONT-D${roomNum}-${new Date().getFullYear()}-${String(p2ContractSeq).padStart(4, "0")}`;
+          overrides.identification_number = (origId: string | null) => {
+            if (!origId) return null;
+            const clean = origId.replace(/^GM-/, "");
+            return `${clean}-D${roomNum}`;
+          };
         }
 
         return transformRow(row, targetCompanyId, overrides);
