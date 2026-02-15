@@ -26,6 +26,11 @@ function randomUuid(): string {
   return randomBytes(16).toString("hex").replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, "$1-$2-$3-$4-$5");
 }
 
+function extractRoomNumber(targetCompanyId: string): string {
+  const match = targetCompanyId.match(/room-(\d+)$/);
+  return match ? match[1] : "000";
+}
+
 interface Phase1Table {
   table: string;
   idMode: "random" | "deterministic";
@@ -321,13 +326,30 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
         }
 
         if (p1.extraOverrides?.includes("identification_number")) {
-          overrides.identification_number = () => `${randomUuid()}-${randomBytes(3).toString("hex")}`;
+          const roomNum = extractRoomNumber(targetCompanyId);
+          overrides.identification_number = (orig: string | null) => {
+            if (!orig) return null;
+            const clean = orig.replace(/^GM-/, "");
+            return `${clean}-R${roomNum}`;
+          };
         }
         if (p1.extraOverrides?.includes("email")) {
-          overrides.email = () => `${randomUuid()}@demo.sst.co`;
+          const roomNum = extractRoomNumber(targetCompanyId);
+          overrides.email = (orig: string | null) => {
+            if (!orig) return null;
+            const clean = orig.replace(".gm@", "@").replace(".gm.", ".");
+            const [local, domain] = clean.split("@");
+            return `${local}.r${roomNum}@${domain || "demo.sst.co"}`;
+          };
         }
         if (p1.extraOverrides?.includes("contract_number")) {
-          overrides.contract_number = () => `${randomUuid()}-C`;
+          const roomNum = extractRoomNumber(targetCompanyId);
+          let contractSeq = 0;
+          overrides.contract_number = (orig: string | null) => {
+            if (!orig) return null;
+            contractSeq++;
+            return `CONT-R${roomNum}-${new Date().getFullYear()}-${String(contractSeq).padStart(4, "0")}`;
+          };
         }
 
         return transformRow(row, targetCompanyId, overrides);
