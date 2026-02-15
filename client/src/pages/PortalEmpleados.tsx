@@ -339,6 +339,7 @@ function AdminOverviewTab({ workers, pendingReports }: { workers: WorkerWithPort
 function AdminAccessManagementTab({ workers, isLoading }: { workers: WorkerWithPortalAccess[], isLoading: boolean }) {
   const { toast } = useToast();
   const [creatingAccessForId, setCreatingAccessForId] = useState<string | null>(null);
+  const [showBulkDialog, setShowBulkDialog] = useState(false);
   
   const createAccessMutation = useMutation({
     mutationFn: (workerId: string) => {
@@ -364,7 +365,38 @@ function AdminAccessManagementTab({ workers, isLoading }: { workers: WorkerWithP
     },
   });
 
+  const bulkCreateMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/workers/bulk-create-portal-access"),
+    onSuccess: async (response) => {
+      const data = await response.json();
+      queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
+      setShowBulkDialog(false);
+      const emailFailures = (data.results || []).filter((r: any) => r.status === "created_no_email").length;
+      const parts: string[] = [];
+      parts.push(`${data.created} accesos creados`);
+      if (emailFailures > 0) parts.push(`${emailFailures} sin envío de email`);
+      if (data.failed > 0) parts.push(`${data.failed} fallaron`);
+      if (data.skipped > 0) parts.push(`${data.skipped} omitidos`);
+      const hasIssues = data.failed > 0 || emailFailures > 0;
+      toast({
+        title: hasIssues ? "Accesos creados con advertencias" : "Accesos masivos creados",
+        description: parts.join(". ") + ".",
+        className: hasIssues ? undefined : "bg-green-50 border-green-200",
+        variant: hasIssues ? "destructive" : undefined,
+      });
+    },
+    onError: (error: Error) => {
+      setShowBulkDialog(false);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const workersWithEmail = workers.filter(w => w.email);
+  const workersWithoutAccess = workers.filter(w => w.email && !w.hasPortalAccess);
 
   if (isLoading) {
     return <ListSkeletonLoading items={4} />;
@@ -372,15 +404,66 @@ function AdminAccessManagementTab({ workers, isLoading }: { workers: WorkerWithP
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <KeyRound className="h-5 w-5" />
-          Gestión de Accesos al Portal
-        </CardTitle>
-        <CardDescription>
-          Crea o revoca acceso al portal para los trabajadores con email registrado
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <KeyRound className="h-5 w-5" />
+            Gestión de Accesos al Portal
+          </CardTitle>
+          <CardDescription>
+            Crea o revoca acceso al portal para los trabajadores con email registrado
+          </CardDescription>
+        </div>
+        {workersWithoutAccess.length > 0 && (
+          <Button
+            onClick={() => setShowBulkDialog(true)}
+            disabled={bulkCreateMutation.isPending}
+            data-testid="button-bulk-create-access"
+          >
+            {bulkCreateMutation.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Users className="h-4 w-4 mr-2" />
+            )}
+            Crear Accesos Masivos
+          </Button>
+        )}
       </CardHeader>
+
+      <Dialog open={showBulkDialog} onOpenChange={setShowBulkDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Crear accesos masivos</DialogTitle>
+            <DialogDescription>
+              Se crearán credenciales del portal para {workersWithoutAccess.length} trabajadores que tienen email registrado y aún no tienen acceso. Las credenciales serán enviadas por email a cada trabajador.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowBulkDialog(false)}
+              disabled={bulkCreateMutation.isPending}
+              data-testid="button-bulk-cancel"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => bulkCreateMutation.mutate()}
+              disabled={bulkCreateMutation.isPending}
+              data-testid="button-bulk-confirm"
+            >
+              {bulkCreateMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                "Confirmar"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <CardContent>
         {workersWithEmail.length === 0 ? (
           <div className="text-center py-12">

@@ -3392,6 +3392,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/workers/bulk-create-portal-access", requirePermission("users:create"), async (req, res) => {
+    const userRole = req.user!.role;
+    const isAdmin = hasGlobalAccess(userRole);
+    const effectiveCompanyId = getEffectiveCompanyId(req);
+
+    try {
+      let allWorkers: any[];
+      if (effectiveCompanyId) {
+        allWorkers = await storage.getWorkers(effectiveCompanyId);
+      } else if (isAdmin) {
+        allWorkers = await storage.getAllWorkers();
+      } else {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
+      const workersWithEmail = allWorkers.filter(w => w.email);
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const companyCache = new Map<string, string>();
+
+      const results: Array<{workerId: string; name: string; email: string; status: string; username?: string; error?: string}> = [];
+      let created = 0;
+      let failed = 0;
+      let skipped = 0;
+
+      for (const worker of workersWithEmail) {
+        const existingUserByWorker = await storage.getUserByWorkerId(worker.id);
+        if (existingUserByWorker) {
+          skipped++;
+          results.push({ workerId: worker.id, name: worker.name, email: worker.email, status: "skipped", error: "Ya tiene cuenta asociada" });
+          continue;
+        }
+
+        const existingUserByEmail = await storage.getUserByEmail(worker.email);
+        if (existingUserByEmail) {
+          skipped++;
+          results.push({ workerId: worker.id, name: worker.name, email: worker.email, status: "skipped", error: "Email ya en uso por otro usuario" });
+          continue;
+        }
+
+        try {
+          const nameParts = worker.name.toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9\s]/g, "")
+            .split(" ").filter((p: string) => p.length > 0);
+
+          let baseUsername = nameParts.length >= 2
+            ? `${nameParts[0]}_${nameParts[nameParts.length - 1]}`
+            : nameParts[0] || "usuario";
+
+          let username = baseUsername;
+          let counter = 1;
+          while (await storage.getUserByUsername(username)) {
+            username = `${baseUsername}${counter}`;
+            counter++;
+          }
+
+          const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+          let temporaryPassword = '';
+          const bytes = randomBytes(16);
+          for (let i = 0; i < 16; i++) {
+            temporaryPassword += chars[bytes[i] % chars.length];
+          }
+
+          const hashedPassword = await hashPassword(temporaryPassword);
+
+          await db.transaction(async (tx) => {
+            await tx.insert(schema.users).values({
+              username,
+              password: hashedPassword,
+              role: "trabajador",
+              fullName: worker.name,
+              email: worker.email,
+              department: worker.department || null,
+              companyId: worker.companyId,
+              workerId: worker.id,
+            });
+          });
+
+          let companyName = companyCache.get(worker.companyId);
+          if (!companyName) {
+            const company = await storage.getCompany(worker.companyId);
+            companyName = company?.name || "Tu Empresa";
+            companyCache.set(worker.companyId, companyName);
+          }
+
+          const emailResult = await sendPortalAccessEmail(worker.email, {
+            workerName: worker.name,
+            username,
+            temporaryPassword,
+            companyName,
+            loginUrl: `${baseUrl}/login`,
+          });
+
+          created++;
+          if (!emailResult.success) {
+            console.error(`[Bulk Portal Access] User created but email failed for ${worker.email}:`, emailResult.error);
+            results.push({ workerId: worker.id, name: worker.name, email: worker.email, status: "created_no_email", username, error: "Cuenta creada pero falló el envío de email" });
+          } else {
+            results.push({ workerId: worker.id, name: worker.name, email: worker.email, status: "created", username });
+          }
+        } catch (err: any) {
+          failed++;
+          console.error(`[Bulk Portal Access] Error for worker ${worker.id}:`, err.message);
+          results.push({ workerId: worker.id, name: worker.name, email: worker.email, status: "failed", error: err.message });
+        }
+      }
+
+      const total = workersWithEmail.length;
+      console.log(`[Bulk Portal Access] Completed: total=${total}, created=${created}, failed=${failed}, skipped=${skipped}`);
+
+      res.json({ total, created, failed, skipped, results });
+    } catch (error: any) {
+      console.error("Error in bulk portal access creation:", error);
+      res.status(500).json({ error: "Error al crear accesos masivos: " + error.message });
+    }
+  });
+
   // Worker bulk import endpoints
   // NOTA: La plantilla de trabajadores está disponible para todos los usuarios (incluyendo trial)
   // ya que es una herramienta básica para importar datos
