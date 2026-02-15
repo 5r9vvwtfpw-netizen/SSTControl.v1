@@ -10,17 +10,26 @@ import {
 } from "./types";
 import type { CheckInResponse } from "./types";
 import { hashPassword } from "../../server/auth";
-import { randomBytes } from "crypto";
+import { randomBytes, createHash } from "crypto";
 import logger from "../../server/lib/logger";
 
 function extractRows(result: any): any[] {
   return (result as any).rows || result;
 }
 
+function deterministicUuid(originalId: string, targetCompanyId: string): string {
+  const hash = createHash("md5").update(`${originalId}-${targetCompanyId}`).digest("hex");
+  return `${hash.substring(0, 8)}-${hash.substring(8, 12)}-${hash.substring(12, 16)}-${hash.substring(16, 20)}-${hash.substring(20, 32)}`;
+}
+
+function randomUuid(): string {
+  return randomBytes(16).toString("hex").replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, "$1-$2-$3-$4-$5");
+}
+
 interface Phase1Table {
   table: string;
   idMode: "random" | "deterministic";
-  extraOverrides?: (targetCompanyId: string) => Record<string, string>;
+  extraOverrides?: string[];
 }
 
 interface Phase2Table {
@@ -39,11 +48,7 @@ const PHASE1_TABLES: Phase1Table[] = [
   {
     table: "workers",
     idMode: "deterministic",
-    extraOverrides: (_tcid: string) => ({
-      identification_number: "gen_random_uuid()||'-'||substring(md5(random()::text),1,6) as identification_number",
-      email: "gen_random_uuid()||'@demo.sst.co' as email",
-      contract_number: "gen_random_uuid()||'-C' as contract_number",
-    }),
+    extraOverrides: ["identification_number", "email", "contract_number"],
   },
   { table: "job_profiles", idMode: "random" },
   { table: "afiliaciones_ssss", idMode: "random" },
@@ -141,10 +146,111 @@ export async function initializeDemoRooms(): Promise<void> {
   logger.info({ roomCount: countRows[0]?.cnt || countRows[0]?.count || 0 }, "[DemoEngine] All demo rooms ready");
 }
 
+async function readGoldenMasterData(): Promise<{
+  company: Record<string, any> | null;
+  phase1Data: Map<string, { columns: string[]; rows: Record<string, any>[] }>;
+  phase2Data: Map<string, { columns: string[]; rows: Record<string, any>[] }>;
+  phase3Data: Map<string, { columns: string[]; rows: Record<string, any>[] }>;
+}> {
+  const gmId = GOLDEN_MASTER_COMPANY_ID;
+
+  const companyResult = extractRows(await db.execute(sql`SELECT * FROM companies WHERE id = ${gmId}`));
+  const company = companyResult[0] || null;
+
+  const phase1Data = new Map<string, { columns: string[]; rows: Record<string, any>[] }>();
+  for (const p1 of PHASE1_TABLES) {
+    const colResult = extractRows(await db.execute(sql`SELECT column_name FROM information_schema.columns WHERE table_name = ${p1.table} AND table_schema = 'public' ORDER BY ordinal_position`));
+    const columns = colResult.map((r: any) => r.column_name);
+    const dataResult = extractRows(await db.execute(sql`SELECT * FROM ${sql.identifier(p1.table)} WHERE company_id = ${gmId}`));
+    phase1Data.set(p1.table, { columns, rows: dataResult });
+    logger.info(`[DemoEngine] Read ${dataResult.length} rows from Golden Master "${p1.table}"`);
+  }
+
+  const phase2Data = new Map<string, { columns: string[]; rows: Record<string, any>[] }>();
+  for (const p2 of PHASE2_TABLES) {
+    const colResult = extractRows(await db.execute(sql`SELECT column_name FROM information_schema.columns WHERE table_name = ${p2.table} AND table_schema = 'public' ORDER BY ordinal_position`));
+    const columns = colResult.map((r: any) => r.column_name);
+    const dataResult = extractRows(await db.execute(sql`SELECT * FROM ${sql.identifier(p2.table)} WHERE company_id = ${gmId}`));
+    phase2Data.set(p2.table, { columns, rows: dataResult });
+    logger.info(`[DemoEngine] Read ${dataResult.length} rows from Golden Master "${p2.table}"`);
+  }
+
+  const phase3Data = new Map<string, { columns: string[]; rows: Record<string, any>[] }>();
+  for (const p3 of PHASE3_TABLES) {
+    const colResult = extractRows(await db.execute(sql`SELECT column_name FROM information_schema.columns WHERE table_name = ${p3.table} AND table_schema = 'public' ORDER BY ordinal_position`));
+    const columns = colResult.map((r: any) => r.column_name);
+
+    const parentIds = extractRows(await db.execute(sql`SELECT id FROM ${sql.identifier(p3.parentTable)} WHERE company_id = ${gmId}`));
+    const parentIdList = parentIds.map((r: any) => r.id);
+
+    let rows: Record<string, any>[] = [];
+    if (parentIdList.length > 0) {
+      const idChunks = sql.join(parentIdList.map((id: string) => sql`${id}`), sql`, `);
+      const dataResult = extractRows(await db.execute(sql`SELECT * FROM ${sql.identifier(p3.table)} WHERE ${sql.identifier(p3.parentKey)} IN (${idChunks})`));
+      rows = dataResult;
+    }
+    phase3Data.set(p3.table, { columns, rows });
+    logger.info(`[DemoEngine] Read ${rows.length} rows from Golden Master "${p3.table}"`);
+  }
+
+  return { company, phase1Data, phase2Data, phase3Data };
+}
+
+function transformRow(
+  row: Record<string, any>,
+  targetCompanyId: string,
+  overrides: Record<string, (val: any) => any>
+): Record<string, any> {
+  const transformed = { ...row };
+  for (const [key, fn] of Object.entries(overrides)) {
+    transformed[key] = fn(row[key]);
+  }
+  return transformed;
+}
+
+function buildInsertSQL(tableName: string, columns: string[], rows: Record<string, any>[]): { text: string; values: any[] } {
+  if (rows.length === 0) return { text: "", values: [] };
+
+  const colList = columns.map(c => `"${c}"`).join(", ");
+  const allValues: any[] = [];
+  const rowPlaceholders: string[] = [];
+
+  for (const row of rows) {
+    const placeholders: string[] = [];
+    for (const col of columns) {
+      allValues.push(row[col] !== undefined ? row[col] : null);
+      placeholders.push(`$${allValues.length}`);
+    }
+    rowPlaceholders.push(`(${placeholders.join(", ")})`);
+  }
+
+  return {
+    text: `INSERT INTO "${tableName}" (${colList}) VALUES ${rowPlaceholders.join(", ")}`,
+    values: allValues,
+  };
+}
+
 export async function resetCompanyData(targetCompanyId: string): Promise<void> {
   assertSafeDemoRoomCompanyId(targetCompanyId);
 
   logger.info(`[DemoEngine] Resetting company ${targetCompanyId} from Golden Master ${GOLDEN_MASTER_COMPANY_ID}`);
+
+  const gmData = await readGoldenMasterData();
+
+  if (!gmData.company) {
+    logger.warn(`[DemoEngine] Golden Master ${GOLDEN_MASTER_COMPANY_ID} not found in production DB, using fallback`);
+  }
+
+  const masterCompany = gmData.company || {
+    name: "Empresa Demo SST",
+    nit: "900000000-0",
+    city: "Bogota",
+    ciiu_code: "4711",
+    address: "Calle Demo 123",
+    number_of_workers: 8,
+    risk_level: "I",
+    calculated_chapter: "1",
+  };
 
   await db.transaction(async (tx) => {
     for (const child of CHILD_TABLES_TO_WIPE) {
@@ -167,34 +273,8 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
 
     await tx.execute(sql`DELETE FROM users WHERE company_id = ${targetCompanyId} AND role != 'superadmin'`);
 
-    const masterResult = await tx.execute(sql`SELECT * FROM companies WHERE id = ${GOLDEN_MASTER_COMPANY_ID}`);
-    const masterRows = extractRows(masterResult);
-    let masterCompany = masterRows[0];
-
-    logger.info(`[DemoEngine] Golden Master query result: ${masterRows.length} rows found for ID "${GOLDEN_MASTER_COMPANY_ID}"`);
-
-    if (!masterCompany) {
-      logger.warn(`[DemoEngine] Golden Master ${GOLDEN_MASTER_COMPANY_ID} not found, using fallback defaults`);
-      masterCompany = {
-        name: "Empresa Demo SST",
-        nit: "900000000-0",
-        city: "Bogota",
-        ciiu_code: "4711",
-        address: "Calle Demo 123",
-        number_of_workers: 8,
-        risk_level: "I",
-        calculated_chapter: "1",
-      };
-    }
-
-    const demoName = `${(masterCompany as any).name} (Demo)`;
+    const demoName = `${masterCompany.name} (Demo)`;
     const demoNit = `${targetCompanyId}-NIT`;
-    const demoCity = (masterCompany as any).city || "Bogotá";
-    const demoCiiu = (masterCompany as any).ciiu_code || "4711";
-    const demoAddress = (masterCompany as any).address || "Calle Demo 123";
-    const demoWorkers = (masterCompany as any).number_of_workers || 8;
-    const demoRiskLevel = (masterCompany as any).risk_level || "I";
-    const demoChapter = (masterCompany as any).calculated_chapter || "1";
 
     await tx.execute(sql`
       INSERT INTO companies (id, name, nit, city, ciiu_code, address, number_of_workers, number_of_vehicles, risk_level, calculated_chapter)
@@ -202,13 +282,13 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
         ${targetCompanyId},
         ${demoName},
         ${demoNit},
-        ${demoCity},
-        ${demoCiiu},
-        ${demoAddress},
-        ${demoWorkers},
+        ${masterCompany.city || "Bogotá"},
+        ${masterCompany.ciiu_code || "4711"},
+        ${masterCompany.address || "Calle Demo 123"},
+        ${masterCompany.number_of_workers || 8},
         0,
-        ${demoRiskLevel},
-        ${demoChapter}
+        ${masterCompany.risk_level || "I"},
+        ${masterCompany.calculated_chapter || "1"}
       )
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
@@ -222,116 +302,135 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
         calculated_chapter = EXCLUDED.calculated_chapter
     `);
 
-    const gmId = GOLDEN_MASTER_COMPANY_ID;
-    const safeTargetId = targetCompanyId.replace(/'/g, "''");
-    const safeGmId = gmId.replace(/'/g, "''");
-
     for (const p1 of PHASE1_TABLES) {
-      const columns = await getTableColumns(tx, p1.table);
-      const overrides: Record<string, string> = {
-        company_id: `'${safeTargetId}' as company_id`,
-      };
-
-      if (p1.idMode === "deterministic") {
-        overrides.id = `md5(id::text || '-${safeTargetId}')::uuid as id`;
-      } else {
-        overrides.id = "gen_random_uuid() as id";
+      const tableData = gmData.phase1Data.get(p1.table);
+      if (!tableData || tableData.rows.length === 0) {
+        logger.info(`[DemoEngine] Phase 1 - "${p1.table}": 0 rows to clone`);
+        continue;
       }
 
-      if (p1.extraOverrides) {
-        Object.assign(overrides, p1.extraOverrides(safeTargetId));
+      const transformedRows = tableData.rows.map(row => {
+        const overrides: Record<string, (val: any) => any> = {
+          company_id: () => targetCompanyId,
+        };
+
+        if (p1.idMode === "deterministic") {
+          overrides.id = (origId: string) => deterministicUuid(origId, targetCompanyId);
+        } else {
+          overrides.id = () => randomUuid();
+        }
+
+        if (p1.extraOverrides?.includes("identification_number")) {
+          overrides.identification_number = () => `${randomUuid()}-${randomBytes(3).toString("hex")}`;
+        }
+        if (p1.extraOverrides?.includes("email")) {
+          overrides.email = () => `${randomUuid()}@demo.sst.co`;
+        }
+        if (p1.extraOverrides?.includes("contract_number")) {
+          overrides.contract_number = () => `${randomUuid()}-C`;
+        }
+
+        return transformRow(row, targetCompanyId, overrides);
+      });
+
+      const insertQuery = buildInsertSQL(p1.table, tableData.columns, transformedRows);
+      if (insertQuery.text) {
+        await tx.execute(sql.raw(insertQuery.text.replace(/\$(\d+)/g, (_, n) => {
+          const val = insertQuery.values[parseInt(n) - 1];
+          if (val === null || val === undefined) return "NULL";
+          if (typeof val === "number") return String(val);
+          if (typeof val === "boolean") return val ? "TRUE" : "FALSE";
+          if (val instanceof Date) return `'${val.toISOString()}'`;
+          if (Array.isArray(val)) return `'{${val.map((v: any) => `"${String(v).replace(/"/g, '\\"')}"`).join(",")}}'`;
+          return `'${String(val).replace(/'/g, "''")}'`;
+        })));
       }
 
-      const selectCols = buildCloneSelect(columns, [], overrides);
-
-      const countResult = await tx.execute(sql.raw(`SELECT count(*) as cnt FROM "${p1.table}" WHERE company_id = '${safeGmId}'`));
-      const countRows = extractRows(countResult);
-      const sourceCount = countRows[0]?.cnt || 0;
-      logger.info(`[DemoEngine] Phase 1 - Cloning table "${p1.table}": ${sourceCount} source rows from Golden Master`);
-
-      await tx.execute(sql.raw(`
-        INSERT INTO "${p1.table}" (${columns.map(c => `"${c}"`).join(", ")})
-        SELECT ${selectCols}
-        FROM "${p1.table}"
-        WHERE company_id = '${safeGmId}'
-      `));
+      logger.info(`[DemoEngine] Phase 1 - Cloned ${transformedRows.length} rows into "${p1.table}"`);
     }
 
     for (const p2 of PHASE2_TABLES) {
-      const columns = await getTableColumns(tx, p2.table);
-      const overrides: Record<string, string> = {
-        id: "gen_random_uuid() as id",
-        company_id: `'${safeTargetId}' as company_id`,
-      };
-
-      if (p2.workerIdNullable) {
-        overrides.worker_id = `CASE WHEN worker_id IS NOT NULL THEN md5(worker_id::text || '-${safeTargetId}')::uuid ELSE NULL END as worker_id`;
-      } else {
-        overrides.worker_id = `md5(worker_id::text || '-${safeTargetId}')::uuid as worker_id`;
+      const tableData = gmData.phase2Data.get(p2.table);
+      if (!tableData || tableData.rows.length === 0) {
+        logger.info(`[DemoEngine] Phase 2 - "${p2.table}": 0 rows to clone`);
+        continue;
       }
 
-      const selectCols = buildCloneSelect(columns, [], overrides);
+      const transformedRows = tableData.rows.map(row => {
+        const newId = randomUuid();
+        const overrides: Record<string, (val: any) => any> = {
+          id: () => newId,
+          company_id: () => targetCompanyId,
+        };
 
-      const countResult = await tx.execute(sql.raw(`SELECT count(*) as cnt FROM "${p2.table}" WHERE company_id = '${safeGmId}'`));
-      const countRows = extractRows(countResult);
-      const sourceCount = countRows[0]?.cnt || 0;
-      logger.info(`[DemoEngine] Phase 2 - Cloning table "${p2.table}": ${sourceCount} source rows from Golden Master`);
+        if (p2.workerIdNullable) {
+          overrides.worker_id = (wid: string | null) => wid ? deterministicUuid(wid, targetCompanyId) : null;
+        } else {
+          overrides.worker_id = (wid: string) => deterministicUuid(wid, targetCompanyId);
+        }
 
-      await tx.execute(sql.raw(`
-        INSERT INTO "${p2.table}" (${columns.map(c => `"${c}"`).join(", ")})
-        SELECT ${selectCols}
-        FROM "${p2.table}"
-        WHERE company_id = '${safeGmId}'
-      `));
+        if (p2.table === "contracts") {
+          overrides.contract_number = () => `CONT-DEMO-${newId.substring(0, 8)}`;
+          overrides.identification_number = (origId: string | null) => origId ? `DEMO-${origId}-${randomBytes(3).toString("hex")}` : null;
+        }
+
+        return transformRow(row, targetCompanyId, overrides);
+      });
+
+      const insertQuery = buildInsertSQL(p2.table, tableData.columns, transformedRows);
+      if (insertQuery.text) {
+        await tx.execute(sql.raw(insertQuery.text.replace(/\$(\d+)/g, (_, n) => {
+          const val = insertQuery.values[parseInt(n) - 1];
+          if (val === null || val === undefined) return "NULL";
+          if (typeof val === "number") return String(val);
+          if (typeof val === "boolean") return val ? "TRUE" : "FALSE";
+          if (val instanceof Date) return `'${val.toISOString()}'`;
+          if (Array.isArray(val)) return `'{${val.map((v: any) => `"${String(v).replace(/"/g, '\\"')}"`).join(",")}}'`;
+          return `'${String(val).replace(/'/g, "''")}'`;
+        })));
+      }
+
+      logger.info(`[DemoEngine] Phase 2 - Cloned ${transformedRows.length} rows into "${p2.table}"`);
     }
 
     for (const p3 of PHASE3_TABLES) {
-      const columns = await getTableColumns(tx, p3.table);
-      const overrides: Record<string, string> = {
-        id: "gen_random_uuid() as id",
-        [p3.parentKey]: `md5("${p3.parentKey}"::text || '-${safeTargetId}')::uuid as "${p3.parentKey}"`,
-      };
-
-      if (p3.hasWorkerIdFK) {
-        overrides.worker_id = `md5(worker_id::text || '-${safeTargetId}')::uuid as worker_id`;
+      const tableData = gmData.phase3Data.get(p3.table);
+      if (!tableData || tableData.rows.length === 0) {
+        logger.info(`[DemoEngine] Phase 3 - "${p3.table}": 0 rows to clone`);
+        continue;
       }
 
-      const selectCols = buildCloneSelect(columns, [], overrides);
+      const transformedRows = tableData.rows.map(row => {
+        const overrides: Record<string, (val: any) => any> = {
+          id: () => randomUuid(),
+          [p3.parentKey]: (origParentId: string) => deterministicUuid(origParentId, targetCompanyId),
+        };
 
-      const countResult = await tx.execute(sql.raw(
-        `SELECT count(*) as cnt FROM "${p3.table}" WHERE "${p3.parentKey}" IN (SELECT id FROM "${p3.parentTable}" WHERE company_id = '${safeGmId}')`
-      ));
-      const countRows = extractRows(countResult);
-      const sourceCount = countRows[0]?.cnt || 0;
-      logger.info(`[DemoEngine] Phase 3 - Cloning table "${p3.table}": ${sourceCount} source rows from Golden Master`);
+        if (p3.hasWorkerIdFK) {
+          overrides.worker_id = (wid: string) => deterministicUuid(wid, targetCompanyId);
+        }
 
-      await tx.execute(sql.raw(`
-        INSERT INTO "${p3.table}" (${columns.map(c => `"${c}"`).join(", ")})
-        SELECT ${selectCols}
-        FROM "${p3.table}"
-        WHERE "${p3.parentKey}" IN (SELECT id FROM "${p3.parentTable}" WHERE company_id = '${safeGmId}')
-      `));
+        return transformRow(row, targetCompanyId, overrides);
+      });
+
+      const insertQuery = buildInsertSQL(p3.table, tableData.columns, transformedRows);
+      if (insertQuery.text) {
+        await tx.execute(sql.raw(insertQuery.text.replace(/\$(\d+)/g, (_, n) => {
+          const val = insertQuery.values[parseInt(n) - 1];
+          if (val === null || val === undefined) return "NULL";
+          if (typeof val === "number") return String(val);
+          if (typeof val === "boolean") return val ? "TRUE" : "FALSE";
+          if (val instanceof Date) return `'${val.toISOString()}'`;
+          if (Array.isArray(val)) return `'{${val.map((v: any) => `"${String(v).replace(/"/g, '\\"')}"`).join(",")}}'`;
+          return `'${String(val).replace(/'/g, "''")}'`;
+        })));
+      }
+
+      logger.info(`[DemoEngine] Phase 3 - Cloned ${transformedRows.length} rows into "${p3.table}"`);
     }
   });
 
   logger.info(`[DemoEngine] Company ${targetCompanyId} reset complete`);
-}
-
-async function getTableColumns(tx: any, tableName: string): Promise<string[]> {
-  const result = await tx.execute(sql`
-    SELECT column_name FROM information_schema.columns 
-    WHERE table_name = ${tableName} AND table_schema = 'public'
-    ORDER BY ordinal_position
-  `);
-  const rows = extractRows(result);
-  return rows.map((r: any) => r.column_name);
-}
-
-function buildCloneSelect(columns: string[], excludeCols: string[], overrides: Record<string, string>): string {
-  return columns
-    .filter(c => !excludeCols.includes(c))
-    .map(c => overrides[c] || `"${c}"`)
-    .join(", ");
 }
 
 export async function checkIn(prospectEmail?: string): Promise<CheckInResponse> {
@@ -547,26 +646,33 @@ export async function getDemoHealthDiagnostics(): Promise<Record<string, any>> {
   const gmId = GOLDEN_MASTER_COMPANY_ID;
   const gmPreview = gmId.length > 8 ? `${gmId.substring(0, 8)}...${gmId.substring(gmId.length - 4)}` : gmId;
 
-  const companyResult = await db.execute(sql`SELECT id, name FROM companies WHERE id = ${gmId}`);
-  const companyRows = extractRows(companyResult);
-  const gmFound = companyRows.length > 0;
-  const gmName = gmFound ? (companyRows[0] as any).name : null;
-
+  let gmFound = false;
+  let gmName: string | null = null;
   let workerCount = 0;
-  if (gmFound) {
-    const wResult = await db.execute(sql`SELECT count(*) as cnt FROM workers WHERE company_id = ${gmId}`);
-    workerCount = parseInt(extractRows(wResult)[0]?.cnt || "0", 10);
-  }
+  let gmSource = "none";
 
-  const isProduction = process.env.NODE_ENV === "production";
-  const dbType = isProduction && process.env.AWS_RDS_HOST ? "AWS_RDS" : "Neon";
+  try {
+    const companyResult = extractRows(await db.execute(sql`SELECT id, name FROM companies WHERE id = ${gmId}`));
+    gmFound = companyResult.length > 0;
+    gmName = gmFound ? companyResult[0].name : null;
+    gmSource = "local_database";
+
+    if (gmFound) {
+      const wResult = extractRows(await db.execute(sql`SELECT count(*) as cnt FROM workers WHERE company_id = ${gmId}`));
+      workerCount = parseInt(wResult[0]?.cnt || "0", 10);
+    }
+  } catch (err: any) {
+    logger.warn({ err: err.message }, "[DemoEngine] Could not query Golden Master for health check");
+    gmSource = "error: " + err.message;
+  }
 
   const roomResult = await db.execute(sql`SELECT room_id, status FROM demo_room_bookings ORDER BY room_id`);
   const rooms = extractRows(roomResult);
 
   return {
     enabled: true,
-    database: dbType,
+    database: "Neon (local)",
+    goldenMasterSource: gmSource,
     roomCount: rooms.length,
     rooms: rooms.map((r: any) => ({ id: r.room_id, status: r.status })),
     goldenMaster: {
