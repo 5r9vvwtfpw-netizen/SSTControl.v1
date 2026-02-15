@@ -661,6 +661,56 @@ export async function runHousekeeping(): Promise<{ resetCount: number; errorCoun
   return { resetCount, errorCount };
 }
 
+export async function forceWipeAllRooms(): Promise<{ wipedCompanies: number }> {
+  logger.info("[DemoEngine] Force wipe: cleaning ALL demo room data...");
+
+  let wipedCompanies = 0;
+
+  for (const companyId of DEMO_COMPANY_IDS) {
+    try {
+      for (const child of CHILD_TABLES_TO_WIPE) {
+        if ('grandParentTable' in child && child.grandParentTable) {
+          await db.execute(sql`DELETE FROM ${sql.identifier(child.table)} WHERE ${sql.identifier(child.parentKey)} IN (
+            SELECT id FROM ${sql.identifier(child.parentTable)} WHERE ${sql.identifier((child as any).grandParentKey)} IN (
+              SELECT id FROM ${sql.identifier(child.grandParentTable)} WHERE company_id = ${companyId}
+            )
+          )`);
+        } else {
+          await db.execute(sql`DELETE FROM ${sql.identifier(child.table)} WHERE ${sql.identifier(child.parentKey)} IN (
+            SELECT id FROM ${sql.identifier(child.parentTable)} WHERE company_id = ${companyId}
+          )`);
+        }
+      }
+
+      for (const table of TABLES_WITH_COMPANY_ID_TO_WIPE) {
+        await db.execute(sql`DELETE FROM ${sql.identifier(table)} WHERE company_id = ${companyId}`);
+      }
+
+      await db.execute(sql`DELETE FROM users WHERE company_id = ${companyId}`);
+      await db.execute(sql`DELETE FROM pricing_plugin_subscriptions WHERE customer_id = ${companyId}`);
+      await db.execute(sql`DELETE FROM companies WHERE id = ${companyId}`);
+
+      wipedCompanies++;
+    } catch (err: any) {
+      logger.warn({ companyId, err: err.message }, "[DemoEngine] Force wipe: error cleaning company");
+    }
+  }
+
+  await db.execute(sql`
+    UPDATE demo_room_bookings 
+    SET status = 'available',
+        assigned_prospect_email = NULL,
+        assigned_session_token = NULL,
+        expires_at = NULL,
+        error_message = NULL,
+        last_reset_at = now(),
+        updated_at = now()
+  `);
+
+  logger.info({ wipedCompanies }, "[DemoEngine] Force wipe complete - all rooms available, all demo companies deleted");
+  return { wipedCompanies };
+}
+
 export async function getDemoRoomStatus(): Promise<any[]> {
   const rooms = await db.execute(sql`
     SELECT room_id, company_id, demo_username, status, assigned_prospect_email, expires_at, last_reset_at, error_message, updated_at

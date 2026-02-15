@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { isDemoEnabled } from "./types";
-import { checkIn, getDemoRoomStatus, runHousekeeping, getDemoHealthDiagnostics } from "./service";
+import { checkIn, getDemoRoomStatus, runHousekeeping, getDemoHealthDiagnostics, forceWipeAllRooms } from "./service";
 import logger from "../../server/lib/logger";
 import { db } from "../../server/db";
 import { sql } from "drizzle-orm";
@@ -148,56 +148,39 @@ router.post("/force-reset", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/force-cleanup", async (req: Request, res: Response) => {
+router.post("/force-wipe", async (req: Request, res: Response) => {
   if (!isDemoEnabled()) {
     return res.status(404).json({ error: "Not found" });
   }
 
+  const user = req.user as any;
   const { secret } = req.body || {};
   const expectedSecret = process.env.JWT_RECALCULATE_SECRET;
-  if (!secret || !expectedSecret || secret !== expectedSecret) {
+  const isSuperadmin = user && user.role === "superadmin";
+  const hasSecret = secret && expectedSecret && secret === expectedSecret;
+
+  if (!isSuperadmin && !hasSecret) {
     return res.status(403).json({ error: "Not authorized" });
   }
 
   try {
-    logger.info("[DemoEngine] Force cleanup: resetting ALL rooms to available...");
-
-    await db.execute(sql`
-      UPDATE demo_room_bookings 
-      SET status = 'available',
-          assigned_prospect_email = NULL,
-          assigned_session_token = NULL,
-          expires_at = NULL,
-          error_message = NULL,
-          last_reset_at = now(),
-          updated_at = now()
-    `);
-
-    for (const companyId of [
-      "demo-company-room-001", "demo-company-room-002", "demo-company-room-003",
-      "demo-company-room-004", "demo-company-room-005", "demo-company-room-006",
-      "demo-company-room-007", "demo-company-room-008", "demo-company-room-009",
-      "demo-company-room-010",
-    ]) {
-      try {
-        await db.execute(sql`DELETE FROM users WHERE company_id = ${companyId}`);
-      } catch (e: any) {
-        logger.warn({ companyId, err: e.message }, "[DemoEngine] Cleanup: error deleting users");
-      }
-    }
+    const result = await forceWipeAllRooms();
 
     const countResult = await db.execute(sql`SELECT room_id, status FROM demo_room_bookings ORDER BY room_id`);
     const rooms = extractRows(countResult);
 
-    logger.info({ roomCount: rooms.length }, "[DemoEngine] Force cleanup complete - all rooms available");
+    const demoCompaniesLeft = await db.execute(sql`SELECT count(*) as cnt FROM companies WHERE id LIKE 'demo-company-room-%'`);
+    const leftRows = extractRows(demoCompaniesLeft);
 
     return res.json({
-      message: "All rooms reset to available",
+      message: "Force wipe complete - all demo data deleted, all rooms available",
+      wipedCompanies: result.wipedCompanies,
+      demoCompaniesRemaining: parseInt(leftRows[0]?.cnt || "0", 10),
       rooms: rooms.map((r: any) => ({ id: r.room_id, status: r.status })),
     });
   } catch (error: any) {
-    logger.error({ err: error }, "[DemoEngine] Force cleanup error");
-    return res.status(500).json({ error: "Cleanup failed", message: error.message });
+    logger.error({ err: error }, "[DemoEngine] Force wipe error");
+    return res.status(500).json({ error: "Force wipe failed", message: error.message });
   }
 });
 
