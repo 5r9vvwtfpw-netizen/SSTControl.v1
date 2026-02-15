@@ -1,0 +1,146 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2761
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica-Bold;\f1\fswiss\fcharset0 Helvetica;\f2\fmodern\fcharset0 Courier;
+}
+{\colortbl;\red255\green255\blue255;\red12\green12\blue13;\red249\green249\blue249;\red130\green57\blue3;
+\red237\green239\blue239;\red242\green244\blue244;}
+{\*\expandedcolortbl;;\cssrgb\c5490\c5490\c5882;\cssrgb\c98039\c98039\c98039;\cssrgb\c58824\c29412\c0;
+\cssrgb\c94510\c94902\c94902;\cssrgb\c96078\c96471\c96471;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listlevel\levelnfc2\levelnfcn2\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{lower-roman\}}{\leveltext\leveltemplateid2\'01\'01;}{\levelnumbers\'01;}\fi-360\li1440\lin1440 }{\listname ;}\listid1}
+{\list\listtemplateid2\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid101\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid2}
+{\list\listtemplateid3\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid201\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid3}
+{\list\listtemplateid4\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid301\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid4}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}{\listoverride\listid3\listoverridecount0\ls3}{\listoverride\listid4\listoverridecount0\ls4}}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f0\b\fs28 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 LSO Profile Card - Design Specification
+\f1\b0 \
+This is a modal/dialog that displays an LSO professional's profile. Here's the exact structure and layout:\
+
+\f0\b Layout:
+\f1\b0 \'a0A modal dialog, max width ~448px (
+\f2\fs26 \cf4 \cb5 \strokec4 max-w-md
+\f1\fs28 \cf2 \cb3 \strokec2 ), scrollable if content overflows (
+\f2\fs26 \cf4 \cb5 \strokec4 max-h-[90vh] overflow-y-auto
+\f1\fs28 \cf2 \cb3 \strokec2 ).\
+
+\f0\b Title:
+\f1\b0 \'a0"Informaci\'f3n del Usuario"\
+
+\f0\b Section 1 \'97 User Information (top area):
+\f1\b0 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls1\ilvl0\cf2 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Two-column layout: left side has text info, right side has the profile photo.\cb1 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls1\ilvl0
+\f0\b \cf2 \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Left column
+\f1\b0 \'a0(stacked vertically with icon + label + value):\cb1 \
+\pard\tx940\tx1440\pardeftab720\li1440\fi-1440\partightenfactor0
+\ls1\ilvl1
+\f0\b \cf2 \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	i	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 User icon
+\f1\b0 \'a0+ "Nombre completo" (label, small muted text) + full name (bold)\cb1 \
+\ls1\ilvl1
+\f0\b \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	ii	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Mail icon
+\f1\b0 \'a0+ "Correo electr\'f3nico" + email (bold, word-break for long emails)\cb1 \
+\ls1\ilvl1
+\f0\b \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	iii	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Phone icon
+\f1\b0 \'a0+ "Celular" + phone number (bold)\cb1 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls1\ilvl0
+\f0\b \cf2 \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Right column
+\f1\b0 : Circular profile photo (80x80px,\'a0
+\f2\fs26 \cf4 \cb5 \strokec4 rounded-full
+\f1\fs28 \cf2 \cb3 \strokec2 , border\'a0
+\f2\fs26 \cf4 \cb5 \strokec4 2px muted
+\f1\fs28 \cf2 \cb3 \strokec2 , fallback camera icon if no photo)\cb1 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls1\ilvl0\cf2 \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Below the two columns:\cb1 \uc0\u8232 \cb3 4.\'a0
+\f0\b MapPin icon
+\f1\b0 \'a0+ "Ciudad" + city with department in parentheses (e.g., "Bogot\'e1, D.C. (Bogot\'e1, D.C.)")\cb1 \
+\pard\tx940\tx1440\pardeftab720\li1440\fi-1440\partightenfactor0
+\ls1\ilvl1
+\f0\b \cf2 \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	v	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Eye icon
+\f1\b0 \'a0+ "Visitas al perfil" + visit count number\cb1 \
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f0\b \cf2 \cb3 Divider
+\f1\b0 \'a0(border-top)\
+
+\f0\b Section 2 \'97 Professional Information:
+\f1\b0 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls2\ilvl0\cf2 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Section label: "Informaci\'f3n Profesional" (small, semibold, muted)\cb1 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls2\ilvl0
+\f0\b \cf2 \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 FileText icon
+\f1\b0 \'a0+ "C\'e9dula" + document ID (only if available)\cb1 \
+\ls2\ilvl0
+\f0\b \cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Briefcase icon
+\f1\b0 \'a0+ "Tipo de Profesi\'f3n" + profession type (e.g., "Psic\'f3logo SST")\cb1 \
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f0\b \cf2 \cb3 Divider
+\f1\b0 \'a0(border-top)\
+
+\f0\b Section 3 \'97 Status & Dates:
+\f1\b0 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls3\ilvl0\cf2 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Row: "Estado" (left) + status Badge (right, green for "Confirmado", yellow for "Pendiente", red for "Rechazado")\cb1 \
+\ls3\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Row:\'a0
+\f0\b Calendar icon
+\f1\b0 \'a0+ "Registrado" (left) + date in Spanish format (right, e.g., "15 de febrero de 2026")\cb1 \
+\ls3\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Row:\'a0
+\f0\b CheckCircle icon
+\f1\b0 \'a0+ "Confirmado" (left) + confirmation date (right) \'97 only shown if confirmed\cb1 \
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f0\b \cf2 \cb3 Styling:
+\f1\b0 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls4\ilvl0\cf2 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Icons: 20x20px (
+\f2\fs26 \cf4 \cb5 \strokec4 h-5 w-5
+\f1\fs28 \cf2 \cb3 \strokec2 ), muted color, aligned to top of text\cb1 \
+\ls4\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Labels: small text, muted foreground color\cb1 \
+\ls4\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Values: medium font weight\cb1 \
+\ls4\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Date format:\'a0
+\f2\fs26 \cf4 \cb5 \strokec4 es-CO
+\f1\fs28 \cf2 \cb3 \strokec2 \'a0locale,\'a0
+\f2\fs26 \cf4 \cb5 \strokec4 \{ year: "numeric", month: "long", day: "numeric" \}
+\f1\fs28 \cf2 \cb1 \strokec2 \
+\ls4\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Status badge colors: green = "Confirmado", yellow = "Pendiente", red = "Rechazado"\cb1 \
+\ls4\ilvl0\cb3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Spacing:\'a0
+\f2\fs26 \cf4 \cb5 \strokec4 space-y-3
+\f1\fs28 \cf2 \cb3 \strokec2 \'a0between items,\'a0
+\f2\fs26 \cf4 \cb5 \strokec4 pt-4
+\f1\fs28 \cf2 \cb3 \strokec2 \'a0padding after dividers\cb1 \
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f0\b \cf2 \cb3 Data fields available from the API:
+\f1\b0 \
+\pard\pardeftab720\partightenfactor0
+
+\f2 \cf2 \cb6 fullName, email, phone, city, photoUrl, profileVisits,\cb1 \
+\cb6 professionType, documentId, status, createdAt, confirmedAt\cb1 \
+}
