@@ -62,7 +62,7 @@ const MODULE_LIST = [
   { route: "/ausentismo-laboral", name: "Ausentismo Laboral", group: "SST" },
   { route: "/estandares-sst", name: "Estándares SST", group: "SST" },
   { route: "/evaluaciones-sst", name: "Evaluaciones SST", group: "SST" },
-  { route: "/evaluaciones-sst/:id", name: "Evaluación Inicial (Resolución 0312)", group: "SST" },
+  { route: "/evaluaciones-sst/:id", name: "Gestión Integral - Evaluación Inicial", group: "SST" },
   { route: "/iperc", name: "IPERC - Matriz de Riesgos", group: "SST" },
   { route: "/politicas-sst", name: "Políticas SST", group: "SST" },
   { route: "/plan-emergencias", name: "Plan de Emergencias", group: "SST" },
