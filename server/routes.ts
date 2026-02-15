@@ -47085,7 +47085,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!route) {
         return res.status(400).json({ error: "Se requiere el parámetro 'route'" });
       }
+      const routeAliases: Record<string, string[]> = {
+        "/": ["/dashboard"],
+        "/dashboard": ["/"],
+      };
       let video = await storage.getHelpVideoByRoute(route);
+      if (!video && routeAliases[route]) {
+        for (const alias of routeAliases[route]) {
+          video = await storage.getHelpVideoByRoute(alias);
+          if (video) break;
+        }
+      }
       if (!video) {
         const allVideos = await storage.getActiveHelpVideos();
         video = allVideos.find(v => {
