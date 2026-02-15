@@ -82,7 +82,7 @@ export default function HelpVideoButton() {
         onClick={() => setModalOpen(true)}
         data-testid="button-help-video"
         title={hasVideo ? "Ver video de ayuda" : "Video de ayuda próximamente"}
-        className="gap-2 bg-emerald-600 text-white border-emerald-600 dark:bg-emerald-700 dark:border-emerald-700"
+        className="gap-2 bg-amber-500 text-white border-amber-500 dark:bg-amber-600 dark:border-amber-600"
       >
         <CirclePlay className="h-4 w-4" />
         Video de Ayuda
@@ -125,7 +125,7 @@ export default function HelpVideoButton() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 gap-4 text-muted-foreground">
-                  <Clock className="h-16 w-16 text-emerald-500/50" />
+                  <Clock className="h-16 w-16 text-amber-500/50" />
                   <p className="text-lg font-medium text-foreground">
                     Video próximamente
                   </p>
