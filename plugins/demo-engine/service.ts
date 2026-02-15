@@ -17,19 +17,53 @@ function extractRows(result: any): any[] {
   return (result as any).rows || result;
 }
 
-const TABLES_TO_CLONE = [
-  "workers",
-  "job_profiles",
-  "responsible_designations",
-  "resource_allocations",
-  "sst_evaluations",
-  "politicas_sst",
-  "planes_trabajo_anual",
-  "afiliaciones_ssss",
+interface Phase1Table {
+  table: string;
+  idMode: "random" | "deterministic";
+  extraOverrides?: (targetCompanyId: string) => Record<string, string>;
+}
+
+interface Phase2Table {
+  table: string;
+  workerIdNullable: boolean;
+}
+
+interface Phase3Table {
+  table: string;
+  parentKey: string;
+  parentTable: string;
+  hasWorkerIdFK: boolean;
+}
+
+const PHASE1_TABLES: Phase1Table[] = [
+  {
+    table: "workers",
+    idMode: "deterministic",
+    extraOverrides: (_tcid: string) => ({
+      identification_number: "gen_random_uuid()||'-'||substring(md5(random()::text),1,6) as identification_number",
+      email: "gen_random_uuid()||'@demo.sst.co' as email",
+      contract_number: "gen_random_uuid()||'-C' as contract_number",
+    }),
+  },
+  { table: "job_profiles", idMode: "random" },
+  { table: "afiliaciones_ssss", idMode: "random" },
+  { table: "planes_trabajo_anual", idMode: "random" },
+  { table: "politicas_sst", idMode: "random" },
+  { table: "resource_allocations", idMode: "random" },
+  { table: "sst_evaluations", idMode: "deterministic" },
+  { table: "trainings", idMode: "deterministic" },
 ];
 
-const CHILD_TABLES_TO_CLONE = [
-  { table: "sst_evaluation_items", parentTable: "sst_evaluations", parentKey: "evaluation_id" },
+const PHASE2_TABLES: Phase2Table[] = [
+  { table: "contracts", workerIdNullable: false },
+  { table: "medical_exams", workerIdNullable: false },
+  { table: "health_conditions", workerIdNullable: false },
+  { table: "responsible_designations", workerIdNullable: true },
+];
+
+const PHASE3_TABLES: Phase3Table[] = [
+  { table: "sst_evaluation_items", parentKey: "evaluation_id", parentTable: "sst_evaluations", hasWorkerIdFK: false },
+  { table: "training_attendees", parentKey: "training_id", parentTable: "trainings", hasWorkerIdFK: true },
 ];
 
 const TABLES_WITH_COMPANY_ID_TO_WIPE = [
@@ -188,67 +222,95 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
         calculated_chapter = EXCLUDED.calculated_chapter
     `);
 
-    const workerOverrides: Record<string, string> = {
-      id: "gen_random_uuid() as id",
-      company_id: `'${targetCompanyId}' as company_id`,
-      identification_number: "gen_random_uuid()||'-'||substring(md5(random()::text),1,6) as identification_number",
-      email: "gen_random_uuid()||'@demo.sst.co' as email",
-      contract_number: "gen_random_uuid()||'-C' as contract_number",
-    };
+    const gmId = GOLDEN_MASTER_COMPANY_ID;
+    const safeTargetId = targetCompanyId.replace(/'/g, "''");
+    const safeGmId = gmId.replace(/'/g, "''");
 
-    const defaultOverrides: Record<string, string> = {
-      id: "gen_random_uuid() as id",
-      company_id: `'${targetCompanyId}' as company_id`,
-    };
+    for (const p1 of PHASE1_TABLES) {
+      const columns = await getTableColumns(tx, p1.table);
+      const overrides: Record<string, string> = {
+        company_id: `'${safeTargetId}' as company_id`,
+      };
 
-    for (const table of TABLES_TO_CLONE) {
-      const columns = await getTableColumns(tx, table);
-      const overrides = table === "workers" ? workerOverrides : defaultOverrides;
+      if (p1.idMode === "deterministic") {
+        overrides.id = `md5(id::text || '-${safeTargetId}')::uuid as id`;
+      } else {
+        overrides.id = "gen_random_uuid() as id";
+      }
+
+      if (p1.extraOverrides) {
+        Object.assign(overrides, p1.extraOverrides(safeTargetId));
+      }
+
       const selectCols = buildCloneSelect(columns, [], overrides);
-      
-      const countResult = await tx.execute(sql.raw(`SELECT count(*) as cnt FROM "${table}" WHERE company_id = '${GOLDEN_MASTER_COMPANY_ID}'`));
+
+      const countResult = await tx.execute(sql.raw(`SELECT count(*) as cnt FROM "${p1.table}" WHERE company_id = '${safeGmId}'`));
       const countRows = extractRows(countResult);
       const sourceCount = countRows[0]?.cnt || 0;
-      logger.info(`[DemoEngine] Cloning table "${table}": ${sourceCount} source rows from Golden Master`);
+      logger.info(`[DemoEngine] Phase 1 - Cloning table "${p1.table}": ${sourceCount} source rows from Golden Master`);
 
       await tx.execute(sql.raw(`
-        INSERT INTO "${table}" (${columns.map(c => `"${c}"`).join(", ")})
+        INSERT INTO "${p1.table}" (${columns.map(c => `"${c}"`).join(", ")})
         SELECT ${selectCols}
-        FROM "${table}" 
-        WHERE company_id = '${GOLDEN_MASTER_COMPANY_ID}'
+        FROM "${p1.table}"
+        WHERE company_id = '${safeGmId}'
       `));
     }
 
-    for (const child of CHILD_TABLES_TO_CLONE) {
-      const parentIdMap = await tx.execute(sql`
-        SELECT gm.id as old_id, target.id as new_id
-        FROM ${sql.identifier(child.parentTable)} gm
-        JOIN ${sql.identifier(child.parentTable)} target 
-          ON target.company_id = ${targetCompanyId}
-          AND gm.company_id = ${GOLDEN_MASTER_COMPANY_ID}
-        WHERE gm.company_id = ${GOLDEN_MASTER_COMPANY_ID}
-      `);
+    for (const p2 of PHASE2_TABLES) {
+      const columns = await getTableColumns(tx, p2.table);
+      const overrides: Record<string, string> = {
+        id: "gen_random_uuid() as id",
+        company_id: `'${safeTargetId}' as company_id`,
+      };
 
-      const parentIdRows = extractRows(parentIdMap);
-      
-      for (const mapping of parentIdRows) {
-        const oldParentId = mapping.old_id;
-        const newParentId = mapping.new_id;
-
-        const childColumns = await getTableColumns(tx, child.table);
-        const childOverrides: Record<string, string> = {
-          id: "gen_random_uuid() as id",
-          [child.parentKey]: `'${newParentId}' as "${child.parentKey}"`,
-        };
-        const childSelectCols = buildCloneSelect(childColumns, [], childOverrides);
-
-        await tx.execute(sql.raw(`
-          INSERT INTO "${child.table}" (${childColumns.map(c => `"${c}"`).join(", ")})
-          SELECT ${childSelectCols}
-          FROM "${child.table}"
-          WHERE "${child.parentKey}" = '${oldParentId}'
-        `));
+      if (p2.workerIdNullable) {
+        overrides.worker_id = `CASE WHEN worker_id IS NOT NULL THEN md5(worker_id::text || '-${safeTargetId}')::uuid ELSE NULL END as worker_id`;
+      } else {
+        overrides.worker_id = `md5(worker_id::text || '-${safeTargetId}')::uuid as worker_id`;
       }
+
+      const selectCols = buildCloneSelect(columns, [], overrides);
+
+      const countResult = await tx.execute(sql.raw(`SELECT count(*) as cnt FROM "${p2.table}" WHERE company_id = '${safeGmId}'`));
+      const countRows = extractRows(countResult);
+      const sourceCount = countRows[0]?.cnt || 0;
+      logger.info(`[DemoEngine] Phase 2 - Cloning table "${p2.table}": ${sourceCount} source rows from Golden Master`);
+
+      await tx.execute(sql.raw(`
+        INSERT INTO "${p2.table}" (${columns.map(c => `"${c}"`).join(", ")})
+        SELECT ${selectCols}
+        FROM "${p2.table}"
+        WHERE company_id = '${safeGmId}'
+      `));
+    }
+
+    for (const p3 of PHASE3_TABLES) {
+      const columns = await getTableColumns(tx, p3.table);
+      const overrides: Record<string, string> = {
+        id: "gen_random_uuid() as id",
+        [p3.parentKey]: `md5("${p3.parentKey}"::text || '-${safeTargetId}')::uuid as "${p3.parentKey}"`,
+      };
+
+      if (p3.hasWorkerIdFK) {
+        overrides.worker_id = `md5(worker_id::text || '-${safeTargetId}')::uuid as worker_id`;
+      }
+
+      const selectCols = buildCloneSelect(columns, [], overrides);
+
+      const countResult = await tx.execute(sql.raw(
+        `SELECT count(*) as cnt FROM "${p3.table}" WHERE "${p3.parentKey}" IN (SELECT id FROM "${p3.parentTable}" WHERE company_id = '${safeGmId}')`
+      ));
+      const countRows = extractRows(countResult);
+      const sourceCount = countRows[0]?.cnt || 0;
+      logger.info(`[DemoEngine] Phase 3 - Cloning table "${p3.table}": ${sourceCount} source rows from Golden Master`);
+
+      await tx.execute(sql.raw(`
+        INSERT INTO "${p3.table}" (${columns.map(c => `"${c}"`).join(", ")})
+        SELECT ${selectCols}
+        FROM "${p3.table}"
+        WHERE "${p3.parentKey}" IN (SELECT id FROM "${p3.parentTable}" WHERE company_id = '${safeGmId}')
+      `));
     }
   });
 
