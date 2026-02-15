@@ -2,6 +2,7 @@ export { default as demoEngineRouter } from "./routes";
 export { initializeDemoRooms } from "./service";
 export { startDemoHousekeepingCron } from "./cron";
 export { isDemoEnabled } from "./types";
+export { demoReadOnlyMiddleware } from "./readonly-middleware";
 
 export const PLUGIN_INFO = {
   name: "demo-engine",

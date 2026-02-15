@@ -19,6 +19,8 @@ import { createServer, type Server } from "http";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { initializeWebSocket, notifyNewMessage, notifyMessageRead, setSessionParser } from "./websocket";
 import { setupAuth, getSessionMiddleware, requireAuth as authRequireAuth, requirePermission, requireAnyPermission, requireRole, hashPassword, stripPassword, requireActiveSubscription } from "./auth";
+import { demoReadOnlyMiddleware } from "../plugins/demo-engine/readonly-middleware";
+import { isDemoEnabled } from "../plugins/demo-engine/types";
 import { storage } from "./storage";
 import { db } from "./db";
 import { users } from "@shared/schema";
@@ -1442,6 +1444,12 @@ function canAccessMedicalData(role: UserRole): boolean {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
+
+  if (isDemoEnabled()) {
+    app.use(demoReadOnlyMiddleware());
+    console.log("✅ Demo Read-Only middleware registrado (modo vitrina)");
+  }
+
   // ========== RESPONSE SANITIZATION MIDDLEWARE ==========
   // Intercepta respuestas de error para ocultar mensajes técnicos (SSL, certificados, etc.)
   // IMPORTANTE: Este middleware debe estar ANTES de todas las rutas

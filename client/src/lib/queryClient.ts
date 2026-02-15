@@ -58,6 +58,16 @@ function extractErrorMessage(text: string): string {
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed.error === "demo_readonly") {
+        const demoError = new Error(parsed.message || "Modo demostración: solo lectura");
+        (demoError as any).isDemoReadonly = true;
+        throw demoError;
+      }
+    } catch (e) {
+      if ((e as any).isDemoReadonly) throw e;
+    }
     const friendlyMessage = extractErrorMessage(text);
     throw new Error(friendlyMessage);
   }
