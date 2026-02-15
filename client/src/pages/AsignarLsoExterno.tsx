@@ -49,7 +49,11 @@ import {
   UserCheck,
   RefreshCw,
   AlertTriangle,
-  ExternalLink
+  ExternalLink,
+  Camera,
+  Eye,
+  FileText,
+  Briefcase
 } from "lucide-react";
 
 interface LsoRegistration {
@@ -66,6 +70,10 @@ interface LsoRegistration {
   licenseExpiry?: string;
   professionType?: string;
   signatureUrl?: string;
+  photoUrl?: string;
+  profileVisits?: number;
+  documentId?: string;
+  department?: string;
 }
 
 interface LsoAssignment {
@@ -88,6 +96,7 @@ export default function AsignarLsoExterno() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLso, setSelectedLso] = useState<LsoRegistration | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -170,6 +179,11 @@ export default function AsignarLsoExterno() {
 
   const handleSelectLso = (lso: LsoRegistration) => {
     setSelectedLso(lso);
+    setShowProfileModal(true);
+  };
+
+  const handleAssignFromProfile = () => {
+    setShowProfileModal(false);
     setShowConfirmDialog(true);
   };
 
@@ -431,6 +445,162 @@ export default function AsignarLsoExterno() {
 
         </CardContent>
       </Card>
+
+      {/* LSO Profile Card Modal */}
+      <Dialog open={showProfileModal} onOpenChange={setShowProfileModal}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Información del Usuario</DialogTitle>
+          </DialogHeader>
+          
+          {selectedLso && (
+            <div className="space-y-0">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-3 flex-1">
+                  <div className="flex items-start gap-2">
+                    <User className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Nombre completo</p>
+                      <p className="font-medium">{selectedLso.fullName}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Correo electrónico</p>
+                      <p className="font-medium break-all">{selectedLso.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Celular</p>
+                      <p className="font-medium">{selectedLso.phone}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-shrink-0">
+                  {selectedLso.photoUrl ? (
+                    <img
+                      src={selectedLso.photoUrl}
+                      alt={selectedLso.fullName}
+                      className="w-20 h-20 rounded-full object-cover border-2 border-muted"
+                      data-testid="img-lso-photo"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full border-2 border-muted bg-muted flex items-center justify-center">
+                      <Camera className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-3 mt-3">
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ciudad</p>
+                    <p className="font-medium">{selectedLso.city}{selectedLso.department ? ` (${selectedLso.department})` : ''}</p>
+                  </div>
+                </div>
+                {selectedLso.profileVisits !== undefined && (
+                  <div className="flex items-start gap-2">
+                    <Eye className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Visitas al perfil</p>
+                      <p className="font-medium">{selectedLso.profileVisits}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t pt-4 mt-4">
+                <p className="text-sm font-semibold text-muted-foreground mb-3">Información Profesional</p>
+                <div className="space-y-3">
+                  {selectedLso.documentId && (
+                    <div className="flex items-start gap-2">
+                      <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Cédula</p>
+                        <p className="font-medium">{selectedLso.documentId}</p>
+                      </div>
+                    </div>
+                  )}
+                  {selectedLso.professionType && (
+                    <div className="flex items-start gap-2">
+                      <Briefcase className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Tipo de Profesión</p>
+                        <p className="font-medium">{selectedLso.professionType}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t pt-4 mt-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Estado</span>
+                    {(() => {
+                      const s = selectedLso.status.toLowerCase();
+                      return (
+                        <Badge 
+                          variant="outline"
+                          className={
+                            s === 'confirmado' 
+                              ? 'bg-green-100 text-green-700 border-green-300' 
+                              : s === 'pendiente' 
+                              ? 'bg-yellow-100 text-yellow-700 border-yellow-300' 
+                              : s === 'rechazado'
+                              ? 'bg-red-100 text-red-700 border-red-300'
+                              : ''
+                          }
+                          data-testid="badge-lso-status"
+                        >
+                          {s === 'confirmado' ? 'Confirmado' : s === 'pendiente' ? 'Pendiente' : s === 'rechazado' ? 'Rechazado' : selectedLso.status}
+                        </Badge>
+                      );
+                    })()}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Registrado</span>
+                    </div>
+                    <span className="text-sm font-medium">
+                      {new Date(selectedLso.createdAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </span>
+                  </div>
+                  {selectedLso.confirmedAt && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Confirmado</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        {new Date(selectedLso.confirmedAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setShowProfileModal(false)}>
+              Cerrar
+            </Button>
+            <Button 
+              onClick={handleAssignFromProfile}
+              data-testid="button-assign-from-profile"
+            >
+              Asignar a mi empresa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Diálogo de confirmación de asignación */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
