@@ -47085,11 +47085,18 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!route) {
         return res.status(400).json({ error: "Se requiere el parámetro 'route'" });
       }
-      const video = await storage.getHelpVideoByRoute(route);
+      let video = await storage.getHelpVideoByRoute(route);
       if (!video) {
-        return res.status(200).json({ video: null });
+        const allVideos = await storage.getActiveHelpVideos();
+        video = allVideos.find(v => {
+          if (!v.moduleRoute.includes(":")) return false;
+          const basePattern = v.moduleRoute.replace(/\/:.*$/, "");
+          if (route === basePattern) return true;
+          const pattern = v.moduleRoute.replace(/:[^/]+/g, "[^/]+");
+          return new RegExp(`^${pattern}$`).test(route);
+        }) || undefined;
       }
-      res.json({ video });
+      res.json({ video: video || null });
     } catch (error: any) {
       res.status(500).json({ error: "Error al obtener video de ayuda" });
     }
