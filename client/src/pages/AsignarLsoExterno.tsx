@@ -543,7 +543,7 @@ export default function AsignarLsoExterno() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Estado</span>
                     {(() => {
-                      const s = selectedLso.status.toLowerCase();
+                      const s = (selectedLso.status || '').toLowerCase();
                       return (
                         <Badge 
                           variant="outline"
@@ -569,7 +569,7 @@ export default function AsignarLsoExterno() {
                       <span className="text-sm text-muted-foreground">Registrado</span>
                     </div>
                     <span className="text-sm font-medium">
-                      {new Date(selectedLso.createdAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      {selectedLso.createdAt ? new Date(selectedLso.createdAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }) : 'No disponible'}
                     </span>
                   </div>
                   {selectedLso.confirmedAt && (
