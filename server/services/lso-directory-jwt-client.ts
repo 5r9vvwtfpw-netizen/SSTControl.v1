@@ -25,6 +25,7 @@ export interface LsoPublicProfile {
   email: string;
   phone: string;
   city: string;
+  department?: string;
   professionType?: string;
   specialties?: string[];
   licenseNumber?: string;
@@ -32,8 +33,11 @@ export interface LsoPublicProfile {
   licenseExpiry?: string;
   signatureUrl?: string;
   documentId?: string;
+  photoUrl?: string;
+  profileVisits?: number;
   status: 'confirmed';
   confirmedAt: string;
+  createdAt?: string;
 }
 
 export interface LsoSearchResponse {
