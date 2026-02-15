@@ -77,6 +77,7 @@ const PHASE3_TABLES: Phase3Table[] = [
 ];
 
 const TABLES_WITH_COMPANY_ID_TO_WIPE = [
+  "evaluaciones_sst",
   "sst_evaluations",
   "planes_trabajo_anual",
   "medical_exams",
@@ -96,10 +97,39 @@ const TABLES_WITH_COMPANY_ID_TO_WIPE = [
 ];
 
 const CHILD_TABLES_TO_WIPE = [
+  { table: "respuestas_estandares", parentTable: "evaluaciones_sst", parentKey: "evaluacion_id" },
   { table: "sst_evidence", parentTable: "sst_evaluation_items", parentKey: "evaluation_item_id", grandParentTable: "sst_evaluations", grandParentKey: "evaluation_id" },
   { table: "sst_evaluation_items", parentTable: "sst_evaluations", parentKey: "evaluation_id" },
   { table: "training_attendees", parentTable: "trainings", parentKey: "training_id" },
 ];
+
+const DEMO_WORKERS_COUNT = 15;
+const DEMO_CALCULATED_CHAPTER = "2";
+const DEMO_TIPO_EMPRESA = "tipo2";
+
+const SST_STANDARDS_FOR_75_PERCENT: { estandarId: string; puntaje: number }[] = [
+  { estandarId: "std-1.1.1", puntaje: 1 },
+  { estandarId: "std-1.1.2", puntaje: 1 },
+  { estandarId: "std-1.1.3", puntaje: 1 },
+  { estandarId: "std-1.1.4", puntaje: 1 },
+  { estandarId: "std-1.1.6", puntaje: 2 },
+  { estandarId: "std-1.1.7", puntaje: 2 },
+  { estandarId: "std-1.1.8", puntaje: 2 },
+  { estandarId: "std-1.2.1", puntaje: 2 },
+  { estandarId: "std-1.2.2", puntaje: 2 },
+  { estandarId: "std-1.2.3", puntaje: 2 },
+  { estandarId: "std-2.1.1", puntaje: 3 },
+  { estandarId: "std-2.2.1", puntaje: 3 },
+  { estandarId: "std-2.4.1", puntaje: 3 },
+  { estandarId: "std-3.1.1", puntaje: 5 },
+  { estandarId: "std-3.1.2", puntaje: 5 },
+  { estandarId: "std-3.2.1", puntaje: 5 },
+  { estandarId: "std-3.2.2", puntaje: 5 },
+  { estandarId: "std-4.1.1", puntaje: 15 },
+  { estandarId: "std-4.1.2", puntaje: 15 },
+];
+const SST_75_TOTAL_POINTS = 75;
+const SST_75_MAX_POINTS = 102;
 
 function getNextExpiry(): Date {
   const now = new Date();
@@ -290,10 +320,10 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
         ${masterCompany.city || "Bogotá"},
         ${masterCompany.ciiu_code || "4711"},
         ${masterCompany.address || "Calle Demo 123"},
-        ${masterCompany.number_of_workers || 8},
+        ${DEMO_WORKERS_COUNT},
         0,
         ${masterCompany.risk_level || "I"},
-        ${masterCompany.calculated_chapter || "1"}
+        ${DEMO_CALCULATED_CHAPTER}
       )
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
@@ -455,6 +485,68 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
 
       logger.info(`[DemoEngine] Phase 3 - Cloned ${transformedRows.length} rows into "${p3.table}"`);
     }
+
+    try {
+      await tx.execute(sql.raw(`SAVEPOINT phase4_eval`));
+
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+      const evalId = deterministicUuid("demo-eval-sst-0312", targetCompanyId);
+      const fechaEval = now.toISOString().split("T")[0];
+      const porcentaje = Math.round((SST_75_TOTAL_POINTS / SST_75_MAX_POINTS) * 100);
+
+      await tx.execute(sql.raw(`
+        INSERT INTO evaluaciones_sst (
+          id, company_id, anio, mes, tipo_empresa, estado,
+          responsable_nombre, responsable_cargo,
+          puntaje_total, puntaje_maximo, porcentaje_cumplimiento,
+          nivel_cumplimiento, fecha_evaluacion, version, created_at, updated_at
+        ) VALUES (
+          '${evalId}',
+          '${targetCompanyId}',
+          ${currentYear},
+          ${currentMonth},
+          '${DEMO_TIPO_EMPRESA}',
+          'en-progreso',
+          'Responsable SST Demo',
+          'Coordinador SST',
+          ${SST_75_TOTAL_POINTS},
+          ${SST_75_MAX_POINTS},
+          ${porcentaje},
+          'moderadamente-aceptable',
+          '${fechaEval}',
+          1,
+          now(),
+          now()
+        )
+      `));
+
+      for (const std of SST_STANDARDS_FOR_75_PERCENT) {
+        const respId = deterministicUuid(`demo-resp-${std.estandarId}`, targetCompanyId);
+        await tx.execute(sql.raw(`
+          INSERT INTO respuestas_estandares (
+            id, evaluacion_id, estandar_id, cumple, no_aplica,
+            puntaje_obtenido, puntaje_maximo, updated_at
+          ) VALUES (
+            '${respId}',
+            '${evalId}',
+            '${std.estandarId}',
+            1,
+            0,
+            ${std.puntaje},
+            ${std.puntaje},
+            now()
+          )
+        `));
+      }
+
+      await tx.execute(sql.raw(`RELEASE SAVEPOINT phase4_eval`));
+      logger.info(`[DemoEngine] Phase 4 - Created SST evaluation (${DEMO_TIPO_EMPRESA}) with ${porcentaje}% compliance (${SST_STANDARDS_FOR_75_PERCENT.length} standards marked as compliant)`);
+    } catch (evalError: any) {
+      await tx.execute(sql.raw(`ROLLBACK TO SAVEPOINT phase4_eval`));
+      logger.warn({ err: evalError.message }, "[DemoEngine] Phase 4 - SST evaluation creation failed (non-fatal, continuing)");
+    }
   });
 
   logger.info(`[DemoEngine] Company ${targetCompanyId} reset complete`);
@@ -545,7 +637,7 @@ export async function checkIn(prospectEmail?: string): Promise<CheckInResponse> 
         VALUES (
           gen_random_uuid(),
           ${result.companyId},
-          8,
+          ${DEMO_WORKERS_COUNT},
           'microempresa',
           '0',
           '0',
