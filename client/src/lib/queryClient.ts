@@ -31,6 +31,9 @@ function extractErrorMessage(text: string): string {
     
     // Caso 3: Objeto con propiedad "error"
     if (parsed.error && typeof parsed.error === 'string') {
+      if (parsed.details && typeof parsed.details === 'string') {
+        return `${parsed.error}: ${parsed.details}`;
+      }
       return parsed.error;
     }
     

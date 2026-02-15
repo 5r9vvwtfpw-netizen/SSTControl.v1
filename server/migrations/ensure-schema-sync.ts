@@ -71,6 +71,35 @@ export async function ensureSchemaSync(): Promise<void> {
       console.log("[Schema Sync] ✅ Table 'objetivos_estandares_vinculacion' exists");
     }
     
+    // 3. Check help_videos table
+    const helpVideosResult = await db.execute(sql`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_name = 'help_videos'
+    `);
+    
+    const helpVideosRows = helpVideosResult.rows || helpVideosResult;
+    const helpVideosExists = Array.isArray(helpVideosRows) && helpVideosRows.length > 0;
+    
+    if (!helpVideosExists) {
+      console.log("[Schema Sync] Creating missing table 'help_videos'...");
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS help_videos (
+          id SERIAL PRIMARY KEY,
+          module_route VARCHAR(255) NOT NULL UNIQUE,
+          module_name VARCHAR(255) NOT NULL,
+          video_url TEXT NOT NULL,
+          video_title VARCHAR(255) NOT NULL,
+          is_active BOOLEAN NOT NULL DEFAULT true,
+          created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )
+      `);
+      console.log("[Schema Sync] ✅ Table 'help_videos' created");
+    } else {
+      console.log("[Schema Sync] ✅ Table 'help_videos' exists");
+    }
+
     console.log("[Schema Sync] Schema synchronization complete");
   } catch (error: any) {
     console.error("[Schema Sync] ❌ Error during schema sync:", error?.message || error);
