@@ -33,6 +33,10 @@ const EXCLUDED_ROUTES = [
   "/contrato-saas",
 ];
 
+const EXCLUDED_ROUTE_PATTERNS = [
+  /^\/evaluaciones-sst\/[^/]+$/,
+];
+
 function toYouTubeEmbedUrl(url: string): string {
   try {
     const parsed = new URL(url);
@@ -64,7 +68,7 @@ export default function HelpVideoButton() {
 
   const isExcluded = EXCLUDED_ROUTES.some(
     (route) => location === route || location.startsWith(route + "/")
-  );
+  ) || EXCLUDED_ROUTE_PATTERNS.some((pattern) => pattern.test(location));
 
   const encodedRoute = encodeURIComponent(location);
   const { data } = useQuery<{ video: HelpVideo | null }>({
