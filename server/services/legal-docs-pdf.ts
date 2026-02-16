@@ -11,6 +11,24 @@
 
 import { PDFDocument } from 'pdf-lib-with-encrypt';
 import { addStandardHeader, addSignatureFooter, addProviderContactFooter, PdfSigners, loadCompanyLogo } from './pdf-standardizer';
+import * as fs from 'fs';
+import * as path from 'path';
+
+function loadSstColombiaLogo(): Buffer | null {
+  try {
+    const logoPath = path.join(process.cwd(), 'server', 'assets', 'sst-colombia-logo.png');
+    if (fs.existsSync(logoPath)) {
+      return fs.readFileSync(logoPath);
+    }
+    const altPath = path.join(process.cwd(), 'attached_assets', 'SST-Colombia-logo-3_1768408022586.png');
+    if (fs.existsSync(altPath)) {
+      return fs.readFileSync(altPath);
+    }
+  } catch (e) {
+    console.error('[LegalDocsPdf] Error loading SST Colombia logo:', e);
+  }
+  return null;
+}
 
 /**
  * Apply PDF encryption to prevent copying text
@@ -235,26 +253,37 @@ export class LegalDocsPdfService {
     
     doc.rect(0, 0, pageWidth, doc.page.height).fillColor('#166534').fill();
     
+    const sstLogo = loadSstColombiaLogo();
+    if (sstLogo) {
+      try {
+        const logoWidth = 120;
+        const logoX = (pageWidth - logoWidth) / 2;
+        doc.image(sstLogo, logoX, 100, { width: logoWidth });
+      } catch (e) {
+        console.error('[LegalDocsPdf] Error adding SST logo to cover:', e);
+      }
+    }
+    
     doc.fontSize(32).font('Helvetica-Bold')
        .fillColor('#FFFFFF')
-       .text('PROTECCIONES LEGALES', margin, 200, { width: contentWidth, align: 'center' });
+       .text('PROTECCIONES LEGALES', margin, 240, { width: contentWidth, align: 'center' });
     
     doc.fontSize(24).font('Helvetica')
-       .text('SST COLOMBIA', margin, 250, { width: contentWidth, align: 'center' });
+       .text('SST COLOMBIA', margin, 290, { width: contentWidth, align: 'center' });
     
     doc.fontSize(14)
-       .text('Sistema de Gestión de Seguridad y Salud en el Trabajo', margin, 290, { width: contentWidth, align: 'center' });
+       .text('Sistema de Gestión de Seguridad y Salud en el Trabajo', margin, 330, { width: contentWidth, align: 'center' });
     
     doc.fontSize(16).font('Helvetica-Bold')
-       .text('TABLA COMPLETA DE CUMPLIMIENTO', margin, 350, { width: contentWidth, align: 'center' });
+       .text('TABLA COMPLETA DE CUMPLIMIENTO', margin, 390, { width: contentWidth, align: 'center' });
     
     doc.fontSize(12).font('Helvetica')
-       .text('Registro DNDA: 13-197-177', margin, 400, { width: contentWidth, align: 'center' });
+       .text('Registro DNDA: 13-197-177', margin, 440, { width: contentWidth, align: 'center' });
     
     doc.fontSize(10)
-       .text('Documento Confidencial', margin, 500, { width: contentWidth, align: 'center' });
+       .text('Documento Confidencial', margin, 520, { width: contentWidth, align: 'center' });
     
-    doc.text(`Generado: ${new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}`, margin, 520, { width: contentWidth, align: 'center' });
+    doc.text(`Generado: ${new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}`, margin, 540, { width: contentWidth, align: 'center' });
     
     doc.text('© 2026 SST Colombia S.A.S. - Todos los derechos reservados', margin, doc.page.height - 60, { width: contentWidth, align: 'center' });
 
