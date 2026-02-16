@@ -1,13 +1,53 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Headset, LogOut, Ticket, Key } from "lucide-react";
 import { Link, Redirect, useLocation } from "wouter";
 import { ActiveAccessIndicator } from "@/components/SupportAccessRequestDialog";
 import { NotificationBell } from "@/components/NotificationBell";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function SoporteLayout({ children }: { children: React.ReactNode }) {
   const { user, logoutMutation } = useAuth();
   const [location] = useLocation();
+  const { toast } = useToast();
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      const res = await apiRequest("POST", "/api/change-password", data);
+      if (!res.ok) {
+        const body = await res.json();
+        throw new Error(body.error || "Error al cambiar la contraseña");
+      }
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Contraseña actualizada", description: "Su contraseña ha sido cambiada exitosamente." });
+      setShowPasswordDialog(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
 
   if (!user) {
     return <Redirect to="/soporte/login" />;
@@ -19,6 +59,22 @@ export default function SoporteLayout({ children }: { children: React.ReactNode 
 
   const handleLogout = () => {
     logoutMutation.mutate();
+  };
+
+  const handleChangePassword = () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({ title: "Error", description: "Todos los campos son requeridos", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast({ title: "Error", description: "La nueva contraseña debe tener al menos 8 caracteres", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Error", description: "Las contraseñas no coinciden", variant: "destructive" });
+      return;
+    }
+    changePasswordMutation.mutate({ currentPassword, newPassword });
   };
 
   return (
@@ -41,7 +97,7 @@ export default function SoporteLayout({ children }: { children: React.ReactNode 
                 <Link href="/soporte/tickets">
                   <Button 
                     variant="ghost" 
-                    className={`text-white hover:bg-white/20 ${location === '/soporte/tickets' ? 'bg-white/20' : ''}`}
+                    className={`text-white ${location === '/soporte/tickets' ? 'bg-white/20' : ''}`}
                     data-testid="nav-soporte-tickets"
                   >
                     <Ticket className="h-4 w-4 mr-2" />
@@ -59,8 +115,17 @@ export default function SoporteLayout({ children }: { children: React.ReactNode 
               </span>
               <Button
                 variant="ghost"
+                onClick={() => setShowPasswordDialog(true)}
+                className="text-white"
+                data-testid="button-soporte-change-password"
+              >
+                <Key className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Cambiar Contraseña</span>
+              </Button>
+              <Button
+                variant="ghost"
                 onClick={handleLogout}
-                className="text-white hover:bg-white/20"
+                className="text-white"
                 data-testid="button-soporte-logout"
               >
                 <LogOut className="h-4 w-4 mr-2" />
@@ -80,6 +145,80 @@ export default function SoporteLayout({ children }: { children: React.ReactNode 
           SST Colombia - Centro de Soporte Técnico
         </div>
       </footer>
+
+      <Dialog open={showPasswordDialog} onOpenChange={(open) => {
+        setShowPasswordDialog(open);
+        if (!open) {
+          setCurrentPassword("");
+          setNewPassword("");
+          setConfirmPassword("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cambiar Contraseña</DialogTitle>
+            <DialogDescription>
+              Ingrese su contraseña actual y la nueva contraseña.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Contraseña Actual</Label>
+              <Input
+                id="current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Ingrese su contraseña actual"
+                data-testid="input-current-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Nueva Contraseña</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Mínimo 8 caracteres"
+                data-testid="input-new-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirmar Nueva Contraseña</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Repita la nueva contraseña"
+                data-testid="input-confirm-password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowPasswordDialog(false);
+                setCurrentPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
+              }}
+              data-testid="button-cancel-password"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleChangePassword}
+              disabled={changePasswordMutation.isPending}
+              data-testid="button-save-password"
+            >
+              {changePasswordMutation.isPending ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
