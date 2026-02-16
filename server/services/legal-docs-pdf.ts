@@ -862,13 +862,12 @@ export class LegalDocsPdfService {
     ];
 
     for (const measure of securityMeasures) {
-      // Check if measure will fit on current page
       if (currentY + 15 > doc.page.height - 60) {
         doc.addPage();
         currentY = margin;
       }
-      doc.fontSize(9).font('Helvetica-Bold').text(measure[0] + ':', margin + 15, currentY, { continued: true });
-      doc.font('Helvetica').text(' ' + measure[1]);
+      doc.fontSize(9).font('Helvetica-Bold').fillColor('#333333').text(measure[0] + ':', margin + 15, currentY, { continued: true });
+      doc.font('Helvetica').fillColor('#333333').text(' ' + measure[1]);
       currentY += 15;
     }
 
