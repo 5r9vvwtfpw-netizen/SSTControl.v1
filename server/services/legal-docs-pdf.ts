@@ -179,16 +179,25 @@ export class LegalDocsPdfService {
     };
 
     const addTableRow = (col1: string, col2: string, col3?: string, isHeader: boolean = false) => {
-      checkPageBreak(25);
-      const col1Width = col3 ? contentWidth * 0.25 : contentWidth * 0.35;
-      const col2Width = col3 ? contentWidth * 0.45 : contentWidth * 0.65;
-      const col3Width = col3 ? contentWidth * 0.30 : 0;
-      
+      const col1Width = col3 ? contentWidth * 0.22 : contentWidth * 0.35;
+      const col2Width = col3 ? contentWidth * 0.40 : contentWidth * 0.65;
+      const col3Width = col3 ? contentWidth * 0.38 : 0;
+
+      const fontSize = 9;
+      const font = isHeader ? 'Helvetica-Bold' : 'Helvetica';
+      doc.fontSize(fontSize).font(font);
+      const h1 = doc.heightOfString(col1, { width: col1Width - 10 });
+      const h2 = doc.heightOfString(col2, { width: col2Width - 10 });
+      const h3 = col3 ? doc.heightOfString(col3, { width: col3Width - 10 }) : 0;
+      const rowHeight = Math.max(h1, h2, h3) + 10;
+
+      checkPageBreak(rowHeight + 5);
+
       if (isHeader) {
-        doc.rect(margin, currentY - 3, contentWidth, 20).fillColor('#166534').fill();
-        doc.fontSize(9).font('Helvetica-Bold').fillColor('#FFFFFF');
+        doc.rect(margin, currentY - 3, contentWidth, rowHeight + 2).fillColor('#166534').fill();
+        doc.fontSize(fontSize).font('Helvetica-Bold').fillColor('#FFFFFF');
       } else {
-        doc.fontSize(9).font('Helvetica').fillColor('#333333');
+        doc.fontSize(fontSize).font('Helvetica').fillColor('#333333');
       }
       
       doc.text(col1, margin + 5, currentY, { width: col1Width - 10 });
@@ -198,9 +207,9 @@ export class LegalDocsPdfService {
       }
       
       if (!isHeader) {
-        doc.moveTo(margin, currentY + 15).lineTo(pageWidth - margin, currentY + 15).strokeColor('#EEEEEE').stroke();
+        doc.moveTo(margin, currentY + rowHeight - 5).lineTo(pageWidth - margin, currentY + rowHeight - 5).strokeColor('#EEEEEE').stroke();
       }
-      currentY += 20;
+      currentY += rowHeight;
     };
 
     const addParagraph = (text: string, indent: number = 0) => {
