@@ -158,7 +158,8 @@ export class LegalDocsPdfService {
     const pageWidth = doc.page.width;
     const contentWidth = pageWidth - (margin * 2);
     
-    // Use standardized header
+    // Use standardized header with SST Colombia logo
+    const sstLogoForHeader = loadSstColombiaLogo();
     let currentY = await addStandardHeader({
       doc,
       company,
@@ -166,7 +167,7 @@ export class LegalDocsPdfService {
       documentCode: `SST-LEG-${new Date().getFullYear()}`,
       version: '1.0',
       date: new Date(),
-      logoBuffer,
+      logoBuffer: sstLogoForHeader || logoBuffer,
     });
     currentY += 15;
 
@@ -573,7 +574,8 @@ export class LegalDocsPdfService {
     const pageWidth = doc.page.width;
     const contentWidth = pageWidth - (margin * 2);
     
-    // Use standardized header
+    // Use standardized header with SST Colombia logo
+    const sstLogoForHeader2 = loadSstColombiaLogo();
     let currentY = await addStandardHeader({
       doc,
       company,
@@ -581,7 +583,7 @@ export class LegalDocsPdfService {
       documentCode: `SST-DAT-${new Date().getFullYear()}`,
       version: '1.0',
       date: new Date(),
-      logoBuffer,
+      logoBuffer: sstLogoForHeader2 || logoBuffer,
     });
     currentY += 20;
 
@@ -736,7 +738,8 @@ export class LegalDocsPdfService {
     const pageWidth = doc.page.width;
     const contentWidth = pageWidth - (margin * 2);
     
-    // Use standardized header
+    // Use standardized header with SST Colombia logo
+    const sstLogoForHeader3 = loadSstColombiaLogo();
     let currentY = await addStandardHeader({
       doc,
       company,
@@ -744,7 +747,7 @@ export class LegalDocsPdfService {
       documentCode: `SST-SEG-${new Date().getFullYear()}`,
       version: '1.0',
       date: new Date(),
-      logoBuffer,
+      logoBuffer: sstLogoForHeader3 || logoBuffer,
     });
     currentY += 20;
 
