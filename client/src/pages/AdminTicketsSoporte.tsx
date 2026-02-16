@@ -189,8 +189,10 @@ export default function AdminTicketsSoporte() {
     );
   }
 
-  const { data: tickets = [], isLoading, refetch } = useQuery<SupportTicket[]>({
-    queryKey: ['/api/support-tickets']
+  const { data: tickets = [], isLoading, isError, error: ticketsError, refetch } = useQuery<SupportTicket[]>({
+    queryKey: ['/api/support-tickets'],
+    retry: 2,
+    retryDelay: 1000,
   });
 
   const { data: selectedTicketDetails, isLoading: isLoadingDetails } = useQuery<TicketWithDetails>({
@@ -304,6 +306,26 @@ export default function AdminTicketsSoporte() {
     return (
       <div className="flex items-center justify-center min-h-[400px]" data-testid="loading-admin-tickets">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]" data-testid="error-admin-tickets">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
+            <h2 className="text-lg font-semibold mb-2">Error al cargar tickets</h2>
+            <p className="text-muted-foreground mb-4">
+              {(ticketsError as any)?.message || "No se pudieron obtener los tickets de soporte. Intente nuevamente."}
+            </p>
+            <Button onClick={() => refetch()} variant="outline" data-testid="button-retry-tickets">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Reintentar
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }

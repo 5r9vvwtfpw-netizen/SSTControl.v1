@@ -108,9 +108,10 @@ export async function seedAdminUser() {
       } else {
         console.log("✅ Usuario admin ya existe");
       }
-      // Siempre verificar/crear superadmin y LSO antes de salir
+      // Siempre verificar/crear superadmin, LSO y soporte antes de salir
       await seedSuperadminUser();
       await seedLsoUser();
+      await seedSoporteUser();
       return;
     }
 
@@ -146,6 +147,9 @@ export async function seedAdminUser() {
   
   // Crear usuario LSO de ejemplo si no existe ninguno
   await seedLsoUser();
+  
+  // Crear usuario de soporte si no existe ninguno
+  await seedSoporteUser();
 }
 
 /**
@@ -196,5 +200,49 @@ async function seedLsoUser() {
     console.log("   Licencia: LSO-2024-001 (vigente)");
   } catch (error) {
     console.error("⚠️ Error al crear usuario LSO:", error);
+  }
+}
+
+/**
+ * Crea un usuario de soporte por defecto si no existe ninguno
+ * Esto asegura que siempre haya al menos un usuario con rol 'soporte'
+ * para gestionar tickets desde el portal de soporte
+ */
+async function seedSoporteUser() {
+  try {
+    console.log("🔐 Verificando usuarios de soporte...");
+
+    const existingSoporte = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.role, "soporte"))
+      .limit(1);
+
+    if (existingSoporte.length > 0) {
+      console.log("✅ Ya existe al menos un usuario de soporte");
+      return;
+    }
+
+    console.log("👤 Creando usuario de soporte por defecto...");
+
+    const hashedPassword = await hashPassword("soporte2026");
+    
+    await db
+      .insert(schema.users)
+      .values({
+        username: "soporte",
+        password: hashedPassword,
+        email: "soporte@sstcolombia.com",
+        fullName: "Agente de Soporte",
+        role: "soporte",
+        companyId: null,
+      });
+
+    console.log("✅ Usuario de soporte creado exitosamente");
+    console.log("   Usuario: soporte");
+    console.log("   Contraseña: soporte2026");
+    console.log("   Rol: Soporte (gestión de tickets)");
+  } catch (error) {
+    console.error("⚠️ Error al crear usuario de soporte:", error);
   }
 }

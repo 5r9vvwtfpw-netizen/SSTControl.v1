@@ -1672,17 +1672,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     // Routes that don't require access authorization (always allowed for support)
+    // Note: When using app.use('/api', ...), req.path strips the '/api' prefix
+    // So we check against both the full path (req.originalUrl) and stripped path (req.path)
     const alwaysAllowedPatterns = [
       '/api/user',
       '/api/logout',
       '/api/support-tickets',
       '/api/support-tickets-stats',
       '/api/support-access',
-      '/api/companies', // For company selector dropdown (read-only list)
+      '/api/companies',
+      '/api/notifications',
+      '/api/admin/support-users',
+      '/user',
+      '/logout',
+      '/support-tickets',
+      '/support-tickets-stats',
+      '/support-access',
+      '/companies',
+      '/notifications',
+      '/admin/support-users',
     ];
     
+    const requestPath = req.originalUrl?.split('?')[0] || req.path;
     const isAlwaysAllowed = alwaysAllowedPatterns.some(pattern => 
-      req.path === pattern || req.path.startsWith(pattern + '/')
+      req.path === pattern || req.path.startsWith(pattern + '/') ||
+      requestPath === pattern || requestPath.startsWith(pattern + '/')
     );
     
     if (isAlwaysAllowed) {
@@ -38698,30 +38712,29 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/support-tickets - Get all tickets (superadmin/soporte) or company tickets (users)
   app.get("/api/support-tickets", requireAuth, async (req, res) => {
     try {
-      const userRole = req.user!.role;
+      const userRole = String(req.user!.role || '');
       const userCompanyId = req.user!.companyId;
       
-      console.log(`[Support Tickets] User role: '${userRole}', companyId: '${userCompanyId}', hasSupportAccess: ${hasSupportAccess(userRole as UserRole)}`);
+      console.log(`[Support Tickets] User: ${req.user!.username}, role: '${userRole}', companyId: '${userCompanyId}'`);
       
-      // Superadmin and soporte can see all tickets
-      if (hasSupportAccess(userRole as UserRole)) {
+      const isSupportRole = userRole === 'superadmin' || userRole === 'soporte';
+      
+      if (isSupportRole) {
         const tickets = await storage.getSupportTickets();
-        console.log(`[Support Tickets] Returning ALL tickets: ${tickets.length}`);
+        console.log(`[Support Tickets] Support access - returning ALL tickets: ${tickets.length}`);
         res.json(tickets);
       } else {
-        // Users without a company cannot see any tickets
         if (!userCompanyId) {
           console.log(`[Support Tickets] No companyId, returning empty`);
           return res.json([]);
         }
-        // Filter tickets by user's company only
         const tickets = await storage.getSupportTickets(userCompanyId);
-        console.log(`[Support Tickets] Returning company tickets: ${tickets.length}`);
+        console.log(`[Support Tickets] Company tickets: ${tickets.length}`);
         res.json(tickets);
       }
     } catch (error: any) {
-      console.error('Error fetching support tickets:', error);
-      res.status(500).send('Error al obtener tickets de soporte');
+      console.error('[Support Tickets] Error:', error);
+      res.status(500).json({ error: 'Error al obtener tickets de soporte', details: error.message });
     }
   });
 
@@ -39091,7 +39104,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/support-tickets-stats - Get ticket statistics (superadmin/soporte only)
   app.get("/api/support-tickets-stats", requireAuth, async (req, res) => {
     try {
-      if (!hasSupportAccess(req.user!.role)) {
+      const userRole = String(req.user!.role || '');
+      const isSupportRole = userRole === 'superadmin' || userRole === 'soporte';
+      if (!isSupportRole) {
         return res.status(403).send("Solo administradores pueden ver estadísticas");
       }
 
