@@ -639,6 +639,27 @@ const uploadConvivenciaActa = multer({
     }
   }
 });
+// Multer configuration for Certificaciones Profesionales (PDF only)
+const certDir = '/tmp/uploads/certificaciones';
+if (!fs.existsSync(certDir)) {
+  fs.mkdirSync(certDir, { recursive: true });
+}
+const certStorage = multer.diskStorage({
+  destination: certDir,
+  filename: (req, file, cb) => {
+    const uniqueName = `cert-${Date.now()}-${file.originalname}`;
+    cb(null, uniqueName);
+  }
+});
+const uploadCert = multer({
+  storage: certStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') cb(null, true);
+    else cb(new Error('Solo se permiten archivos PDF'));
+  }
+});
+
 // Helper function to calculate days without accidents
 function calculateDaysWithoutAccidents(accidents: any[]): number {
   if (!accidents || accidents.length === 0) {
@@ -42742,6 +42763,113 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.send(pdfBuffer);
     } catch (error: any) {
       handlePdfError(error, res, 'legal-docs-medidas-seguridad-pdf');
+    }
+  });
+
+  // =============================================================================
+  // CERTIFICACIONES PROFESIONALES
+  // =============================================================================
+
+  app.get("/api/certificaciones-profesionales", requireAuth, async (req, res) => {
+    try {
+      const certificaciones = await storage.getCertificacionesProfesionales();
+      res.json(certificaciones);
+    } catch (error: any) {
+      console.error("Error fetching certificaciones profesionales:", error);
+      res.status(500).send("Error al obtener certificaciones profesionales");
+    }
+  });
+
+  app.post("/api/certificaciones-profesionales", requireAuth, uploadCert.single('archivo'), async (req, res) => {
+    try {
+      const user = req.user!;
+      if (!hasCompanyAdminAccess(user.role)) {
+        return res.status(403).send("Solo administradores pueden subir certificaciones");
+      }
+
+      if (!req.file) {
+        return res.status(400).send("No se proporcionó ningún archivo PDF");
+      }
+
+      const { titulo, descripcion, profesionalNombre, profesionalCredenciales, profesionalLicencia, fechaEmision } = req.body;
+
+      if (!titulo || !profesionalNombre || !profesionalCredenciales) {
+        return res.status(400).send("Campos requeridos: titulo, profesionalNombre, profesionalCredenciales");
+      }
+
+      const fileBuffer = fs.readFileSync(req.file.path);
+      const uniqueFilename = `cert-${Date.now()}-${randomUUID()}${path.extname(req.file.originalname)}`;
+      const objectPath = `certificaciones/${uniqueFilename}`;
+
+      await objectStorageService.uploadObject(objectPath, fileBuffer, req.file.mimetype);
+
+      fs.unlinkSync(req.file.path);
+
+      const archivoUrl = `/objects/${objectPath}`;
+
+      const certificacion = await storage.createCertificacionProfesional({
+        titulo,
+        descripcion: descripcion || null,
+        profesionalNombre,
+        profesionalCredenciales,
+        profesionalLicencia: profesionalLicencia || null,
+        archivoUrl,
+        archivoNombre: req.file.originalname,
+        fechaEmision: fechaEmision || null,
+        uploadedBy: user.id,
+      });
+
+      res.json(certificacion);
+    } catch (error: any) {
+      console.error("Error creating certificacion profesional:", error);
+      res.status(500).send(error.message || "Error al crear certificación profesional");
+    }
+  });
+
+  app.delete("/api/certificaciones-profesionales/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      if (!hasCompanyAdminAccess(user.role)) {
+        return res.status(403).send("Solo administradores pueden eliminar certificaciones");
+      }
+
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).send("ID inválido");
+      }
+
+      await storage.deleteCertificacionProfesional(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting certificacion profesional:", error);
+      res.status(500).send("Error al eliminar certificación profesional");
+    }
+  });
+
+  app.get("/api/certificaciones-profesionales/:id/download", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).send("ID inválido");
+      }
+
+      const certificaciones = await storage.getCertificacionesProfesionales();
+      const cert = certificaciones.find(c => c.id === id);
+
+      if (!cert) {
+        return res.status(404).send("Certificación no encontrada");
+      }
+
+      const objectPath = cert.archivoUrl.replace('/objects/', '');
+      const normalizedPath = objectStorageService.normalizeObjectEntityPath(objectPath);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${cert.archivoNombre}"`);
+
+      await objectStorageService.downloadObject(normalizedPath, res);
+    } catch (error: any) {
+      console.error("Error downloading certificacion:", error);
+      res.status(500).send("Error al descargar certificación");
     }
   });
 

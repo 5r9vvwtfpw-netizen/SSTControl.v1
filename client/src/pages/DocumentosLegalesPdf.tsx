@@ -1,8 +1,14 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { hasCompanyAdminAccess } from "@shared/permissions";
+import type { CertificacionProfesional } from "@shared/schema";
 import { 
   FileText, 
   Shield, 
@@ -12,7 +18,12 @@ import {
   Building2, 
   Scale,
   CheckCircle,
-  Loader2 
+  Loader2,
+  Award,
+  Upload,
+  Trash2,
+  UserCheck,
+  BadgeCheck
 } from "lucide-react";
 import { formatReportError } from "@/lib/report-error-messages";
 
@@ -27,7 +38,81 @@ interface DocumentDownload {
 
 export default function DocumentosLegalesPdf() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [downloading, setDownloading] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+
+  const { data: certificaciones = [], isLoading: loadingCerts } = useQuery<CertificacionProfesional[]>({
+    queryKey: ["/api/certificaciones-profesionales"],
+    enabled: !!user,
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await fetch("/api/certificaciones-profesionales", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Error al subir certificación");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/certificaciones-profesionales"] });
+      toast({ title: "Certificación subida", description: "El documento se ha subido correctamente." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/certificaciones-profesionales/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/certificaciones-profesionales"] });
+      toast({ title: "Certificación eliminada", description: "El documento se ha eliminado correctamente." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("archivo", file);
+    formData.append("titulo", file.name.replace(/\.pdf$/i, ""));
+    formData.append("profesionalNombre", "Hernán Valencia Gil");
+    formData.append("profesionalCredenciales", "Consultor Profesional en Prevención de Riesgos Laborales");
+    formData.append("profesionalLicencia", "S2019060049528");
+    uploadMutation.mutate(formData);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleCertDownload = async (cert: CertificacionProfesional) => {
+    try {
+      const response = await fetch(`/api/certificaciones-profesionales/${cert.id}/download`, { credentials: "include" });
+      if (!response.ok) throw new Error("Error al descargar");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = cert.archivoNombre;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      toast({ title: "Error", description: "No se pudo descargar el archivo", variant: "destructive" });
+    }
+  };
 
   const documents: DocumentDownload[] = [
     {
@@ -202,6 +287,108 @@ export default function DocumentosLegalesPdf() {
             </Card>
           ))}
         </div>
+
+        <Card className="mt-8" data-testid="card-certificaciones">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Certificaciones y Avales Profesionales</CardTitle>
+            </div>
+            <CardDescription>
+              Documentos de auditoría y aval emitidos por profesionales externos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="p-4 bg-muted/50 rounded-lg mb-4">
+              <div className="flex items-start gap-3">
+                <UserCheck className="h-6 w-6 text-green-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-semibold" data-testid="text-auditor-label">Auditor Externo</p>
+                  <p className="text-sm font-medium" data-testid="text-auditor-nombre">Hernán Valencia Gil</p>
+                  <p className="text-sm text-muted-foreground" data-testid="text-auditor-titulo">Consultor Profesional en Prevención de Riesgos Laborales</p>
+                  <p className="text-sm text-muted-foreground" data-testid="text-auditor-licencia">Licencia Profesional N° S2019060049528 - DSSA</p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <Badge variant="secondary" data-testid="badge-iso-9001">ISO 9001</Badge>
+                    <Badge variant="secondary" data-testid="badge-iso-14001">ISO 14001</Badge>
+                    <Badge variant="secondary" data-testid="badge-iso-45001">ISO 45001</Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {loadingCerts ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : certificaciones.length > 0 ? (
+              <div className="space-y-3 mb-4">
+                {certificaciones.map((cert) => (
+                  <div key={cert.id} className="flex items-center justify-between gap-3 p-3 bg-muted/30 rounded-lg" data-testid={`card-cert-${cert.id}`}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <BadgeCheck className="h-5 w-5 text-green-600 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate" data-testid={`text-cert-titulo-${cert.id}`}>{cert.titulo}</p>
+                        <p className="text-xs text-muted-foreground truncate">{cert.archivoNombre}</p>
+                        {cert.fechaEmision && (
+                          <p className="text-xs text-muted-foreground">Emitido: {new Date(cert.fechaEmision).toLocaleDateString("es-CO")}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleCertDownload(cert)}
+                        data-testid={`button-download-cert-${cert.id}`}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      {isAdmin && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => deleteMutation.mutate(cert.id)}
+                          disabled={deleteMutation.isPending}
+                          data-testid={`button-delete-cert-${cert.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground mb-4" data-testid="text-no-certs">No hay certificaciones subidas aún.</p>
+            )}
+
+            {isAdmin && (
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  data-testid="input-cert-file"
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadMutation.isPending}
+                  data-testid="button-upload-cert"
+                >
+                  {uploadMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  Subir Certificación PDF
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <Card className="mt-8 bg-muted/30">
           <CardContent className="p-6">

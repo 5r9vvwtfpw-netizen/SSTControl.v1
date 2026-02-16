@@ -2081,6 +2081,10 @@ export interface IStorage {
   createHelpVideo(data: InsertHelpVideo): Promise<HelpVideo>;
   updateHelpVideo(id: number, data: Partial<InsertHelpVideo>): Promise<HelpVideo | undefined>;
   deleteHelpVideo(id: number): Promise<boolean>;
+
+  getCertificacionesProfesionales(): Promise<schema.CertificacionProfesional[]>;
+  createCertificacionProfesional(data: schema.InsertCertificacionProfesional): Promise<schema.CertificacionProfesional>;
+  deleteCertificacionProfesional(id: number): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -17054,6 +17058,24 @@ export class DbStorage implements IStorage {
   async deleteHelpVideo(id: number): Promise<boolean> {
     const result = await db.delete(schema.helpVideos).where(eq(schema.helpVideos.id, id)).returning();
     return result.length > 0;
+  }
+
+  async getCertificacionesProfesionales(): Promise<schema.CertificacionProfesional[]> {
+    return await db.select()
+      .from(schema.certificacionesProfesionales)
+      .orderBy(desc(schema.certificacionesProfesionales.createdAt));
+  }
+
+  async createCertificacionProfesional(data: schema.InsertCertificacionProfesional): Promise<schema.CertificacionProfesional> {
+    const [created] = await db.insert(schema.certificacionesProfesionales)
+      .values(data)
+      .returning();
+    return created;
+  }
+
+  async deleteCertificacionProfesional(id: number): Promise<void> {
+    await db.delete(schema.certificacionesProfesionales)
+      .where(eq(schema.certificacionesProfesionales.id, id));
   }
 }
 

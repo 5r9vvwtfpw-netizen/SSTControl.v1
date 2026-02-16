@@ -10525,3 +10525,21 @@ export type ChatbotQuestion = typeof chatbotQuestions.$inferSelect;
 export const insertHelpVideoSchema = createInsertSchema(helpVideos).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertHelpVideo = z.infer<typeof insertHelpVideoSchema>;
 export type HelpVideo = typeof helpVideos.$inferSelect;
+
+export const certificacionesProfesionales = pgTable("certificaciones_profesionales", {
+  id: serial("id").primaryKey(),
+  titulo: text("titulo").notNull(),
+  descripcion: text("descripcion"),
+  profesionalNombre: text("profesional_nombre").notNull(),
+  profesionalCredenciales: text("profesional_credenciales").notNull(),
+  profesionalLicencia: text("profesional_licencia"),
+  archivoUrl: text("archivo_url").notNull(),
+  archivoNombre: text("archivo_nombre").notNull(),
+  fechaEmision: date("fecha_emision"),
+  uploadedBy: varchar("uploaded_by").references(() => users.id),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const insertCertificacionProfesionalSchema = createInsertSchema(certificacionesProfesionales).omit({ id: true, createdAt: true });
+export type InsertCertificacionProfesional = z.infer<typeof insertCertificacionProfesionalSchema>;
+export type CertificacionProfesional = typeof certificacionesProfesionales.$inferSelect;
