@@ -362,31 +362,6 @@ export default function DocumentosLegalesPdf() {
               <p className="text-sm text-muted-foreground mb-4" data-testid="text-no-certs">No hay certificaciones subidas aún.</p>
             )}
 
-            {isAdmin && (
-              <div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  data-testid="input-cert-file"
-                />
-                <Button
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadMutation.isPending}
-                  data-testid="button-upload-cert"
-                >
-                  {uploadMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Upload className="h-4 w-4 mr-2" />
-                  )}
-                  Subir Certificación PDF
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
 
