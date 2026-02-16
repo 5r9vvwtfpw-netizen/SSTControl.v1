@@ -16,6 +16,7 @@ import { Switch, Route, Redirect, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PHVANavigation } from "@/components/PHVANavigation";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
@@ -125,6 +126,9 @@ import PricingPluginCalculator from "@/pages/PricingPluginCalculator";
 import PricingPluginAdmin from "@/pages/PricingPluginAdmin";
 import Welcome from "@/pages/Welcome";
 import PoliticaPrivacidadProveedor from "@/pages/PoliticaPrivacidadProveedor";
+import AvisoPrivacidad from "@/pages/AvisoPrivacidad";
+import PoliticaCookies from "@/pages/PoliticaCookies";
+import ContratoSaaS from "@/pages/ContratoSaaS";
 import DocumentosLegalesPdf from "@/pages/DocumentosLegalesPdf";
 import RegistroAccesosProveedor from "@/pages/RegistroAccesosProveedor";
 import CrearEmpresa from "@/pages/CrearEmpresa";
@@ -326,6 +330,9 @@ function Router() {
       <Route path="/politica-privacidad" component={PoliticaPrivacidad} />
       <Route path="/politica-privacidad-proveedor" component={PoliticaPrivacidadProveedor} />
       <Route path="/acuerdo-procesamiento-datos" component={AcuerdoProcesamientoDatos} />
+      <Route path="/aviso-privacidad" component={AvisoPrivacidad} />
+      <Route path="/politica-cookies" component={PoliticaCookies} />
+      <Route path="/contrato-saas" component={ContratoSaaS} />
       <ProtectedRoute path="/documentos-legales" component={DocumentosLegalesPdf} />
       <Route path="/demo/verify" component={DemoVerify} />
       <Route path="/auth" component={AuthPage} />
@@ -503,6 +510,7 @@ export default function App() {
         </AuthProvider>
         <ChatBot />
         <Toaster />
+        <CookieConsentBanner />
       </TooltipProvider>
     </QueryClientProvider>
   );

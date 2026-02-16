@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Shield, FileText, Scale, Lock } from "lucide-react";
+import { Shield, FileText, Scale, Lock, Cookie, FileSignature } from "lucide-react";
 
 export function Footer() {
   return (
@@ -27,6 +27,22 @@ export function Footer() {
             >
               <Lock className="h-3 w-3" />
               <span>Política de Privacidad</span>
+            </Link>
+            <Link 
+              href="/politica-cookies" 
+              className="flex items-center gap-1 hover:text-foreground transition-colors"
+              data-testid="link-cookies-footer"
+            >
+              <Cookie className="h-3 w-3" />
+              <span>Cookies</span>
+            </Link>
+            <Link 
+              href="/contrato-saas" 
+              className="flex items-center gap-1 hover:text-foreground transition-colors"
+              data-testid="link-contrato-footer"
+            >
+              <FileSignature className="h-3 w-3" />
+              <span>Contrato SaaS</span>
             </Link>
             <Link 
               href="/terminos-servicio#propiedad-intelectual" 

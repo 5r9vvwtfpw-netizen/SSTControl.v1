@@ -418,6 +418,24 @@ export default function DocumentosLegalesPdf() {
                   Solicitudes ARCO
                 </Button>
               </Link>
+              <Link href="/aviso-privacidad">
+                <Button variant="outline" className="w-full justify-start" data-testid="link-aviso-privacidad">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Aviso de Privacidad
+                </Button>
+              </Link>
+              <Link href="/politica-cookies">
+                <Button variant="outline" className="w-full justify-start" data-testid="link-politica-cookies">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Politica de Cookies
+                </Button>
+              </Link>
+              <Link href="/contrato-saas">
+                <Button variant="outline" className="w-full justify-start" data-testid="link-contrato-saas">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Contrato SaaS
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
