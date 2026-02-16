@@ -12,7 +12,7 @@ export default function PoliticaCookies() {
         <Card>
           <CardHeader className="space-y-2">
             <div className="flex items-center gap-2">
-              <Cookie className="h-6 w-6 text-primary" />
+              <Cookie className="h-6 w-6 text-foreground" />
               <CardTitle className="text-3xl" data-testid="text-page-title">Política de Cookies</CardTitle>
             </div>
             <CardDescription>
@@ -153,7 +153,7 @@ export default function PoliticaCookies() {
                   <div className="space-y-2 text-muted-foreground">
                     <p>Si tiene preguntas sobre nuestra Política de Cookies o sobre el uso de tecnologías de seguimiento en nuestra plataforma, puede contactarnos a través de:</p>
                     <div className="bg-muted p-3 rounded">
-                      <p><strong>Soporte Técnico:</strong> <a href="mailto:soporte@sst-colombia.com" className="text-primary hover:underline">soporte@sst-colombia.com</a></p>
+                      <p><strong>Soporte Técnico:</strong> <a href="mailto:soporte@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-soporte-2">soporte@sst-colombia.com</a></p>
                       <p><strong>Domicilio:</strong> Medellín, Colombia</p>
                     </div>
                   </div>

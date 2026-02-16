@@ -40,7 +40,7 @@ export function CookieConsentBanner() {
       <div className="container mx-auto max-w-4xl">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="flex items-start gap-3 flex-1">
-            <Cookie className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <Cookie className="h-5 w-5 text-foreground shrink-0 mt-0.5" />
             <div className="text-sm">
               <p className="font-medium mb-1" data-testid="text-cookie-title">
                 Uso de Cookies

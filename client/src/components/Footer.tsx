@@ -85,6 +85,22 @@ export function FooterMinimal() {
           >
             Privacidad
           </Link>
+          <span>·</span>
+          <Link 
+            href="/politica-cookies" 
+            className="hover:text-foreground transition-colors underline"
+            data-testid="link-cookies-minimal"
+          >
+            Cookies
+          </Link>
+          <span>·</span>
+          <Link 
+            href="/contrato-saas" 
+            className="hover:text-foreground transition-colors underline"
+            data-testid="link-contrato-minimal"
+          >
+            Contrato SaaS
+          </Link>
         </div>
       </div>
     </footer>

@@ -12,7 +12,7 @@ export default function ContratoSaaS() {
         <Card>
           <CardHeader className="space-y-2">
             <div className="flex items-center gap-2">
-              <FileSignature className="h-6 w-6 text-primary" />
+              <FileSignature className="h-6 w-6 text-foreground" />
               <CardTitle className="text-3xl" data-testid="text-page-title">Contrato de Prestación de Servicios SaaS</CardTitle>
             </div>
             <CardDescription>
@@ -300,8 +300,8 @@ export default function ContratoSaaS() {
                   <div className="space-y-2 text-muted-foreground">
                     <p>Para cualquier consulta relacionada con este contrato, puede contactarnos a través de:</p>
                     <div className="bg-muted p-3 rounded">
-                      <p><strong>Asuntos Legales:</strong> <a href="mailto:legal@sst-colombia.com" className="text-primary hover:underline">legal@sst-colombia.com</a></p>
-                      <p><strong>Soporte Técnico:</strong> <a href="mailto:soporte@sst-colombia.com" className="text-primary hover:underline">soporte@sst-colombia.com</a></p>
+                      <p><strong>Asuntos Legales:</strong> <a href="mailto:legal@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-legal">legal@sst-colombia.com</a></p>
+                      <p><strong>Soporte Técnico:</strong> <a href="mailto:soporte@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-soporte-3">soporte@sst-colombia.com</a></p>
                       <p><strong>Domicilio:</strong> Medellín, Colombia</p>
                     </div>
                   </div>

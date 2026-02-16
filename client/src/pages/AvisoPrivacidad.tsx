@@ -13,7 +13,7 @@ export default function AvisoPrivacidad() {
         <Card>
           <CardHeader className="space-y-2">
             <div className="flex items-center gap-2">
-              <Eye className="h-6 w-6 text-primary" />
+              <Eye className="h-6 w-6 text-foreground" />
               <CardTitle className="text-3xl" data-testid="text-page-title">Aviso de Privacidad</CardTitle>
             </div>
             <CardDescription>
@@ -34,7 +34,7 @@ export default function AvisoPrivacidad() {
                       <p><strong>Razón Social:</strong> SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL SAS</p>
                       <p><strong>NIT:</strong> (Pendiente de asignación)</p>
                       <p><strong>Domicilio:</strong> Medellín, Colombia</p>
-                      <p><strong>Correo electrónico:</strong> <a href="mailto:privacidad@sst-colombia.com" className="text-primary hover:underline">privacidad@sst-colombia.com</a></p>
+                      <p><strong>Correo electrónico:</strong> <a href="mailto:privacidad@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-privacidad-1">privacidad@sst-colombia.com</a></p>
                     </div>
                   </div>
                 </section>
@@ -147,8 +147,8 @@ export default function AvisoPrivacidad() {
                       <p className="font-semibold">¿Cómo ejercer sus derechos ARCO?</p>
                       <p className="mt-2">Puede presentar su solicitud a través de:</p>
                       <ul className="list-disc pl-6 space-y-1 mt-2">
-                        <li>Correo electrónico: <a href="mailto:privacidad@sst-colombia.com" className="text-primary hover:underline">privacidad@sst-colombia.com</a></li>
-                        <li>Formulario en línea: <Link href="/solicitudes-arco" className="text-primary hover:underline" data-testid="link-solicitudes-arco">Solicitudes ARCO</Link></li>
+                        <li>Correo electrónico: <a href="mailto:privacidad@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-privacidad-2">privacidad@sst-colombia.com</a></li>
+                        <li>Formulario en línea: <Link href="/solicitudes-arco" className="underline hover:text-foreground transition-colors" data-testid="link-solicitudes-arco">Solicitudes ARCO</Link></li>
                       </ul>
                       <p className="mt-2 text-xs italic">Plazo de respuesta: 10 días hábiles según Decreto 1377 de 2013, Artículo 15.</p>
                     </div>
@@ -207,8 +207,8 @@ export default function AvisoPrivacidad() {
                   <div className="space-y-2 text-muted-foreground">
                     <p>Para cualquier consulta, solicitud o reclamo relacionado con el tratamiento de sus datos personales, puede contactarnos a través de:</p>
                     <div className="bg-muted p-3 rounded">
-                      <p><strong>Protección de Datos:</strong> <a href="mailto:privacidad@sst-colombia.com" className="text-primary hover:underline">privacidad@sst-colombia.com</a></p>
-                      <p><strong>Soporte Técnico:</strong> <a href="mailto:soporte@sst-colombia.com" className="text-primary hover:underline">soporte@sst-colombia.com</a></p>
+                      <p><strong>Protección de Datos:</strong> <a href="mailto:privacidad@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-privacidad-3">privacidad@sst-colombia.com</a></p>
+                      <p><strong>Soporte Técnico:</strong> <a href="mailto:soporte@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-soporte-1">soporte@sst-colombia.com</a></p>
                       <p><strong>Domicilio:</strong> Medellín, Colombia</p>
                     </div>
                   </div>
