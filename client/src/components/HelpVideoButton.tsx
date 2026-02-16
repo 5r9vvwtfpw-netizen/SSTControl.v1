@@ -23,6 +23,14 @@ const EXCLUDED_ROUTES = [
   "/planes",
   "/welcome",
   "/soporte",
+  "/documentos-legales",
+  "/dashboard-hacer",
+  "/dashboard-verificar",
+  "/dashboard-actuar",
+  "/pesv",
+  "/aviso-privacidad",
+  "/politica-cookies",
+  "/contrato-saas",
 ];
 
 function toYouTubeEmbedUrl(url: string): string {
