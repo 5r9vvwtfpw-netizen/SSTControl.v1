@@ -76,6 +76,9 @@ const CHAPTER_1_MODULES = [
   "/politica-privacidad",
   "/politica-privacidad-proveedor",
   "/acuerdo-procesamiento-datos",
+  "/aviso-privacidad",
+  "/politica-cookies",
+  "/contrato-saas",
   "/documentos-legales",
   "/directorio-profesionales",  // Directorio de profesionales SST - disponible para todos
   
