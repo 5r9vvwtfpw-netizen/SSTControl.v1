@@ -4,22 +4,35 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 import { Link, useLocation, useParams } from "wouter";
 
 const PESV_EVAL_STORAGE_KEY = "active_pesv_evaluacion_id";
+const PESV_FASE_STORAGE_KEY = "active_pesv_fase";
 
-export function setPesvEvaluacionContext(evaluacionId: string) {
+export function setPesvEvaluacionContext(evaluacionId: string, fase?: string) {
   try {
     sessionStorage.setItem(PESV_EVAL_STORAGE_KEY, evaluacionId);
+    if (fase) {
+      sessionStorage.setItem(PESV_FASE_STORAGE_KEY, fase);
+    }
   } catch {}
 }
 
 export function clearPesvEvaluacionContext() {
   try {
     sessionStorage.removeItem(PESV_EVAL_STORAGE_KEY);
+    sessionStorage.removeItem(PESV_FASE_STORAGE_KEY);
   } catch {}
 }
 
 function getPesvEvaluacionContext(): string | null {
   try {
     return sessionStorage.getItem(PESV_EVAL_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function getPesvFaseContext(): string | null {
+  try {
+    return sessionStorage.getItem(PESV_FASE_STORAGE_KEY);
   } catch {
     return null;
   }
@@ -39,12 +52,14 @@ export function BackToPesvEvaluationButton({ className = "" }: BackToPesvEvaluat
   }, []);
 
   const evaluacionId = params.evaluacionId || extractEvaluacionIdFromPath(location) || storedEvalId;
+  const storedFase = getPesvFaseContext();
   
   if (evaluacionId) {
+    const faseParam = storedFase ? `?fase=${storedFase}` : '';
     return (
       <Button
         className={`bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md ${className}`}
-        onClick={() => setLocation(`/pesv/evaluacion/${evaluacionId}`)}
+        onClick={() => setLocation(`/pesv/evaluacion/${evaluacionId}${faseParam}`)}
         data-testid="button-back-to-pesv-evaluation"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />

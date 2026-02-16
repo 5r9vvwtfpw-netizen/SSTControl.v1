@@ -50,7 +50,17 @@ export default function DetalleEvaluacionPesv() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { companyChapter } = useCompanyContext();
-  const [selectedFase, setSelectedFase] = useState<FasePHVA>("planear");
+  const initialFase = (() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const fase = params.get('fase');
+      if (fase && ['planear', 'hacer', 'verificar', 'actuar'].includes(fase)) {
+        return fase as FasePHVA;
+      }
+    }
+    return 'planear' as FasePHVA;
+  })();
+  const [selectedFase, setSelectedFase] = useState<FasePHVA>(initialFase);
   const [selectedPaso, setSelectedPaso] = useState<PasoPesvData | null>(null);
   const [respuestaDialogOpen, setRespuestaDialogOpen] = useState(false);
   const [autoFilledFields, setAutoFilledFields] = useState<Record<string, boolean>>({});
@@ -58,9 +68,9 @@ export default function DetalleEvaluacionPesv() {
 
   useEffect(() => {
     if (id) {
-      setPesvEvaluacionContext(id);
+      setPesvEvaluacionContext(id, selectedFase);
     }
-  }, [id]);
+  }, [id, selectedFase]);
 
   const { data: evaluacion, isLoading: loadingEvaluacion } = useQuery<EvaluacionPesv>({
     queryKey: ["/api/evaluaciones-pesv", id],
@@ -555,7 +565,13 @@ export default function DetalleEvaluacionPesv() {
         </CardContent>
       </Card>
 
-      <Tabs value={selectedFase} onValueChange={(v) => setSelectedFase(v as FasePHVA)}>
+      <Tabs value={selectedFase} onValueChange={(v) => {
+        const newFase = v as FasePHVA;
+        setSelectedFase(newFase);
+        const url = new URL(window.location.href);
+        url.searchParams.set('fase', newFase);
+        window.history.replaceState({}, '', url.toString());
+      }}>
         <TabsList className="grid w-full grid-cols-4" data-testid="tabs-fases">
           {([
             { key: 'planear' as FasePHVA, nombre: 'Planear', bgColor: '#2196F3', icon: 'P' },
