@@ -2981,34 +2981,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.patch("/api/workers/:id", requirePermission("workers:edit"), async (req, res) => {
-    const userRole = req.user!.role;
-    const isAdmin = hasGlobalAccess(userRole);
-    
-    let companyId: string;
-    if (isAdmin) {
-      // Admin can edit workers from any company
-      // Get the worker first to know which company it belongs to
-      const existingWorker = await storage.getWorkerById(req.params.id);
-      if (!existingWorker) {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      
+      let companyId: string;
+      if (isAdmin) {
+        const existingWorker = await storage.getWorkerById(req.params.id);
+        if (!existingWorker) {
+          return res.status(404).send("Trabajador no encontrado");
+        }
+        companyId = existingWorker.companyId;
+      } else {
+        companyId = req.user!.companyId || "";
+        if (!companyId) {
+          return res.status(403).send("Usuario no asociado a una empresa");
+        }
+      }
+      
+      const userId = req.user!.id;
+      const auditContext = getAuditContext(req);
+      
+      const worker = await storage.updateWorker(req.params.id, req.body, companyId, userId, auditContext);
+      if (!worker) {
         return res.status(404).send("Trabajador no encontrado");
       }
-      companyId = existingWorker.companyId;
-    } else {
-      companyId = req.user!.companyId || "";
-      if (!companyId) {
-        return res.status(403).send("Usuario no asociado a una empresa");
-      }
+      res.json(worker);
+    } catch (error: any) {
+      console.error("Error updating worker:", error);
+      res.status(500).json({ error: error.message || "Error al actualizar el trabajador" });
     }
-    
-    // Audit logging context (Bloque 2: Legal Compliance)
-    const userId = req.user!.id;
-    const auditContext = getAuditContext(req);
-    
-    const worker = await storage.updateWorker(req.params.id, req.body, companyId, userId, auditContext);
-    if (!worker) {
-      return res.status(404).send("Trabajador no encontrado");
-    }
-    res.json(worker);
   });
 
 
