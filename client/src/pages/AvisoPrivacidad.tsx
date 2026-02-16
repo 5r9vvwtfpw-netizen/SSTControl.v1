@@ -31,7 +31,7 @@ export default function AvisoPrivacidad() {
                   <div className="space-y-2 text-muted-foreground">
                     <p>En cumplimiento de lo dispuesto en la Ley 1581 de 2012 y el Decreto 1377 de 2013, le informamos que el responsable del tratamiento de sus datos personales es:</p>
                     <div className="bg-muted p-3 rounded">
-                      <p><strong>Razón Social:</strong> SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL SAS</p>
+                      <p><strong>Razón Social:</strong> SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
                       <p><strong>NIT:</strong> (Pendiente de asignación)</p>
                       <p><strong>Domicilio:</strong> Medellín, Colombia</p>
                       <p><strong>Correo electrónico:</strong> <a href="mailto:privacidad@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-privacidad-1">privacidad@sst-colombia.com</a></p>
@@ -216,7 +216,7 @@ export default function AvisoPrivacidad() {
 
                 <div className="text-center text-xs text-muted-foreground mt-8 pt-4 border-t">
                   <p>Documento versión 1.0 | Fecha de vigencia: {lastUpdated}</p>
-                  <p className="mt-1">© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL SAS. Todos los derechos reservados.</p>
+                  <p className="mt-1">© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. Todos los derechos reservados.</p>
                 </div>
               </div>
             </ScrollArea>

@@ -106,7 +106,7 @@ export function ContratoServiciosSaas({
               </h4>
               <div className="space-y-3 text-muted-foreground">
                 <p>
-                  <strong>EL PROVEEDOR:</strong> SST Colombia S.A.S., sociedad comercial constituida bajo las leyes 
+                  <strong>EL PROVEEDOR:</strong> SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., sociedad comercial constituida bajo las leyes 
                   de la República de Colombia, identificada con NIT [NIT], con domicilio en Bogotá D.C., 
                   representada legalmente por [Representante Legal], en adelante "EL PROVEEDOR".
                 </p>
@@ -475,7 +475,7 @@ export function ContratoServiciosSaas({
                 </div>
               </div>
               <p className="text-xs text-center text-muted-foreground mt-3">
-                © {new Date().getFullYear()} SST Colombia S.A.S. - Todos los derechos reservados | DNDA 13-197-177
+                © {new Date().getFullYear()} SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. - Todos los derechos reservados | DNDA 13-197-177
               </p>
             </section>
 

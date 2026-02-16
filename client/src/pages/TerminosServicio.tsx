@@ -99,7 +99,7 @@ export default function TerminosServicio() {
                   <h2 className="text-xl font-semibold mb-3">5. Propiedad Intelectual y Protección de Activos Digitales</h2>
                   <div className="space-y-3 text-muted-foreground">
                     <div className="bg-primary/5 p-3 rounded-lg border border-primary/20">
-                      <p><strong>5.1 PROPIEDAD INTELECTUAL:</strong> El Cliente reconoce y acepta que el Software, incluyendo pero no limitado a su código fuente, arquitectura de datos, interfaces de usuario, diseños, y muy especialmente <strong>la metodología de filtrado lógico de estándares y la curaduría legal de contenidos basada en la Resolución 0312 de 2019</strong>, son propiedad exclusiva de SST Colombia S.A.S.</p>
+                      <p><strong>5.1 PROPIEDAD INTELECTUAL:</strong> El Cliente reconoce y acepta que el Software, incluyendo pero no limitado a su código fuente, arquitectura de datos, interfaces de usuario, diseños, y muy especialmente <strong>la metodología de filtrado lógico de estándares y la curaduría legal de contenidos basada en la Resolución 0312 de 2019</strong>, son propiedad exclusiva de SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
                     </div>
                     <p><strong>5.2 Registro Legal:</strong> Dichos activos se encuentran protegidos por las leyes de derecho de autor y tratados internacionales, contando con el <strong>registro oficial ante la Dirección Nacional de Derecho de Autor (DNDA) bajo el número 13-197-177</strong>.</p>
                     <p><strong>5.3 Licencia de Uso:</strong> Se otorga al Cliente una licencia no exclusiva, no transferible y revocable para usar la Plataforma durante la vigencia del contrato.</p>
@@ -193,7 +193,7 @@ export default function TerminosServicio() {
 
                     <div className="bg-destructive/10 p-3 rounded-lg border border-destructive/30">
                       <p className="font-semibold text-destructive mb-2">9.3 LIMITACIÓN DE RESPONSABILIDAD:</p>
-                      <p className="mb-2">SST Colombia S.A.S. <strong>NO será responsable</strong> por:</p>
+                      <p className="mb-2">SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. <strong>NO será responsable</strong> por:</p>
                       <ul className="list-disc pl-6 space-y-1">
                         <li>Sanciones o multas impuestas por el Ministerio del Trabajo o cualquier autoridad competente debido a la falta de implementación real del sistema por parte del Cliente.</li>
                         <li>Accidentes de trabajo o enfermedades laborales ocurridas en las instalaciones del Cliente.</li>
@@ -268,7 +268,7 @@ export default function TerminosServicio() {
                 <section>
                   <h2 className="text-xl font-semibold mb-3">14. Información de Contacto</h2>
                   <div className="space-y-2 text-muted-foreground">
-                    <p><strong>Razón Social:</strong> SST Colombia S.A.S.</p>
+                    <p><strong>Razón Social:</strong> SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
                     <p><strong>NIT:</strong> 900.XXX.XXX-X (Pendiente de asignación)</p>
                     <p><strong>Domicilio:</strong> Medellín, Colombia</p>
                     <p><strong>Correo Electrónico:</strong> legal@sst-colombia.com</p>
@@ -293,7 +293,7 @@ export default function TerminosServicio() {
 
                 <div className="text-center text-xs text-muted-foreground mt-8 pt-4 border-t">
                   <p>Documento versión 1.0 | Fecha de vigencia: {lastUpdated}</p>
-                  <p className="mt-1">© 2026 SST Colombia S.A.S. Todos los derechos reservados.</p>
+                  <p className="mt-1">© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. Todos los derechos reservados.</p>
                 </div>
               </div>
             </ScrollArea>

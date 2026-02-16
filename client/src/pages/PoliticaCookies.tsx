@@ -161,7 +161,7 @@ export default function PoliticaCookies() {
 
                 <div className="text-center text-xs text-muted-foreground mt-8 pt-4 border-t">
                   <p>Documento versión 1.0 | Fecha de vigencia: {lastUpdated}</p>
-                  <p className="mt-1">© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL SAS. Todos los derechos reservados.</p>
+                  <p className="mt-1">© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. Todos los derechos reservados.</p>
                 </div>
               </div>
             </ScrollArea>

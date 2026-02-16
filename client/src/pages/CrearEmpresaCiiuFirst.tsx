@@ -915,7 +915,7 @@ export default function CrearEmpresaCiiuFirst() {
                     <h2 className="text-lg font-semibold mb-3">5. Propiedad Intelectual</h2>
                     <div className="space-y-3 text-muted-foreground">
                       <div className="bg-primary/5 p-3 rounded-lg border border-primary/20">
-                        <p><strong>5.1 PROPIEDAD INTELECTUAL:</strong> El Software, incluyendo su código fuente, arquitectura de datos, interfaces de usuario, diseños, y la metodología de filtrado lógico de estándares, son propiedad exclusiva de SST Colombia S.A.S.</p>
+                        <p><strong>5.1 PROPIEDAD INTELECTUAL:</strong> El Software, incluyendo su código fuente, arquitectura de datos, interfaces de usuario, diseños, y la metodología de filtrado lógico de estándares, son propiedad exclusiva de SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
                       </div>
                       <p><strong>5.2 Registro Legal:</strong> Protegidos por las leyes de derecho de autor con registro oficial ante la DNDA bajo el número 13-197-177.</p>
                       <p><strong>5.3 Licencia de Uso:</strong> Se otorga al Cliente una licencia no exclusiva, no transferible y revocable.</p>
@@ -965,7 +965,7 @@ export default function CrearEmpresaCiiuFirst() {
                 <>
                   <section>
                     <div className="bg-primary/5 p-3 rounded-lg border border-primary/20">
-                      <p className="text-muted-foreground"><strong>PROPIEDAD INTELECTUAL:</strong> El Cliente reconoce y acepta que el Software, incluyendo pero no limitado a su código fuente, arquitectura de datos, interfaces de usuario, diseños, y muy especialmente <strong>la metodología de filtrado lógico de estándares y la curaduría legal de contenidos basada en la Resolución 0312 de 2019</strong>, son propiedad exclusiva de SST Colombia S.A.S.</p>
+                      <p className="text-muted-foreground"><strong>PROPIEDAD INTELECTUAL:</strong> El Cliente reconoce y acepta que el Software, incluyendo pero no limitado a su código fuente, arquitectura de datos, interfaces de usuario, diseños, y muy especialmente <strong>la metodología de filtrado lógico de estándares y la curaduría legal de contenidos basada en la Resolución 0312 de 2019</strong>, son propiedad exclusiva de SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
                     </div>
                   </section>
                   <Separator />
@@ -1016,7 +1016,7 @@ export default function CrearEmpresaCiiuFirst() {
                   <section>
                     <h2 className="text-lg font-semibold mb-3">Política de Privacidad y Protección de Datos</h2>
                     <p className="text-muted-foreground leading-relaxed">
-                      SST Colombia S.A.S. se compromete a proteger la privacidad de los usuarios de la plataforma, en cumplimiento de la Ley 1581 de 2012 (Ley de Protección de Datos Personales) y su Decreto Reglamentario 1377 de 2013.
+                      SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. se compromete a proteger la privacidad de los usuarios de la plataforma, en cumplimiento de la Ley 1581 de 2012 (Ley de Protección de Datos Personales) y su Decreto Reglamentario 1377 de 2013.
                     </p>
                   </section>
                   <Separator />

@@ -383,7 +383,7 @@ export class InvoicePdfService {
     doc.fontSize(6)
        .fillColor('#AAAAAA')
        .text(
-         `© ${new Date().getFullYear()} SST Colombia S.A.S. - DNDA 13-197-177 - Todos los derechos reservados`,
+         `© ${new Date().getFullYear()} SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. - DNDA 13-197-177 - Todos los derechos reservados`,
          margin,
          currentY,
          { align: 'center' }

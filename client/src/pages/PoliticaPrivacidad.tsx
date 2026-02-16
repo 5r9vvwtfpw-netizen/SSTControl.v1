@@ -69,7 +69,7 @@ export default function PoliticaPrivacidad() {
                     </div>
                     <div>
                       <p className="font-semibold">Encargado del Tratamiento (SST Colombia):</p>
-                      <p><strong>SST Colombia S.A.S.</strong> actúa como Encargado del Tratamiento, lo que significa que:</p>
+                      <p><strong>SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</strong> actúa como Encargado del Tratamiento, lo que significa que:</p>
                       <ul className="list-disc pl-6 space-y-1 mt-2">
                         <li>Procesamos datos bajo instrucciones documentadas del Responsable (su empresa)</li>
                         <li>Implementamos medidas técnicas y organizativas de seguridad</li>
@@ -512,7 +512,7 @@ export default function PoliticaPrivacidad() {
                 <div className="text-center text-xs text-muted-foreground mt-8 pt-4 border-t">
                   <p>Política de Privacidad versión 1.0 | Fecha de vigencia: {lastUpdated}</p>
                   <p className="mt-1">Cumple con Ley 1581/2012, Decreto 1377/2013 y GDPR (UE) 2016/679</p>
-                  <p className="mt-1">© 2026 SST Colombia S.A.S. Todos los derechos reservados.</p>
+                  <p className="mt-1">© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. Todos los derechos reservados.</p>
                 </div>
               </div>
             </ScrollArea>

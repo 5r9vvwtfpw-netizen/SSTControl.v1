@@ -30,7 +30,7 @@ export default function ContratoSaaS() {
                   <div className="space-y-3 text-muted-foreground">
                     <div className="bg-muted p-3 rounded">
                       <p className="font-semibold">Proveedor:</p>
-                      <p><strong>Razón Social:</strong> SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL SAS</p>
+                      <p><strong>Razón Social:</strong> SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
                       <p><strong>Domicilio:</strong> Medellín, Colombia</p>
                       <p><strong>Actividad:</strong> Prestación de servicios de software para gestión de Seguridad y Salud en el Trabajo</p>
                     </div>
@@ -309,7 +309,7 @@ export default function ContratoSaaS() {
 
                 <div className="text-center text-xs text-muted-foreground mt-8 pt-4 border-t">
                   <p>Documento versión 1.0 | Fecha de vigencia: {lastUpdated}</p>
-                  <p className="mt-1">© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL SAS. Todos los derechos reservados.</p>
+                  <p className="mt-1">© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. Todos los derechos reservados.</p>
                 </div>
               </div>
             </ScrollArea>

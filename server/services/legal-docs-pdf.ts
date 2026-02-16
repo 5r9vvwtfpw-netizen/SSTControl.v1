@@ -4,7 +4,7 @@
  * Generates comprehensive PDF documents for legal protections implemented in SST Colombia.
  * Includes intellectual property, data protection, security measures, and compliance documentation.
  * 
- * Copyright © 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL SAS
+ * Copyright © 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.
  * Registro DNDA: 13-197-177
  * Protegido bajo Ley 23 de 1982 y Decisión Andina 351
  */
@@ -144,7 +144,7 @@ export class LegalDocsPdfService {
       bufferPages: true,
       info: {
         Title: 'Protecciones Legales SST Colombia - Tabla Completa',
-        Author: 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL SAS',
+        Author: 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.',
         Subject: 'Documentación Legal y de Cumplimiento',
         Keywords: 'DNDA 13-197-177, Ley 1581, GDPR, SST, Protección de Datos',
         CreationDate: new Date()
@@ -286,7 +286,7 @@ export class LegalDocsPdfService {
     
     doc.text(`Generado: ${new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}`, margin, 540, { width: contentWidth, align: 'center' });
     
-    doc.text('© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL SAS - Todos los derechos reservados', margin, doc.page.height - 60, { width: contentWidth, align: 'center' });
+    doc.text('© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. - Todos los derechos reservados', margin, doc.page.height - 60, { width: contentWidth, align: 'center' });
 
     // ============================================================================
     // CONTENT PAGES
@@ -504,7 +504,7 @@ export class LegalDocsPdfService {
     addSectionTitle('15. INFORMACIÓN DE CONTACTO');
     
     addTableRow('Campo', 'Valor', '', true);
-    addTableRow('Razón Social', 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL SAS', '');
+    addTableRow('Razón Social', 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.', '');
     addTableRow('Domicilio', 'Medellín, Colombia', '');
     addTableRow('Correo Legal', 'legal@sst-colombia.com', '');
     addTableRow('Soporte Técnico', 'soporte@sst-colombia.com', '');
@@ -561,7 +561,7 @@ export class LegalDocsPdfService {
       size: 'LETTER',
       info: {
         Title: 'Protección de Datos - Resumen Ejecutivo',
-        Author: 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL SAS',
+        Author: 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.',
         Subject: 'Cumplimiento Ley 1581/2012 y GDPR',
         CreationDate: new Date()
       }
@@ -725,7 +725,7 @@ export class LegalDocsPdfService {
       size: 'LETTER',
       info: {
         Title: 'Medidas de Seguridad y Auditoría - SST Colombia',
-        Author: 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL SAS',
+        Author: 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.',
         Subject: 'Documentación de Seguridad Técnica',
         CreationDate: new Date()
       }

@@ -30,7 +30,7 @@ export default function AcuerdoProcesamientoDatos() {
                   <p className="text-muted-foreground">
                     Este Acuerdo de Procesamiento de Datos (DPA) establece las obligaciones y responsabilidades entre 
                     el <strong>Responsable del Tratamiento</strong> (su empresa) y el <strong>Encargado del Tratamiento</strong> 
-                    (SST Colombia S.A.S.) en relación con el procesamiento de datos personales, cumpliendo con el Artículo 
+                    (SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.) en relación con el procesamiento de datos personales, cumpliendo con el Artículo 
                     28 del GDPR y la Ley 1581 de 2012 de Colombia.
                   </p>
                 </section>
@@ -41,7 +41,7 @@ export default function AcuerdoProcesamientoDatos() {
                   <h2 className="text-xl font-semibold mb-3">1. Definiciones</h2>
                   <div className="space-y-2 text-muted-foreground">
                     <p><strong>1.1 Responsable del Tratamiento (Data Controller):</strong> La empresa cliente que utiliza la plataforma SST Colombia y que determina los fines y medios del tratamiento de datos personales.</p>
-                    <p><strong>1.2 Encargado del Tratamiento (Data Processor):</strong> SST Colombia S.A.S., que trata datos personales en nombre del Responsable según sus instrucciones documentadas.</p>
+                    <p><strong>1.2 Encargado del Tratamiento (Data Processor):</strong> SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., que trata datos personales en nombre del Responsable según sus instrucciones documentadas.</p>
                     <p><strong>1.3 Datos Personales:</strong> Toda información relacionada con personas físicas identificadas o identificables (trabajadores, empleados).</p>
                     <p><strong>1.4 Tratamiento:</strong> Cualquier operación sobre datos personales: recopilación, registro, organización, estructuración, conservación, adaptación, modificación, consulta, uso, comunicación, supresión o destrucción.</p>
                     <p><strong>1.5 Subencargado (Sub-processor):</strong> Tercero contratado por el Encargado para realizar actividades específicas de procesamiento.</p>
@@ -391,7 +391,7 @@ export default function AcuerdoProcesamientoDatos() {
                   <div className="space-y-2 text-muted-foreground">
                     <div className="bg-muted p-3 rounded">
                       <p><strong>Encargado del Tratamiento:</strong></p>
-                      <p className="mt-1">SST Colombia S.A.S.</p>
+                      <p className="mt-1">SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
                       <p>NIT: 900.XXX.XXX-X</p>
                       <p>Domicilio: Medellín, Colombia</p>
                       <p>DPO Email: <a href="mailto:dpo@sst-colombia.com" className="text-primary hover:underline">dpo@sst-colombia.com</a></p>
@@ -418,7 +418,7 @@ export default function AcuerdoProcesamientoDatos() {
                 <div className="text-center text-xs text-muted-foreground mt-8 pt-4 border-t">
                   <p>Acuerdo de Procesamiento de Datos versión 1.0 | Fecha de vigencia: {lastUpdated}</p>
                   <p className="mt-1">Cumple con GDPR Art. 28, Ley 1581/2012, Decreto 1377/2013</p>
-                  <p className="mt-1">© 2026 SST Colombia S.A.S. Todos los derechos reservados.</p>
+                  <p className="mt-1">© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. Todos los derechos reservados.</p>
                 </div>
               </div>
             </ScrollArea>

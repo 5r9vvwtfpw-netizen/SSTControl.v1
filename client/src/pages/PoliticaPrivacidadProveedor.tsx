@@ -32,10 +32,10 @@ export default function PoliticaPrivacidadProveedor() {
                 <section className="bg-primary/5 p-4 rounded-lg border border-primary/20" data-testid="section-introduction">
                   <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
                     <Building2 className="h-5 w-5 text-primary" />
-                    SST Colombia S.A.S. - Responsable del Tratamiento
+                    SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. - Responsable del Tratamiento
                   </h2>
                   <p className="text-muted-foreground">
-                    SST Colombia S.A.S. (en adelante "SST Colombia", "nosotros" o "el Proveedor") es una empresa 
+                    SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. (en adelante "SST Colombia", "nosotros" o "el Proveedor") es una empresa 
                     colombiana dedicada a proporcionar servicios de software como servicio (SaaS) para la gestión 
                     de Sistemas de Seguridad y Salud en el Trabajo (SG-SST). Como Responsable del Tratamiento de 
                     datos personales, nos comprometemos a proteger la privacidad de nuestros clientes, usuarios y 
@@ -52,7 +52,7 @@ export default function PoliticaPrivacidadProveedor() {
                   </h2>
                   <div className="space-y-3 text-muted-foreground">
                     <div className="bg-muted p-4 rounded-lg space-y-2">
-                      <p><strong>Razón Social:</strong> SST Colombia S.A.S.</p>
+                      <p><strong>Razón Social:</strong> SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
                       <p><strong>NIT:</strong> Consultar en sección "Mi Cuenta" del sistema</p>
                       <p className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
@@ -495,7 +495,7 @@ export default function PoliticaPrivacidadProveedor() {
 
                 <div className="text-center text-xs text-muted-foreground mt-8 pt-4 border-t">
                   <p data-testid="text-version-info">Documento versión {policyVersion} | Fecha de vigencia: {lastUpdated}</p>
-                  <p className="mt-1">© 2026 SST Colombia S.A.S. Todos los derechos reservados.</p>
+                  <p className="mt-1">© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. Todos los derechos reservados.</p>
                 </div>
               </div>
             </ScrollArea>
