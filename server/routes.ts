@@ -16012,9 +16012,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ccfNombre: worker.ccfNombre || null,
             }, companyId);
             afiliacion = newAfiliacion;
-            console.log(`[Muestreo SGSS] Afiliacion creada para ${designeeInfo.name}`);
+            console.log(`[Muestreo SGSS] Afiliacion creada para ${worker.name}`);
           } catch (syncError: any) {
-            console.warn(`[Muestreo SGSS] Error creando afiliacion para ${designeeInfo.name}: ${syncError.message}`);
+            console.warn(`[Muestreo SGSS] Error creando afiliacion para ${worker.name}: ${syncError.message}`);
           }
         } else if (afiliacion) {
           // Actualizar afiliacion existente con campos faltantes del trabajador
@@ -16034,10 +16034,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }, companyId);
               if (updatedAfiliacion) {
                 afiliacion = updatedAfiliacion;
-                console.log(`[Muestreo SGSS] Afiliacion actualizada para ${designeeInfo.name}`);
+                console.log(`[Muestreo SGSS] Afiliacion actualizada para ${worker.name}`);
               }
             } catch (syncError: any) {
-              console.warn(`[Muestreo SGSS] Error actualizando afiliacion para ${designeeInfo.name}: ${syncError.message}`);
+              console.warn(`[Muestreo SGSS] Error actualizando afiliacion para ${worker.name}: ${syncError.message}`);
             }
           }
         }
