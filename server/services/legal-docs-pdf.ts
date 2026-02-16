@@ -848,27 +848,33 @@ export class LegalDocsPdfService {
     doc.fontSize(14).font('Helvetica-Bold').fillColor('#166534').text('3. MEDIDAS TÉCNICAS', margin, currentY);
     currentY += 25;
 
+    doc.fillColor('#333333');
+
     const securityMeasures = [
-      ['Cifrado en tránsito', 'TLS 1.3'],
-      ['Cifrado en reposo', 'AES-256-GCM con derivación de llaves por campo'],
-      ['Autenticación', 'scrypt con salt aleatorio de 16 bytes (no reversible) + timingSafeEqual'],
-      ['Sesiones', 'Cookies httpOnly, secure, sameSite strict, expiración 12 horas'],
-      ['Control de acceso', 'RBAC con 13 roles diferenciados (Decreto 1072/2015)'],
-      ['Roles del sistema', 'Superadmin, Soporte, Superusuario, Admin, Responsable SST, Coordinador Salud, LSO, Coordinador SST, Coordinador RRHH, Jefe Personal, Supervisor, Vigía SST, Auditor Interno, Trabajador'],
-      ['Firewall/WAF', 'DDoS, SQL injection, XSS'],
-      ['Monitoreo', '24/7 con logging estructurado JSON'],
-      ['Backups', 'Automáticos cifrados, retención 20 años (Decreto 1074/2015)'],
-      ['Disaster Recovery', 'RTO ≤4h, RPO ≤24h']
+      ['Cifrado en tránsito:', 'TLS 1.3'],
+      ['Cifrado en reposo:', 'AES-256-GCM con derivación de llaves por campo'],
+      ['Autenticación:', 'scrypt con salt aleatorio de 16 bytes (no reversible) + timingSafeEqual'],
+      ['Sesiones:', 'Cookies httpOnly, secure, sameSite strict, expiración 12 horas'],
+      ['Control de acceso:', 'RBAC con 13 roles diferenciados (Decreto 1072/2015)'],
+      ['Roles del sistema:', 'Superadmin, Soporte, Superusuario, Admin, Responsable SST, Coordinador Salud, LSO, Coordinador SST, Coordinador RRHH, Jefe Personal, Supervisor, Vigía SST, Auditor Interno, Trabajador'],
+      ['Firewall/WAF:', 'DDoS, SQL injection, XSS'],
+      ['Monitoreo:', '24/7 con logging estructurado JSON'],
+      ['Backups:', 'Automáticos cifrados, retención 20 años (Decreto 1074/2015)'],
+      ['Disaster Recovery:', 'RTO ≤4h, RPO ≤24h']
     ];
 
     for (const measure of securityMeasures) {
-      if (currentY + 15 > doc.page.height - 60) {
+      const fullText = measure[0] + ' ' + measure[1];
+      doc.fontSize(9).font('Helvetica').fillColor('#333333');
+      const textHeight = doc.heightOfString(fullText, { width: contentWidth - 15 });
+      const rowHeight = Math.max(16, textHeight + 5);
+      if (currentY + rowHeight > doc.page.height - 60) {
         doc.addPage();
         currentY = margin;
       }
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#333333').text(measure[0] + ':', margin + 15, currentY, { continued: true });
-      doc.font('Helvetica').fillColor('#333333').text(' ' + measure[1]);
-      currentY += 15;
+      doc.font('Helvetica-Bold').fillColor('#333333').text(measure[0], margin + 15, currentY, { continued: true });
+      doc.font('Helvetica').fillColor('#333333').text(' ' + measure[1], { width: contentWidth - 15 });
+      currentY += rowHeight;
     }
 
     // Footer
