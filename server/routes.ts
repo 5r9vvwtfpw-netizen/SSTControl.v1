@@ -16,7 +16,7 @@
 // FRESH BUILD TRIGGER
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql, desc, ne } from "drizzle-orm";
 import { initializeWebSocket, notifyNewMessage, notifyMessageRead, setSessionParser } from "./websocket";
 import { setupAuth, getSessionMiddleware, requireAuth as authRequireAuth, requirePermission, requireAnyPermission, requireRole, hashPassword, stripPassword, requireActiveSubscription } from "./auth";
 import { demoReadOnlyMiddleware } from "../plugins/demo-engine/readonly-middleware";
@@ -3000,11 +3000,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isAdmin = hasGlobalAccess(userRole);
       
       let companyId: string;
+      const existingWorker = await storage.getWorkerById(req.params.id);
+      if (!existingWorker) {
+        return res.status(404).send("Trabajador no encontrado");
+      }
+      
       if (isAdmin) {
-        const existingWorker = await storage.getWorkerById(req.params.id);
-        if (!existingWorker) {
-          return res.status(404).send("Trabajador no encontrado");
-        }
         companyId = existingWorker.companyId;
       } else {
         companyId = req.user!.companyId || "";
@@ -3013,16 +3014,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      const updateData = { ...req.body };
+      if (updateData.email !== undefined && updateData.email === existingWorker.email) {
+        delete updateData.email;
+      }
+      
+      if (updateData.email) {
+        const workersWithEmail = await db.select({ id: schema.workers.id })
+          .from(schema.workers)
+          .where(and(
+            eq(schema.workers.email, updateData.email),
+            ne(schema.workers.id, req.params.id)
+          ))
+          .limit(1);
+        if (workersWithEmail.length > 0) {
+          return res.status(400).json({ error: "El email ya está registrado por otro trabajador" });
+        }
+      }
+      
       const userId = req.user!.id;
       const auditContext = getAuditContext(req);
       
-      const worker = await storage.updateWorker(req.params.id, req.body, companyId, userId, auditContext);
+      const worker = await storage.updateWorker(req.params.id, updateData, companyId, userId, auditContext);
       if (!worker) {
         return res.status(404).send("Trabajador no encontrado");
       }
       res.json(worker);
     } catch (error: any) {
       console.error("Error updating worker:", error);
+      if (error.message?.includes('workers_email_unique') || error.code === '23505') {
+        return res.status(400).json({ error: "El email ya está registrado por otro trabajador" });
+      }
       res.status(500).json({ error: error.message || "Error al actualizar el trabajador" });
     }
   });
