@@ -408,6 +408,9 @@ export class LegalDocsPdfService {
     addTableRow('billingRateLimiter', '100 requests/15min', 'Endpoints de facturación');
     addTableRow('subscriptionMutationLimiter', '20 requests/15min', 'Crear/cambiar suscripción');
     addTableRow('paymentOperationLimiter', '10 requests/15min', 'Operaciones de pago');
+    addTableRow('loginRateLimiter', '5 requests/15min', 'Intentos de inicio de sesión');
+    addTableRow('passwordResetRateLimiter', '3 requests/1hora', 'Recuperación de contraseña');
+    addTableRow('registrationRateLimiter', '3 requests/1hora', 'Registro de cuentas nuevas');
     addTableRow('webhookRateLimiter', '1000 requests/15min', 'Webhooks servidor-a-servidor');
     
     currentY += 15;
@@ -431,12 +434,13 @@ export class LegalDocsPdfService {
     
     addTableRow('Medida', 'Especificación', 'Documentación', true);
     addTableRow('Cifrado en tránsito', 'TLS 1.3', 'Política Privacidad, Contrato');
-    addTableRow('Cifrado en reposo', 'AES-256', 'Política Privacidad, Contrato');
-    addTableRow('Autenticación', 'scrypt (no reversible)', 'Política Privacidad');
-    addTableRow('Control de acceso', 'RBAC 6 niveles', 'Política Privacidad');
+    addTableRow('Cifrado en reposo', 'AES-256-GCM con derivación por campo', 'Política Privacidad, Contrato');
+    addTableRow('Autenticación', 'scrypt + salt 16 bytes + timingSafeEqual', 'Política Privacidad');
+    addTableRow('Sesiones', 'httpOnly, secure, sameSite strict, 12h', 'Política Privacidad');
+    addTableRow('Control de acceso', 'RBAC con 13 roles (Decreto 1072/2015)', 'Política Privacidad');
     addTableRow('Firewall/WAF', 'DDoS, SQL injection, XSS', 'Política Privacidad');
-    addTableRow('Monitoreo', '24/7', 'Contrato Cláusula 6.5');
-    addTableRow('Backups', 'Diarios, cifrados, 20 años', 'Contrato Cláusula 8');
+    addTableRow('Monitoreo', '24/7 con logging estructurado JSON', 'Contrato Cláusula 6.5');
+    addTableRow('Backups', 'Automáticos cifrados, 20 años', 'Contrato Cláusula 8');
     addTableRow('Disaster Recovery', 'RTO ≤4h, RPO ≤24h', 'Política Privacidad');
     
     currentY += 15;
@@ -759,6 +763,9 @@ export class LegalDocsPdfService {
       ['billingRateLimiter', '100 req/IP', '15 min', 'Endpoints facturación'],
       ['subscriptionMutationLimiter', '20 req/IP', '15 min', 'Cambios suscripción'],
       ['paymentOperationLimiter', '10 req/IP', '15 min', 'Operaciones pago'],
+      ['loginRateLimiter', '5 req/IP', '15 min', 'Intentos de inicio de sesión'],
+      ['passwordResetRateLimiter', '3 req/IP', '1 hora', 'Recuperación de contraseña'],
+      ['registrationRateLimiter', '3 req/IP', '1 hora', 'Registro de cuentas nuevas'],
       ['webhookRateLimiter', '1000 req', '15 min', 'Webhooks S2S']
     ];
 
@@ -840,12 +847,14 @@ export class LegalDocsPdfService {
 
     const securityMeasures = [
       ['Cifrado en tránsito', 'TLS 1.3'],
-      ['Cifrado en reposo', 'AES-256'],
-      ['Autenticación', 'scrypt (no reversible)'],
-      ['Control de acceso', 'RBAC 6 niveles'],
+      ['Cifrado en reposo', 'AES-256-GCM con derivación de llaves por campo'],
+      ['Autenticación', 'scrypt con salt aleatorio de 16 bytes (no reversible) + timingSafeEqual'],
+      ['Sesiones', 'Cookies httpOnly, secure, sameSite strict, expiración 12 horas'],
+      ['Control de acceso', 'RBAC con 13 roles diferenciados (Decreto 1072/2015)'],
+      ['Roles del sistema', 'Superadmin, Soporte, Superusuario, Admin, Responsable SST, Coordinador Salud, LSO, Coordinador SST, Coordinador RRHH, Jefe Personal, Supervisor, Vigía SST, Auditor Interno, Trabajador'],
       ['Firewall/WAF', 'DDoS, SQL injection, XSS'],
-      ['Monitoreo', '24/7'],
-      ['Backups', 'Diarios, cifrados, 20 años'],
+      ['Monitoreo', '24/7 con logging estructurado JSON'],
+      ['Backups', 'Automáticos cifrados, retención 20 años (Decreto 1074/2015)'],
       ['Disaster Recovery', 'RTO ≤4h, RPO ≤24h']
     ];
 
