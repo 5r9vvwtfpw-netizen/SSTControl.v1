@@ -288,6 +288,31 @@ export default function DocumentosLegalesPdf() {
           ))}
         </div>
 
+        <Card className="mt-8" data-testid="card-certificaciones">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Certificaciones y Avales Profesionales</CardTitle>
+            </div>
+            <CardDescription>
+              Documentos de auditoría y aval emitidos por profesionales externos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-start gap-3">
+                <UserCheck className="h-6 w-6 text-green-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-semibold" data-testid="text-auditor-label">Auditor Externo</p>
+                  <p className="text-sm font-medium" data-testid="text-auditor-nombre">Hernán Valencia Gil</p>
+                  <p className="text-sm text-muted-foreground" data-testid="text-auditor-titulo">Consultor Profesional en Prevención de Riesgos Laborales</p>
+                  <p className="text-sm text-muted-foreground" data-testid="text-auditor-licencia">Licencia Profesional N° S2019060049528 - DSSA</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="mt-8 bg-muted/30">
           <CardContent className="p-6">
             <h3 className="font-semibold mb-3">Documentos Legales Adicionales</h3>
