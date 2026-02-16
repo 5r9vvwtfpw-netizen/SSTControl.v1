@@ -322,14 +322,6 @@ export default function AdminTicketsSoporte() {
         </div>
         
         <div className="flex items-center gap-2">
-          <SupportAccessRequestDialog
-            trigger={
-              <Button variant="default" data-testid="button-request-company-access">
-                <Key className="h-4 w-4 mr-2" />
-                Solicitar Acceso
-              </Button>
-            }
-          />
           <Button onClick={() => refetch()} variant="outline" data-testid="button-refresh-tickets">
             <RefreshCw className="h-4 w-4 mr-2" />
             Actualizar
