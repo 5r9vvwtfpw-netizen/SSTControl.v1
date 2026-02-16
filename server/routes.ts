@@ -38701,17 +38701,22 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const userRole = req.user!.role;
       const userCompanyId = req.user!.companyId;
       
+      console.log(`[Support Tickets] User role: '${userRole}', companyId: '${userCompanyId}', hasSupportAccess: ${hasSupportAccess(userRole as UserRole)}`);
+      
       // Superadmin and soporte can see all tickets
-      if (hasSupportAccess(userRole)) {
+      if (hasSupportAccess(userRole as UserRole)) {
         const tickets = await storage.getSupportTickets();
+        console.log(`[Support Tickets] Returning ALL tickets: ${tickets.length}`);
         res.json(tickets);
       } else {
         // Users without a company cannot see any tickets
         if (!userCompanyId) {
+          console.log(`[Support Tickets] No companyId, returning empty`);
           return res.json([]);
         }
         // Filter tickets by user's company only
         const tickets = await storage.getSupportTickets(userCompanyId);
+        console.log(`[Support Tickets] Returning company tickets: ${tickets.length}`);
         res.json(tickets);
       }
     } catch (error: any) {
