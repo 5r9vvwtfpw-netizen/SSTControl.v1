@@ -40303,33 +40303,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // Handle users with companyId (normal case)
       if (user.companyId) {
         allRecipients = await storage.getMessageRecipients(user.companyId, user.role);
-        
-        // SST-2025-0046: Also include support users who have active sessions for this company
-        const activeSupportSessions = await storage.getSupportAccessSessions(user.companyId);
-        const now = new Date();
-        const activeSupportUserIds = [...new Set(activeSupportSessions
-          .filter(s => 
-            s.status === 'approved' && 
-            (!s.startedAt || new Date(s.startedAt) <= now) &&
-            (!s.endedAt || new Date(s.endedAt) > now)
-          )
-          .map(s => s.supportUserId))];
-        
-        // Get support users and add to recipients (avoid duplicates)
-        const existingIds = new Set(allRecipients.map(r => r.id));
-        for (const supportUserId of activeSupportUserIds) {
-          if (!existingIds.has(supportUserId)) {
-            const supportUser = await storage.getUser(supportUserId);
-            if (supportUser) {
-              allRecipients.push({
-                id: supportUser.id,
-                fullName: supportUser.fullName || supportUser.username,
-                role: supportUser.role
-              });
-              existingIds.add(supportUserId);
-            }
-          }
-        }
       } 
       // Handle superadmin: get recipients from all companies or filtered by query param
       else if (user.role === 'superadmin') {

@@ -14027,50 +14027,43 @@ export class DbStorage implements IStorage {
   }
 
   async getMessageRecipients(companyId: string, senderRole: string): Promise<Array<{ id: string; fullName: string | null; role: string }>> {
-    const validRoles = [
-      'superadmin', 'superusuario', 'admin', 
-      'responsable_sst', 'coordinador_salud', 'lso',
-      'coordinador_sst', 'coordinador_rrhh', 'jefe_personal',
-      'supervisor', 'trabajador'
-    ];
-    
-    const companyUsers = await db.select({
-      id: schema.users.id,
-      fullName: schema.users.fullName,
-      role: schema.users.role,
-    })
-    .from(schema.users)
-    .where(
-      and(
-        eq(schema.users.companyId, companyId),
-        inArray(schema.users.role, validRoles as any)
-      )
-    );
-    
-    const assignedLsos = await db.select({
-      id: schema.users.id,
-      fullName: schema.users.fullName,
-      role: schema.users.role,
-    })
-    .from(schema.licensedProfessionalAssignments)
-    .innerJoin(schema.users, eq(schema.licensedProfessionalAssignments.userId, schema.users.id))
-    .where(
-      and(
-        eq(schema.licensedProfessionalAssignments.companyId, companyId),
-        eq(schema.licensedProfessionalAssignments.isActive, true),
-        eq(schema.users.role, 'lso')
-      )
-    );
-
-    const seenIds = new Set(companyUsers.map(u => u.id));
-    for (const lso of assignedLsos) {
-      if (!seenIds.has(lso.id)) {
-        companyUsers.push(lso);
-        seenIds.add(lso.id);
-      }
+    if (senderRole === 'lso') {
+      const responsables = await db.select({
+        id: schema.users.id,
+        fullName: schema.users.fullName,
+        role: schema.users.role,
+      })
+      .from(schema.users)
+      .where(
+        and(
+          eq(schema.users.companyId, companyId),
+          eq(schema.users.role, 'responsable_sst')
+        )
+      );
+      return responsables;
     }
-    
-    return companyUsers;
+
+    if (senderRole === 'responsable_sst') {
+      const assignedLsos = await db.select({
+        id: schema.users.id,
+        fullName: schema.users.fullName,
+        role: schema.users.role,
+      })
+      .from(schema.licensedProfessionalAssignments)
+      .innerJoin(schema.users, eq(schema.licensedProfessionalAssignments.userId, schema.users.id))
+      .where(
+        and(
+          eq(schema.licensedProfessionalAssignments.companyId, companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true),
+          eq(schema.users.role, 'lso')
+        )
+      );
+      const uniqueLsos = new Map<string, typeof assignedLsos[0]>();
+      assignedLsos.forEach(l => uniqueLsos.set(l.id, l));
+      return Array.from(uniqueLsos.values());
+    }
+
+    return [];
   }
 
   // ============================================================================
