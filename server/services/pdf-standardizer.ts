@@ -31,7 +31,7 @@ export const PDF_COLORS = {
 // Información de contacto del proveedor SST Colombia
 export const PROVIDER_CONTACT = {
   name: 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.',
-  nit: '901.234.567-8',
+  nit: '902.036.337-4',
   website: 'www.sst-colombia.com',
   emails: {
     admin: 'admin@sst-colombia.com',

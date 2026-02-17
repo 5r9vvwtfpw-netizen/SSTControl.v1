@@ -1852,6 +1852,297 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // ============================================================================
+  // SECURITY REPORT PDF - Public endpoint for security documentation
+  // ============================================================================
+  app.get("/api/security-report/pdf", async (_req, res) => {
+    try {
+      const doc = new PDFDocument({
+        margin: 50,
+        size: 'LETTER',
+        bufferPages: true,
+        info: {
+          Title: 'INFORME DE SEGURIDAD DEL SISTEMA - SST Colombia',
+          Author: 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.',
+          Subject: 'Documento de referencia para implementación de seguridad',
+          Keywords: 'seguridad, SST, Colombia, cifrado, RBAC, auditoría',
+          CreationDate: new Date()
+        }
+      });
+
+      const chunks: Buffer[] = [];
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+
+      const margin = 50;
+      const pageWidth = doc.page.width;
+      const contentWidth = pageWidth - margin * 2;
+      const GREEN = '#1e7e34';
+      const DARK = '#333333';
+      const footerText = '© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. - Documento informativo de seguridad';
+
+      let currentY = margin;
+
+      const checkPage = (needed: number) => {
+        if (currentY + needed > doc.page.height - 70) {
+          doc.addPage();
+          currentY = margin;
+          return true;
+        }
+        return false;
+      };
+
+      const addFooter = () => {
+        const range = doc.bufferedPageRange();
+        for (let i = range.start; i < range.start + range.count; i++) {
+          doc.switchToPage(i);
+          doc.fontSize(7).font('Helvetica').fillColor('#999999');
+          doc.text(footerText, margin, doc.page.height - 35, {
+            width: contentWidth,
+            align: 'center'
+          });
+          doc.text(`Página ${i + 1} de ${range.count}`, margin, doc.page.height - 25, {
+            width: contentWidth,
+            align: 'center'
+          });
+        }
+      };
+
+      const sectionTitle = (num: string, title: string) => {
+        checkPage(40);
+        doc.fontSize(13).font('Helvetica-Bold').fillColor(GREEN);
+        doc.text(`${num}. ${title}`, margin, currentY, { width: contentWidth });
+        currentY = doc.y + 8;
+        doc.moveTo(margin, currentY - 4).lineTo(pageWidth - margin, currentY - 4).strokeColor(GREEN).lineWidth(1).stroke();
+        currentY += 4;
+      };
+
+      const bullet = (text: string, indent: number = 0) => {
+        checkPage(18);
+        const x = margin + 10 + indent;
+        doc.fontSize(9).font('Helvetica').fillColor(DARK);
+        doc.text('•', x, currentY);
+        doc.text(text, x + 10, currentY, { width: contentWidth - 20 - indent });
+        currentY = doc.y + 3;
+      };
+
+      const bulletBold = (label: string, text: string, indent: number = 0) => {
+        checkPage(18);
+        const x = margin + 10 + indent;
+        doc.fontSize(9).font('Helvetica-Bold').fillColor(DARK);
+        const labelW = doc.widthOfString(label);
+        doc.text('• ', x, currentY);
+        doc.text(label, x + 10, currentY);
+        doc.font('Helvetica').text(text, x + 10 + labelW, currentY, { width: contentWidth - 20 - indent - labelW });
+        currentY = doc.y + 3;
+      };
+
+      const subBullet = (text: string) => {
+        checkPage(16);
+        const x = margin + 25;
+        doc.fontSize(8.5).font('Helvetica').fillColor('#555555');
+        doc.text('- ', x, currentY);
+        doc.text(text, x + 8, currentY, { width: contentWidth - 45 });
+        currentY = doc.y + 2;
+      };
+
+      const paragraph = (text: string) => {
+        checkPage(25);
+        doc.fontSize(9).font('Helvetica').fillColor(DARK);
+        doc.text(text, margin + 10, currentY, { width: contentWidth - 20, align: 'justify' });
+        currentY = doc.y + 6;
+      };
+
+      const tableRow = (cols: string[], widths: number[], isHeader: boolean = false) => {
+        const fontSize = 8.5;
+        const font = isHeader ? 'Helvetica-Bold' : 'Helvetica';
+        doc.fontSize(fontSize).font(font);
+        const heights = cols.map((c, i) => doc.heightOfString(c, { width: widths[i] - 8 }));
+        const rowH = Math.max(...heights) + 8;
+        checkPage(rowH + 5);
+
+        if (isHeader) {
+          doc.rect(margin, currentY - 2, contentWidth, rowH + 2).fillColor(GREEN).fill();
+          doc.fontSize(fontSize).font('Helvetica-Bold').fillColor('#FFFFFF');
+        } else {
+          doc.fontSize(fontSize).font('Helvetica').fillColor(DARK);
+        }
+
+        let xOff = margin;
+        cols.forEach((c, i) => {
+          doc.text(c, xOff + 4, currentY, { width: widths[i] - 8 });
+          xOff += widths[i];
+        });
+
+        if (!isHeader) {
+          doc.moveTo(margin, currentY + rowH - 2).lineTo(pageWidth - margin, currentY + rowH - 2).strokeColor('#EEEEEE').lineWidth(0.5).stroke();
+        }
+        currentY += rowH;
+      };
+
+      // === COVER / TITLE ===
+      currentY = margin + 40;
+      doc.fontSize(22).font('Helvetica-Bold').fillColor(GREEN);
+      doc.text('INFORME DE SEGURIDAD DEL SISTEMA', margin, currentY, { width: contentWidth, align: 'center' });
+      currentY = doc.y + 5;
+      doc.fontSize(18).font('Helvetica-Bold').fillColor(GREEN);
+      doc.text('SST Colombia', margin, currentY, { width: contentWidth, align: 'center' });
+      currentY = doc.y + 15;
+      doc.fontSize(11).font('Helvetica').fillColor(DARK);
+      doc.text('Documento de referencia para implementación de seguridad', margin, currentY, { width: contentWidth, align: 'center' });
+      currentY = doc.y + 15;
+      doc.fontSize(9).font('Helvetica').fillColor('#666666');
+      doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}`, margin, currentY, { width: contentWidth, align: 'center' });
+      currentY = doc.y + 30;
+      doc.moveTo(margin + 50, currentY).lineTo(pageWidth - margin - 50, currentY).strokeColor(GREEN).lineWidth(2).stroke();
+      currentY += 25;
+
+      // === 1. AUTENTICACIÓN Y CONTRASEÑAS ===
+      sectionTitle('1', 'AUTENTICACIÓN Y CONTRASEÑAS');
+      bulletBold('Algoritmo de hash: ', 'scrypt con sal aleatoria de 16 bytes (128 bits) y clave derivada de 64 bytes (512 bits)');
+      bulletBold('Formato almacenado: ', 'hash_hex.salt_hex (nunca se guarda la contraseña en texto plano)');
+      bulletBold('Comparación segura: ', 'timingSafeEqual para evitar ataques de tiempo');
+      bulletBold('Validación de contraseñas: ', 'mínimo 6 caracteres con validación Zod');
+      bullet('Sesiones: Express-session con almacenamiento en base de datos');
+      subBullet('Cookie httpOnly: true (no accesible desde JavaScript del navegador)');
+      subBullet('Cookie secure: true en producción (solo HTTPS)');
+      subBullet('Cookie sameSite: \'strict\' (protección contra CSRF)');
+      subBullet('Tiempo de expiración: 12 horas');
+      bulletBold('Función stripPassword(): ', 'remueve el hash de toda respuesta de la API');
+      currentY += 10;
+
+      // === 2. CONTROL DE ACCESO (RBAC) ===
+      sectionTitle('2', 'CONTROL DE ACCESO (RBAC) - 14 ROLES');
+      paragraph('Roles: superadmin, soporte, superusuario, admin, responsable_sst, coordinador_salud, lso, coordinador_sst, coordinador_rrhh, jefe_personal, supervisor, vigia_sst, auditor_interno, trabajador');
+      bulletBold('Middleware requireRole(): ', 'para control por rol');
+      bulletBold('Middleware requirePermission(): ', 'para control granular por permisos');
+      bullet('Sistema de permisos tipo recurso:acción');
+      bullet('Aislamiento multi-tenant: cada usuario solo accede a datos de su empresa');
+      currentY += 10;
+
+      // === 3. CIFRADO DE DATOS EN REPOSO ===
+      sectionTitle('3', 'CIFRADO DE DATOS EN REPOSO (Ley 1581/2012)');
+      bulletBold('Algoritmo: ', 'AES-256-GCM (Galois/Counter Mode)');
+      bulletBold('Llave maestra: ', '256 bits, variable de entorno');
+      bulletBold('Derivación de llaves por campo: ', 'HMAC-SHA256 con contexto único');
+      bullet('Campos cifrados de trabajadores:');
+      subBullet('nombre, cédula, teléfono, dirección, condiciones de salud, historial médico');
+      subBullet('contacto de emergencia, cuenta bancaria, fecha de nacimiento');
+      subBullet('grupo sanguíneo, alergias, medicamentos, discapacidades');
+      bullet('Campos cifrados de empresas:');
+      subBullet('NIT, dirección, teléfono, nombre y datos del representante legal');
+      bulletBold('Hashing para búsqueda: ', 'campos como cédula tienen hash adicional para búsqueda indexada sin descifrar');
+      currentY += 10;
+
+      // === 4. RATE LIMITING ===
+      sectionTitle('4', 'RATE LIMITING (Protección contra ataques)');
+      const rlW = [contentWidth * 0.25, contentWidth * 0.30, contentWidth * 0.45];
+      tableRow(['Endpoint', 'Límite', 'Propósito'], rlW, true);
+      tableRow(['Login', '5 intentos / 15 min', 'Protección contra fuerza bruta'], rlW);
+      tableRow(['Registro', '3 intentos / 1 hora', 'Creación masiva de cuentas'], rlW);
+      tableRow(['Reset contraseña', '3 solicitudes / 1 hora', 'Bombardeo de emails'], rlW);
+      tableRow(['Facturación', '100 requests / 15 min', 'Abuso de API'], rlW);
+      tableRow(['Mutaciones suscripción', '20 requests / 15 min', 'Manipulación'], rlW);
+      tableRow(['Operaciones de pago', '10 requests / 15 min', 'Fraude'], rlW);
+      tableRow(['Webhooks', '1000 requests / 15 min', 'DDoS'], rlW);
+      currentY += 10;
+
+      // === 5. LOGGING Y AUDITORÍA ===
+      sectionTitle('5', 'LOGGING Y AUDITORÍA');
+      bulletBold('Logger estructurado Pino: ', 'JSON en producción, formato legible en desarrollo');
+      bulletBold('Contexto por request: ', 'requestId, companyId, userId');
+      bullet('Redacción automática de datos sensibles en logs (contraseñas, tokens, sesiones, cédulas, datos médicos)');
+      bulletBold('Audit Logger: ', 'registra todas las operaciones CRUD sobre entidades reguladas');
+      bulletBold('Cumple: ', 'Ley 1581/2012, Decreto 1074/2015 (retención 20 años), Resolución 2346/2007');
+      currentY += 10;
+
+      // === 6. VALIDACIÓN DE DATOS ===
+      sectionTitle('6', 'VALIDACIÓN DE DATOS');
+      bullet('Zod en todas las rutas del servidor (861+ validaciones)');
+      bullet('Schemas compartidos frontend/backend (drizzle-zod)');
+      bullet('Conversión de strings vacíos a null para campos opcionales');
+      currentY += 10;
+
+      // === 7. PROTECCIÓN DE PAGOS (Stripe) ===
+      sectionTitle('7', 'PROTECCIÓN DE PAGOS (Stripe)');
+      bullet('Verificación de firma de webhooks con STRIPE_WEBHOOK_SECRET');
+      bullet('Rate limiting específico para operaciones de pago');
+      bullet('Verificación JWT con HMAC-SHA256 para precios desde landing page');
+      currentY += 10;
+
+      // === 8. BACKUPS AUTOMATIZADOS ===
+      sectionTitle('8', 'BACKUPS AUTOMATIZADOS');
+      bulletBold('Frecuencia: ', 'Semanal (domingos 11PM hora Colombia)');
+      bulletBold('Método: ', 'pg_dump de PostgreSQL');
+      bulletBold('Cifrado: ', 'AES-256-CBC con password de entorno');
+      bulletBold('Almacenamiento: ', 'Upload a AWS S3');
+      currentY += 10;
+
+      // === 9. CONTROL DE SUSCRIPCIONES ===
+      sectionTitle('9', 'CONTROL DE SUSCRIPCIONES');
+      bulletBold('Feature Gate: ', 'middleware que bloquea acceso a módulos premium según plan');
+      bulletBold('Subscription Check: ', 'verifica estado de suscripción');
+      bullet('Bloqueo automático cuando vence o falla el pago');
+      bullet('Período de gracia configurable');
+      currentY += 10;
+
+      // === 10. PROTECCIÓN DE DOCUMENTOS PDF ===
+      sectionTitle('10', 'PROTECCIÓN DE DOCUMENTOS PDF');
+      bullet('Marca de agua en PDFs de prueba: "VERSIÓN DE PRUEBA - NO VÁLIDO PARA AUDITORÍA"');
+      bullet('Estandarización corporativa de todos los PDFs');
+      bullet('Trazabilidad centralizada de documentos generados');
+      currentY += 10;
+
+      // === 11. SISTEMA DE LICENCIAS ===
+      sectionTitle('11', 'SISTEMA DE LICENCIAS');
+      bullet('Verificación periódica cada 5 minutos');
+      bullet('Modo solo lectura si la licencia es inválida');
+      bullet('Hash SHA-256 de la llave para transmisión segura');
+      currentY += 10;
+
+      // === 12. MULTI-TENANCY ===
+      sectionTitle('12', 'MULTI-TENANCY');
+      bullet('Cada empresa es un tenant aislado');
+      bullet('Los usuarios solo acceden a datos de su empresa (companyId)');
+      bullet('Aislamiento a nivel de consultas de base de datos');
+      currentY += 15;
+
+      // === TABLA RESUMEN DE TECNOLOGÍAS ===
+      checkPage(40);
+      doc.fontSize(13).font('Helvetica-Bold').fillColor(GREEN);
+      doc.text('TABLA RESUMEN DE TECNOLOGÍAS', margin, currentY, { width: contentWidth, align: 'center' });
+      currentY = doc.y + 10;
+
+      const techW = [contentWidth * 0.35, contentWidth * 0.65];
+      tableRow(['Componente', 'Tecnología'], techW, true);
+      tableRow(['Hash de contraseñas', 'scrypt + salt aleatorio'], techW);
+      tableRow(['Cifrado de datos', 'AES-256-GCM'], techW);
+      tableRow(['Derivación de llaves', 'HMAC-SHA256'], techW);
+      tableRow(['Sesiones', 'express-session + PostgreSQL store'], techW);
+      tableRow(['Rate limiting', 'express-rate-limit'], techW);
+      tableRow(['Validación', 'Zod'], techW);
+      tableRow(['Logging', 'Pino (JSON estructurado)'], techW);
+      tableRow(['Pagos', 'Stripe (webhook signature verification)'], techW);
+      tableRow(['JWT', 'HMAC-SHA256'], techW);
+      tableRow(['Backups', 'pg_dump + AES-256-CBC + S3'], techW);
+
+      addFooter();
+
+      doc.on('end', () => {
+        const pdfBuffer = Buffer.concat(chunks);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename="informe-seguridad-sst-colombia.pdf"');
+        res.setHeader('Content-Length', pdfBuffer.length);
+        res.end(pdfBuffer);
+      });
+      doc.end();
+    } catch (error: any) {
+      console.error('[SecurityReport] Error generating PDF:', error);
+      if (!res.headersSent) {
+        res.status(500).send('Error al generar el informe de seguridad');
+      }
+    }
+  });
+
   app.post("/api/my-company", requireAuth, async (req, res) => {
     try {
       const user = req.user!;
