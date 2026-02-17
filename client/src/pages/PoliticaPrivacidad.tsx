@@ -79,9 +79,10 @@ export default function PoliticaPrivacidad() {
                     </div>
                     <div className="bg-muted p-3 rounded">
                       <p className="font-semibold">Datos de Contacto del DPO (Data Protection Officer):</p>
-                      <p className="mt-1">Oficial de Protección de Datos: <a href="mailto:dpo@sst-colombia.com" className="text-primary hover:underline">dpo@sst-colombia.com</a></p>
-                      <p>Dirección: Medellín, Colombia</p>
-                      <p>Teléfono: +57 (1) XXX-XXXX</p>
+                      <p className="mt-1"><strong>NIT:</strong> 902.036.337-4</p>
+                      <p>Oficial de Protección de Datos: <a href="mailto:dpo@sst-colombia.com" className="text-primary hover:underline">dpo@sst-colombia.com</a></p>
+                      <p>Dirección: CL 48 No. 38-45, Medellín, Antioquia, Colombia</p>
+                      <p>Teléfono: 300 522 0679</p>
                     </div>
                   </div>
                 </section>
@@ -479,8 +480,8 @@ export default function PoliticaPrivacidad() {
                     <div className="bg-muted p-3 rounded">
                       <p><strong>Oficial de Protección de Datos (DPO):</strong></p>
                       <p className="mt-1">Email: <a href="mailto:dpo@sst-colombia.com" className="text-primary hover:underline">dpo@sst-colombia.com</a></p>
-                      <p>Teléfono: +57 (1) XXX-XXXX</p>
-                      <p>Dirección: Medellín, Colombia</p>
+                      <p>Teléfono: 300 522 0679</p>
+                      <p>Dirección: CL 48 No. 38-45, Medellín, Antioquia, Colombia</p>
                       <p>Horario de atención: Lunes a Viernes 8:00-17:00</p>
                     </div>
                     <p className="mt-3"><strong>16.2 Autoridad de Control:</strong></p>

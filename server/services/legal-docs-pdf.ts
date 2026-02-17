@@ -505,7 +505,9 @@ export class LegalDocsPdfService {
     
     addTableRow('Campo', 'Valor', '', true);
     addTableRow('Razón Social', 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.', '');
-    addTableRow('Domicilio', 'Medellín, Colombia', '');
+    addTableRow('NIT', '902.036.337-4', '');
+    addTableRow('Representante Legal', 'Luz Adriana Díaz Calle', '');
+    addTableRow('Domicilio', 'CL 48 No. 38-45, Medellín, Antioquia, Colombia', '');
     addTableRow('Correo Legal', 'legal@sst-colombia.com', '');
     addTableRow('Soporte Técnico', 'soporte@sst-colombia.com', '');
     addTableRow('DPO', 'dpo@sst-colombia.com', '');

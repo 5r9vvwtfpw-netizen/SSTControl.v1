@@ -269,12 +269,13 @@ export default function TerminosServicio() {
                   <h2 className="text-xl font-semibold mb-3">14. Información de Contacto</h2>
                   <div className="space-y-2 text-muted-foreground">
                     <p><strong>Razón Social:</strong> SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
-                    <p><strong>NIT:</strong> 900.XXX.XXX-X (Pendiente de asignación)</p>
-                    <p><strong>Domicilio:</strong> Medellín, Colombia</p>
-                    <p><strong>Correo Electrónico:</strong> legal@sst-colombia.com</p>
+                    <p><strong>NIT:</strong> 902.036.337-4</p>
+                    <p><strong>Representante Legal:</strong> Luz Adriana Díaz Calle</p>
+                    <p><strong>Domicilio:</strong> CL 48 No. 38-45, Medellín, Antioquia, Colombia</p>
+                    <p><strong>Correo Electrónico:</strong> LADIC2023@ICLOUD.COM | legal@sst-colombia.com</p>
+                    <p><strong>Teléfono:</strong> 300 522 0679</p>
                     <p><strong>Soporte Técnico:</strong> soporte@sst-colombia.com</p>
                     <p><strong>Protección de Datos (DPO):</strong> dpo@sst-colombia.com</p>
-                    <p><strong>Teléfono:</strong> +57 (1) XXX-XXXX</p>
                   </div>
                 </section>
 

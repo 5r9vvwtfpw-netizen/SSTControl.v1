@@ -32,8 +32,9 @@ export default function AvisoPrivacidad() {
                     <p>En cumplimiento de lo dispuesto en la Ley 1581 de 2012 y el Decreto 1377 de 2013, le informamos que el responsable del tratamiento de sus datos personales es:</p>
                     <div className="bg-muted p-3 rounded">
                       <p><strong>Razón Social:</strong> SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
-                      <p><strong>NIT:</strong> (Pendiente de asignación)</p>
-                      <p><strong>Domicilio:</strong> Medellín, Colombia</p>
+                      <p><strong>NIT:</strong> 902.036.337-4</p>
+                      <p><strong>Representante Legal:</strong> Luz Adriana Díaz Calle</p>
+                      <p><strong>Domicilio:</strong> CL 48 No. 38-45, Medellín, Antioquia, Colombia</p>
                       <p><strong>Correo electrónico:</strong> <a href="mailto:privacidad@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-privacidad-1">privacidad@sst-colombia.com</a></p>
                     </div>
                   </div>
@@ -209,7 +210,7 @@ export default function AvisoPrivacidad() {
                     <div className="bg-muted p-3 rounded">
                       <p><strong>Protección de Datos:</strong> <a href="mailto:privacidad@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-privacidad-3">privacidad@sst-colombia.com</a></p>
                       <p><strong>Soporte Técnico:</strong> <a href="mailto:soporte@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-soporte-1">soporte@sst-colombia.com</a></p>
-                      <p><strong>Domicilio:</strong> Medellín, Colombia</p>
+                      <p><strong>Domicilio:</strong> CL 48 No. 38-45, Medellín, Antioquia, Colombia</p>
                     </div>
                   </div>
                 </section>

@@ -53,10 +53,11 @@ export default function PoliticaPrivacidadProveedor() {
                   <div className="space-y-3 text-muted-foreground">
                     <div className="bg-muted p-4 rounded-lg space-y-2">
                       <p><strong>Razón Social:</strong> SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
-                      <p><strong>NIT:</strong> Consultar en sección "Mi Cuenta" del sistema</p>
+                      <p><strong>NIT:</strong> 902.036.337-4</p>
+                      <p><strong>Representante Legal:</strong> Luz Adriana Díaz Calle</p>
                       <p className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
-                        <span><strong>Domicilio:</strong> Medellín, Colombia</span>
+                        <span><strong>Domicilio:</strong> CL 48 No. 38-45, Medellín, Antioquia, Colombia</span>
                       </p>
                       <p className="flex items-center gap-2">
                         <Mail className="h-4 w-4" />
@@ -467,11 +468,11 @@ export default function PoliticaPrivacidadProveedor() {
                       </p>
                       <p className="flex items-center gap-2 mt-3">
                         <Phone className="h-4 w-4" />
-                        <span>+57 (1) XXX-XXXX</span>
+                        <span>300 522 0679</span>
                       </p>
                       <p className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
-                        <span>Medellín, Colombia</span>
+                        <span>CL 48 No. 38-45, Medellín, Antioquia, Colombia</span>
                       </p>
                     </div>
                     <p className="text-sm">

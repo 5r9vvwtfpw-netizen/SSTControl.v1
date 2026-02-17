@@ -392,11 +392,12 @@ export default function AcuerdoProcesamientoDatos() {
                     <div className="bg-muted p-3 rounded">
                       <p><strong>Encargado del Tratamiento:</strong></p>
                       <p className="mt-1">SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
-                      <p>NIT: 900.XXX.XXX-X</p>
-                      <p>Domicilio: Medellín, Colombia</p>
+                      <p>NIT: 902.036.337-4</p>
+                      <p>Representante Legal: Luz Adriana Díaz Calle</p>
+                      <p>Domicilio: CL 48 No. 38-45, Medellín, Antioquia, Colombia</p>
                       <p>DPO Email: <a href="mailto:dpo@sst-colombia.com" className="text-primary hover:underline">dpo@sst-colombia.com</a></p>
                       <p>Legal Email: <a href="mailto:legal@sst-colombia.com" className="text-primary hover:underline">legal@sst-colombia.com</a></p>
-                      <p>Teléfono: +57 (1) XXX-XXXX</p>
+                      <p>Teléfono: 300 522 0679</p>
                     </div>
                   </div>
                 </section>

@@ -31,7 +31,9 @@ export default function ContratoSaaS() {
                     <div className="bg-muted p-3 rounded">
                       <p className="font-semibold">Proveedor:</p>
                       <p><strong>Razón Social:</strong> SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
-                      <p><strong>Domicilio:</strong> Medellín, Colombia</p>
+                      <p><strong>NIT:</strong> 902.036.337-4</p>
+                      <p><strong>Representante Legal:</strong> Luz Adriana Díaz Calle</p>
+                      <p><strong>Domicilio:</strong> CL 48 No. 38-45, Medellín, Antioquia, Colombia</p>
                       <p><strong>Actividad:</strong> Prestación de servicios de software para gestión de Seguridad y Salud en el Trabajo</p>
                     </div>
                     <div className="bg-muted p-3 rounded">
@@ -302,7 +304,7 @@ export default function ContratoSaaS() {
                     <div className="bg-muted p-3 rounded">
                       <p><strong>Asuntos Legales:</strong> <a href="mailto:legal@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-legal">legal@sst-colombia.com</a></p>
                       <p><strong>Soporte Técnico:</strong> <a href="mailto:soporte@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-soporte-3">soporte@sst-colombia.com</a></p>
-                      <p><strong>Domicilio:</strong> Medellín, Colombia</p>
+                      <p><strong>Domicilio:</strong> CL 48 No. 38-45, Medellín, Antioquia, Colombia</p>
                     </div>
                   </div>
                 </section>
