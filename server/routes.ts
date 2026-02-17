@@ -39981,11 +39981,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get("/api/internal-messages", requireAuth, async (req, res) => {
     try {
       const user = req.user!;
-      if (!user.companyId) {
-        return res.status(400).send("Usuario no tiene empresa asignada");
-      }
       
-      const messages = await storage.getInternalMessages(user.id, user.companyId);
+      const messages = await storage.getInternalMessages(user.id, user.companyId || null);
       res.json(messages);
     } catch (error: any) {
       console.error('Error fetching internal messages:', error);
@@ -39997,11 +39994,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get("/api/internal-messages/unread-count", requireAuth, async (req, res) => {
     try {
       const user = req.user!;
-      if (!user.companyId) {
-        return res.json({ count: 0 });
-      }
       
-      const count = await storage.getUnreadMessageCount(user.id, user.companyId);
+      const count = await storage.getUnreadMessageCount(user.id, user.companyId || null);
       res.json({ count });
     } catch (error: any) {
       console.error('Error fetching unread count:', error);
@@ -40090,6 +40084,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         allRecipients.forEach(r => uniqueRecipients.set(r.id, r));
         allRecipients = Array.from(uniqueRecipients.values());
       }
+      // LSO users without companyId get empty recipients list
+      else if (user.role === 'lso') {
+        allRecipients = [];
+      }
       // Other users without companyId cannot send messages
       else {
         return res.status(400).send("Usuario no tiene empresa asignada");
@@ -40126,12 +40124,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.status(500).send('Error al obtener mensaje');
     }
   });
-
   // POST /api/internal-messages - Send a new message
+
   app.post("/api/internal-messages", requireAuth, async (req, res) => {
     try {
       const user = req.user!;
-      if (!user.companyId) {
+      const isSpecialRole = user.role === 'superadmin' || user.role === 'soporte' || user.role === 'lso';
+      if (!user.companyId && !isSpecialRole) {
         return res.status(400).send("Usuario no tiene empresa asignada");
       }
       
