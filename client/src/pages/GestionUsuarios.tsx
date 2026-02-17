@@ -44,7 +44,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema, type User, type UserRole } from "@shared/schema";
 import { roleLabels, roleDescriptions, hasGlobalAccess } from "@shared/permissions";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, Pencil, Trash2, Shield, Info, Building2, Award } from "lucide-react";
+import { Plus, Pencil, Trash2, Shield, Info, Building2, Award, Search, X } from "lucide-react";
 import { z } from "zod";
 import type { Company } from "@shared/schema";
 
@@ -167,6 +167,7 @@ export default function GestionUsuarios() {
   const [showExtraSeatModal, setShowExtraSeatModal] = useState(false);
   const [extraSeatPurchaseInfo, setExtraSeatPurchaseInfo] = useState<ExtraSeatPurchaseInfo | null>(null);
   const [isPurchaseLoading, setIsPurchaseLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   
   const { data: users, isLoading } = useQuery<UserWithoutPassword[]>({
     queryKey: ["/api/users"],
@@ -900,11 +901,32 @@ export default function GestionUsuarios() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Usuarios del Sistema</CardTitle>
-          <CardDescription>
-            {users?.length || 0} usuarios registrados
-          </CardDescription>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <CardTitle>Usuarios del Sistema</CardTitle>
+            <CardDescription>
+              {users?.length || 0} usuarios registrados
+            </CardDescription>
+          </div>
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar usuario, nombre, email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 pr-9"
+              data-testid="input-search-users"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                data-testid="button-clear-search-users"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -915,7 +937,26 @@ export default function GestionUsuarios() {
             <div className="text-center py-8 text-muted-foreground">
               No hay usuarios registrados
             </div>
-          ) : (
+          ) : (() => {
+            const normalizedSearch = searchTerm.toLowerCase().trim();
+            const filteredUsers = normalizedSearch
+              ? users.filter((u) => {
+                  const roleName = roleLabels[u.role] || u.role;
+                  return (
+                    u.username.toLowerCase().includes(normalizedSearch) ||
+                    (u.fullName || "").toLowerCase().includes(normalizedSearch) ||
+                    (u.email || "").toLowerCase().includes(normalizedSearch) ||
+                    (u.department || "").toLowerCase().includes(normalizedSearch) ||
+                    roleName.toLowerCase().includes(normalizedSearch)
+                  );
+                })
+              : users;
+            return filteredUsers.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No se encontraron usuarios para "{searchTerm}"</p>
+              </div>
+            ) : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -928,7 +969,7 @@ export default function GestionUsuarios() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {filteredUsers.map((user) => (
                   <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
                     <TableCell className="font-medium">{user.username}</TableCell>
                     <TableCell>{user.fullName || "-"}</TableCell>
@@ -996,7 +1037,8 @@ export default function GestionUsuarios() {
                 ))}
               </TableBody>
             </Table>
-          )}
+            );
+          })()}
         </CardContent>
       </Card>
 

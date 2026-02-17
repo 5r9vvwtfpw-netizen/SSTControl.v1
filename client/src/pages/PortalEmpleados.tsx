@@ -33,7 +33,7 @@ import {
   MessageSquare, AlertCircle, Send, CheckCircle2, FileText, User, Briefcase, FileCheck,
   GraduationCap, Calendar, Clock, MapPin, UserCheck, Users, Mail, KeyRound, Eye, EyeOff, Vote,
   Building2, BarChart3, Shield, UserCog, BookOpen, Award, Play, Trophy, Star, FolderOpen, Inbox, Download, Bell, ChevronDown,
-  History, Monitor, Smartphone, Tablet, Video, Heart, ClipboardList, Camera, Upload, Trash2, Loader2, Headphones, Car
+  History, Monitor, Smartphone, Tablet, Video, Heart, ClipboardList, Camera, Upload, Trash2, Loader2, Headphones, Car, Search, X
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
@@ -340,6 +340,7 @@ function AdminAccessManagementTab({ workers, isLoading }: { workers: WorkerWithP
   const { toast } = useToast();
   const [creatingAccessForId, setCreatingAccessForId] = useState<string | null>(null);
   const [showBulkDialog, setShowBulkDialog] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   
   const createAccessMutation = useMutation({
     mutationFn: (workerId: string) => {
@@ -404,30 +405,51 @@ function AdminAccessManagementTab({ workers, isLoading }: { workers: WorkerWithP
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
-        <div>
-          <CardTitle className="flex items-center gap-2">
-            <KeyRound className="h-5 w-5" />
-            Gestión de Accesos al Portal
-          </CardTitle>
-          <CardDescription>
-            Crea o revoca acceso al portal para los trabajadores con email registrado
-          </CardDescription>
+      <CardHeader className="flex flex-col gap-4">
+        <div className="flex flex-row items-center justify-between gap-4 flex-wrap">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Gestión de Accesos al Portal
+            </CardTitle>
+            <CardDescription>
+              Crea o revoca acceso al portal para los trabajadores con email registrado
+            </CardDescription>
+          </div>
+          {workersWithoutAccess.length > 0 && (
+            <Button
+              onClick={() => setShowBulkDialog(true)}
+              disabled={bulkCreateMutation.isPending}
+              data-testid="button-bulk-create-access"
+            >
+              {bulkCreateMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Users className="h-4 w-4 mr-2" />
+              )}
+              Crear Accesos Masivos
+            </Button>
+          )}
         </div>
-        {workersWithoutAccess.length > 0 && (
-          <Button
-            onClick={() => setShowBulkDialog(true)}
-            disabled={bulkCreateMutation.isPending}
-            data-testid="button-bulk-create-access"
-          >
-            {bulkCreateMutation.isPending ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Users className="h-4 w-4 mr-2" />
-            )}
-            Crear Accesos Masivos
-          </Button>
-        )}
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar trabajador por nombre o email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 pr-9"
+            data-testid="input-search-portal-access"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              data-testid="button-clear-search-portal-access"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </CardHeader>
 
       <Dialog open={showBulkDialog} onOpenChange={setShowBulkDialog}>
@@ -475,26 +497,39 @@ function AdminAccessManagementTab({ workers, isLoading }: { workers: WorkerWithP
               Registra emails en la sección de Trabajadores para habilitar acceso al portal
             </p>
           </div>
-        ) : (
+        ) : (() => {
+          const normalizedSearch = searchTerm.toLowerCase().trim();
+          const filteredWorkers = normalizedSearch
+            ? workersWithEmail.filter((w) =>
+                (w.name || "").toLowerCase().includes(normalizedSearch) ||
+                (w.email || "").toLowerCase().includes(normalizedSearch)
+              )
+            : workersWithEmail;
+          return filteredWorkers.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No se encontraron trabajadores para "{searchTerm}"</p>
+            </div>
+          ) : (
           <div className="space-y-3">
-            {workersWithEmail.map((worker) => (
+            {filteredWorkers.map((w) => (
               <div 
-                key={worker.id}
+                key={w.id}
                 className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 border rounded-lg hover-elevate"
-                data-testid={`row-worker-access-${worker.id}`}
+                data-testid={`row-worker-access-${w.id}`}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm sm:text-base truncate">{worker.name}</p>
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">{worker.email}</p>
+                    <p className="font-medium text-sm sm:text-base truncate">{w.name}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">{w.email}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-3 self-end sm:self-center">
-                  {worker.hasPortalAccess ? (
+                  {w.hasPortalAccess ? (
                     <Badge className="bg-green-600 text-xs sm:text-sm">
                       <CheckCircle2 className="h-3 w-3 mr-1" />
                       Acceso Activo
@@ -502,21 +537,22 @@ function AdminAccessManagementTab({ workers, isLoading }: { workers: WorkerWithP
                   ) : (
                     <Button
                       size="sm"
-                      onClick={() => createAccessMutation.mutate(worker.id)}
-                      disabled={creatingAccessForId === worker.id}
-                      data-testid={`button-create-access-${worker.id}`}
+                      onClick={() => createAccessMutation.mutate(w.id)}
+                      disabled={creatingAccessForId === w.id}
+                      data-testid={`button-create-access-${w.id}`}
                       className="text-xs sm:text-sm"
                     >
                       <KeyRound className="h-4 w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">{creatingAccessForId === worker.id ? "Creando..." : "Crear Acceso"}</span>
-                      <span className="sm:hidden">{creatingAccessForId === worker.id ? "..." : "Crear"}</span>
+                      <span className="hidden sm:inline">{creatingAccessForId === w.id ? "Creando..." : "Crear Acceso"}</span>
+                      <span className="sm:hidden">{creatingAccessForId === w.id ? "..." : "Crear"}</span>
                     </Button>
                   )}
                 </div>
               </div>
             ))}
           </div>
-        )}
+          );
+        })()}
       </CardContent>
     </Card>
   );
