@@ -10286,6 +10286,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const designation = await storage.createResponsibleDesignation(validatedData, companyId);
+
+      try {
+        if (isExternalLsoDesignation && (validatedData.externalLsoIdentificationNumber || validatedData.externalLsoName)) {
+          const cedula = validatedData.externalLsoIdentificationNumber;
+          const licenseNum = validatedData.licenciaSstNumero;
+          console.log('[AUTO-ASSIGN LSO] Looking up LSO user with cedula:', cedula, 'license:', licenseNum);
+          
+          let lsoUser: any = null;
+          
+          if (cedula) {
+            const [byWorker] = await db.select({ user: schema.users })
+              .from(schema.workers)
+              .innerJoin(schema.users, eq(schema.users.workerId, schema.workers.id))
+              .where(and(
+                eq(schema.workers.identificationNumber, cedula),
+                eq(schema.users.role, 'lso')
+              ));
+            if (byWorker) lsoUser = byWorker.user;
+          }
+          
+          if (!lsoUser && licenseNum) {
+            const [byLicense] = await db.select().from(schema.users)
+              .where(and(
+                eq(schema.users.sstLicenseNumber, licenseNum),
+                eq(schema.users.role, 'lso')
+              ));
+            if (byLicense) lsoUser = byLicense;
+          }
+          
+          if (!lsoUser && cedula) {
+            const [byUsername] = await db.select().from(schema.users)
+              .where(and(
+                eq(schema.users.username, cedula),
+                eq(schema.users.role, 'lso')
+              ));
+            if (byUsername) lsoUser = byUsername;
+          }
+
+          if (lsoUser) {
+            console.log('[AUTO-ASSIGN LSO] Found LSO user:', lsoUser.id, lsoUser.fullName);
+            const [existingAssignment] = await db.select().from(schema.licensedProfessionalAssignments)
+              .where(and(
+                eq(schema.licensedProfessionalAssignments.userId, lsoUser.id),
+                eq(schema.licensedProfessionalAssignments.companyId, companyId),
+                eq(schema.licensedProfessionalAssignments.isActive, true)
+              ));
+
+            if (!existingAssignment) {
+              await db.insert(schema.licensedProfessionalAssignments).values({
+                userId: lsoUser.id,
+                companyId: companyId,
+                assignedBy: req.user!.id,
+                isActive: true,
+                externalLsoName: validatedData.externalLsoName || null,
+                externalLsoEmail: lsoUser.email || null,
+                externalLsoLicenseNumber: validatedData.licenciaSstNumero || null,
+              });
+              console.log('[AUTO-ASSIGN LSO] Created assignment for LSO user:', lsoUser.id, 'to company:', companyId);
+            } else {
+              console.log('[AUTO-ASSIGN LSO] Active assignment already exists for LSO user:', lsoUser.id);
+            }
+
+            const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId));
+            const message = await storage.createInternalMessage({
+              companyId: companyId,
+              senderId: req.user!.id,
+              senderName: req.user!.fullName || req.user!.username,
+              senderRole: req.user!.role,
+              receiverId: lsoUser.id,
+              receiverName: lsoUser.fullName || lsoUser.username,
+              receiverRole: lsoUser.role,
+              subject: 'Nueva designacion como responsable del SG-SST',
+              content: `La empresa "${company?.name || 'Sin nombre'}" te ha designado como profesional responsable del SG-SST. Ya puedes acceder a la informacion de esta empresa desde tu portal de licenciado.`,
+              priority: 'urgent',
+              status: 'unread',
+              relatedEntity: 'responsible_designation',
+              relatedEntityId: designation.id,
+            });
+            console.log('[AUTO-ASSIGN LSO] Notification sent to LSO user:', lsoUser.id);
+            try { notifyNewMessage(lsoUser.id, req.user!.id, message.id); } catch (e) { /* ignore */ }
+          } else {
+            console.log('[AUTO-ASSIGN LSO] No LSO user found with identification:', validatedData.externalLsoIdentificationNumber);
+          }
+        }
+      } catch (autoAssignError: any) {
+        console.error('[AUTO-ASSIGN LSO] Error during auto-assignment:', autoAssignError.message);
+      }
+
       res.status(201).json(designation);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -10347,13 +10435,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let companyId: string;
     
     if (isAdmin) {
-      // Admin: Get companyId from designation's worker
       const designation = await storage.getResponsibleDesignationById(req.params.id);
       if (!designation) {
         return res.status(404).send("Designación no encontrada");
       }
-      const worker = await storage.getWorkerById(designation.workerId);
-      companyId = worker?.companyId || "";
+      if (designation.isExternalLso) {
+        companyId = designation.companyId;
+      } else if (designation.workerId) {
+        const worker = await storage.getWorkerById(designation.workerId);
+        companyId = worker?.companyId || "";
+      } else {
+        companyId = designation.companyId;
+      }
     } else {
       companyId = req.user!.companyId || "";
       if (!companyId) {
@@ -10361,6 +10454,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
     
+    try {
+      const existingDesignation = await storage.getResponsibleDesignationById(req.params.id);
+      if (existingDesignation && existingDesignation.isExternalLso) {
+        const cedula = existingDesignation.externalLsoIdentificationNumber;
+        const licenseNum = existingDesignation.licenciaSstNumero;
+        console.log('[AUTO-ASSIGN LSO] Revoking LSO assignment for cedula:', cedula, 'license:', licenseNum);
+        
+        let lsoUser: any = null;
+        
+        if (cedula) {
+          const [byWorker] = await db.select({ user: schema.users })
+            .from(schema.workers)
+            .innerJoin(schema.users, eq(schema.users.workerId, schema.workers.id))
+            .where(and(
+              eq(schema.workers.identificationNumber, cedula),
+              eq(schema.users.role, 'lso')
+            ));
+          if (byWorker) lsoUser = byWorker.user;
+        }
+        
+        if (!lsoUser && licenseNum) {
+          const [byLicense] = await db.select().from(schema.users)
+            .where(and(
+              eq(schema.users.sstLicenseNumber, licenseNum),
+              eq(schema.users.role, 'lso')
+            ));
+          if (byLicense) lsoUser = byLicense;
+        }
+        
+        if (!lsoUser && cedula) {
+          const [byUsername] = await db.select().from(schema.users)
+            .where(and(
+              eq(schema.users.username, cedula),
+              eq(schema.users.role, 'lso')
+            ));
+          if (byUsername) lsoUser = byUsername;
+        }
+
+        if (lsoUser) {
+          await db.update(schema.licensedProfessionalAssignments)
+            .set({ isActive: false })
+            .where(and(
+              eq(schema.licensedProfessionalAssignments.userId, lsoUser.id),
+              eq(schema.licensedProfessionalAssignments.companyId, companyId),
+              eq(schema.licensedProfessionalAssignments.isActive, true)
+            ));
+          console.log('[AUTO-ASSIGN LSO] Deactivated assignment for LSO user:', lsoUser.id);
+
+          const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId));
+          const message = await storage.createInternalMessage({
+            companyId: companyId,
+            senderId: req.user!.id,
+            senderName: req.user!.fullName || req.user!.username,
+            senderRole: req.user!.role,
+            receiverId: lsoUser.id,
+            receiverName: lsoUser.fullName || lsoUser.username,
+            receiverRole: lsoUser.role,
+            subject: 'Revocacion de designacion como responsable del SG-SST',
+            content: `La empresa "${company?.name || 'Sin nombre'}" ha revocado tu designacion como profesional responsable del SG-SST. Ya no tendras acceso a la informacion de esta empresa desde tu portal de licenciado.`,
+            priority: 'urgent',
+            status: 'unread',
+            relatedEntity: 'responsible_designation',
+            relatedEntityId: req.params.id,
+          });
+          console.log('[AUTO-ASSIGN LSO] Revocation notification sent to LSO user:', lsoUser.id);
+          try { notifyNewMessage(lsoUser.id, req.user!.id, message.id); } catch (e) { /* ignore */ }
+        } else {
+          console.log('[AUTO-ASSIGN LSO] No LSO user found for revocation with identification:', existingDesignation.externalLsoIdentificationNumber);
+        }
+      }
+    } catch (autoRevokeError: any) {
+      console.error('[AUTO-ASSIGN LSO] Error during auto-revocation:', autoRevokeError.message);
+    }
+
     await storage.deleteResponsibleDesignation(req.params.id, companyId);
     res.sendStatus(204);
   });
