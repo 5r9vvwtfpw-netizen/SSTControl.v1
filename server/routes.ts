@@ -42976,6 +42976,23 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // GET /api/legal-docs/rut/pdf - RUT document (SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.)
+  app.get("/api/legal-docs/rut/pdf", requireAuth, async (req, res) => {
+    try {
+      const filePath = path.join(process.cwd(), "server", "assets", "RUT_1771350241893.pdf");
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).send("Documento RUT no encontrado");
+      }
+      const pdfBuffer = fs.readFileSync(filePath);
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="RUT-SADGI-SAS-902036337-4.pdf"');
+      res.setHeader('Content-Length', pdfBuffer.length.toString());
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      handlePdfError(error, res, 'legal-docs-rut-pdf');
+    }
+  });
   // =============================================================================
   // CERTIFICACIONES PROFESIONALES
   // =============================================================================

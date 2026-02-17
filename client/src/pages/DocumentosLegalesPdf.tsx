@@ -24,13 +24,7 @@ import {
   Trash2,
   UserCheck,
   BadgeCheck,
-  Landmark,
-  MapPin,
-  Phone,
-  Mail,
-  Briefcase,
-  Hash,
-  Users
+  Landmark
 } from "lucide-react";
 import { formatReportError } from "@/lib/report-error-messages";
 
@@ -145,6 +139,14 @@ export default function DocumentosLegalesPdf() {
       endpoint: "/api/legal-docs/medidas-seguridad/pdf",
       icon: <Lock className="h-8 w-8" />,
       filename: "Medidas-Seguridad-SST-Colombia.pdf"
+    },
+    {
+      id: "rut-empresa",
+      title: "RUT - Registro Único Tributario",
+      description: "Registro Único Tributario de SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. (SADGI S.A.S.) - NIT 902036337-4. Régimen Simple de Tributación. Actividad económica 6311. Dirección seccional: Impuestos de Medellín.",
+      endpoint: "/api/legal-docs/rut/pdf",
+      icon: <Landmark className="h-8 w-8" />,
+      filename: "RUT-SADGI-SAS-902036337-4.pdf"
     }
   ];
 
