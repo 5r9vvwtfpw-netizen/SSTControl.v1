@@ -23,7 +23,14 @@ import {
   Upload,
   Trash2,
   UserCheck,
-  BadgeCheck
+  BadgeCheck,
+  Landmark,
+  MapPin,
+  Phone,
+  Mail,
+  Briefcase,
+  Hash,
+  Users
 } from "lucide-react";
 import { formatReportError } from "@/lib/report-error-messages";
 
