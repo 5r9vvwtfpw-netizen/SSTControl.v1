@@ -1159,14 +1159,37 @@ export function registerBillingRoutes(app: Express) {
       const subscription = invoice.subscriptionId ? await storage.getSubscription(invoice.subscriptionId) : null;
       const plan = subscription ? await storage.getSubscriptionPlan(subscription.planId) : null;
 
-      if (!company || !subscription || !plan) {
-        return res.status(500).json({ error: "Datos incompletos para generar factura" });
+      if (!company) {
+        return res.status(500).json({ error: "Datos de empresa no encontrados" });
       }
 
-      // Re-generate PDF
+      const invoiceData = {
+        invoiceNumber: invoice.invoiceNumber || '',
+        issuedDate: invoice.issueDate ? new Date(invoice.issueDate) : new Date(),
+        dueDate: invoice.dueDate ? new Date(invoice.dueDate) : new Date(),
+        paidDate: invoice.paidDate ? new Date(invoice.paidDate) : undefined,
+        status: invoice.status || 'pending',
+        amount: invoice.total || 0,
+        currency: invoice.currency || 'COP',
+        billingPeriodStart: invoice.periodStart ? new Date(invoice.periodStart) : new Date(),
+        billingPeriodEnd: invoice.periodEnd ? new Date(invoice.periodEnd) : new Date(),
+        description: invoice.notes || 'Suscripción SST Colombia',
+        lineItems: (() => { try { return invoice.lineItems ? (typeof invoice.lineItems === 'string' ? JSON.parse(invoice.lineItems) : invoice.lineItems) : undefined; } catch { return undefined; } })(),
+        paymentTransactionId: invoice.transactionId || undefined,
+      };
+
+      const companyData = {
+        name: company.name || '',
+        nit: company.nit || '',
+        address: company.address || undefined,
+        city: company.city || undefined,
+        contactEmail: company.contactEmail || undefined,
+        phone: company.phone || undefined,
+      };
+
       const pdfBuffer = await invoicePdfService.generateInvoicePdf(
-        invoice as any,
-        company as any
+        invoiceData,
+        companyData
       );
 
       // Send PDF file
