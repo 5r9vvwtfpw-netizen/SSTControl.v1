@@ -40375,9 +40375,28 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         allRecipients.forEach(r => uniqueRecipients.set(r.id, r));
         allRecipients = Array.from(uniqueRecipients.values());
       }
-      // LSO users without companyId get empty recipients list
       else if (user.role === 'lso') {
-        allRecipients = [];
+        const lsoAssignments = await db.select({
+          companyId: schema.licensedProfessionalAssignments.companyId,
+        })
+        .from(schema.licensedProfessionalAssignments)
+        .where(
+          and(
+            eq(schema.licensedProfessionalAssignments.userId, user.id),
+            eq(schema.licensedProfessionalAssignments.isActive, true)
+          )
+        );
+        
+        const assignedCompanyIds = [...new Set(lsoAssignments.map(a => a.companyId))];
+        
+        for (const companyId of assignedCompanyIds) {
+          const recipients = await storage.getMessageRecipients(companyId, user.role);
+          allRecipients = allRecipients.concat(recipients);
+        }
+        
+        const uniqueLsoRecipients = new Map<string, typeof allRecipients[0]>();
+        allRecipients.forEach(r => uniqueLsoRecipients.set(r.id, r));
+        allRecipients = Array.from(uniqueLsoRecipients.values());
       }
       // Other users without companyId cannot send messages
       else {

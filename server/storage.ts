@@ -14027,8 +14027,6 @@ export class DbStorage implements IStorage {
   }
 
   async getMessageRecipients(companyId: string, senderRole: string): Promise<Array<{ id: string; fullName: string | null; role: string }>> {
-    // Todos los usuarios de la empresa pueden recibir mensajes internos
-    // Incluye todos los roles del enum userRoleEnum de la base de datos
     const validRoles = [
       'superadmin', 'superusuario', 'admin', 
       'responsable_sst', 'coordinador_salud', 'lso',
@@ -14036,7 +14034,7 @@ export class DbStorage implements IStorage {
       'supervisor', 'trabajador'
     ];
     
-    const users = await db.select({
+    const companyUsers = await db.select({
       id: schema.users.id,
       fullName: schema.users.fullName,
       role: schema.users.role,
@@ -14049,7 +14047,30 @@ export class DbStorage implements IStorage {
       )
     );
     
-    return users;
+    const assignedLsos = await db.select({
+      id: schema.users.id,
+      fullName: schema.users.fullName,
+      role: schema.users.role,
+    })
+    .from(schema.licensedProfessionalAssignments)
+    .innerJoin(schema.users, eq(schema.licensedProfessionalAssignments.userId, schema.users.id))
+    .where(
+      and(
+        eq(schema.licensedProfessionalAssignments.companyId, companyId),
+        eq(schema.licensedProfessionalAssignments.isActive, true),
+        eq(schema.users.role, 'lso')
+      )
+    );
+
+    const seenIds = new Set(companyUsers.map(u => u.id));
+    for (const lso of assignedLsos) {
+      if (!seenIds.has(lso.id)) {
+        companyUsers.push(lso);
+        seenIds.add(lso.id);
+      }
+    }
+    
+    return companyUsers;
   }
 
   // ============================================================================
