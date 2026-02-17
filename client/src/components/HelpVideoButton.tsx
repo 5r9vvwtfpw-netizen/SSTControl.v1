@@ -37,6 +37,35 @@ const EXCLUDED_ROUTE_PATTERNS = [
   /^\/evaluaciones-sst\/[^/]+$/,
 ];
 
+function isYouTubeUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === "youtu.be" || parsed.hostname.includes("youtube.com");
+  } catch {
+    return false;
+  }
+}
+
+function isDirectVideoUrl(url: string): boolean {
+  const videoExtensions = [".mp4", ".webm", ".ogg", ".mov", ".m4v"];
+  try {
+    const parsed = new URL(url);
+    const pathname = parsed.pathname.toLowerCase();
+    return videoExtensions.some((ext) => pathname.endsWith(ext));
+  } catch {
+    return false;
+  }
+}
+
+function isVimeoUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.includes("vimeo.com");
+  } catch {
+    return false;
+  }
+}
+
 function toYouTubeEmbedUrl(url: string): string {
   try {
     const parsed = new URL(url);
@@ -56,6 +85,17 @@ function toYouTubeEmbedUrl(url: string): string {
 
     if (videoId) {
       return `https://www.youtube.com/embed/${videoId}`;
+    }
+  } catch {}
+  return url;
+}
+
+function toVimeoEmbedUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const match = parsed.pathname.match(/\/(\d+)/);
+    if (match) {
+      return `https://player.vimeo.com/video/${match[1]}`;
     }
   } catch {}
   return url;
@@ -126,14 +166,49 @@ export default function HelpVideoButton() {
             <div className="p-4">
               {hasVideo ? (
                 <div className="aspect-video w-full">
-                  <iframe
-                    src={toYouTubeEmbedUrl(video.videoUrl)}
-                    className="w-full h-full rounded-md border"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    title={video.videoTitle}
-                    data-testid="iframe-help-video"
-                  />
+                  {isDirectVideoUrl(video.videoUrl) ? (
+                    <video
+                      src={video.videoUrl}
+                      className="w-full h-full rounded-md border bg-black"
+                      controls
+                      autoPlay
+                      playsInline
+                      title={video.videoTitle}
+                      data-testid="video-help-video"
+                    >
+                      Tu navegador no soporta la reproducción de video.
+                    </video>
+                  ) : isYouTubeUrl(video.videoUrl) ? (
+                    <iframe
+                      src={toYouTubeEmbedUrl(video.videoUrl)}
+                      className="w-full h-full rounded-md border"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title={video.videoTitle}
+                      data-testid="iframe-help-video"
+                    />
+                  ) : isVimeoUrl(video.videoUrl) ? (
+                    <iframe
+                      src={toVimeoEmbedUrl(video.videoUrl)}
+                      className="w-full h-full rounded-md border"
+                      allow="autoplay; fullscreen; picture-in-picture"
+                      allowFullScreen
+                      title={video.videoTitle}
+                      data-testid="iframe-help-video"
+                    />
+                  ) : (
+                    <video
+                      src={video.videoUrl}
+                      className="w-full h-full rounded-md border bg-black"
+                      controls
+                      autoPlay
+                      playsInline
+                      title={video.videoTitle}
+                      data-testid="video-help-video"
+                    >
+                      Tu navegador no soporta la reproducción de video.
+                    </video>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 gap-4 text-muted-foreground">

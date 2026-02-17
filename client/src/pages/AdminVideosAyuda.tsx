@@ -260,7 +260,7 @@ export default function AdminVideosAyuda() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold" data-testid="text-page-title">Videos de Ayuda por Módulo</h1>
-          <p className="text-muted-foreground">Configure videos tutoriales de YouTube para cada módulo de la aplicación.</p>
+          <p className="text-muted-foreground">Configure videos tutoriales para cada módulo. Soporta YouTube, Vimeo o archivos de video directos (.mp4, .webm).</p>
         </div>
         <Button onClick={openCreate} data-testid="button-add-video">
           <Plus className="h-4 w-4 mr-2" />
@@ -411,10 +411,10 @@ export default function AdminVideosAyuda() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="video-url">URL del Video (YouTube)</Label>
+                <Label htmlFor="video-url">URL del Video</Label>
                 <Input
                   id="video-url"
-                  placeholder="https://www.youtube.com/watch?v=..."
+                  placeholder="YouTube, Vimeo o enlace directo (.mp4, .webm)"
                   value={formData.videoUrl}
                   onChange={(e) => setFormData((prev) => ({ ...prev, videoUrl: e.target.value }))}
                   data-testid="input-video-url"
