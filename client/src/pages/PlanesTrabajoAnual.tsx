@@ -25,6 +25,7 @@ import { AutomationAssistant, PlantillaInfo } from "@/components/AutomationAssis
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { hasGlobalAccess } from "@shared/permissions";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
 const formSchema = insertPlanTrabajoAnualSchema.omit({
   totalActividades: true,
@@ -344,15 +345,7 @@ export default function PlanesTrabajoAnual() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setLocation(evaluacionActiva ? `/evaluaciones-sst/${evaluacionActiva.id}` : "/evaluaciones-sst")}
-          data-testid="button-back-to-evaluation"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Volver a la evaluación inicial
-        </Button>
+        <BackToEvaluationButton />
         <BackToCronogramaButton className="ml-auto" />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">

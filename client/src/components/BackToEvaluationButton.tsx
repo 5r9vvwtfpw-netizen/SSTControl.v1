@@ -11,29 +11,15 @@ export function BackToEvaluationButton({ className = "" }: BackToEvaluationButto
   const [, setLocation] = useLocation();
   const [searchParams, setSearchParams] = useState<URLSearchParams | null>(null);
   
-  // Use window.location.search directly for reliable query param access
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setSearchParams(params);
   }, []);
   
-  const { fromEvaluation, evaluationId } = useMemo(() => {
-    if (!searchParams) {
-      return { fromEvaluation: false, evaluationId: null };
-    }
-    const from = searchParams.get("from");
-    const evalId = searchParams.get("evaluationId");
-    return {
-      // Support both English "evaluation" and Spanish "evaluacion"
-      fromEvaluation: from === "evaluation" || from === "evaluacion",
-      evaluationId: evalId,
-    };
+  const evaluationId = useMemo(() => {
+    if (!searchParams) return null;
+    return searchParams.get("evaluationId");
   }, [searchParams]);
-  
-  // Always render the button - the evaluation context can be inferred
-  if (!fromEvaluation) {
-    return null;
-  }
   
   const handleGoBack = () => {
     if (evaluationId) {
