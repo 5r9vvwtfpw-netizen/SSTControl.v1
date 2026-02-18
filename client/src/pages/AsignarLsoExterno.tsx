@@ -563,15 +563,17 @@ export default function AsignarLsoExterno() {
                       );
                     })()}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Registrado</span>
+                  {(selectedLso.createdAt || selectedLso.confirmedAt) && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Registrado</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        {new Date(selectedLso.createdAt || selectedLso.confirmedAt!).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </span>
                     </div>
-                    <span className="text-sm font-medium">
-                      {selectedLso.createdAt ? new Date(selectedLso.createdAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }) : 'No disponible'}
-                    </span>
-                  </div>
+                  )}
                   {selectedLso.confirmedAt && (
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
