@@ -14,6 +14,7 @@ import { syncInvoiceSnapshotColumns } from './migrations/sync-invoice-snapshot-c
 import { syncVehicleMaintenancesColumns } from './migrations/sync-vehicle-maintenances-columns';
 import { createSstSpeedAlerts } from './migrations/create-sst-speed-alerts';
 import { syncSafeRoutesColumns } from './migrations/sync-safe-routes-columns';
+import { createCertificacionesProfesionales } from './migrations/create-certificaciones-profesionales';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -39,6 +40,7 @@ export async function runMigrations() {
     await syncVehicleMaintenancesColumns();
     await createSstSpeedAlerts();
     await syncSafeRoutesColumns();
+    await createCertificacionesProfesionales();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);
