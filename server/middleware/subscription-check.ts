@@ -152,7 +152,13 @@ export function requireActiveSubscription(req: Request, res: Response, next: Nex
   }
 
   const user = req.user as any;
+  const userRole = user.role;
   const companyId = user.companyId;
+
+  const exemptRoles = ['superadmin', 'soporte', 'lso_externo'];
+  if (exemptRoles.includes(userRole)) {
+    return next();
+  }
 
   if (!companyId) {
     return next();
