@@ -1184,7 +1184,7 @@ export function registerBillingRoutes(app: Express) {
         address: company.address || undefined,
         city: company.city || undefined,
         contactEmail: company.contactEmail || undefined,
-        phone: company.phone || undefined,
+        phone: company.contactPhone || undefined,
       };
 
       const pdfBuffer = await invoicePdfService.generateInvoicePdf(

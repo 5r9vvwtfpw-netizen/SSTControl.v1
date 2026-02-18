@@ -1,8 +1,8 @@
 /**
- * Invoice PDF Generation Service (Bloque 4 - Tarea 15)
+ * Invoice PDF Generation Service
  * 
- * Generates professional invoice PDFs using PDFKit for Colombian B2B billing compliance.
- * Follows existing FURAT PDF patterns from server/routes.ts
+ * Generates professional invoice PDFs using PDFKit for Colombian B2B billing.
+ * Provider: SADGI S.A.S. (NIT 902.036.337-4)
  */
 
 interface InvoiceData {
@@ -35,402 +35,374 @@ interface CompanyData {
 }
 
 export class InvoicePdfService {
-  /**
-   * Generate invoice PDF buffer
-   * Returns Buffer that can be attached to email or saved to disk
-   */
+  private readonly GREEN = '#166534';
+  private readonly DARK = '#1a1a1a';
+  private readonly GRAY = '#555555';
+  private readonly LIGHT_GRAY = '#888888';
+  private readonly BORDER = '#d1d5db';
+  private readonly BG_LIGHT = '#f9fafb';
+  private readonly WHITE = '#ffffff';
+
   async generateInvoicePdf(
     invoice: InvoiceData,
     company: CompanyData
   ): Promise<Buffer> {
-    // Dynamic import following existing pattern
     const { default: PDFDocument } = await import('pdfkit');
     
-    // Create PDF document
     const doc = new PDFDocument({ 
       margin: 50, 
       size: 'LETTER',
       info: {
         Title: `Factura ${invoice.invoiceNumber}`,
-        Author: 'SST Colombia',
-        Subject: `Factura de suscripción - ${company.name}`,
+        Author: 'SST Colombia - SADGI S.A.S.',
+        Subject: `Factura de suscripcion - ${company.name}`,
         CreationDate: new Date()
       }
     });
 
-    // Collect PDF chunks into buffer
     const chunks: Buffer[] = [];
     doc.on('data', (chunk) => chunks.push(chunk));
 
-    const margin = 50;
-    const pageWidth = doc.page.width;
-    let currentY = margin;
+    const M = 50;
+    const W = doc.page.width;
+    const contentW = W - M * 2;
+    let y = M;
 
-    // ============================================================================
-    // HEADER SECTION
-    // ============================================================================
+    // ============================================================
+    // HEADER - Logo + Invoice number box
+    // ============================================================
     
-    // Logo area (placeholder for future logo support)
-    doc.fontSize(20).font('Helvetica-Bold')
-       .fillColor('#166534')
-       .text('SST COLOMBIA', margin, currentY);
+    doc.fontSize(22).font('Helvetica-Bold')
+       .fillColor(this.GREEN)
+       .text('SST COLOMBIA', M, y);
     
-    currentY += 25;
-    doc.fontSize(10).font('Helvetica')
-       .fillColor('#333333')
-       .text('Sistema Integral de Gestión SST', margin, currentY);
-    
-    currentY += 12;
-    doc.text('www.sst-colombia.com', margin, currentY);
-    
-    // Invoice number and status (right aligned)
-    const invoiceHeaderY = margin;
-    doc.fontSize(14).font('Helvetica-Bold')
-       .fillColor('#166534')
-       .text(`FACTURA`, pageWidth - 200, invoiceHeaderY, { width: 150, align: 'right' });
-    
-    doc.fontSize(12).font('Helvetica')
-       .fillColor('#333333')
-       .text(invoice.invoiceNumber, pageWidth - 200, invoiceHeaderY + 20, { width: 150, align: 'right' });
-    
-    // Status badge
-    const statusColor = invoice.status === 'paid' ? '#166534' : '#DC2626';
-    const statusText = invoice.status === 'paid' ? '✓ PAGADA' : 'PENDIENTE';
-    doc.fontSize(10).font('Helvetica-Bold')
-       .fillColor(statusColor)
-       .text(statusText, pageWidth - 200, invoiceHeaderY + 38, { width: 150, align: 'right' });
-    
-    currentY += 40;
-    
-    // Divider line
-    doc.moveTo(margin, currentY)
-       .lineTo(pageWidth - margin, currentY)
-       .strokeColor('#CCCCCC')
-       .stroke();
-    
-    currentY += 20;
+    y += 26;
+    doc.fontSize(9).font('Helvetica')
+       .fillColor(this.GRAY)
+       .text('Sistema Integral de Gestion SST', M, y);
+    y += 13;
+    doc.text('www.sst-colombia.com', M, y);
+    y += 13;
+    doc.text('NIT: 902.036.337-4', M, y);
 
-    // ============================================================================
-    // BILLING INFORMATION
-    // ============================================================================
+    const boxW = 170;
+    const boxX = W - M - boxW;
+    const boxY = M;
+    
+    doc.rect(boxX, boxY, boxW, 70)
+       .fillAndStroke(this.BG_LIGHT, this.BORDER);
+
+    doc.fontSize(11).font('Helvetica-Bold')
+       .fillColor(this.GREEN)
+       .text('FACTURA DE VENTA', boxX, boxY + 10, { width: boxW, align: 'center' });
     
     doc.fontSize(12).font('Helvetica-Bold')
-       .fillColor('#166534')
-       .text('INFORMACIÓN DE FACTURACIÓN', margin, currentY);
-    
-    currentY += 20;
-    
-    // Company information
+       .fillColor(this.DARK)
+       .text(invoice.invoiceNumber, boxX, boxY + 28, { width: boxW, align: 'center' });
+
+    const isPaid = invoice.status === 'paid';
+    const statusColor = isPaid ? this.GREEN : '#DC2626';
+    const statusText = isPaid ? 'PAGADA' : 'PENDIENTE';
+
+    const badgeW = 80;
+    const badgeX = boxX + (boxW - badgeW) / 2;
+    const badgeY = boxY + 46;
+    doc.roundedRect(badgeX, badgeY, badgeW, 16, 3)
+       .fillAndStroke(statusColor, statusColor);
+    doc.fontSize(8).font('Helvetica-Bold')
+       .fillColor(this.WHITE)
+       .text(statusText, badgeX, badgeY + 4, { width: badgeW, align: 'center' });
+
+    y += 30;
+
+    doc.moveTo(M, y).lineTo(W - M, y)
+       .strokeColor(this.BORDER).lineWidth(1).stroke();
+    y += 20;
+
+    // ============================================================
+    // TWO-COLUMN: Client info (left) + Dates (right)
+    // ============================================================
+
+    const colLeftX = M;
+    const colLeftW = contentW * 0.5;
+    const colRightX = M + contentW * 0.52;
+    const colRightW = contentW * 0.48;
+    const sectionStartY = y;
+
+    doc.fontSize(9).font('Helvetica-Bold')
+       .fillColor(this.GREEN)
+       .text('FACTURADO A', colLeftX, y);
+    y += 16;
+
     doc.fontSize(10).font('Helvetica-Bold')
-       .fillColor('#333333')
-       .text('FACTURADO A:', margin, currentY);
-    
-    currentY += 15;
-    
-    doc.font('Helvetica').text(company.name, margin, currentY);
-    currentY += 12;
-    
-    doc.text(`NIT: ${company.nit}`, margin, currentY);
-    currentY += 12;
-    
+       .fillColor(this.DARK)
+       .text(company.name, colLeftX, y, { width: colLeftW });
+    y += 15;
+
+    doc.fontSize(9).font('Helvetica')
+       .fillColor(this.GRAY);
+
+    doc.text('NIT: ' + company.nit, colLeftX, y, { width: colLeftW });
+    y += 13;
+
     if (company.address) {
-      doc.text(`Dirección: ${company.address}`, margin, currentY);
-      currentY += 12;
+      doc.text(company.address, colLeftX, y, { width: colLeftW });
+      y += 13;
     }
-    
     if (company.city) {
-      doc.text(`Ciudad: ${company.city}`, margin, currentY);
-      currentY += 12;
+      doc.text(company.city, colLeftX, y, { width: colLeftW });
+      y += 13;
     }
-    
     if (company.contactEmail) {
-      doc.text(`Email: ${company.contactEmail}`, margin, currentY);
-      currentY += 12;
+      doc.text(company.contactEmail, colLeftX, y, { width: colLeftW });
+      y += 13;
     }
-    
-    currentY += 15;
-    
-    // Invoice dates (right column)
-    const dateColumnX = pageWidth - 250;
-    let dateY = currentY - 100;
-    
-    doc.fontSize(10).font('Helvetica-Bold')
-       .fillColor('#666666')
-       .text('Fecha de Emisión:', dateColumnX, dateY);
-    
-    doc.font('Helvetica')
-       .fillColor('#333333')
-       .text(this.formatDate(invoice.issuedDate), dateColumnX + 110, dateY);
-    
-    dateY += 15;
-    
-    doc.font('Helvetica-Bold')
-       .fillColor('#666666')
-       .text('Fecha de Vencimiento:', dateColumnX, dateY);
-    
-    doc.font('Helvetica')
-       .fillColor('#333333')
-       .text(this.formatDate(invoice.dueDate), dateColumnX + 110, dateY);
-    
-    if (invoice.paidDate) {
-      dateY += 15;
-      doc.font('Helvetica-Bold')
-         .fillColor('#666666')
-         .text('Fecha de Pago:', dateColumnX, dateY);
-      
-      doc.font('Helvetica')
-         .fillColor('#166534')
-         .text(this.formatDate(invoice.paidDate), dateColumnX + 110, dateY);
+    if (company.phone) {
+      doc.text('Tel: ' + company.phone, colLeftX, y, { width: colLeftW });
+      y += 13;
     }
-    
-    dateY += 15;
-    
-    doc.font('Helvetica-Bold')
-       .fillColor('#666666')
-       .text('Período de Facturación:', dateColumnX, dateY);
-    
-    dateY += 12;
-    
-    doc.font('Helvetica')
-       .fillColor('#333333')
-       .text(
-         `${this.formatDate(invoice.billingPeriodStart)} - ${this.formatDate(invoice.billingPeriodEnd)}`,
-         dateColumnX,
-         dateY
-       );
-    
-    currentY += 10;
-    
-    // Divider line
-    doc.moveTo(margin, currentY)
-       .lineTo(pageWidth - margin, currentY)
-       .strokeColor('#CCCCCC')
-       .stroke();
-    
-    currentY += 20;
 
-    // ============================================================================
+    const leftEndY = y;
+
+    let ry = sectionStartY;
+
+    doc.fontSize(9).font('Helvetica-Bold')
+       .fillColor(this.GREEN)
+       .text('DATOS DE LA FACTURA', colRightX, ry, { width: colRightW });
+    ry += 16;
+
+    const dateRows: Array<{ label: string; value: string; valueColor?: string }> = [
+      { label: 'Fecha de Emision', value: this.formatDate(invoice.issuedDate) },
+      { label: 'Fecha de Vencimiento', value: this.formatDate(invoice.dueDate) },
+    ];
+
+    if (invoice.paidDate) {
+      dateRows.push({
+        label: 'Fecha de Pago',
+        value: this.formatDate(invoice.paidDate),
+        valueColor: this.GREEN
+      });
+    }
+
+    dateRows.push({
+      label: 'Periodo de Facturacion',
+      value: this.formatDate(invoice.billingPeriodStart) + ' al ' + this.formatDate(invoice.billingPeriodEnd)
+    });
+
+    for (const row of dateRows) {
+      doc.fontSize(8).font('Helvetica-Bold')
+         .fillColor(this.LIGHT_GRAY)
+         .text(row.label, colRightX, ry, { width: colRightW });
+      ry += 12;
+      doc.fontSize(9).font('Helvetica')
+         .fillColor(row.valueColor || this.DARK)
+         .text(row.value, colRightX, ry, { width: colRightW });
+      ry += 16;
+    }
+
+    y = Math.max(leftEndY, ry) + 10;
+
+    doc.moveTo(M, y).lineTo(W - M, y)
+       .strokeColor(this.BORDER).lineWidth(1).stroke();
+    y += 20;
+
+    // ============================================================
     // LINE ITEMS TABLE
-    // ============================================================================
-    
-    doc.fontSize(12).font('Helvetica-Bold')
-       .fillColor('#166534')
-       .text('DETALLE DE SERVICIOS', margin, currentY);
-    
-    currentY += 20;
-    
-    // Table header
-    const tableHeaderY = currentY;
-    doc.rect(margin, tableHeaderY, pageWidth - (margin * 2), 25)
-       .fillAndStroke('#F3F4F6', '#CCCCCC');
-    
+    // ============================================================
+
     doc.fontSize(10).font('Helvetica-Bold')
-       .fillColor('#333333')
-       .text('Descripción', margin + 10, tableHeaderY + 8, { width: 300 })
-       .text('Cantidad', margin + 320, tableHeaderY + 8, { width: 60, align: 'center' })
-       .text('Precio Unitario', margin + 390, tableHeaderY + 8, { width: 90, align: 'right' })
-       .text('Total', margin + 490, tableHeaderY + 8, { width: 72, align: 'right' });
-    
-    currentY = tableHeaderY + 30;
-    
-    // Line items
+       .fillColor(this.GREEN)
+       .text('DETALLE DE SERVICIOS', M, y);
+    y += 18;
+
+    const col1X = M;
+    const col1W = contentW * 0.50;
+    const col2X = M + contentW * 0.50;
+    const col2W = contentW * 0.12;
+    const col3X = M + contentW * 0.62;
+    const col3W = contentW * 0.18;
+    const col4X = M + contentW * 0.80;
+    const col4W = contentW * 0.20;
+    const rowH = 28;
+
+    doc.rect(M, y, contentW, rowH)
+       .fillAndStroke(this.GREEN, this.GREEN);
+
+    doc.fontSize(9).font('Helvetica-Bold')
+       .fillColor(this.WHITE)
+       .text('Descripcion', col1X + 8, y + 9, { width: col1W - 8 })
+       .text('Cant.', col2X, y + 9, { width: col2W, align: 'center' })
+       .text('Precio Unit.', col3X, y + 9, { width: col3W, align: 'right' })
+       .text('Total', col4X, y + 9, { width: col4W - 8, align: 'right' });
+
+    y += rowH;
+
     const lineItems = invoice.lineItems || [{
-      description: invoice.description || 'Suscripción SST Colombia',
+      description: invoice.description || 'Suscripcion SST Colombia',
       quantity: 1,
       unitPrice: invoice.amount,
       total: invoice.amount
     }];
-    
+
     lineItems.forEach((item, index) => {
-      if (currentY > doc.page.height - 150) {
+      if (y > doc.page.height - 150) {
         doc.addPage();
-        currentY = margin;
+        y = M;
       }
-      
-      const rowY = currentY;
-      const rowHeight = 30;
-      
-      // Alternating row background
-      if (index % 2 === 0) {
-        doc.rect(margin, rowY, pageWidth - (margin * 2), rowHeight)
-           .fillAndStroke('#FAFAFA', '#E5E5E5');
-      } else {
-        doc.rect(margin, rowY, pageWidth - (margin * 2), rowHeight)
-           .stroke('#E5E5E5');
-      }
-      
-      doc.fontSize(10).font('Helvetica')
-         .fillColor('#333333')
-         .text(item.description, margin + 10, rowY + 8, { width: 290 })
-         .text(item.quantity.toString(), margin + 320, rowY + 8, { width: 60, align: 'center' })
-         .text(this.formatCurrency(item.unitPrice, invoice.currency), margin + 390, rowY + 8, { width: 90, align: 'right' })
-         .text(this.formatCurrency(item.total, invoice.currency), margin + 490, rowY + 8, { width: 72, align: 'right' });
-      
-      currentY += rowHeight;
-    });
-    
-    currentY += 10;
 
-    // ============================================================================
-    // TOTALS SECTION
-    // ============================================================================
-    
-    // Total box
-    const totalBoxX = pageWidth - 250;
-    const totalBoxWidth = 200;
-    
-    doc.rect(totalBoxX, currentY, totalBoxWidth, 40)
-       .fillAndStroke('#166534', '#166534');
-    
-    doc.fontSize(12).font('Helvetica-Bold')
-       .fillColor('#FFFFFF')
-       .text('TOTAL A PAGAR:', totalBoxX + 10, currentY + 8)
-       .fontSize(16)
-       .text(
-         this.formatCurrency(invoice.amount, invoice.currency),
-         totalBoxX + 10,
-         currentY + 22
-       );
-    
-    currentY += 60;
-    
-    // Payment transaction ID (if paid)
-    if (invoice.paymentTransactionId) {
+      const bgColor = index % 2 === 0 ? this.BG_LIGHT : this.WHITE;
+      doc.rect(M, y, contentW, rowH)
+         .fillAndStroke(bgColor, this.BORDER);
+
       doc.fontSize(9).font('Helvetica')
-         .fillColor('#666666')
-         .text(
-           `ID de Transacción: ${invoice.paymentTransactionId}`,
-           margin,
-           currentY,
-           { align: 'right' }
-         );
-      
-      currentY += 20;
+         .fillColor(this.DARK)
+         .text(item.description, col1X + 8, y + 9, { width: col1W - 8 })
+         .text(item.quantity.toString(), col2X, y + 9, { width: col2W, align: 'center' })
+         .text(this.formatCurrency(item.unitPrice), col3X, y + 9, { width: col3W, align: 'right' })
+         .text(this.formatCurrency(item.total), col4X, y + 9, { width: col4W - 8, align: 'right' });
+
+      y += rowH;
+    });
+
+    y += 5;
+
+    // ============================================================
+    // SUBTOTAL / IVA / TOTAL
+    // ============================================================
+
+    const totalsX = col3X;
+    const totalsLabelW = col3W;
+    const totalsValW = col4W - 8;
+    const totalsValX = col4X;
+
+    doc.fontSize(9).font('Helvetica')
+       .fillColor(this.GRAY)
+       .text('Subtotal:', totalsX, y, { width: totalsLabelW, align: 'right' })
+       .fillColor(this.DARK)
+       .text(this.formatCurrency(invoice.amount), totalsValX, y, { width: totalsValW, align: 'right' });
+    y += 16;
+
+    doc.fontSize(9).font('Helvetica')
+       .fillColor(this.GRAY)
+       .text('IVA (0%):', totalsX, y, { width: totalsLabelW, align: 'right' })
+       .fillColor(this.DARK)
+       .text('$0', totalsValX, y, { width: totalsValW, align: 'right' });
+    y += 18;
+
+    const totalBoxW = col3W + col4W;
+    const totalBoxX = col3X;
+    doc.rect(totalBoxX, y, totalBoxW, 32)
+       .fillAndStroke(this.GREEN, this.GREEN);
+
+    doc.fontSize(10).font('Helvetica-Bold')
+       .fillColor(this.WHITE)
+       .text('TOTAL A PAGAR', totalBoxX + 10, y + 5, { width: totalBoxW * 0.45 });
+
+    doc.fontSize(14).font('Helvetica-Bold')
+       .fillColor(this.WHITE)
+       .text(this.formatCurrency(invoice.amount), totalBoxX + 10, y + 5, { width: totalBoxW - 20, align: 'right' });
+
+    y += 45;
+
+    if (invoice.paymentTransactionId) {
+      doc.fontSize(8).font('Helvetica')
+         .fillColor(this.LIGHT_GRAY)
+         .text('ID de Transaccion: ' + invoice.paymentTransactionId, M, y, { width: contentW, align: 'right' });
+      y += 18;
     }
 
-    // ============================================================================
-    // FOOTER SECTION
-    // ============================================================================
-    
-    if (currentY > doc.page.height - 120) {
-      doc.addPage();
-      currentY = margin;
+    // ============================================================
+    // PAYMENT INFO BOX
+    // ============================================================
+
+    y += 5;
+    if (y < doc.page.height - 200) {
+      doc.rect(M, y, contentW, 50)
+         .fillAndStroke('#f0fdf4', '#bbf7d0');
+
+      doc.fontSize(8).font('Helvetica-Bold')
+         .fillColor(this.GREEN)
+         .text('INFORMACION DE PAGO', M + 12, y + 8);
+
+      doc.fontSize(8).font('Helvetica')
+         .fillColor(this.GRAY)
+         .text('Los pagos se procesan de forma segura a traves de Stripe.', M + 12, y + 22)
+         .text('Software excluido de IVA segun Art. 476 numeral 21 del Estatuto Tributario.', M + 12, y + 34);
+
+      y += 62;
     }
-    
-    currentY = doc.page.height - 100;
-    
-    // Divider line
-    doc.moveTo(margin, currentY)
-       .lineTo(pageWidth - margin, currentY)
-       .strokeColor('#CCCCCC')
-       .stroke();
-    
-    currentY += 15;
-    
-    // Footer text
-    doc.fontSize(9).font('Helvetica')
-       .fillColor('#666666')
+
+    // ============================================================
+    // FOOTER
+    // ============================================================
+
+    const footerY = doc.page.height - 85;
+
+    if (y > footerY - 10) {
+      doc.addPage();
+    }
+
+    doc.moveTo(M, footerY)
+       .lineTo(W - M, footerY)
+       .strokeColor(this.BORDER).lineWidth(0.5).stroke();
+
+    let fy = footerY + 10;
+
+    doc.fontSize(8).font('Helvetica')
+       .fillColor(this.GRAY)
        .text(
-         'Gracias por confiar en SST Colombia para la gestión de seguridad y salud en el trabajo de su empresa.',
-         margin,
-         currentY,
-         { align: 'center' }
+         'Gracias por confiar en SST Colombia para la gestion de seguridad y salud en el trabajo de su empresa.',
+         M, fy, { width: contentW, align: 'center' }
        );
-    
-    currentY += 15;
-    
-    doc.fontSize(8)
-       .fillColor('#999999')
+    fy += 13;
+
+    doc.fontSize(7).font('Helvetica')
+       .fillColor(this.LIGHT_GRAY)
        .text(
-         'Este documento constituye una factura válida por servicios de suscripción al Sistema SST Colombia.',
-         margin,
-         currentY,
-         { align: 'center' }
+         'Soporte: soporte@sst-colombia.com  |  Facturacion: facturacion@sst-colombia.com  |  Pagos: pagos@sst-colombia.com',
+         M, fy, { width: contentW, align: 'center' }
        );
-    
-    currentY += 12;
-    
+    fy += 10;
+
     doc.text(
-      'Para consultas o soporte, contacte a soporte@sst-colombia.com',
-      margin,
-      currentY,
-      { align: 'center' }
+      'Legal: legal@sst-colombia.com  |  DPO: dpo@sst-colombia.com  |  Privacidad: privacidad@sst-colombia.com',
+      M, fy, { width: contentW, align: 'center' }
     );
-    
-    // Provider contact information - All 7 emails
-    currentY += 10;
-    
-    doc.fontSize(7)
-       .fillColor('#888888')
+    fy += 12;
+
+    doc.fontSize(6).font('Helvetica')
+       .fillColor('#aaaaaa')
        .text(
-         'Soporte: soporte@sst-colombia.com | Facturación: facturacion@sst-colombia.com | Pagos: pagos@sst-colombia.com',
-         margin,
-         currentY,
-         { align: 'center' }
+         'SISTEMA AUTOMATIZADO DE GESTION INTEGRAL S.A.S. | NIT 902.036.337-4 | DNDA 13-197-177 | CL 48 No. 38-45, Medellin',
+         M, fy, { width: contentW, align: 'center' }
        );
-    
-    currentY += 9;
-    
-    doc.text(
-      'Legal: legal@sst-colombia.com | DPO: dpo@sst-colombia.com | Privacidad: privacidad@sst-colombia.com',
-      margin,
-      currentY,
-      { align: 'center' }
-    );
-    
-    currentY += 10;
-    
-    doc.fontSize(6)
-       .fillColor('#AAAAAA')
-       .text(
-         `© ${new Date().getFullYear()} SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. - DNDA 13-197-177 - Todos los derechos reservados`,
-         margin,
-         currentY,
-         { align: 'center' }
-       );
-    
-    // Finalize PDF
+
     doc.end();
 
-    // Wait for PDF to finish and return buffer
     return new Promise((resolve, reject) => {
-      doc.on('end', () => {
-        const buffer = Buffer.concat(chunks);
-        resolve(buffer);
-      });
-      
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
     });
   }
 
-  /**
-   * Format date in Colombian locale (DD de MMMM de YYYY)
-   */
   private formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString('es-CO', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    const d = new Date(date);
+    const day = d.getDate();
+    const months = [
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    ];
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    return day + ' de ' + month + ' de ' + year;
   }
 
-  /**
-   * Format currency in Colombian Pesos (COP)
-   */
-  private formatCurrency(amount: number, currency: string): string {
-    if (currency === 'COP') {
-      return new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(amount);
-    }
-    
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: currency
+  private formatCurrency(amount: number): string {
+    const formatted = new Intl.NumberFormat('es-CO', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(amount);
+    return '$' + formatted;
   }
 }
 
