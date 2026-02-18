@@ -29,6 +29,44 @@ The Landing Page Integration Plugin provides secure JWT verification for pricing
 
 The Excel worker import system uses a **tolerant normalization pipeline** that accepts free-text input from users and maps it to valid database enum values. This includes `removeAccents`, `normalizeContractType`, `normalizeEducationLevel`, `normalizeGender`, `normalizeCivilStatus`, and status normalization functions. The validation strategy uses Zod `safeParse` with a retry mechanism to set invalid optional enum fields to `undefined` or default values, ensuring **no row is rejected** due to vocabulary variations.
 
+## Reglas de Desarrollo Críticas
+
+### Anti-patrón: Componentes Inline en Rutas Protegidas
+**NUNCA** definir componentes como funciones inline dentro de otros componentes de ruta. Esto causa que React los destruya y recree en cada re-renderizado del padre, perdiendo todo el estado interno (diálogos abiertos, formularios, datos temporales).
+
+**MAL (causa pérdida de estado):**
+```tsx
+function MiRutaProtegida({ component: Component }) {
+  const Wrapper = () => <Gate><Component /></Gate>;  // NUEVA función cada render
+  return <Route component={Wrapper} />;
+}
+```
+
+**BIEN (referencia estable):**
+```tsx
+function MiRutaProtegida({ component: Component }) {
+  const Wrapper = useMemo(() => {
+    return function StableWrapper() {
+      return <Gate><Component /></Gate>;
+    };
+  }, [Component]);  // Solo cambia si Component cambia
+  return <Route component={Wrapper} />;
+}
+```
+
+**Archivos protegidos con este patrón:**
+- `client/src/lib/subscription-protected-route.tsx` — usa `useMemo` para estabilizar `GatedComponent`
+- `client/src/lib/protected-route.tsx` — pasa `Component` directamente a `<Route>`
+
+### Protección de Diálogos y Sheets contra Contenido Portalizado
+Los componentes `Dialog` y `Sheet` (`client/src/components/ui/dialog.tsx` y `sheet.tsx`) tienen tres capas de protección para evitar que menús desplegables (Select, Combobox, DatePicker) cierren accidentalmente el diálogo al seleccionar opciones:
+
+1. **`onPointerDownOutside`**: Detecta si el clic fue sobre contenido portalizado de Radix (`[data-radix-popper-content-wrapper]`, `[data-radix-select-viewport]`) y bloquea el cierre.
+2. **`onInteractOutside`**: Misma lógica para eventos de interacción genéricos.
+3. **`onOpenChange` wrapper**: Antes de cerrar, verifica si hay menús desplegables activos en el DOM y bloquea el cierre si los hay.
+
+**IMPORTANTE:** No modificar estos handlers sin entender el ciclo de vida de los portales de Radix UI. Cualquier cambio debe probarse con un diálogo que contenga un Select dentro.
+
 ## External Dependencies
 
 -   **PostgreSQL (Neon/AWS RDS)**: Relational database.
