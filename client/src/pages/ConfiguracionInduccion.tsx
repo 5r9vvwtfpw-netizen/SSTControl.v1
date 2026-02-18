@@ -17,6 +17,8 @@ import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { Plus, Pencil, Trash2, Video, FileText, BookOpen, GraduationCap, Settings, Eye, Send, Users, CheckCircle2, XCircle, ClipboardList, ChevronUp, ChevronDown } from "lucide-react";
 import { Link } from "wouter";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AutomationAssistant, type PlantillaInfo } from "@/components/AutomationAssistant";
+import { getEstandarByCodigo } from "@/data/planear-normativa";
 import type { ContenidoInduccion, PreguntaInduccion, SesionInduccionVirtual, Worker } from "@shared/schema";
 
 type ContenidoFormData = {
@@ -398,6 +400,75 @@ export default function ConfiguracionInduccion() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {(() => {
+        const estandar = getEstandarByCodigo('1.2.2');
+        if (!estandar) return null;
+        
+        const temasObligatorios = estandar.camposSugeridos.find(c => c.campo === 'temasObligatorios');
+        const camposSugeridos = temasObligatorios ? [{
+          campo: 'temasObligatorios',
+          valor: temasObligatorios.valorSugerido || '',
+          normativaReferencia: 'Decreto 1072/2015, Art. 2.2.4.6.11'
+        }] : [];
+
+        const plantillasInduccion: PlantillaInfo[] = [
+          {
+            id: 'contenido-induccion-sst',
+            nombre: 'Contenidos Obligatorios de Inducción SST',
+            descripcion: 'Temas mínimos requeridos para inducción según Decreto 1072/2015',
+            campos: {
+              titulo: 'Inducción en SST - Temas Obligatorios',
+              descripcion: `Contenido de inducción que incluye:\n1. Generalidades de la empresa\n2. Política de SST\n3. Objetivos del SG-SST\n4. Peligros y riesgos del cargo\n5. Medidas de prevención y control\n6. Uso de EPP\n7. Reporte de condiciones y actos inseguros\n8. Procedimiento de emergencias\n9. Derechos y deberes en SST`,
+            },
+            normativaBase: 'DEC-1072-2.2.4.6.11'
+          },
+          {
+            id: 'contenido-reinduccion-sst',
+            nombre: 'Contenidos de Reinducción Anual',
+            descripcion: 'Temas para reinducción anual según normativa SST',
+            campos: {
+              titulo: 'Reinducción Anual en SST',
+              descripcion: `Reinducción que incluye:\n1. Actualización de la Política de SST\n2. Cambios en la identificación de peligros y riesgos\n3. Nuevos controles implementados\n4. Lecciones aprendidas de accidentes e incidentes\n5. Actualización del plan de emergencias\n6. Cambios en normativa aplicable\n7. Indicadores de SST del período`,
+            },
+            normativaBase: 'RES-0312-2019-ART16'
+          }
+        ];
+
+        return (
+          <AutomationAssistant
+            titulo="Configuración de Inducción Virtual"
+            estandar="1.2.2"
+            descripcion="Gestión de contenidos de inducción y reinducción en SST"
+            normativaAplicable={estandar.normativaAplicable}
+            plantillasDisponibles={plantillasInduccion}
+            camposSugeridos={camposSugeridos}
+            onAutoFill={(datos) => {
+              if (datos.temasObligatorios) {
+                setContenidoForm(prev => ({
+                  ...prev,
+                  titulo: 'Inducción en SST - Temas Obligatorios',
+                  descripcion: datos.temasObligatorios,
+                  tipoContenido: 'texto',
+                  contenidoTexto: datos.temasObligatorios,
+                }));
+                setContenidoDialogOpen(true);
+              }
+            }}
+            onSelectPlantilla={(plantilla) => {
+              if (plantilla.campos) {
+                setContenidoForm(prev => ({
+                  ...prev,
+                  titulo: plantilla.campos.titulo || prev.titulo,
+                  descripcion: plantilla.campos.descripcion || prev.descripcion,
+                }));
+                setContenidoDialogOpen(true);
+              }
+            }}
+            compact={true}
+          />
+        );
+      })()}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
