@@ -6,7 +6,23 @@ import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const Dialog = DialogPrimitive.Root
+function Dialog(props: React.ComponentProps<typeof DialogPrimitive.Root>) {
+  const { onOpenChange, children, ...rest } = props;
+  const wrappedOnOpenChange = React.useCallback((open: boolean) => {
+    if (!open) {
+      const hasPortaledContent = document.querySelector('[data-radix-popper-content-wrapper]');
+      if (hasPortaledContent) {
+        return;
+      }
+    }
+    onOpenChange?.(open);
+  }, [onOpenChange]);
+  return (
+    <DialogPrimitive.Root {...rest} onOpenChange={wrappedOnOpenChange}>
+      {children}
+    </DialogPrimitive.Root>
+  );
+}
 
 const DialogTrigger = DialogPrimitive.Trigger
 
@@ -32,44 +48,28 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, onPointerDownOutside, onInteractOutside, ...props }, ref) => (
+>(({ className, children, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
       onPointerDownOutside={(e) => {
-        const target = e.target as HTMLElement;
-        if (
-          target.closest('[data-radix-popper-content-wrapper]') ||
-          target.closest('[role="listbox"]') ||
-          target.closest('[role="option"]') ||
-          target.closest('[data-radix-select-viewport]') ||
-          target.closest('[data-radix-combobox-content]') ||
-          target.closest('[data-radix-menu-content]') ||
-          target.closest('[cmdk-list]') ||
-          target.closest('[cmdk-input]') ||
-          target.closest('.pac-container')
-        ) {
+        const target = (e as any).detail?.originalEvent?.target as HTMLElement | undefined;
+        if (target?.closest?.('[data-radix-popper-content-wrapper]') ||
+            target?.closest?.('[data-radix-select-viewport]') ||
+            target?.hasAttribute?.('data-radix-collection-item')) {
           e.preventDefault();
+          return;
         }
-        onPointerDownOutside?.(e);
       }}
       onInteractOutside={(e) => {
-        const target = e.target as HTMLElement;
-        if (
-          target.closest('[data-radix-popper-content-wrapper]') ||
-          target.closest('[role="listbox"]') ||
-          target.closest('[role="option"]') ||
-          target.closest('[data-radix-select-viewport]') ||
-          target.closest('[data-radix-combobox-content]') ||
-          target.closest('[data-radix-menu-content]') ||
-          target.closest('[cmdk-list]') ||
-          target.closest('[cmdk-input]') ||
-          target.closest('.pac-container')
-        ) {
+        const target = (e as any).detail?.originalEvent?.target as HTMLElement | undefined;
+        if (target?.closest?.('[data-radix-popper-content-wrapper]') ||
+            target?.closest?.('[data-radix-select-viewport]') ||
+            target?.hasAttribute?.('data-radix-collection-item')) {
           e.preventDefault();
+          return;
         }
-        onInteractOutside?.(e);
       }}
       className={cn(
         "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 sm:rounded-lg",

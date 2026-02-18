@@ -8,6 +8,7 @@
  * sin modificar su implementación original.
  */
 
+import { useMemo } from "react";
 import { Route } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
@@ -28,11 +29,15 @@ export function SubscriptionProtectedRoute({
   feature,
   featureName,
 }: SubscriptionProtectedRouteProps) {
-  const GatedComponent = () => (
-    <SubscriptionGate feature={feature} featureName={featureName}>
-      <Component />
-    </SubscriptionGate>
-  );
+  const GatedComponent = useMemo(() => {
+    return function GatedWrapper() {
+      return (
+        <SubscriptionGate feature={feature} featureName={featureName}>
+          <Component />
+        </SubscriptionGate>
+      );
+    };
+  }, [Component, feature, featureName]);
 
   return <ProtectedRoute path={path} component={GatedComponent} />;
 }

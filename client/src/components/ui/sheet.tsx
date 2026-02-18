@@ -7,7 +7,23 @@ import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const Sheet = SheetPrimitive.Root
+function Sheet(props: React.ComponentProps<typeof SheetPrimitive.Root>) {
+  const { onOpenChange, children, ...rest } = props;
+  const wrappedOnOpenChange = React.useCallback((open: boolean) => {
+    if (!open) {
+      const hasPortaledContent = document.querySelector('[data-radix-popper-content-wrapper]');
+      if (hasPortaledContent) {
+        return;
+      }
+    }
+    onOpenChange?.(open);
+  }, [onOpenChange]);
+  return (
+    <SheetPrimitive.Root {...rest} onOpenChange={wrappedOnOpenChange}>
+      {children}
+    </SheetPrimitive.Root>
+  );
+}
 
 const SheetTrigger = SheetPrimitive.Trigger
 
@@ -56,38 +72,28 @@ interface SheetContentProps
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, onPointerDownOutside, onInteractOutside, ...props }, ref) => (
+>(({ side = "right", className, children, ...props }, ref) => (
   <SheetPortal>
     <SheetOverlay />
     <SheetPrimitive.Content
       ref={ref}
       onPointerDownOutside={(e) => {
-        const target = e.target as HTMLElement;
-        if (
-          target.closest('[data-radix-popper-content-wrapper]') ||
-          target.closest('[role="listbox"]') ||
-          target.closest('[role="option"]') ||
-          target.closest('[data-radix-select-viewport]') ||
-          target.closest('[cmdk-list]') ||
-          target.closest('[cmdk-input]')
-        ) {
+        const target = (e as any).detail?.originalEvent?.target as HTMLElement | undefined;
+        if (target?.closest?.('[data-radix-popper-content-wrapper]') ||
+            target?.closest?.('[data-radix-select-viewport]') ||
+            target?.hasAttribute?.('data-radix-collection-item')) {
           e.preventDefault();
+          return;
         }
-        onPointerDownOutside?.(e);
       }}
       onInteractOutside={(e) => {
-        const target = e.target as HTMLElement;
-        if (
-          target.closest('[data-radix-popper-content-wrapper]') ||
-          target.closest('[role="listbox"]') ||
-          target.closest('[role="option"]') ||
-          target.closest('[data-radix-select-viewport]') ||
-          target.closest('[cmdk-list]') ||
-          target.closest('[cmdk-input]')
-        ) {
+        const target = (e as any).detail?.originalEvent?.target as HTMLElement | undefined;
+        if (target?.closest?.('[data-radix-popper-content-wrapper]') ||
+            target?.closest?.('[data-radix-select-viewport]') ||
+            target?.hasAttribute?.('data-radix-collection-item')) {
           e.preventDefault();
+          return;
         }
-        onInteractOutside?.(e);
       }}
       className={cn(sheetVariants({ side }), className)}
       {...props}
