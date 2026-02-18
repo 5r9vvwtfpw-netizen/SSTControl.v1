@@ -6149,8 +6149,10 @@ export const sstDocumentAlerts = pgTable("sst_document_alerts", {
 export const insertSstDocumentSchema = createInsertSchema(sstDocuments)
   .omit({ id: true, createdAt: true, updatedAt: true })
   .extend({
+    companyId: z.string().optional(),
     title: z.string().min(1, "El título del documento es obligatorio"),
     category: z.string().min(1, "El tipo de documento es obligatorio"),
+    code: z.string().optional().nullable(),
     documentDate: z.coerce.date().optional().nullable(),
     effectiveDate: z.coerce.date().optional().nullable(),
     expirationDate: z.coerce.date().optional().nullable(),
