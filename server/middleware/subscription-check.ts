@@ -16,11 +16,34 @@ export interface SubscriptionStatus {
 }
 
 export async function getSubscriptionStatus(companyId: string): Promise<SubscriptionStatus> {
-  const [subscription] = await db
-    .select()
-    .from(pricingPluginSubscriptions)
-    .where(eq(pricingPluginSubscriptions.customerId, companyId))
-    .limit(1);
+  let subscription: any;
+  try {
+    const [result] = await db
+      .select({
+        id: pricingPluginSubscriptions.id,
+        customerId: pricingPluginSubscriptions.customerId,
+        subscriptionStatus: pricingPluginSubscriptions.subscriptionStatus,
+        trialEndsAt: pricingPluginSubscriptions.trialEndsAt,
+        blockedAt: pricingPluginSubscriptions.blockedAt,
+        blockedReason: pricingPluginSubscriptions.blockedReason,
+        status: pricingPluginSubscriptions.status,
+      })
+      .from(pricingPluginSubscriptions)
+      .where(eq(pricingPluginSubscriptions.customerId, companyId))
+      .limit(1);
+    subscription = result;
+  } catch (error: any) {
+    logger.error({ error: error.message, companyId }, "Error querying subscription status - allowing access as fallback");
+    return {
+      isActive: true,
+      isBlocked: false,
+      isTrial: false,
+      trialEndsAt: null,
+      subscriptionStatus: "active",
+      blockedReason: null,
+      daysRemaining: null,
+    };
+  }
 
   if (!subscription) {
     return {
@@ -166,7 +189,11 @@ export async function blockExpiredTrials(): Promise<number> {
   const now = new Date();
   
   const expiredTrials = await db
-    .select()
+    .select({
+      id: pricingPluginSubscriptions.id,
+      trialEndsAt: pricingPluginSubscriptions.trialEndsAt,
+      subscriptionStatus: pricingPluginSubscriptions.subscriptionStatus,
+    })
     .from(pricingPluginSubscriptions)
     .where(eq(pricingPluginSubscriptions.subscriptionStatus, "trial"));
 
