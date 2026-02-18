@@ -1850,3 +1850,159 @@ export async function sendSupportAccessRequestEmail(
     return { success: false, error: error.message };
   }
 }
+
+// ==================== CREDENCIALES DE ACCESO AL PORTAL DE LICENCIADOS LSO ====================
+
+export interface LsoPortalAccessEmailData {
+  lsoName: string;
+  username: string;
+  temporaryPassword: string;
+  companyName: string;
+  loginUrl: string;
+}
+
+function getLsoPortalAccessEmailHTML(data: LsoPortalAccessEmailData): string {
+  return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Credenciales de Acceso - Portal de Licenciados LSO</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #166534 0%, #15803d 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">
+                SST Colombia
+              </h1>
+              <p style="margin: 8px 0 0 0; color: #dcfce7; font-size: 14px;">
+                Portal de Licenciados LSO
+              </p>
+            </td>
+          </tr>
+
+          <!-- Welcome Banner -->
+          <tr>
+            <td style="background-color: #3b82f6; padding: 12px 30px; text-align: center;">
+              <p style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 600;">
+                Bienvenido al Portal de Licenciados
+              </p>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <h2 style="margin: 0 0 20px 0; color: #166534; font-size: 20px;">
+                Hola ${data.lsoName},
+              </h2>
+              
+              <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                La empresa <strong>${data.companyName}</strong> te ha designado como profesional LSO responsable del SG-SST. Se ha creado tu cuenta de acceso al <strong>Portal de Licenciados</strong>.
+              </p>
+
+              <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                A continuación encontrarás tus credenciales de acceso:
+              </p>
+
+              <!-- Credentials Box -->
+              <div style="background-color: #f0fdf4; border: 2px solid #16a34a; padding: 24px; margin: 24px 0; border-radius: 8px;">
+                <table role="presentation" style="width: 100%;">
+                  <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #dcfce7;">
+                      <strong style="color: #166534; font-size: 14px;">Usuario:</strong>
+                      <div style="color: #1f2937; font-size: 18px; font-family: monospace; margin-top: 4px; background: white; padding: 8px 12px; border-radius: 4px;">
+                        ${data.username}
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0;">
+                      <strong style="color: #166534; font-size: 14px;">Contraseña temporal:</strong>
+                      <div style="color: #1f2937; font-size: 18px; font-family: monospace; margin-top: 4px; background: white; padding: 8px 12px; border-radius: 4px;">
+                        ${data.temporaryPassword}
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- CTA Button -->
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="${data.loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #166534 0%, #15803d 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
+                  Ingresar al Portal
+                </a>
+              </div>
+
+              <!-- Security Notice -->
+              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 4px;">
+                <p style="margin: 0; color: #92400e; font-size: 14px;">
+                  <strong>Importante:</strong> Por seguridad, te recomendamos cambiar tu contraseña despues del primer inicio de sesion. Esta contraseña es temporal y solo tu debes conocerla.
+                </p>
+              </div>
+
+              <p style="margin: 24px 0 0 0; color: #374151; font-size: 14px; line-height: 1.6;">
+                En el portal podrás:
+              </p>
+              <ul style="color: #374151; font-size: 14px; line-height: 1.8; padding-left: 20px;">
+                <li>Gestionar documentos del SG-SST de tus empresas asignadas</li>
+                <li>Firmar actas y documentos oficiales</li>
+                <li>Consultar y actualizar evaluaciones SST</li>
+                <li>Comunicarte con las empresas asignadas</li>
+              </ul>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 24px 30px; border-radius: 0 0 8px 8px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 12px; text-align: center;">
+                Este es un mensaje automático del Sistema SST Colombia.
+              </p>
+              <p style="margin: 0; color: #9ca3af; font-size: 11px; text-align: center;">
+                Si no solicitaste esta cuenta, por favor contacta al área de SST de tu empresa.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+}
+
+export async function sendLsoPortalAccessEmail(
+  to: string,
+  data: LsoPortalAccessEmailData
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const subject = 'Credenciales de Acceso - Portal de Licenciados SST Colombia';
+    
+    const result = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to,
+      subject,
+      html: getLsoPortalAccessEmailHTML(data),
+    });
+
+    if (result.error) {
+      console.error('Error sending LSO portal access email:', result.error);
+      return { success: false, error: result.error.message };
+    }
+
+    return { success: true, messageId: result.data?.id };
+  } catch (error: any) {
+    console.error('Failed to send LSO portal access email:', error);
+    return { success: false, error: error.message };
+  }
+}

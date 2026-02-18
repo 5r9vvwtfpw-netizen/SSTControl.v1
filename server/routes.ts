@@ -259,6 +259,7 @@ import {
   sendResultadoAprobacionEmail,
   sendPortalAccessEmail,
   sendSupportAccessRequestEmail,
+  sendLsoPortalAccessEmail,
   type CambioSstEmailData,
   type AprobacionCambioEmailData
 } from "./email";
@@ -10658,7 +10659,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log('[AUTO-ASSIGN LSO] Notification sent to LSO user:', lsoUser.id);
             try { notifyNewMessage(lsoUser.id, req.user!.id, message.id); } catch (e) { /* ignore */ }
           } else {
-            console.log('[AUTO-ASSIGN LSO] No LSO user found with identification:', validatedData.externalLsoIdentificationNumber);
+            console.log('[AUTO-ASSIGN LSO] No LSO user found, attempting auto-creation...');
+            
+            const cedula = validatedData.externalLsoIdentificationNumber;
+            const licenseNum = validatedData.licenciaSstNumero;
+            
+            if (cedula && validatedData.externalLsoName) {
+              const conditions = [
+                eq(schema.licensedProfessionalAssignments.companyId, companyId),
+                eq(schema.licensedProfessionalAssignments.isActive, true),
+                sql`${schema.licensedProfessionalAssignments.externalLsoEmail} IS NOT NULL`,
+              ];
+              
+              if (licenseNum) {
+                conditions.push(eq(schema.licensedProfessionalAssignments.externalLsoLicenseNumber, licenseNum));
+              } else {
+                conditions.push(eq(schema.licensedProfessionalAssignments.externalLsoName, validatedData.externalLsoName));
+              }
+              
+              const [matchedAssignment] = await db.select()
+                .from(schema.licensedProfessionalAssignments)
+                .where(and(...conditions));
+              
+              const lsoEmail = matchedAssignment?.externalLsoEmail;
+              
+              if (lsoEmail) {
+                const [existingByUsername] = await db.select().from(schema.users)
+                  .where(eq(schema.users.username, cedula));
+                
+                if (!existingByUsername) {
+                  const tempPassword = randomBytes(6).toString('hex');
+                  const hashedPw = await hashPassword(tempPassword);
+                  
+                  try {
+                    const [newLsoUser] = await db.insert(schema.users).values({
+                      username: cedula,
+                      password: hashedPw,
+                      role: 'lso' as any,
+                      fullName: validatedData.externalLsoName,
+                      email: lsoEmail,
+                      sstLicenseNumber: licenseNum || null,
+                    }).returning();
+                    
+                    if (newLsoUser) {
+                      console.log('[AUTO-CREATE LSO] Created LSO user:', newLsoUser.id, newLsoUser.fullName);
+                      
+                      await db.update(schema.licensedProfessionalAssignments)
+                        .set({ userId: newLsoUser.id })
+                        .where(eq(schema.licensedProfessionalAssignments.id, matchedAssignment.id));
+                      
+                      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId));
+                      const baseUrl = `${req.protocol}://${req.get('host')}`;
+                      
+                      try {
+                        await sendLsoPortalAccessEmail(lsoEmail, {
+                          lsoName: validatedData.externalLsoName,
+                          username: cedula,
+                          temporaryPassword: tempPassword,
+                          companyName: company?.name || 'Empresa',
+                          loginUrl: `${baseUrl}/auth`,
+                        });
+                        console.log('[AUTO-CREATE LSO] Credentials email sent to:', lsoEmail);
+                      } catch (emailErr: any) {
+                        console.error('[AUTO-CREATE LSO] Failed to send email:', emailErr.message);
+                      }
+                    }
+                  } catch (insertErr: any) {
+                    if (insertErr.code === '23505') {
+                      console.log('[AUTO-CREATE LSO] User already exists (concurrent creation), skipping');
+                    } else {
+                      throw insertErr;
+                    }
+                  }
+                } else {
+                  console.log('[AUTO-CREATE LSO] User with username', cedula, 'already exists, skipping creation');
+                }
+              } else {
+                console.log('[AUTO-ASSIGN LSO] No matching assignment found with email for this LSO');
+              }
+            } else {
+              console.log('[AUTO-ASSIGN LSO] Cannot auto-create: missing cedula or name');
+            }
           }
         }
       } catch (autoAssignError: any) {
