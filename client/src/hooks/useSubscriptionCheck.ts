@@ -44,7 +44,7 @@ export function useSubscriptionCheck() {
     location === path || location.startsWith(path + "/") || location.startsWith("/checkout")
   );
 
-  const exemptRoles = ['superadmin', 'soporte', 'lso_externo'];
+  const exemptRoles = ['superadmin', 'soporte', 'lso_externo', 'admin'];
   const isExemptRole = user?.role ? exemptRoles.includes(user.role) : false;
 
   const shouldBlock = !isLoading && 

@@ -155,7 +155,7 @@ export function requireActiveSubscription(req: Request, res: Response, next: Nex
   const userRole = user.role;
   const companyId = user.companyId;
 
-  const exemptRoles = ['superadmin', 'soporte', 'lso_externo'];
+  const exemptRoles = ['superadmin', 'soporte', 'lso_externo', 'admin'];
   if (exemptRoles.includes(userRole)) {
     return next();
   }
