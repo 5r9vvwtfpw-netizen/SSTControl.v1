@@ -56,11 +56,39 @@ interface SheetContentProps
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
+>(({ side = "right", className, children, onPointerDownOutside, onInteractOutside, ...props }, ref) => (
   <SheetPortal>
     <SheetOverlay />
     <SheetPrimitive.Content
       ref={ref}
+      onPointerDownOutside={(e) => {
+        const target = e.target as HTMLElement;
+        if (
+          target.closest('[data-radix-popper-content-wrapper]') ||
+          target.closest('[role="listbox"]') ||
+          target.closest('[role="option"]') ||
+          target.closest('[data-radix-select-viewport]') ||
+          target.closest('[cmdk-list]') ||
+          target.closest('[cmdk-input]')
+        ) {
+          e.preventDefault();
+        }
+        onPointerDownOutside?.(e);
+      }}
+      onInteractOutside={(e) => {
+        const target = e.target as HTMLElement;
+        if (
+          target.closest('[data-radix-popper-content-wrapper]') ||
+          target.closest('[role="listbox"]') ||
+          target.closest('[role="option"]') ||
+          target.closest('[data-radix-select-viewport]') ||
+          target.closest('[cmdk-list]') ||
+          target.closest('[cmdk-input]')
+        ) {
+          e.preventDefault();
+        }
+        onInteractOutside?.(e);
+      }}
       className={cn(sheetVariants({ side }), className)}
       {...props}
     >
