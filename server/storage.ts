@@ -1494,6 +1494,7 @@ export interface IStorage {
   hasDefaultPaymentSource(companyId: string): Promise<boolean>;
   transitionSubscriptionStatus(id: string, newStatus: 'active' | 'past_due' | 'suspended' | 'canceled' | 'expired', metadata?: { suspendedAt?: Date; canceledAt?: Date }): Promise<Subscription | undefined>;
   getActiveOrTrialSubscriptionByCompany(companyId: string): Promise<Subscription | undefined>;
+  ensurePricingPluginSync(companyId: string, status: string, trialEnd: Date | null): Promise<void>;
   
   // Payment Sources - Tokenized payment methods
   getPaymentSourcesByCompany(companyId: string): Promise<PaymentSource[]>;
@@ -11860,8 +11861,104 @@ export class DbStorage implements IStorage {
     return subscription;
   }
 
+  async ensurePricingPluginSync(companyId: string, status: string, trialEnd: Date | null): Promise<void> {
+    try {
+      const statusMap: Record<string, string> = {
+        'active': 'active',
+        'trial': 'trial',
+        'past_due': 'past_due',
+        'suspended': 'blocked',
+        'canceled': 'blocked',
+        'expired': 'blocked',
+      };
+      const mappedStatus = statusMap[status] || 'blocked';
+      const isBlocked = mappedStatus === 'blocked';
+
+      const blockedReasonMap: Record<string, string> = {
+        'suspended': 'Suscripcion suspendida',
+        'canceled': 'Suscripcion cancelada',
+        'expired': 'Suscripcion expirada',
+      };
+      const blockedReason = isBlocked ? (blockedReasonMap[status] || 'Suscripcion inactiva') : null;
+
+      const companyData = await db.execute(
+        sql`SELECT number_of_workers, number_of_vehicles FROM companies WHERE id = ${companyId}`
+      );
+      const workers = (companyData.rows?.[0] as any)?.number_of_workers || 2;
+      const vehicles = (companyData.rows?.[0] as any)?.number_of_vehicles || 0;
+
+      const existing = await db.execute(
+        sql`SELECT id, subscription_status FROM pricing_plugin_subscriptions WHERE customer_id = ${companyId} LIMIT 1`
+      );
+
+      if (!existing.rows || existing.rows.length === 0) {
+        if (isBlocked) {
+          await db.execute(sql`
+            INSERT INTO pricing_plugin_subscriptions (
+              customer_id, employee_count, tier, monthly_cost, price_per_license,
+              minimum_fee, status, subscription_status, trial_ends_at,
+              blocked_at, blocked_reason, vehiculos, updated_at
+            ) VALUES (
+              ${companyId}, ${workers}, 'sst_dinamico', 0, 0, 0,
+              'active', ${mappedStatus}, ${trialEnd},
+              NOW(), ${blockedReason}, ${vehicles}, NOW()
+            )
+          `);
+        } else {
+          await db.execute(sql`
+            INSERT INTO pricing_plugin_subscriptions (
+              customer_id, employee_count, tier, monthly_cost, price_per_license,
+              minimum_fee, status, subscription_status, trial_ends_at,
+              blocked_at, blocked_reason, vehiculos, updated_at
+            ) VALUES (
+              ${companyId}, ${workers}, 'sst_dinamico', 0, 0, 0,
+              'active', ${mappedStatus}, ${trialEnd},
+              NULL, NULL, ${vehicles}, NOW()
+            )
+          `);
+        }
+        console.log(`[SUB-SYNC] Created pricing_plugin_subscriptions for company ${companyId} (status: ${mappedStatus})`);
+      } else {
+        const currentStatus = (existing.rows[0] as any)?.subscription_status;
+        if (isBlocked) {
+          await db.execute(sql`
+            UPDATE pricing_plugin_subscriptions
+            SET subscription_status = ${mappedStatus},
+                trial_ends_at = ${trialEnd},
+                employee_count = ${workers},
+                vehiculos = ${vehicles},
+                blocked_at = NOW(),
+                blocked_reason = ${blockedReason},
+                updated_at = NOW()
+            WHERE customer_id = ${companyId}
+          `);
+        } else {
+          await db.execute(sql`
+            UPDATE pricing_plugin_subscriptions
+            SET subscription_status = ${mappedStatus},
+                trial_ends_at = ${trialEnd},
+                employee_count = ${workers},
+                vehiculos = ${vehicles},
+                blocked_at = NULL,
+                blocked_reason = NULL,
+                updated_at = NOW()
+            WHERE customer_id = ${companyId}
+          `);
+        }
+        if (currentStatus !== mappedStatus) {
+          console.log(`[SUB-SYNC] Updated pricing_plugin_subscriptions for company ${companyId}: ${currentStatus} -> ${mappedStatus}`);
+        } else {
+          console.log(`[SUB-SYNC] Updated pricing_plugin_subscriptions fields for company ${companyId} (status: ${mappedStatus})`);
+        }
+      }
+    } catch (error: any) {
+      console.error(`[SUB-SYNC] Error syncing pricing_plugin_subscriptions for company ${companyId}:`, error.message);
+    }
+  }
+
   async createSubscription(subscription: InsertSubscription): Promise<Subscription> {
     const [newSubscription] = await db.insert(schema.subscriptions).values(subscription).returning();
+    await this.ensurePricingPluginSync(newSubscription.companyId, newSubscription.status, newSubscription.trialEnd || null);
     return newSubscription;
   }
 
@@ -11871,6 +11968,9 @@ export class DbStorage implements IStorage {
       .set({ ...subscription, updatedAt: new Date() })
       .where(eq(schema.subscriptions.id, id))
       .returning();
+    if (updated) {
+      await this.ensurePricingPluginSync(updated.companyId, updated.status, updated.trialEnd || null);
+    }
     return updated;
   }
 
@@ -11885,6 +11985,9 @@ export class DbStorage implements IStorage {
       })
       .where(eq(schema.subscriptions.id, id))
       .returning();
+    if (updated) {
+      await this.ensurePricingPluginSync(updated.companyId, 'active', null);
+    }
     return updated;
   }
 
@@ -11898,6 +12001,9 @@ export class DbStorage implements IStorage {
       })
       .where(eq(schema.subscriptions.id, id))
       .returning();
+    if (updated) {
+      await this.ensurePricingPluginSync(updated.companyId, 'canceled', null);
+    }
     return updated;
   }
 
@@ -11950,6 +12056,7 @@ export class DbStorage implements IStorage {
         .returning();
 
       console.log(`✅ [TRIAL-DB] Suscripción trial creada: id=${subscription.id}`);
+      await this.ensurePricingPluginSync(companyId, 'trial', trialEnd);
       return subscription;
     } catch (dbError: any) {
       console.error(`❌ [TRIAL-DB] Error de base de datos:`, dbError);
@@ -12020,6 +12127,9 @@ export class DbStorage implements IStorage {
       .where(eq(schema.subscriptions.id, id))
       .returning();
     
+    if (updated) {
+      await this.ensurePricingPluginSync(updated.companyId, newStatus, updated.trialEnd || null);
+    }
     return updated;
   }
 

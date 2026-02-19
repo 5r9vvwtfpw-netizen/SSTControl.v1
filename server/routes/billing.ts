@@ -688,6 +688,11 @@ export function registerBillingRoutes(app: Express) {
           trialEnd: trialEnd,
         });
         
+        const updatedSub = await storage.getSubscription(subscription.id);
+        if (updatedSub) {
+          await (storage as any).ensurePricingPluginSync(updatedSub.companyId, 'trial', trialEnd);
+        }
+        
         return res.status(200).json({
           success: true,
           trial: true,

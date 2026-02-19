@@ -31,6 +31,7 @@ import { startMedicalExamRemindersCron } from "./jobs/medical-exam-reminders";
 import { startIndicadoresSchedulerCron } from "./jobs/indicadores-scheduler";
 import { startNotificationsCron } from "./jobs/notifications";
 import { scheduleWeeklyBackup } from "./jobs/weekly-backup";
+import { startSubscriptionIntegrityCheck } from "./cron/subscription-integrity";
 import { getUncachableStripeClient, getStripeSecretKey } from "./stripeClient";
 import { storage } from "./storage";
 import { initializeLicense, requireValidLicense } from "./middleware/license";
@@ -845,6 +846,12 @@ app.use(requireValidLicense);
       scheduleWeeklyBackup();
     } catch (error) {
       logger.error({ err: error }, "⚠️ Weekly backup scheduler initialization failed");
+    }
+
+    try {
+      startSubscriptionIntegrityCheck();
+    } catch (error) {
+      logger.error({ err: error }, "⚠️ Subscription integrity check initialization failed");
     }
   } else {
     logger.info('⏭️ Skipping Stripe verification and cron jobs (Autoscale mode)');
