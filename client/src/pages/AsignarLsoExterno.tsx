@@ -8,9 +8,11 @@
  * - Ver el LSO actualmente asignado
  */
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
+import { useCompanyContext } from "@/hooks/use-company-context";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,6 +103,30 @@ export default function AsignarLsoExterno() {
   const [confirmNegotiation, setConfirmNegotiation] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { selectedCompany } = useCompanyContext();
+
+  const buildMailtoUrl = useMemo(() => {
+    return (lso: LsoRegistration) => {
+      const companyName = selectedCompany?.name || "nuestra empresa";
+      const userName = user?.fullName || user?.username || "";
+      const subject = encodeURIComponent(`Solicitud de servicios SST - ${companyName}`);
+      const body = encodeURIComponent(
+        `Estimado(a) ${lso.fullName},\n\n` +
+        `Mi nombre es ${userName}, representante de ${companyName}.\n\n` +
+        `Encontramos su perfil en el directorio de profesionales LSO de SST Colombia y estamos interesados en conocer sus servicios de Seguridad y Salud en el Trabajo.\n\n` +
+        `Nos gustaría agendar una reunión para discutir:\n` +
+        `- Alcance de los servicios requeridos\n` +
+        `- Honorarios y condiciones\n` +
+        `- Disponibilidad\n\n` +
+        `Quedo atento(a) a su respuesta.\n\n` +
+        `Cordialmente,\n` +
+        `${userName}\n` +
+        `${companyName}`
+      );
+      return `mailto:${lso.email}?subject=${subject}&body=${body}`;
+    };
+  }, [selectedCompany, user]);
 
   // Query para verificar el estado de la integración (usando nuevos endpoints JWT)
   const { data: statusData, isLoading: statusLoading } = useQuery<{ ok: boolean; configured: boolean; connected?: boolean; message: string }>({
@@ -624,7 +650,7 @@ export default function AsignarLsoExterno() {
                 </p>
                 <div className="space-y-1">
                   {selectedLso.email && (
-                    <a href={`mailto:${selectedLso.email}`} className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400 hover:underline" data-testid="link-contact-email">
+                    <a href={buildMailtoUrl(selectedLso)} className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400 hover:underline" data-testid="link-contact-email">
                       <Mail className="h-3.5 w-3.5" />
                       {selectedLso.email}
                     </a>
