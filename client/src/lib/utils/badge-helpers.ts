@@ -18,7 +18,11 @@ export const SUBSCRIPTION_STATUS_CONFIGS: Record<string, BadgeConfig> = {
   trial: { label: "Prueba", variant: "secondary" },
   past_due: { label: "Vencida", variant: "destructive" },
   suspended: { label: "Suspendida", variant: "destructive" },
+  blocked: { label: "Bloqueada", variant: "destructive" },
+  trial_expired: { label: "Prueba expirada", variant: "destructive" },
+  cancelled: { label: "Cancelada", variant: "outline" },
   canceled: { label: "Cancelada", variant: "outline" },
+  no_subscription: { label: "Sin suscripción", variant: "outline" },
 };
 
 /**

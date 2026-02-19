@@ -234,8 +234,8 @@ export default function MiSuscripcion() {
 
   const { subscription, plan } = subscriptionData;
 
-  // Check if subscription needs payment (trial, past_due, or suspended)
-  const needsPayment = ['trial', 'past_due', 'suspended'].includes(subscription.status);
+  // Check if subscription needs payment
+  const needsPayment = ['trial', 'past_due', 'suspended', 'blocked', 'trial_expired', 'cancelled'].includes(subscription.status);
 
   // Get appropriate button text based on status
   const getPaymentButtonText = () => {
@@ -245,7 +245,11 @@ export default function MiSuscripcion() {
       case 'past_due':
         return 'Pagar ahora';
       case 'suspended':
+      case 'blocked':
+      case 'trial_expired':
         return 'Reactivar cuenta';
+      case 'cancelled':
+        return 'Renovar suscripción';
       default:
         return 'Pagar';
     }
@@ -291,13 +295,25 @@ export default function MiSuscripcion() {
         </Alert>
       )}
 
-      {subscription.status === 'suspended' && (
+      {(subscription.status === 'suspended' || subscription.status === 'blocked') && (
         <Alert variant="destructive" className="mb-6" data-testid="alert-suspended-payment">
           <XCircle className="h-4 w-4" />
           <AlertDescription className="flex flex-wrap items-center justify-between gap-4">
             <span>
               <strong>Cuenta suspendida:</strong> Tu acceso al plan <strong>{plan.displayName || plan.name}</strong> ha sido suspendido por falta de pago. 
               Reactiva tu cuenta para continuar usando el sistema.
+            </span>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {subscription.status === 'trial_expired' && (
+        <Alert variant="destructive" className="mb-6" data-testid="alert-trial-expired-payment">
+          <XCircle className="h-4 w-4" />
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-4">
+            <span>
+              <strong>Prueba expirada:</strong> Tu período de prueba del plan <strong>{plan.displayName || plan.name}</strong> ha terminado. 
+              Activa tu suscripción para continuar usando el sistema.
             </span>
           </AlertDescription>
         </Alert>

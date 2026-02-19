@@ -15,6 +15,7 @@ import {
 import { getCompanyFeatures } from "../middleware/subscription-limits";
 import { getUncachableStripeClient } from "../stripeClient";
 import { billingHealthCheck } from "../lib/billing-validator";
+import { getSubscriptionStatus } from "../middleware/subscription-check";
 
 /**
  * Billing & Subscriptions Routes (Bloque 4 - Sistema de Facturación Stripe)
@@ -1098,6 +1099,13 @@ export function registerBillingRoutes(app: Express) {
         return res.status(404).json({ error: "No se encontró suscripción activa" });
       }
 
+      // Enrich with real status from pricing_plugin_subscriptions (source of truth for blocking)
+      const pricingStatus = await getSubscriptionStatus(companyId);
+      const enrichedSubscription = {
+        ...subscription,
+        status: pricingStatus.subscriptionStatus || subscription.status,
+      };
+
       // Get plan details
       const plan = await storage.getSubscriptionPlan(subscription.planId);
       
@@ -1105,7 +1113,7 @@ export function registerBillingRoutes(app: Express) {
       const changeHistory = await storage.getPlanChangeHistory(subscription.id);
 
       res.json({
-        subscription,
+        subscription: enrichedSubscription,
         plan,
         changeHistory
       });
