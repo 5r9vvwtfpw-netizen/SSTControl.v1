@@ -1532,7 +1532,7 @@ export default function CopasstCms() {
                   </Label>
                 </div>
               </div>
-              <Button onClick={() => { resetCategoriaForm(); setCategoriaDialogOpen(true); }} data-testid="button-nueva-categoria">
+              <Button onClick={() => { setCategoriaEditando(null); resetCategoriaForm(); setCategoriaDialogOpen(true); }} data-testid="button-nueva-categoria">
                 <Plus className="w-4 h-4 mr-2" />
                 Nueva Categoría
               </Button>
@@ -2070,6 +2070,8 @@ export default function CopasstCms() {
       <Dialog open={categoriaDialogOpen} onOpenChange={(open) => {
         setCategoriaDialogOpen(open);
         if (!open) {
+          setCategoriaEditando(null);
+          resetCategoriaForm();
           setMostrarBancoCategorias(true);
           setBusquedaBancoCategorias("");
         }
