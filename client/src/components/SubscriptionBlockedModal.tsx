@@ -7,7 +7,6 @@ interface SubscriptionBlockedModalProps {
   blockedReason: string;
   trialEndsAt?: string | null;
   onActivateSubscription?: () => void;
-  onContactSupport?: () => void;
 }
 
 export function SubscriptionBlockedModal({
@@ -15,7 +14,6 @@ export function SubscriptionBlockedModal({
   blockedReason,
   trialEndsAt,
   onActivateSubscription,
-  onContactSupport,
 }: SubscriptionBlockedModalProps) {
   const getStatusIcon = () => {
     switch (subscriptionStatus) {
@@ -128,17 +126,6 @@ export function SubscriptionBlockedModal({
             </Button>
           )}
           
-          {onContactSupport && (
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={onContactSupport}
-              data-testid="button-contact-support"
-            >
-              Contactar Soporte
-            </Button>
-          )}
-
           <p className="text-xs text-muted-foreground text-center mt-2">
             ¿Necesita ayuda? Escríbanos a soporte@sst-colombia.com
           </p>

@@ -440,7 +440,6 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
           blockedReason={subscriptionStatus.blockedReason || "Su acceso está bloqueado"}
           trialEndsAt={subscriptionStatus.trialEndsAt}
           onActivateSubscription={() => navigate("/mi-suscripcion")}
-          onContactSupport={() => window.open("mailto:soporte@sst-colombia.com", "_blank")}
         />
       </>
     );
