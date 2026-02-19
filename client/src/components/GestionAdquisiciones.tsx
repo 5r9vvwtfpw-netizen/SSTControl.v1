@@ -612,7 +612,7 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
                   <Progress value={resumenIntegrado?.recursosFinancieros.porcentajeEjecucion || 0} className="h-2" />
                 </div>
                 
-                <Link href="/recursos-financieros" className="block">
+                <Link href="/asignacion-recursos" className="block">
                   <Button variant="outline" size="sm" className="w-full gap-2" data-testid="button-ir-recursos">
                     <DollarSign className="h-4 w-4" />
                     Ver Recursos Financieros
