@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { db } from "../db";
 import { eq, and, or } from "drizzle-orm";
 import { pricingPluginSubscriptions } from "../../pricing_plugin/schema";
-import { users } from "@shared/schema";
+import { users, subscriptions } from "@shared/schema";
 import logger from "../lib/logger";
 
 export interface SubscriptionStatus {
@@ -45,7 +45,114 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
     };
   }
 
+  // Fallback: if no record in pricing_plugin_subscriptions, check the main subscriptions table
   if (!subscription) {
+    try {
+      const [mainSub] = await db
+        .select({
+          id: subscriptions.id,
+          status: subscriptions.status,
+          trialEnd: subscriptions.trialEnd,
+          currentPeriodEnd: subscriptions.currentPeriodEnd,
+          lastPaymentDate: subscriptions.lastPaymentDate,
+        })
+        .from(subscriptions)
+        .where(eq(subscriptions.companyId, companyId))
+        .limit(1);
+
+      if (mainSub) {
+        const now = new Date();
+        const periodEnd = mainSub.currentPeriodEnd ? new Date(mainSub.currentPeriodEnd) : null;
+        const trialEnd = mainSub.trialEnd ? new Date(mainSub.trialEnd) : null;
+
+        logger.info({ companyId, mainSubStatus: mainSub.status, periodEnd }, "Fallback to subscriptions table - no pricing_plugin record found");
+
+        if (mainSub.status === "active") {
+          if (periodEnd && periodEnd < now) {
+            return {
+              isActive: false,
+              isBlocked: true,
+              isTrial: false,
+              trialEndsAt: trialEnd,
+              subscriptionStatus: "past_due",
+              blockedReason: "Su período de suscripción ha vencido. Por favor renueve su suscripción.",
+              daysRemaining: null,
+            };
+          }
+          return {
+            isActive: true,
+            isBlocked: false,
+            isTrial: false,
+            trialEndsAt: trialEnd,
+            subscriptionStatus: "active",
+            blockedReason: null,
+            daysRemaining: null,
+          };
+        }
+
+        if (mainSub.status === "trial") {
+          if (trialEnd) {
+            const daysRemaining = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            if (daysRemaining <= 0) {
+              return {
+                isActive: false,
+                isBlocked: true,
+                isTrial: true,
+                trialEndsAt: trialEnd,
+                subscriptionStatus: "trial_expired",
+                blockedReason: "Su período de prueba ha expirado. Por favor active su suscripción para continuar.",
+                daysRemaining: 0,
+              };
+            }
+            return {
+              isActive: true,
+              isBlocked: false,
+              isTrial: true,
+              trialEndsAt: trialEnd,
+              subscriptionStatus: "trial",
+              blockedReason: null,
+              daysRemaining,
+            };
+          }
+          return {
+            isActive: true,
+            isBlocked: false,
+            isTrial: true,
+            trialEndsAt: null,
+            subscriptionStatus: "trial",
+            blockedReason: null,
+            daysRemaining: null,
+          };
+        }
+
+        if (mainSub.status === "canceled") {
+          return {
+            isActive: false,
+            isBlocked: true,
+            isTrial: false,
+            trialEndsAt: trialEnd,
+            subscriptionStatus: "cancelled",
+            blockedReason: "Su suscripción ha sido cancelada.",
+            daysRemaining: null,
+          };
+        }
+
+        if (mainSub.status === "past_due") {
+          return {
+            isActive: false,
+            isBlocked: true,
+            isTrial: false,
+            trialEndsAt: trialEnd,
+            subscriptionStatus: "past_due",
+            blockedReason: "Su pago está pendiente. Por favor actualice su método de pago.",
+            daysRemaining: null,
+          };
+        }
+      }
+    } catch (fallbackError: any) {
+      logger.error({ error: fallbackError.message, companyId }, "Error querying fallback subscriptions table");
+    }
+
     return {
       isActive: false,
       isBlocked: true,
