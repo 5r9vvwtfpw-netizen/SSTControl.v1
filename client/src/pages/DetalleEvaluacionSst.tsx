@@ -2123,7 +2123,7 @@ export default function DetalleEvaluacionSst() {
                       data-testid="button-ir-objetivos-sst"
                       asChild
                     >
-                      <Link href={`/objetivos-sst?from=evaluation&evaluationId=${id}`}>
+                      <Link href={`/objetivos-sst?from=evaluation&evaluationId=${id}&estandar=2.2.1`}>
                         <Target className="h-4 w-4 mr-2" />
                         Ir a Objetivos SST
                       </Link>

@@ -27,6 +27,7 @@ import { es } from "date-fns/locale";
 import { indicadoresSstPredefinidos, getIndicadorByCodigo, formulasSugeridas } from "@/data/indicadores-sst-predefinidos";
 import { OBJETIVOS_SST_PREDEFINIDOS, OBJETIVOS_POR_CATEGORIA, ObjetivoSst as ObjetivoPredefinido } from "@/data/objetivos-sst-predefinidos";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
+import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
@@ -1482,6 +1483,8 @@ function IndicadoresTab() {
   const [selectedIndicador, setSelectedIndicador] = useState<IndicadorSst | null>(null);
   const [selectedPredefIndicador, setSelectedPredefIndicador] = useState<string>("");
 
+  const estandarFromUrl = new URLSearchParams(window.location.search).get("estandar");
+
   const form = useForm<z.infer<typeof indicadorFormSchema>>({
     resolver: zodResolver(indicadorFormSchema),
     defaultValues: {
@@ -1765,6 +1768,14 @@ function IndicadoresTab() {
             setEditingIndicador(null);
             setSelectedPredefIndicador("");
             form.reset();
+          } else if (open && !editingIndicador && estandarFromUrl) {
+            const estandarData = getEstandarByCodigo(estandarFromUrl);
+            if (estandarData?.normativaAplicable?.length) {
+              const normasTexto = estandarData.normativaAplicable
+                .map(n => `${n.norma}${n.articulo ? ` ${n.articulo}` : ''} - ${n.descripcion}`)
+                .join('; ');
+              form.setValue("normasRelacionadas", normasTexto);
+            }
           }
         }}>
           <DialogTrigger asChild>
@@ -1782,6 +1793,16 @@ function IndicadoresTab() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {!editingIndicador && estandarFromUrl && (
+                  <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-md p-3">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+                      <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                        Normas relacionadas auto-rellenadas desde el Estándar {estandarFromUrl} de la evaluación SST
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {!editingIndicador && (
                   <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
                     <div className="flex items-start gap-3">
