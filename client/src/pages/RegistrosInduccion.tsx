@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { type RegistroInduccion, type Worker, type AfiliacionSsss } from "@shared/schema";
+import { type RegistroInduccion, type Worker, type AfiliacionSsss, type ResponsibleDesignation } from "@shared/schema";
 import { Plus, Pencil, Trash2, ClipboardList, FileDown, Settings, Send, CalendarDays } from "lucide-react";
 import { Link } from "wouter";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -132,8 +132,53 @@ export default function RegistrosInduccionPage() {
     queryKey: ["/api/afiliaciones-ssss"],
   });
 
+  const { data: designaciones = [] } = useQuery<ResponsibleDesignation[]>({
+    queryKey: ["/api/responsible-designations"],
+  });
+
   // Ref to track if auto-fill was already done for this worker
   const autoFilledWorkerRef = useRef<string>("");
+  const responsableAutoFilledRef = useRef(false);
+
+  useEffect(() => {
+    if (!dialogOpen || editingRecord || responsableAutoFilledRef.current) return;
+    if (designaciones.length === 0) return;
+
+    const activeDesignation = designaciones.find(d => d.status === 'activo');
+    if (!activeDesignation) return;
+
+    responsableAutoFilledRef.current = true;
+
+    let responsableNombre = '';
+    if (activeDesignation.isExternalLso && activeDesignation.externalLsoName) {
+      responsableNombre = activeDesignation.externalLsoName;
+    } else if (activeDesignation.workerId) {
+      const worker = workers.find(w => w.id === activeDesignation.workerId);
+      if (worker) {
+        responsableNombre = worker.name;
+      }
+    }
+
+    const licencia = activeDesignation.licenciaSstNumero || '';
+
+    if (responsableNombre || licencia) {
+      const fieldsAutoFilled: string[] = [];
+      if (responsableNombre) {
+        setResponsableSelect("otro");
+        setResponsableOtro(responsableNombre);
+        fieldsAutoFilled.push("Responsable");
+      }
+      if (licencia) {
+        setFormData(prev => ({ ...prev, responsableLicencia: licencia }));
+        fieldsAutoFilled.push("Licencia SO");
+      }
+      toast({
+        title: "Responsable SST cargado",
+        description: `Se cargaron: ${fieldsAutoFilled.join(", ")} desde la designación del responsable`,
+        className: "bg-blue-50 border-blue-200",
+      });
+    }
+  }, [dialogOpen, editingRecord, designaciones, workers, toast]);
 
   // Auto-fill worker data when worker is selected
   useEffect(() => {
@@ -289,7 +334,8 @@ export default function RegistrosInduccionPage() {
     setEvaluacionSst(Object.fromEntries(SST_ITEMS.map((_, i) => [`item${i + 1}`, false])));
     setEvaluacionSeccion(Object.fromEntries(SECCION_ITEMS.map((_, i) => [`item${i + 1}`, false])));
     setEvaluacionMaquinas(Object.fromEntries(MAQUINAS_ITEMS.map((_, i) => [`item${i + 1}`, false])));
-    autoFilledWorkerRef.current = ""; // Reset auto-fill tracking ref
+    autoFilledWorkerRef.current = "";
+    responsableAutoFilledRef.current = false;
   };
 
   const handleEdit = (record: RegistroInduccion) => {
