@@ -11,6 +11,12 @@ export async function syncPricingPluginSubscriptions() {
       return;
     }
 
+    const colCheck = await db.execute(sql`
+      SELECT column_name FROM information_schema.columns 
+      WHERE table_name = 'pricing_plugin_subscriptions' AND column_name = 'vehiculos'
+    `);
+    const hasVehiculos = colCheck.rows && colCheck.rows.length > 0;
+
     const missing = await db.execute(sql`
       SELECT s.id, s.company_id, s.status, s.plan_id, s.trial_end, s.current_period_end, s.last_payment_date
       FROM subscriptions s
@@ -63,33 +69,62 @@ export async function syncPricingPluginSubscriptions() {
         continue;
       }
 
-      if (subscriptionStatus === 'blocked') {
-        await db.execute(sql`
-          INSERT INTO pricing_plugin_subscriptions (
-            customer_id, employee_count, tier, monthly_cost, price_per_license, 
-            minimum_fee, status, subscription_status, trial_ends_at, 
-            blocked_at, blocked_reason, vehiculos
-          ) VALUES (
-            ${companyId}, ${workers}, ${planId || 'microempresa'}, 0, 0, 0, 
-            'active', ${subscriptionStatus}, ${trialEnd}, 
-            ${now}, ${blockedReason}, ${vehicles}
-          )
-        `);
-      } else {
-        await db.execute(sql`
-          INSERT INTO pricing_plugin_subscriptions (
-            customer_id, employee_count, tier, monthly_cost, price_per_license, 
-            minimum_fee, status, subscription_status, trial_ends_at, 
-            vehiculos
-          ) VALUES (
-            ${companyId}, ${workers}, ${planId || 'microempresa'}, 0, 0, 0, 
-            'active', ${subscriptionStatus}, ${trialEnd}, 
-            ${vehicles}
-          )
-        `);
+      try {
+        if (hasVehiculos) {
+          if (subscriptionStatus === 'blocked') {
+            await db.execute(sql`
+              INSERT INTO pricing_plugin_subscriptions (
+                customer_id, employee_count, tier, monthly_cost, price_per_license, 
+                minimum_fee, status, subscription_status, trial_ends_at, 
+                blocked_at, blocked_reason, vehiculos
+              ) VALUES (
+                ${companyId}, ${workers}, ${planId || 'microempresa'}, 0, 0, 0, 
+                'active', ${subscriptionStatus}, ${trialEnd}, 
+                ${now}, ${blockedReason}, ${vehicles}
+              )
+            `);
+          } else {
+            await db.execute(sql`
+              INSERT INTO pricing_plugin_subscriptions (
+                customer_id, employee_count, tier, monthly_cost, price_per_license, 
+                minimum_fee, status, subscription_status, trial_ends_at, 
+                vehiculos
+              ) VALUES (
+                ${companyId}, ${workers}, ${planId || 'microempresa'}, 0, 0, 0, 
+                'active', ${subscriptionStatus}, ${trialEnd}, 
+                ${vehicles}
+              )
+            `);
+          }
+        } else {
+          if (subscriptionStatus === 'blocked') {
+            await db.execute(sql`
+              INSERT INTO pricing_plugin_subscriptions (
+                customer_id, employee_count, tier, monthly_cost, price_per_license, 
+                minimum_fee, status, subscription_status, trial_ends_at, 
+                blocked_at, blocked_reason
+              ) VALUES (
+                ${companyId}, ${workers}, ${planId || 'microempresa'}, 0, 0, 0, 
+                'active', ${subscriptionStatus}, ${trialEnd}, 
+                ${now}, ${blockedReason}
+              )
+            `);
+          } else {
+            await db.execute(sql`
+              INSERT INTO pricing_plugin_subscriptions (
+                customer_id, employee_count, tier, monthly_cost, price_per_license, 
+                minimum_fee, status, subscription_status, trial_ends_at
+              ) VALUES (
+                ${companyId}, ${workers}, ${planId || 'microempresa'}, 0, 0, 0, 
+                'active', ${subscriptionStatus}, ${trialEnd}
+              )
+            `);
+          }
+        }
+        console.log(`  ✅ Creado registro pricing_plugin para empresa ${companyId} (status: ${subscriptionStatus})`);
+      } catch (insertError: any) {
+        console.error(`  ⚠️ Error insertando registro para empresa ${companyId}:`, insertError.message);
       }
-
-      console.log(`  ✅ Creado registro pricing_plugin para empresa ${companyId} (status: ${subscriptionStatus})`);
     }
 
     console.log(`✅ Sincronización de pricing_plugin_subscriptions completada`);
