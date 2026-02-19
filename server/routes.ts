@@ -32335,7 +32335,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // ========== ITEMS DE ADQUISICIÓN (2.9.1) ==========
-  
+
+  // GET /api/adquisicion-items/resumen-integrado - Resumen integrado con EPP y recursos financieros
+  app.get("/api/adquisicion-items/resumen-integrado", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user?.companyId;
+      if (!companyId) return res.status(401).json({ error: "No autorizado" });
+
+      const items = await storage.getAdquisicionItems(companyId);
+
+      const porCategoria: Record<string, number> = {};
+      const gastosPorCategoria: Record<string, number> = {};
+      let gastoTotal = 0;
+      let recursosVinculados = 0;
+
+      for (const item of items) {
+        const cat = item.categoria || 'otros';
+        porCategoria[cat] = (porCategoria[cat] || 0) + 1;
+        const gasto = (item.precioUnitario || 0) * (item.cantidad || 0);
+        gastosPorCategoria[cat] = (gastosPorCategoria[cat] || 0) + gasto;
+        gastoTotal += gasto;
+        if (item.resourceAllocationId) recursosVinculados++;
+      }
+
+      let totalEntregas = 0;
+      let trabajadoresConEpp = 0;
+      const entregasPorCategoria: Record<string, number> = {};
+      const ultimasEntregas: { eppNombre: string; eppCategoria: string; cantidad: number; fechaEntrega: string }[] = [];
+
+      try {
+        const eppResult = await db.select({
+          id: eppDeliveries.id,
+          workerId: eppDeliveries.workerId,
+          quantity: eppDeliveries.quantity,
+          deliveryDate: eppDeliveries.deliveryDate,
+          eppName: schema.eppCatalog.name,
+          eppCategory: schema.eppCatalog.category,
+        })
+        .from(eppDeliveries)
+        .leftJoin(schema.eppCatalog, eq(eppDeliveries.eppCatalogId, schema.eppCatalog.id))
+        .where(eq(eppDeliveries.companyId, companyId))
+        .orderBy(desc(eppDeliveries.deliveryDate));
+
+        totalEntregas = eppResult.length;
+        const workerIds = new Set(eppResult.map(e => e.workerId));
+        trabajadoresConEpp = workerIds.size;
+
+        for (const e of eppResult) {
+          const cat = e.eppCategory || 'otros';
+          entregasPorCategoria[cat] = (entregasPorCategoria[cat] || 0) + 1;
+        }
+
+        for (const e of eppResult.slice(0, 5)) {
+          ultimasEntregas.push({
+            eppNombre: e.eppName || 'EPP',
+            eppCategoria: e.eppCategory || 'General',
+            cantidad: e.quantity || 1,
+            fechaEntrega: e.deliveryDate ? new Date(e.deliveryDate).toISOString() : '',
+          });
+        }
+      } catch (eppError) {
+        console.error('Error fetching EPP data for resumen-integrado:', eppError);
+      }
+
+      let totalRecursos = 0;
+      let ejecutadoRecursos = 0;
+      try {
+        const recursos = await storage.getResourceAllocations(companyId);
+        const financieros = recursos.filter((r: any) => r.resourceType === 'financiero');
+        for (const r of financieros) {
+          totalRecursos += Number(r.allocatedBudget) || 0;
+          ejecutadoRecursos += Number(r.executedBudget) || 0;
+        }
+      } catch (recError) {
+        console.error('Error fetching resource data for resumen-integrado:', recError);
+      }
+
+      res.json({
+        adquisiciones: {
+          porCategoria,
+          gastoTotal,
+          gastosPorCategoria,
+          totalItems: items.length,
+          recursosVinculados,
+        },
+        epp: {
+          totalEntregas,
+          trabajadoresConEpp,
+          entregasPorCategoria,
+          ultimasEntregas,
+        },
+        recursosFinancieros: {
+          total: totalRecursos,
+          ejecutado: ejecutadoRecursos,
+          porcentajeEjecucion: totalRecursos > 0 ? Math.round((ejecutadoRecursos / totalRecursos) * 100) : 0,
+        },
+      });
+    } catch (error: any) {
+      console.error('Error fetching resumen integrado:', error);
+      res.status(500).json({ error: error.message || "Error al obtener resumen integrado" });
+    }
+  });
+
   // GET /api/adquisicion-items/resumen - Resumen por categoría y gastos
   app.get("/api/adquisicion-items/resumen", requireAuth, async (req, res) => {
     try {
