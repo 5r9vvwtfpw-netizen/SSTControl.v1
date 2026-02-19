@@ -297,7 +297,7 @@ export default function AsignarLsoExterno() {
                 <li>Al asignarlo, el profesional recibirá acceso al Portal LSO para firmar documentos</li>
               </ol>
               <p className="text-xs text-blue-600 dark:text-blue-500">
-                El profesional LSO es independiente. La plataforma facilita el directorio pero la negociación es directa entre su empresa y el profesional.
+                El profesional LSO es un contratista independiente. SST Colombia facilita el directorio para que usted pueda encontrar profesionales licenciados, pero no participa en la negociación ni en la relación contractual. Los términos del servicio (honorarios, alcance, duración) se acuerdan directamente entre su empresa y el profesional elegido. Asigne al profesional en el sistema solo después de haber formalizado el acuerdo.
               </p>
             </div>
           </div>
