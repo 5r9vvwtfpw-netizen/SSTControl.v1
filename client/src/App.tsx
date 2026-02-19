@@ -439,7 +439,7 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
           subscriptionStatus={subscriptionStatus.subscriptionStatus}
           blockedReason={subscriptionStatus.blockedReason || "Su acceso está bloqueado"}
           trialEndsAt={subscriptionStatus.trialEndsAt}
-          onActivateSubscription={() => navigate("/mi-suscripcion")}
+          onActivateSubscription={() => { window.location.href = "/mi-suscripcion"; }}
         />
       </>
     );

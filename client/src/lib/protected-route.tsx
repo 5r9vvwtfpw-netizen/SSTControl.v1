@@ -50,8 +50,8 @@ export function ProtectedRoute({
     );
   }
 
-  // TRABAJADORES: Solo pueden acceder al Portal de Empleados y rutas de capacitación COPASST
-  const trabajadorAllowedPaths = ["/portal-empleados", "/capacitacion-copasst"];
+  // TRABAJADORES: Solo pueden acceder al Portal de Empleados, capacitación COPASST, y flujo de suscripción/pago
+  const trabajadorAllowedPaths = ["/portal-empleados", "/capacitacion-copasst", "/mi-suscripcion", "/checkout"];
   if (user.role === "trabajador" && !trabajadorAllowedPaths.includes(path)) {
     return (
       <Route path={path}>
