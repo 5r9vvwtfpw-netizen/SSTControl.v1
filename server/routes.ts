@@ -1553,7 +1553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Object Storage routes - serve files from Replit Object Storage
-  
+
   // Route to serve files directly from Object Storage at /objects/*
   app.get("/objects/*", async (req, res) => {
     try {
@@ -1738,6 +1738,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error checking support access session:', error);
       return res.status(500).json({ error: "Error al verificar sesión de acceso" });
+    }
+  });
+
+  // POST /api/uploads/request-url - Get a presigned URL for file upload (S3)
+  app.post("/api/uploads/request-url", requireAuth, async (req, res) => {
+    try {
+      const { name, size, contentType } = req.body;
+
+      if (!name) {
+        return res.status(400).json({ error: "Missing required field: name" });
+      }
+
+      const storageService = new ObjectStorageService();
+      const { uploadUrl, objectPath } = await storageService.getPresignedUploadUrl(
+        name,
+        contentType || "application/octet-stream"
+      );
+
+      res.json({
+        uploadURL: uploadUrl,
+        objectPath,
+        metadata: { name, size, contentType },
+      });
+    } catch (error) {
+      console.error("Error generating upload URL:", error);
+      res.status(500).json({ error: "Error al generar URL de subida" });
     }
   });
 
