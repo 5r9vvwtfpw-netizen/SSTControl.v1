@@ -98,6 +98,7 @@ export default function AsignarLsoExterno() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [confirmNegotiation, setConfirmNegotiation] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -184,6 +185,7 @@ export default function AsignarLsoExterno() {
 
   const handleAssignFromProfile = () => {
     setShowProfileModal(false);
+    setConfirmNegotiation(false);
     setShowConfirmDialog(true);
   };
 
@@ -278,6 +280,29 @@ export default function AsignarLsoExterno() {
           Busque y asigne un Licenciado en Seguridad y Salud en el Trabajo desde el directorio externo.
         </p>
       </div>
+
+      {/* Aviso de proceso de contratación */}
+      <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30">
+        <CardContent className="py-4">
+          <div className="flex gap-3">
+            <AlertTriangle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-blue-800 dark:text-blue-300" data-testid="text-process-info">
+                Proceso de contratación del Profesional LSO
+              </p>
+              <ol className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-decimal list-inside">
+                <li>Busque en el directorio al profesional que se ajuste a sus necesidades</li>
+                <li><strong>Contacte al profesional directamente</strong> por correo o teléfono para negociar los términos del servicio</li>
+                <li>Una vez acordados los términos, asígnelo desde esta página para vincularlo a su SG-SST</li>
+                <li>Al asignarlo, el profesional recibirá acceso al Portal LSO para firmar documentos</li>
+              </ol>
+              <p className="text-xs text-blue-600 dark:text-blue-500">
+                El profesional LSO es independiente. La plataforma facilita el directorio pero la negociación es directa entre su empresa y el profesional.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* LSO Actualmente Asignado */}
       {assignmentLoading ? (
@@ -590,6 +615,31 @@ export default function AsignarLsoExterno() {
             </div>
           )}
 
+          {selectedLso && (
+            <div className="border-t pt-4 mt-4">
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-3">
+                <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 mb-2 flex items-center gap-1">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  Antes de asignar, contacte al profesional
+                </p>
+                <div className="space-y-1">
+                  {selectedLso.email && (
+                    <a href={`mailto:${selectedLso.email}`} className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400 hover:underline" data-testid="link-contact-email">
+                      <Mail className="h-3.5 w-3.5" />
+                      {selectedLso.email}
+                    </a>
+                  )}
+                  {selectedLso.phone && (
+                    <a href={`tel:${selectedLso.phone}`} className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400 hover:underline" data-testid="link-contact-phone">
+                      <Phone className="h-3.5 w-3.5" />
+                      {selectedLso.phone}
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setShowProfileModal(false)}>
               Cerrar
@@ -598,6 +648,7 @@ export default function AsignarLsoExterno() {
               onClick={handleAssignFromProfile}
               data-testid="button-assign-from-profile"
             >
+              <UserCheck className="h-4 w-4 mr-2" />
               Asignar a mi empresa
             </Button>
           </DialogFooter>
@@ -605,35 +656,55 @@ export default function AsignarLsoExterno() {
       </Dialog>
 
       {/* Diálogo de confirmación de asignación */}
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+      <Dialog open={showConfirmDialog} onOpenChange={(open) => {
+        setShowConfirmDialog(open);
+        if (!open) setConfirmNegotiation(false);
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirmar Asignación de LSO</DialogTitle>
             <DialogDescription>
-              ¿Está seguro de que desea asignar este profesional como su Licenciado en SST?
+              Confirme que ya ha contactado y llegado a un acuerdo con este profesional antes de asignarlo.
             </DialogDescription>
           </DialogHeader>
           
           {selectedLso && (
-            <div className="space-y-3 py-4">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{selectedLso.fullName}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span>{selectedLso.email}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span>{selectedLso.city}</span>
-              </div>
-              {selectedLso.licenseNumber && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Award className="h-4 w-4 text-muted-foreground" />
-                  <span>Licencia: {selectedLso.licenseNumber}</span>
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{selectedLso.fullName}</span>
                 </div>
-              )}
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span>{selectedLso.email}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span>{selectedLso.city}</span>
+                </div>
+                {selectedLso.licenseNumber && (
+                  <div className="flex items-center gap-2">
+                    <Award className="h-4 w-4 text-muted-foreground" />
+                    <span>Licencia: {selectedLso.licenseNumber}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="border rounded-md p-3 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+                <label className="flex items-start gap-3 cursor-pointer" data-testid="label-confirm-negotiation">
+                  <input
+                    type="checkbox"
+                    checked={confirmNegotiation}
+                    onChange={(e) => setConfirmNegotiation(e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-amber-400 text-primary focus:ring-primary"
+                    data-testid="checkbox-confirm-negotiation"
+                  />
+                  <span className="text-sm text-amber-800 dark:text-amber-300">
+                    Confirmo que he contactado previamente a <strong>{selectedLso.fullName}</strong> y hemos llegado a un acuerdo para la prestación de servicios como Licenciado en SST para mi empresa.
+                  </span>
+                </label>
+              </div>
             </div>
           )}
 
@@ -643,7 +714,7 @@ export default function AsignarLsoExterno() {
             </Button>
             <Button 
               onClick={handleConfirmAssign}
-              disabled={assignMutation.isPending}
+              disabled={assignMutation.isPending || !confirmNegotiation}
               data-testid="button-confirm-assign"
             >
               {assignMutation.isPending ? "Asignando..." : "Confirmar Asignación"}
