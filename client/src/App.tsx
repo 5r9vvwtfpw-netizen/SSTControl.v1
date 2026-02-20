@@ -172,6 +172,17 @@ import HelpVideoButton from "@/components/HelpVideoButton";
 import DemoVerify from "@/pages/DemoVerify";
 
 // Componente que decide si mostrar Welcome o Dashboard según autenticación
+function HelpVideoButtonWrapper() {
+  const [location] = useLocation();
+  const hiddenRoutes = ["/videos-ayuda", "/admin-videos-ayuda"];
+  if (hiddenRoutes.includes(location)) return null;
+  return (
+    <div className="flex justify-end mb-2">
+      <HelpVideoButton />
+    </div>
+  );
+}
+
 function HomeGateway() {
   const { user, isLoading } = useAuth();
   
@@ -392,9 +403,7 @@ function AdminLayout() {
         <main className="flex-1 overflow-auto bg-background">
           <div className="container mx-auto px-6 py-6">
             <TrialAlert />
-            <div className="flex justify-end mb-2">
-              <HelpVideoButton />
-            </div>
+            <HelpVideoButtonWrapper />
             <ChapterGate>
               <Router />
             </ChapterGate>
