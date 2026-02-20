@@ -104,20 +104,26 @@ export default function AsignarLsoExterno() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { selectedCompany } = useCompanyContext();
+  const { selectedCompany, effectiveCompanyId } = useCompanyContext();
+
+  const { data: companyData } = useQuery<any>({
+    queryKey: ["/api/company/current"],
+    enabled: !!user?.companyId || !!effectiveCompanyId,
+  });
 
   const buildMailtoUrl = useMemo(() => {
     return (lso: LsoRegistration) => {
-      const c = selectedCompany;
-      const companyName = c?.name || "nuestra empresa";
-      const userName = user?.fullName || user?.username || "";
-      const nit = c?.nit || "No registrado";
-      const ciiu = c?.ciiuCode || "No registrado";
-      const workers = c?.numberOfWorkers ?? "No registrado";
+      const c = companyData || selectedCompany;
+      const companyName = c?.name || "";
+      const nit = c?.nit || "";
+      const ciiu = c?.ciiuCode || "";
+      const workers = c?.numberOfWorkers;
       const vehicles = c?.numberOfVehicles ?? 0;
-      const contactPhone = c?.contactPhone || "No registrado";
-      const contactEmail = c?.contactEmail || "No registrado";
-      const legalRep = c?.legalRepName || userName;
+      const city = c?.city || "";
+      const address = c?.address || "";
+      const contactPhone = c?.contactPhone || "";
+      const contactEmail = c?.contactEmail || "";
+      const legalRep = c?.legalRepName || "";
       const legalRepPosition = c?.legalRepPosition || "Representante Legal";
 
       const subject = encodeURIComponent(`Solicitud de servicios SST - ${companyName} (NIT: ${nit})`);
@@ -136,6 +142,8 @@ export default function AsignarLsoExterno() {
         `Razón Social: ${companyName}\n` +
         `NIT: ${nit}\n` +
         `Código CIIU (Actividad Económica): ${ciiu}\n` +
+        `Ciudad: ${city}\n` +
+        (address ? `Dirección: ${address}\n` : "") +
         `Número de trabajadores: ${workers}\n` +
         vehicleSection +
         `\n` +
@@ -149,13 +157,14 @@ export default function AsignarLsoExterno() {
         `═══════════════════════════════════════\n` +
         `SERVICIOS REQUERIDOS\n` +
         `═══════════════════════════════════════\n\n` +
-        `Estamos interesados en contratar servicios profesionales de Seguridad y Salud en el Trabajo que incluyan:\n\n` +
-        `- Diseño e implementación del SG-SST conforme a la Resolución 0312 de 2019\n` +
-        `- Acompañamiento en el cumplimiento de estándares mínimos\n` +
-        `- Asesoría técnica en gestión de riesgos laborales\n` +
-        (vehicles && vehicles > 0 ? `- Diseño e implementación del PESV conforme a la Resolución 40595 de 2022\n` : "") +
+        `Nuestra empresa ya cuenta con el Sistema de Gestión de SST implementado a través de la plataforma SST Colombia. Requerimos un profesional Licenciado en SST para:\n\n` +
+        `- Acompañamiento y direccionamiento técnico del SG-SST conforme a la Resolución 0312 de 2019\n` +
+        `- Orientación en intervenciones de ley y cumplimiento de estándares mínimos\n` +
+        `- Asesoría profesional en gestión de riesgos laborales y vigilancia epidemiológica\n` +
+        `- Firma y respaldo profesional de documentos técnicos del SG-SST\n` +
+        (vehicles && vehicles > 0 ? `- Acompañamiento en el PESV conforme a la Resolución 40595 de 2022\n` : "") +
         `\nNos gustaría agendar una reunión para discutir en detalle:\n` +
-        `- Alcance específico de los servicios según nuestro perfil empresarial\n` +
+        `- Alcance específico del acompañamiento según nuestro perfil empresarial\n` +
         `- Propuesta económica y condiciones contractuales\n` +
         `- Cronograma y disponibilidad\n\n` +
         `Nota: Este contacto se realiza de manera directa entre la empresa y el profesional. SST Colombia actúa únicamente como facilitador del directorio y no interviene en la negociación ni en la relación contractual.\n\n` +
@@ -170,7 +179,7 @@ export default function AsignarLsoExterno() {
       );
       return `mailto:${lso.email}?subject=${subject}&body=${body}`;
     };
-  }, [selectedCompany, user]);
+  }, [companyData, selectedCompany, user]);
 
   // Query para verificar el estado de la integración (usando nuevos endpoints JWT)
   const { data: statusData, isLoading: statusLoading } = useQuery<{ ok: boolean; configured: boolean; connected?: boolean; message: string }>({
