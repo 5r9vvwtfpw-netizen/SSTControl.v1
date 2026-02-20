@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, X, Video, Play, BookOpen, Shield, Car, Settings, MonitorPlay } from "lucide-react";
+import {
+  Search, X, Video, Play, BookOpen, MonitorPlay,
+  ClipboardList, Hammer, CheckSquare, RefreshCw, Settings, Car
+} from "lucide-react";
 
 function isYouTubeUrl(url: string): boolean {
   try {
@@ -85,39 +88,169 @@ function getYouTubeThumbnail(url: string): string | null {
   return null;
 }
 
-function getVideoGroup(route: string): string {
-  if (route.startsWith("/pesv")) return "PESV";
-  const adminRoutes = ["/empresas", "/usuarios", "/profesionales-licenciados", "/portal-licenciado", "/admin-"];
-  if (adminRoutes.some(r => route.startsWith(r))) return "Administracion";
-  return "SST";
+type CycleKey = "planear" | "hacer" | "verificar" | "actuar" | "administracion" | "pesv" | "general";
+
+const ROUTE_TO_CYCLE: Record<string, CycleKey> = {
+  "/trabajadores": "planear",
+  "/perfiles-cargo": "planear",
+  "/afiliaciones-ssss": "planear",
+  "/evaluaciones-sst": "planear",
+  "/estandares-sst": "planear",
+  "/politicas-sst": "planear",
+  "/politica-sst": "planear",
+  "/asignacion-recursos": "planear",
+  "/designacion-responsable": "planear",
+  "/asignar-lso-externo": "planear",
+  "/programa-capacitacion-anual": "planear",
+  "/planes-trabajo-anual": "planear",
+  "/iperc": "planear",
+  "/plan-emergencias": "planear",
+  "/matriz-legal": "planear",
+  "/objetivos-sst": "planear",
+  "/partes-interesadas": "planear",
+  "/analisis-contexto": "planear",
+  "/plan-mejoramiento-contexto": "planear",
+  "/copasst": "planear",
+  "/copasst-gestion": "planear",
+  "/copasst-cms": "planear",
+  "/comite-convivencia-actas": "planear",
+  "/conservacion-documentos": "planear",
+  "/comunicacion-sst": "planear",
+  "/perfil-sociodemografico": "planear",
+
+  "/dashboard-hacer": "hacer",
+  "/capacitaciones": "hacer",
+  "/capacitacion-copasst": "hacer",
+  "/registros-induccion": "hacer",
+  "/configuracion-induccion": "hacer",
+  "/curso-50-horas": "hacer",
+  "/inspecciones": "hacer",
+  "/entrega-epp": "hacer",
+  "/examenes-medicos": "hacer",
+  "/mediciones-ambientales": "hacer",
+  "/conservacion-auditiva": "hacer",
+  "/sustancias-quimicas": "hacer",
+  "/vigilancia-epidemiologica": "hacer",
+  "/actividades-promocion-prevencion": "hacer",
+  "/estilos-vida-saludable": "hacer",
+  "/medidas": "hacer",
+  "/salud": "hacer",
+  "/accidentes": "hacer",
+  "/investigacion-accidentes": "hacer",
+  "/arbol-causas": "hacer",
+  "/ausentismo-laboral": "hacer",
+  "/evaluacion-proveedores": "hacer",
+  "/gestion-cambios": "hacer",
+  "/adquisiciones-sst": "hacer",
+  "/contratos": "hacer",
+  "/trabajadores-alto-riesgo": "hacer",
+
+  "/dashboard-verificar": "verificar",
+  "/indicadores-accidentalidad": "verificar",
+  "/copasst-evaluaciones": "verificar",
+  "/auditorias-internas": "verificar",
+  "/informes": "verificar",
+
+  "/dashboard-actuar": "actuar",
+  "/revisiones-direccion": "actuar",
+  "/recomendaciones-arl": "actuar",
+
+  "/empresas": "administracion",
+  "/usuarios": "administracion",
+  "/profesionales-licenciados": "administracion",
+  "/portal-licenciado": "administracion",
+  "/portal-empleados": "administracion",
+  "/mi-cuenta": "administracion",
+  "/tickets-soporte": "administracion",
+  "/mensajes-internos": "administracion",
+  "/mi-suscripcion": "administracion",
+  "/documentos-legales": "administracion",
+  "/directorio-profesionales": "administracion",
+};
+
+function getVideoCycle(route: string): CycleKey {
+  const cleanRoute = route.split("?")[0].replace(/\/:[\w]+/g, "");
+  if (ROUTE_TO_CYCLE[cleanRoute]) return ROUTE_TO_CYCLE[cleanRoute];
+  if (route.startsWith("/pesv")) return "pesv";
+  if (route.startsWith("/admin-")) return "administracion";
+  return "general";
 }
 
-const GROUP_CONFIG = {
-  SST: {
-    label: "Seguridad y Salud en el Trabajo",
-    description: "Tutoriales para la gestion del sistema SST",
-    icon: Shield,
-    gradient: "from-emerald-500/10 to-emerald-600/5 dark:from-emerald-500/20 dark:to-emerald-600/10",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
-    badgeClass: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-  },
-  PESV: {
-    label: "Plan Estrategico de Seguridad Vial",
-    description: "Tutoriales para el modulo PESV",
-    icon: Car,
+const CYCLE_CONFIG: Record<CycleKey, {
+  label: string;
+  description: string;
+  icon: typeof ClipboardList;
+  gradient: string;
+  iconColor: string;
+  badgeClass: string;
+  accentBorder: string;
+}> = {
+  planear: {
+    label: "Planear (P)",
+    description: "Organizacion, evaluacion y planificacion del SG-SST",
+    icon: ClipboardList,
     gradient: "from-blue-500/10 to-blue-600/5 dark:from-blue-500/20 dark:to-blue-600/10",
     iconColor: "text-blue-600 dark:text-blue-400",
     badgeClass: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+    accentBorder: "border-l-blue-500",
   },
-  Administracion: {
-    label: "Administracion del Sistema",
-    description: "Tutoriales para la configuracion y gestion",
-    icon: Settings,
+  hacer: {
+    label: "Hacer (H)",
+    description: "Implementacion y ejecucion de controles y actividades",
+    icon: Hammer,
     gradient: "from-amber-500/10 to-amber-600/5 dark:from-amber-500/20 dark:to-amber-600/10",
     iconColor: "text-amber-600 dark:text-amber-400",
     badgeClass: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+    accentBorder: "border-l-amber-500",
   },
-} as const;
+  verificar: {
+    label: "Verificar (V)",
+    description: "Seguimiento, medicion, analisis y evaluacion",
+    icon: CheckSquare,
+    gradient: "from-emerald-500/10 to-emerald-600/5 dark:from-emerald-500/20 dark:to-emerald-600/10",
+    iconColor: "text-emerald-600 dark:text-emerald-400",
+    badgeClass: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+    accentBorder: "border-l-emerald-500",
+  },
+  actuar: {
+    label: "Actuar (A)",
+    description: "Acciones de mejora continua y revision por la direccion",
+    icon: RefreshCw,
+    gradient: "from-rose-500/10 to-rose-600/5 dark:from-rose-500/20 dark:to-rose-600/10",
+    iconColor: "text-rose-600 dark:text-rose-400",
+    badgeClass: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
+    accentBorder: "border-l-rose-500",
+  },
+  pesv: {
+    label: "PESV - Seguridad Vial",
+    description: "Plan Estrategico de Seguridad Vial",
+    icon: Car,
+    gradient: "from-violet-500/10 to-violet-600/5 dark:from-violet-500/20 dark:to-violet-600/10",
+    iconColor: "text-violet-600 dark:text-violet-400",
+    badgeClass: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
+    accentBorder: "border-l-violet-500",
+  },
+  administracion: {
+    label: "Administracion",
+    description: "Configuracion del sistema, usuarios y gestion general",
+    icon: Settings,
+    gradient: "from-slate-500/10 to-slate-600/5 dark:from-slate-500/20 dark:to-slate-600/10",
+    iconColor: "text-slate-600 dark:text-slate-400",
+    badgeClass: "bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300",
+    accentBorder: "border-l-slate-500",
+  },
+  general: {
+    label: "General",
+    description: "Tutoriales generales del sistema",
+    icon: BookOpen,
+    gradient: "from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10",
+    iconColor: "text-primary",
+    badgeClass: "bg-primary/10 text-primary dark:bg-primary/20",
+    accentBorder: "border-l-primary",
+  },
+};
+
+const CYCLE_ORDER: CycleKey[] = ["general", "planear", "hacer", "verificar", "actuar", "pesv", "administracion"];
 
 export default function BibliotecaVideos() {
   const [search, setSearch] = useState("");
@@ -139,8 +272,6 @@ export default function BibliotecaVideos() {
         );
       })
     : activeVideos;
-
-  const groups = ["SST", "PESV", "Administracion"] as const;
 
   function openVideoModal(video: HelpVideo) {
     setSelectedVideo(video);
@@ -208,7 +339,7 @@ export default function BibliotecaVideos() {
               Biblioteca de Videos de Ayuda
             </h1>
             <p className="text-muted-foreground mt-1" data-testid="text-page-subtitle">
-              {activeVideos.length} {activeVideos.length === 1 ? "tutorial disponible" : "tutoriales disponibles"} para aprender a usar cada modulo del sistema
+              {activeVideos.length} {activeVideos.length === 1 ? "tutorial disponible" : "tutoriales disponibles"} organizados por ciclo PHVA
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -240,36 +371,36 @@ export default function BibliotecaVideos() {
         </div>
       </div>
 
-      {groups.map((group) => {
-        const groupVideos = filteredVideos.filter(
-          (video) => getVideoGroup(video.moduleRoute) === group
+      {CYCLE_ORDER.map((cycleKey) => {
+        const cycleVideos = filteredVideos.filter(
+          (video) => getVideoCycle(video.moduleRoute) === cycleKey
         );
-        if (groupVideos.length === 0) return null;
+        if (cycleVideos.length === 0) return null;
 
-        const config = GROUP_CONFIG[group];
-        const GroupIcon = config.icon;
+        const config = CYCLE_CONFIG[cycleKey];
+        const CycleIcon = config.icon;
 
         return (
-          <div key={group} className="space-y-4" data-testid={`section-group-${group}`}>
+          <div key={cycleKey} className="space-y-4" data-testid={`section-cycle-${cycleKey}`}>
             <div className={`rounded-md bg-gradient-to-r ${config.gradient} border border-border/50 p-4`}>
               <div className="flex items-center gap-3 flex-wrap">
                 <div className={`h-9 w-9 rounded-md bg-background flex items-center justify-center border`}>
-                  <GroupIcon className={`h-5 w-5 ${config.iconColor}`} />
+                  <CycleIcon className={`h-5 w-5 ${config.iconColor}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-lg font-semibold" data-testid={`text-group-title-${group}`}>
+                  <h2 className="text-lg font-semibold" data-testid={`text-cycle-title-${cycleKey}`}>
                     {config.label}
                   </h2>
                   <p className="text-xs text-muted-foreground">{config.description}</p>
                 </div>
-                <Badge className={`no-default-hover-elevate no-default-active-elevate ${config.badgeClass} border-0`} data-testid={`badge-count-${group}`}>
-                  {groupVideos.length} {groupVideos.length === 1 ? "video" : "videos"}
+                <Badge className={`no-default-hover-elevate no-default-active-elevate ${config.badgeClass} border-0`} data-testid={`badge-count-${cycleKey}`}>
+                  {cycleVideos.length} {cycleVideos.length === 1 ? "video" : "videos"}
                 </Badge>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {groupVideos.map((video) => {
+              {cycleVideos.map((video) => {
                 const thumbnail = isYouTubeUrl(video.videoUrl)
                   ? getYouTubeThumbnail(video.videoUrl)
                   : null;
