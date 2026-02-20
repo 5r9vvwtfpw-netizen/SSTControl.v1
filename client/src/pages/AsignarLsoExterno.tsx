@@ -170,7 +170,7 @@ export default function AsignarLsoExterno() {
         `- Firma y respaldo profesional de los documentos técnicos generados por el sistema\n` +
         `- Participación activa en el COPASST y Comité de Convivencia Laboral\n` +
         (vehicles && vehicles > 0 ? `- Gestión del PESV (Plan Estratégico de Seguridad Vial) conforme a la Resolución 40595 de 2022\n` : "") +
-        `\nEl profesional tendrá acceso completo a la plataforma SST Colombia con su propio usuario y perfil de Licenciado, donde podrá gestionar toda la operación del SG-SST de nuestra empresa de forma digital.\n\n` +
+        `\nIMPORTANTE: La plataforma SST Colombia cuenta con un Portal exclusivo para Licenciados en SST. Una vez vinculado, usted accederá a través de este portal dedicado donde podrá gestionar, supervisar y dar direccionamiento al SG-SST de nuestra empresa sin necesidad de ingresar al sistema interno de la empresa. Desde el Portal del Licenciado tendrá visibilidad completa del estado del programa, los indicadores, documentos y el cumplimiento normativo.\n\n` +
         `Nos gustaría agendar una reunión para discutir en detalle:\n` +
         `- Alcance específico del acompañamiento según nuestro perfil empresarial\n` +
         `- Propuesta económica y condiciones contractuales\n` +
