@@ -108,21 +108,65 @@ export default function AsignarLsoExterno() {
 
   const buildMailtoUrl = useMemo(() => {
     return (lso: LsoRegistration) => {
-      const companyName = selectedCompany?.name || "nuestra empresa";
+      const c = selectedCompany;
+      const companyName = c?.name || "nuestra empresa";
       const userName = user?.fullName || user?.username || "";
-      const subject = encodeURIComponent(`Solicitud de servicios SST - ${companyName}`);
+      const nit = c?.nit || "No registrado";
+      const ciiu = c?.ciiuCode || "No registrado";
+      const workers = c?.numberOfWorkers ?? "No registrado";
+      const vehicles = c?.numberOfVehicles ?? 0;
+      const contactPhone = c?.contactPhone || "No registrado";
+      const contactEmail = c?.contactEmail || "No registrado";
+      const legalRep = c?.legalRepName || userName;
+      const legalRepPosition = c?.legalRepPosition || "Representante Legal";
+
+      const subject = encodeURIComponent(`Solicitud de servicios SST - ${companyName} (NIT: ${nit})`);
+
+      let vehicleSection = "";
+      if (vehicles && vehicles > 0) {
+        vehicleSection = `- Vehículos registrados: ${vehicles} (aplica PESV - Plan Estratégico de Seguridad Vial)\n`;
+      }
+
       const body = encodeURIComponent(
         `Estimado(a) ${lso.fullName},\n\n` +
-        `Mi nombre es ${userName}, representante de ${companyName}.\n\n` +
-        `Encontramos su perfil en el directorio de profesionales LSO de SST Colombia y estamos interesados en conocer sus servicios de Seguridad y Salud en el Trabajo.\n\n` +
-        `Nos gustaría agendar una reunión para discutir:\n` +
-        `- Alcance de los servicios requeridos\n` +
-        `- Honorarios y condiciones\n` +
-        `- Disponibilidad\n\n` +
-        `Quedo atento(a) a su respuesta.\n\n` +
-        `Cordialmente,\n` +
-        `${userName}\n` +
-        `${companyName}`
+        `Reciba un cordial saludo. A través de la plataforma SST Colombia hemos identificado su perfil profesional en el directorio de Licenciados en Seguridad y Salud en el Trabajo y nos permitimos presentar nuestra empresa para explorar una posible vinculación de sus servicios profesionales.\n\n` +
+        `═══════════════════════════════════════\n` +
+        `INFORMACIÓN DE LA EMPRESA\n` +
+        `═══════════════════════════════════════\n\n` +
+        `Razón Social: ${companyName}\n` +
+        `NIT: ${nit}\n` +
+        `Código CIIU (Actividad Económica): ${ciiu}\n` +
+        `Número de trabajadores: ${workers}\n` +
+        vehicleSection +
+        `\n` +
+        `═══════════════════════════════════════\n` +
+        `DATOS DE CONTACTO\n` +
+        `═══════════════════════════════════════\n\n` +
+        `Representante Legal: ${legalRep}\n` +
+        `Cargo: ${legalRepPosition}\n` +
+        `Teléfono: ${contactPhone}\n` +
+        `Correo electrónico: ${contactEmail}\n\n` +
+        `═══════════════════════════════════════\n` +
+        `SERVICIOS REQUERIDOS\n` +
+        `═══════════════════════════════════════\n\n` +
+        `Estamos interesados en contratar servicios profesionales de Seguridad y Salud en el Trabajo que incluyan:\n\n` +
+        `- Diseño e implementación del SG-SST conforme a la Resolución 0312 de 2019\n` +
+        `- Acompañamiento en el cumplimiento de estándares mínimos\n` +
+        `- Asesoría técnica en gestión de riesgos laborales\n` +
+        (vehicles && vehicles > 0 ? `- Diseño e implementación del PESV conforme a la Resolución 40595 de 2022\n` : "") +
+        `\nNos gustaría agendar una reunión para discutir en detalle:\n` +
+        `- Alcance específico de los servicios según nuestro perfil empresarial\n` +
+        `- Propuesta económica y condiciones contractuales\n` +
+        `- Cronograma y disponibilidad\n\n` +
+        `Nota: Este contacto se realiza de manera directa entre la empresa y el profesional. SST Colombia actúa únicamente como facilitador del directorio y no interviene en la negociación ni en la relación contractual.\n\n` +
+        `Quedamos atentos a su respuesta.\n\n` +
+        `Cordialmente,\n\n` +
+        `${legalRep}\n` +
+        `${legalRepPosition}\n` +
+        `${companyName}\n` +
+        `NIT: ${nit}\n` +
+        `Tel: ${contactPhone}\n` +
+        `Email: ${contactEmail}`
       );
       return `mailto:${lso.email}?subject=${subject}&body=${body}`;
     };
