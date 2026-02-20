@@ -160,15 +160,18 @@ export default function AsignarLsoExterno() {
         `Teléfono: ${contactPhone}\n` +
         `Correo electrónico: ${contactEmail}\n\n` +
         `═══════════════════════════════════════\n` +
-        `SERVICIOS REQUERIDOS\n` +
+        `SOBRE NUESTRO SISTEMA DE GESTIÓN\n` +
         `═══════════════════════════════════════\n\n` +
-        `Nuestra empresa ya cuenta con el Sistema de Gestión de SST implementado a través de la plataforma SST Colombia. Requerimos un profesional Licenciado en SST para:\n\n` +
-        `- Acompañamiento y direccionamiento técnico del SG-SST conforme a la Resolución 0312 de 2019\n` +
-        `- Orientación en intervenciones de ley y cumplimiento de estándares mínimos\n` +
-        `- Asesoría profesional en gestión de riesgos laborales y vigilancia epidemiológica\n` +
-        `- Firma y respaldo profesional de documentos técnicos del SG-SST\n` +
-        (vehicles && vehicles > 0 ? `- Acompañamiento en el PESV conforme a la Resolución 40595 de 2022\n` : "") +
-        `\nNos gustaría agendar una reunión para discutir en detalle:\n` +
+        `Nuestra empresa ya tiene implementado el Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST) a través de la plataforma digital SST Colombia (sst.sagisas.co). El software ya gestiona la documentación, los estándares mínimos, la trazabilidad del ciclo PHVA, los reportes y la mayor parte del cumplimiento normativo de forma automatizada.\n\n` +
+        `Buscamos un profesional Licenciado en SST que se vincule para liderar y gestionar el programa directamente dentro de nuestra plataforma, brindando:\n\n` +
+        `- Direccionamiento técnico y profesional del SG-SST conforme a la Resolución 0312 de 2019\n` +
+        `- Liderazgo en las intervenciones de ley, inspecciones y cumplimiento de estándares mínimos\n` +
+        `- Gestión de riesgos laborales, vigilancia epidemiológica y programas de prevención\n` +
+        `- Firma y respaldo profesional de los documentos técnicos generados por el sistema\n` +
+        `- Participación activa en el COPASST y Comité de Convivencia Laboral\n` +
+        (vehicles && vehicles > 0 ? `- Gestión del PESV (Plan Estratégico de Seguridad Vial) conforme a la Resolución 40595 de 2022\n` : "") +
+        `\nEl profesional tendrá acceso completo a la plataforma SST Colombia con su propio usuario y perfil de Licenciado, donde podrá gestionar toda la operación del SG-SST de nuestra empresa de forma digital.\n\n` +
+        `Nos gustaría agendar una reunión para discutir en detalle:\n` +
         `- Alcance específico del acompañamiento según nuestro perfil empresarial\n` +
         `- Propuesta económica y condiciones contractuales\n` +
         `- Cronograma y disponibilidad\n\n` +
