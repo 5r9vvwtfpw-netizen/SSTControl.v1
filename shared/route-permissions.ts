@@ -32,6 +32,7 @@ export const routePermissions: Record<string, Permission[]> = {
   "/directorio-profesionales": [], // Directorio informativo de profesionales SST (accesible para todos)
   "/documentos-legales": ["users:edit"], // Solo superadmin y admin (documentos legales PDF)
   "/admin-videos-ayuda": ["billing:global_view"], // Solo superadmin (gestión de videos de ayuda)
+  "/videos-ayuda": [], // Accesible para todos los usuarios autenticados (biblioteca de videos)
   "/mensajes-internos": [], // Accesible para todos los usuarios autenticados (comunicación LSO ↔ Responsable SST)
   
   // Pricing Plugin

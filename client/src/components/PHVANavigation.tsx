@@ -83,6 +83,12 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
         { label: "Notificaciones", path: "/configuracion-notificaciones" },
       ],
     },
+    {
+      title: "Ayuda",
+      items: [
+        { label: "Videos de Ayuda", path: "/videos-ayuda" },
+      ],
+    },
   ],
   planear: [
     {

@@ -167,6 +167,7 @@ import { TrialAlert } from "@/components/TrialAlert";
 import { SubscriptionBlockedModal } from "@/components/SubscriptionBlockedModal";
 import { useSubscriptionCheck } from "@/hooks/useSubscriptionCheck";
 import AdminVideosAyuda from "@/pages/AdminVideosAyuda";
+import BibliotecaVideos from "@/pages/BibliotecaVideos";
 import HelpVideoButton from "@/components/HelpVideoButton";
 import DemoVerify from "@/pages/DemoVerify";
 
@@ -281,6 +282,7 @@ function Router() {
       <ProtectedRoute path="/admin-usuarios-soporte" component={AdminUsuariosSoporte} />
       <ProtectedRoute path="/admin-promociones" component={AdminPromociones} />
       <ProtectedRoute path="/admin-videos-ayuda" component={AdminVideosAyuda} />
+      <ProtectedRoute path="/videos-ayuda" component={BibliotecaVideos} />
       <ProtectedRoute path="/mensajes-internos" component={MensajesInternos} />
       <ProtectedRoute path="/accesos-soporte" component={AccesosSoporte} />
       <ProtectedRoute path="/planes-suscripcion" component={PlanesSuscripcion} />
