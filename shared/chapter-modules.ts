@@ -81,6 +81,8 @@ const CHAPTER_1_MODULES = [
   "/contrato-saas",
   "/documentos-legales",
   "/directorio-profesionales",  // Directorio de profesionales SST - disponible para todos
+  "/videos-ayuda",  // Biblioteca de videos de ayuda - disponible para todos
+  "/admin-videos-ayuda",  // Gestión de videos (superadmin)
   
   // Auth (siempre disponible)
   "/auth",
