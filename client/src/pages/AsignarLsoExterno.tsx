@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
+import { CIIU_CODES } from "@/lib/ciiu-codes";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,7 +117,10 @@ export default function AsignarLsoExterno() {
       const c = companyData || selectedCompany;
       const companyName = c?.name || "";
       const nit = c?.nit || "";
-      const ciiu = c?.ciiuCode || "";
+      const ciiuCode = c?.ciiuCode || "";
+      const ciiuEntry = CIIU_CODES.find(item => item.code === ciiuCode);
+      const ciiuDisplay = ciiuEntry ? `${ciiuCode} - ${ciiuEntry.description}` : ciiuCode;
+      const riskLevel = c?.riskLevel || "";
       const workers = c?.numberOfWorkers;
       const vehicles = c?.numberOfVehicles ?? 0;
       const city = c?.city || "";
@@ -141,7 +145,8 @@ export default function AsignarLsoExterno() {
         `═══════════════════════════════════════\n\n` +
         `Razón Social: ${companyName}\n` +
         `NIT: ${nit}\n` +
-        `Código CIIU (Actividad Económica): ${ciiu}\n` +
+        `Actividad Económica (CIIU): ${ciiuDisplay}\n` +
+        `Nivel de Riesgo ARL: ${riskLevel}\n` +
         `Ciudad: ${city}\n` +
         (address ? `Dirección: ${address}\n` : "") +
         `Número de trabajadores: ${workers}\n` +
