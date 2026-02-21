@@ -10,6 +10,16 @@ function generateToken(): string {
 }
 
 export function registerInduccionVirtualRoutes(app: Express) {
+  const pluginEnabled = process.env.ENABLE_INDUCCION_VIRTUAL_PLUGIN !== "false";
+  if (!pluginEnabled) {
+    console.log("[Inducción Virtual Plugin] DESHABILITADO por variable de entorno");
+    // Register only public endpoints to return proper error
+    app.get("/api/induccion-publica/:token", (req, res) => res.status(503).json({ error: "Módulo de inducción virtual temporalmente deshabilitado" }));
+    app.post("/api/induccion-publica/:token/progreso", (req, res) => res.status(503).json({ error: "Módulo de inducción virtual temporalmente deshabilitado" }));
+    app.post("/api/induccion-publica/:token/completar", (req, res) => res.status(503).json({ error: "Módulo de inducción virtual temporalmente deshabilitado" }));
+    return;
+  }
+  console.log("[Inducción Virtual Plugin] Habilitado");
   
   // ============================================================================
   // CONTENIDOS DE INDUCCIÓN - CRUD para administradores
@@ -753,6 +763,44 @@ export function registerInduccionVirtualRoutes(app: Express) {
     } catch (error: any) {
       console.error("Error completing induction:", error);
       res.status(500).send("Error al completar inducción");
+    }
+  });
+
+  // ============================================================================
+  // PORTAL DEL EMPLEADO - Inducciones virtuales pendientes
+  // ============================================================================
+
+  app.get("/api/portal/mis-inducciones-virtuales", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated() || !(req.user as any)?.workerId) {
+        return res.status(200).json([]);
+      }
+      
+      const user = req.user as any;
+      
+      const sesiones = await db.select({
+        id: schema.sesionesInduccionVirtual.id,
+        token: schema.sesionesInduccionVirtual.token,
+        tipoInduccion: schema.sesionesInduccionVirtual.tipoInduccion,
+        estado: schema.sesionesInduccionVirtual.estado,
+        fechaEnvio: schema.sesionesInduccionVirtual.fechaEnvio,
+        fechaExpiracion: schema.sesionesInduccionVirtual.fechaExpiracion,
+        fechaInicio: schema.sesionesInduccionVirtual.fechaInicio,
+        fechaFinalizacion: schema.sesionesInduccionVirtual.fechaFinalizacion,
+        puntajeEvaluacion: schema.sesionesInduccionVirtual.puntajeEvaluacion,
+        aprobado: schema.sesionesInduccionVirtual.aprobado,
+      })
+        .from(schema.sesionesInduccionVirtual)
+        .where(and(
+          eq(schema.sesionesInduccionVirtual.workerId, user.workerId),
+          eq(schema.sesionesInduccionVirtual.companyId, user.companyId)
+        ))
+        .orderBy(desc(schema.sesionesInduccionVirtual.fechaEnvio));
+      
+      res.json(sesiones);
+    } catch (error: any) {
+      console.error("Error fetching worker virtual inductions:", error);
+      res.status(500).json({ error: "Error al obtener inducciones virtuales" });
     }
   });
 }

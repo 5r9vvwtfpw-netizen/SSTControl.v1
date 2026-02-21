@@ -30,7 +30,7 @@ import type {
 import { insertReporteTrabajadorSchema } from "@shared/schema";
 import { z } from "zod";
 import { 
-  MessageSquare, AlertCircle, Send, CheckCircle2, FileText, User, Briefcase, FileCheck,
+  MessageSquare, AlertCircle, Send, CheckCircle, CheckCircle2, FileText, User, Briefcase, FileCheck,
   GraduationCap, Calendar, Clock, MapPin, UserCheck, Users, Mail, KeyRound, Eye, EyeOff, Vote,
   Building2, BarChart3, Shield, UserCog, BookOpen, Award, Play, Trophy, Star, FolderOpen, Inbox, Download, Bell, ChevronDown,
   History, Monitor, Smartphone, Tablet, Video, Heart, ClipboardList, Camera, Upload, Trash2, Loader2, Headphones, Car, Search, X
@@ -939,6 +939,7 @@ const portalNavGroups = [
       { id: "cursos-virtuales", label: "Cursos Virtuales", icon: BookOpen },
       { id: "capacitaciones", label: "Capacitaciones", icon: GraduationCap },
       { id: "mis-inducciones", label: "Mis Inducciones", icon: ClipboardList },
+      { id: "inducciones-virtuales", label: "Inducciones Virtuales", icon: Monitor },
     ]
   },
   {
@@ -1199,6 +1200,7 @@ function WorkerPortal() {
         {activeSection === "cursos-virtuales" && <CursosVirtualesTab />}
         {activeSection === "capacitaciones" && <MisCapacitacionesTab />}
         {activeSection === "mis-inducciones" && <MisInduccionesTab />}
+        {activeSection === "inducciones-virtuales" && <InduccionesVirtualesTab />}
         {activeSection === "comunicaciones" && <ComunicacionesTab />}
         {activeSection === "reportar" && <ReportarTab />}
         {activeSection === "mis-reportes" && <MisReportesTab />}
@@ -2845,6 +2847,198 @@ function MisInduccionesTab() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// ==================== TAB: INDUCCIONES VIRTUALES ====================
+
+function InduccionesVirtualesTab() {
+  const { toast } = useToast();
+
+  type SesionVirtual = {
+    id: string;
+    token: string;
+    tipoInduccion: string;
+    estado: string;
+    fechaEnvio: string;
+    fechaExpiracion: string;
+    fechaInicio: string | null;
+    fechaFinalizacion: string | null;
+    puntajeEvaluacion: number | null;
+    aprobado: number | null;
+  };
+
+  const { data: sesiones = [], isLoading } = useQuery<SesionVirtual[]>({
+    queryKey: ["/api/portal/mis-inducciones-virtuales"],
+  });
+
+  if (isLoading) {
+    return (
+      <Card data-testid="loading-inducciones-virtuales">
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const pendientes = sesiones.filter(s => s.estado === "pendiente" || s.estado === "en_progreso");
+  const completadas = sesiones.filter(s => s.estado === "completada");
+  const expiradas = sesiones.filter(s => s.estado === "expirada");
+
+  if (sesiones.length === 0) {
+    return (
+      <Card data-testid="empty-inducciones-virtuales">
+        <CardContent className="p-6">
+          <div className="text-center py-8">
+            <Monitor className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">Sin inducciones virtuales</h3>
+            <p className="text-muted-foreground">
+              No tiene inducciones virtuales asignadas actualmente.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {pendientes.length > 0 && (
+        <Card data-testid="card-inducciones-pendientes">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+              Inducciones Pendientes
+            </CardTitle>
+            <CardDescription>
+              Complete estas inducciones lo antes posible
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {pendientes.map((sesion) => {
+                const diasRestantes = Math.max(0, Math.ceil((new Date(sesion.fechaExpiracion).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+                return (
+                  <Card key={sesion.id} className="border-amber-200 dark:border-amber-800" data-testid={`card-induccion-virtual-${sesion.id}`}>
+                    <CardContent className="p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge className={sesion.tipoInduccion === 'induccion' 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
+                              : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'}>
+                              {sesion.tipoInduccion === 'induccion' ? 'Inducción' : 'Reinducción'}
+                            </Badge>
+                            <Badge variant={sesion.estado === "en_progreso" ? "default" : "outline"}>
+                              {sesion.estado === "en_progreso" ? "En Progreso" : "Pendiente"}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Asignada: {new Date(sesion.fechaEnvio).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {diasRestantes > 0 
+                              ? `Expira en ${diasRestantes} día${diasRestantes > 1 ? 's' : ''}` 
+                              : 'Expira hoy'}
+                          </p>
+                        </div>
+                        <a href={`/induccion-virtual/${sesion.token}`} target="_blank" rel="noopener noreferrer">
+                          <Button data-testid={`button-iniciar-induccion-${sesion.id}`}>
+                            <Play className="h-4 w-4 mr-2" />
+                            {sesion.estado === "en_progreso" ? "Continuar" : "Iniciar"}
+                          </Button>
+                        </a>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {completadas.length > 0 && (
+        <Card data-testid="card-inducciones-completadas">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              Inducciones Completadas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {completadas.map((sesion) => (
+                <Card key={sesion.id} className="border" data-testid={`card-induccion-completada-${sesion.id}`}>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                            {sesion.tipoInduccion === 'induccion' ? 'Inducción' : 'Reinducción'}
+                          </Badge>
+                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Completada
+                          </Badge>
+                          {sesion.puntajeEvaluacion !== null && (
+                            <Badge className={sesion.aprobado 
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" 
+                              : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"}>
+                              {sesion.puntajeEvaluacion}% - {sesion.aprobado ? "Aprobado" : "No aprobado"}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Completada: {sesion.fechaFinalizacion ? new Date(sesion.fechaFinalizacion).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {expiradas.length > 0 && (
+        <Card data-testid="card-inducciones-expiradas">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-muted-foreground" />
+              Inducciones Expiradas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {expiradas.map((sesion) => (
+                <Card key={sesion.id} className="border opacity-60" data-testid={`card-induccion-expirada-${sesion.id}`}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="secondary">
+                          {sesion.tipoInduccion === 'induccion' ? 'Inducción' : 'Reinducción'}
+                        </Badge>
+                        <Badge variant="secondary">Expirada</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Expiró: {new Date(sesion.fechaExpiracion).toLocaleDateString('es-CO')}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
