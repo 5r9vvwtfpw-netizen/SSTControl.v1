@@ -25667,7 +25667,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               email: assignment.externalLsoEmail,
               phone: assignment.externalLsoPhone,
               city: assignment.externalLsoCity,
-              sstLicenseNumber: assignment.externalLsoLicenseNumber || 'Licenciado Externo',
+              sstLicenseNumber: assignment.externalLsoLicenseNumber || '',
               sstLicenseIssuer: assignment.externalLsoLicenseIssuer,
               sstLicenseExpiry: assignment.externalLsoLicenseExpiry,
               signatureUrl: assignment.externalLsoSignatureUrl,
@@ -25718,7 +25718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               email: null,
               phone: null,
               city: null,
-              sstLicenseNumber: responsibleDesignation.licenciaSstNumero || 'Licenciado Externo',
+              sstLicenseNumber: responsibleDesignation.licenciaSstNumero || '',
               sstLicenseIssuer: null,
               sstLicenseExpiry: responsibleDesignation.licenciaSstVigencia,
               signatureUrl: null,
@@ -26049,13 +26049,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .text('Profesional Licenciado SST', firma2X + 5, currentY + 8);
       const lsoName = licensedProfessionalData?.fullName || 'Profesional SST';
       const lsoLicense = licensedProfessionalData?.sstLicenseNumber || '';
+      const lsoIsExternal = licensedProfessionalData?.isExternal || isExternalLso;
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000')
-        .text(lsoName, firma2X + 5, currentY + 45, { width: firmaWidth3 - 10 });
+        .text(lsoName, firma2X + 5, currentY + 35, { width: firmaWidth3 - 10 });
+      const lsoSubtitle = lsoIsExternal ? 'Lic. Externo SST' : 'Lic. Interno SST';
+      doc.fontSize(6).font('Helvetica').fillColor('#666666')
+        .text(lsoSubtitle, firma2X + 5, currentY + 48, { width: firmaWidth3 - 10 });
       if (lsoLicense) {
         doc.fontSize(6).font('Helvetica').fillColor('#666666')
-          .text(`Lic. ${lsoLicense}`, firma2X + 5, currentY + 60, { width: firmaWidth3 - 10 });
+          .text(`Lic. SST No. ${lsoLicense}`, firma2X + 5, currentY + 58, { width: firmaWidth3 - 10 });
       }
-
       // Firma 3 - Representante Legal
       const firma3X = margin + (firmaWidth3 + 15) * 2;
       doc.rect(firma3X, currentY, firmaWidth3, 80).stroke('#1e7e34');
