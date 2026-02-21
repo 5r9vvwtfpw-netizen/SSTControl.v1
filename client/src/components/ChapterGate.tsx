@@ -39,7 +39,11 @@ export function ChapterGate({ children }: ChapterGateProps) {
     return companyChapter;
   })();
 
+  const publicRoutes = ["/induccion-virtual", "/login", "/auth", "/pricing", "/terminos-servicio", "/politica-privacidad", "/politica-cookies", "/contrato-saas", "/recuperar-contrasena", "/restablecer-contrasena", "/demo", "/recomendar", "/portal-empleados", "/configuracion-induccion", "/mi-suscripcion"];
+  const isPublicRoute = publicRoutes.some(r => location === r || location.startsWith(r + "/"));
+
   const isAllowed = effectiveChapter === null 
+    || isPublicRoute
     || isModuleAllowedForChapter(location, effectiveChapter)
     || (isPesvRoute(location) && companyHasVehicles);
 
