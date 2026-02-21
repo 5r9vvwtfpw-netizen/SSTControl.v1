@@ -225,3 +225,35 @@ export const webhookRateLimiter = rateLimit({
     });
   }
 });
+
+/**
+ * Upload rate limiter
+ * Allows 30 file uploads per 15 minutes per IP
+ * Prevents abuse of file upload endpoints
+ */
+export const uploadRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // 30 uploads per window
+  message: {
+    error: 'Demasiadas subidas de archivos. Por favor espere 15 minutos.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: false,
+  skipFailedRequests: false,
+  handler: (req, res) => {
+    const reqLogger = (req as any).log || logger;
+    reqLogger.warn({
+      ip: req.ip,
+      path: req.path,
+      method: req.method,
+      userId: (req as any).user?.id
+    }, 'Upload rate limit exceeded');
+    
+    res.status(429).json({
+      error: 'Demasiadas subidas de archivos. Por favor espere 15 minutos.',
+      retryAfter: '15 minutes'
+    });
+  }
+});

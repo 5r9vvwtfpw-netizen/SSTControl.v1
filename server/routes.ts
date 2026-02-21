@@ -266,6 +266,8 @@ import {
 import { emailService } from "./services/email";
 import { processNotifications, sendNotificationEmail } from "./jobs/notifications";
 import { randomBytes } from "crypto";
+import crypto from "crypto";
+import { uploadRateLimiter } from "./middleware/rate-limit";
 import { marked } from "marked";
 import PDFDocument from "pdfkit";
 import { processApprovedChange, isChangeFullyApproved } from "./automation-gestion-cambios";
@@ -660,6 +662,75 @@ const uploadCert = multer({
     else cb(new Error('Solo se permiten archivos PDF'));
   }
 });
+
+// Secure multer configuration for upload-proxy endpoint
+const secureUploadDir = 'uploads/temp';
+if (!fs.existsSync(secureUploadDir)) {
+  fs.mkdirSync(secureUploadDir, { recursive: true });
+}
+
+const secureUploadStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    if (!fs.existsSync(secureUploadDir)) {
+      fs.mkdirSync(secureUploadDir, { recursive: true });
+    }
+    cb(null, secureUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, crypto.randomUUID() + ext);
+  }
+});
+
+const secureUpload = multer({
+  storage: secureUploadStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimeTypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ];
+    
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf', '.doc', '.docx', '.xls', '.xlsx'];
+    const extname = path.extname(file.originalname).toLowerCase();
+    
+    if (allowedMimeTypes.includes(file.mimetype) && allowedExtensions.includes(extname)) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Tipo de archivo no permitido. Solo se permiten: JPG, PNG, PDF, DOC, DOCX, XLS, XLSX'));
+    }
+  }
+});
+
+function validateFileMagicBytes(buffer: Buffer, ext: string): boolean {
+  if (buffer.length < 4) return false;
+  
+  const magicBytes: Record<string, number[][]> = {
+    '.pdf': [[0x25, 0x50, 0x44, 0x46]], // %PDF
+    '.jpg': [[0xFF, 0xD8, 0xFF]],
+    '.jpeg': [[0xFF, 0xD8, 0xFF]],
+    '.png': [[0x89, 0x50, 0x4E, 0x47]], // .PNG
+    '.doc': [[0xD0, 0xCF, 0x11, 0xE0]], // OLE compound
+    '.docx': [[0x50, 0x4B, 0x03, 0x04]], // ZIP (OOXML)
+    '.xls': [[0xD0, 0xCF, 0x11, 0xE0]], // OLE compound
+    '.xlsx': [[0x50, 0x4B, 0x03, 0x04]], // ZIP (OOXML)
+  };
+
+  const expected = magicBytes[ext.toLowerCase()];
+  if (!expected) return true;
+  
+  return expected.some(signature => 
+    signature.every((byte, index) => buffer[index] === byte)
+  );
+}
 
 // Helper function to calculate days without accidents
 function calculateDaysWithoutAccidents(accidents: any[]): number {
@@ -17381,7 +17452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generic file upload endpoint for SST documents
-  app.post("/api/upload", requireAuth, uploadAltoRiesgo.single('file'), async (req, res) => {
+  app.post("/api/upload", requireAuth, uploadRateLimiter, uploadAltoRiesgo.single('file'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).send("No se proporcionó archivo");
@@ -17408,27 +17479,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/upload-proxy", requireAuth, uploadAltoRiesgo.single('file'), async (req, res) => {
+  app.post("/api/upload-proxy", requireAuth, uploadRateLimiter, secureUpload.single('file'), async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).send("No se proporcionó archivo");
+        return res.status(400).json({ error: "No se proporcionó archivo" });
       }
 
-      const objectStorageService = new ObjectStorageService();
+      const user = req.user as any;
+      const companyId = user.companyId;
+      
+      if (!companyId && !['superadmin', 'soporte'].includes(user.role)) {
+        if (req.file.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
       const fileBuffer = fs.readFileSync(req.file.path);
-      const ext = path.extname(req.file.originalname);
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      
+      if (!validateFileMagicBytes(fileBuffer, ext)) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: "El contenido del archivo no coincide con su extensión. Archivo rechazado por seguridad." });
+      }
+
+      const sanitizedName = req.file.originalname
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9._-]/g, '_')
+        .substring(0, 100);
+
+      const objectStorageService = new ObjectStorageService();
       const uniqueId = crypto.randomUUID();
       const category = req.body.category || 'documents';
-      const objectPath = `uploads/${category}/${uniqueId}${ext}`;
+      
+      const companyScope = companyId || 'system';
+      const objectPath = `uploads/${companyScope}/${category}/${uniqueId}${ext}`;
       
       await objectStorageService.uploadObject(objectPath, fileBuffer, req.file.mimetype);
       
       fs.unlinkSync(req.file.path);
       
+      const reqLogger = (req as any).log || console;
+      reqLogger.info({
+        action: 'file_upload',
+        userId: user.id,
+        username: user.username,
+        companyId: companyScope,
+        objectPath,
+        originalName: sanitizedName,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+      }, `File uploaded: ${sanitizedName} (${(req.file.size / 1024).toFixed(1)} KB)`);
+      
       res.json({ objectPath, originalName: req.file.originalname });
     } catch (error: any) {
+      if (req.file?.path && fs.existsSync(req.file.path)) {
+        try { fs.unlinkSync(req.file.path); } catch {}
+      }
       console.error('Error in upload-proxy:', error);
-      res.status(400).send(error.message || "Error al subir archivo");
+      res.status(400).json({ error: error.message || "Error al subir archivo" });
     }
   });
 
