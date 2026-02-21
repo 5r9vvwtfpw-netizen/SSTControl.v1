@@ -26032,41 +26032,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`La autoevaluación debe realizarse anualmente y los resultados deben enviarse a la Administradora de Riesgos Laborales (ARL) y registrarse en la plataforma del Ministerio del Trabajo.`, margin, currentY, { width: contentWidth, align: 'justify' });
       currentY = doc.y + 40;
 
-      // Cuadros de firma - 3 columnas
-      const firmaWidth3 = (contentWidth - 30) / 3;
+      // Firmantes estandarizados ISO 45001:2018
+      const ministerioSigners = await getSignersForCompany(companyId, true);
 
-      // Firma 1 - Responsable SG-SST
-      doc.rect(margin, currentY, firmaWidth3, 80).stroke('#1e7e34');
-      doc.fontSize(7).font('Helvetica').fillColor('#666666')
-        .text('Firma Responsable SG-SST', margin + 5, currentY + 8);
-      doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000')
-        .text(evaluacion.responsableNombre || 'Responsable SST', margin + 5, currentY + 55, { width: firmaWidth3 - 10 });
+      // Override LSO data: priorizar responsible_designations (designación formal)
+      // luego licensedProfessionalData como fallback
+      const [formalDesignation] = await db.select()
+        .from(schema.responsibleDesignations)
+        .where(and(
+          eq(schema.responsibleDesignations.companyId, companyId),
+          eq(schema.responsibleDesignations.isExternalLso, true)
+        ))
+        .orderBy(desc(schema.responsibleDesignations.createdAt))
+        .limit(1);
 
-      // Firma 2 - Profesional Licenciado SST
-      const firma2X = margin + firmaWidth3 + 15;
-      doc.rect(firma2X, currentY, firmaWidth3, 80).stroke('#1e7e34');
-      doc.fontSize(7).font('Helvetica').fillColor('#666666')
-        .text('Profesional Licenciado SST', firma2X + 5, currentY + 8);
-      const lsoName = licensedProfessionalData?.fullName || 'Profesional SST';
-      const lsoLicense = licensedProfessionalData?.sstLicenseNumber || '';
-      const lsoIsExternal = licensedProfessionalData?.isExternal || isExternalLso;
-      doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000')
-        .text(lsoName, firma2X + 5, currentY + 35, { width: firmaWidth3 - 10 });
-      const lsoSubtitle = lsoIsExternal ? 'Lic. Externo SST' : 'Lic. Interno SST';
-      doc.fontSize(6).font('Helvetica').fillColor('#666666')
-        .text(lsoSubtitle, firma2X + 5, currentY + 48, { width: firmaWidth3 - 10 });
-      if (lsoLicense) {
-        doc.fontSize(6).font('Helvetica').fillColor('#666666')
-          .text(`Lic. SST No. ${lsoLicense}`, firma2X + 5, currentY + 58, { width: firmaWidth3 - 10 });
+      if (formalDesignation && formalDesignation.licenciaSstNumero) {
+        ministerioSigners.lso = {
+          name: formalDesignation.externalLsoName || formalDesignation.licenciaSstTitular || 'Profesional SST',
+          licenseNumber: formalDesignation.licenciaSstNumero,
+          licenseIssuer: formalDesignation.licenciaSstVigencia
+            ? `Vigencia: ${new Date(formalDesignation.licenciaSstVigencia).toLocaleDateString('es-CO')}`
+            : undefined,
+        };
+      } else if (licensedProfessionalData) {
+        ministerioSigners.lso = {
+          name: licensedProfessionalData.fullName || licensedProfessionalData.externalLsoName || 'Profesional SST',
+          licenseNumber: licensedProfessionalData.sstLicenseNumber || licensedProfessionalData.licenciaSstNumero || '',
+          licenseIssuer: licensedProfessionalData.sstLicenseExpiry
+            ? `Vigencia: ${new Date(licensedProfessionalData.sstLicenseExpiry).toLocaleDateString('es-CO')}`
+            : undefined,
+        };
       }
-      // Firma 3 - Representante Legal
-      const firma3X = margin + (firmaWidth3 + 15) * 2;
-      doc.rect(firma3X, currentY, firmaWidth3, 80).stroke('#1e7e34');
-      doc.fontSize(7).font('Helvetica').fillColor('#666666')
-        .text('Representante Legal', firma3X + 5, currentY + 8);
-      doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000')
-        .text(company.legalRepresentative || 'Representante Legal', firma3X + 5, currentY + 55, { width: firmaWidth3 - 10 });
-      currentY += 100;
+
+      // Override responsable SG-SST with the evaluation's responsable
+      if (evaluacion.responsableNombre) {
+        ministerioSigners.elaboro = {
+          name: evaluacion.responsableNombre,
+          role: 'Responsable del SG-SST',
+        };
+      }
+
+      addSignatureFooter(doc, ministerioSigners, true);
+      currentY = doc.y + 20;
 
       // Fecha de generación
       doc.fontSize(8).font('Helvetica').fillColor('#666666')
