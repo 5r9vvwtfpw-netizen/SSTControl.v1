@@ -134,6 +134,12 @@ interface DashboardActuarStats {
   };
 }
 
+interface EvaluacionSstItem {
+  id: string;
+  status: string;
+  createdAt: string;
+}
+
 interface PHVASummaryProps {
   companyId?: number | string | null;
 }
@@ -153,6 +159,13 @@ export function PHVASummary({ companyId }: PHVASummaryProps) {
     queryKey: ["/api/dashboard-actuar"],
     enabled: !!companyId,
   });
+
+  const { data: evaluaciones = [] } = useQuery<EvaluacionSstItem[]>({
+    queryKey: ["/api/evaluaciones-sst"],
+    enabled: !!companyId,
+  });
+
+  const latestEvaluacionId = evaluaciones.length > 0 ? evaluaciones[0].id : null;
 
   const isLoading = hacerLoading || verificarLoading || actuarLoading;
 
@@ -297,9 +310,9 @@ export function PHVASummary({ companyId }: PHVASummaryProps) {
           <span className="text-sm text-amber-700 dark:text-amber-400">
             <strong>{actuarStats?.consolidado?.accionesVencidasTotal}</strong> acciones vencidas requieren atención inmediata
           </span>
-          <Link href="/dashboard-actuar">
+          <Link href={latestEvaluacionId ? `/evaluaciones-sst/${latestEvaluacionId}` : "/evaluaciones-sst"}>
             <Button variant="ghost" size="sm" className="ml-auto gap-1 text-amber-700" data-testid="link-acciones-vencidas">
-              Ver detalle <ArrowRight className="h-3 w-3" />
+              Gestionar acciones <ArrowRight className="h-3 w-3" />
             </Button>
           </Link>
         </div>
