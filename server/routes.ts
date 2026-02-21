@@ -17408,6 +17408,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/upload-proxy", requireAuth, uploadAltoRiesgo.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).send("No se proporcionó archivo");
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      const fileBuffer = fs.readFileSync(req.file.path);
+      const ext = path.extname(req.file.originalname);
+      const uniqueId = crypto.randomUUID();
+      const category = req.body.category || 'documents';
+      const objectPath = `uploads/${category}/${uniqueId}${ext}`;
+      
+      await objectStorageService.uploadObject(objectPath, fileBuffer, req.file.mimetype);
+      
+      fs.unlinkSync(req.file.path);
+      
+      res.json({ objectPath, originalName: req.file.originalname });
+    } catch (error: any) {
+      console.error('Error in upload-proxy:', error);
+      res.status(400).send(error.message || "Error al subir archivo");
+    }
+  });
+
   // Upload certificado ARL
   app.post("/api/trabajadores-alto-riesgo/:id/upload-certificado", 
     requirePermission("companies:edit"),
