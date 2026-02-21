@@ -17458,22 +17458,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).send("No se proporcionó archivo");
       }
 
-      // Upload to Object Storage for persistence
+      const user = req.user as any;
+      const companyId = user.companyId;
+
       const objectStorageService = new ObjectStorageService();
       const fileBuffer = fs.readFileSync(req.file.path);
-      const ext = path.extname(req.file.originalname);
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      
+      if (!validateFileMagicBytes(fileBuffer, ext)) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: "El contenido del archivo no coincide con su extensión. Archivo rechazado por seguridad." });
+      }
+      
       const uniqueId = crypto.randomUUID();
-      const category = req.body.category || 'general';
-      const objectPath = `uploads/${category}/${uniqueId}${ext}`;
+      const ALLOWED_CATEGORIES = ['general', 'documents', 'evidencias', 'capacitaciones'];
+      const rawCategory = req.body.category || 'general';
+      const category = ALLOWED_CATEGORIES.includes(rawCategory) ? rawCategory : 'general';
+      const companyScope = companyId || 'system';
+      const objectPath = `uploads/${companyScope}/${category}/${uniqueId}${ext}`;
       
       await objectStorageService.uploadObject(objectPath, fileBuffer, req.file.mimetype);
       
-      // Clean up local file
       fs.unlinkSync(req.file.path);
       
       const fileUrl = `/objects/${objectPath}`;
+      
+      const reqLogger = (req as any).log || console;
+      reqLogger.info({
+        action: 'file_upload',
+        userId: user.id,
+        companyId: companyScope,
+        objectPath,
+        originalName: req.file.originalname,
+        fileSize: req.file.size,
+      }, `File uploaded via /api/upload: ${req.file.originalname}`);
+      
       res.json({ url: fileUrl, originalName: req.file.originalname });
     } catch (error: any) {
+      if (req.file?.path && fs.existsSync(req.file.path)) {
+        try { fs.unlinkSync(req.file.path); } catch {}
+      }
       console.error('Error uploading file to Object Storage:', error);
       res.status(400).send(error.message);
     }
@@ -17508,7 +17532,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const objectStorageService = new ObjectStorageService();
       const uniqueId = crypto.randomUUID();
-      const category = req.body.category || 'documents';
+      const ALLOWED_CATEGORIES = ['documents', 'evidencias', 'capacitaciones', 'copasst-actas', 'convivencia-actas', 'programas-capacitacion', 'general'];
+      const rawCategory = req.body.category || 'documents';
+      const category = ALLOWED_CATEGORIES.includes(rawCategory) ? rawCategory : 'documents';
       
       const companyScope = companyId || 'system';
       const objectPath = `uploads/${companyScope}/${category}/${uniqueId}${ext}`;
