@@ -14,11 +14,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
-import { Plus, Pencil, Trash2, Video, FileText, BookOpen, GraduationCap, Settings, Eye, Send, Users, CheckCircle2, XCircle, ClipboardList, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Video, FileText, BookOpen, GraduationCap, Settings, Eye, Send, Users, CheckCircle2, XCircle, ClipboardList, ChevronUp, ChevronDown, Wand2, Shield, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AutomationAssistant, type PlantillaInfo } from "@/components/AutomationAssistant";
 import { getEstandarByCodigo } from "@/data/planear-normativa";
+import { getPlantillasPorNivel } from "@/data/induccion-plantillas-arl";
+import { useCompanyContext } from "@/hooks/use-company-context";
 import type { ContenidoInduccion, PreguntaInduccion, SesionInduccionVirtual, Worker } from "@shared/schema";
 
 type ContenidoFormData = {
@@ -63,6 +65,7 @@ const defaultPregunta: PreguntaFormData = {
 
 export default function ConfiguracionInduccion() {
   const { toast } = useToast();
+  const { selectedCompany } = useCompanyContext();
   const [activeTab, setActiveTab] = useState("contenidos");
   
   const [contenidoDialogOpen, setContenidoDialogOpen] = useState(false);
@@ -70,6 +73,7 @@ export default function ConfiguracionInduccion() {
   const [enviarDialogOpen, setEnviarDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [respuestasDialogOpen, setRespuestasDialogOpen] = useState(false);
+  const [plantillaDialogOpen, setPlantillaDialogOpen] = useState(false);
   const [sesionSeleccionada, setSesionSeleccionada] = useState<SesionInduccionVirtual | null>(null);
   
   const [editingContenido, setEditingContenido] = useState<ContenidoInduccion | null>(null);
@@ -244,6 +248,36 @@ export default function ConfiguracionInduccion() {
     },
   });
 
+  const riskLevel = (selectedCompany as any)?.riskLevel || "I";
+  const plantillas = getPlantillasPorNivel(riskLevel);
+
+  const cargarPlantillaMutation = useMutation({
+    mutationFn: async () => {
+      for (const contenido of plantillas.contenidos) {
+        await apiRequest("POST", "/api/contenidos-induccion", contenido);
+      }
+      for (const pregunta of plantillas.preguntas) {
+        await apiRequest("POST", "/api/preguntas-induccion", {
+          ...pregunta,
+          opciones: JSON.stringify(pregunta.opciones),
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/contenidos-induccion"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/preguntas-induccion"] });
+      setPlantillaDialogOpen(false);
+      toast({
+        title: "Plantilla cargada exitosamente",
+        description: `Se crearon ${plantillas.contenidos.length} contenidos y ${plantillas.preguntas.length} preguntas de evaluación. Revise y publique los contenidos antes de enviar inducciones.`,
+      });
+      setActiveTab("contenidos");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error al cargar plantilla", description: error.message, variant: "destructive" });
+    },
+  });
+
   const handleEditContenido = (contenido: ContenidoInduccion) => {
     setEditingContenido(contenido);
     setContenidoForm({
@@ -341,6 +375,15 @@ export default function ConfiguracionInduccion() {
             Configure el contenido, evaluaciones y gestione el envío de inducciones virtuales
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setPlantillaDialogOpen(true)}
+            data-testid="button-cargar-plantilla"
+          >
+            <Wand2 className="h-4 w-4 mr-2" />
+            Cargar Plantilla ARL
+          </Button>
         <Dialog open={enviarDialogOpen} onOpenChange={setEnviarDialogOpen}>
           <DialogTrigger asChild>
             <Button data-testid="button-enviar-induccion">
@@ -399,7 +442,108 @@ export default function ConfiguracionInduccion() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
+      <Dialog open={plantillaDialogOpen} onOpenChange={setPlantillaDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              Cargar Plantilla por Nivel de Riesgo ARL
+            </DialogTitle>
+            <DialogDescription>
+              Carga automática de contenidos y preguntas de evaluación adaptados al nivel de riesgo de su empresa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Nivel de Riesgo ARL de su empresa</p>
+                    <p className="text-2xl font-bold text-primary">{riskLevel}</p>
+                  </div>
+                  <div className="text-right text-sm text-muted-foreground">
+                    <p><strong>{plantillas.contenidos.length}</strong> contenidos educativos</p>
+                    <p><strong>{plantillas.preguntas.length}</strong> preguntas de evaluación</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Contenidos que se crearán:</p>
+              <ScrollArea className="h-40 border rounded-md p-3">
+                <ul className="space-y-1">
+                  {plantillas.contenidos.map((c, i) => (
+                    <li key={i} className="text-sm flex items-center gap-2">
+                      <BookOpen className="h-3 w-3 text-primary shrink-0" />
+                      {c.titulo}
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Preguntas de evaluación que se crearán:</p>
+              <ScrollArea className="h-40 border rounded-md p-3">
+                <ul className="space-y-1">
+                  {plantillas.preguntas.map((p, i) => (
+                    <li key={i} className="text-sm flex items-center gap-2">
+                      <GraduationCap className="h-3 w-3 text-primary shrink-0" />
+                      {p.pregunta}
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
+            </div>
+
+            {(contenidos.length > 0 || preguntas.length > 0) && (
+              <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                <CardContent className="pt-4">
+                  <p className="text-sm text-blue-700 dark:text-blue-400">
+                    Ya tiene <strong>{contenidos.length}</strong> contenido(s) y <strong>{preguntas.length}</strong> pregunta(s) existentes.
+                    Los nuevos se agregarán sin eliminar los actuales.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+              <CardContent className="pt-4">
+                <p className="text-sm text-amber-700 dark:text-amber-400">
+                  Los contenidos se crearán en estado <strong>Borrador</strong>. Revise y personalice cada uno antes de publicarlos.
+                  Las preguntas se crearán activas pero puede editarlas según las necesidades de su empresa.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPlantillaDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => cargarPlantillaMutation.mutate()}
+              disabled={cargarPlantillaMutation.isPending}
+              data-testid="button-confirmar-plantilla"
+            >
+              {cargarPlantillaMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Cargando...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Cargar {plantillas.contenidos.length} contenidos y {plantillas.preguntas.length} preguntas
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {(() => {
         const estandar = getEstandarByCodigo('1.2.2');
