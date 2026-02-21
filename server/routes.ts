@@ -26049,7 +26049,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (formalDesignation && formalDesignation.licenciaSstNumero) {
         ministerioSigners.lso = {
           name: formalDesignation.externalLsoName || formalDesignation.licenciaSstTitular || 'Profesional SST',
-          licenseNumber: formalDesignation.licenciaSstNumero,
+          licenseNumber: formalDesignation.licenciaSstNumero!,
           licenseIssuer: formalDesignation.licenciaSstVigencia
             ? `Vigencia: ${new Date(formalDesignation.licenciaSstVigencia).toLocaleDateString('es-CO')}`
             : undefined,

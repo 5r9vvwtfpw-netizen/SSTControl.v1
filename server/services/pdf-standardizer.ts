@@ -127,82 +127,61 @@ export async function getSignersForCompany(companyId: string, requiresLSO: boole
   let lsoData: PdfSigners['lso'] | undefined;
   
   if (requiresLSO) {
-    const [assignment] = await db
+    // 1. Prioridad: responsible_designations (designación formal del responsable)
+    const [formalDesignation] = await db
       .select()
-      .from(licensedProfessionalAssignments)
+      .from(responsibleDesignations)
       .where(and(
-        eq(licensedProfessionalAssignments.companyId, companyId),
-        eq(licensedProfessionalAssignments.isActive, true)
+        eq(responsibleDesignations.companyId, companyId),
+        eq(responsibleDesignations.isExternalLso, true)
       ))
       .limit(1);
 
-    if (assignment) {
-      // Verificar si es LSO externo (del directorio lso.sst-colombia.com.co)
-      if (assignment.externalLsoId && assignment.externalLsoName) {
-        lsoData = {
-          name: assignment.externalLsoName,
-          licenseNumber: assignment.externalLsoLicenseNumber || 'Pendiente',
-          licenseIssuer: assignment.externalLsoLicenseIssuer || 'Secretaría de Salud',
-          signatureUrl: assignment.externalLsoSignatureUrl || undefined,
-        };
-      } else {
-        // LSO interno (usuario en el sistema)
-        const [lsoUser] = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, assignment.userId))
-          .limit(1);
-
-        if (lsoUser && lsoUser.sstLicenseNumber) {
-          lsoData = {
-            name: lsoUser.fullName || lsoUser.username,
-            licenseNumber: lsoUser.sstLicenseNumber,
-            licenseIssuer: lsoUser.sstLicenseIssuer || 'Secretaría de Salud',
-            signatureUrl: lsoUser.sstSignatureUrl || undefined,
-          };
-        }
-      }
+    if (formalDesignation && formalDesignation.externalLsoName && formalDesignation.licenciaSstNumero) {
+      lsoData = {
+        name: formalDesignation.externalLsoName,
+        licenseNumber: formalDesignation.licenciaSstNumero,
+        licenseIssuer: formalDesignation.licenciaSstVigencia 
+          ? `Vigencia: ${formatDate(formalDesignation.licenciaSstVigencia)}`
+          : 'Secretaría de Salud',
+      };
     }
 
-    // Fallback: buscar licencia en responsible_designations si no se encontró en licensed_professional_assignments
-    // La licencia SST se registra en la designación del responsable (Resolución 0312/2019)
-    if (lsoData && lsoData.licenseNumber === 'Pendiente') {
-      const [designation] = await db
-        .select()
-        .from(responsibleDesignations)
-        .where(and(
-          eq(responsibleDesignations.companyId, companyId),
-          eq(responsibleDesignations.isExternalLso, true)
-        ))
-        .limit(1);
-
-      if (designation && designation.licenciaSstNumero) {
-        lsoData.licenseNumber = designation.licenciaSstNumero;
-        if (designation.licenciaSstVigencia) {
-          lsoData.licenseIssuer = `Vigencia: ${formatDate(designation.licenciaSstVigencia)}`;
-        }
-      }
-    }
-
-    // Fallback adicional: si no hay lsoData, buscar designación LSO externa directamente
+    // 2. Fallback: licensed_professional_assignments
     if (!lsoData) {
-      const [designation] = await db
+      const [assignment] = await db
         .select()
-        .from(responsibleDesignations)
+        .from(licensedProfessionalAssignments)
         .where(and(
-          eq(responsibleDesignations.companyId, companyId),
-          eq(responsibleDesignations.isExternalLso, true)
+          eq(licensedProfessionalAssignments.companyId, companyId),
+          eq(licensedProfessionalAssignments.isActive, true)
         ))
         .limit(1);
 
-      if (designation && designation.externalLsoName && designation.licenciaSstNumero) {
-        lsoData = {
-          name: designation.externalLsoName,
-          licenseNumber: designation.licenciaSstNumero,
-          licenseIssuer: designation.licenciaSstVigencia 
-            ? `Vigencia: ${formatDate(designation.licenciaSstVigencia)}`
-            : 'Secretaría de Salud',
-        };
+      if (assignment) {
+        if (assignment.externalLsoId && assignment.externalLsoName) {
+          lsoData = {
+            name: assignment.externalLsoName,
+            licenseNumber: assignment.externalLsoLicenseNumber || 'Pendiente',
+            licenseIssuer: assignment.externalLsoLicenseIssuer || 'Secretaría de Salud',
+            signatureUrl: assignment.externalLsoSignatureUrl || undefined,
+          };
+        } else if (assignment.userId) {
+          const [lsoUser] = await db
+            .select()
+            .from(users)
+            .where(eq(users.id, assignment.userId))
+            .limit(1);
+
+          if (lsoUser && lsoUser.sstLicenseNumber) {
+            lsoData = {
+              name: lsoUser.fullName || lsoUser.username,
+              licenseNumber: lsoUser.sstLicenseNumber,
+              licenseIssuer: lsoUser.sstLicenseIssuer || 'Secretaría de Salud',
+              signatureUrl: lsoUser.sstSignatureUrl || undefined,
+            };
+          }
+        }
       }
     }
   }
