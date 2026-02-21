@@ -271,6 +271,7 @@ import { uploadRateLimiter } from "./middleware/rate-limit";
 import { marked } from "marked";
 import PDFDocument from "pdfkit";
 import { processApprovedChange, isChangeFullyApproved } from "./automation-gestion-cambios";
+import { compressFile } from "./services/file-compression";
 
 // Helper para verificar si el usuario puede descargar documentos
 // Los usuarios en período de prueba (trial) NO pueden descargar documentos masivos ni exportar datos
@@ -685,7 +686,7 @@ const secureUploadStorage = multer.diskStorage({
 const secureUpload = multer({
   storage: secureUploadStorage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB limit - server compresses automatically
   },
   fileFilter: (req, file, cb) => {
     const allowedMimeTypes = [
@@ -17504,16 +17505,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/upload-proxy", requireAuth, uploadRateLimiter, secureUpload.single('file'), async (req, res) => {
+    const tempFiles: string[] = [];
+    
+    const cleanupTempFiles = () => {
+      for (const filePath of tempFiles) {
+        try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch {}
+      }
+    };
+    
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No se proporcionó archivo" });
       }
+      
+      tempFiles.push(req.file.path);
 
       const user = req.user as any;
       const companyId = user.companyId;
       
       if (!companyId && !['superadmin', 'soporte'].includes(user.role)) {
-        if (req.file.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        cleanupTempFiles();
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
 
@@ -17521,9 +17532,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ext = path.extname(req.file.originalname).toLowerCase();
       
       if (!validateFileMagicBytes(fileBuffer, ext)) {
-        fs.unlinkSync(req.file.path);
+        cleanupTempFiles();
         return res.status(400).json({ error: "El contenido del archivo no coincide con su extensión. Archivo rechazado por seguridad." });
       }
+
+      const compressionResult = await compressFile(req.file.path, req.file.mimetype);
+      if (compressionResult.compressedPath !== req.file.path) {
+        tempFiles.push(compressionResult.compressedPath);
+      }
+      const finalBuffer = fs.readFileSync(compressionResult.compressedPath);
 
       const sanitizedName = req.file.originalname
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -17539,9 +17556,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const companyScope = companyId || 'system';
       const objectPath = `uploads/${companyScope}/${category}/${uniqueId}${ext}`;
       
-      await objectStorageService.uploadObject(objectPath, fileBuffer, req.file.mimetype);
+      await objectStorageService.uploadObject(objectPath, finalBuffer, req.file.mimetype);
       
-      fs.unlinkSync(req.file.path);
+      cleanupTempFiles();
       
       const reqLogger = (req as any).log || console;
       reqLogger.info({
@@ -17551,15 +17568,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId: companyScope,
         objectPath,
         originalName: sanitizedName,
-        fileSize: req.file.size,
+        originalSize: compressionResult.originalSize,
+        compressedSize: compressionResult.compressedSize,
+        compressionRatio: compressionResult.originalSize > 0 
+          ? ((1 - compressionResult.compressedSize / compressionResult.originalSize) * 100).toFixed(1) + '%' 
+          : '0%',
         mimeType: req.file.mimetype,
-      }, `File uploaded: ${sanitizedName} (${(req.file.size / 1024).toFixed(1)} KB)`);
+      }, `File uploaded: ${sanitizedName} (${(compressionResult.originalSize / 1024).toFixed(1)} KB → ${(compressionResult.compressedSize / 1024).toFixed(1)} KB)`);
       
       res.json({ objectPath, originalName: req.file.originalname });
     } catch (error: any) {
-      if (req.file?.path && fs.existsSync(req.file.path)) {
-        try { fs.unlinkSync(req.file.path); } catch {}
-      }
+      cleanupTempFiles();
       console.error('Error in upload-proxy:', error);
       res.status(400).json({ error: error.message || "Error al subir archivo" });
     }
