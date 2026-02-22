@@ -11651,26 +11651,41 @@ export class DbStorage implements IStorage {
     for (const auditoria of auditorias) {
       const company = await this.getCompany(auditoria.companyId);
       
-      const auditores = await db.select()
+      const auditoresRaw = await db.select()
         .from(schema.auditoriaAuditores)
-        .innerJoin(
-          schema.users,
-          eq(schema.auditoriaAuditores.userId, schema.users.id)
-        )
         .where(eq(schema.auditoriaAuditores.auditoriaId, auditoria.id));
+      
+      const auditoresWithUsers = [];
+      for (const auditor of auditoresRaw) {
+        if (auditor.auditorId) {
+          const user = await db.select().from(schema.users).where(eq(schema.users.id, auditor.auditorId)).limit(1);
+          if (user.length > 0) {
+            auditoresWithUsers.push(user[0]);
+            continue;
+          }
+        }
+        auditoresWithUsers.push({ fullName: auditor.nombreExterno || 'Auditor', username: auditor.emailExterno || '' } as any);
+      }
 
       const hallazgos = await db.select()
         .from(schema.hallazgosAuditoria)
         .where(eq(schema.hallazgosAuditoria.auditoriaId, auditoria.id));
 
-      const planesAccion = await db.select()
-        .from(schema.planesAccionAuditoria)
-        .where(eq(schema.planesAccionAuditoria.auditoriaId, auditoria.id));
+      const hallazgoIds = hallazgos.map(h => h.id);
+      let planesAccion: any[] = [];
+      if (hallazgoIds.length > 0) {
+        for (const hId of hallazgoIds) {
+          const planes = await db.select()
+            .from(schema.planesAccionAuditoria)
+            .where(eq(schema.planesAccionAuditoria.hallazgoId, hId));
+          planesAccion.push(...planes);
+        }
+      }
 
       results.push({
         auditoria,
         company,
-        auditores: auditores.map(a => a.users),
+        auditores: auditoresWithUsers,
         hallazgos,
         planesAccion,
         totalHallazgos: hallazgos.length,
@@ -11764,7 +11779,7 @@ export class DbStorage implements IStorage {
     const objetivos = await db.select()
       .from(schema.objetivosSst)
       .where(whereConditions)
-      .orderBy(schema.objetivosSst.titulo);
+      .orderBy(schema.objetivosSst.nombre);
 
     let indicadoresConditions: any = companyId != null 
       ? and(

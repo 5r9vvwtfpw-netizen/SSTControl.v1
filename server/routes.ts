@@ -17052,6 +17052,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const margin = 35;
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - (margin * 2);
+      const GREEN_HEADER = '#166534';
       
       // Set response headers
       res.setHeader('Content-Type', 'application/pdf');
@@ -22224,7 +22225,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           xPos += cols[0];
           
           // Topic (truncate if too long)
-          const topic = training.title.length > 30 ? training.title.substring(0, 27) + '...' : training.title;
+          const topicText = (training as any).topic || (training as any).title || 'Sin tema';
+          const topic = topicText.length > 30 ? topicText.substring(0, 27) + '...' : topicText;
           doc.text(topic, xPos + 3, rowY + 7, { width: cols[1] - 6 });
           xPos += cols[1];
           
@@ -22802,21 +22804,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (politica.elaboradoPorId) {
         const worker = await storage.getWorker(politica.elaboradoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          elaboroName = `${designeeInfo.name} - ${worker.position}`;
+          elaboroName = `${worker.fullName} - ${worker.position}`;
         }
       }
 
       if (politica.autorizadoPorId) {
         const worker = await storage.getWorker(politica.autorizadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          autorizoName = `${designeeInfo.name} - ${worker.position}`;
+          autorizoName = `${worker.fullName} - ${worker.position}`;
         }
       }
 
       if (politica.aprobadoPorId) {
         const worker = await storage.getWorker(politica.aprobadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          aproboName = `${designeeInfo.name} - ${worker.position}`;
+          aproboName = `${worker.fullName} - ${worker.position}`;
         }
       }
 
