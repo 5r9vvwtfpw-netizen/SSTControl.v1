@@ -5072,7 +5072,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(effectiveCompanyId, false);
+      const signers = await getSignersForCompany(effectiveCompanyId, true);
 
       // Standard Header
       await addStandardHeader({
@@ -5196,7 +5196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Footer with signatures
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       doc.end();
 
     } catch (error: any) {
@@ -6730,7 +6730,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const logoBuffer = company?.logoUrl ? await loadCompanyLogo(company.logoUrl) : null;
       
       // Obtener firmantes
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(companyId, true);
       
       const doc = new PDFDocument({ size: "LETTER", margin: PDF_CONFIG.MARGIN });
       
@@ -6810,7 +6810,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.fillColor("#000000");
 
       // 6. Footer con firmantes
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error) {
@@ -7544,7 +7544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Preload company logo and get signers
       const logoBuffer = await loadCompanyLogo(company?.logoUrl || null);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       // Standard Header with logo, version control
       let currentY = await addStandardHeader({
@@ -7687,7 +7687,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Agregar footer con firmantes ISO 45001:2018
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       
       // Finalize PDF
       doc.end();
@@ -9374,7 +9374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Preload company logo and signers from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(profile.companyId, false);
+      const signers = await getSignersForCompany(profile.companyId, true);
       
       // Setup standard header
       await addStandardHeader({
@@ -9565,7 +9565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text('• Decreto 768 de 2022 - Tabla de Clasificación de Actividades Económicas y Riesgos', margin + 10, doc.y, { width: pageWidth - 2 * margin - 15 });
       
       // Add standard signature footer
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       
       doc.end();
     } catch (error: any) {
@@ -11101,7 +11101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Preload company logo and signers from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       
       // Standard Header ISO 45001:2018
       let currentY = await addStandardHeader({
@@ -11579,7 +11579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text('• Resolución 0312 de 2019 - Estándares Mínimos del SG-SST', margin + 10, currentY, { lineBreak: false });
 
       // Agregar footer con firmantes ISO 45001:2018
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
 
       doc.end();
 
@@ -14633,7 +14633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Load company logo and signers using centralized PDF Standardizer
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       
       // Add standard corporate header (ISO 45001:2018)
       await addStandardHeader({
@@ -15520,7 +15520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get company logo and signers for standardized PDF
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(companyId, true);
       
       const markdownPath = path.join(process.cwd(), 'docs', 'PROGRAMA_CAPACITACION_PREVENCION.md');
       
@@ -15870,7 +15870,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
       // Load company logo for PDF header
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(companyId, true);
 
       // Standard Header (ISO 45001:2018)
       await addStandardHeader({
@@ -16212,7 +16212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .text('Responsable de Inducción', pageWidth - margin - 230, currentY + 35, { width: 200, align: 'center' });
 
       // Add signature footer (ISO 45001:2018)
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
 
       doc.end();
 
@@ -17062,7 +17062,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Preload company logo
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       
       // Setup standard headers and footers
       const fechaVerificacion = new Date(verificacion.fecha);
@@ -17319,7 +17319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`Documento generado automáticamente el: ${generationDate}`, margin, currentY, { width: contentWidth, align: 'center' });
       
       // Finalize PDF
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       doc.end();
       
     } catch (error: any) {
@@ -17693,7 +17693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Load company logo and signers using centralized PDF Standardizer
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       
       // Add standard corporate header (ISO 45001:2018)
       let currentY = await addStandardHeader({
@@ -17977,7 +17977,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and worker photo from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       // Worker photo not needed for muestreo PDF
       
       // Standard Header with logo, version control, and signatures at footer
@@ -18113,7 +18113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           { align: 'center' }
         );
 
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       doc.end();
 
     } catch (error: any) {
@@ -21440,7 +21440,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and signers
       const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
-      const signers = await getSignersForCompany(user.companyId);
+      const signers = await getSignersForCompany(user.companyId, true);
 
       // Standard Header with logo, version control, and signatures
       let currentY = await addStandardHeader({
@@ -21665,7 +21665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and signers
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(user.companyId);
+      const signers = await getSignersForCompany(user.companyId, true);
 
       // Standard Header with logo, version control, and signatures
       let currentY = await addStandardHeader({
@@ -21757,7 +21757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}`, { align: 'center' });
 
       // Add signature footer
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -22063,7 +22063,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Load company logo and signers for standardized PDF
       const logoBuffer = await loadCompanyLogo(company?.logoUrl);
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(companyId, true);
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
@@ -22294,7 +22294,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Add signature footer (ISO 45001:2018)
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -22833,7 +22833,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and signers for standardized header
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       const contentStartY = await addStandardHeader({
         doc,
@@ -24046,7 +24046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.font('Helvetica').text(new Date(politica.fechaFirma).toLocaleDateString('es-CO'));
 
       // Add standardized signature footer (no LSO required)
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -25465,7 +25465,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Load company logo and get signers for standardized PDF
       const logo = await loadCompanyLogo(company?.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       // Create PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
@@ -25592,7 +25592,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Add signature footer (no LSO required for management reports)
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -30232,7 +30232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Load company logo and signers for standardized PDF
       const logoBuffer = await loadCompanyLogo(company?.logoUrl || null);
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(companyId, true);
       
       // Obtener datos relacionados
       const evaluaciones = await storage.getEvaluacionesImpactoCambio(cambioId, companyId);
@@ -30448,7 +30448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Finalizar PDF con firma estandarizada
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'cambios-sst-pdf');
@@ -30501,7 +30501,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Load logo and signers for standardized PDF
       const logo = await loadCompanyLogo(company?.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       
       // Add standardized header (ISO 45001:2018)
       let currentY = await addStandardHeader({
@@ -30613,7 +30613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.font('Helvetica').text(recomendaciones, { align: 'justify' });
       
       // Add signature footer (no LSO required for management reports)
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
 
       // Finalizar PDF
       doc.end();
@@ -30669,7 +30669,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const evaluaciones = await storage.getEvaluacionesAdquisicion(companyId);
 
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       // Worker photo not needed for muestreo PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
@@ -30863,7 +30863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -30887,7 +30887,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const seguimientos = await storage.getAllSeguimientosProveedores(companyId);
 
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
@@ -31119,7 +31119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.fillColor('#000000');
 
       // Add signature footer (no LSO required for management reports)
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -31140,7 +31140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const automatizaciones = await storage.getAutomatizacionLogsForCompany(companyId);
 
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       // Worker photo not needed for muestreo PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
@@ -31332,7 +31332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.fontSize(8).font('Helvetica').fillColor('#666666');
       doc.text(`Documento generado automáticamente el ${new Date().toLocaleDateString('es-CO')} a las ${new Date().toLocaleTimeString('es-CO')}.`, margin, doc.y, { align: 'center', width: contentWidth });
 
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'gestion-cambios-panel-pdf');
@@ -31403,7 +31403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const latestEval = data[0];
       const company = latestEval.company || { name: 'N/A', nit: 'N/A', address: null, logoUrl: null };
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       // Worker photo not needed for muestreo PDF
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
@@ -31553,7 +31553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'evaluaciones-sst-consolidado-pdf');
@@ -31579,7 +31579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const firstAudit = data[0];
       const company = firstAudit.company || { name: 'N/A', nit: 'N/A', address: null, logoUrl: null };
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(firstAudit.auditoria.companyId);
+      const signers = await getSignersForCompany(firstAudit.auditoria.companyId, true);
       // Worker photo not needed for muestreo PDF
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
@@ -31685,7 +31685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentY += 3;
       }
 
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'auditorias-internas-consolidado-pdf');
@@ -31711,7 +31711,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const company = userCompanyId ? await storage.getCompany(userCompanyId) : null;
       const companyInfo = company || { name: 'Sistema SST Colombia', nit: 'N/A', address: '', logoUrl: null };
       const logoBuffer = await loadCompanyLogo(companyInfo.logoUrl);
-      const signers = await getSignersForCompany(userCompanyId, false);
+      const signers = await getSignersForCompany(userCompanyId, true);
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
       
@@ -31801,7 +31801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'revisiones-direccion-consolidado-pdf');
@@ -31827,7 +31827,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const company = userCompanyId ? await storage.getCompany(userCompanyId) : null;
       const companyInfo = company || { name: 'Sistema SST Colombia', nit: 'N/A', address: '', logoUrl: null };
       const logoBuffer = await loadCompanyLogo(companyInfo.logoUrl);
-      const signers = await getSignersForCompany(userCompanyId, false);
+      const signers = await getSignersForCompany(userCompanyId, true);
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
       
@@ -31931,7 +31931,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentY = doc.y + 3;
       }
 
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'objetivos-indicadores-consolidado-pdf');
@@ -32010,7 +32010,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Load company logo
       const logo = await loadCompanyLogo(company?.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       // Worker photo not needed for muestreo PDF
 
       // Create PDF with standard format
@@ -33068,7 +33068,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Load company logo and signers
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(companyId, true);
 
       // Create PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
@@ -33276,7 +33276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       // Add standard signature footer
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -42484,7 +42484,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - 2 * margin;
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, false);
+      const signers = await getSignersForCompany(companyId, true);
 
       let currentY = await addStandardHeader({
         doc,
@@ -42690,7 +42690,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       });
       
       // Add standard signature footer
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -42811,7 +42811,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!company) return res.status(404).send("Empresa no encontrada");
       const programs = await storage.getEvsPrograms(companyId);
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       // Worker photo not needed for muestreo PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
@@ -42828,7 +42828,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       currentY += 20;
       if (programs.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay programas registrados.', 50, currentY); }
       else { programs.forEach((prog, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${prog.name}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Año: ${prog.year} | Categoría: ${prog.category} | Estado: ${prog.status}`, 60, currentY); currentY += 12; doc.text(`Responsable: ${prog.responsibleName || 'N/A'}`, 60, currentY); currentY += 18; }); }
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'evs-programs-pdf');
@@ -42893,7 +42893,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!company) return res.status(404).send("Empresa no encontrada");
       const activities = await storage.getEvsActivities(companyId);
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       // Worker photo not needed for muestreo PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
@@ -42910,7 +42910,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       currentY += 20;
       if (activities.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay actividades registradas.', 50, currentY); }
       else { activities.forEach((act, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${act.title}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Categoría: ${act.category} | Tipo: ${act.activityType} | Modalidad: ${act.modality}`, 60, currentY); currentY += 12; doc.text(`Fecha: ${act.scheduledDate ? new Date(act.scheduledDate).toLocaleDateString('es-CO') : 'N/A'} | Estado: ${act.status}`, 60, currentY); currentY += 18; }); }
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'evs-activities-pdf');
@@ -42978,7 +42978,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const workers = await storage.getWorkers(companyId);
       const getWorkerName = (id: string) => workers.find(w => w.id === id)?.name || 'Desconocido';
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       // Worker photo not needed for muestreo PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
@@ -42995,7 +42995,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       currentY += 20;
       if (controls.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay controles registrados.', 50, currentY); }
       else { controls.forEach((ctrl, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${getWorkerName(ctrl.workerId)}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Tipo: ${ctrl.controlType} | Fecha: ${ctrl.controlDate ? new Date(ctrl.controlDate).toLocaleDateString('es-CO') : 'N/A'}`, 60, currentY); currentY += 12; doc.text(`Resultado: ${ctrl.result} | Realizado por: ${ctrl.performedBy || 'N/A'}`, 60, currentY); currentY += 18; }); }
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'evs-controls-pdf');
@@ -43056,7 +43056,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const workers = await storage.getWorkers(companyId);
       const getWorkerName = (id: string | null) => id ? (workers.find(w => w.id === id)?.name || 'Desconocido') : 'Confidencial';
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       // Worker photo not needed for muestreo PDF
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
@@ -43073,7 +43073,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       currentY += 20;
       if (incidents.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay incidentes registrados.', 50, currentY); }
       else { incidents.forEach((inc, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${getWorkerName(inc.workerId)}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Tipo: ${inc.incidentType} | Severidad: ${inc.severity} | Fecha: ${inc.incidentDate ? new Date(inc.incidentDate).toLocaleDateString('es-CO') : 'N/A'}`, 60, currentY); currentY += 12; doc.text(`Estado: ${inc.status}`, 60, currentY); currentY += 18; }); }
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'evs-incidents-pdf');
@@ -43144,7 +43144,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const getWorkerName = (id: string) => workers.find(w => w.id === id)?.name || 'Desconocido';
       const getWorkerPosition = (id: string) => workers.find(w => w.id === id)?.position || '';
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
       const followups_subscription = await storage.getSubscriptionByCompany(companyId);
@@ -43277,7 +43277,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.fontSize(9).font('Helvetica').text('Este documento contiene el listado de casos en seguimiento del programa de Estilos de Vida Saludable (EVS) de la empresa. Los casos deben ser revisados periódicamente según las fechas establecidas.', margin, currentY, { width: contentWidth });
       
       // Add standardized signature footer (no LSO required)
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       
       doc.end();
     } catch (error: any) {
@@ -43300,7 +43300,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const worker = workers.find(w => w.id === followup.workerId);
       const workerName = worker?.name || 'Desconocido';
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
       const subscription = await storage.getSubscriptionByCompany(companyId);
@@ -43435,7 +43435,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       // Add standardized signature footer (no LSO required)
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       
       doc.end();
     } catch (error: any) {
@@ -44259,7 +44259,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       // Cargar logo y obtener firmantes
       const logoBuffer = await loadCompanyLogo(companyId);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       
       // Crear PDF
       const doc = new PDFDocument({ size: 'LETTER', margin: 40 });
@@ -44347,7 +44347,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       );
       
       // Footer con firmantes
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
       
       doc.end();
     } catch (error: any) {
@@ -45293,7 +45293,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       // Load company logo and get signers
       const logo = await loadCompanyLogo(company?.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
 
       // Create PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
@@ -45534,7 +45534,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
 
       // Footer con firmantes
-      addSignatureFooter(doc, signers, false);
+      addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
