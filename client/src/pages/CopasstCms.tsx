@@ -1210,7 +1210,7 @@ export default function CopasstCms() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2 flex-wrap">
         <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>

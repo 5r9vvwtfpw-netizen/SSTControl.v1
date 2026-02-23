@@ -1003,7 +1003,7 @@ export default function Trabajadores() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+ <div className="flex items-center flex-wrap gap-2">
         <BackToEvaluationButton />
         <div className="flex items-center gap-2">
           <BackToPesvEvaluationButton />

@@ -389,7 +389,7 @@ export default function RecomendacionesArl() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end">
+ <div className="flex gap-2 flex-wrap items-center justify-end">
         <BackToCronogramaButton />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">

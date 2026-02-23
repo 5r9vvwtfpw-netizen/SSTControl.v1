@@ -125,7 +125,7 @@ export default function ArbolCausas() {
 
   return (
     <div className="container mx-auto py-6 px-4 max-w-6xl">
-      <div className="flex items-center justify-between mb-4">
+ <div className="flex gap-2 flex-wrap items-center mb-4">
         <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>

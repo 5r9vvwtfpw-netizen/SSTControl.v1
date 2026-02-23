@@ -247,7 +247,7 @@ export default function PesvCapacitacionesEvaluacion() {
         isLoading={evaluacionLoading}
       />
 
-      <div className="flex justify-end mb-4">
+ <div className="flex gap-2 flex-wrap justify-end mb-4">
         <BackToPesvEvaluationButton />
       </div>
 

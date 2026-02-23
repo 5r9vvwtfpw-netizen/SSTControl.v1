@@ -266,7 +266,7 @@ export default function EstilosVidaSaludable() {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2 flex-wrap">
         <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>

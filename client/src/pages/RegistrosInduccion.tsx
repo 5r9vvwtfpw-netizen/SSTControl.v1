@@ -462,7 +462,7 @@ export default function RegistrosInduccionPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Botón volver a evaluación */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2 flex-wrap">
         <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>

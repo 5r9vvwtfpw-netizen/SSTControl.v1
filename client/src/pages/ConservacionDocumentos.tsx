@@ -688,7 +688,7 @@ export default function ConservacionDocumentos() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center gap-4">
+ <div className="flex items-center gap-4 flex-wrap">
         <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
