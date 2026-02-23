@@ -15,7 +15,7 @@ let licenseState: LicenseState = {
   message: "Licencia no verificada"
 };
 
-const CACHE_DURATION = 5 * 60 * 1000;
+const CACHE_DURATION = 24 * 60 * 60 * 1000;
 const WRITE_METHODS = ["POST", "PUT", "PATCH", "DELETE"];
 const PUBLIC_PATHS = [
   "/api/login",

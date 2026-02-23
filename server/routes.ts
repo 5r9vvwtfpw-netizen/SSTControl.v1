@@ -2193,7 +2193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // === 11. SISTEMA DE LICENCIAS ===
       sectionTitle('11', 'SISTEMA DE LICENCIAS');
-      bullet('Verificación periódica cada 5 minutos');
+      bullet('Verificación periódica cada 24 horas');
       bullet('Modo solo lectura si la licencia es inválida');
       bullet('Hash SHA-256 de la llave para transmisión segura');
       currentY += 10;
