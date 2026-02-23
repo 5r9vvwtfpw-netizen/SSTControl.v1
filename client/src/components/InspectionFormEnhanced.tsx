@@ -49,8 +49,18 @@ export function InspectionFormEnhanced({
   workers,
   onCancel,
 }: InspectionFormEnhancedProps) {
-  const [selectedPredefInspeccion, setSelectedPredefInspeccion] = useState<string>("");
-  const [currentInspeccion, setCurrentInspeccion] = useState<InspeccionPredefinida | null>(null);
+  const initialTemplate = useMemo(() => {
+    if (formData.area) {
+      const match = inspeccionesSstPredefinidas.find(i => i.area === formData.area);
+      return match?.codigo || "";
+    }
+    return "";
+  }, []);
+
+  const [selectedPredefInspeccion, setSelectedPredefInspeccion] = useState<string>(initialTemplate);
+  const [currentInspeccion, setCurrentInspeccion] = useState<InspeccionPredefinida | null>(
+    initialTemplate ? getInspeccionByCodigo(initialTemplate) || null : null
+  );
   const [verificationItems, setVerificationItems] = useState<VerificationItem[]>([]);
   const [showItemsList, setShowItemsList] = useState(false);
 
