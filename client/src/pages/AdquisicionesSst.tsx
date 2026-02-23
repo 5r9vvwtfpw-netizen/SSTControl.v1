@@ -1432,7 +1432,7 @@ function EvaluacionesTab() {
                               <SelectItem value="aprobado">Aprobado</SelectItem>
                               <SelectItem value="aprobado_condiciones">Aprobado con Condiciones</SelectItem>
                               <SelectItem value="rechazado">Rechazado</SelectItem>
-                              <SelectItem value="requiere_revision">Requiere Revisión</SelectItem>
+                              <SelectItem value="requiere_controles">Requiere Controles</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormDescription>
@@ -1502,7 +1502,8 @@ function EvaluacionesTab() {
                           {evaluacion.resultado === "aprobado" ? "Aprobado" :
                            evaluacion.resultado === "aprobado_condiciones" ? "Aprobado con Condiciones" :
                            evaluacion.resultado === "rechazado" ? "Rechazado" :
-                           "Requiere Revisión"}
+                           evaluacion.resultado === "requiere_controles" ? "Requiere Controles" :
+                           evaluacion.resultado}
                         </Badge>
                       </TableCell>
                       <TableCell>
