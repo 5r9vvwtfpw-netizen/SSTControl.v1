@@ -515,8 +515,7 @@ export default function InvestigacionAccidentes() {
 
   const deleteInvestigationMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/investigations/${id}`);
-      return res.json();
+      await apiRequest("DELETE", `/api/investigations/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/investigations"] });
