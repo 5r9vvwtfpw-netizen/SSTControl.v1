@@ -588,10 +588,16 @@ export default function InvestigacionAccidentes() {
   });
 
   const handleSubmit = (data: InvestigationFormData) => {
+    const payload = {
+      ...data,
+      isSevere: data.isSevere ? 1 : 0,
+      isFatal: data.isFatal ? 1 : 0,
+      copasstParticipation: data.copasstParticipation ? 1 : 0,
+    };
     if (editingInvestigation) {
-      updateInvestigationMutation.mutate({ id: editingInvestigation.id, data });
+      updateInvestigationMutation.mutate({ id: editingInvestigation.id, data: payload });
     } else {
-      createInvestigationMutation.mutate(data);
+      createInvestigationMutation.mutate(payload);
     }
   };
 
