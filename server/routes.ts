@@ -16,7 +16,7 @@
 // FRESH BUILD TRIGGER
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { eq, and, sql, desc, ne } from "drizzle-orm";
+import { eq, and, sql, desc, ne, inArray } from "drizzle-orm";
 import { initializeWebSocket, notifyNewMessage, notifyMessageRead, setSessionParser } from "./websocket";
 import { setupAuth, getSessionMiddleware, requireAuth as authRequireAuth, requirePermission, requireAnyPermission, requireRole, hashPassword, stripPassword, requireActiveSubscription } from "./auth";
 import { demoReadOnlyMiddleware } from "../plugins/demo-engine/readonly-middleware";
