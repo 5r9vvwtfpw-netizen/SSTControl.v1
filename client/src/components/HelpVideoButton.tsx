@@ -99,16 +99,23 @@ function toVimeoEmbedUrl(url: string): string {
   return url;
 }
 
-export default function HelpVideoButton() {
+interface HelpVideoButtonProps {
+  customRoute?: string;
+  label?: string;
+  testId?: string;
+}
+
+export default function HelpVideoButton({ customRoute, label, testId }: HelpVideoButtonProps = {}) {
   const [location] = useLocation();
   const { user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
 
-  const isExcluded = EXCLUDED_ROUTES.some(
+  const isExcluded = !customRoute && (EXCLUDED_ROUTES.some(
     (route) => location === route || location.startsWith(route + "/")
-  ) || EXCLUDED_ROUTE_PATTERNS.some((pattern) => pattern.test(location));
+  ) || EXCLUDED_ROUTE_PATTERNS.some((pattern) => pattern.test(location)));
 
-  const encodedRoute = encodeURIComponent(location);
+  const routeForLookup = customRoute || location;
+  const encodedRoute = encodeURIComponent(routeForLookup);
   const { data } = useQuery<{ video: HelpVideo | null }>({
     queryKey: ["/api/help-videos/by-route", encodedRoute],
     queryFn: async () => {
@@ -125,17 +132,19 @@ export default function HelpVideoButton() {
   if (!user || isExcluded) return null;
 
   const hasVideo = !!video;
+  const buttonLabel = label || "Video de Ayuda";
+  const buttonTestId = testId || "button-help-video";
 
   return (
     <>
       <Button
         onClick={() => setModalOpen(true)}
-        data-testid="button-help-video"
-        title={hasVideo ? "Ver video de ayuda" : "Video de ayuda próximamente"}
+        data-testid={buttonTestId}
+        title={hasVideo ? `Ver ${buttonLabel.toLowerCase()}` : `${buttonLabel} próximamente`}
         className="gap-2 bg-orange-500 text-gray-800 border-orange-500 dark:bg-orange-600 dark:border-orange-600 dark:text-gray-800"
       >
         <CirclePlay className="h-4 w-4" />
-        Video de Ayuda
+        {buttonLabel}
       </Button>
 
       {modalOpen && (

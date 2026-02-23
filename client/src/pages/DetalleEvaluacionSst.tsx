@@ -686,7 +686,11 @@ export default function DetalleEvaluacionSst() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {getNivelBadge(evaluacion.nivelCumplimiento, evaluacion.porcentajeCumplimiento)}
-          <HelpVideoButton />
+          <HelpVideoButton 
+            customRoute="/evaluacion-sst-tutorial" 
+            label="Tutorial Evaluación" 
+            testId="button-help-video-evaluacion"
+          />
           <Button 
             variant="default" 
             onClick={handleDownloadMinisterioReport} 
