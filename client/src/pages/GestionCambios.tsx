@@ -135,7 +135,7 @@ const plantillasCambiosSst: PlantillaInfo[] = [
     descripcion: 'Cambios por actualización de normativa SST aplicable',
     campos: {
       tipo: 'externo',
-      categoria: 'normativo',
+      categoria: 'legal',
       descripcion: `REQUISITOS SST PARA CAMBIO NORMATIVO (Art. 2.2.4.6.26 Decreto 1072/2015):
 
 • Identificación de requisitos legales aplicables
@@ -155,7 +155,7 @@ const plantillasCambiosSst: PlantillaInfo[] = [
     descripcion: 'Cambio de proveedores o contratistas que afectan SST',
     campos: {
       tipo: 'externo',
-      categoria: 'proveedor',
+      categoria: 'otro',
       descripcion: `REQUISITOS SST PARA CAMBIO DE PROVEEDOR (Art. 2.2.4.6.26 Decreto 1072/2015):
 
 • Evaluación SST del nuevo proveedor/contratista
@@ -338,7 +338,7 @@ function CambiosTab({ prefillData, onPrefillApplied }: CambiosTabProps) {
         ...form.getValues(),
         titulo: "",
         tipo: prefillData.tipo as "interno" | "externo",
-        categoria: prefillData.categoria as "proceso" | "instalacion" | "equipo" | "personal" | "organizacional" | "normativo" | "proveedor" | "otro",
+        categoria: prefillData.categoria as "proceso" | "instalacion" | "equipo" | "organizacional" | "tecnologico" | "legal" | "producto" | "personal" | "otro",
         descripcion: prefillData.descripcion,
         areaAfectada: "",
         procesoAfectado: "",
@@ -455,7 +455,7 @@ function CambiosTab({ prefillData, onPrefillApplied }: CambiosTabProps) {
     
     const campos = plantilla.campos as PlantillaPrefill;
     form.setValue('tipo', (campos.tipo as "interno" | "externo") || 'interno');
-    form.setValue('categoria', (campos.categoria as "proceso" | "instalacion" | "equipo" | "personal" | "organizacional" | "normativo" | "proveedor" | "otro") || 'proceso');
+    form.setValue('categoria', (campos.categoria as "proceso" | "instalacion" | "equipo" | "organizacional" | "tecnologico" | "legal" | "producto" | "personal" | "otro") || 'proceso');
     form.setValue('descripcion', campos.descripcion || '');
     
     toast({
@@ -573,11 +573,12 @@ function CambiosTab({ prefillData, onPrefillApplied }: CambiosTabProps) {
                             <SelectContent>
                               <SelectItem value="proceso">Proceso</SelectItem>
                               <SelectItem value="instalacion">Instalación</SelectItem>
-                              <SelectItem value="equipo">Equipo/Tecnología</SelectItem>
-                              <SelectItem value="personal">Personal</SelectItem>
+                              <SelectItem value="equipo">Equipo</SelectItem>
                               <SelectItem value="organizacional">Organizacional</SelectItem>
-                              <SelectItem value="normativo">Normativo</SelectItem>
-                              <SelectItem value="proveedor">Proveedor</SelectItem>
+                              <SelectItem value="tecnologico">Tecnológico</SelectItem>
+                              <SelectItem value="legal">Legal/Normativo</SelectItem>
+                              <SelectItem value="producto">Producto</SelectItem>
+                              <SelectItem value="personal">Personal</SelectItem>
                               <SelectItem value="otro">Otro</SelectItem>
                             </SelectContent>
                           </Select>
