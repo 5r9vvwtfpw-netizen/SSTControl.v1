@@ -157,16 +157,7 @@ function DocumentAcknowledgmentsTab({ documentId }: { documentId: string }) {
 
   const assignMutation = useMutation({
     mutationFn: async (data: { documentId: string; workerIds: string[]; dueDate?: string; message?: string }) => {
-      const res = await fetch("/api/document-assignments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Error al asignar documento");
-      }
+      const res = await apiRequest("POST", "/api/document-assignments", data);
       return res.json();
     },
     onSuccess: (data) => {
@@ -178,7 +169,7 @@ function DocumentAcknowledgmentsTab({ documentId }: { documentId: string }) {
       setSelectedWorkerIds([]);
       setDueDate(undefined);
       setMessage("");
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ["/api/document-acknowledgments", documentId] });
     },
     onError: (error: Error) => {
       toast({
