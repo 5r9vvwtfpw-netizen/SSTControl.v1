@@ -75,6 +75,16 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
   const [autoFillFromEvaluacion, setAutoFillFromEvaluacion] = useState(false);
   const [selectedEvaluacionId, setSelectedEvaluacionId] = useState<string | null>(null);
 
+  const evaluationParams = (() => {
+    const params = new URLSearchParams(window.location.search);
+    const evalId = params.get("evaluationId");
+    const from = params.get("from");
+    if (from === "evaluation" && evalId) {
+      return `?from=evaluation&evaluationId=${evalId}`;
+    }
+    return "";
+  })();
+
   const { data: items = [], isLoading: loadingItems } = useQuery<AdquisicionItem[]>({
     queryKey: ["/api/adquisicion-items"],
     enabled: embedded || open,
@@ -565,7 +575,7 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
                   </div>
                 )}
                 
-                <Link href="/entrega-epp" className="block">
+                <Link href={`/entrega-epp${evaluationParams}`} className="block">
                   <Button variant="outline" size="sm" className="w-full gap-2" data-testid="button-ir-epp">
                     <HardHat className="h-4 w-4" />
                     Ver Módulo EPP Completo
@@ -612,7 +622,7 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
                   <Progress value={resumenIntegrado?.recursosFinancieros.porcentajeEjecucion || 0} className="h-2" />
                 </div>
                 
-                <Link href="/asignacion-recursos" className="block">
+                <Link href={`/asignacion-recursos${evaluationParams}`} className="block">
                   <Button variant="outline" size="sm" className="w-full gap-2" data-testid="button-ir-recursos">
                     <DollarSign className="h-4 w-4" />
                     Ver Recursos Financieros
