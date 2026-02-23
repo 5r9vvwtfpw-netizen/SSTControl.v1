@@ -100,7 +100,7 @@ export function Estandar424VerificacionInspecciones({ isVisible, evaluationId }:
               data-testid="button-ver-acciones-424"
               asChild
             >
-              <Link href={`/medidas-preventivas${fromParam}`}>
+              <Link href={`/medidas${fromParam}`}>
                 <ClipboardList className="h-4 w-4 mr-2" />
                 Ver Acciones
               </Link>
