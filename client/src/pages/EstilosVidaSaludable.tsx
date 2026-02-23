@@ -865,11 +865,16 @@ function ActividadesTab({ activities, programs, workers, isLoading, toast }: { a
   };
 
   const handleSubmit = () => {
+    if (!formData.scheduledDate) {
+      toast({ title: "Campo requerido", description: "La fecha programada es obligatoria.", variant: "destructive" });
+      return;
+    }
     const payload = {
       ...formData,
       programId: formData.programId === "__none__" ? null : (formData.programId || null),
       estimatedParticipants: formData.estimatedParticipants ? parseInt(formData.estimatedParticipants) : null,
       actualParticipants: formData.actualParticipants ? parseInt(formData.actualParticipants) : null,
+      executionDate: formData.executionDate || null,
     };
 
     if (editingActivity) {
