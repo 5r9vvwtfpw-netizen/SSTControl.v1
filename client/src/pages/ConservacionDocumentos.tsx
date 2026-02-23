@@ -136,9 +136,8 @@ interface AcknowledgmentData {
 
 interface Worker {
   id: string;
-  firstName: string;
-  lastName: string;
-  documentNumber: string;
+  name: string;
+  identificationNumber: string;
 }
 
 function DocumentAcknowledgmentsTab({ documentId }: { documentId: string }) {
@@ -293,8 +292,8 @@ function DocumentAcknowledgmentsTab({ documentId }: { documentId: string }) {
                             <CheckCircle2 className="h-3 w-3 text-primary-foreground" />
                           )}
                         </div>
-                        <span className="flex-1">{worker.firstName} {worker.lastName}</span>
-                        <span className="text-xs text-muted-foreground">{worker.documentNumber}</span>
+                        <span className="flex-1">{worker.name}</span>
+                        <span className="text-xs text-muted-foreground">{worker.identificationNumber}</span>
                       </div>
                     ))}
                   </div>
