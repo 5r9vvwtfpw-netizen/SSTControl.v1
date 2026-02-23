@@ -754,11 +754,11 @@ function CambiosTab({ prefillData, onPrefillApplied }: CambiosTabProps) {
                           <FormControl>
                             <Input 
                               type="date" 
-                              value={field.value instanceof Date && !isNaN(field.value.getTime()) ? field.value.toISOString().split('T')[0] : ''}
+                              value={field.value instanceof Date && !isNaN(field.value.getTime()) ? `${field.value.getFullYear()}-${String(field.value.getMonth() + 1).padStart(2, '0')}-${String(field.value.getDate()).padStart(2, '0')}` : ''}
                               onChange={(e) => {
                                 const dateValue = e.target.value;
                                 if (dateValue) {
-                                  const parsedDate = new Date(dateValue + 'T00:00:00');
+                                  const parsedDate = new Date(dateValue + 'T12:00:00');
                                   if (!isNaN(parsedDate.getTime())) {
                                     field.onChange(parsedDate);
                                   }
@@ -781,11 +781,11 @@ function CambiosTab({ prefillData, onPrefillApplied }: CambiosTabProps) {
                           <FormControl>
                             <Input 
                               type="date" 
-                              value={field.value instanceof Date && !isNaN(field.value.getTime()) ? field.value.toISOString().split('T')[0] : ''}
+                              value={field.value instanceof Date && !isNaN(field.value.getTime()) ? `${field.value.getFullYear()}-${String(field.value.getMonth() + 1).padStart(2, '0')}-${String(field.value.getDate()).padStart(2, '0')}` : ''}
                               onChange={(e) => {
                                 const dateValue = e.target.value;
                                 if (dateValue) {
-                                  const parsedDate = new Date(dateValue + 'T00:00:00');
+                                  const parsedDate = new Date(dateValue + 'T12:00:00');
                                   if (!isNaN(parsedDate.getTime())) {
                                     field.onChange(parsedDate);
                                   }
