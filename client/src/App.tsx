@@ -175,7 +175,8 @@ import DemoVerify from "@/pages/DemoVerify";
 function HelpVideoButtonWrapper() {
   const [location] = useLocation();
   const hiddenRoutes = ["/videos-ayuda", "/admin-videos-ayuda"];
-  if (hiddenRoutes.includes(location)) return null;
+  const hiddenPrefixes = ["/evaluaciones-sst/"];
+  if (hiddenRoutes.includes(location) || hiddenPrefixes.some(p => location.startsWith(p))) return null;
   return (
     <div className="flex justify-end mb-2">
       <HelpVideoButton />

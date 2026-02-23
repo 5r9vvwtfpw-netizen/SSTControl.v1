@@ -38,6 +38,7 @@ import { Estandar614VerificacionPlanificarAuditoria } from "@/components/Estanda
 import { Estandar711VerificacionAccionesCorrectivas } from "@/components/Estandar711VerificacionAccionesCorrectivas";
 import { Estandar712VerificacionMejoraAltaDireccion } from "@/components/Estandar712VerificacionMejoraAltaDireccion";
 import { Estandar713VerificacionAccionesInvestigaciones } from "@/components/Estandar713VerificacionAccionesInvestigaciones";
+import HelpVideoButton from "@/components/HelpVideoButton";
 
 export default function DetalleEvaluacionSst() {
   const { id } = useParams();
@@ -685,6 +686,7 @@ export default function DetalleEvaluacionSst() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {getNivelBadge(evaluacion.nivelCumplimiento, evaluacion.porcentajeCumplimiento)}
+          <HelpVideoButton />
           <Button 
             variant="default" 
             onClick={handleDownloadMinisterioReport} 

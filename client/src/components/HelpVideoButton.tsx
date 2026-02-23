@@ -33,9 +33,7 @@ const EXCLUDED_ROUTES = [
   "/contrato-saas",
 ];
 
-const EXCLUDED_ROUTE_PATTERNS = [
-  /^\/evaluaciones-sst\/[^/]+$/,
-];
+const EXCLUDED_ROUTE_PATTERNS: RegExp[] = [];
 
 function isYouTubeUrl(url: string): boolean {
   try {
