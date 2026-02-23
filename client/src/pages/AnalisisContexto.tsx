@@ -523,9 +523,9 @@ export default function AnalisisContexto() {
 
   return (
     <div className="container mx-auto p-6 space-y-6" data-testid="page-analisis-contexto">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2 flex-wrap">
         <BackToEvaluationButton />
-        <BackToCronogramaButton className="ml-auto" />
+        <BackToCronogramaButton />
       </div>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
