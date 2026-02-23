@@ -16,6 +16,7 @@ import { createSstSpeedAlerts } from './migrations/create-sst-speed-alerts';
 import { syncSafeRoutesColumns } from './migrations/sync-safe-routes-columns';
 import { createCertificacionesProfesionales } from './migrations/create-certificaciones-profesionales';
 import { syncPricingPluginSubscriptions } from './migrations/sync-pricing-plugin-subscriptions';
+import { syncInvestigationParticipants } from './migrations/sync-investigation-participants';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -29,6 +30,7 @@ export async function runMigrations() {
     await syncAccidentTypeEnum();
     await syncAccidentInvestigationsTable();
     await syncInvestigationFindings();
+    await syncInvestigationParticipants();
     await fixEvaluacionesPuntajes();
     await syncMedicalExamsDocumentUrl();
     await syncExternalLsoColumns();
