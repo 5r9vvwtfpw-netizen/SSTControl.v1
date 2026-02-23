@@ -478,7 +478,7 @@ export default function RegistrosInduccionPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild data-testid="button-configuracion-induccion">
-            <Link href="/configuracion-induccion">
+            <Link href={`/configuracion-induccion${window.location.search}`}>
               <Settings className="h-4 w-4 mr-2" />
               Inducción Virtual
             </Link>
