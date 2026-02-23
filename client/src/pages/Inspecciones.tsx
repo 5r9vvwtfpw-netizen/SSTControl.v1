@@ -156,8 +156,7 @@ export default function Inspecciones() {
 
   const deleteInspectionMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/inspections/${id}`);
-      return res.json();
+      await apiRequest("DELETE", `/api/inspections/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
