@@ -375,7 +375,7 @@ export default function PesvMejoraContinua() {
         isLoading={evaluacionLoading}
       />
 
-      <div className="flex justify-end mb-4 gap-2">
+      <div className="flex items-center gap-2 flex-wrap mb-4">
         <Button
           variant="outline"
           size="sm"

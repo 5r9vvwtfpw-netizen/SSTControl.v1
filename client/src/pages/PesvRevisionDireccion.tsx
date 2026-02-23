@@ -214,7 +214,7 @@ export default function PesvRevisionDireccion() {
         isLoading={evaluacionLoading}
       />
 
-      <div className="flex justify-end gap-2 mb-4">
+      <div className="flex items-center gap-2 flex-wrap mb-4">
         <Button
           variant="ghost"
           size="icon"

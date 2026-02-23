@@ -59,21 +59,22 @@ export default function PesvLiderazgo() {
 
   return (
     <div className="container mx-auto py-6 space-y-6" data-testid="page-pesv-liderazgo">
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex items-center gap-2 flex-wrap mb-4">
         <Link href="/pesv">
-          <Button variant="ghost" size="icon" data-testid="button-back-pesv">
-            <ArrowLeft className="h-4 w-4" />
+          <Button variant="outline" size="sm" data-testid="button-back-pesv">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver al Panel PESV
           </Button>
         </Link>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">
-            Paso 4: Liderazgo y Compromiso de la Alta Dirección
-          </h1>
-          <p className="text-muted-foreground">
-            Demostración del compromiso de la alta dirección con la seguridad vial
-          </p>
-        </div>
         <BackToPesvEvaluationButton />
+      </div>
+      <div>
+        <h1 className="text-2xl font-bold" data-testid="text-page-title">
+          Paso 4: Liderazgo y Compromiso de la Alta Dirección
+        </h1>
+        <p className="text-muted-foreground">
+          Demostración del compromiso de la alta dirección con la seguridad vial
+        </p>
       </div>
 
       <TrazabilidadPesvBanner codigoPaso="P04" compacto={false} />
