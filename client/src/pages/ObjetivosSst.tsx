@@ -82,17 +82,15 @@ export default function ObjetivosSst() {
   
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <BackToEvaluationButton />
-        <div className="flex items-center gap-2">
-          <Link href="/pesv/evaluaciones">
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md" data-testid="button-ir-evaluacion-pesv">
-              <Target className="h-4 w-4 mr-2" />
-              Ir a Evaluación PESV
-            </Button>
-          </Link>
-          <BackToCronogramaButton />
-        </div>
+        <BackToCronogramaButton />
+        <Link href="/pesv/evaluaciones">
+          <Button variant="outline" size="sm" data-testid="button-ir-evaluacion-pesv">
+            <Target className="h-4 w-4 mr-2" />
+            Evaluación PESV
+          </Button>
+        </Link>
       </div>
       <div>
         <h1 className="text-3xl font-bold" data-testid="text-page-title">Objetivos e Indicadores SST</h1>
