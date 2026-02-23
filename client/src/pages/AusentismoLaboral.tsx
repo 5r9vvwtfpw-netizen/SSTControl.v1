@@ -241,7 +241,7 @@ export default function AusentismoLaboral() {
         companyId,
         epsFollowup: data.epsFollowup ? 1 : 0,
         arlFollowup: data.arlFollowup ? 1 : 0,
-        accidentId: data.accidentId || null,
+        accidentId: (data.accidentId && data.accidentId !== "none") ? data.accidentId : null,
       };
       const res = await apiRequest("POST", "/api/absences", payload);
       return res.json();
@@ -263,6 +263,7 @@ export default function AusentismoLaboral() {
         ...data,
         epsFollowup: data.epsFollowup ? 1 : 0,
         arlFollowup: data.arlFollowup ? 1 : 0,
+        accidentId: (data.accidentId && data.accidentId !== "none") ? data.accidentId : null,
       };
       const res = await apiRequest("PATCH", `/api/absences/${id}`, payload);
       return res.json();
