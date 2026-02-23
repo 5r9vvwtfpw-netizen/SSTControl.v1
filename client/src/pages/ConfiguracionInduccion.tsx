@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
-import { Plus, Pencil, Trash2, Video, FileText, BookOpen, GraduationCap, Settings, Eye, Send, Users, CheckCircle2, XCircle, ClipboardList, ChevronUp, ChevronDown, Wand2, Shield, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Video, FileText, BookOpen, GraduationCap, Settings, Eye, Send, Users, CheckCircle2, XCircle, ClipboardList, ChevronUp, ChevronDown, Wand2, Shield, Loader2, Upload, File } from "lucide-react";
 import { Link } from "wouter";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AutomationAssistant, type PlantillaInfo } from "@/components/AutomationAssistant";
@@ -81,6 +81,8 @@ export default function ConfiguracionInduccion() {
   const [itemToDelete, setItemToDelete] = useState<{ type: "contenido" | "pregunta"; id: string } | null>(null);
   
   const [contenidoForm, setContenidoForm] = useState<ContenidoFormData>(defaultContenido);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState("");
   const [preguntaForm, setPreguntaForm] = useState<PreguntaFormData>(defaultPregunta);
   const [selectedWorker, setSelectedWorker] = useState("");
   const [tipoInduccion, setTipoInduccion] = useState<"induccion" | "reinduccion">("induccion");
@@ -291,6 +293,7 @@ export default function ConfiguracionInduccion() {
       estado: contenido.estado,
       obligatorio: contenido.obligatorio,
     });
+    setSelectedFileName(contenido.urlDocumento ? "Archivo existente" : "");
     setContenidoDialogOpen(true);
   };
 
@@ -304,6 +307,33 @@ export default function ConfiguracionInduccion() {
       activa: pregunta.activa,
     });
     setPreguntaDialogOpen(true);
+  };
+
+  const handleFileUpload = async (file: globalThis.File) => {
+    setUploadingFile(true);
+    setSelectedFileName(file.name);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', 'capacitaciones');
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || 'Error al subir archivo');
+      }
+      const data = await res.json();
+      setContenidoForm(prev => ({ ...prev, urlDocumento: data.url }));
+      toast({ title: "Archivo subido", description: `${file.name} subido correctamente` });
+    } catch (error: any) {
+      toast({ title: "Error al subir archivo", description: error.message, variant: "destructive" });
+      setSelectedFileName("");
+    } finally {
+      setUploadingFile(false);
+    }
   };
 
   const handleSubmitContenido = () => {
@@ -611,6 +641,7 @@ export default function ConfiguracionInduccion() {
               if (!open) {
                 setEditingContenido(null);
                 setContenidoForm(defaultContenido);
+                setSelectedFileName("");
               }
             }}>
               <DialogTrigger asChild>
@@ -650,7 +681,6 @@ export default function ConfiguracionInduccion() {
                           <SelectItem value="video">Video</SelectItem>
                           <SelectItem value="documento">Documento PDF</SelectItem>
                           <SelectItem value="presentacion">Presentación</SelectItem>
-                          <SelectItem value="texto">Texto/HTML</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -675,22 +705,57 @@ export default function ConfiguracionInduccion() {
                   )}
                   {(contenidoForm.tipoContenido === "documento" || contenidoForm.tipoContenido === "presentacion") && (
                     <div className="space-y-2">
-                      <Label>URL del Documento</Label>
-                      <Input
-                        value={contenidoForm.urlDocumento}
-                        onChange={(e) => setContenidoForm({ ...contenidoForm, urlDocumento: e.target.value })}
-                        placeholder="https://..."
-                      />
-                    </div>
-                  )}
-                  {contenidoForm.tipoContenido === "texto" && (
-                    <div className="space-y-2">
-                      <Label>Contenido (HTML permitido)</Label>
-                      <Textarea
-                        value={contenidoForm.contenidoTexto}
-                        onChange={(e) => setContenidoForm({ ...contenidoForm, contenidoTexto: e.target.value })}
-                        placeholder="<p>Contenido de la inducción...</p>"
-                        rows={6}
+                      <Label>Adjuntar Archivo {contenidoForm.tipoContenido === "documento" ? "(PDF)" : "(PDF, DOCX, XLSX)"}</Label>
+                      {contenidoForm.urlDocumento ? (
+                        <div className="flex items-center gap-2 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-md">
+                          <File className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <span className="text-sm text-emerald-700 dark:text-emerald-300 flex-1 truncate">
+                            {selectedFileName || "Archivo adjunto"}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setContenidoForm(prev => ({ ...prev, urlDocumento: "" }));
+                              setSelectedFileName("");
+                            }}
+                            data-testid="button-remove-file"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div
+                          className="border-2 border-dashed border-muted-foreground/25 rounded-md p-6 text-center cursor-pointer hover-elevate transition-colors"
+                          onClick={() => document.getElementById('induccion-file-input')?.click()}
+                          data-testid="dropzone-file-upload"
+                        >
+                          {uploadingFile ? (
+                            <div className="flex flex-col items-center gap-2">
+                              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                              <p className="text-sm text-muted-foreground">Subiendo archivo...</p>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center gap-2">
+                              <Upload className="h-8 w-8 text-muted-foreground" />
+                              <p className="text-sm text-muted-foreground">Haga clic para seleccionar un archivo</p>
+                              <p className="text-xs text-muted-foreground">PDF, DOC, DOCX, XLS, XLSX (máx. 10MB)</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <input
+                        id="induccion-file-input"
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileUpload(file);
+                          e.target.value = "";
+                        }}
+                        data-testid="input-file-upload"
                       />
                     </div>
                   )}
