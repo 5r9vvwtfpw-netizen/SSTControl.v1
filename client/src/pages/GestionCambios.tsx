@@ -1,4 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+
+function parseDateLocal(dateStr: string | Date): Date {
+  if (dateStr instanceof Date) return dateStr;
+  if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  return new Date(dateStr);
+}
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -427,8 +436,8 @@ function CambiosTab({ prefillData, onPrefillApplied }: CambiosTabProps) {
       numeroTrabajadoresAfectados: item.numeroTrabajadoresAfectados,
       justificacion: item.justificacion,
       objetivos: item.objetivos || "",
-      fechaPropuesta: new Date(item.fechaPropuesta),
-      fechaImplementacionPlanificada: item.fechaImplementacionPlanificada ? new Date(item.fechaImplementacionPlanificada) : undefined,
+      fechaPropuesta: parseDateLocal(item.fechaPropuesta),
+      fechaImplementacionPlanificada: item.fechaImplementacionPlanificada ? parseDateLocal(item.fechaImplementacionPlanificada) : undefined,
       solicitante: item.solicitante,
       responsableImplementacion: item.responsableImplementacion || "",
       estado: item.estado,
@@ -965,7 +974,7 @@ function CambiosTab({ prefillData, onPrefillApplied }: CambiosTabProps) {
                     <TableCell>{cambio.areaAfectada}</TableCell>
                     <TableCell><StatusBadge status={cambio.estado} type="cambio" withIcon testId={`badge-estado-${cambio.estado}`} /></TableCell>
                     <TableCell>{cambio.solicitante}</TableCell>
-                    <TableCell>{format(new Date(cambio.fechaPropuesta), "dd/MM/yyyy", { locale: es })}</TableCell>
+                    <TableCell>{format(parseDateLocal(cambio.fechaPropuesta), "dd/MM/yyyy", { locale: es })}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -1099,7 +1108,7 @@ function EvaluacionesTab() {
     setEditingItem(item);
     form.reset({
       cambioId: item.cambioId,
-      fechaEvaluacion: new Date(item.fechaEvaluacion),
+      fechaEvaluacion: parseDateLocal(item.fechaEvaluacion),
       evaluador: item.evaluador,
       peligrosIdentificados: item.peligrosIdentificados,
       numeroPeligrosNuevos: item.numeroPeligrosNuevos,
@@ -1192,8 +1201,8 @@ function EvaluacionesTab() {
                           <FormControl>
                             <Input 
                               type="date" 
-                              value={field.value instanceof Date ? field.value.toISOString().split('T')[0] : ''}
-                              onChange={(e) => field.onChange(new Date(e.target.value))}
+                              value={field.value instanceof Date ? `${field.value.getFullYear()}-${String(field.value.getMonth() + 1).padStart(2, '0')}-${String(field.value.getDate()).padStart(2, '0')}` : ''}
+                              onChange={(e) => field.onChange(parseDateLocal(e.target.value))}
                               data-testid="input-fecha-evaluacion"
                             />
                           </FormControl>
@@ -1524,7 +1533,7 @@ function EvaluacionesTab() {
                       <TableCell className="font-medium">
                         {cambio ? `${cambio.codigo} - ${cambio.titulo}` : "N/A"}
                       </TableCell>
-                      <TableCell>{new Date(evaluacion.fechaEvaluacion).toLocaleDateString('es-CO')}</TableCell>
+                      <TableCell>{parseDateLocal(evaluacion.fechaEvaluacion).toLocaleDateString('es-CO')}</TableCell>
                       <TableCell>{evaluacion.evaluador}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{evaluacion.numeroPeligrosNuevos}</Badge>
