@@ -592,6 +592,8 @@ export default function InvestigacionAccidentes() {
       isSevere: data.isSevere ? 1 : 0,
       isFatal: data.isFatal ? 1 : 0,
       copasstParticipation: data.copasstParticipation ? 1 : 0,
+      requiresLicensedProfessional: data.isSevere || data.isFatal ? 1 : 0,
+      requiresMinistryReport: data.isFatal ? 1 : 0,
     };
     if (editingInvestigation) {
       updateInvestigationMutation.mutate({ id: editingInvestigation.id, data: payload });
