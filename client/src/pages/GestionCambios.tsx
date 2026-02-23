@@ -397,10 +397,10 @@ function CambiosTab({ prefillData, onPrefillApplied }: CambiosTabProps) {
     const payload = {
       ...data,
       fechaPropuesta: data.fechaPropuesta instanceof Date 
-        ? data.fechaPropuesta.toISOString() 
+        ? `${data.fechaPropuesta.getFullYear()}-${String(data.fechaPropuesta.getMonth() + 1).padStart(2, '0')}-${String(data.fechaPropuesta.getDate()).padStart(2, '0')}`
         : data.fechaPropuesta,
       fechaImplementacionPlanificada: data.fechaImplementacionPlanificada instanceof Date 
-        ? data.fechaImplementacionPlanificada.toISOString() 
+        ? `${data.fechaImplementacionPlanificada.getFullYear()}-${String(data.fechaImplementacionPlanificada.getMonth() + 1).padStart(2, '0')}-${String(data.fechaImplementacionPlanificada.getDate()).padStart(2, '0')}`
         : data.fechaImplementacionPlanificada,
       requiereActualizacionMatrizRiesgos: data.requiereActualizacionMatrizRiesgos ?? 0,
       requiereActualizacionPlanTrabajo: data.requiereActualizacionPlanTrabajo ?? 0,
