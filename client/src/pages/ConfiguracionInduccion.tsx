@@ -549,51 +549,22 @@ export default function ConfiguracionInduccion() {
         const estandar = getEstandarByCodigo('1.2.2');
         if (!estandar) return null;
         
-        const temasObligatorios = estandar.camposSugeridos.find(c => c.campo === 'temasObligatorios');
-        const camposSugeridos = temasObligatorios ? [{
-          campo: 'temasObligatorios',
-          valor: temasObligatorios.valorSugerido || '',
-          normativaReferencia: 'Decreto 1072/2015, Art. 2.2.4.6.11'
-        }] : [];
+        const camposSugeridos = [{
+          campo: 'autoCrear',
+          valor: `${plantillas.contenidos.length} contenidos educativos y ${plantillas.preguntas.length} preguntas de evaluación según nivel de riesgo ARL ${riskLevel}`,
+          normativaReferencia: 'Decreto 1072/2015, Art. 2.2.4.6.11 | Resolución 0312/2019'
+        }];
 
-        const preguntasPlantilla = plantillas.preguntas;
         const plantillasInduccion: PlantillaInfo[] = [
           {
-            id: 'contenido-induccion-sst',
-            nombre: 'Contenidos Obligatorios de Inducción SST',
-            descripcion: 'Temas mínimos requeridos para inducción según Decreto 1072/2015',
+            id: 'todo-induccion-sst',
+            nombre: `Crear todo automáticamente (${plantillas.contenidos.length} contenidos + ${plantillas.preguntas.length} preguntas)`,
+            descripcion: `Crea automáticamente todos los contenidos educativos y preguntas de evaluación requeridos para inducción SST según nivel de riesgo ARL ${riskLevel}. No requiere digitar nada.`,
             campos: {
-              tipo: 'contenido',
-              titulo: 'Inducción en SST - Temas Obligatorios',
-              descripcion: `Contenido de inducción que incluye:\n1. Generalidades de la empresa\n2. Política de SST\n3. Objetivos del SG-SST\n4. Peligros y riesgos del cargo\n5. Medidas de prevención y control\n6. Uso de EPP\n7. Reporte de condiciones y actos inseguros\n8. Procedimiento de emergencias\n9. Derechos y deberes en SST`,
+              tipo: 'auto-crear-todo',
             },
             normativaBase: 'DEC-1072-2.2.4.6.11'
           },
-          {
-            id: 'contenido-reinduccion-sst',
-            nombre: 'Contenidos de Reinducción Anual',
-            descripcion: 'Temas para reinducción anual según normativa SST',
-            campos: {
-              tipo: 'contenido',
-              titulo: 'Reinducción Anual en SST',
-              descripcion: `Reinducción que incluye:\n1. Actualización de la Política de SST\n2. Cambios en la identificación de peligros y riesgos\n3. Nuevos controles implementados\n4. Lecciones aprendidas de accidentes e incidentes\n5. Actualización del plan de emergencias\n6. Cambios en normativa aplicable\n7. Indicadores de SST del período`,
-            },
-            normativaBase: 'RES-0312-2019-ART16'
-          },
-          ...preguntasPlantilla.map((p, i) => ({
-            id: `pregunta-auto-${i}`,
-            nombre: `Pregunta: ${p.pregunta.substring(0, 60)}${p.pregunta.length > 60 ? '...' : ''}`,
-            descripcion: p.explicacion.substring(0, 120) + (p.explicacion.length > 120 ? '...' : ''),
-            campos: {
-              tipo: 'pregunta',
-              pregunta: p.pregunta,
-              opciones: p.opciones,
-              respuestaCorrecta: p.respuestaCorrecta,
-              explicacion: p.explicacion,
-              activa: p.activa,
-            },
-            normativaBase: 'DEC-1072-2.2.4.6.11'
-          }))
         ];
 
         return (
@@ -604,40 +575,12 @@ export default function ConfiguracionInduccion() {
             normativaAplicable={estandar.normativaAplicable}
             plantillasDisponibles={plantillasInduccion}
             camposSugeridos={camposSugeridos}
-            onAutoFill={(datos) => {
-              if (datos.temasObligatorios) {
-                setContenidoForm(prev => ({
-                  ...prev,
-                  titulo: 'Inducción en SST - Temas Obligatorios',
-                  descripcion: datos.temasObligatorios,
-                  tipoContenido: 'texto',
-                  contenidoTexto: datos.temasObligatorios,
-                }));
-                setContenidoDialogOpen(true);
-              }
+            onAutoFill={() => {
+              cargarPlantillaMutation.mutate();
             }}
             onSelectPlantilla={(plantilla) => {
-              if (plantilla.campos?.tipo === 'pregunta') {
-                setPreguntaForm({
-                  pregunta: plantilla.campos.pregunta || '',
-                  opciones: plantilla.campos.opciones || ['', '', '', ''],
-                  respuestaCorrecta: plantilla.campos.respuestaCorrecta ?? 0,
-                  explicacion: plantilla.campos.explicacion || '',
-                  activa: plantilla.campos.activa ?? 1,
-                });
-                setActiveTab('preguntas');
-                setPreguntaDialogOpen(true);
-                toast({
-                  title: "Pregunta auto-rellenada",
-                  description: "Revise los datos y haga clic en Crear para guardar la pregunta.",
-                });
-              } else if (plantilla.campos) {
-                setContenidoForm(prev => ({
-                  ...prev,
-                  titulo: plantilla.campos.titulo || prev.titulo,
-                  descripcion: plantilla.campos.descripcion || prev.descripcion,
-                }));
-                setContenidoDialogOpen(true);
+              if (plantilla.campos?.tipo === 'auto-crear-todo') {
+                cargarPlantillaMutation.mutate();
               }
             }}
             compact={true}
