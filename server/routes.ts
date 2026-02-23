@@ -4851,10 +4851,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
       
-      // Enrich with calculated SLA status
+      const investigationIds = investigations.map(inv => inv.id);
+      const allFindings = investigationIds.length > 0
+        ? await db.select()
+            .from(schema.investigationFindings)
+            .where(
+              inArray(schema.investigationFindings.investigationId, investigationIds)
+            )
+        : [];
+
+      const findingsByInvestigation = allFindings.reduce((acc: Record<string, any[]>, f) => {
+        if (!acc[f.investigationId]) acc[f.investigationId] = [];
+        acc[f.investigationId].push(f);
+        return acc;
+      }, {});
+
       const enrichedInvestigations = investigations.map(inv => {
         const { slaStatus, daysRemaining } = calculateSlaStatus(inv.dueDate);
-        return { ...inv, slaStatus, daysRemaining };
+        return { ...inv, slaStatus, daysRemaining, findings: findingsByInvestigation[inv.id] || [] };
       });
       
       res.json(enrichedInvestigations);
