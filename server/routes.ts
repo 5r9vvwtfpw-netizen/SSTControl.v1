@@ -32592,8 +32592,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const recursos = await storage.getResourceAllocations(companyId);
         const financieros = recursos.filter((r: any) => r.resourceType === 'financiero');
         for (const r of financieros) {
-          totalRecursos += Number(r.allocatedBudget) || 0;
-          ejecutadoRecursos += Number(r.executedBudget) || 0;
+          totalRecursos += Number((r as any).inversionEstimada) || 0;
+          ejecutadoRecursos += Number((r as any).montoEjecutado) || 0;
         }
       } catch (recError) {
         console.error('Error fetching resource data for resumen-integrado:', recError);
