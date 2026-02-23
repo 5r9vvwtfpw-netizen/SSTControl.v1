@@ -261,8 +261,7 @@ export default function DetallePlanTrabajo() {
 
   const deleteActividadMutation = useMutation({
     mutationFn: async (actId: string) => {
-      const res = await apiRequest("DELETE", `/api/actividades-plan-trabajo/${actId}`, {});
-      return res.json();
+      await apiRequest("DELETE", `/api/actividades-plan-trabajo/${actId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/planes-trabajo-anual", id, "actividades"] });

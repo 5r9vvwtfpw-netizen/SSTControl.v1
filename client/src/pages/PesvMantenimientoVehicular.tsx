@@ -105,8 +105,7 @@ export default function PesvMantenimientoVehicular() {
 
   const deleteMaintenanceMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/vehicle-maintenances/${id}`);
-      return res.json();
+      await apiRequest("DELETE", `/api/vehicle-maintenances/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/vehicle-maintenances"] });

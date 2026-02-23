@@ -96,8 +96,7 @@ export default function PesvSiniestros() {
 
   const deleteIncidentMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/road-incidents/${id}`);
-      return res.json();
+      await apiRequest("DELETE", `/api/road-incidents/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/road-incidents"] });

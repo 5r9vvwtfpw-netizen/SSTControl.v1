@@ -142,8 +142,7 @@ export default function PesvConductores() {
 
   const deleteDriverMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/drivers/${id}`);
-      return res.json();
+      await apiRequest("DELETE", `/api/drivers/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/drivers"] });

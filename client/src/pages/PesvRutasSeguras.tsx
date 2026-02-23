@@ -878,8 +878,7 @@ export default function PesvRutasSeguras() {
 
   const deleteRouteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/safe-routes/${id}`);
-      return res.json();
+      await apiRequest("DELETE", `/api/safe-routes/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/safe-routes"] });

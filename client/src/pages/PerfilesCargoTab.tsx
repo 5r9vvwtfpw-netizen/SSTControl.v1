@@ -358,14 +358,7 @@ export default function PerfilesCargo() {
 
   const deleteProfileMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/job-profiles/${id}`);
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        if (data?.details) {
-          throw new Error(data.details);
-        }
-        throw new Error(data?.message || "Error al eliminar el perfil");
-      }
+      await apiRequest("DELETE", `/api/job-profiles/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/job-profiles"] });

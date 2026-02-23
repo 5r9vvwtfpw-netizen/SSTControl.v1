@@ -217,8 +217,7 @@ export default function PesvAuditorias() {
 
   const deleteAuditMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/pesv-audits/${id}`);
-      return res.json();
+      await apiRequest("DELETE", `/api/pesv-audits/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pesv-audits"] });

@@ -208,29 +208,19 @@ export default function PerfilesCargo() {
       const url = forceDisassociateWorkers 
         ? `/api/job-profiles/${id}?forceDisassociateWorkers=true`
         : `/api/job-profiles/${id}`;
-      const res = await apiRequest("DELETE", url);
-      if (res.status === 204) return null;
-      return res.json();
+      await apiRequest("DELETE", url);
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/job-profiles"] });
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
       setDeleteDialogOpen(false);
       setProfileToDelete(null);
       setProfileReferences(null);
-      if (data?.disassociatedWorkers) {
-        toast({
-          title: "Perfil eliminado",
-          description: `Se eliminó el perfil y se desasociaron ${data.disassociatedWorkers} trabajador(es)`,
-          className: "bg-yellow-50 border-yellow-200",
-        });
-      } else {
-        toast({
-          title: "Perfil eliminado",
-          description: "El perfil de cargo se ha eliminado exitosamente",
-          className: "bg-yellow-50 border-yellow-200",
-        });
-      }
+      toast({
+        title: "Perfil eliminado",
+        description: "El perfil de cargo se ha eliminado exitosamente",
+        className: "bg-yellow-50 border-yellow-200",
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -394,19 +384,18 @@ export default function PerfilesCargo() {
   // Bulk delete mutation for all profiles of a company
   const bulkDeleteProfilesMutation = useMutation({
     mutationFn: async (data: { companyId: string; confirmationCode: string; confirmCompanyName: string }) => {
-      const res = await apiRequest("DELETE", `/api/job-profiles/bulk-delete/${data.companyId}`, {
+      await apiRequest("DELETE", `/api/job-profiles/bulk-delete/${data.companyId}`, {
         confirmationCode: data.confirmationCode,
         confirmCompanyName: data.confirmCompanyName,
       });
-      return res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/job-profiles"] });
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
-      setBulkDeleteResults(data);
+      setBulkDeleteResults({ message: "Todos los perfiles han sido eliminados exitosamente", deleted: 0, total: 0 });
       toast({
         title: "Perfiles eliminados",
-        description: data.message,
+        description: "Todos los perfiles han sido eliminados exitosamente",
         className: "bg-green-50 border-green-200",
       });
     },

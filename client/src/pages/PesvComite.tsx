@@ -166,8 +166,7 @@ export default function PesvComite() {
 
   const deleteIntegranteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/pesv/comite/integrantes/${id}`);
-      return res.json();
+      await apiRequest("DELETE", `/api/pesv/comite/integrantes/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pesv/comite/integrantes"] });
@@ -212,8 +211,7 @@ export default function PesvComite() {
 
   const deleteActaMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/pesv/comite/actas/${id}`);
-      return res.json();
+      await apiRequest("DELETE", `/api/pesv/comite/actas/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pesv/comite/actas"] });

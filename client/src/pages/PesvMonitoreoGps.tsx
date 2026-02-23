@@ -100,8 +100,7 @@ export default function PesvMonitoreoGps() {
 
   const deleteTrackingMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/vehicle-gps-tracking/${id}`);
-      return res.json();
+      await apiRequest("DELETE", `/api/vehicle-gps-tracking/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/vehicle-gps-tracking"] });

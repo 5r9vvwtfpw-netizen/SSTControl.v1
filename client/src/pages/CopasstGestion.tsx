@@ -627,8 +627,7 @@ export default function CopasstGestion() {
 
   const deleteActaFileMutation = useMutation({
     mutationFn: async (actaId: string) => {
-      const res = await apiRequest("DELETE", `/api/copasst-actas/${actaId}/upload`);
-      return await res.json();
+      await apiRequest("DELETE", `/api/copasst-actas/${actaId}/upload`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/copasst-actas", effectiveCompanyId] });

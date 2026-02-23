@@ -94,8 +94,7 @@ export default function PesvInspecciones() {
 
   const deleteInspectionMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/vehicle-inspections/${id}`);
-      return res.json();
+      await apiRequest("DELETE", `/api/vehicle-inspections/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/vehicle-inspections"] });

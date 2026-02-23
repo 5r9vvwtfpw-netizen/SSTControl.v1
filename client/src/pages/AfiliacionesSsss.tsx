@@ -708,16 +708,15 @@ export default function AfiliacionesSsss() {
 
   const bulkDeleteAfiliacionesMutation = useMutation({
     mutationFn: async (companyId: string) => {
-      const response = await apiRequest("DELETE", `/api/afiliaciones-ssss/bulk/${companyId}`);
-      return response.json();
+      await apiRequest("DELETE", `/api/afiliaciones-ssss/bulk/${companyId}`);
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/afiliaciones-ssss"] });
       setBulkDeleteResults({
-        ...data,
-        message: data.deleted === data.total 
-          ? "Todas las afiliaciones han sido eliminadas exitosamente" 
-          : `Se eliminaron ${data.deleted} de ${data.total} afiliaciones`
+        deleted: 0,
+        total: 0,
+        errors: [],
+        message: "Todas las afiliaciones han sido eliminadas exitosamente"
       });
     },
     onError: (error: Error) => {

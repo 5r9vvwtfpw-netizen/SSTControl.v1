@@ -58,6 +58,30 @@ function MiRutaProtegida({ component: Component }) {
 - `client/src/lib/subscription-protected-route.tsx` — usa `useMemo` para estabilizar `GatedComponent`
 - `client/src/lib/protected-route.tsx` — pasa `Component` directamente a `<Route>`
 
+### Patrón de Mutaciones DELETE (Respuestas 204 No Content)
+Las rutas DELETE del backend retornan `204 No Content` (sin cuerpo). **NUNCA** llamar `.json()` en la respuesta de un DELETE.
+
+**MAL (causa error de parseo):**
+```tsx
+mutationFn: async (id: number) => {
+  const res = await apiRequest("DELETE", `/api/something/${id}`);
+  return res.json(); // FALLA: 204 no tiene cuerpo JSON
+},
+```
+
+**BIEN:**
+```tsx
+mutationFn: async (id: number) => {
+  await apiRequest("DELETE", `/api/something/${id}`);
+},
+```
+
+### Formularios de Edición - Pre-carga de Datos
+Al reutilizar un formulario para edición, los campos con "asistente inteligente" o selección de plantillas deben inicializarse con el valor existente del registro, no vacíos. Usar `useMemo` para calcular el valor inicial una sola vez.
+
+### Rutas Internas en Componentes de Verificación
+Los componentes `Estandar*Verificacion*.tsx` contienen botones que enlazan a módulos del sistema. Las rutas deben coincidir exactamente con las definidas en `client/src/App.tsx`. Verificar antes de crear un enlace que la ruta destino exista en App.tsx y en `shared/chapter-modules.ts`.
+
 ### Protección de Diálogos y Sheets contra Contenido Portalizado
 Los componentes `Dialog` y `Sheet` (`client/src/components/ui/dialog.tsx` y `sheet.tsx`) tienen tres capas de protección para evitar que menús desplegables (Select, Combobox, DatePicker) cierren accidentalmente el diálogo al seleccionar opciones:
 

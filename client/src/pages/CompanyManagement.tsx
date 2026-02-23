@@ -287,16 +287,15 @@ export default function CompanyManagement() {
   // Eliminación completa con todos los datos (solo superadmin)
   const fullDeleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/companies/${id}/full-delete`);
-      return res.json();
+      await apiRequest("DELETE", `/api/companies/${id}/full-delete`);
     },
-    onSuccess: (data: { message: string; totalRecordsDeleted: number }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
       setDeleteDialogOpen(false);
       setCompanyToDelete(null);
       toast({
         title: "Empresa eliminada completamente",
-        description: `${data.message}. Se eliminaron ${data.totalRecordsDeleted} registros.`,
+        description: "La empresa y todos sus datos han sido eliminados exitosamente.",
         className: "bg-red-50 border-red-200",
       });
     },
