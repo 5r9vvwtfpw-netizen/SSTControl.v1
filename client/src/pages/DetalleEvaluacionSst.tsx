@@ -1868,18 +1868,6 @@ export default function DetalleEvaluacionSst() {
                       variant="outline" 
                       size="sm" 
                       className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-900/50"
-                      data-testid="button-ir-iperc"
-                      asChild
-                    >
-                      <Link href={`/iperc?from=evaluation&evaluationId=${id}`}>
-                        <Target className="h-4 w-4 mr-2" />
-                        Matriz IPERC (Peligros)
-                      </Link>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-900/50"
                       data-testid="button-ir-capacitaciones"
                       asChild
                     >
