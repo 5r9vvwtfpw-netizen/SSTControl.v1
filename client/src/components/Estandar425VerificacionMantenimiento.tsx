@@ -88,7 +88,7 @@ export function Estandar425VerificacionMantenimiento({ isVisible, evaluationId }
               data-testid="button-ver-cronograma-425"
               asChild
             >
-              <Link href={`/cronograma${fromParam}`}>
+              <Link href={`/planes-trabajo-anual${fromParam}`}>
                 <Calendar className="h-4 w-4 mr-2" />
                 Ver Cronograma
               </Link>
