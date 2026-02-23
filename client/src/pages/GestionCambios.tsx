@@ -135,7 +135,7 @@ const plantillasCambiosSst: PlantillaInfo[] = [
     descripcion: 'Cambios por actualización de normativa SST aplicable',
     campos: {
       tipo: 'externo',
-      categoria: 'legal',
+      categoria: 'normativo',
       descripcion: `REQUISITOS SST PARA CAMBIO NORMATIVO (Art. 2.2.4.6.26 Decreto 1072/2015):
 
 • Identificación de requisitos legales aplicables
@@ -155,7 +155,7 @@ const plantillasCambiosSst: PlantillaInfo[] = [
     descripcion: 'Cambio de proveedores o contratistas que afectan SST',
     campos: {
       tipo: 'externo',
-      categoria: 'otro',
+      categoria: 'proveedor',
       descripcion: `REQUISITOS SST PARA CAMBIO DE PROVEEDOR (Art. 2.2.4.6.26 Decreto 1072/2015):
 
 • Evaluación SST del nuevo proveedor/contratista
@@ -338,7 +338,7 @@ function CambiosTab({ prefillData, onPrefillApplied }: CambiosTabProps) {
         ...form.getValues(),
         titulo: "",
         tipo: prefillData.tipo as "interno" | "externo",
-        categoria: prefillData.categoria as "proceso" | "instalacion" | "equipo" | "personal" | "organizacional" | "tecnologico" | "legal" | "producto" | "otro",
+        categoria: prefillData.categoria as "proceso" | "instalacion" | "equipo" | "personal" | "organizacional" | "normativo" | "proveedor" | "otro",
         descripcion: prefillData.descripcion,
         areaAfectada: "",
         procesoAfectado: "",
@@ -455,7 +455,7 @@ function CambiosTab({ prefillData, onPrefillApplied }: CambiosTabProps) {
     
     const campos = plantilla.campos as PlantillaPrefill;
     form.setValue('tipo', (campos.tipo as "interno" | "externo") || 'interno');
-    form.setValue('categoria', (campos.categoria as "proceso" | "instalacion" | "equipo" | "personal" | "organizacional" | "tecnologico" | "legal" | "producto" | "otro") || 'proceso');
+    form.setValue('categoria', (campos.categoria as "proceso" | "instalacion" | "equipo" | "personal" | "organizacional" | "normativo" | "proveedor" | "otro") || 'proceso');
     form.setValue('descripcion', campos.descripcion || '');
     
     toast({
