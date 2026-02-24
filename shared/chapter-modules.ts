@@ -211,7 +211,7 @@ const CHAPTER_3_ADDITIONAL_MODULES = [
   
   // Operaciones avanzadas
   "/sustancias-quimicas",
-  "/vigilancia-epidemiologica",
+  "/vigilancia-epidemiologica",  // Estándar 3.1.1 y 3.1.2 - Programas de Vigilancia Epidemiológica Ocupacional
   
   // PESV completo (solo empresas grandes)
   "/pesv",

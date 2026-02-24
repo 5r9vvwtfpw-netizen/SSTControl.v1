@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, CheckCircle2, FileText, Download, ArrowLeft, Save, Sparkles, X, Check, MinusCircle, Plus, Pencil, ExternalLink, UserCheck, Users, DollarSign, ShieldCheck, Shield, AlertCircle, GraduationCap, BookOpen, Target, ClipboardList, ClipboardCheck, BarChart3, Scale, MessageSquare, ShoppingCart, RefreshCcw, HeartPulse, Activity, FileCheck, FolderLock, UserCog, Camera, Trash2, FolderOpen, Search, UserMinus, FlaskConical, History, Calendar, HardHat, Lightbulb } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileText, Download, ArrowLeft, Save, Sparkles, X, Check, MinusCircle, Plus, Pencil, ExternalLink, UserCheck, Users, DollarSign, ShieldCheck, Shield, AlertCircle, GraduationCap, BookOpen, Target, ClipboardList, ClipboardCheck, BarChart3, Scale, MessageSquare, ShoppingCart, RefreshCcw, HeartPulse, Activity, FileCheck, FolderLock, UserCog, Camera, Trash2, FolderOpen, Search, UserMinus, FlaskConical, History, Calendar, HardHat, Lightbulb, Microscope } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -2871,6 +2871,18 @@ export default function DetalleEvaluacionSst() {
                         Ver Documentos SST
                       </Link>
                     </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="border-teal-300 text-teal-700 hover:bg-teal-100 dark:border-teal-600 dark:text-teal-300 dark:hover:bg-teal-900/50"
+                      data-testid="button-ir-sve-3-1-1"
+                      asChild
+                    >
+                      <Link href={`/vigilancia-epidemiologica?from=evaluation&evaluationId=${id}`}>
+                        <Microscope className="h-4 w-4 mr-2" />
+                        Programas SVE
+                      </Link>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -2935,6 +2947,18 @@ export default function DetalleEvaluacionSst() {
                       <Link href={`/perfil-sociodemografico?from=evaluation&evaluationId=${id}`}>
                         <Users className="h-4 w-4 mr-2" />
                         Ver Perfil Sociodemográfico
+                      </Link>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="border-teal-300 text-teal-700 hover:bg-teal-100 dark:border-teal-600 dark:text-teal-300 dark:hover:bg-teal-900/50"
+                      data-testid="button-ir-sve-3-1-2"
+                      asChild
+                    >
+                      <Link href={`/vigilancia-epidemiologica?from=evaluation&evaluationId=${id}`}>
+                        <Microscope className="h-4 w-4 mr-2" />
+                        Programas SVE
                       </Link>
                     </Button>
                   </div>
