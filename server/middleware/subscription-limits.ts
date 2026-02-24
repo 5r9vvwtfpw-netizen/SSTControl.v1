@@ -99,7 +99,17 @@ async function getCompanyLimits(companyId: string): Promise<SubscriptionLimits> 
 
     if (!hasValidSubscription) {
       console.log(`[SubscriptionLimits] Company ${companyId} has no valid subscription, using Esencial defaults`);
-      return DEFAULT_ESENCIAL_LIMITS;
+      const defaults = { ...DEFAULT_ESENCIAL_LIMITS };
+      try {
+        const company = await storage.getCompany(companyId);
+        if (company && company.numberOfVehicles && company.numberOfVehicles > 0) {
+          defaults.hasPESV = true;
+          console.log(`[SubscriptionLimits] PESV override (no subscription): Company ${companyId} has ${company.numberOfVehicles} vehicles, enabling PESV access`);
+        }
+      } catch (e) {
+        // Fallback silencioso
+      }
+      return defaults;
     }
 
     // 2. Trial: desbloquear TODAS las features para que el usuario explore el sistema completo
@@ -144,7 +154,24 @@ async function getCompanyLimits(companyId: string): Promise<SubscriptionLimits> 
       return DEFAULT_ESENCIAL_LIMITS;
     }
 
-    // 4. Retornar límites del plan (convertir integers a booleans para feature flags)
+    // 4. PESV override: Si la empresa tiene vehículos registrados (numberOfVehicles > 0),
+    // el PESV debe estar habilitado automáticamente (Resolución 40595/2022).
+    // El precio actualizado ya se recalculó vía quote JWT y se cobrará en la próxima factura.
+    // No se debe bloquear el acceso al módulo PESV solo porque el plan original no lo incluía.
+    let pesvOverride = plan.hasPESV === 1;
+    if (!pesvOverride) {
+      try {
+        const company = await storage.getCompany(companyId);
+        if (company && company.numberOfVehicles && company.numberOfVehicles > 0) {
+          pesvOverride = true;
+          console.log(`[SubscriptionLimits] PESV override: Company ${companyId} has ${company.numberOfVehicles} vehicles, enabling PESV access`);
+        }
+      } catch (e) {
+        console.error('[SubscriptionLimits] Error checking company vehicles for PESV override:', e);
+      }
+    }
+
+    // 5. Retornar límites del plan (convertir integers a booleans para feature flags)
     return {
       maxWorkers: plan.maxWorkers === -1 ? null : plan.maxWorkers,
       maxUsers: plan.maxUsers === -1 ? null : plan.maxUsers,
@@ -153,7 +180,7 @@ async function getCompanyLimits(companyId: string): Promise<SubscriptionLimits> 
       
       hasIPERCCompleto: plan.hasIPERCCompleto === 1,
       hasAuditorias: plan.hasAuditorias === 1,
-      hasPESV: plan.hasPESV === 1,
+      hasPESV: pesvOverride,
       hasRevisionDireccion: plan.hasRevisionDireccion === 1,
       hasGestionCambios: plan.hasGestionCambios === 1,
       hasMatrizLegal: plan.hasMatrizLegal === 1,
