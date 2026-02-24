@@ -15,14 +15,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import {
   Plus, Search, FileText, Edit2, Trash2, AlertCircle, Clock,
-  CheckCircle2, Target, TrendingUp, Filter, Download, CalendarIcon, ArrowLeft, Zap, Lightbulb
+  CheckCircle2, Target, TrendingUp, Filter, Download, CalendarIcon, ArrowLeft, Zap, Lightbulb, AlertTriangle
 } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AccionMejoraContexto, insertAccionMejoraContextoSchema, User, FactorContexto, AnalisisContexto } from "@shared/schema";
+import { AccionMejoraContexto, insertAccionMejoraContextoSchema, User, FactorContexto, AnalisisContexto, Accident, AccidentInvestigation } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -150,6 +150,23 @@ export default function PlanMejoramientoContexto() {
     queryKey: ["/api/analisis-contexto"],
   });
 
+  const { data: accidentes = [] } = useQuery<Accident[]>({
+    queryKey: ["/api/accidents"],
+  });
+
+  const { data: investigaciones = [] } = useQuery<AccidentInvestigation[]>({
+    queryKey: ["/api/investigations"],
+  });
+
+  const accidentesRecientes = useMemo(() => {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    return accidentes
+      .filter(a => new Date(a.date) >= sixMonthsAgo)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 8);
+  }, [accidentes]);
+
   const latestAnalisisId = useMemo(() => {
     if (analisisContextoList.length === 0) return null;
     const sorted = [...analisisContextoList].sort((a, b) =>
@@ -192,6 +209,67 @@ export default function PlanMejoramientoContexto() {
     ];
     setAutoFillSources(sources);
   }, [form, autoFillSources]);
+
+  const applyAccidentSuggestion = useCallback((accident: Accident) => {
+    const severityMap: Record<string, "alta" | "media" | "baja"> = {
+      mortal: "alta",
+      grave: "alta",
+      leve: "media",
+    };
+    const prioridad = severityMap[accident.severity] || "media";
+
+    const severityLabel: Record<string, string> = {
+      mortal: "Mortal",
+      grave: "Grave",
+      leve: "Leve",
+    };
+
+    const investigation = investigaciones.find(inv => inv.accidentId === accident.id);
+
+    let accionTexto = "";
+    if (investigation?.correctiveActions) {
+      try {
+        const actions = JSON.parse(investigation.correctiveActions);
+        if (Array.isArray(actions) && actions.length > 0) {
+          accionTexto = typeof actions[0] === "string" ? actions[0] : (actions[0].descripcion || actions[0].action || JSON.stringify(actions[0]));
+        }
+      } catch { /* ignore */ }
+    }
+    if (!accionTexto) {
+      accionTexto = `Implementar acciones correctivas por accidente ${severityLabel[accident.severity] || accident.severity}: ${accident.description.substring(0, 60)}`;
+    }
+
+    const hallazgo = investigation
+      ? `Investigación AT: ${accident.description}${investigation.rootCause ? `. Causa raíz: ${investigation.rootCause}` : ""}${investigation.conclusions ? `. Conclusiones: ${investigation.conclusions}` : ""}`
+      : `Accidente de trabajo (${severityLabel[accident.severity] || accident.severity}): ${accident.description}. Fecha: ${new Date(accident.date).toLocaleDateString("es-CO")}.`;
+
+    const descripcion = investigation?.lessonLearned
+      ? `Lección aprendida: ${investigation.lessonLearned}`
+      : `Acción derivada de accidente ${severityLabel[accident.severity] || accident.severity} ocurrido el ${new Date(accident.date).toLocaleDateString("es-CO")}. Se requiere implementar medidas correctivas para prevenir recurrencia.`;
+
+    form.setValue("accion", accionTexto);
+    form.setValue("tipoFoda", "debilidad");
+    form.setValue("prioridad", prioridad);
+    form.setValue("hallazgoDescripcion", hallazgo);
+    form.setValue("descripcion", descripcion);
+    form.setValue("origenHallazgo", "investigacion_accidente");
+
+    const fechaLimite = new Date();
+    fechaLimite.setDate(fechaLimite.getDate() + (prioridad === "alta" ? 15 : 30));
+    form.setValue("fechaLimite", fechaLimite);
+
+    const sources: AutoFillSource[] = [
+      ...autoFillSources.filter(s => !["accion", "tipoFoda", "prioridad", "hallazgoDescripcion", "descripcion", "origenHallazgo", "fechaLimite"].includes(s.field)),
+      { field: "accion", source: "contexto", label: "Accidente AT" },
+      { field: "tipoFoda", source: "contexto", label: "Debilidad" },
+      { field: "prioridad", source: "contexto", label: `Gravedad ${severityLabel[accident.severity] || accident.severity}` },
+      { field: "hallazgoDescripcion", source: "contexto", label: investigation ? "Investigación AT" : "Accidente AT" },
+      { field: "descripcion", source: "contexto", label: investigation?.lessonLearned ? "Lección aprendida" : "Accidente AT" },
+      { field: "origenHallazgo", source: "contexto", label: "Investigación" },
+      { field: "fechaLimite", source: "auto", label: prioridad === "alta" ? "15 días (grave/mortal)" : "30 días" },
+    ];
+    setAutoFillSources(sources);
+  }, [form, autoFillSources, investigaciones]);
 
   const createMutation = useMutation({
     mutationFn: async (data: AccionFormData) => {
@@ -325,6 +403,18 @@ export default function PlanMejoramientoContexto() {
 
   const searchString = useSearch();
   const fromEvaluation = searchString.includes("from=evaluation");
+  const searchParamsObj = useMemo(() => new URLSearchParams(searchString), [searchString]);
+  const sourceAccidenteId = searchParamsObj.get("accidenteId");
+
+  useEffect(() => {
+    if (sourceAccidenteId && accidentes.length > 0 && !dialogOpen && !editingAccion) {
+      const accident = accidentes.find(a => a.id === sourceAccidenteId);
+      if (accident) {
+        handleOpenDialog();
+        setTimeout(() => applyAccidentSuggestion(accident), 100);
+      }
+    }
+  }, [sourceAccidenteId, accidentes.length]);
 
   return (
     <div className="p-6 space-y-6">
@@ -595,6 +685,45 @@ export default function PlanMejoramientoContexto() {
                   </Button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {!editingAccion && accidentesRecientes.length > 0 && (
+            <div className="rounded-md border border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-3 space-y-2" data-testid="section-sugerencias-accidentes">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                <span className="text-sm font-medium">Sugerencias desde Accidentes ({accidentesRecientes.length})</span>
+                <span className="text-xs text-muted-foreground">Últimos 6 meses</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {accidentesRecientes.slice(0, 6).map((acc) => {
+                  const hasInvestigation = investigaciones.some(inv => inv.accidentId === acc.id);
+                  const severityColors: Record<string, string> = {
+                    mortal: "text-red-700 dark:text-red-300 border-red-300 dark:border-red-700",
+                    grave: "text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700",
+                    leve: "text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700",
+                  };
+                  return (
+                    <Button
+                      key={acc.id}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => applyAccidentSuggestion(acc)}
+                      className={`text-xs ${severityColors[acc.severity] || ""}`}
+                      data-testid={`button-sugerencia-accidente-${acc.id}`}
+                    >
+                      <AlertTriangle className="h-3 w-3 mr-1 flex-shrink-0" />
+                      <span className="truncate max-w-[180px]">
+                        {acc.severity.charAt(0).toUpperCase()}{hasInvestigation ? "+Inv" : ""}: {acc.description.length > 25 ? acc.description.substring(0, 25) + "..." : acc.description}
+                      </span>
+                    </Button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Pre-llena: acción, hallazgo, prioridad (según gravedad), origen y fecha límite (15 días grave/mortal, 30 días leve)
+              </p>
             </div>
           )}
 
