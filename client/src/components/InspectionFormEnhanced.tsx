@@ -55,7 +55,7 @@ export function InspectionFormEnhanced({
       return match?.codigo || "";
     }
     return "";
-  }, []);
+  }, [formData.area]);
 
   const [selectedPredefInspeccion, setSelectedPredefInspeccion] = useState<string>(initialTemplate);
   const [currentInspeccion, setCurrentInspeccion] = useState<InspeccionPredefinida | null>(
@@ -63,6 +63,18 @@ export function InspectionFormEnhanced({
   );
   const [verificationItems, setVerificationItems] = useState<VerificationItem[]>([]);
   const [showItemsList, setShowItemsList] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  useEffect(() => {
+    if (initialTemplate && !hasInitialized) {
+      setSelectedPredefInspeccion(initialTemplate);
+      const inspeccion = getInspeccionByCodigo(initialTemplate);
+      if (inspeccion) {
+        setCurrentInspeccion(inspeccion);
+      }
+      setHasInitialized(true);
+    }
+  }, [initialTemplate, hasInitialized]);
 
   const handleAutoFillFromPredefinido = (codigo: string) => {
     const inspeccion = getInspeccionByCodigo(codigo);
