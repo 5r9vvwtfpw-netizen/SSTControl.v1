@@ -587,8 +587,15 @@ export default function InvestigacionAccidentes() {
   });
 
   const handleSubmit = (data: InvestigationFormData) => {
+    const sanitized: Record<string, any> = { ...data };
+    const dateFields = ['eventDate', 'investigationStartDate', 'licensedProfessionalLicenseExpiry'];
+    dateFields.forEach(field => {
+      if (sanitized[field] === '' || sanitized[field] === undefined) {
+        delete sanitized[field];
+      }
+    });
     const payload = {
-      ...data,
+      ...sanitized,
       isSevere: data.isSevere ? 1 : 0,
       isFatal: data.isFatal ? 1 : 0,
       copasstParticipation: data.copasstParticipation ? 1 : 0,

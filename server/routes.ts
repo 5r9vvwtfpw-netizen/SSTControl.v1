@@ -5241,8 +5241,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).send("No autorizado para editar esta investigación");
       }
       
-      // Update severity requirements if changed
+      // Sanitize empty date strings to null (PostgreSQL requires null, not '')
+      const dateFields = ['eventDate', 'investigationStartDate', 'investigationEndDate', 'dueDate', 'licensedProfessionalLicenseExpiry', 'actionsClosedDate', 'furatDate', 'ministryReportDate', 'arlNotificationDate', 'epsNotificationDate'];
       const updateData = { ...req.body };
+      dateFields.forEach(field => {
+        if (updateData[field] === '' || updateData[field] === undefined) {
+          delete updateData[field];
+        }
+      });
+      
+      // Update severity requirements if changed
       if (req.body.severity) {
         updateData.isSevere = req.body.severity === 'grave' ? 1 : 0;
         updateData.isFatal = req.body.severity === 'mortal' ? 1 : 0;
