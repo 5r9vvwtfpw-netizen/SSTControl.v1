@@ -445,7 +445,7 @@ export default function ConservacionDocumentos() {
   });
 
   const { data: expiringDocs } = useQuery<SstDocument[]>({
-    queryKey: ["/api/sst-documents/expiring", { days: 30 }],
+    queryKey: ["/api/sst-documents/expiring?days=30"],
   });
 
   const { data: users } = useQuery<{ id: string; fullName: string; role: string }[]>({

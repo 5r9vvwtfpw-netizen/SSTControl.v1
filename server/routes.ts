@@ -39013,14 +39013,19 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(400).json({ error: "Debe especificar el documento y al menos un trabajador" });
       }
 
-      // Verify document exists
-      const document = await storage.getSstDocument(documentId, companyId);
+      // Verify document exists - try with companyId first, then fallback to just documentId
+      let document = await storage.getSstDocument(documentId, companyId);
       if (!document) {
-        return res.status(404).json({ error: "Documento no encontrado" });
+        document = await storage.getSstDocumentById(documentId);
       }
+      if (!document) {
+        console.error(`[Document Assignment] Document not found: documentId=${documentId}, companyId=${companyId}`);
+        return res.status(404).json({ error: "Documento no encontrado. Por favor, verifique que el documento existe." });
+      }
+      const effectiveCompanyId = document.companyId || companyId;
 
       // Get existing assignments to avoid duplicates
-      const existingAssignments = await storage.getDocumentWorkerAssignmentsByDocument(documentId, companyId);
+      const existingAssignments = await storage.getDocumentWorkerAssignmentsByDocument(documentId, effectiveCompanyId);
       const existingWorkerIds = new Set(existingAssignments.map(a => a.workerId));
 
       // Create new assignments
@@ -39036,7 +39041,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           isRequired: isRequired ?? true,
           priority: priority || "normal",
           message: message || null,
-        }, companyId);
+        }, effectiveCompanyId);
         createdAssignments.push(assignment);
       }
 
