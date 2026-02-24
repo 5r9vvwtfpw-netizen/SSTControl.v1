@@ -394,11 +394,34 @@ export default function PlanMejoramientoContexto() {
   const estadisticas = planConsolidado?.estadisticas || { pendientes: 0, enProgreso: 0, completadas: 0 };
   const totalAcciones = acciones.length;
 
-  const handleExportPdf = () => {
-    toast({
-      title: "Exportar PDF",
-      description: "Esta funcionalidad estará disponible próximamente.",
-    });
+  const handleExportPdf = async () => {
+    try {
+      const response = await fetch("/api/acciones-mejora-contexto/pdf", {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error("Error al generar el PDF");
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "plan-mejoramiento-contexto.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast({
+        title: "PDF descargado",
+        description: "El plan de mejoramiento se ha exportado correctamente.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo exportar el PDF.",
+        variant: "destructive",
+      });
+    }
   };
 
   const searchString = useSearch();
