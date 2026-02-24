@@ -13382,6 +13382,30 @@ export class DbStorage implements IStorage {
   }
 
   async deletePlanEmergencia(id: string, companyId: string): Promise<void> {
+    await db.delete(schema.puntosEncuentro)
+      .where(eq(schema.puntosEncuentro.planEmergenciaId, id));
+    await db.delete(schema.zonasEvacuacion)
+      .where(eq(schema.zonasEvacuacion.planEmergenciaId, id));
+    const simulacros = await db.select({ id: schema.simulacros.id })
+      .from(schema.simulacros)
+      .where(eq(schema.simulacros.planEmergenciaId, id));
+    for (const simulacro of simulacros) {
+      await db.delete(schema.participantesSimulacro)
+        .where(eq(schema.participantesSimulacro.simulacroId, simulacro.id));
+    }
+    await db.delete(schema.simulacros)
+      .where(eq(schema.simulacros.planEmergenciaId, id));
+    await db.delete(schema.analisisVulnerabilidad)
+      .where(eq(schema.analisisVulnerabilidad.planEmergenciaId, id));
+    const brigadas = await db.select({ id: schema.brigadasEmergencia.id })
+      .from(schema.brigadasEmergencia)
+      .where(eq(schema.brigadasEmergencia.planEmergenciaId, id));
+    for (const brigada of brigadas) {
+      await db.delete(schema.miembrosBrigada)
+        .where(eq(schema.miembrosBrigada.brigadaId, brigada.id));
+    }
+    await db.delete(schema.brigadasEmergencia)
+      .where(eq(schema.brigadasEmergencia.planEmergenciaId, id));
     await db.delete(schema.planesEmergencia)
       .where(and(
         eq(schema.planesEmergencia.id, id),
