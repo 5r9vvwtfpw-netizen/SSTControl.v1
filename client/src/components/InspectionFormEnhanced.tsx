@@ -95,12 +95,14 @@ export function InspectionFormEnhanced({
     }));
     setVerificationItems(items);
 
+    const today = new Date().toISOString().split('T')[0];
     setFormData({
       ...formData,
       area: inspeccion.area,
       observations: inspeccion.descripcion,
       findings: 0,
       compliance: 100,
+      date: formData.date || today,
     });
   };
 
