@@ -3794,17 +3794,45 @@ export default function DetalleEvaluacionSst() {
                   <p className="text-xs text-orange-600 dark:text-orange-400 mt-3 font-medium">
                     Evidencia esperada: Matriz IPERC actualizada, documento metodológico (GTC 45 u otra), registros de participación de trabajadores
                   </p>
-                  <div className="mt-4 p-3 bg-orange-100/50 dark:bg-orange-900/30 rounded-md border border-orange-200 dark:border-orange-800">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                        <p className="text-xs font-semibold text-orange-700 dark:text-orange-300">
-                          Módulo IPERC (Matriz de Peligros)
-                        </p>
+                  <div className="mt-4 space-y-2">
+                    <p className="text-xs font-semibold text-orange-700 dark:text-orange-300">
+                      Fuentes de evidencia con trazabilidad:
+                    </p>
+                    <div className="p-3 bg-orange-100/50 dark:bg-orange-900/30 rounded-md border border-orange-200 dark:border-orange-800">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                          <div>
+                            <p className="text-xs font-semibold text-orange-700 dark:text-orange-300">
+                              Módulo IPERC (Matriz de Peligros)
+                            </p>
+                            <p className="text-xs text-orange-600 dark:text-orange-400">
+                              Identificación, evaluación y valoración de riesgos
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/iperc?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-iperc-411">
+                          Ir a IPERC
+                        </Button>
                       </div>
-                      <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/iperc?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-iperc-411">
-                        Ir a IPERC
-                      </Button>
+                    </div>
+                    <div className="p-3 bg-orange-100/50 dark:bg-orange-900/30 rounded-md border border-orange-200 dark:border-orange-800">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <ClipboardCheck className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                          <div>
+                            <p className="text-xs font-semibold text-orange-700 dark:text-orange-300">
+                              Inspecciones de Seguridad
+                            </p>
+                            <p className="text-xs text-orange-600 dark:text-orange-400">
+                              Verificación en campo de los peligros identificados
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/inspecciones?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-inspecciones-411">
+                          Ir a Inspecciones
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -4210,6 +4238,24 @@ export default function DetalleEvaluacionSst() {
                         </div>
                         <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/entrega-epp?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-epp-421">
                           Ir a EPP
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md border border-emerald-200 dark:border-emerald-800">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <ClipboardCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <div>
+                            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                              Inspecciones de Seguridad
+                            </p>
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                              Verificación de la efectividad de los controles implementados
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="default" size="sm" onClick={() => { setRespuestaDialogOpen(false); setLocation(`/inspecciones?from=evaluation&evaluationId=${id}`); }} data-testid="button-ir-inspecciones-421">
+                          Ir a Inspecciones
                         </Button>
                       </div>
                     </div>
