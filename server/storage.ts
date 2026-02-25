@@ -908,6 +908,7 @@ export interface IStorage {
   
   // Respuestas Estándares methods (company-scoped) - Respuestas individuales a cada estándar
   getRespuestasEstandares(evaluacionId: string, companyId: string): Promise<RespuestaEstandar[]>;
+  getRespuestasEstandaresByEvaluacionId(evaluacionId: string): Promise<RespuestaEstandar[]>;
   getRespuestaEstandar(id: string, companyId: string): Promise<RespuestaEstandar | undefined>;
   createRespuestaEstandar(respuesta: InsertRespuestaEstandar, companyId: string): Promise<RespuestaEstandar>;
   updateRespuestaEstandar(id: string, respuesta: Partial<InsertRespuestaEstandar>, companyId: string): Promise<RespuestaEstandar | undefined>;
@@ -6505,6 +6506,11 @@ export class DbStorage implements IStorage {
     const evaluacion = await this.getEvaluacionSst(evaluacionId, companyId);
     if (!evaluacion) return [];
     
+    return await db.select().from(schema.respuestasEstandares)
+      .where(eq(schema.respuestasEstandares.evaluacionId, evaluacionId));
+  }
+
+  async getRespuestasEstandaresByEvaluacionId(evaluacionId: string): Promise<schema.RespuestaEstandar[]> {
     return await db.select().from(schema.respuestasEstandares)
       .where(eq(schema.respuestasEstandares.evaluacionId, evaluacionId));
   }

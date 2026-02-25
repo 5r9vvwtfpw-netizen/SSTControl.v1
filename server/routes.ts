@@ -25762,7 +25762,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Obtener estándares según tipo de empresa
       const estandares = await storage.getEstandaresByTipoEmpresa(evaluacion.tipoEmpresa);
-      const respuestas = await storage.getRespuestasEstandares(req.params.id, companyId);
+      const respuestas = await storage.getRespuestasEstandaresByEvaluacionId(req.params.id);
       const componentes = await storage.getComponentesSst();
       const acciones = await storage.getAccionesMejora(req.params.id, companyId);
 
