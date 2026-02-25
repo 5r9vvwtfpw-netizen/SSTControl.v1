@@ -38698,8 +38698,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // Get all document assignments for this worker
       const assignments = await storage.getDocumentWorkerAssignmentsByWorker(workerId, companyId);
       
-      // Get all acknowledgments for this worker
-      const acknowledgments = await storage.getDocumentAcknowledgmentsByWorker(workerId, companyId);
+      // Get all acknowledgments for this worker (resilient)
+      let acknowledgments: any[] = [];
+      try {
+        acknowledgments = await storage.getDocumentAcknowledgmentsByWorker(workerId, companyId);
+      } catch (ackErr: any) {
+        console.warn('[portal/mis-documentos-asignados] Error fetching acknowledgments, continuing with empty:', ackErr.message);
+      }
       const acknowledgedDocIds = new Set(acknowledgments.map(a => a.documentId));
 
       // Get document details for each assignment
@@ -38972,8 +38977,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // Get all assignments for this document
       const assignments = await storage.getDocumentWorkerAssignmentsByDocument(documentId, companyId);
       
-      // Get all acknowledgments for this document
-      const acknowledgments = await storage.getDocumentAcknowledgmentsByDocument(documentId, companyId);
+      // Get all acknowledgments for this document (resilient - don't crash if query fails)
+      let acknowledgments: any[] = [];
+      try {
+        acknowledgments = await storage.getDocumentAcknowledgmentsByDocument(documentId, companyId);
+      } catch (ackErr: any) {
+        console.warn('[document-acknowledgments] Error fetching acknowledgments, continuing with empty:', ackErr.message);
+      }
       const acknowledgedWorkerIds = new Set(acknowledgments.map(a => a.workerId));
 
       // Get worker details for each assignment
@@ -38996,8 +39006,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         })
       );
 
-      // Get stats
-      const stats = await storage.getDocumentAcknowledgmentStats(documentId, companyId);
+      // Get stats (resilient)
+      let stats = { totalAssigned: assignments.length, totalAcknowledged: acknowledgments.length };
+      try {
+        stats = await storage.getDocumentAcknowledgmentStats(documentId, companyId);
+      } catch (statsErr: any) {
+        console.warn('[document-acknowledgments] Error fetching stats, using computed values:', statsErr.message);
+      }
 
       res.json({
         documentId,
