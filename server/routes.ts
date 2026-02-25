@@ -25658,6 +25658,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send('Empresa no encontrada');
       }
 
+      // Obtener suscripción para validar marca de agua
+      const ministerio_subscription = await storage.getSubscriptionByCompany(companyId);
+      const ministerio_trialStatus = getTrialStatus(ministerio_subscription?.status || 'trial', ministerio_subscription?.trialEnd || null, true, true);
+
 
       // ========== VALIDACIÓN LICENCIADO PROFESIONAL (Circular 009/2025) ==========
       // El reporte del Ministerio requiere la firma de un profesional licenciado
@@ -25773,8 +25777,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create PDF
       const doc = new PDFDocument({ margin: 40, size: 'LETTER' });
       
-      // Always show "Documento no válido" watermark in red
-      setupTrialWatermarkOnAllPages(doc, true);
+      // Mostrar marca de agua solo si suscripción en trial o inactiva
+      setupTrialWatermarkOnAllPages(doc, ministerio_trialStatus.requiresWatermark);
       const margin = 40;
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - 2 * margin;
