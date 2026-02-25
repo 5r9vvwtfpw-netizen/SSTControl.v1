@@ -4860,15 +4860,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
             )
         : [];
 
+      const allParticipants = investigationIds.length > 0
+        ? await db.select()
+            .from(schema.investigationParticipants)
+            .where(
+              inArray(schema.investigationParticipants.investigationId, investigationIds)
+            )
+        : [];
+
       const findingsByInvestigation = allFindings.reduce((acc: Record<string, any[]>, f) => {
         if (!acc[f.investigationId]) acc[f.investigationId] = [];
         acc[f.investigationId].push(f);
         return acc;
       }, {});
 
+      const participantsByInvestigation = allParticipants.reduce((acc: Record<string, any[]>, p) => {
+        if (!acc[p.investigationId]) acc[p.investigationId] = [];
+        acc[p.investigationId].push(p);
+        return acc;
+      }, {});
+
       const enrichedInvestigations = investigations.map(inv => {
         const { slaStatus, daysRemaining } = calculateSlaStatus(inv.dueDate);
-        return { ...inv, slaStatus, daysRemaining, findings: findingsByInvestigation[inv.id] || [] };
+        return { ...inv, slaStatus, daysRemaining, findings: findingsByInvestigation[inv.id] || [], participants: participantsByInvestigation[inv.id] || [] };
       });
       
       res.json(enrichedInvestigations);
