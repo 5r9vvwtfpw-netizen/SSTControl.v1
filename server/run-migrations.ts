@@ -19,6 +19,7 @@ import { syncPricingPluginSubscriptions } from './migrations/sync-pricing-plugin
 import { syncInvestigationParticipants } from './migrations/sync-investigation-participants';
 import { syncDocumentAcknowledgmentsColumns } from './migrations/sync-document-acknowledgments-columns';
 import { syncActividadAccionMejoraLink } from './migrations/sync-actividad-accion-mejora-link';
+import { syncPcaTables } from './migrations/sync-pca-tables';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -49,6 +50,7 @@ export async function runMigrations() {
     await syncPricingPluginSubscriptions();
     await syncDocumentAcknowledgmentsColumns();
     await syncActividadAccionMejoraLink();
+    await syncPcaTables();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);
