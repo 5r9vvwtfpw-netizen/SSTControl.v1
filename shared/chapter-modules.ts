@@ -160,12 +160,14 @@ const CHAPTER_1_MODULES = [
   "/examenes-medicos",
   // Estándar 4.1.1 - IPERC
   "/iperc",
+  // Estándar 4.2.1 - Inspecciones de seguridad (obligatorio para todas las empresas, Decreto 1072/2015)
+  "/inspecciones",
   // Dashboard Hacer (necesario para acceder a los módulos anteriores)
   "/dashboard-hacer",
 ];
 
 // Módulos adicionales para Capítulo 2 (21 estándares)
-// Nota: planes-trabajo-anual, iperc, examenes-medicos y dashboard-hacer ya están en Capítulo 1
+// Nota: planes-trabajo-anual, iperc, examenes-medicos, inspecciones y dashboard-hacer ya están en Capítulo 1
 const CHAPTER_2_ADDITIONAL_MODULES = [
   // Personal adicional
   "/trabajadores-alto-riesgo",
@@ -188,7 +190,6 @@ const CHAPTER_2_ADDITIONAL_MODULES = [
   "/asignacion-recursos",
   
   // Operaciones SST (adicionales)
-  "/inspecciones",
   "/mediciones-ambientales",
   "/conservacion-auditiva",  // Estándar 4.1.4 - Programa de Conservación Auditiva (Res. 8321/1983)
   "/plan-emergencias",
