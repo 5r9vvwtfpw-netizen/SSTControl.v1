@@ -26018,10 +26018,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (noAplica) {
             estado = '➖ No aplica';
             estadoColor = '#666666';
-          } else if (cumple === true) {
+          } else if (respuesta && cumple) {
             estado = '✓ Cumple';
             estadoColor = '#28a745';
-          } else if (cumple === false) {
+          } else if (respuesta && !cumple) {
             estado = '✗ No cumple';
             estadoColor = '#dc3545';
           }
