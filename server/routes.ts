@@ -26232,6 +26232,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // ============================================================
+      // HILO DORADO: Cargar Acciones de Mejora + Plan de Trabajo + Actividades Vinculadas
+      // ============================================================
+      const accionesMejoraReales = await storage.getAccionesMejora(req.params.id, companyId);
+      const planesTrabajoAnualHD = await storage.getPlanesTrabajoAnual(companyId);
+      const planActivoHD = planesTrabajoAnualHD.find(p => p.anio === evaluacion.anio) || planesTrabajoAnualHD[0];
+      let actividadesPlanTrabajoHD: any[] = [];
+      if (planActivoHD) {
+        actividadesPlanTrabajoHD = await storage.getActividadesPlanTrabajo(planActivoHD.id, companyId);
+      }
+
+      // ============================================================
       // CÁLCULOS AUTOMÁTICOS DE CUMPLIMIENTO
       // ============================================================
       const trabajadoresActivos = workers.filter(w => w.status === 'activo').length;
@@ -26838,22 +26849,352 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY += 10;
 
       // ============================================================
-      // E. PLAN DE MEJORA RECOMENDADO
+      // E. PLAN DE MEJORA - ACCIONES REGISTRADAS
+      // ============================================================
+      doc.addPage();
+      doc.font('Helvetica').fontSize(7).fillColor('#000000');
+      currentY = 50;
+
+      doc.rect(margin, currentY, contentWidth, 25).fill(colorVerdeSst);
+      doc.fontSize(12).font('Helvetica-Bold').fillColor('#ffffff')
+        .text('E. PLAN DE MEJORA - ACCIONES REGISTRADAS', margin + 10, currentY + 7);
+      currentY += 40;
+
+      doc.fontSize(8).font('Helvetica').fillColor('#666666')
+        .text('Acciones correctivas, preventivas y de mejora registradas durante la evaluaci\u00f3n de est\u00e1ndares m\u00ednimos.', margin, currentY, { width: contentWidth });
+      currentY = doc.y + 10;
+
+      if (accionesMejoraReales.length === 0) {
+        doc.fontSize(8).font('Helvetica').fillColor('#666666')
+          .text('No se han registrado acciones de mejora para esta evaluaci\u00f3n.', margin, currentY);
+        currentY = doc.y + 10;
+      } else {
+        const accionesCompletadas = accionesMejoraReales.filter(a => a.estado === 'completada').length;
+        const accionesEnProceso = accionesMejoraReales.filter(a => a.estado === 'en-proceso').length;
+        const accionesPendientes = accionesMejoraReales.filter(a => a.estado === 'pendiente').length;
+        const promedioAvance = Math.round(accionesMejoraReales.reduce((sum, a) => sum + (a.porcentajeAvance || 0), 0) / accionesMejoraReales.length);
+
+        const resumenW = contentWidth / 4;
+        doc.rect(margin, currentY, resumenW, 40).fill('#e8f5e9');
+        doc.rect(margin + resumenW, currentY, resumenW, 40).fill('#e3f2fd');
+        doc.rect(margin + resumenW * 2, currentY, resumenW, 40).fill('#fff3e0');
+        doc.rect(margin + resumenW * 3, currentY, resumenW, 40).fill('#f3e5f5');
+
+        doc.fontSize(16).font('Helvetica-Bold');
+        doc.fillColor('#2e7d32').text(String(accionesMejoraReales.length), margin, currentY + 5, { width: resumenW, align: 'center' });
+        doc.fillColor('#1565c0').text(String(accionesCompletadas), margin + resumenW, currentY + 5, { width: resumenW, align: 'center' });
+        doc.fillColor('#e65100').text(String(accionesEnProceso + accionesPendientes), margin + resumenW * 2, currentY + 5, { width: resumenW, align: 'center' });
+        doc.fillColor('#7b1fa2').text(promedioAvance + '%', margin + resumenW * 3, currentY + 5, { width: resumenW, align: 'center' });
+
+        doc.fontSize(6).font('Helvetica');
+        doc.fillColor('#2e7d32').text('Total Acciones', margin, currentY + 25, { width: resumenW, align: 'center' });
+        doc.fillColor('#1565c0').text('Completadas', margin + resumenW, currentY + 25, { width: resumenW, align: 'center' });
+        doc.fillColor('#e65100').text('Pendientes', margin + resumenW * 2, currentY + 25, { width: resumenW, align: 'center' });
+        doc.fillColor('#7b1fa2').text('Avance Promedio', margin + resumenW * 3, currentY + 25, { width: resumenW, align: 'center' });
+        currentY += 50;
+
+        doc.rect(margin, currentY, contentWidth, 16).fill(colorVerdeSst);
+        doc.fontSize(7).font('Helvetica-Bold').fillColor('#ffffff');
+        doc.text('N\u00ba', margin + 3, currentY + 4, { width: 18 });
+        doc.text('Acci\u00f3n', margin + 22, currentY + 4, { width: 160 });
+        doc.text('Tipo', margin + 185, currentY + 4, { width: 55 });
+        doc.text('Responsable', margin + 243, currentY + 4, { width: 90 });
+        doc.text('Prioridad', margin + 336, currentY + 4, { width: 48 });
+        doc.text('Avance', margin + 387, currentY + 4, { width: 38 });
+        doc.text('Estado', margin + 428, currentY + 4, { width: 55 });
+        currentY += 16;
+
+        const tipoLabels: Record<string, string> = { 'correctiva': 'Correctiva', 'preventiva': 'Preventiva', 'mejora': 'Mejora' };
+        const estadoLabels: Record<string, string> = { 'pendiente': 'Pendiente', 'en-proceso': 'En Proceso', 'completada': 'Completada' };
+
+        accionesMejoraReales.forEach((accion, idx) => {
+          if (currentY > 700) {
+            doc.addPage();
+            doc.font('Helvetica').fontSize(7).fillColor('#000000');
+            currentY = 50;
+          }
+
+          const bgColor = idx % 2 === 0 ? '#f8f9fa' : '#ffffff';
+          const rowH = 14;
+          doc.rect(margin, currentY, contentWidth, rowH).fill(bgColor);
+
+          const estadoColor = accion.estado === 'completada' ? '#28a745' : accion.estado === 'en-proceso' ? '#fd7e14' : '#dc3545';
+          const prioColor = accion.prioridad === 'alta' ? '#dc3545' : accion.prioridad === 'media' ? '#fd7e14' : '#28a745';
+
+          doc.fontSize(6.5).font('Helvetica').fillColor('#000000');
+          doc.text(String(idx + 1), margin + 3, currentY + 4, { width: 18 });
+          doc.text((accion.descripcionAccion || '').substring(0, 45), margin + 22, currentY + 4, { width: 160, lineBreak: false });
+          doc.text(tipoLabels[accion.tipoAccion] || accion.tipoAccion, margin + 185, currentY + 4, { width: 55, lineBreak: false });
+          doc.text((accion.responsable || '').substring(0, 20), margin + 243, currentY + 4, { width: 90, lineBreak: false });
+          doc.font('Helvetica-Bold').fillColor(prioColor).text((accion.prioridad || 'media').toUpperCase(), margin + 336, currentY + 4, { width: 48, lineBreak: false });
+          doc.font('Helvetica').fillColor('#000000').text((accion.porcentajeAvance || 0) + '%', margin + 387, currentY + 4, { width: 38, lineBreak: false });
+          doc.font('Helvetica-Bold').fillColor(estadoColor).text(estadoLabels[accion.estado] || accion.estado, margin + 428, currentY + 4, { width: 55, lineBreak: false });
+          currentY += rowH;
+        });
+        currentY += 10;
+      }
+
+      // ============================================================
+      // F. HILO DORADO - TRAZABILIDAD DEL SG-SST
+      // ============================================================
+      doc.addPage();
+      doc.font('Helvetica').fontSize(7).fillColor('#000000');
+      currentY = 50;
+
+      doc.rect(margin, currentY, contentWidth, 25).fill('#b8860b');
+      doc.fontSize(12).font('Helvetica-Bold').fillColor('#ffffff')
+        .text('F. HILO DORADO - TRAZABILIDAD DEL SG-SST', margin + 10, currentY + 7);
+      currentY += 35;
+
+      doc.fontSize(8).font('Helvetica').fillColor('#333333')
+        .text('Trazabilidad completa del ciclo de mejora continua: Est\u00e1ndar No Cumple \u2192 Acci\u00f3n de Mejora \u2192 Actividad del Cronograma \u2192 Ejecuci\u00f3n. Este an\u00e1lisis demuestra la conexi\u00f3n integral entre la evaluaci\u00f3n de est\u00e1ndares, el plan de mejora y el plan de trabajo anual.', margin, currentY, { width: contentWidth, align: 'justify' });
+      currentY = doc.y + 12;
+
+      const estandaresNoCumplen = respuestas.filter(r => !r.cumple && !r.noAplica);
+      const accionesConVinculacion = accionesMejoraReales.filter(a => {
+        const actividadesVinculadas = actividadesPlanTrabajoHD.filter(act => act.accionMejoraId === a.id);
+        return actividadesVinculadas.length > 0;
+      });
+      const accionesSinVinculacion = accionesMejoraReales.filter(a => {
+        const actividadesVinculadas = actividadesPlanTrabajoHD.filter(act => act.accionMejoraId === a.id);
+        return actividadesVinculadas.length === 0;
+      });
+
+      const hdBoxW = contentWidth / 4;
+      doc.rect(margin, currentY, hdBoxW, 45).fill('#fff8e1').stroke('#b8860b');
+      doc.rect(margin + hdBoxW, currentY, hdBoxW, 45).fill('#fbe9e7').stroke('#b8860b');
+      doc.rect(margin + hdBoxW * 2, currentY, hdBoxW, 45).fill('#e8f5e9').stroke('#b8860b');
+      doc.rect(margin + hdBoxW * 3, currentY, hdBoxW, 45).fill('#e3f2fd').stroke('#b8860b');
+
+      doc.fontSize(18).font('Helvetica-Bold');
+      doc.fillColor('#b8860b').text(String(estandaresNoCumplen.length), margin, currentY + 5, { width: hdBoxW, align: 'center' });
+      doc.fillColor('#c62828').text(String(accionesMejoraReales.length), margin + hdBoxW, currentY + 5, { width: hdBoxW, align: 'center' });
+      doc.fillColor('#2e7d32').text(String(accionesConVinculacion.length), margin + hdBoxW * 2, currentY + 5, { width: hdBoxW, align: 'center' });
+      doc.fillColor('#1565c0').text(String(actividadesPlanTrabajoHD.filter(a => a.accionMejoraId).length), margin + hdBoxW * 3, currentY + 5, { width: hdBoxW, align: 'center' });
+
+      doc.fontSize(6).font('Helvetica');
+      doc.fillColor('#b8860b').text('Est\u00e1ndares', margin, currentY + 26, { width: hdBoxW, align: 'center' });
+      doc.text('No Cumplidos', margin, currentY + 33, { width: hdBoxW, align: 'center' });
+      doc.fillColor('#c62828').text('Acciones de', margin + hdBoxW, currentY + 26, { width: hdBoxW, align: 'center' });
+      doc.text('Mejora Creadas', margin + hdBoxW, currentY + 33, { width: hdBoxW, align: 'center' });
+      doc.fillColor('#2e7d32').text('Acciones con', margin + hdBoxW * 2, currentY + 26, { width: hdBoxW, align: 'center' });
+      doc.text('Actividades Vinculadas', margin + hdBoxW * 2, currentY + 33, { width: hdBoxW, align: 'center' });
+      doc.fillColor('#1565c0').text('Actividades', margin + hdBoxW * 3, currentY + 26, { width: hdBoxW, align: 'center' });
+      doc.text('del Cronograma', margin + hdBoxW * 3, currentY + 33, { width: hdBoxW, align: 'center' });
+      currentY += 55;
+
+      if (accionesMejoraReales.length > 0) {
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#b8860b')
+          .text('Detalle de Trazabilidad por Acci\u00f3n de Mejora:', margin, currentY);
+        currentY = doc.y + 8;
+
+        for (const accion of accionesMejoraReales) {
+          if (currentY > 650) {
+            doc.addPage();
+            doc.font('Helvetica').fontSize(7).fillColor('#000000');
+            currentY = 50;
+          }
+
+          const actividadesVinculadas = actividadesPlanTrabajoHD.filter(act => act.accionMejoraId === accion.id);
+          const actCompletadas = actividadesVinculadas.filter(act => act.ejecutado || act.estado === 'completada').length;
+
+          const estandarRelacionado = accion.respuestaEstandarId 
+            ? estandares.find(e => {
+                const resp = respuestas.find(r => r.id === accion.respuestaEstandarId);
+                return resp && e.id === resp.estandarId;
+              })
+            : null;
+
+          doc.rect(margin, currentY, contentWidth, 2).fill('#b8860b');
+          currentY += 6;
+
+          doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000');
+          if (estandarRelacionado) {
+            doc.text('\u25b6 Est\u00e1ndar: ', margin, currentY, { continued: true });
+            doc.fillColor('#c62828').text(estandarRelacionado.numeroEstandar + ' - ' + (estandarRelacionado.nombre || '').substring(0, 60));
+          } else {
+            doc.text('\u25b6 Acci\u00f3n sin est\u00e1ndar espec\u00edfico vinculado', margin, currentY);
+          }
+          currentY = doc.y + 3;
+
+          doc.fontSize(7.5).font('Helvetica-Bold').fillColor('#333333')
+            .text('  \u2192 Acci\u00f3n: ', margin, currentY, { continued: true });
+          doc.font('Helvetica').text((accion.descripcionAccion || '').substring(0, 80));
+          currentY = doc.y + 2;
+
+          const estadoAccionColor = accion.estado === 'completada' ? '#28a745' : accion.estado === 'en-proceso' ? '#fd7e14' : '#dc3545';
+          const estadoAccionText = accion.estado === 'completada' ? 'COMPLETADA' : accion.estado === 'en-proceso' ? 'EN PROCESO' : 'PENDIENTE';
+          doc.fontSize(7).font('Helvetica').fillColor('#666666')
+            .text('     Responsable: ' + (accion.responsable || '') + '  |  Avance: ' + (accion.porcentajeAvance || 0) + '%  |  Estado: ', margin, currentY, { continued: true });
+          doc.font('Helvetica-Bold').fillColor(estadoAccionColor).text(estadoAccionText);
+          currentY = doc.y + 4;
+
+          if (actividadesVinculadas.length > 0) {
+            doc.fontSize(7).font('Helvetica-Bold').fillColor('#1565c0')
+              .text('     Actividades del Cronograma vinculadas (' + actCompletadas + '/' + actividadesVinculadas.length + ' ejecutadas):', margin, currentY);
+            currentY = doc.y + 3;
+
+            for (const act of actividadesVinculadas) {
+              if (currentY > 700) {
+                doc.addPage();
+                doc.font('Helvetica').fontSize(7).fillColor('#000000');
+                currentY = 50;
+              }
+              const isEjecutado = act.ejecutado || act.estado === 'completada';
+              const checkmark = isEjecutado ? '\u2713' : '\u25cb';
+              const actColor = isEjecutado ? '#28a745' : '#999999';
+              doc.fontSize(6.5).font('Helvetica').fillColor(actColor)
+                .text('        ' + checkmark + ' ' + (act.actividad || '').substring(0, 70) + ' (Mes: ' + (act.mes || '') + ')', margin, currentY);
+              currentY = doc.y + 2;
+            }
+          } else {
+            doc.fontSize(7).font('Helvetica').fillColor('#999999')
+              .text('     Sin actividades del cronograma vinculadas', margin, currentY);
+          }
+          currentY = doc.y + 8;
+        }
+
+        if (accionesSinVinculacion.length > 0) {
+          if (currentY > 650) {
+            doc.addPage();
+            doc.font('Helvetica').fontSize(7).fillColor('#000000');
+            currentY = 50;
+          }
+          doc.fontSize(8).font('Helvetica-Bold').fillColor('#e65100')
+            .text('\u26a0 Acciones sin vinculaci\u00f3n al Cronograma: ' + accionesSinVinculacion.length + ' de ' + accionesMejoraReales.length, margin, currentY);
+          currentY = doc.y + 3;
+          doc.fontSize(7).font('Helvetica').fillColor('#666666')
+            .text('Se recomienda vincular las acciones pendientes a actividades espec\u00edficas del Plan de Trabajo Anual para asegurar su ejecuci\u00f3n y seguimiento.', margin, currentY, { width: contentWidth });
+          currentY = doc.y + 10;
+        }
+      } else {
+        doc.fontSize(8).font('Helvetica').fillColor('#666666')
+          .text('No se han registrado acciones de mejora para esta evaluaci\u00f3n. El hilo dorado inicia con la identificaci\u00f3n de est\u00e1ndares no cumplidos y la creaci\u00f3n de acciones correctivas.', margin, currentY, { width: contentWidth });
+        currentY = doc.y + 10;
+      }
+
+      // ============================================================
+      // G. PLAN DE TRABAJO ANUAL - AVANCE DEL CRONOGRAMA
       // ============================================================
       if (currentY > 550) {
         doc.addPage();
-          // Reset font after page break to maintain consistent text size
-          doc.font('Helvetica').fontSize(7).fillColor('#000000');
+        doc.font('Helvetica').fontSize(7).fillColor('#000000');
+        currentY = 50;
+      }
+
+      doc.fontSize(11).font('Helvetica-Bold').fillColor(colorVerdeSst)
+        .text('G. PLAN DE TRABAJO ANUAL - AVANCE DEL CRONOGRAMA', margin, currentY);
+      currentY = doc.y + 8;
+
+      if (!planActivoHD || actividadesPlanTrabajoHD.length === 0) {
+        doc.fontSize(8).font('Helvetica').fillColor('#666666')
+          .text('No se encontr\u00f3 un Plan de Trabajo Anual con actividades para el per\u00edodo evaluado.', margin, currentY);
+        currentY = doc.y + 10;
+      } else {
+        const totalAct = actividadesPlanTrabajoHD.length;
+        const actEjecutadas = actividadesPlanTrabajoHD.filter(a => a.ejecutado || a.estado === 'completada').length;
+        const actEnProceso = actividadesPlanTrabajoHD.filter(a => a.estado === 'en-proceso').length;
+        const actPendientesHD = totalAct - actEjecutadas - actEnProceso;
+        const porcentajeCronograma = totalAct > 0 ? Math.round((actEjecutadas / totalAct) * 100) : 0;
+
+        doc.fontSize(8).font('Helvetica').fillColor('#333333')
+          .text('Plan de Trabajo: ' + (planActivoHD.nombre || 'Plan ' + planActivoHD.anio) + '  |  A\u00f1o: ' + planActivoHD.anio, margin, currentY);
+        currentY = doc.y + 8;
+
+        const cronBoxW = contentWidth / 4;
+        doc.rect(margin, currentY, cronBoxW, 38).fill('#e8f5e9');
+        doc.rect(margin + cronBoxW, currentY, cronBoxW, 38).fill('#e3f2fd');
+        doc.rect(margin + cronBoxW * 2, currentY, cronBoxW, 38).fill('#fff3e0');
+        doc.rect(margin + cronBoxW * 3, currentY, cronBoxW, 38).fill('#fce4ec');
+
+        doc.fontSize(16).font('Helvetica-Bold');
+        doc.fillColor('#2e7d32').text(String(totalAct), margin, currentY + 4, { width: cronBoxW, align: 'center' });
+        doc.fillColor('#1565c0').text(String(actEjecutadas), margin + cronBoxW, currentY + 4, { width: cronBoxW, align: 'center' });
+        doc.fillColor('#e65100').text(String(actEnProceso), margin + cronBoxW * 2, currentY + 4, { width: cronBoxW, align: 'center' });
+        doc.fillColor('#c62828').text(String(actPendientesHD), margin + cronBoxW * 3, currentY + 4, { width: cronBoxW, align: 'center' });
+
+        doc.fontSize(6).font('Helvetica');
+        doc.fillColor('#2e7d32').text('Total Actividades', margin, currentY + 24, { width: cronBoxW, align: 'center' });
+        doc.fillColor('#1565c0').text('Ejecutadas', margin + cronBoxW, currentY + 24, { width: cronBoxW, align: 'center' });
+        doc.fillColor('#e65100').text('En Proceso', margin + cronBoxW * 2, currentY + 24, { width: cronBoxW, align: 'center' });
+        doc.fillColor('#c62828').text('Pendientes', margin + cronBoxW * 3, currentY + 24, { width: cronBoxW, align: 'center' });
+        currentY += 48;
+
+        doc.rect(margin, currentY, contentWidth * (porcentajeCronograma / 100), 8).fill('#28a745');
+        doc.rect(margin + contentWidth * (porcentajeCronograma / 100), currentY, contentWidth * (1 - porcentajeCronograma / 100), 8).fill('#e0e0e0');
+        currentY += 12;
+        doc.fontSize(8).font('Helvetica-Bold').fillColor(porcentajeCronograma >= 80 ? '#28a745' : porcentajeCronograma >= 50 ? '#fd7e14' : '#dc3545')
+          .text('Cumplimiento del Cronograma: ' + porcentajeCronograma + '%', margin, currentY, { width: contentWidth, align: 'center' });
+        currentY = doc.y + 12;
+
+        const programasMap: Record<string, { total: number; ejecutadas: number }> = {};
+        actividadesPlanTrabajoHD.forEach(act => {
+          const prog = act.programa || 'otro';
+          if (!programasMap[prog]) programasMap[prog] = { total: 0, ejecutadas: 0 };
+          programasMap[prog].total++;
+          if (act.ejecutado || act.estado === 'completada') programasMap[prog].ejecutadas++;
+        });
+
+        const programaLabels: Record<string, string> = {
+          'capacitacion': 'Capacitaci\u00f3n',
+          'prevencion-accidentes': 'Prevenci\u00f3n de Accidentes',
+          'vigilancia-epidemiologica': 'Vigilancia Epidemiol\u00f3gica',
+          'inspeccion': 'Inspecciones',
+          'emergencias': 'Emergencias',
+          'higiene-seguridad': 'Higiene y Seguridad',
+          'identificacion-peligros': 'Identificaci\u00f3n de Peligros',
+          'investigacion-accidentes': 'Investigaci\u00f3n de Accidentes',
+          'comites': 'Comit\u00e9s',
+          'auditoria': 'Auditor\u00eda',
+          'riesgo-psicosocial': 'Riesgo Psicosocial',
+          'comunicacion': 'Comunicaci\u00f3n',
+          'mejora-continua': 'Mejora Continua',
+          'seguridad-vial': 'Seguridad Vial',
+          'otro': 'Otros',
+        };
+
+        doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000')
+          .text('Avance por Programa SST:', margin, currentY);
+        currentY = doc.y + 5;
+
+        Object.entries(programasMap).forEach(([prog, data]) => {
+          if (currentY > 700) {
+            doc.addPage();
+            doc.font('Helvetica').fontSize(7).fillColor('#000000');
+            currentY = 50;
+          }
+          const pctProg = data.total > 0 ? Math.round((data.ejecutadas / data.total) * 100) : 0;
+          const progLabel = programaLabels[prog] || prog;
+          doc.fontSize(7).font('Helvetica').fillColor('#000000')
+            .text(progLabel + ' (' + data.ejecutadas + '/' + data.total + ')', margin + 5, currentY, { width: 200, lineBreak: false });
+
+          const barX = margin + 210;
+          const barW = contentWidth - 215;
+          doc.rect(barX, currentY, barW, 6).fill('#e0e0e0');
+          doc.rect(barX, currentY, barW * (pctProg / 100), 6).fill(pctProg >= 80 ? '#28a745' : pctProg >= 50 ? '#fd7e14' : '#dc3545');
+          doc.fontSize(6).font('Helvetica-Bold').fillColor('#000000')
+            .text(pctProg + '%', barX + barW + 5, currentY, { width: 30, lineBreak: false });
+          currentY += 12;
+        });
+        currentY += 5;
+      }
+
+      // ============================================================
+      // H. PLAN DE MEJORA RECOMENDADO (Generado por el sistema)
+      // ============================================================
+      if (currentY > 550) {
+        doc.addPage();
+        doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 100;
       }
 
       doc.fontSize(11).font('Helvetica-Bold').fillColor(colorVerdeSst)
-        .text('E. PLAN DE MEJORA RECOMENDADO', margin, currentY);
+        .text('H. PLAN DE MEJORA RECOMENDADO', margin, currentY);
       currentY = doc.y + 8;
 
       if (recomendaciones.length === 0) {
         doc.fontSize(8).font('Helvetica').fillColor(colorAceptable)
-          .text('No se requieren acciones correctivas inmediatas. Se recomienda mantener el seguimiento periódico.', margin, currentY);
+          .text('No se requieren acciones correctivas inmediatas. Se recomienda mantener el seguimiento peri\u00f3dico.', margin, currentY);
         currentY = doc.y + 10;
       } else {
         for (let i = 0; i < Math.min(recomendaciones.length, 6); i++) {
@@ -26861,22 +27202,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const prioridadColor = rec.prioridad === 'alta' ? colorCritico : rec.prioridad === 'media' ? colorModerado : colorAceptable;
 
           doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000')
-            .text(`${i + 1}. ${rec.accion}`, margin, currentY);
+            .text((i + 1) + '. ' + rec.accion, margin, currentY);
           currentY = doc.y + 3;
           
           doc.fontSize(7).font('Helvetica').fillColor('#000000')
-            .text(`   Responsable: ${rec.responsable} | Plazo: ${rec.plazo} | Prioridad: `, margin, currentY, { continued: true });
+            .text('   Responsable: ' + rec.responsable + ' | Plazo: ' + rec.plazo + ' | Prioridad: ', margin, currentY, { continued: true });
           doc.fillColor(prioridadColor).font('Helvetica-Bold').text(rec.prioridad.toUpperCase());
           currentY = doc.y + 2;
           
           doc.fontSize(7).font('Helvetica').fillColor('#666666')
-            .text(`   Recursos: ${rec.recursos}`, margin, currentY);
+            .text('   Recursos: ' + rec.recursos, margin, currentY);
           currentY = doc.y + 8;
         }
       }
 
       // ============================================================
-      // F. CONCLUSIONES
+      // I. CONCLUSIONES
       // ============================================================
       if (currentY > 550) {
         doc.addPage();
@@ -26886,7 +27227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       doc.fontSize(11).font('Helvetica-Bold').fillColor(colorVerdeSst)
-        .text('F. CONCLUSIONES', margin, currentY);
+        .text('I. CONCLUSIONES', margin, currentY);
       currentY = doc.y + 8;
 
       // Estado actual
