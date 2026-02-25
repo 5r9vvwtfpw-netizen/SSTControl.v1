@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { ChevronLeft, ChevronRight, Check, Clock, AlertTriangle, CheckCircle, ListTodo, HelpCircle, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Clock, AlertTriangle, CheckCircle, ListTodo, HelpCircle, ArrowRight, Edit, Link2 } from "lucide-react";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
@@ -265,6 +265,7 @@ interface CronogramaMensualProps {
   planId: string;
   anio: number;
   mesInicial?: string;
+  onEditActividad?: (actividad: ActividadPlanTrabajo) => void;
 }
 
 // Palabras clave de actividades que solo aplican a capítulos 2 y 3 (no aplican a capítulo 1)
@@ -291,7 +292,7 @@ function actividadAplicaACapitulo(actividad: string, companyChapter: number | nu
   return true;
 }
 
-export function CronogramaMensual({ actividades, planId, anio, mesInicial }: CronogramaMensualProps) {
+export function CronogramaMensual({ actividades, planId, anio, mesInicial, onEditActividad }: CronogramaMensualProps) {
   const { toast } = useToast();
   const [mesSeleccionado, setMesSeleccionado] = useState(mesInicial || getMesInicial(anio));
   const { selectedCompany } = useCompanyContext();
@@ -582,6 +583,13 @@ export function CronogramaMensual({ actividades, planId, anio, mesInicial }: Cro
                       )}
                     </div>
                     
+                    {actividad.accionMejoraId && (
+                      <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
+                        <Link2 className="h-3 w-3" />
+                        <span>Vinculada a Plan de Mejora</span>
+                      </div>
+                    )}
+                    
                     <div className="flex gap-2">
                       <Button
                         variant={isEjecutado ? "default" : "outline"}
@@ -599,6 +607,16 @@ export function CronogramaMensual({ actividades, planId, anio, mesInicial }: Cro
                           "Ejecutado"
                         )}
                       </Button>
+                      {onEditActividad && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => onEditActividad(actividad)}
+                          data-testid={`button-edit-actividad-${index}`}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
                       {getRouteForActividad(actividad.actividad, actividad.programa) && (
                         <Button
                           variant="outline"

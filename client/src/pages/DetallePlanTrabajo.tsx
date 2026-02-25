@@ -684,6 +684,7 @@ export default function DetallePlanTrabajo() {
                 planId={id!} 
                 anio={plan.anio}
                 mesInicial={getMesFromUrl()}
+                onEditActividad={handleEditActividad}
               />
             </>
           )}
