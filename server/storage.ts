@@ -938,6 +938,7 @@ export interface IStorage {
   createActividadPlanTrabajo(actividad: InsertActividadPlanTrabajo, companyId: string): Promise<ActividadPlanTrabajo>;
   updateActividadPlanTrabajo(id: string, actividad: Partial<InsertActividadPlanTrabajo>, companyId: string): Promise<ActividadPlanTrabajo | undefined>;
   deleteActividadPlanTrabajo(id: string, companyId: string): Promise<void>;
+  recalcularAvanceAccionMejora(accionMejoraId: string, companyId: string): Promise<void>;
   
   // Matriz Legal methods (company-scoped) - Normatividad colombiana SST
   getMatrizLegal(companyId: string): Promise<MatrizLegal[]>;
@@ -6929,6 +6930,11 @@ export class DbStorage implements IStorage {
     // Actualizar métricas del plan
     await this.actualizarMetricasPlan(existing.planTrabajoId, companyId);
 
+    const accionId = updated.accionMejoraId || existing.accionMejoraId;
+    if (accionId) {
+      await this.recalcularAvanceAccionMejora(accionId, companyId);
+    }
+
     return updated;
   }
 
@@ -6941,6 +6947,50 @@ export class DbStorage implements IStorage {
 
     // Actualizar métricas del plan
     await this.actualizarMetricasPlan(actividad.planTrabajoId, companyId);
+
+    if (actividad.accionMejoraId) {
+      await this.recalcularAvanceAccionMejora(actividad.accionMejoraId, companyId);
+    }
+  }
+
+  async recalcularAvanceAccionMejora(accionMejoraId: string, companyId: string): Promise<void> {
+    try {
+      const actividadesVinculadas = await db.select()
+        .from(schema.actividadesPlanTrabajo)
+        .where(eq(schema.actividadesPlanTrabajo.accionMejoraId, accionMejoraId));
+
+      if (actividadesVinculadas.length === 0) return;
+
+      const completadas = actividadesVinculadas.filter(a => a.estado === 'completada').length;
+      const total = actividadesVinculadas.length;
+      const porcentaje = Math.round((completadas / total) * 100);
+
+      let nuevoEstado: string | undefined;
+      if (porcentaje === 100) {
+        nuevoEstado = 'completada';
+      } else if (porcentaje > 0) {
+        nuevoEstado = 'en-proceso';
+      }
+
+      const updateData: any = {
+        porcentajeAvance: porcentaje,
+        updatedAt: sql`now()`,
+      };
+      if (nuevoEstado) {
+        updateData.estado = nuevoEstado;
+      }
+      if (porcentaje === 100) {
+        updateData.fechaEjecucion = sql`CURRENT_DATE`;
+      }
+
+      await db.update(schema.accionesMejora)
+        .set(updateData)
+        .where(eq(schema.accionesMejora.id, accionMejoraId));
+
+      console.log(`[AccionMejora-AutoAvance] Acción ${accionMejoraId}: ${completadas}/${total} actividades completadas → ${porcentaje}%`);
+    } catch (error: any) {
+      console.error('[AccionMejora-AutoAvance] Error:', error.message);
+    }
   }
 
   // Matriz Legal methods (company-scoped)

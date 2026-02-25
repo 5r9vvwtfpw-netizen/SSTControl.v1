@@ -18,6 +18,7 @@ import { createCertificacionesProfesionales } from './migrations/create-certific
 import { syncPricingPluginSubscriptions } from './migrations/sync-pricing-plugin-subscriptions';
 import { syncInvestigationParticipants } from './migrations/sync-investigation-participants';
 import { syncDocumentAcknowledgmentsColumns } from './migrations/sync-document-acknowledgments-columns';
+import { syncActividadAccionMejoraLink } from './migrations/sync-actividad-accion-mejora-link';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -47,6 +48,7 @@ export async function runMigrations() {
     await createCertificacionesProfesionales();
     await syncPricingPluginSubscriptions();
     await syncDocumentAcknowledgmentsColumns();
+    await syncActividadAccionMejoraLink();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Download, CheckCircle, Plus, Edit, Trash2, Calendar, TrendingUp, BarChart3, Bot, Sparkles, ListChecks, Clock, AlertTriangle, HelpCircle, RefreshCw } from "lucide-react";
+import { ArrowLeft, Download, CheckCircle, Plus, Edit, Trash2, Calendar, TrendingUp, BarChart3, Bot, Sparkles, ListChecks, Clock, AlertTriangle, HelpCircle, RefreshCw, Link2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -19,7 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { insertActividadPlanTrabajoSchema } from "@shared/schema";
-import type { PlanTrabajoAnual, ActividadPlanTrabajo } from "@shared/schema";
+import type { PlanTrabajoAnual, ActividadPlanTrabajo, AccionMejora } from "@shared/schema";
 import { PROGRAMAS_SST_LABELS, CICLOS_PHVA_LABELS, MESES_LABELS } from "@/lib/actividades-plan-trabajo-predefinidas";
 import { CronogramaMensual } from "@/components/CronogramaMensual";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
@@ -148,6 +148,10 @@ export default function DetallePlanTrabajo() {
     enabled: !!id,
   });
 
+  const { data: accionesMejora = [] } = useQuery<AccionMejora[]>({
+    queryKey: ["/api/acciones-mejora"],
+  });
+
   const actividadForm = useForm<z.infer<typeof insertActividadPlanTrabajoSchema>>({
     resolver: zodResolver(insertActividadPlanTrabajoSchema),
     defaultValues: {
@@ -245,6 +249,7 @@ export default function DetallePlanTrabajo() {
       queryClient.invalidateQueries({ queryKey: ["/api/planes-trabajo-anual", id, "actividades"] });
       queryClient.invalidateQueries({ queryKey: ["/api/planes-trabajo-anual", id, "insights"] });
       queryClient.invalidateQueries({ queryKey: ["/api/planes-trabajo-anual", id, "agenda"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/acciones-mejora"] });
       setActividadDialogOpen(false);
       setEditingActividad(null);
       actividadForm.reset();
@@ -337,6 +342,7 @@ export default function DetallePlanTrabajo() {
         recursosFinancieros: dataToSubmit.recursosFinancieros,
         estado: dataToSubmit.estado,
         observaciones: dataToSubmit.observaciones,
+        accionMejoraId: (dataToSubmit as any).accionMejoraId || null,
       });
     } else {
       createActividadMutation.mutate(dataToSubmit);
@@ -358,7 +364,8 @@ export default function DetallePlanTrabajo() {
       recursosFinancieros: actividad.recursosFinancieros || 0,
       estado: actividad.estado,
       observaciones: actividad.observaciones || "",
-    });
+      accionMejoraId: actividad.accionMejoraId || undefined,
+    } as any);
     setActividadDialogOpen(true);
   };
 
@@ -852,6 +859,47 @@ export default function DetallePlanTrabajo() {
                   )}
                 />
               </div>
+
+              <FormField
+                control={actividadForm.control}
+                name={"accionMejoraId" as any}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1.5">
+                      <Link2 className="h-3.5 w-3.5" />
+                      Vincular a Acción del Plan de Mejora (Opcional)
+                    </FormLabel>
+                    <Select value={field.value || "__none__"} onValueChange={(val) => field.onChange(val === "__none__" ? null : val)}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-accion-mejora">
+                          <SelectValue placeholder="Sin vincular" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="__none__">Sin vincular</SelectItem>
+                        {accionesMejora.filter(a => a.estado !== 'completada' && a.estado !== 'vencida').map((accion) => (
+                          <SelectItem key={accion.id} value={accion.id}>
+                            {accion.descripcionAccion.substring(0, 80)}{accion.descripcionAccion.length > 80 ? '...' : ''} ({accion.porcentajeAvance}%)
+                          </SelectItem>
+                        ))}
+                        {accionesMejora.filter(a => a.estado === 'completada' || a.estado === 'vencida').length > 0 && (
+                          <>
+                            {accionesMejora.filter(a => a.estado === 'completada' || a.estado === 'vencida').map((accion) => (
+                              <SelectItem key={accion.id} value={accion.id}>
+                                {accion.descripcionAccion.substring(0, 80)}{accion.descripcionAccion.length > 80 ? '...' : ''} ({accion.estado})
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Al vincular, el avance de la acción de mejora se calculará automáticamente según las actividades completadas
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={actividadForm.control}

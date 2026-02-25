@@ -2964,6 +2964,7 @@ export const planesTrabajoAnual = pgTable("planes_trabajo_anual", {
 export const actividadesPlanTrabajo = pgTable("actividades_plan_trabajo", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   planTrabajoId: varchar("plan_trabajo_id").notNull().references(() => planesTrabajoAnual.id, { onDelete: "cascade" }),
+  accionMejoraId: varchar("accion_mejora_id").references(() => accionesMejora.id, { onDelete: "set null" }),
   
   // Clasificación de la actividad
   programa: programaSstEnum("programa").notNull(),

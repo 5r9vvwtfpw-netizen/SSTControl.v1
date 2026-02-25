@@ -91,6 +91,16 @@ Los componentes `Dialog` y `Sheet` (`client/src/components/ui/dialog.tsx` y `she
 
 **IMPORTANTE:** No modificar estos handlers sin entender el ciclo de vida de los portales de Radix UI. Cualquier cambio debe probarse con un diálogo que contenga un Select dentro.
 
+### Vinculación Actividades del Cronograma ↔ Plan de Mejora
+Las actividades del Plan Anual de Trabajo (`actividades_plan_trabajo`) pueden vincularse opcionalmente a acciones del Plan de Mejora (`acciones_mejora`) mediante `accionMejoraId`. Cuando una actividad vinculada cambia de estado (completada/pendiente), el sistema recalcula automáticamente el `porcentajeAvance` de la acción de mejora correspondiente: `completadas / total_vinculadas * 100`. Si el 100% de actividades se completan, la acción se marca como "completada" automáticamente con su `fechaEjecucion`.
+
+**Archivos involucrados:**
+- `shared/schema.ts` — columna `accionMejoraId` en `actividadesPlanTrabajo`
+- `server/storage.ts` — método `recalcularAvanceAccionMejora()`
+- `server/migrations/sync-actividad-accion-mejora-link.ts` — migración para producción
+- `client/src/pages/DetallePlanTrabajo.tsx` — selector de acción de mejora en formulario
+- `client/src/components/CronogramaMensual.tsx` — invalidación de cache al toggle
+
 ## External Dependencies
 
 -   **PostgreSQL (Neon/AWS RDS)**: Relational database.

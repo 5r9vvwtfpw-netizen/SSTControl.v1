@@ -358,6 +358,7 @@ export function CronogramaMensual({ actividades, planId, anio, mesInicial }: Cro
       queryClient.invalidateQueries({ queryKey: ["/api/planes-trabajo-anual", planId, "agenda"] });
       queryClient.invalidateQueries({ queryKey: ["/api/planes-trabajo-anual", planId] });
       queryClient.invalidateQueries({ queryKey: ["/api/planes-trabajo-anual"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/acciones-mejora"] });
       toast({ 
         title: "Actualizado", 
         description: "Estado de la actividad actualizado correctamente",
