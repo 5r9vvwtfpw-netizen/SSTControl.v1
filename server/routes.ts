@@ -4958,14 +4958,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Inject companyId into body before validation
       const bodyWithCompanyId = { ...req.body, companyId };
       
-      // Sanitize empty date strings to null (PostgreSQL requires null, not '')
-      const dateFields = ['investigationEndDate', 'licensedProfessionalLicenseExpiry', 'actionsClosedDate', 'furatDate', 'ministryReportDate', 'arlNotificationDate', 'epsNotificationDate', 'approvedAt'];
+      // Sanitize ALL empty strings to null for PostgreSQL (date, timestamp, integer columns reject '')
       const sanitizedBody = { ...bodyWithCompanyId };
-      dateFields.forEach(field => {
-        if (sanitizedBody[field] === '' || sanitizedBody[field] === undefined) {
-          sanitizedBody[field] = null;
+      for (const key of Object.keys(sanitizedBody)) {
+        if (sanitizedBody[key] === '' || sanitizedBody[key] === undefined) {
+          sanitizedBody[key] = null;
         }
-      });
+      }
       
       // Parse and validate data
       const validatedData = insertAccidentInvestigationSchema.parse(sanitizedBody);
@@ -5241,14 +5240,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).send("No autorizado para editar esta investigación");
       }
       
-      // Sanitize empty date strings to null (PostgreSQL requires null, not '')
-      const dateFields = ['eventDate', 'investigationStartDate', 'investigationEndDate', 'dueDate', 'licensedProfessionalLicenseExpiry', 'actionsClosedDate', 'furatDate', 'ministryReportDate', 'arlNotificationDate', 'epsNotificationDate'];
+      // Sanitize ALL empty strings to null for PostgreSQL (date, timestamp, integer columns reject '')
       const updateData = { ...req.body };
-      dateFields.forEach(field => {
-        if (updateData[field] === '' || updateData[field] === undefined) {
-          delete updateData[field];
+      for (const key of Object.keys(updateData)) {
+        if (updateData[key] === '' || updateData[key] === undefined) {
+          updateData[key] = null;
         }
-      });
+      }
       
       // Update severity requirements if changed
       if (req.body.severity) {
