@@ -341,6 +341,8 @@ export function CronogramaMensual({ actividades, planId, anio, mesInicial }: Cro
     };
   }, [actividadesFiltradas, mesSeleccionado, anio, mesInfo]);
 
+  const [loadingActividadId, setLoadingActividadId] = useState<string | null>(null);
+
   const toggleEjecutadoMutation = useMutation({
     mutationFn: async ({ actividadId, ejecutado }: { actividadId: string; ejecutado: boolean }) => {
       const res = await apiRequest("PATCH", `/api/actividades-plan-trabajo/${actividadId}`, { 
@@ -350,6 +352,7 @@ export function CronogramaMensual({ actividades, planId, anio, mesInicial }: Cro
       return res.json();
     },
     onSuccess: () => {
+      setLoadingActividadId(null);
       queryClient.invalidateQueries({ queryKey: ["/api/planes-trabajo-anual", planId, "actividades"] });
       queryClient.invalidateQueries({ queryKey: ["/api/planes-trabajo-anual", planId, "insights"] });
       queryClient.invalidateQueries({ queryKey: ["/api/planes-trabajo-anual", planId, "agenda"] });
@@ -362,6 +365,7 @@ export function CronogramaMensual({ actividades, planId, anio, mesInicial }: Cro
       });
     },
     onError: (error: Error) => {
+      setLoadingActividadId(null);
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
@@ -380,6 +384,7 @@ export function CronogramaMensual({ actividades, planId, anio, mesInicial }: Cro
 
   const handleToggleEjecutado = (actividad: ActividadPlanTrabajo) => {
     const nuevoEstado = !(actividad.ejecutado || actividad.estado === "completada");
+    setLoadingActividadId(actividad.id);
     toggleEjecutadoMutation.mutate({ actividadId: actividad.id, ejecutado: nuevoEstado });
   };
 
@@ -526,7 +531,7 @@ export function CronogramaMensual({ actividades, planId, anio, mesInicial }: Cro
             {actividadesMes.map((actividad, index) => {
               const cicloInfo = getCicloInfo(actividad.programa);
               const isEjecutado = actividad.ejecutado || actividad.estado === "completada";
-              const isLoading = toggleEjecutadoMutation.isPending;
+              const isLoading = loadingActividadId === actividad.id;
               
               return (
                 <Card 
