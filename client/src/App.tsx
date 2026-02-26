@@ -353,6 +353,7 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/login" component={LoginEmpresa} />
       <Route path="/soporte/login" component={LoginSoporte} />
+      <Route path="/soporte/:rest*">{() => { window.location.href = "/soporte/login"; return null; }}</Route>
       <Route path="/recuperar-contrasena" component={RecuperarContrasena} />
       <Route path="/induccion-virtual/:token" component={InduccionVirtualPublica} />
       <Route path="/restablecer-contrasena" component={RestablecerContrasena} />
