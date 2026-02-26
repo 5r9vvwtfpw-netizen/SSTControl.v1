@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Headset, LogOut, Ticket, Key } from "lucide-react";
 import { Link, Redirect, useLocation } from "wouter";
-import { ActiveAccessIndicator } from "@/components/SupportAccessRequestDialog";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -109,7 +108,6 @@ export default function SoporteLayout({ children }: { children: React.ReactNode 
 
             <div className="flex items-center gap-3">
               <NotificationBell />
-              <ActiveAccessIndicator />
               <span className="text-sm hidden sm:inline-block">
                 {user.fullName || user.username}
               </span>

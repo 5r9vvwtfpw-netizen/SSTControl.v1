@@ -147,7 +147,6 @@ import MensajesInternos from "@/pages/MensajesInternos";
 import InduccionVirtualPublica from "@/pages/InduccionVirtualPublica";
 import ConfiguracionInduccion from "@/pages/ConfiguracionInduccion";
 import ConfiguracionNotificaciones from "@/pages/ConfiguracionNotificaciones";
-import AccesosSoporte from "@/pages/AccesosSoporte";
 import IndicadoresAccidentalidad from "@/pages/IndicadoresAccidentalidad";
 import IndiceSeveridadILI from "@/pages/IndiceSeveridadILI";
 import IndiceFrequenciaSeveridad from "@/pages/IndiceFrequenciaSeveridad";
@@ -296,7 +295,6 @@ function Router() {
       <ProtectedRoute path="/admin-videos-ayuda" component={AdminVideosAyuda} />
       <ProtectedRoute path="/videos-ayuda" component={BibliotecaVideos} />
       <ProtectedRoute path="/mensajes-internos" component={MensajesInternos} />
-      <ProtectedRoute path="/accesos-soporte" component={AccesosSoporte} />
       <ProtectedRoute path="/planes-suscripcion" component={PlanesSuscripcion} />
       <ProtectedRoute path="/checkout" component={Checkout} />
       <ProtectedRoute path="/dashboard-facturacion" component={DashboardFacturacion} />
