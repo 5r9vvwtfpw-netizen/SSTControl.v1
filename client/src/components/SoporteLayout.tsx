@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Headset, LogOut, Ticket, Key } from "lucide-react";
+import { Headset, LogOut, Ticket, Key, BookOpen } from "lucide-react";
 import { Link, Redirect, useLocation } from "wouter";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useMutation } from "@tanstack/react-query";
@@ -101,6 +101,16 @@ export default function SoporteLayout({ children }: { children: React.ReactNode 
                   >
                     <Ticket className="h-4 w-4 mr-2" />
                     Tickets
+                  </Button>
+                </Link>
+                <Link href="/soporte/manual">
+                  <Button 
+                    variant="ghost" 
+                    className={`text-white ${location === '/soporte/manual' ? 'bg-white/20' : ''}`}
+                    data-testid="nav-soporte-manual"
+                  >
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Manual
                   </Button>
                 </Link>
               </nav>

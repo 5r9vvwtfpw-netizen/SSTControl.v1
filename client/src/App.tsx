@@ -147,6 +147,7 @@ import MensajesInternos from "@/pages/MensajesInternos";
 import InduccionVirtualPublica from "@/pages/InduccionVirtualPublica";
 import ConfiguracionInduccion from "@/pages/ConfiguracionInduccion";
 import ConfiguracionNotificaciones from "@/pages/ConfiguracionNotificaciones";
+import ManualSoporte from "@/pages/ManualSoporte";
 import IndicadoresAccidentalidad from "@/pages/IndicadoresAccidentalidad";
 import IndiceSeveridadILI from "@/pages/IndiceSeveridadILI";
 import IndiceFrequenciaSeveridad from "@/pages/IndiceFrequenciaSeveridad";
@@ -418,6 +419,7 @@ function SupportRouter() {
   return (
     <Switch>
       <Route path="/soporte/tickets" component={AdminTicketsSoporte} />
+      <Route path="/soporte/manual" component={ManualSoporte} />
       <Route path="/soporte/login" component={LoginSoporte} />
       <Route>
         <Redirect to="/soporte/tickets" />
