@@ -71,165 +71,167 @@ const PROTOCOLO_NO_CONTACTO = [
 
 const MODULOS_SST = [
   {
+    modulo: "Evaluación de Estándares SST (Archivo Maestro)",
+    ruta: "Verificar > Evaluaciones SST > [Abrir Evaluación]",
+    descripcion: "Este es el ARCHIVO MAESTRO del SG-SST. Todos los estándares de la Resolución 0312/2019 se gestionan desde aquí. Al hacer clic en un estándar se abre un diálogo donde se califica Cumple/No Cumple/No Aplica. El sistema sugiere enlaces a los módulos relacionados como evidencia.",
+    preguntasFrecuentes: [
+      { pregunta: "Cómo calificar un estándar", respuesta: "Hola [Nombre]. Vaya a Verificar > Evaluaciones SST y abra su evaluación activa. Verá los estándares agrupados por componente. Haga clic en el estándar que desea calificar y se abrirá un diálogo con las opciones: 'Cumple' (otorga puntaje), 'No Cumple' (0 puntos) o 'No Aplica' (mantiene puntaje si se justifica). El sistema calcula automáticamente el porcentaje total." },
+      { pregunta: "Cuántos estándares me aplican", respuesta: "Hola [Nombre]. Depende del tamaño y riesgo de su empresa: Microempresa (hasta 10 trabajadores, Riesgo I-III) = 7 estándares. Pequeña empresa (11-50, Riesgo I-III) = 21 estándares. Mediana/Grande (más de 50 o Riesgo IV-V) = 61 estándares. El sistema lo calcula automáticamente al crear la evaluación." },
+      { pregunta: "No encuentro un estándar específico", respuesta: "Hola [Nombre]. Dentro de su evaluación SST, los estándares están agrupados por 7 componentes (Recursos, Gestión Integral, Gestión de Salud, etc.). Desplácese por la lista o use el componente correspondiente para encontrar el estándar. El número del estándar (ej: 1.1.1) le ayuda a ubicarlo rápidamente." },
+      { pregunta: "Cómo generar el PDF del Ministerio", respuesta: "Hola [Nombre]. Abra su evaluación SST en Verificar > Evaluaciones SST y busque el botón 'PDF Ministerio del Trabajo'. Se generará un informe completo con secciones A-I incluyendo el Hilo Dorado de trazabilidad que conecta estándares, acciones de mejora y actividades del plan de trabajo." },
+      { pregunta: "Cómo crear una acción de mejora desde un estándar", respuesta: "Hola [Nombre]. Dentro de la evaluación SST, al calificar un estándar como 'No Cumple', el sistema le permite crear directamente una acción de mejora vinculada. Así queda la trazabilidad completa entre el estándar incumplido y la acción correctiva." },
+    ],
+  },
+  {
     modulo: "Trabajadores",
     ruta: "Hacer > Trabajadores",
-    descripcion: "Registro y gestión de empleados, datos personales, cargo, área, tipo de contrato.",
+    descripcion: "Registro y gestión de empleados. Los datos de trabajadores sirven como evidencia para varios estándares SST (ej: 1.1.4 afiliaciones, 3.1.1 exámenes médicos). El cumplimiento de estos estándares se califica en la Evaluación SST.",
     preguntasFrecuentes: [
-      { pregunta: "No puede registrar un trabajador", respuesta: "Vaya a Hacer > Trabajadores > botón 'Nuevo Trabajador'. Complete todos los campos obligatorios (marcados con *): Nombre completo, Tipo y Número de documento, Cargo y Área. Si aparece un error de límite, verifique su plan en Configuración > Mi Suscripción." },
-      { pregunta: "Quiere importar trabajadores masivamente", respuesta: "En Hacer > Trabajadores, busque el botón 'Importar Excel'. Descargue primero la plantilla Excel de ejemplo, llénela con los datos de sus trabajadores y súbala. El sistema acepta variaciones en los nombres de campos (con/sin tildes, mayúsculas/minúsculas)." },
-      { pregunta: "No encuentra un trabajador registrado", respuesta: "En Hacer > Trabajadores, use la barra de búsqueda para buscar por nombre o número de documento. Verifique que no haya filtros activos que oculten registros." },
+      { pregunta: "No puede registrar un trabajador", respuesta: "Hola [Nombre]. Vaya a Hacer > Trabajadores > botón 'Nuevo Trabajador'. Complete todos los campos obligatorios (marcados con *): Nombre completo, Tipo y Número de documento, Cargo y Área. Si aparece un error de límite, verifique su plan en Configuración > Mi Suscripción." },
+      { pregunta: "Quiere importar trabajadores masivamente", respuesta: "Hola [Nombre]. En Hacer > Trabajadores, busque el botón 'Importar Excel'. Descargue primero la plantilla Excel de ejemplo, llénela con los datos de sus trabajadores y súbala. El sistema acepta variaciones en los nombres de campos (con/sin tildes, mayúsculas/minúsculas)." },
+      { pregunta: "No encuentra un trabajador registrado", respuesta: "Hola [Nombre]. En Hacer > Trabajadores, use la barra de búsqueda para buscar por nombre o número de documento. Verifique que no haya filtros activos que oculten registros." },
     ],
   },
   {
     modulo: "Capacitaciones",
     ruta: "Hacer > Capacitaciones",
-    descripcion: "Programación y registro de capacitaciones SST, control de asistencia.",
+    descripcion: "Registro de capacitaciones SST. Este módulo genera la evidencia para los estándares 1.2.1 (programa de capacitación), 1.2.2 (inducción/reinducción) y 1.2.3 (curso 50 horas). El cumplimiento se califica desde la Evaluación SST.",
     preguntasFrecuentes: [
-      { pregunta: "Cómo registrar una capacitación", respuesta: "Vaya a Hacer > Capacitaciones > 'Nueva Capacitación'. Complete: Tema, Fecha, Duración, Instructor y seleccione los asistentes de la lista de trabajadores. Puede adjuntar evidencia fotográfica." },
-      { pregunta: "Cómo registrar asistencia", respuesta: "Abra la capacitación y en la sección de Asistentes, marque la casilla de cada trabajador que asistió. Puede agregar más asistentes con el botón 'Agregar Asistente'." },
-      { pregunta: "Qué capacitaciones son obligatorias", respuesta: "Según la Resolución 0312/2019, son obligatorias: Inducción y reinducción en SST (std-1.2.2), Programa de capacitación anual (std-1.2.1), y el Curso virtual de 50 horas (std-1.2.3). El sistema las muestra en la evaluación de estándares." },
-    ],
-  },
-  {
-    modulo: "Evaluación de Estándares SST",
-    ruta: "Verificar > Evaluaciones SST",
-    descripcion: "Evaluación de cumplimiento según Resolución 0312/2019. Califica los estándares aplicables según el tamaño de la empresa.",
-    preguntasFrecuentes: [
-      { pregunta: "Cuántos estándares me aplican", respuesta: "Depende del tamaño de su empresa: Microempresa (≤10 trabajadores, Riesgo I-III) = 7 estándares. Pequeña empresa (11-50, Riesgo I-III) = 21 estándares. Mediana/Grande (>50 o Riesgo IV-V) = 61 estándares. El sistema lo calcula automáticamente según sus datos." },
-      { pregunta: "Cómo calificar un estándar", respuesta: "En la evaluación, cada estándar tiene opciones: 'Cumple', 'No Cumple' o 'No Aplica'. Marque la opción correspondiente. El sistema calcula automáticamente el puntaje por componente y el total." },
-      { pregunta: "Cómo generar el PDF del Ministerio", respuesta: "Abra la evaluación SST y busque el botón 'PDF Ministerio del Trabajo'. Se generará un informe completo con secciones A-I incluyendo el Hilo Dorado de trazabilidad." },
+      { pregunta: "Cómo registrar una capacitación", respuesta: "Hola [Nombre]. Vaya a Hacer > Capacitaciones > 'Nueva Capacitación'. Complete: Tema, Fecha, Duración, Instructor y seleccione los asistentes de la lista de trabajadores. Puede adjuntar evidencia fotográfica. Recuerde que el cumplimiento de los estándares de capacitación (1.2.1, 1.2.2, 1.2.3) se califica en la Evaluación SST." },
+      { pregunta: "Cómo registrar asistencia", respuesta: "Hola [Nombre]. Abra la capacitación y en la sección de Asistentes, marque la casilla de cada trabajador que asistió. Puede agregar más asistentes con el botón 'Agregar Asistente'." },
+      { pregunta: "Qué capacitaciones son obligatorias", respuesta: "Hola [Nombre]. Según la Resolución 0312/2019 son obligatorias: Programa de capacitación anual (estándar 1.2.1), Inducción y reinducción en SST (estándar 1.2.2), y Curso virtual de 50 horas (estándar 1.2.3). Registre las capacitaciones en este módulo y luego califique estos estándares en su Evaluación SST (Verificar > Evaluaciones SST)." },
     ],
   },
   {
     modulo: "Inspecciones de Seguridad",
     ruta: "Hacer > Inspecciones",
-    descripcion: "Registro de inspecciones de seguridad en el lugar de trabajo.",
+    descripcion: "Registro de inspecciones de seguridad. Genera evidencia para estándares como 4.2.5 (inspecciones sistemáticas). El cumplimiento se califica en la Evaluación SST.",
     preguntasFrecuentes: [
-      { pregunta: "Cómo crear una inspección", respuesta: "Vaya a Hacer > Inspecciones > 'Nueva Inspección'. Seleccione el tipo de inspección, la fecha, el área inspeccionada y el inspector. Complete los hallazgos encontrados con su nivel de riesgo." },
-      { pregunta: "Qué tipos de inspección hay", respuesta: "El sistema soporta: Inspección general de seguridad, Inspección de EPP, Inspección de orden y aseo, Inspección de extintores, e Inspección de botiquines. Cada una tiene su formato específico." },
+      { pregunta: "Cómo crear una inspección", respuesta: "Hola [Nombre]. Vaya a Hacer > Inspecciones > 'Nueva Inspección'. Seleccione el tipo, fecha, área inspeccionada y el inspector. Complete los hallazgos con su nivel de riesgo. Esta información sirve como evidencia del estándar 4.2.5 que se califica en la Evaluación SST." },
+      { pregunta: "Qué tipos de inspección hay", respuesta: "Hola [Nombre]. El sistema soporta: Inspección general de seguridad, Inspección de EPP, Inspección de orden y aseo, Inspección de extintores, e Inspección de botiquines. Cada una tiene su formato específico." },
     ],
   },
   {
     modulo: "Accidentes e Incidentes",
     ruta: "Hacer > Accidentes",
-    descripcion: "Registro y gestión de accidentes de trabajo, incidentes y enfermedades laborales.",
+    descripcion: "Registro de accidentes de trabajo, incidentes y enfermedades laborales. Genera evidencia para estándares 3.2.1 (reporte), 3.2.2 (investigación) y 3.2.3 (registro estadístico). El cumplimiento se califica en la Evaluación SST.",
     preguntasFrecuentes: [
-      { pregunta: "Cómo registrar un accidente", respuesta: "Vaya a Hacer > Accidentes > 'Nuevo Registro'. Seleccione el tipo (Accidente de Trabajo, Incidente, Enfermedad Laboral), la fecha, el trabajador afectado, la descripción detallada y las medidas tomadas." },
-      { pregunta: "Cómo hacer la investigación del accidente", respuesta: "Abra el accidente registrado y busque la sección de Investigación. Agregue participantes de la investigación, registre los hallazgos, las causas raíz y las acciones correctivas." },
+      { pregunta: "Cómo registrar un accidente", respuesta: "Hola [Nombre]. Vaya a Hacer > Accidentes > 'Nuevo Registro'. Seleccione el tipo (Accidente de Trabajo, Incidente, Enfermedad Laboral), la fecha, el trabajador afectado, la descripción detallada y las medidas tomadas. Esto genera evidencia para los estándares 3.2.1 a 3.2.3 de su Evaluación SST." },
+      { pregunta: "Cómo hacer la investigación del accidente", respuesta: "Hola [Nombre]. Abra el accidente registrado y busque la sección de Investigación. Agregue participantes de la investigación, registre los hallazgos, las causas raíz y las acciones correctivas." },
     ],
   },
   {
     modulo: "Exámenes Médicos",
     ruta: "Hacer > Exámenes Médicos",
-    descripcion: "Control de exámenes médicos ocupacionales (ingreso, periódicos, egreso).",
+    descripcion: "Control de exámenes médicos ocupacionales. Genera evidencia para estándares 3.1.1 a 3.1.3. El cumplimiento se califica en la Evaluación SST.",
     preguntasFrecuentes: [
-      { pregunta: "Cómo registrar un examen médico", respuesta: "Vaya a Hacer > Exámenes Médicos > 'Nuevo Examen'. Seleccione el trabajador, el tipo de examen (Ingreso, Periódico, Egreso, Post-incapacidad), la fecha, el concepto médico y puede adjuntar el certificado." },
-      { pregunta: "Cómo ver exámenes próximos a vencer", respuesta: "El sistema envía alertas automáticas cuando los exámenes periódicos están próximos a vencer. También puede ver el listado completo en Hacer > Exámenes Médicos y ordenar por fecha de vencimiento." },
+      { pregunta: "Cómo registrar un examen médico", respuesta: "Hola [Nombre]. Vaya a Hacer > Exámenes Médicos > 'Nuevo Examen'. Seleccione el trabajador, el tipo de examen (Ingreso, Periódico, Egreso, Post-incapacidad), la fecha, el concepto médico y puede adjuntar el certificado. Esta información sirve como evidencia para los estándares de salud que se califican en la Evaluación SST." },
+      { pregunta: "Cómo ver exámenes próximos a vencer", respuesta: "Hola [Nombre]. El sistema envía alertas automáticas cuando los exámenes periódicos están próximos a vencer. También puede ver el listado completo en Hacer > Exámenes Médicos y ordenar por fecha de vencimiento." },
     ],
   },
   {
     modulo: "Entrega de EPP",
     ruta: "Hacer > Entrega EPP",
-    descripcion: "Registro de entrega de Elementos de Protección Personal.",
+    descripcion: "Registro de entrega de Elementos de Protección Personal. Genera evidencia para estándar 4.2.4. El cumplimiento se califica en la Evaluación SST.",
     preguntasFrecuentes: [
-      { pregunta: "Cómo registrar entrega de EPP", respuesta: "Vaya a Hacer > Entrega EPP > 'Nueva Entrega'. Seleccione el trabajador, los elementos entregados del catálogo (77 elementos disponibles), cantidad, fecha de entrega y fecha de reposición estimada." },
+      { pregunta: "Cómo registrar entrega de EPP", respuesta: "Hola [Nombre]. Vaya a Hacer > Entrega EPP > 'Nueva Entrega'. Seleccione el trabajador, los elementos entregados del catálogo (77 elementos disponibles), cantidad, fecha de entrega y fecha de reposición estimada. Esta información sirve como evidencia del estándar 4.2.4 que se califica en la Evaluación SST." },
     ],
   },
   {
     modulo: "Plan de Trabajo Anual",
     ruta: "Planear > Plan de Trabajo Anual",
-    descripcion: "Cronograma anual de actividades SST con seguimiento mensual.",
+    descripcion: "Cronograma anual de actividades SST. Genera evidencia para estándar 2.4.1. Las actividades se pueden vincular a acciones del Plan de Mejora para trazabilidad automática.",
     preguntasFrecuentes: [
-      { pregunta: "Cómo crear el plan anual", respuesta: "Vaya a Planear > Plan de Trabajo Anual > 'Nuevo Plan'. Defina el año, y agregue actividades con su programa, responsable, mes programado y recursos necesarios. Las actividades se pueden vincular a acciones del Plan de Mejora." },
-      { pregunta: "Cómo marcar una actividad como completada", respuesta: "En el detalle del plan, cada actividad tiene un toggle para marcarla como completada. Al completarla, si está vinculada a una acción de mejora, el porcentaje de avance se recalcula automáticamente." },
+      { pregunta: "Cómo crear el plan anual", respuesta: "Hola [Nombre]. Vaya a Planear > Plan de Trabajo Anual > 'Nuevo Plan'. Defina el año y agregue actividades con su programa, responsable, mes programado y recursos necesarios. Las actividades se pueden vincular a acciones del Plan de Mejora para que el avance se calcule automáticamente." },
+      { pregunta: "Cómo marcar una actividad como completada", respuesta: "Hola [Nombre]. En el detalle del plan, cada actividad tiene un toggle para marcarla como completada. Al completarla, si está vinculada a una acción de mejora, el porcentaje de avance se recalcula automáticamente." },
     ],
   },
   {
     modulo: "Matriz IPERC",
     ruta: "Planear > Matriz IPERC",
-    descripcion: "Identificación de Peligros, Evaluación y Control de Riesgos (GTC 45).",
+    descripcion: "Identificación de Peligros, Evaluación y Control de Riesgos (GTC 45). Genera evidencia para estándares 4.1.1 a 4.1.4. El cumplimiento se califica en la Evaluación SST.",
     preguntasFrecuentes: [
-      { pregunta: "Cómo crear la matriz de riesgos", respuesta: "Vaya a Planear > Matriz IPERC. Agregue los procesos/actividades de su empresa, identifique los peligros asociados, evalúe el nivel de riesgo y defina los controles (eliminación, sustitución, ingeniería, administrativos, EPP)." },
+      { pregunta: "Cómo crear la matriz de riesgos", respuesta: "Hola [Nombre]. Vaya a Planear > Matriz IPERC. Agregue los procesos/actividades de su empresa, identifique los peligros asociados, evalúe el nivel de riesgo y defina los controles (eliminación, sustitución, ingeniería, administrativos, EPP). Esta información sirve como evidencia para los estándares 4.1.1 a 4.1.4 de la Evaluación SST." },
     ],
   },
   {
     modulo: "Indicadores de Accidentalidad",
     ruta: "Verificar > Indicadores",
-    descripcion: "Indicadores obligatorios: Frecuencia, Severidad, Mortalidad, Prevalencia, Incidencia, Ausentismo.",
+    descripcion: "Indicadores obligatorios: Frecuencia, Severidad, Mortalidad, Prevalencia, Incidencia, Ausentismo. Genera evidencia para estándares 3.3.1 a 3.3.6.",
     preguntasFrecuentes: [
-      { pregunta: "Cómo se calculan los indicadores", respuesta: "Los indicadores se calculan automáticamente basados en los accidentes y enfermedades registrados. El sistema usa las fórmulas establecidas por la normativa colombiana. Vaya a Verificar > Indicadores para ver los valores actualizados." },
+      { pregunta: "Cómo se calculan los indicadores", respuesta: "Hola [Nombre]. Los indicadores se calculan automáticamente basados en los accidentes y enfermedades registrados en Hacer > Accidentes. El sistema usa las fórmulas de la normativa colombiana. Vaya a Verificar > Indicadores para ver los valores. Estos datos sirven como evidencia para los estándares 3.3.1 a 3.3.6 de su Evaluación SST." },
     ],
   },
   {
     modulo: "Objetivos SST",
     ruta: "Planear > Objetivos SST",
-    descripcion: "Definición y seguimiento de objetivos del SG-SST con vinculación a estándares.",
+    descripcion: "Definición y seguimiento de objetivos del SG-SST. Se pueden vincular con estándares de la Resolución 0312 para trazabilidad formal.",
     preguntasFrecuentes: [
-      { pregunta: "Cómo vincular objetivos con estándares", respuesta: "Al crear o editar un objetivo SST, encontrará una sección para vincular con estándares de la Resolución 0312. Esto permite trazar el cumplimiento de cada objetivo con los requisitos normativos." },
+      { pregunta: "Cómo vincular objetivos con estándares", respuesta: "Hola [Nombre]. Al crear o editar un objetivo SST, encontrará una sección para vincular con estándares de la Resolución 0312. Esto permite trazar el cumplimiento de cada objetivo con los requisitos normativos que se califican en la Evaluación SST." },
     ],
   },
   {
     modulo: "Matriz Legal",
     ruta: "Planear > Matriz Legal",
-    descripcion: "Gestión de requisitos legales aplicables y su cumplimiento.",
+    descripcion: "Gestión de requisitos legales aplicables. Genera evidencia para estándar 2.7.1.",
     preguntasFrecuentes: [
-      { pregunta: "Cómo agregar un requisito legal", respuesta: "Vaya a Planear > Matriz Legal > 'Nuevo Requisito'. Complete la norma, artículo, tema, obligación, responsable de cumplimiento y estado de cumplimiento. El sistema permite hacer seguimiento periódico." },
+      { pregunta: "Cómo agregar un requisito legal", respuesta: "Hola [Nombre]. Vaya a Planear > Matriz Legal > 'Nuevo Requisito'. Complete la norma, artículo, tema, obligación, responsable de cumplimiento y estado. El sistema permite hacer seguimiento periódico. El cumplimiento del estándar 2.7.1 se califica en la Evaluación SST." },
     ],
   },
   {
     modulo: "Plan de Emergencias",
     ruta: "Hacer > Plan de Emergencias",
-    descripcion: "Plan de prevención, preparación y respuesta ante emergencias.",
+    descripcion: "Plan de prevención, preparación y respuesta ante emergencias. Genera evidencia para estándares 5.1.1 a 5.1.3.",
     preguntasFrecuentes: [
-      { pregunta: "Qué incluye el plan de emergencias", respuesta: "El módulo permite registrar: análisis de amenazas y vulnerabilidad, conformación de brigadas, procedimientos de evacuación, directorio de emergencias y registro de simulacros." },
+      { pregunta: "Qué incluye el plan de emergencias", respuesta: "Hola [Nombre]. El módulo permite registrar: análisis de amenazas y vulnerabilidad, conformación de brigadas, procedimientos de evacuación, directorio de emergencias y registro de simulacros. Esta información sirve como evidencia para los estándares 5.1.1 a 5.1.3 que se califican en la Evaluación SST." },
     ],
   },
   {
     modulo: "Auditorías Internas",
     ruta: "Verificar > Auditorías Internas",
-    descripcion: "Auditorías internas del SG-SST con formularios inteligentes.",
+    descripcion: "Auditorías internas del SG-SST. Genera evidencia para estándares 6.1.2 y 6.1.4.",
     preguntasFrecuentes: [
-      { pregunta: "Cómo crear una auditoría", respuesta: "Vaya a Verificar > Auditorías Internas > 'Nueva Auditoría'. El sistema tiene formularios inteligentes que pre-cargan criterios basados en los estándares aplicables a su empresa." },
+      { pregunta: "Cómo crear una auditoría", respuesta: "Hola [Nombre]. Vaya a Verificar > Auditorías Internas > 'Nueva Auditoría'. El sistema tiene formularios inteligentes que pre-cargan criterios basados en los estándares aplicables. Los resultados sirven como evidencia para los estándares 6.1.2 y 6.1.4 de su Evaluación SST." },
     ],
   },
   {
     modulo: "Revisión por la Dirección",
     ruta: "Actuar > Revisión por la Dirección",
-    descripcion: "Revisión anual del SG-SST por la alta dirección.",
+    descripcion: "Revisión anual del SG-SST por la alta dirección. Genera evidencia para estándar 6.1.3.",
     preguntasFrecuentes: [
-      { pregunta: "Qué debe incluir la revisión", respuesta: "La revisión por la dirección debe incluir: resultados de auditorías, indicadores, estado de acciones correctivas, cambios relevantes, y conclusiones con compromisos. El sistema genera el formato automáticamente." },
+      { pregunta: "Qué debe incluir la revisión", respuesta: "Hola [Nombre]. La revisión por la dirección debe incluir: resultados de auditorías, indicadores, estado de acciones correctivas, cambios relevantes, y conclusiones con compromisos. El sistema genera el formato automáticamente. Esto es evidencia del estándar 6.1.3 que se califica en la Evaluación SST." },
     ],
   },
   {
     modulo: "Plan de Mejoramiento",
     ruta: "Actuar > Mejora Continua",
-    descripcion: "Acciones preventivas, correctivas y de mejora del SG-SST.",
+    descripcion: "Acciones preventivas, correctivas y de mejora. Genera evidencia para estándares 7.1.1 a 7.1.4. Las acciones se pueden vincular a actividades del Plan de Trabajo para trazabilidad automática.",
     preguntasFrecuentes: [
-      { pregunta: "Cómo crear una acción de mejora", respuesta: "Vaya a Actuar > Mejora Continua > 'Nueva Acción'. Defina el tipo (Preventiva, Correctiva, Mejora), la descripción, el responsable, la fecha límite y el componente SST relacionado. Las actividades del Plan de Trabajo pueden vincularse para seguimiento automático del avance." },
+      { pregunta: "Cómo crear una acción de mejora", respuesta: "Hola [Nombre]. Vaya a Actuar > Mejora Continua > 'Nueva Acción'. Defina el tipo (Preventiva, Correctiva, Mejora), la descripción, el responsable, la fecha límite y el componente SST. Las actividades del Plan de Trabajo pueden vincularse para seguimiento automático del avance. También puede crear acciones directamente desde la Evaluación SST al calificar un estándar como 'No Cumple'." },
     ],
   },
   {
     modulo: "COPASST / Vigía",
     ruta: "Hacer > COPASST",
-    descripcion: "Comité Paritario o Vigía de Seguridad y Salud en el Trabajo.",
+    descripcion: "Comité Paritario o Vigía de Seguridad y Salud en el Trabajo. Genera evidencia para estándares 1.1.6 y 1.1.7.",
     preguntasFrecuentes: [
-      { pregunta: "Diferencia entre COPASST y Vigía", respuesta: "Empresas con menos de 10 trabajadores designan un Vigía de SST. Empresas con 10 o más trabajadores deben conformar el COPASST con representantes del empleador y los trabajadores. El sistema se adapta según el número de trabajadores registrados." },
+      { pregunta: "Diferencia entre COPASST y Vigía", respuesta: "Hola [Nombre]. Empresas con menos de 10 trabajadores designan un Vigía de SST. Empresas con 10 o más conforman el COPASST con representantes del empleador y los trabajadores. El sistema se adapta automáticamente. El cumplimiento de los estándares 1.1.6 y 1.1.7 se califica en la Evaluación SST." },
     ],
   },
   {
     modulo: "Gestión del Cambio",
     ruta: "Planear > Gestión del Cambio",
-    descripcion: "Registro y evaluación de cambios que puedan afectar la SST.",
+    descripcion: "Registro y evaluación de cambios que afectan la SST. Genera evidencia para estándar 2.11.1.",
     preguntasFrecuentes: [
-      { pregunta: "Cuándo registrar un cambio", respuesta: "Registre cambios cuando haya: nuevos procesos, nuevos equipos, cambios en instalaciones, cambios en personal clave, cambios en materiales/sustancias, o cambios normativos que afecten la SST de la empresa." },
+      { pregunta: "Cuándo registrar un cambio", respuesta: "Hola [Nombre]. Registre cambios cuando haya: nuevos procesos, nuevos equipos, cambios en instalaciones, cambios en personal clave, cambios en materiales/sustancias, o cambios normativos que afecten la SST. Esto genera evidencia para el estándar 2.11.1 que se califica en la Evaluación SST." },
     ],
   },
   {
     modulo: "Comunicación SST",
     ruta: "Planear > Comunicación SST",
-    descripcion: "Gestión de comunicaciones internas y externas sobre SST.",
+    descripcion: "Gestión de comunicaciones internas y externas sobre SST. Genera evidencia para estándar 2.8.1.",
     preguntasFrecuentes: [
-      { pregunta: "Qué comunicaciones debo registrar", respuesta: "Registre todas las comunicaciones relevantes de SST: políticas, cambios normativos, alertas de seguridad, resultados de investigaciones, convocatorias a capacitaciones. Esto cumple con el estándar 2.8.1 de la Resolución 0312." },
+      { pregunta: "Qué comunicaciones debo registrar", respuesta: "Hola [Nombre]. Registre todas las comunicaciones relevantes de SST: políticas, cambios normativos, alertas de seguridad, resultados de investigaciones, convocatorias a capacitaciones. Esto genera evidencia del estándar 2.8.1 que se califica en la Evaluación SST." },
     ],
   },
   {
@@ -237,52 +239,52 @@ const MODULOS_SST = [
     ruta: "Configuración > Mi Suscripción",
     descripcion: "Gestión de plan, facturación y configuración de la empresa.",
     preguntasFrecuentes: [
-      { pregunta: "Cómo cambiar de plan", respuesta: "Vaya a Configuración > Mi Suscripción. Allí verá su plan actual y las opciones disponibles. Al cambiar datos como número de trabajadores o vehículos, el precio se recalcula automáticamente." },
-      { pregunta: "Cómo ver facturas", respuesta: "En Configuración > Mi Suscripción > Dashboard de Facturación encontrará el historial completo de facturas, próxima fecha de cobro y método de pago." },
-      { pregunta: "Cómo agregar usuarios", respuesta: "Vaya a Configuración > Usuarios > 'Nuevo Usuario'. Cada rol administrativo incluye un usuario sin costo adicional. Los roles disponibles son: Admin, Coordinador SST, Supervisor, y otros según su plan." },
+      { pregunta: "Cómo cambiar de plan", respuesta: "Hola [Nombre]. Vaya a Configuración > Mi Suscripción. Allí verá su plan actual y las opciones disponibles. Al cambiar datos como número de trabajadores o vehículos, el precio se recalcula automáticamente." },
+      { pregunta: "Cómo ver facturas", respuesta: "Hola [Nombre]. En Configuración > Mi Suscripción > Dashboard de Facturación encontrará el historial completo de facturas, próxima fecha de cobro y método de pago." },
+      { pregunta: "Cómo agregar usuarios", respuesta: "Hola [Nombre]. Vaya a Configuración > Usuarios > 'Nuevo Usuario'. Cada rol administrativo incluye un usuario sin costo adicional. Los roles disponibles son: Admin, Coordinador SST, Supervisor, y otros según su plan." },
     ],
   },
 ];
 
 const PASOS_PESV = [
-  { codigo: "P01", nombre: "Equipo de Trabajo", descripcion: "Conformación del comité de seguridad vial. En el sistema: PESV > Comité.", respuesta: "Para conformar el comité PESV, vaya a PESV > Comité > 'Nuevo Integrante'. Agregue los miembros del comité de seguridad vial con su rol, cargo y datos de contacto." },
-  { codigo: "P02", nombre: "Liderazgo y Compromiso", descripcion: "Política de seguridad vial y compromiso de la dirección. En el sistema: PESV > Liderazgo.", respuesta: "Para registrar la política de seguridad vial, vaya a PESV > Liderazgo. Allí puede documentar la política, los compromisos de la dirección y la asignación de recursos para el PESV." },
-  { codigo: "P03", nombre: "Diagnóstico / Contexto", descripcion: "Análisis del contexto organizacional en seguridad vial. En el sistema: PESV > Contexto Organizacional.", respuesta: "Para realizar el diagnóstico PESV, vaya a PESV > Contexto Organizacional. Complete la información sobre la empresa, sus operaciones vehiculares, rutas principales y exposición al riesgo vial." },
-  { codigo: "P04", nombre: "Evaluación de Riesgos Viales", descripcion: "Identificación y evaluación de riesgos viales. En el sistema: PESV > Matriz de Riesgos.", respuesta: "Para la matriz de riesgos viales, vaya a PESV > Matriz de Riesgos. Identifique los peligros viales (factor humano, vehículo, infraestructura, condiciones ambientales) y evalúe el nivel de riesgo." },
-  { codigo: "P05", nombre: "Objetivos e Indicadores", descripcion: "Definición de metas medibles en seguridad vial. En el sistema: PESV > Indicadores.", respuesta: "Para definir objetivos e indicadores PESV, vaya a PESV > Indicadores. Establezca metas medibles de reducción de siniestralidad, frecuencia de inspecciones y cumplimiento de capacitaciones viales." },
-  { codigo: "P06", nombre: "Programas y Planes", descripcion: "Factores de desempeño del PESV. En el sistema: PESV > Factores de Desempeño.", respuesta: "Para los programas y factores de desempeño, vaya a PESV > Factores de Desempeño. Configure los programas de gestión de velocidad, uso de elementos de seguridad, mantenimiento preventivo y otros." },
-  { codigo: "P07", nombre: "Roles y Responsabilidades", descripcion: "Asignación de funciones en seguridad vial. En el sistema: PESV > Liderazgo.", respuesta: "Los roles y responsabilidades se gestionan en PESV > Liderazgo, junto con el compromiso directivo. Defina quién es responsable de cada aspecto del plan de seguridad vial." },
-  { codigo: "P08", nombre: "Recursos", descripcion: "Asignación de presupuesto y recursos. En el sistema: PESV > Liderazgo.", respuesta: "La asignación de recursos se documenta en PESV > Liderazgo. Registre el presupuesto, equipos y personal asignado para la implementación del PESV." },
-  { codigo: "H01", nombre: "Factor Humano - Conductores", descripcion: "Gestión de conductores y requisitos. En el sistema: PESV > Conductores.", respuesta: "Para gestionar conductores, vaya a PESV > Conductores. Registre los datos del conductor, categoría de licencia, fecha de vencimiento, exámenes médicos y evaluaciones de conducción." },
-  { codigo: "H02", nombre: "Capacitación Vial", descripcion: "Plan de formación en seguridad vial. En el sistema: PESV > Capacitaciones.", respuesta: "Para registrar capacitaciones viales, vaya a PESV > Capacitaciones. Cree eventos de capacitación específicos de seguridad vial (manejo defensivo, normativa de tránsito, primeros auxilios viales) y registre asistencia." },
-  { codigo: "H03", nombre: "Documentación de Conductores", descripcion: "Control documental de licencias y certificaciones. En el sistema: PESV > Conductores.", respuesta: "La documentación de conductores se gestiona en PESV > Conductores. Para cada conductor puede registrar y hacer seguimiento de licencia, certificaciones, exámenes y sanciones." },
-  { codigo: "H04", nombre: "Vehículos Seguros", descripcion: "Gestión de la flota vehicular. En el sistema: PESV > Vehículos.", respuesta: "Para gestionar la flota, vaya a PESV > Vehículos. Registre cada vehículo con: placa, marca, modelo, año, tipo, SOAT, revisión tecnomecánica y estado general." },
-  { codigo: "H05", nombre: "Mantenimiento Preventivo", descripcion: "Plan de mantenimiento de vehículos. En el sistema: PESV > Vehículos > Mantenimiento.", respuesta: "Para registrar mantenimientos, vaya a PESV > Vehículos, seleccione un vehículo y registre los mantenimientos preventivos y correctivos realizados con fecha, tipo, repuestos y observaciones." },
-  { codigo: "H06", nombre: "Inspecciones Preoperacionales", descripcion: "Chequeos diarios antes de operar vehículos. En el sistema: PESV > Inspecciones.", respuesta: "Para las inspecciones preoperacionales, vaya a PESV > Inspecciones > 'Nueva Inspección'. Seleccione el vehículo, el conductor, y complete la lista de verificación (frenos, luces, llantas, documentos, etc.)." },
-  { codigo: "H07", nombre: "Gestión de Velocidad", descripcion: "Monitoreo y control de velocidad. En el sistema: PESV > Monitoreo GPS.", respuesta: "El monitoreo de velocidad se encuentra en PESV > Monitoreo GPS. Si su empresa cuenta con dispositivos GPS, puede integrar los datos para seguimiento de velocidad y alertas." },
-  { codigo: "H08", nombre: "Rutas Seguras", descripcion: "Análisis de rutas y planificación de recorridos. En el sistema: PESV > Rutas Seguras.", respuesta: "Para gestionar rutas, vaya a PESV > Rutas Seguras. Registre las rutas principales de la empresa con: origen, destino, distancia, tiempo estimado, puntos críticos y medidas de control." },
-  { codigo: "H09", nombre: "Fatiga y Somnolencia", descripcion: "Control de fatiga en conductores. En el sistema: evaluación del paso en PESV.", respuesta: "El control de fatiga se documenta en la evaluación PESV paso H09. Registre las medidas implementadas: control de jornadas, pausas activas, programas de descanso y monitoreo de signos de fatiga." },
-  { codigo: "H10", nombre: "Sustancias Psicoactivas", descripcion: "Política de alcohol y drogas. En el sistema: evaluación del paso en PESV.", respuesta: "La política de alcohol y drogas se documenta en la evaluación PESV paso H10. Registre: política escrita, pruebas realizadas, programas de prevención y procedimientos ante casos positivos." },
-  { codigo: "H11", nombre: "Atención a Víctimas", descripcion: "Protocolo de atención a víctimas de siniestros. En el sistema: evaluación del paso en PESV.", respuesta: "El protocolo de atención se documenta en la evaluación PESV paso H11. Incluya: protocolo de primeros auxilios, directorio de emergencias viales, procedimiento de reporte y acompañamiento a víctimas." },
-  { codigo: "V01", nombre: "Indicadores de Gestión", descripcion: "Medición del desempeño del PESV. En el sistema: PESV > Indicadores.", respuesta: "Los indicadores de gestión PESV se consultan en PESV > Indicadores. El sistema calcula automáticamente indicadores como: tasa de siniestralidad, cumplimiento de inspecciones, cobertura de capacitaciones viales." },
-  { codigo: "V02", nombre: "Registro y Análisis de Siniestros", descripcion: "Reporte de accidentes viales. En el sistema: PESV > Siniestros.", respuesta: "Para registrar un siniestro vial, vaya a PESV > Siniestros > 'Nuevo Siniestro'. Complete: fecha, ubicación, tipo de siniestro, vehículo involucrado, conductor, daños, lesiones y causa probable." },
-  { codigo: "V03", nombre: "Auditorías PESV", descripcion: "Auditoría interna del PESV. En el sistema: PESV > Auditorías.", respuesta: "Para crear una auditoría PESV, vaya a PESV > Auditorías > 'Nueva Auditoría'. El sistema permite evaluar cada paso del PESV y registrar hallazgos, no conformidades y oportunidades de mejora." },
-  { codigo: "A01", nombre: "Mejora Continua PESV", descripcion: "Acciones de mejora del PESV. En el sistema: PESV > Mejora Continua.", respuesta: "Para registrar acciones de mejora PESV, vaya a PESV > Mejora Continua > 'Nueva Acción'. Defina el tipo (Preventiva, Correctiva, Mejora), la descripción, el responsable y la fecha límite." },
-  { codigo: "A02", nombre: "Revisión por la Dirección PESV", descripcion: "Revisión gerencial del PESV. En el sistema: PESV > Revisión por la Dirección.", respuesta: "Para la revisión por la dirección del PESV, vaya a PESV > Revisión por la Dirección > 'Nueva Revisión'. Complete el análisis de resultados, conclusiones y compromisos de la alta dirección." },
+  { codigo: "P01", nombre: "Equipo de Trabajo", descripcion: "Se gestiona desde la Evaluación PESV (archivo maestro). Haga clic en el paso P01 dentro de su evaluación activa.", respuesta: "Hola [Nombre]. Para gestionar el paso P01 (Equipo de Trabajo), vaya a PESV > Evaluaciones PESV y abra su evaluación activa. Busque la pestaña 'Planear' y haga clic en el paso P01. Se abrirá un diálogo donde puede calificar el cumplimiento. El sistema le mostrará los módulos relacionados (como Comité PESV) donde puede registrar la evidencia de soporte." },
+  { codigo: "P02", nombre: "Liderazgo y Compromiso", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso P02 dentro de la pestaña Planear.", respuesta: "Hola [Nombre]. Para gestionar el paso P02 (Liderazgo y Compromiso), abra su Evaluación PESV activa en PESV > Evaluaciones PESV, pestaña 'Planear', y haga clic en P02. Allí califica el cumplimiento. La evidencia de soporte (política de seguridad vial, compromisos de la dirección) se puede documentar en los módulos que el sistema sugiere dentro del mismo diálogo." },
+  { codigo: "P03", nombre: "Diagnóstico / Contexto", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso P03 dentro de la pestaña Planear.", respuesta: "Hola [Nombre]. Para el paso P03 (Diagnóstico/Contexto), abra su Evaluación PESV activa, pestaña 'Planear', y haga clic en P03. Complete la información sobre el contexto organizacional en seguridad vial. El sistema pre-llena datos sugeridos según el nivel de complejidad de su empresa." },
+  { codigo: "P04", nombre: "Evaluación de Riesgos Viales", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso P04 dentro de la pestaña Planear.", respuesta: "Hola [Nombre]. Para el paso P04 (Evaluación de Riesgos Viales), abra su Evaluación PESV activa, pestaña 'Planear', y haga clic en P04. El diálogo le permite calificar el cumplimiento y le sugiere los módulos donde registrar la evidencia (identificación de peligros viales por factor humano, vehículo, infraestructura y condiciones ambientales)." },
+  { codigo: "P05", nombre: "Objetivos e Indicadores", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso P05 dentro de la pestaña Planear.", respuesta: "Hola [Nombre]. Para el paso P05 (Objetivos e Indicadores), abra su Evaluación PESV activa, pestaña 'Planear', y haga clic en P05. El sistema le mostrará los módulos relacionados donde puede definir metas medibles de reducción de siniestralidad y cumplimiento de inspecciones." },
+  { codigo: "P06", nombre: "Programas y Planes", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso P06 dentro de la pestaña Planear.", respuesta: "Hola [Nombre]. Para el paso P06 (Programas y Planes), abra su Evaluación PESV activa, pestaña 'Planear', y haga clic en P06. Allí califica el cumplimiento y el sistema sugiere los módulos de factores de desempeño donde registrar la evidencia." },
+  { codigo: "P07", nombre: "Roles y Responsabilidades", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso P07 dentro de la pestaña Planear.", respuesta: "Hola [Nombre]. Para el paso P07 (Roles y Responsabilidades), abra su Evaluación PESV activa, pestaña 'Planear', y haga clic en P07. Defina quién es responsable de cada aspecto del plan de seguridad vial desde el diálogo de calificación." },
+  { codigo: "P08", nombre: "Recursos", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso P08 dentro de la pestaña Planear.", respuesta: "Hola [Nombre]. Para el paso P08 (Recursos), abra su Evaluación PESV activa, pestaña 'Planear', y haga clic en P08. Documente la asignación de presupuesto, equipos y personal para la implementación del PESV." },
+  { codigo: "H01", nombre: "Factor Humano - Conductores", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso H01 dentro de la pestaña Hacer.", respuesta: "Hola [Nombre]. Para el paso H01 (Factor Humano - Conductores), abra su Evaluación PESV activa, pestaña 'Hacer', y haga clic en H01. El sistema le sugiere el módulo de Conductores donde puede registrar la evidencia (datos del conductor, categoría de licencia, exámenes médicos)." },
+  { codigo: "H02", nombre: "Capacitación Vial", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso H02 dentro de la pestaña Hacer.", respuesta: "Hola [Nombre]. Para el paso H02 (Capacitación Vial), abra su Evaluación PESV activa, pestaña 'Hacer', y haga clic en H02. El sistema sugiere el módulo de Capacitaciones PESV donde puede registrar eventos de formación (manejo defensivo, normativa de tránsito, primeros auxilios viales) y asistencia." },
+  { codigo: "H03", nombre: "Documentación de Conductores", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso H03 dentro de la pestaña Hacer.", respuesta: "Hola [Nombre]. Para el paso H03 (Documentación de Conductores), abra su Evaluación PESV activa, pestaña 'Hacer', y haga clic en H03. El sistema sugiere el módulo de Conductores donde puede hacer seguimiento de licencias, certificaciones, exámenes y sanciones." },
+  { codigo: "H04", nombre: "Vehículos Seguros", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso H04 dentro de la pestaña Hacer.", respuesta: "Hola [Nombre]. Para el paso H04 (Vehículos Seguros), abra su Evaluación PESV activa, pestaña 'Hacer', y haga clic en H04. El sistema sugiere el módulo de Vehículos donde puede registrar la flota (placa, marca, modelo, SOAT, revisión tecnomecánica)." },
+  { codigo: "H05", nombre: "Mantenimiento Preventivo", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso H05 dentro de la pestaña Hacer.", respuesta: "Hola [Nombre]. Para el paso H05 (Mantenimiento Preventivo), abra su Evaluación PESV activa, pestaña 'Hacer', y haga clic en H05. El sistema sugiere el módulo de Vehículos > Mantenimiento donde registrar mantenimientos preventivos y correctivos." },
+  { codigo: "H06", nombre: "Inspecciones Preoperacionales", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso H06 dentro de la pestaña Hacer.", respuesta: "Hola [Nombre]. Para el paso H06 (Inspecciones Preoperacionales), abra su Evaluación PESV activa, pestaña 'Hacer', y haga clic en H06. El sistema sugiere el módulo de Inspecciones PESV donde completar la lista de verificación diaria (frenos, luces, llantas, documentos)." },
+  { codigo: "H07", nombre: "Gestión de Velocidad", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso H07 dentro de la pestaña Hacer.", respuesta: "Hola [Nombre]. Para el paso H07 (Gestión de Velocidad), abra su Evaluación PESV activa, pestaña 'Hacer', y haga clic en H07. Si su empresa tiene GPS, el sistema sugiere el módulo de Monitoreo GPS para seguimiento de velocidad y alertas." },
+  { codigo: "H08", nombre: "Rutas Seguras", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso H08 dentro de la pestaña Hacer.", respuesta: "Hola [Nombre]. Para el paso H08 (Rutas Seguras), abra su Evaluación PESV activa, pestaña 'Hacer', y haga clic en H08. El sistema sugiere el módulo de Rutas Seguras donde registrar rutas con origen, destino, distancia, puntos críticos y medidas de control." },
+  { codigo: "H09", nombre: "Fatiga y Somnolencia", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso H09 dentro de la pestaña Hacer.", respuesta: "Hola [Nombre]. Para el paso H09 (Fatiga y Somnolencia), abra su Evaluación PESV activa, pestaña 'Hacer', y haga clic en H09. Documente las medidas implementadas: control de jornadas, pausas activas, programas de descanso y monitoreo de signos de fatiga directamente en el diálogo de calificación." },
+  { codigo: "H10", nombre: "Sustancias Psicoactivas", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso H10 dentro de la pestaña Hacer.", respuesta: "Hola [Nombre]. Para el paso H10 (Sustancias Psicoactivas), abra su Evaluación PESV activa, pestaña 'Hacer', y haga clic en H10. Documente la política de alcohol y drogas, pruebas realizadas, programas de prevención y procedimientos ante casos positivos en el diálogo de calificación." },
+  { codigo: "H11", nombre: "Atención a Víctimas", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso H11 dentro de la pestaña Hacer.", respuesta: "Hola [Nombre]. Para el paso H11 (Atención a Víctimas), abra su Evaluación PESV activa, pestaña 'Hacer', y haga clic en H11. Documente el protocolo de primeros auxilios, directorio de emergencias viales, procedimiento de reporte y acompañamiento a víctimas en el diálogo de calificación." },
+  { codigo: "V01", nombre: "Indicadores de Gestión", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso V01 dentro de la pestaña Verificar.", respuesta: "Hola [Nombre]. Para el paso V01 (Indicadores de Gestión), abra su Evaluación PESV activa, pestaña 'Verificar', y haga clic en V01. El sistema le sugiere el módulo de Indicadores PESV donde se calculan automáticamente indicadores como tasa de siniestralidad y cobertura de capacitaciones." },
+  { codigo: "V02", nombre: "Registro y Análisis de Siniestros", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso V02 dentro de la pestaña Verificar.", respuesta: "Hola [Nombre]. Para el paso V02 (Registro y Análisis de Siniestros), abra su Evaluación PESV activa, pestaña 'Verificar', y haga clic en V02. El sistema sugiere el módulo de Siniestros donde registrar fecha, ubicación, vehículo involucrado, conductor, daños y causa probable." },
+  { codigo: "V03", nombre: "Auditorías PESV", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso V03 dentro de la pestaña Verificar.", respuesta: "Hola [Nombre]. Para el paso V03 (Auditorías PESV), abra su Evaluación PESV activa, pestaña 'Verificar', y haga clic en V03. El sistema sugiere el módulo de Auditorías PESV donde evaluar cada paso y registrar hallazgos y no conformidades." },
+  { codigo: "A01", nombre: "Mejora Continua PESV", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso A01 dentro de la pestaña Actuar.", respuesta: "Hola [Nombre]. Para el paso A01 (Mejora Continua PESV), abra su Evaluación PESV activa, pestaña 'Actuar', y haga clic en A01. El sistema sugiere el módulo de Mejora Continua PESV donde registrar acciones preventivas, correctivas y de mejora con responsable y fecha límite." },
+  { codigo: "A02", nombre: "Revisión por la Dirección PESV", descripcion: "Se gestiona desde la Evaluación PESV. Haga clic en el paso A02 dentro de la pestaña Actuar.", respuesta: "Hola [Nombre]. Para el paso A02 (Revisión por la Dirección PESV), abra su Evaluación PESV activa, pestaña 'Actuar', y haga clic en A02. El sistema sugiere el módulo de Revisión por la Dirección PESV donde completar el análisis de resultados, conclusiones y compromisos de la alta dirección." },
 ];
 
 const ESTANDARES_RESUMEN = [
-  { rango: "1.1.1 - 1.1.8", componente: "Recursos", descripcion: "Responsable SST, recursos, afiliaciones, alto riesgo, COPASST/Vigía, Comité Convivencia.", modulo: "Planear > Recursos / Hacer > COPASST" },
-  { rango: "1.2.1 - 1.2.3", componente: "Recursos (Capacitación)", descripcion: "Programa de capacitación anual, inducción/reinducción, Curso 50 horas.", modulo: "Hacer > Capacitaciones" },
-  { rango: "2.1.1 - 2.11.1", componente: "Gestión Integral", descripcion: "Política SST, objetivos, evaluación inicial, plan de trabajo, archivo documental, rendición de cuentas, matriz legal, comunicación, adquisiciones, proveedores, gestión del cambio.", modulo: "Planear (varios sub-módulos)" },
-  { rango: "3.1.1 - 3.1.9", componente: "Gestión de la Salud", descripcion: "Exámenes médicos, perfil sociodemográfico, estilos de vida, manejo químico, agua potable, residuos.", modulo: "Hacer > Exámenes Médicos / Vigilancia Epidemiológica" },
-  { rango: "3.2.1 - 3.2.3", componente: "Gestión de la Salud (Reporte)", descripcion: "Reporte de accidentes, investigación de incidentes, registro estadístico.", modulo: "Hacer > Accidentes" },
-  { rango: "3.3.1 - 3.3.6", componente: "Gestión de la Salud (Indicadores)", descripcion: "Frecuencia, severidad, mortalidad, prevalencia, incidencia, ausentismo.", modulo: "Verificar > Indicadores" },
-  { rango: "4.1.1 - 4.1.4", componente: "Peligros y Riesgos (Identificación)", descripcion: "Metodología IPERC, participación trabajadores, sustancias químicas, mediciones ambientales.", modulo: "Planear > Matriz IPERC / Sustancias Químicas" },
-  { rango: "4.2.1 - 4.2.6", componente: "Peligros y Riesgos (Control)", descripcion: "Jerarquía de controles, procedimientos, inspecciones, mantenimiento, EPP, vigilancia.", modulo: "Hacer > Inspecciones / Entrega EPP" },
-  { rango: "5.1.1 - 5.1.3", componente: "Gestión de Amenazas", descripcion: "Plan de emergencias, brigada, simulacros.", modulo: "Hacer > Plan de Emergencias" },
-  { rango: "6.1.1 - 6.1.4", componente: "Verificación", descripcion: "Indicadores de gestión, auditoría anual, revisión por dirección, auditoría con COPASST.", modulo: "Verificar > Auditorías / Actuar > Revisión" },
-  { rango: "7.1.1 - 7.1.4", componente: "Mejoramiento", descripcion: "Acciones preventivas/correctivas, plan de mejoramiento, acciones ARL/autoridades.", modulo: "Actuar > Mejora Continua" },
+  { rango: "1.1.1 - 1.1.8", componente: "Recursos", descripcion: "Responsable SST, recursos, afiliaciones, alto riesgo, COPASST/Vigía, Comité Convivencia.", modulo: "Evaluación SST > Componente Recursos. Evidencia de soporte en: Trabajadores, COPASST" },
+  { rango: "1.2.1 - 1.2.3", componente: "Recursos (Capacitación)", descripcion: "Programa de capacitación anual, inducción/reinducción, Curso 50 horas.", modulo: "Evaluación SST > Componente Recursos. Evidencia de soporte en: Capacitaciones" },
+  { rango: "2.1.1 - 2.11.1", componente: "Gestión Integral", descripcion: "Política SST, objetivos, evaluación inicial, plan de trabajo, archivo documental, rendición de cuentas, matriz legal, comunicación, adquisiciones, proveedores, gestión del cambio.", modulo: "Evaluación SST > Componente Gestión Integral. Evidencia de soporte en: Objetivos, Matriz Legal, Plan de Trabajo, Comunicación, Gestión del Cambio" },
+  { rango: "3.1.1 - 3.1.9", componente: "Gestión de la Salud", descripcion: "Exámenes médicos, perfil sociodemográfico, estilos de vida, manejo químico, agua potable, residuos.", modulo: "Evaluación SST > Componente Gestión de la Salud. Evidencia de soporte en: Exámenes Médicos" },
+  { rango: "3.2.1 - 3.2.3", componente: "Gestión de la Salud (Reporte)", descripcion: "Reporte de accidentes, investigación de incidentes, registro estadístico.", modulo: "Evaluación SST > Componente Gestión de la Salud. Evidencia de soporte en: Accidentes" },
+  { rango: "3.3.1 - 3.3.6", componente: "Gestión de la Salud (Indicadores)", descripcion: "Frecuencia, severidad, mortalidad, prevalencia, incidencia, ausentismo.", modulo: "Evaluación SST > Componente Gestión de la Salud. Evidencia de soporte en: Indicadores" },
+  { rango: "4.1.1 - 4.1.4", componente: "Peligros y Riesgos (Identificación)", descripcion: "Metodología IPERC, participación trabajadores, sustancias químicas, mediciones ambientales.", modulo: "Evaluación SST > Componente Peligros y Riesgos. Evidencia de soporte en: Matriz IPERC" },
+  { rango: "4.2.1 - 4.2.6", componente: "Peligros y Riesgos (Control)", descripcion: "Jerarquía de controles, procedimientos, inspecciones, mantenimiento, EPP, vigilancia.", modulo: "Evaluación SST > Componente Peligros y Riesgos. Evidencia de soporte en: Inspecciones, Entrega EPP" },
+  { rango: "5.1.1 - 5.1.3", componente: "Gestión de Amenazas", descripcion: "Plan de emergencias, brigada, simulacros.", modulo: "Evaluación SST > Componente Gestión de Amenazas. Evidencia de soporte en: Plan de Emergencias" },
+  { rango: "6.1.1 - 6.1.4", componente: "Verificación", descripcion: "Indicadores de gestión, auditoría anual, revisión por dirección, auditoría con COPASST.", modulo: "Evaluación SST > Componente Verificación. Evidencia de soporte en: Auditorías, Revisión por la Dirección" },
+  { rango: "7.1.1 - 7.1.4", componente: "Mejoramiento", descripcion: "Acciones preventivas/correctivas, plan de mejoramiento, acciones ARL/autoridades.", modulo: "Evaluación SST > Componente Mejoramiento. Evidencia de soporte en: Mejora Continua" },
 ];
 
 const DIAGNOSTICO_RAPIDO = [
@@ -509,7 +511,7 @@ export default function ManualSoporte() {
           defaultOpen={!!searchTerm}
         >
           <p className="text-sm text-muted-foreground mb-4">
-            Cada módulo incluye su ruta en el sistema y respuestas predefinidas para las preguntas más comunes. Copie y personalice antes de enviar.
+            El primer módulo es la Evaluación SST (archivo maestro) donde se califican TODOS los estándares. Los demás módulos son herramientas donde el cliente registra la evidencia de soporte. El flujo es: registrar datos en el módulo correspondiente y luego calificar el estándar en la Evaluación SST.
           </p>
           <div className="space-y-6">
             {filteredModulos.map((m, idx) => (
@@ -543,7 +545,7 @@ export default function ManualSoporte() {
           defaultOpen={!!searchTerm}
         >
           <p className="text-sm text-muted-foreground mb-4">
-            Los 61 estándares agrupados por componente. Use esta tabla para orientar al cliente sobre dónde gestionar cada estándar en el sistema.
+            Los 61 estándares agrupados por componente. TODOS se califican desde la Evaluación SST (archivo maestro en Verificar {'>'} Evaluaciones SST). Los módulos mencionados como "Evidencia de soporte" son donde el cliente registra la información que respalda cada estándar.
           </p>
           <div className="space-y-3">
             {ESTANDARES_RESUMEN.map((e, idx) => (
@@ -560,7 +562,7 @@ export default function ManualSoporte() {
           <Separator className="my-4" />
           <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md p-3">
             <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Plantilla genérica para consultas sobre estándares:</p>
-            <CopyableResponse text="Hola [Nombre]. El estándar [NÚMERO] corresponde al componente [COMPONENTE] de la Resolución 0312/2019. Para gestionarlo en el sistema, vaya a [MÓDULO]. Allí encontrará las opciones para registrar la evidencia de cumplimiento. Si necesita más detalle sobre los criterios de verificación, puede consultarlos directamente en la evaluación SST (Verificar > Evaluaciones SST) donde cada estándar muestra su descripción completa y las opciones de calificación." />
+            <CopyableResponse text="Hola [Nombre]. El estándar [NÚMERO] corresponde al componente [COMPONENTE] de la Resolución 0312/2019. Para calificarlo, vaya a Verificar > Evaluaciones SST, abra su evaluación activa, busque el estándar [NÚMERO] dentro del componente [COMPONENTE] y haga clic sobre él. Se abrirá un diálogo donde puede marcar Cumple, No Cumple o No Aplica. Si necesita registrar evidencia de soporte, el mismo diálogo le sugiere los módulos relacionados donde puede documentarla." />
           </div>
         </CollapsibleSection>
       )}
@@ -572,7 +574,7 @@ export default function ManualSoporte() {
           defaultOpen={!!searchTerm}
         >
           <p className="text-sm text-muted-foreground mb-4">
-            Los 24 pasos del Plan Estratégico de Seguridad Vial. Cada paso incluye su ubicación en el sistema y una respuesta predefinida para copiar.
+            Los 24 pasos del PESV se gestionan TODOS desde la Evaluación PESV (archivo maestro en PESV {'>'} Evaluaciones PESV). Al abrir la evaluación, el cliente navega por pestañas (Planear, Hacer, Verificar, Actuar) y hace clic en cada paso para calificarlo. El diálogo sugiere módulos relacionados para registrar evidencia.
           </p>
           <div className="space-y-3">
             {filteredPESV.map((p, idx) => (
