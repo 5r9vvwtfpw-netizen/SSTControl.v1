@@ -501,7 +501,7 @@ export default function ManualSoporte() {
 
       {(!searchTerm || filteredModulos.length > 0) && (
         <CollapsibleSection
-          title={`Módulos del Sistema SST (${filteredModulos.length})`}
+          title={`Módulos de Evidencia SST (${filteredModulos.length} módulos para 61 estándares)`}
           icon={<ClipboardList className="h-5 w-5 text-blue-500" />}
           defaultOpen={!!searchTerm}
         >
