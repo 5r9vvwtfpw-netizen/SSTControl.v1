@@ -171,6 +171,7 @@ import BibliotecaVideos from "@/pages/BibliotecaVideos";
 import HelpVideoButton from "@/components/HelpVideoButton";
 import DemoVerify from "@/pages/DemoVerify";
 import DemoLanding from "@/pages/DemoLanding";
+import { DemoWatermark } from "@/components/DemoWatermark";
 
 // Componente que decide si mostrar Welcome o Dashboard según autenticación
 function HelpVideoButtonWrapper() {
@@ -520,6 +521,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
+          <DemoWatermark />
           <AuthenticatedLayout />
         </AuthProvider>
         <ChatBot />

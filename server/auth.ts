@@ -405,11 +405,20 @@ export function setupAuth(app: Express) {
       }
     }
     
+    let isDemoSession = false;
+    if (user.companyId) {
+      try {
+        const { DEMO_COMPANY_IDS } = await import("../plugins/demo-engine/types");
+        isDemoSession = DEMO_COMPANY_IDS.includes(user.companyId as any);
+      } catch {}
+    }
+
     res.json({
       ...userWithoutPassword,
       emailVerified,
       profileComplete,
       subscriptionStatus,
+      isDemoSession,
     });
   });
 

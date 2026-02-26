@@ -60,8 +60,8 @@ async function throwIfResNotOk(res: Response) {
     const text = (await res.text()) || res.statusText;
     try {
       const parsed = JSON.parse(text);
-      if (parsed.error === "demo_readonly") {
-        const demoError = new Error(parsed.message || "Modo demostración: solo lectura");
+      if (parsed.error === "demo_readonly" || parsed.error === "demo_blocked") {
+        const demoError = new Error(parsed.message || "Función no disponible en la demostración");
         (demoError as any).isDemoReadonly = true;
         throw demoError;
       }
