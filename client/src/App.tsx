@@ -170,6 +170,7 @@ import AdminVideosAyuda from "@/pages/AdminVideosAyuda";
 import BibliotecaVideos from "@/pages/BibliotecaVideos";
 import HelpVideoButton from "@/components/HelpVideoButton";
 import DemoVerify from "@/pages/DemoVerify";
+import DemoLanding from "@/pages/DemoLanding";
 
 // Componente que decide si mostrar Welcome o Dashboard según autenticación
 function HelpVideoButtonWrapper() {
@@ -347,6 +348,7 @@ function Router() {
       <Route path="/politica-cookies" component={PoliticaCookies} />
       <Route path="/contrato-saas" component={ContratoSaaS} />
       <ProtectedRoute path="/documentos-legales" component={DocumentosLegalesPdf} />
+      <Route path="/demo" component={DemoLanding} />
       <Route path="/demo/verify" component={DemoVerify} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/login" component={LoginEmpresa} />
