@@ -411,14 +411,9 @@ export default function ManualSoporte() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md p-4 space-y-2">
+            <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md p-4">
               <p className="font-semibold text-red-800 dark:text-red-200">
-                NUNCA acceder a los datos de la empresa del cliente. NUNCA comunicarse directamente con el cliente fuera del sistema de tickets.
-              </p>
-              <p className="text-sm text-red-700 dark:text-red-300">
-                El soporte se da exclusivamente mediante instrucciones escritas en el ticket. El agente guía al cliente paso a paso
-                para que él mismo resuelva el problema. No se permiten llamadas, videollamadas, ni acceso remoto.
-                Esto es obligatorio por el modelo de servicio automatizado en la nube (cumplimiento normativo colombiano — no genera IVA por intervención humana).
+                NUNCA acceder a los datos del cliente. Solo instrucciones escritas en el ticket. No llamadas, no acceso remoto.
               </p>
             </div>
           </CardContent>
