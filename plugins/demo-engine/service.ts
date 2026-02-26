@@ -104,6 +104,7 @@ const CHILD_TABLES_TO_WIPE = [
 ];
 
 const DEMO_WORKERS_COUNT = 15;
+const DEMO_VEHICLES_COUNT = 5;
 const DEMO_CALCULATED_CHAPTER = "2";
 const DEMO_TIPO_EMPRESA = "tipo2";
 
@@ -321,7 +322,7 @@ export async function resetCompanyData(targetCompanyId: string): Promise<void> {
         ${masterCompany.ciiu_code || "4711"},
         ${masterCompany.address || "Calle Demo 123"},
         ${DEMO_WORKERS_COUNT},
-        0,
+        ${DEMO_VEHICLES_COUNT},
         ${masterCompany.risk_level || "I"},
         ${DEMO_CALCULATED_CHAPTER}
       )
