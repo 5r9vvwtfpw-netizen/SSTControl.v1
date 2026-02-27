@@ -44061,7 +44061,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/legal-docs/rut/pdf - RUT document (SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.)
   app.get("/api/legal-docs/rut/pdf", requireAuth, async (req, res) => {
     try {
-      const filePath = path.join(process.cwd(), "server", "assets", "RUT_1771350241893.pdf");
+      const filePath = path.join(process.cwd(), "server", "assets", "RUT_ACTUALIZADO_FEB26_2026_1772217240537.pdf");
       if (!fs.existsSync(filePath)) {
         return res.status(404).send("Documento RUT no encontrado");
       }
