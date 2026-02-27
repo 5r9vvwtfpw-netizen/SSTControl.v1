@@ -20858,7 +20858,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = userCompanyId;
       }
       
-      const parsed = insertAudiometryRecordSchema.safeParse(req.body);
+      const parsed = insertAudiometryRecordSchema.safeParse({ ...req.body, companyId });
       if (!parsed.success) {
         return res.status(400).send(parsed.error.message);
       }
