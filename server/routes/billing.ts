@@ -12,6 +12,7 @@ import {
   paymentOperationLimiter,
   webhookRateLimiter
 } from "../middleware/rate-limit";
+import { accountingService } from "../services/accounting-integration";
 import { getCompanyFeatures } from "../middleware/subscription-limits";
 import { getUncachableStripeClient } from "../stripeClient";
 import { billingHealthCheck } from "../lib/billing-validator";
@@ -62,6 +63,14 @@ export function registerBillingRoutes(app: Express) {
       });
     }
   });
+
+  app.get("/api/billing/accounting-integration/status", requireAuth, requireSuperadmin, async (req, res) => {
+    res.json({
+      ...accountingService.getStatus(),
+      timestamp: new Date().toISOString()
+    });
+  });
+
   
   // ============================================================================
   // SUBSCRIPTION PLANS - Planes de Suscripción

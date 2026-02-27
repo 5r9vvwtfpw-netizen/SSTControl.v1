@@ -45,6 +45,7 @@ import { promotionsRouter } from "../plugins/promotions";
 import { handlePromotionsWebhook } from "../plugins/promotions/webhook-handler";
 import { landingPageRouter } from "../plugins/landing-page-integration";
 import { demoEngineRouter, initializeDemoRooms, startDemoHousekeepingCron, isDemoEnabled } from "../plugins/demo-engine";
+import { accountingService } from "./services/accounting-integration";
 
 
 const app = express();
@@ -308,6 +309,50 @@ app.post(
                         companyId,
                         total: priceInPesos
                       }, 'Invoice created for payment');
+
+                      if (accountingService.isEnabled()) {
+                        let parsedLineItems: any[] = [];
+                        try {
+                          parsedLineItems = typeof lineItems === 'string' ? JSON.parse(lineItems) : (lineItems || []);
+                        } catch { parsedLineItems = []; }
+                        accountingService.sendInvoiceToAccounting({
+                          invoiceId: invoice.id,
+                          invoiceNumber,
+                          companyId,
+                          customerName: company.name,
+                          customerNit: company.nit || 'N/A',
+                          customerEmail: company.contactEmail || '',
+                          customerAddress: company.address || '',
+                          customerPhone: company.phone || '',
+                          customerCity: company.city || '',
+                          subtotal,
+                          taxAmount,
+                          total: priceInPesos,
+                          currency: 'COP',
+                          periodStart: now,
+                          periodEnd: nextBillingDate,
+                          issueDate: now,
+                          dueDate: now,
+                          paidDate: now,
+                          status: 'paid',
+                          lineItems: parsedLineItems,
+                          snapshotCiiuCode: company.ciiuCode || null,
+                          snapshotNumberOfWorkers: company.numberOfWorkers ?? null,
+                          snapshotNumberOfVehicles: company.numberOfVehicles ?? null,
+                          stripePaymentId: session.id,
+                        }).then(async (result) => {
+                          if (result.success && result.dianCufe) {
+                            await storage.updateInvoice(invoice.id, {
+                              dianCufe: result.dianCufe,
+                              dianXmlUrl: result.dianXmlUrl || null,
+                              dianPdfUrl: result.dianPdfUrl || null,
+                            });
+                            logger.info({ invoiceId: invoice.id, dianCufe: result.dianCufe }, '[Accounting] DIAN data updated on invoice');
+                          }
+                        }).catch((err) => {
+                          logger.error({ err, invoiceId: invoice.id }, '[Accounting] Non-critical error sending to accounting');
+                        });
+                      }
                     }
                   } catch (invoiceError) {
                     logger.error({ err: invoiceError, companyId }, 'Error creating invoice (non-critical)');

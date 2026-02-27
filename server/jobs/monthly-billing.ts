@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { storage } from '../storage';
 import { emailService } from '../services/email';
 import { invoicePdfService } from '../services/invoice-pdf';
+import { accountingService } from '../services/accounting-integration';
 import logger from '../lib/logger';
 
 /**
@@ -71,6 +72,51 @@ export async function processMonthlyBilling() {
         }
 
         logger.info({ ...subscriptionContext, invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber }, 'Invoice record created');
+
+        if (accountingService.isEnabled()) {
+          let parsedLineItems: any[] = [];
+          try {
+            parsedLineItems = typeof invoice.lineItems === 'string'
+              ? JSON.parse(invoice.lineItems)
+              : (invoice.lineItems || []);
+          } catch { parsedLineItems = []; }
+          accountingService.sendInvoiceToAccounting({
+            invoiceId: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            companyId: subscription.companyId,
+            customerName: subscription.companyName || '',
+            customerNit: subscription.companyNit || 'N/A',
+            customerEmail: subscription.companyEmail || '',
+            customerAddress: subscription.companyAddress || '',
+            customerPhone: subscription.companyPhone || '',
+            customerCity: subscription.companyCity || '',
+            subtotal: invoice.subtotal,
+            taxAmount: invoice.taxAmount,
+            total: invoice.total,
+            currency: invoice.currency,
+            periodStart: invoice.periodStart,
+            periodEnd: invoice.periodEnd,
+            issueDate: invoice.issueDate,
+            dueDate: invoice.dueDate,
+            paidDate: invoice.paidDate,
+            status: invoice.status,
+            lineItems: parsedLineItems || [],
+            snapshotCiiuCode: invoice.snapshotCiiuCode,
+            snapshotNumberOfWorkers: invoice.snapshotNumberOfWorkers,
+            snapshotNumberOfVehicles: invoice.snapshotNumberOfVehicles,
+          }).then(async (result) => {
+            if (result.success && result.dianCufe) {
+              await storage.updateInvoice(invoice.id, {
+                dianCufe: result.dianCufe,
+                dianXmlUrl: result.dianXmlUrl || null,
+                dianPdfUrl: result.dianPdfUrl || null,
+              });
+              logger.info({ invoiceId: invoice.id, dianCufe: result.dianCufe }, '[Accounting] DIAN data updated on invoice');
+            }
+          }).catch((err) => {
+            logger.error({ err, invoiceId: invoice.id }, '[Accounting] Non-critical error in monthly billing');
+          });
+        }
 
         // Generate PDF
         let pdfBuffer: Buffer | undefined;
