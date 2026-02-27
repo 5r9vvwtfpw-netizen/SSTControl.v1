@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Eye, FileText, Activity, AlertTriangle, Heart, Brain, Ear, Droplet, Wind, Stethoscope, Trash2, Edit, Printer, CalendarDays } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Plus, Search, Eye, FileText, Activity, AlertTriangle, Heart, Brain, Ear, Droplet, Wind, Stethoscope, Trash2, Edit, Printer, CalendarDays, Sparkles, Info } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { SveProgram, SveCase, insertSveProgramSchema, insertSveCaseSchema } from "@shared/schema";
@@ -70,6 +70,71 @@ const riskTypeLabels: Record<string, string> = {
   "visual": "Visual",
   "cardiovascular": "Cardiovascular",
   "respiratorio": "Respiratorio",
+};
+
+const SVE_NORMATIVA_COLOMBIA: Record<string, {
+  name: string;
+  objective: string;
+  targetPopulation: string;
+  protocol: string;
+  normaBase: string;
+}> = {
+  biomecanico: {
+    name: "Programa SVE Prevención de Desórdenes Musculoesqueléticos (DME) 2026",
+    objective: "Identificar, evaluar, prevenir y controlar los factores de riesgo biomecánico que puedan generar desórdenes musculoesqueléticos (DME) en los trabajadores, mediante vigilancia médica y ambiental sistemática, conforme a las GATISO para DME (Resolución 2844/2007), Decreto 1072/2015 Art. 2.2.4.6.24, y Resolución 0312/2019 Estándar 2.6.1.",
+    targetPopulation: "Trabajadores expuestos a factores de riesgo biomecánico: manipulación manual de cargas, movimientos repetitivos, posturas prolongadas (sedente o bípeda), vibración de cuerpo entero o segmentaria. Incluye áreas operativas, administrativas con uso prolongado de computador, y personal de bodega/logística.",
+    protocol: "1) Evaluaciones médicas ocupacionales con énfasis osteomuscular (ingreso, periódicas anuales, retiro) según Resolución 2346/2007. 2) Aplicación de encuestas de morbilidad sentida (Cuestionario Nórdico Estandarizado). 3) Inspección ergonómica de puestos de trabajo con metodologías validadas (RULA, REBA, NIOSH, OCRA). 4) Pausas activas mínimo 2 veces por jornada. 5) Capacitación en higiene postural y manejo de cargas. 6) Seguimiento semestral de casos en vigilancia. 7) Indicadores: prevalencia DME, incidencia de casos nuevos, cobertura de intervención.",
+    normaBase: "GATISO DME (Res. 2844/2007), Decreto 1072/2015, Res. 0312/2019 Est. 2.6.1"
+  },
+  psicosocial: {
+    name: "Programa SVE Prevención de Riesgo Psicosocial 2026",
+    objective: "Identificar, evaluar, prevenir, intervenir y monitorear los factores de riesgo psicosocial intralaboral, extralaboral e individual, y sus efectos en la salud de los trabajadores, conforme a la Resolución 2646/2008, Resolución 2764/2022 (actualización de la Batería de Riesgo Psicosocial), Decreto 1072/2015 Art. 2.2.4.6.24, y la Ley 1616/2013 de Salud Mental.",
+    targetPopulation: "Todos los trabajadores de la organización, con énfasis en aquellos con resultados de riesgo alto y muy alto en la aplicación de la Batería de Riesgo Psicosocial, trabajadores con cargos de alta demanda emocional, atención al público, jornadas extendidas, trabajo bajo presión o con exposición a eventos potencialmente traumáticos.",
+    protocol: "1) Aplicación anual de la Batería de Riesgo Psicosocial (Resolución 2764/2022) por psicólogo especialista con licencia SST vigente. 2) Evaluación de estrés laboral con instrumentos validados. 3) Intervención primaria: promoción de salud mental, manejo del tiempo, comunicación asertiva. 4) Intervención secundaria: grupos focales para riesgo medio, talleres de afrontamiento. 5) Intervención terciaria: remisión a EPS/ARL para riesgo alto y muy alto, seguimiento individual. 6) Programa de prevención de acoso laboral (Ley 1010/2006, Resolución 652/2012 — Comité de Convivencia). 7) Indicadores: distribución por nivel de riesgo, tasa de ausentismo por causa mental, cobertura de intervención.",
+    normaBase: "Res. 2646/2008, Res. 2764/2022, Ley 1616/2013, Decreto 1072/2015"
+  },
+  auditivo: {
+    name: "Programa SVE Conservación Auditiva 2026",
+    objective: "Prevenir la aparición y progresión de la hipoacusia neurosensorial inducida por ruido (HNIR) en trabajadores expuestos a niveles de presión sonora iguales o superiores a 80 dB(A) TWA, mediante vigilancia audiométrica periódica y control de la exposición, conforme a las GATISO para Hipoacusia Neurosensorial (Resolución 2844/2007), Resolución 0312/2019 Estándar 2.6.1, y la GTC 45.",
+    targetPopulation: "Trabajadores expuestos a niveles de ruido iguales o superiores a 80 dB(A) promedio ponderado para 8 horas (TWA), incluyendo áreas de producción, mantenimiento, operación de maquinaria, talleres, plantas industriales y cualquier puesto donde la medición ambiental o dosimetría personal supere el nivel de acción.",
+    protocol: "1) Sonometrías y dosimetrías según Resolución 0627/2006 (mínimo anual en áreas críticas). 2) Audiometría tonal por vía aérea de base (ingreso) y de seguimiento (anual para expuestos). 3) Otoscopia previa a cada audiometría. 4) Clasificación de hallazgos: GATI criterios de Larsen/ELI. 5) Dotación y verificación de uso de protección auditiva (NRR adecuado al nivel de exposición). 6) Señalización de áreas con niveles superiores a 85 dB(A). 7) Capacitación anual en efectos del ruido y uso correcto de protectores. 8) Control de ingeniería: aislamiento de fuentes, mantenimiento preventivo. 9) Indicadores: STS (cambio significativo de umbral), prevalencia de hipoacusia, cobertura audiométrica.",
+    normaBase: "GATISO HNIR (Res. 2844/2007), Res. 0627/2006, GTC 45, Decreto 1072/2015"
+  },
+  quimico: {
+    name: "Programa SVE Prevención de Riesgo Químico 2026",
+    objective: "Prevenir enfermedades laborales derivadas de la exposición a agentes químicos (sólidos, líquidos, gaseosos y vapores) mediante la identificación, evaluación y control de los riesgos asociados, conforme al Sistema Globalmente Armonizado — SGA (Decreto 1496/2018), las GATISO aplicables (Resolución 2844/2007), Decreto 1072/2015 Art. 2.2.4.6.24, y la Resolución 0312/2019 Estándar 2.6.1.",
+    targetPopulation: "Trabajadores que manipulan, almacenan, transportan o están expuestos a sustancias químicas peligrosas: personal de laboratorio, mantenimiento, aseo, fumigación, pintura, soldadura, operaciones con solventes, ácidos, bases, plaguicidas, y cualquier puesto con exposición identificada en la matriz de peligros.",
+    protocol: "1) Inventario actualizado de sustancias químicas con fichas de datos de seguridad (FDS/SDS) según SGA. 2) Evaluaciones ambientales de exposición (TLV-TWA, TLV-STEL según ACGIH vigente). 3) Monitoreo biológico de trabajadores expuestos (indicadores biológicos de exposición — BEI). 4) Exámenes médicos ocupacionales con paraclínicos específicos según agente (espirometría, hepatograma, hemograma, etc.). 5) Matriz de compatibilidad química para almacenamiento. 6) Dotación de EPP específico (respiradores con filtro adecuado al agente, guantes de material compatible). 7) Capacitación en SGA, etiquetado, lectura de FDS, y procedimientos de emergencia por derrame/fuga. 8) Indicadores: nivel de exposición vs. TLV, biomarcadores dentro de rango, incidencia de efectos adversos.",
+    normaBase: "Decreto 1496/2018 (SGA), GATISO (Res. 2844/2007), Decreto 1072/2015, Res. 0312/2019"
+  },
+  biologico: {
+    name: "Programa SVE Prevención de Riesgo Biológico 2026",
+    objective: "Prevenir infecciones y enfermedades ocupacionales por exposición a agentes biológicos (virus, bacterias, hongos, parásitos, fluidos corporales, material biológico) mediante medidas de bioseguridad, vacunación y vigilancia médica, conforme al Decreto 1072/2015 Art. 2.2.4.6.24, Resolución 0312/2019 Estándar 2.6.1, y los lineamientos del Ministerio de Salud.",
+    targetPopulation: "Trabajadores del sector salud, laboratorio clínico, servicios generales en instituciones de salud, veterinarios, personal de manejo de residuos, manipuladores de alimentos, personal agrícola expuesto a zoonosis, y cualquier trabajador con exposición ocupacional a agentes biológicos identificada en la matriz de peligros.",
+    protocol: "1) Evaluación del riesgo biológico según clasificación de agentes (Grupos 1-4 OMS). 2) Esquema de vacunación ocupacional completo (Hepatitis B con titulación de anticuerpos, tétanos, influenza, fiebre amarilla según zona). 3) Capacitación en precauciones universales y estándar de bioseguridad. 4) Gestión integral de residuos biológicos (Decreto 351/2014). 5) Protocolo de atención post-exposición a fluidos corporales (accidente biológico). 6) Suministro y control de EPP de barrera (guantes, tapabocas, gafas, bata). 7) Exámenes médicos periódicos con serologías según exposición. 8) Indicadores: cobertura de vacunación, tasa de accidentes biológicos, cumplimiento de protocolos de bioseguridad.",
+    normaBase: "Decreto 1072/2015, Res. 0312/2019 Est. 2.6.1, Decreto 351/2014, Lineamientos MinSalud"
+  },
+  visual: {
+    name: "Programa SVE Conservación Visual 2026",
+    objective: "Prevenir y controlar alteraciones visuales de origen ocupacional en trabajadores expuestos a factores de riesgo para la salud visual, mediante vigilancia optométrica y control de condiciones de iluminación, conforme a las GATISO (Resolución 2844/2007), Decreto 1072/2015 Art. 2.2.4.6.24, Resolución 0312/2019 Estándar 2.6.1, y el RETILAP (Resolución 180540/2010).",
+    targetPopulation: "Trabajadores con uso prolongado de pantallas de visualización de datos (PVD) — más de 4 horas diarias —, trabajadores expuestos a radiaciones ópticas (soldadura, UV, láser), personal de control de calidad con inspección visual de detalle, y trabajadores en áreas con iluminación deficiente o excesiva.",
+    protocol: "1) Examen optométrico ocupacional de ingreso, periódico (anual) y de retiro. 2) Luxometrías en puestos de trabajo según RETILAP (niveles recomendados por actividad). 3) Encuesta de sintomatología visual (fatiga visual, cefalea, ojo seco). 4) Adecuación ergonómica de puestos con PVD: distancia, altura, ángulo de pantalla, uso de filtros antirreflejos. 5) Regla 20-20-20 para usuarios de PVD (cada 20 min, mirar a 20 pies, por 20 segundos). 6) Control de fuentes de deslumbramiento y reflejos. 7) Dotación de protección ocular específica según riesgo (filtros UV, lentes de seguridad). 8) Indicadores: prevalencia de alteraciones visuales, cobertura de exámenes optométricos, cumplimiento de niveles de iluminación.",
+    normaBase: "GATISO (Res. 2844/2007), RETILAP (Res. 180540/2010), Decreto 1072/2015, Res. 0312/2019"
+  },
+  cardiovascular: {
+    name: "Programa SVE Prevención de Riesgo Cardiovascular 2026",
+    objective: "Identificar, evaluar y controlar los factores de riesgo cardiovascular modificables en los trabajadores, promoviendo estilos de vida y trabajo saludables para prevenir eventos cardiovasculares y cerebrovasculares, conforme al Decreto 1072/2015 Art. 2.2.4.6.24, Resolución 0312/2019 Estándar 2.6.1, y la Guía de Práctica Clínica para la prevención de enfermedad cardiovascular del Ministerio de Salud.",
+    targetPopulation: "Trabajadores con factores de riesgo cardiovascular identificados: hipertensión arterial, dislipidemia, diabetes mellitus, sobrepeso u obesidad (IMC ≥ 25), sedentarismo, tabaquismo, antecedentes familiares de enfermedad cardiovascular, edad mayor a 45 años (hombres) o 55 años (mujeres), y trabajadores con estrés laboral alto.",
+    protocol: "1) Tamizaje cardiovascular en exámenes médicos ocupacionales: presión arterial, perfil lipídico, glicemia en ayunas, IMC, perímetro abdominal. 2) Estratificación de riesgo cardiovascular (escala Framingham o equivalente validada para Colombia). 3) Programa de actividad física laboral: pausas activas y acondicionamiento físico. 4) Intervención nutricional: educación en alimentación saludable, control de máquinas dispensadoras. 5) Programa de cesación tabáquica. 6) Seguimiento trimestral de casos de riesgo alto y muy alto. 7) Remisión a EPS para manejo de patologías diagnosticadas. 8) Indicadores: distribución por nivel de riesgo cardiovascular, prevalencia de factores de riesgo, adherencia a intervenciones, tasas de ausentismo por causa cardiovascular.",
+    normaBase: "Decreto 1072/2015, Res. 0312/2019 Est. 2.6.1, GPC MinSalud Riesgo Cardiovascular"
+  },
+  respiratorio: {
+    name: "Programa SVE Prevención de Enfermedad Respiratoria Ocupacional 2026",
+    objective: "Prevenir la aparición y progresión de enfermedades respiratorias de origen ocupacional (neumoconiosis, asma ocupacional, EPOC ocupacional) en trabajadores expuestos a material particulado, gases, vapores, humos y fibras, mediante vigilancia espirométrica y control ambiental, conforme a las GATISO para Neumoconiosis (Resolución 2844/2007), Decreto 1072/2015 Art. 2.2.4.6.24, y Resolución 0312/2019 Estándar 2.6.1.",
+    targetPopulation: "Trabajadores expuestos a polvo mineral (sílice, asbesto, carbón), polvo orgánico (algodón, madera, granos), humos metálicos (soldadura), gases y vapores irritantes, fibras minerales, y cualquier agente con potencial de daño al sistema respiratorio identificado en la matriz de peligros con concentraciones cercanas o superiores al nivel de acción.",
+    protocol: "1) Evaluación ambiental de material particulado (PM10, PM2.5, fracción respirable) y agentes químicos aerodispersados según TLV-TWA ACGIH. 2) Espirometría ocupacional de base (ingreso) y de seguimiento (anual para expuestos) con interpretación según ATS/ERS. 3) Radiografía de tórax según protocolo OIT para neumoconiosis (lectura por B-Reader certificado) cuando aplique. 4) Encuesta de síntomas respiratorios estandarizada. 5) Dotación de protección respiratoria con factor de protección adecuado al agente y concentración (selección según NIOSH). 6) Pruebas de ajuste (fit test) de respiradores. 7) Control de ingeniería: ventilación localizada, sistemas de extracción, humectación de polvo. 8) Indicadores: función pulmonar (FEV1, FVC, FEV1/FVC), prevalencia de alteraciones espirométricas, concentración ambiental vs. TLV.",
+    normaBase: "GATISO Neumoconiosis (Res. 2844/2007), Decreto 1072/2015, Res. 0312/2019, ATS/ERS"
+  }
 };
 
 export default function VigilanciaEpidemiologica() {
@@ -309,6 +374,34 @@ export default function VigilanciaEpidemiologica() {
     });
   };
 
+  const handleAutoFillFromNormativa = useCallback((riskType: string) => {
+    if (editingProgram) return;
+    const normativa = SVE_NORMATIVA_COLOMBIA[riskType];
+    if (!normativa) return;
+    
+    const today = new Date();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const startDate = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+    const review = new Date(today.getFullYear(), today.getMonth() + 6, today.getDate());
+    const reviewDate = `${review.getFullYear()}-${pad(review.getMonth() + 1)}-${pad(review.getDate())}`;
+    
+    setProgramFormData(prev => ({
+      ...prev,
+      name: normativa.name,
+      objective: normativa.objective,
+      targetPopulation: normativa.targetPopulation,
+      protocol: normativa.protocol,
+      startDate,
+      reviewDate,
+    }));
+    
+    toast({
+      title: "Datos normativos aplicados",
+      description: `Formulario completado con normativa colombiana vigente: ${normativa.normaBase}`,
+      className: "bg-yellow-50 border-yellow-200",
+    });
+  }, [editingProgram, toast]);
+
   const handleProgramSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -525,11 +618,34 @@ export default function VigilanciaEpidemiologica() {
                   id="name"
                   value={programFormData.name}
                   onChange={(e) => setProgramFormData({ ...programFormData, name: e.target.value })}
-                  placeholder="Ej: Programa SVE Riesgo Biomecánico 2025"
+                  placeholder="Ej: Programa SVE Riesgo Biomecánico 2026"
                   required
                   data-testid="input-program-name"
                 />
               </div>
+
+              {!editingProgram && (
+                <div className="rounded-md border border-yellow-300 dark:border-yellow-700 bg-yellow-50/50 dark:bg-yellow-950/30 p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                    <span className="text-sm font-medium text-yellow-800 dark:text-yellow-300">Asistente normativo colombiano</span>
+                  </div>
+                  <p className="text-xs text-yellow-700 dark:text-yellow-400">
+                    Seleccione el tipo de riesgo y presione "Aplicar normativa" para completar automáticamente el formulario con datos conforme a la legislación colombiana vigente (Decreto 1072/2015, Resolución 0312/2019, GATISO, y normativa específica por riesgo).
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAutoFillFromNormativa(programFormData.riskType)}
+                    className="border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-300"
+                    data-testid="button-apply-normativa"
+                  >
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Aplicar normativa — {riskTypeLabels[programFormData.riskType]}
+                  </Button>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -618,6 +734,15 @@ export default function VigilanciaEpidemiologica() {
                   data-testid="input-program-protocol"
                 />
               </div>
+
+              {!editingProgram && programFormData.protocol && SVE_NORMATIVA_COLOMBIA[programFormData.riskType] && (
+                <div className="flex items-start gap-2 rounded-md bg-muted/50 p-2">
+                  <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">Base normativa:</span> {SVE_NORMATIVA_COLOMBIA[programFormData.riskType].normaBase}. Los campos son editables — ajuste la población objetivo y protocolo según las condiciones específicas de su empresa.
+                  </p>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
