@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,6 +49,9 @@ export function InspectionFormEnhanced({
   workers,
   onCancel,
 }: InspectionFormEnhancedProps) {
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
+
   const initialTemplate = useMemo(() => {
     if (formData.area) {
       const match = inspeccionesSstPredefinidas.find(i => i.area === formData.area);
@@ -107,13 +110,14 @@ export function InspectionFormEnhanced({
 
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const currentFormData = formDataRef.current;
     setFormData({
-      ...formData,
+      ...currentFormData,
       area: inspeccion.area,
       observations: inspeccion.descripcion,
       findings: 0,
       compliance: 100,
-      date: formData.date || today,
+      date: currentFormData.date || today,
     });
   };
 
@@ -142,7 +146,7 @@ export function InspectionFormEnhanced({
     }
 
     setFormData({
-      ...formData,
+      ...formDataRef.current,
       findings: findingsCount,
       compliance: compliancePercentage,
     });
