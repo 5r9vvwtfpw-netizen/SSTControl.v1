@@ -291,7 +291,21 @@ export default function Inspecciones() {
           <p className="text-muted-foreground">Auditorías y verificaciones de cumplimiento</p>
         </div>
         {user?.role && hasCompanyAdminAccess(user.role) && (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={dialogOpen} onOpenChange={(open) => {
+            if (open) {
+              setFormData({
+                companyId: "",
+                area: "",
+                inspector: "",
+                date: "",
+                findings: "",
+                compliance: "",
+                observations: "",
+                status: "pendiente",
+              });
+            }
+            setDialogOpen(open);
+          }}>
             <DialogTrigger asChild>
               <Button data-testid="button-add-inspection">
                 <Plus className="h-4 w-4 mr-2" />
@@ -379,7 +393,22 @@ export default function Inspecciones() {
         </div>
       )}
 
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <Dialog open={editDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedInspection(null);
+          setFormData({
+            companyId: "",
+            area: "",
+            inspector: "",
+            date: "",
+            findings: "",
+            compliance: "",
+            observations: "",
+            status: "pendiente",
+          });
+        }
+        setEditDialogOpen(open);
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Inspección</DialogTitle>

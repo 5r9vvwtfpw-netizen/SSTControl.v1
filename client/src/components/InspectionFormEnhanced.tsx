@@ -76,6 +76,16 @@ export function InspectionFormEnhanced({
     }
   }, [initialTemplate, hasInitialized]);
 
+  useEffect(() => {
+    if (!formData.area && !formData.inspector && !formData.date) {
+      setSelectedPredefInspeccion("");
+      setCurrentInspeccion(null);
+      setVerificationItems([]);
+      setShowItemsList(false);
+      setHasInitialized(false);
+    }
+  }, [formData.area, formData.inspector, formData.date]);
+
   const handleAutoFillFromPredefinido = (codigo: string) => {
     const inspeccion = getInspeccionByCodigo(codigo);
     if (!inspeccion) {
