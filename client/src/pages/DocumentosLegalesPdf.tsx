@@ -143,7 +143,7 @@ export default function DocumentosLegalesPdf() {
     {
       id: "rut-empresa",
       title: "RUT - Registro Único Tributario",
-      description: "Registro Único Tributario de SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. (SADGI S.A.S.) - NIT 902.036.337-4. Régimen Simple de Tributación. Actividad económica 6311. Dirección seccional: Impuestos de Medellín. Actualizado: 26 de febrero de 2026.",
+      description: "SADGI S.A.S. - NIT 902.036.337-4. Actualizado: 26/02/2026.",
       endpoint: "/api/legal-docs/rut/pdf",
       icon: <Landmark className="h-8 w-8" />,
       filename: "RUT-SADGI-SAS-902036337-4.pdf"
