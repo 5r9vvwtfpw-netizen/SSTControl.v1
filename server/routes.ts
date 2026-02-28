@@ -22377,23 +22377,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Validación de credenciales SST (Resolución 0312/2019)
+      // Verificar si el usuario actual tiene licencia, O si la empresa tiene un LSO asignado con licencia vigente
       const currentUser = await storage.getUser(req.user!.id);
-      if (!currentUser?.sstLicenseNumber || currentUser.sstLicenseStatus !== 'vigente') {
+      let hasValidLicense = false;
+
+      // Opción 1: El usuario actual tiene licencia SST vigente
+      if (currentUser?.sstLicenseNumber && currentUser.sstLicenseStatus === 'vigente') {
+        if (currentUser.sstLicenseExpiresAt) {
+          const expiryDate = new Date(currentUser.sstLicenseExpiresAt);
+          hasValidLicense = expiryDate >= new Date();
+        } else {
+          hasValidLicense = true;
+        }
+      }
+
+      // Opción 2: La empresa tiene un LSO asignado con licencia vigente
+      if (!hasValidLicense) {
+        const companyId = req.user!.companyId;
+        const [activeAssignment] = await db.select()
+          .from(schema.licensedProfessionalAssignments)
+          .where(and(
+            eq(schema.licensedProfessionalAssignments.companyId, companyId),
+            eq(schema.licensedProfessionalAssignments.isActive, true)
+          ));
+
+        if (activeAssignment) {
+          // LSO externo: verificar licencia del registro de asignación
+          if (activeAssignment.externalLsoLicenseNumber) {
+            if (activeAssignment.externalLsoLicenseExpiry) {
+              hasValidLicense = new Date(activeAssignment.externalLsoLicenseExpiry) >= new Date();
+            } else {
+              hasValidLicense = true;
+            }
+          }
+          // LSO interno: verificar licencia del usuario LSO
+          if (!hasValidLicense && activeAssignment.userId) {
+            const lsoUser = await storage.getUser(activeAssignment.userId);
+            if (lsoUser?.sstLicenseNumber && lsoUser.sstLicenseStatus === 'vigente') {
+              if (lsoUser.sstLicenseExpiresAt) {
+                hasValidLicense = new Date(lsoUser.sstLicenseExpiresAt) >= new Date();
+              } else {
+                hasValidLicense = true;
+              }
+            }
+          }
+        }
+      }
+
+      if (!hasValidLicense) {
         return res.status(403).json({
           error: "Se requiere licencia SST vigente para gestionar programas SVE",
-          details: "Según la Resolución 0312/2019, solo profesionales con licencia SST vigente pueden crear programas de vigilancia epidemiológica. Por favor, actualice sus credenciales SST en su perfil de usuario."
+          details: "Según la Resolución 0312/2019, se requiere un profesional con licencia SST vigente. Asigne un LSO con licencia vigente desde el Directorio de Profesionales, o actualice las credenciales SST en su perfil de usuario."
         });
-      }
-      
-      // Validación adicional: verificar que la fecha de expiración sea futura
-      if (currentUser.sstLicenseExpiresAt) {
-        const expiryDate = new Date(currentUser.sstLicenseExpiresAt);
-        if (expiryDate < new Date()) {
-          return res.status(403).json({
-            error: "Licencia SST vencida",
-            details: "Su licencia SST ha expirado. Por favor, renueve su licencia y actualice sus credenciales para continuar gestionando programas SVE."
-          });
-        }
       }
       
       const companyId = req.user!.companyId;
@@ -22416,23 +22451,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Validación de credenciales SST (Resolución 0312/2019)
+      // Verificar si el usuario actual tiene licencia, O si la empresa tiene un LSO asignado con licencia vigente
       const currentUser = await storage.getUser(req.user!.id);
-      if (!currentUser?.sstLicenseNumber || currentUser.sstLicenseStatus !== 'vigente') {
+      let hasValidLicense = false;
+
+      if (currentUser?.sstLicenseNumber && currentUser.sstLicenseStatus === 'vigente') {
+        if (currentUser.sstLicenseExpiresAt) {
+          hasValidLicense = new Date(currentUser.sstLicenseExpiresAt) >= new Date();
+        } else {
+          hasValidLicense = true;
+        }
+      }
+
+      if (!hasValidLicense) {
+        const companyId = req.user!.companyId;
+        const [activeAssignment] = await db.select()
+          .from(schema.licensedProfessionalAssignments)
+          .where(and(
+            eq(schema.licensedProfessionalAssignments.companyId, companyId),
+            eq(schema.licensedProfessionalAssignments.isActive, true)
+          ));
+
+        if (activeAssignment) {
+          if (activeAssignment.externalLsoLicenseNumber) {
+            if (activeAssignment.externalLsoLicenseExpiry) {
+              hasValidLicense = new Date(activeAssignment.externalLsoLicenseExpiry) >= new Date();
+            } else {
+              hasValidLicense = true;
+            }
+          }
+          if (!hasValidLicense && activeAssignment.userId) {
+            const lsoUser = await storage.getUser(activeAssignment.userId);
+            if (lsoUser?.sstLicenseNumber && lsoUser.sstLicenseStatus === 'vigente') {
+              if (lsoUser.sstLicenseExpiresAt) {
+                hasValidLicense = new Date(lsoUser.sstLicenseExpiresAt) >= new Date();
+              } else {
+                hasValidLicense = true;
+              }
+            }
+          }
+        }
+      }
+
+      if (!hasValidLicense) {
         return res.status(403).json({
           error: "Se requiere licencia SST vigente para gestionar programas SVE",
-          details: "Según la Resolución 0312/2019, solo profesionales con licencia SST vigente pueden editar programas de vigilancia epidemiológica. Por favor, actualice sus credenciales SST en su perfil de usuario."
+          details: "Según la Resolución 0312/2019, se requiere un profesional con licencia SST vigente. Asigne un LSO con licencia vigente desde el Directorio de Profesionales, o actualice las credenciales SST en su perfil de usuario."
         });
-      }
-      
-      // Validación adicional: verificar que la fecha de expiración sea futura
-      if (currentUser.sstLicenseExpiresAt) {
-        const expiryDate = new Date(currentUser.sstLicenseExpiresAt);
-        if (expiryDate < new Date()) {
-          return res.status(403).json({
-            error: "Licencia SST vencida",
-            details: "Su licencia SST ha expirado. Por favor, renueve su licencia y actualice sus credenciales para continuar gestionando programas SVE."
-          });
-        }
       }
       
       const companyId = req.user!.companyId;
