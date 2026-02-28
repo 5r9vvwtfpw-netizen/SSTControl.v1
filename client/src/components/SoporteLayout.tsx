@@ -103,16 +103,16 @@ export default function SoporteLayout({ children }: { children: React.ReactNode 
                     Tickets
                   </Button>
                 </Link>
-                <Link href="/soporte/manual">
+                <a href="/soporte/manual" target="_blank" rel="noopener noreferrer">
                   <Button 
                     variant="ghost" 
-                    className={`text-white ${location === '/soporte/manual' ? 'bg-white/20' : ''}`}
+                    className="text-white"
                     data-testid="nav-soporte-manual"
                   >
                     <BookOpen className="h-4 w-4 mr-2" />
                     Manual
                   </Button>
-                </Link>
+                </a>
               </nav>
             </div>
 
