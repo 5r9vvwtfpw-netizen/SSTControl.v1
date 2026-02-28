@@ -275,7 +275,13 @@ export default function Inspecciones() {
   });
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("es-CO");
+    if (!dateString) return "";
+    const parts = dateString.split("T")[0].split("-");
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      return `${parseInt(day)}/${parseInt(month)}/${year}`;
+    }
+    return dateString;
   };
 
   return (

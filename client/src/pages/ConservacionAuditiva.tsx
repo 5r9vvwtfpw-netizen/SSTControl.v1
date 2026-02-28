@@ -1192,6 +1192,7 @@ export default function ConservacionAuditiva() {
                   )}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
