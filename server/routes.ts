@@ -39068,22 +39068,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(400).json({ error: "No se proporcionó ninguna imagen" });
       }
 
-      // Get the S3 URL from the uploaded file
-      const photoUrl = (req.file as Express.MulterS3.File).location;
+      const extension = path.extname(req.file.originalname) || '.jpg';
+      const photoUrl = await objectStorageService.uploadObject(
+        `worker-photos/${workerId}-${Date.now()}${extension}`,
+        req.file.buffer,
+        req.file.mimetype
+      );
       
-      // Update worker with new photo URL
-      await storage.updateWorker(workerId, user.companyId, { photoUrl });
-
-      // Log audit event
-      await storage.createAuditLog({
-        action: "worker_photo_self_upload",
-        tableName: "workers",
-        recordId: workerId,
-        userId: user.id,
-        companyId: user.companyId,
-        changes: { photoUrl },
-        ipAddress: (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.ip || null,
-      });
+      const auditContext = getAuditContext(req);
+      await storage.updateWorker(workerId, { photoUrl }, user.companyId, user.id, auditContext);
 
       res.status(200).json({ 
         message: "Foto actualizada correctamente",
@@ -39156,19 +39149,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).json({ error: "Usuario no asociado a un trabajador" });
       }
 
-      // Update worker to remove photo URL
-      await storage.updateWorker(workerId, user.companyId, { photoUrl: null });
-
-      // Log audit event
-      await storage.createAuditLog({
-        action: "worker_photo_self_delete",
-        tableName: "workers",
-        recordId: workerId,
-        userId: user.id,
-        companyId: user.companyId,
-        changes: { photoUrl: null },
-        ipAddress: (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.ip || null,
-      });
+      const auditContext = getAuditContext(req);
+      await storage.updateWorker(workerId, { photoUrl: null }, user.companyId, user.id, auditContext);
 
       res.status(200).json({ message: "Foto eliminada correctamente" });
     } catch (error: any) {

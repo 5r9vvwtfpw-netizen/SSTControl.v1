@@ -1712,6 +1712,30 @@ export default function Trabajadores() {
                   </TabsContent>
                   
                   <TabsContent value="contrato" className="mt-4 space-y-4">
+                    {editingWorker && (
+                      <div className="flex items-center gap-4 rounded-lg border p-4">
+                        <div className="h-20 w-20 rounded-lg border-2 border-muted overflow-hidden bg-muted flex items-center justify-center shrink-0">
+                          {editingWorker.photoUrl && !photoLoadError ? (
+                            <img 
+                              src={`${editingWorker.photoUrl}${editingWorker.photoUrl.includes('?') ? '&' : '?'}t=${Date.now()}`} 
+                              alt={editingWorker.fullName || "Foto del trabajador"}
+                              className="h-full w-full object-cover"
+                              onError={() => setPhotoLoadError(true)}
+                              data-testid="img-worker-contract-photo"
+                            />
+                          ) : (
+                            <User className="h-8 w-8 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <p className="font-semibold" data-testid="text-worker-name-contract">{editingWorker.fullName}</p>
+                          <p className="text-sm text-muted-foreground">{editingWorker.identificationNumber}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {editingWorker.photoUrl ? "Foto de carnet disponible" : "Sin foto — el trabajador puede subirla desde el Portal de Empleados"}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     {isLoadingContract ? (
                       <div className="space-y-4">
                         <div className="h-4 bg-muted rounded animate-pulse w-1/3" />
