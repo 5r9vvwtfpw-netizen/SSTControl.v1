@@ -274,17 +274,22 @@ function getTrainingRenewalEmailHTML(data: TrainingRenewalEmailData): string {
 // Función principal para enviar email de renovación de examen
 export async function sendExamRenewalEmail(
   to: string,
-  data: ExamRenewalEmailData
+  data: ExamRenewalEmailData,
+  replyTo?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const subject = `⚠️ Renovación de Examen Médico Ocupacional - ${data.daysUntilExpiry} días restantes`;
     
-    const result = await resend.emails.send({
+    const emailOptions: any = {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
       subject,
       html: getExamRenewalEmailHTML(data),
-    });
+    };
+    if (replyTo) {
+      emailOptions.replyTo = replyTo;
+    }
+    const result = await resend.emails.send(emailOptions);
 
     if (result.error) {
       console.error('Error sending exam renewal email:', result.error);
@@ -301,17 +306,22 @@ export async function sendExamRenewalEmail(
 // Función principal para enviar email de renovación de capacitación
 export async function sendTrainingRenewalEmail(
   to: string,
-  data: TrainingRenewalEmailData
+  data: TrainingRenewalEmailData,
+  replyTo?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const subject = `📚 Renovación de Capacitación SST - ${data.daysUntilExpiry} días restantes`;
     
-    const result = await resend.emails.send({
+    const emailOptions: any = {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
       subject,
       html: getTrainingRenewalEmailHTML(data),
-    });
+    };
+    if (replyTo) {
+      emailOptions.replyTo = replyTo;
+    }
+    const result = await resend.emails.send(emailOptions);
 
     if (result.error) {
       console.error('Error sending training renewal email:', result.error);
@@ -729,17 +739,22 @@ function getResultadoAprobacionEmailHTML(data: AprobacionCambioEmailData): strin
 // Función para enviar email de nuevo cambio
 export async function sendNuevoCambioEmail(
   to: string,
-  data: CambioSstEmailData
+  data: CambioSstEmailData,
+  replyTo?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const subject = `Nuevo Cambio SST Registrado - ${data.codigo}`;
     
-    const result = await resend.emails.send({
+    const emailOptions: any = {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
       subject,
       html: getNuevoCambioEmailHTML(data),
-    });
+    };
+    if (replyTo) {
+      emailOptions.replyTo = replyTo;
+    }
+    const result = await resend.emails.send(emailOptions);
 
     if (result.error) {
       console.error('Error sending nuevo cambio email:', result.error);
@@ -757,17 +772,22 @@ export async function sendNuevoCambioEmail(
 export async function sendSolicitudAprobacionEmail(
   to: string,
   data: CambioSstEmailData,
-  nivelAprobacion: string
+  nivelAprobacion: string,
+  replyTo?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const subject = `Aprobación Requerida - Cambio SST ${data.codigo}`;
     
-    const result = await resend.emails.send({
+    const emailOptions: any = {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
       subject,
       html: getSolicitudAprobacionEmailHTML(data, nivelAprobacion),
-    });
+    };
+    if (replyTo) {
+      emailOptions.replyTo = replyTo;
+    }
+    const result = await resend.emails.send(emailOptions);
 
     if (result.error) {
       console.error('Error sending solicitud aprobacion email:', result.error);
@@ -784,18 +804,23 @@ export async function sendSolicitudAprobacionEmail(
 // Función para enviar email de resultado de aprobación
 export async function sendResultadoAprobacionEmail(
   to: string,
-  data: AprobacionCambioEmailData
+  data: AprobacionCambioEmailData,
+  replyTo?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const statusText = data.decision === 'aprobado' ? 'APROBADO' : 'RECHAZADO';
     const subject = `Cambio ${statusText} - ${data.cambio.codigo}`;
     
-    const result = await resend.emails.send({
+    const emailOptions: any = {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
       subject,
       html: getResultadoAprobacionEmailHTML(data),
-    });
+    };
+    if (replyTo) {
+      emailOptions.replyTo = replyTo;
+    }
+    const result = await resend.emails.send(emailOptions);
 
     if (result.error) {
       console.error('Error sending resultado aprobacion email:', result.error);
@@ -1252,17 +1277,22 @@ function getRespuestaReporteEmailHTML(data: RespuestaReporteEmailData): string {
 // Función para enviar email de nueva comunicación SST
 export async function sendNuevaComunicacionEmail(
   to: string,
-  data: ComunicacionSstEmailData
+  data: ComunicacionSstEmailData,
+  replyTo?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const subject = `Nueva Comunicación SST: ${data.asunto}`;
     
-    const result = await resend.emails.send({
+    const emailOptions: any = {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
       subject,
       html: getNuevaComunicacionEmailHTML(data),
-    });
+    };
+    if (replyTo) {
+      emailOptions.replyTo = replyTo;
+    }
+    const result = await resend.emails.send(emailOptions);
 
     if (result.error) {
       console.error('Error sending nueva comunicación email:', result.error);
@@ -1279,17 +1309,22 @@ export async function sendNuevaComunicacionEmail(
 // Función para enviar email de reporte urgente
 export async function sendReporteUrgenteEmail(
   to: string,
-  data: ReporteUrgenteEmailData
+  data: ReporteUrgenteEmailData,
+  replyTo?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const subject = `URGENTE - Nuevo Reporte SST: ${data.codigo}`;
     
-    const result = await resend.emails.send({
+    const emailOptions: any = {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
       subject,
       html: getReporteUrgenteEmailHTML(data),
-    });
+    };
+    if (replyTo) {
+      emailOptions.replyTo = replyTo;
+    }
+    const result = await resend.emails.send(emailOptions);
 
     if (result.error) {
       console.error('Error sending reporte urgente email:', result.error);
@@ -1306,17 +1341,22 @@ export async function sendReporteUrgenteEmail(
 // Función para enviar email de respuesta a reporte
 export async function sendRespuestaReporteEmail(
   to: string,
-  data: RespuestaReporteEmailData
+  data: RespuestaReporteEmailData,
+  replyTo?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const subject = `Respuesta a su Reporte SST - ${data.codigo}`;
     
-    const result = await resend.emails.send({
+    const emailOptions: any = {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
       subject,
       html: getRespuestaReporteEmailHTML(data),
-    });
+    };
+    if (replyTo) {
+      emailOptions.replyTo = replyTo;
+    }
+    const result = await resend.emails.send(emailOptions);
 
     if (result.error) {
       console.error('Error sending respuesta reporte email:', result.error);
@@ -1602,6 +1642,7 @@ export interface PortalAccessEmailData {
   temporaryPassword: string;
   companyName: string;
   loginUrl: string;
+  companyEmail?: string;
 }
 
 function getPortalAccessEmailHTML(data: PortalAccessEmailData): string {
@@ -1733,12 +1774,16 @@ export async function sendPortalAccessEmail(
   try {
     const subject = 'Tus credenciales de acceso - Portal SST Colombia';
     
-    const result = await resend.emails.send({
+    const emailOptions: any = {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
       subject,
       html: getPortalAccessEmailHTML(data),
-    });
+    };
+    if (data.companyEmail) {
+      emailOptions.replyTo = data.companyEmail;
+    }
+    const result = await resend.emails.send(emailOptions);
 
     if (result.error) {
       console.error('Error sending portal access email:', result.error);
@@ -1859,6 +1904,7 @@ export interface LsoPortalAccessEmailData {
   temporaryPassword: string;
   companyName: string;
   loginUrl: string;
+  companyEmail?: string;
 }
 
 function getLsoPortalAccessEmailHTML(data: LsoPortalAccessEmailData): string {
@@ -1988,12 +2034,16 @@ export async function sendLsoPortalAccessEmail(
   try {
     const subject = 'Credenciales de Acceso - Portal de Licenciados SST Colombia';
     
-    const result = await resend.emails.send({
+    const emailOptions: any = {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
       subject,
       html: getLsoPortalAccessEmailHTML(data),
-    });
+    };
+    if (data.companyEmail) {
+      emailOptions.replyTo = data.companyEmail;
+    }
+    const result = await resend.emails.send(emailOptions);
 
     if (result.error) {
       console.error('Error sending LSO portal access email:', result.error);

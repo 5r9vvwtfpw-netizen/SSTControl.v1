@@ -323,6 +323,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
             temporaryPassword,
             companyName: company.name || 'Empresa',
             loginUrl: `${baseUrl}/portal-licenciado`,
+            companyEmail: company.contactEmail || undefined,
           });
           console.log(`[LSO-AUTO] Credenciales enviadas por email a ${lsoData.email}`);
         } catch (emailError: any) {

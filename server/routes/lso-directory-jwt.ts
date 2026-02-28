@@ -277,6 +277,7 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
             temporaryPassword,
             companyName: company.name || 'Empresa',
             loginUrl: `${baseUrl}/portal-licenciado`,
+            companyEmail: company.contactEmail || undefined,
           });
           logger.info({ email: lso.email }, "[LSO-AUTO] Credenciales enviadas por email");
         } catch (emailError: any) {

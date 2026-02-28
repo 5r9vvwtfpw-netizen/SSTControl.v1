@@ -3794,6 +3794,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         temporaryPassword,
         companyName,
         loginUrl: `${baseUrl}/login`,
+        companyEmail: company?.contactEmail || undefined,
       });
 
       // Check if email sending failed
@@ -3920,9 +3921,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
           let companyName = companyCache.get(worker.companyId);
+          let companyEmail: string | undefined;
           if (!companyName) {
             const company = await storage.getCompany(worker.companyId);
             companyName = company?.name || "Tu Empresa";
+            companyEmail = company?.contactEmail || undefined;
             companyCache.set(worker.companyId, companyName);
           }
 
@@ -3932,6 +3935,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             temporaryPassword,
             companyName,
             loginUrl: `${baseUrl}/login`,
+            companyEmail,
           });
 
           created++;
@@ -10850,6 +10854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                           temporaryPassword: tempPassword,
                           companyName: company?.name || 'Empresa',
                           loginUrl: `${baseUrl}/auth`,
+                          companyEmail: company?.contactEmail || undefined,
                         });
                         console.log('[AUTO-CREATE LSO] Credentials email sent to:', lsoEmail);
                       } catch (emailErr: any) {
