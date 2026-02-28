@@ -41237,8 +41237,32 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const user = req.user!;
       let allRecipients: Array<{ id: string; fullName: string | null; role: string }> = [];
       
+      // Handle LSO: get recipients from all assigned companies (before companyId check since LSO may have companyId set)
+      if (user.role === 'lso') {
+        const lsoAssignments = await db.select({
+          companyId: schema.licensedProfessionalAssignments.companyId,
+        })
+        .from(schema.licensedProfessionalAssignments)
+        .where(
+          and(
+            eq(schema.licensedProfessionalAssignments.userId, user.id),
+            eq(schema.licensedProfessionalAssignments.isActive, true)
+          )
+        );
+        
+        const assignedCompanyIds = [...new Set(lsoAssignments.map(a => a.companyId))];
+        
+        for (const companyId of assignedCompanyIds) {
+          const recipients = await storage.getMessageRecipients(companyId, user.role);
+          allRecipients = allRecipients.concat(recipients);
+        }
+        
+        const uniqueLsoRecipients = new Map<string, typeof allRecipients[0]>();
+        allRecipients.forEach(r => uniqueLsoRecipients.set(r.id, r));
+        allRecipients = Array.from(uniqueLsoRecipients.values());
+      }
       // Handle users with companyId (normal case)
-      if (user.companyId) {
+      else if (user.companyId) {
         allRecipients = await storage.getMessageRecipients(user.companyId, user.role);
       } 
       // Handle superadmin: get recipients from all companies or filtered by query param
@@ -41284,29 +41308,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         const uniqueRecipients = new Map<string, typeof allRecipients[0]>();
         allRecipients.forEach(r => uniqueRecipients.set(r.id, r));
         allRecipients = Array.from(uniqueRecipients.values());
-      }
-      else if (user.role === 'lso') {
-        const lsoAssignments = await db.select({
-          companyId: schema.licensedProfessionalAssignments.companyId,
-        })
-        .from(schema.licensedProfessionalAssignments)
-        .where(
-          and(
-            eq(schema.licensedProfessionalAssignments.userId, user.id),
-            eq(schema.licensedProfessionalAssignments.isActive, true)
-          )
-        );
-        
-        const assignedCompanyIds = [...new Set(lsoAssignments.map(a => a.companyId))];
-        
-        for (const companyId of assignedCompanyIds) {
-          const recipients = await storage.getMessageRecipients(companyId, user.role);
-          allRecipients = allRecipients.concat(recipients);
-        }
-        
-        const uniqueLsoRecipients = new Map<string, typeof allRecipients[0]>();
-        allRecipients.forEach(r => uniqueLsoRecipients.set(r.id, r));
-        allRecipients = Array.from(uniqueLsoRecipients.values());
       }
       // Other users without companyId cannot send messages
       else {
