@@ -1117,6 +1117,7 @@ export default function ConservacionAuditiva() {
 
           <Card>
             <CardContent className="p-0">
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -1126,7 +1127,7 @@ export default function ConservacionAuditiva() {
                     <TableHead>Estado</TableHead>
                     <TableHead>Resultado</TableHead>
                     <TableHead>Próxima Audiometría</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead className="text-right sticky right-0 bg-background z-10">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1162,7 +1163,7 @@ export default function ConservacionAuditiva() {
                           </Badge>
                         </TableCell>
                         <TableCell>{formatDate(audiometry.nextAudiometryDate)}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right sticky right-0 bg-background z-10">
                           <div className="flex justify-end gap-2">
                             {audiometry.status === "programada" && (
                               <Button
