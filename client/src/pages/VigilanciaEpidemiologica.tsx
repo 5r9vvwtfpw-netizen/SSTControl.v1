@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Eye, FileText, Activity, AlertTriangle, Heart, Brain, Ear, Droplet, Wind, Stethoscope, Trash2, Edit, Printer, CalendarDays, Sparkles, Info } from "lucide-react";
+import { Plus, Search, Eye, FileText, Activity, AlertTriangle, Heart, Brain, Ear, Droplet, Wind, Stethoscope, Trash2, Edit, Printer, CalendarDays, Sparkles, Info, Shield } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -204,6 +204,10 @@ export default function VigilanciaEpidemiologica() {
     queryKey: ["/api/sve-cases"],
   });
 
+  const { data: lsoAssignment } = useQuery<{ ok: boolean; data: { type: string; name: string; licenseNumber?: string; licenseExpiry?: string } | null }>({
+    queryKey: ["/api/lso-directory-jwt/current-assignment"],
+  });
+
   const createProgramMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertSveProgramSchema>) => {
       const res = await apiRequest("POST", "/api/sve-programs", data);
@@ -344,6 +348,19 @@ export default function VigilanciaEpidemiologica() {
     },
   });
 
+  const lsoName = lsoAssignment?.data?.name || "";
+  const lsoPosition = lsoAssignment?.data ? "Licenciado en Salud Ocupacional" : "";
+
+  useEffect(() => {
+    if (lsoName && !editingProgram && !programDialogOpen) {
+      setProgramFormData(prev => ({
+        ...prev,
+        responsibleName: prev.responsibleName || lsoName,
+        responsiblePosition: prev.responsiblePosition || lsoPosition,
+      }));
+    }
+  }, [lsoName, lsoPosition, editingProgram, programDialogOpen]);
+
   const resetProgramForm = () => {
     setProgramFormData({
       name: "",
@@ -351,8 +368,8 @@ export default function VigilanciaEpidemiologica() {
       objective: "",
       targetPopulation: "",
       protocol: "",
-      responsibleName: "",
-      responsiblePosition: "",
+      responsibleName: lsoName,
+      responsiblePosition: lsoPosition,
       startDate: "",
       reviewDate: "",
       status: "activo",
@@ -740,6 +757,17 @@ export default function VigilanciaEpidemiologica() {
                   <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                   <p className="text-xs text-muted-foreground">
                     <span className="font-medium">Base normativa:</span> {SVE_NORMATIVA_COLOMBIA[programFormData.riskType].normaBase}. Los campos son editables — ajuste la población objetivo y protocolo según las condiciones específicas de su empresa.
+                  </p>
+                </div>
+              )}
+
+              {!editingProgram && lsoAssignment?.data && (
+                <div className="flex items-start gap-2 rounded-md bg-green-50 dark:bg-green-950 p-2">
+                  <Shield className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+                  <p className="text-xs text-green-700 dark:text-green-300">
+                    <span className="font-medium">Trazabilidad LSO:</span> Responsable auto-llenado con los datos del profesional licenciado asignado ({lsoAssignment.data.name}).
+                    {lsoAssignment.data.licenseNumber && <> Licencia SST: {lsoAssignment.data.licenseNumber}.</>}
+                    {' '}Los campos son editables si necesita ajustarlos.
                   </p>
                 </div>
               )}
