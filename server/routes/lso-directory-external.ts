@@ -11,11 +11,14 @@
  */
 
 import type { Express } from "express";
-import { requireAuth, requirePermission } from "../auth";
+import { requireAuth, requirePermission, hashPassword } from "../auth";
 import { db } from "../db";
 import * as schema from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { lsoDirectoryApi, type LsoRegistration } from "../services/lso-directory-api";
+import { sendLsoPortalAccessEmail } from "../email";
+import { randomBytes } from "crypto";
+import { storage } from "../storage";
 
 // Helper function to get effective company ID
 function getEffectiveCompanyId(req: any): string | null {
@@ -218,14 +221,83 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
           .where(eq(schema.licensedProfessionalAssignments.id, existing.id));
       }
 
+      // Auto-provisionar usuario LSO si no existe
+      let lsoUserId: string = user.id; // fallback al usuario que asigna
+      let autoCreatedUser = false;
+      let temporaryPassword = '';
+
+      if (!lsoData.email) {
+        return res.status(400).json({
+          ok: false,
+          message: "El profesional LSO debe tener un email registrado para crear la asignación",
+        });
+      }
+
+      {
+        const existingUser = await storage.getUserByEmail(lsoData.email);
+
+        if (existingUser) {
+          if (existingUser.role !== 'lso') {
+            return res.status(400).json({
+              ok: false,
+              message: `Ya existe un usuario con el email ${lsoData.email} pero con rol "${existingUser.role}". No se puede vincular como LSO.`,
+            });
+          }
+          lsoUserId = existingUser.id;
+          console.log(`[LSO-AUTO] Usuario LSO existente encontrado para ${lsoData.email}: ${existingUser.id}`);
+        } else {
+          const nameParts = (lsoData.fullName || 'lso').toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9\s]/g, "")
+            .split(" ").filter((p: string) => p.length > 0);
+
+          let baseUsername = nameParts.length >= 2
+            ? `${nameParts[0]}_${nameParts[nameParts.length - 1]}`
+            : nameParts[0] || "lso";
+
+          let username = baseUsername;
+          let counter = 1;
+          while (await storage.getUserByUsername(username)) {
+            username = `${baseUsername}${counter}`;
+            counter++;
+          }
+
+          const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+          const bytes = randomBytes(16);
+          temporaryPassword = '';
+          for (let i = 0; i < 16; i++) {
+            temporaryPassword += chars[bytes[i] % chars.length];
+          }
+
+          const hashedPassword = await hashPassword(temporaryPassword);
+
+          const [newLsoUser] = await db.insert(schema.users).values({
+            username,
+            password: hashedPassword,
+            role: "lso",
+            fullName: lsoData.fullName,
+            email: lsoData.email,
+            companyId: companyId,
+            sstLicenseNumber: lsoData.licenseNumber || null,
+            sstLicenseIssuer: lsoData.licenseIssuer || null,
+            sstLicenseExpiresAt: lsoData.licenseExpiry ? new Date(lsoData.licenseExpiry) : null,
+            sstSignatureUrl: lsoData.signatureUrl || null,
+            sstPhone: lsoData.phone || null,
+          }).returning();
+
+          lsoUserId = newLsoUser.id;
+          autoCreatedUser = true;
+          console.log(`[LSO-AUTO] Usuario LSO auto-creado: ${username} (${newLsoUser.id}) para empresa ${companyId}`);
+        }
+      }
+
       // Crear la nueva asignación con datos del LSO externo
       const [assignment] = await db.insert(schema.licensedProfessionalAssignments)
         .values({
           companyId,
-          userId: user.id, // Temporalmente usamos el usuario que hace la asignación
+          userId: lsoUserId,
           assignedBy: user.id,
           isActive: true,
-          // Campos adicionales para LSO externo (si existen en el schema)
           externalLsoId: externalLsoId.toString(),
           externalLsoName: lsoData.fullName || null,
           externalLsoEmail: lsoData.email || null,
@@ -238,12 +310,35 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
         })
         .returning();
 
-      console.log(`[POST /api/lso-directory/assign-external] LSO externo ${externalLsoId} asignado a empresa ${companyId}`);
+      // Enviar credenciales por email al LSO si se auto-creó
+      if (autoCreatedUser && lsoData.email && temporaryPassword) {
+        const baseUrl = process.env.REPLIT_DOMAINS
+          ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+          : 'https://sst-colombia.com.co';
+
+        try {
+          await sendLsoPortalAccessEmail(lsoData.email, {
+            lsoName: lsoData.fullName || 'Profesional LSO',
+            username: (await db.select({ username: schema.users.username }).from(schema.users).where(eq(schema.users.id, lsoUserId)))[0]?.username || '',
+            temporaryPassword,
+            companyName: company.name || 'Empresa',
+            loginUrl: `${baseUrl}/portal-licenciado`,
+          });
+          console.log(`[LSO-AUTO] Credenciales enviadas por email a ${lsoData.email}`);
+        } catch (emailError: any) {
+          console.error(`[LSO-AUTO] Error enviando email de credenciales:`, emailError.message);
+        }
+      }
+
+      console.log(`[POST /api/lso-directory/assign-external] LSO externo ${externalLsoId} asignado a empresa ${companyId} (usuario: ${lsoUserId}, auto-creado: ${autoCreatedUser})`);
 
       res.status(201).json({
         ok: true,
-        message: "LSO asignado exitosamente desde el directorio externo",
+        message: autoCreatedUser
+          ? "LSO asignado exitosamente. Se creó el usuario automáticamente y se enviaron las credenciales por email."
+          : "LSO asignado exitosamente desde el directorio externo",
         data: assignment,
+        userAutoCreated: autoCreatedUser,
       });
     } catch (error: any) {
       console.error('[POST /api/lso-directory/assign-external] Error:', error.message);

@@ -33,6 +33,8 @@ The Ministerio del Trabajo PDF report (`GET /api/evaluaciones-sst/:id/pdf-minist
 
 The Excel worker import system uses a tolerant normalization pipeline that accepts free-text input from users and maps it to valid database enum values, ensuring no row is rejected due to vocabulary variations.
 
+When an external LSO is assigned to a company from the directory (`POST /api/lso-directory-jwt/assign`), the system auto-provisions a user account with the `lso` role if one doesn't already exist for that email. Credentials are generated automatically and sent via email using `sendLsoPortalAccessEmail`. The assignment card in the frontend (`AsignarLsoExterno.tsx`) displays a `portalAccess` indicator showing whether the LSO has an active portal account. Both `lso-directory-jwt.ts` and `lso-directory-external.ts` routes include this auto-provisioning logic.
+
 ## External Dependencies
 
 -   **PostgreSQL (Neon/AWS RDS)**: Relational database.

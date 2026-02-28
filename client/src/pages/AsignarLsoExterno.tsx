@@ -56,7 +56,9 @@ import {
   Camera,
   Eye,
   FileText,
-  Briefcase
+  Briefcase,
+  KeyRound,
+  ShieldCheck
 } from "lucide-react";
 
 interface LsoRegistration {
@@ -93,6 +95,11 @@ interface LsoAssignment {
   licenseExpiry?: string;
   signatureUrl?: string;
   assignedAt: string;
+  portalAccess?: {
+    hasAccount: boolean;
+    username?: string;
+    userId?: string;
+  };
 }
 
 export default function AsignarLsoExterno() {
@@ -225,10 +232,14 @@ export default function AsignarLsoExterno() {
         }
       });
     },
-    onSuccess: () => {
+    onSuccess: async (response: any) => {
+      const data = typeof response === 'object' ? response : await response?.json?.();
+      const wasAutoCreated = data?.userAutoCreated;
       toast({
         title: "LSO Asignado",
-        description: "El profesional ha sido asignado exitosamente a su empresa.",
+        description: wasAutoCreated
+          ? data?.message || "El profesional ha sido asignado y se le creó acceso al Portal del Licenciado automáticamente. Las credenciales fueron enviadas por email."
+          : "El profesional ha sido asignado exitosamente a su empresa.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/lso-directory-jwt/current-assignment"] });
       setSelectedLso(null);
@@ -435,6 +446,40 @@ export default function AsignarLsoExterno() {
                 <span>Asignado: {new Date(assignmentData.data.assignedAt).toLocaleDateString('es-CO')}</span>
               </div>
             </div>
+
+            {assignmentData.data.portalAccess && (
+              <div className={`mt-4 rounded-md p-3 flex items-center gap-3 ${
+                assignmentData.data.portalAccess.hasAccount
+                  ? 'bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800'
+                  : 'bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800'
+              }`} data-testid="portal-access-status">
+                {assignmentData.data.portalAccess.hasAccount ? (
+                  <>
+                    <ShieldCheck className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                        Portal del Licenciado: Acceso activo
+                      </p>
+                      <p className="text-xs text-green-600 dark:text-green-500">
+                        Usuario: {assignmentData.data.portalAccess.username} — Las credenciales fueron enviadas por email al profesional.
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                        Portal del Licenciado: Sin acceso
+                      </p>
+                      <p className="text-xs text-amber-600 dark:text-amber-500">
+                        El profesional aún no tiene usuario para el portal. Contacte al administrador.
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </CardContent>
           <CardFooter>
             <Button 

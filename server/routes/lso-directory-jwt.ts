@@ -13,6 +13,10 @@ import logger from "../lib/logger";
 import { db } from "../db";
 import * as schema from "@shared/schema";
 import { eq, and } from "drizzle-orm";
+import { hashPassword } from "../auth";
+import { sendLsoPortalAccessEmail } from "../email";
+import { randomBytes } from "crypto";
+import { storage } from "../storage";
 
 const router = Router();
 
@@ -196,11 +200,95 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
         .where(eq(schema.licensedProfessionalAssignments.id, existing.id));
     }
 
+    // Auto-provisionar usuario LSO si no existe
+    let lsoUserId: string = user.id;
+    let autoCreatedUser = false;
+    let autoUsername = '';
+
+    if (!lso.email) {
+      return res.status(400).json({ ok: false, error: "El profesional LSO debe tener un email registrado para crear la asignación" });
+    }
+
+    const existingUser = await storage.getUserByEmail(lso.email);
+
+    if (existingUser) {
+      if (existingUser.role !== 'lso') {
+        return res.status(400).json({
+          ok: false,
+          error: `Ya existe un usuario con el email ${lso.email} pero con rol "${existingUser.role}". No se puede vincular como LSO.`
+        });
+      }
+      lsoUserId = existingUser.id;
+      logger.info({ email: lso.email, userId: existingUser.id }, "[LSO-AUTO] Usuario LSO existente encontrado");
+    } else {
+        const nameParts = (lso.fullName || 'lso').toLowerCase()
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9\s]/g, "")
+          .split(" ").filter((p: string) => p.length > 0);
+
+        let baseUsername = nameParts.length >= 2
+          ? `${nameParts[0]}_${nameParts[nameParts.length - 1]}`
+          : nameParts[0] || "lso";
+
+        let username = baseUsername;
+        let counter = 1;
+        while (await storage.getUserByUsername(username)) {
+          username = `${baseUsername}${counter}`;
+          counter++;
+        }
+
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+        const bytes = randomBytes(16);
+        let temporaryPassword = '';
+        for (let i = 0; i < 16; i++) {
+          temporaryPassword += chars[bytes[i] % chars.length];
+        }
+
+        const hashedPassword = await hashPassword(temporaryPassword);
+
+        const [newLsoUser] = await db.insert(schema.users).values({
+          username,
+          password: hashedPassword,
+          role: "lso",
+          fullName: lso.fullName,
+          email: lso.email,
+          companyId: companyId,
+          sstLicenseNumber: lso.licenseNumber || null,
+          sstLicenseIssuer: lso.licenseIssuer || null,
+          sstLicenseExpiresAt: lso.licenseExpiry ? new Date(lso.licenseExpiry) : null,
+          sstSignatureUrl: lso.signatureUrl || null,
+          sstPhone: lso.phone || null,
+        }).returning();
+
+        lsoUserId = newLsoUser.id;
+        autoCreatedUser = true;
+        autoUsername = username;
+
+        logger.info({ username, userId: newLsoUser.id, companyId }, "[LSO-AUTO] Usuario LSO auto-creado");
+
+        const baseUrl = process.env.REPLIT_DOMAINS
+          ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+          : 'https://sst-colombia.com.co';
+
+        try {
+          await sendLsoPortalAccessEmail(lso.email, {
+            lsoName: lso.fullName || 'Profesional LSO',
+            username,
+            temporaryPassword,
+            companyName: company.name || 'Empresa',
+            loginUrl: `${baseUrl}/portal-licenciado`,
+          });
+          logger.info({ email: lso.email }, "[LSO-AUTO] Credenciales enviadas por email");
+        } catch (emailError: any) {
+          logger.error({ error: emailError.message }, "[LSO-AUTO] Error enviando email de credenciales");
+        }
+    }
+
     // Crear nueva asignación con datos del LSO externo
     const [assignment] = await db.insert(schema.licensedProfessionalAssignments)
       .values({
         companyId,
-        userId: user.id,
+        userId: lsoUserId,
         assignedBy: user.id,
         isActive: true,
         externalLsoId: externalLsoId.toString(),
@@ -215,12 +303,15 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
       })
       .returning();
 
-    logger.info({ companyId, externalLsoId, lsoName: lso.fullName }, "[LSO-JWT-Routes] LSO externo asignado exitosamente");
+    logger.info({ companyId, externalLsoId, lsoName: lso.fullName, autoCreatedUser }, "[LSO-JWT-Routes] LSO externo asignado exitosamente");
 
     return res.status(201).json({ 
       ok: true, 
-      message: "Profesional LSO asignado exitosamente",
-      data: assignment
+      message: autoCreatedUser
+        ? `Profesional LSO asignado exitosamente. Se creó el usuario "${autoUsername}" y se enviaron credenciales a ${lso.email}.`
+        : "Profesional LSO asignado exitosamente",
+      data: assignment,
+      userAutoCreated: autoCreatedUser,
     });
   } catch (error) {
     logger.error({ error }, "[LSO-JWT-Routes] Error asignando LSO");
@@ -293,8 +384,17 @@ router.get("/current-assignment", requireAuth, async (req: Request, res: Respons
       });
     }
 
-    // Si es asignación externa, devolver datos externos
+    // Si es asignación externa, devolver datos externos + estado del usuario LSO
     if (assignment.externalLsoId) {
+      let portalAccess: { hasAccount: boolean; username?: string; userId?: string } = { hasAccount: false };
+
+      if (assignment.externalLsoEmail) {
+        const lsoUser = await storage.getUserByEmail(assignment.externalLsoEmail);
+        if (lsoUser && lsoUser.role === 'lso') {
+          portalAccess = { hasAccount: true, username: lsoUser.username, userId: lsoUser.id };
+        }
+      }
+
       return res.json({
         ok: true,
         data: {
@@ -310,6 +410,7 @@ router.get("/current-assignment", requireAuth, async (req: Request, res: Respons
           licenseExpiry: assignment.externalLsoLicenseExpiry,
           signatureUrl: assignment.externalLsoSignatureUrl,
           assignedAt: assignment.assignedAt,
+          portalAccess,
         }
       });
     }
