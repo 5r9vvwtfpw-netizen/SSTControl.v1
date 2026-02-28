@@ -62,6 +62,9 @@ export default function AuthPage() {
     contactPhone: "",
   });
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [registrationEmail, setRegistrationEmail] = useState("");
+  const [resendingVerification, setResendingVerification] = useState(false);
+  const [resendResult, setResendResult] = useState<{ success: boolean; message: string } | null>(null);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [quotePreFilled, setQuotePreFilled] = useState<{
@@ -262,9 +265,42 @@ export default function AuthPage() {
     return <Redirect to="/" />;
   }
 
+  const handleResendVerification = async (emailToResend?: string) => {
+    const targetEmail = emailToResend || registrationEmail;
+    if (!targetEmail) return;
+    
+    setResendingVerification(true);
+    setResendResult(null);
+    try {
+      const res = await fetch("/api/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: targetEmail }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResendResult({ success: true, message: data.message || "Correo reenviado exitosamente" });
+      } else {
+        setResendResult({ success: false, message: data.error || "No se pudo reenviar el correo" });
+      }
+    } catch {
+      setResendResult({ success: false, message: "Error de conexión. Intenta de nuevo." });
+    } finally {
+      setResendingVerification(false);
+    }
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    loginMutation.mutate(loginData);
+    loginMutation.mutate(loginData, {
+      onError: (error: any) => {
+        if (error.code === "EMAIL_NOT_VERIFIED" && error.email) {
+          setRegistrationEmail(error.email);
+          setRegistrationSuccess(true);
+          setResendResult(null);
+        }
+      }
+    });
   };
 
   const handleRegister = (e: React.FormEvent) => {
@@ -289,6 +325,7 @@ export default function AuthPage() {
         }
         
         setLoginData(prev => ({ ...prev, username: registerData.username }));
+        setRegistrationEmail(registerData.email);
         setActiveTab("login");
         if (!data?.autoVerified) {
           setRegistrationSuccess(true);
@@ -357,6 +394,25 @@ export default function AuthPage() {
                   <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950 rounded text-amber-800 dark:text-amber-200 text-sm">
                     <strong>¿No encuentras el correo?</strong> Revisa las carpetas de <strong>Spam</strong>, <strong>Promociones</strong> o <strong>Actualizaciones</strong> de tu bandeja de entrada.
                   </div>
+                  {registrationEmail && (
+                    <div className="mt-3 flex flex-col gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleResendVerification()}
+                        disabled={resendingVerification}
+                        data-testid="button-resend-verification"
+                      >
+                        <Mail className="h-3 w-3 mr-1" />
+                        {resendingVerification ? "Reenviando..." : "Reenviar correo de verificación"}
+                      </Button>
+                      {resendResult && (
+                        <p className={`text-xs ${resendResult.success ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                          {resendResult.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </AlertDescription>
               </Alert>
             )}

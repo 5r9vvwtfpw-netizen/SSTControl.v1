@@ -210,10 +210,12 @@ export function setupAuth(app: Express) {
         })
         .where(eq(users.id, user.id));
 
-      // Build verification URL - use production domain if available
-      const baseUrl = process.env.VITE_APP_URL 
-        || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : `http://localhost:5000`);
+      // Build verification URL - use request origin for correct domain in any environment
+      const baseUrl = process.env.VITE_APP_URL
+        || `${req.protocol}://${req.get('host')}`;
       const verificationUrl = `${baseUrl}/api/verify-email?token=${verificationToken}`;
+
+      logger.info({ baseUrl, verificationUrl: verificationUrl.substring(0, 80) }, "Verification URL built");
 
       // Send verification email
       const emailResult = await sendVerificationEmail(email, {
@@ -222,7 +224,9 @@ export function setupAuth(app: Express) {
       });
 
       if (!emailResult.success) {
-        logger.error({ err: emailResult.error }, "Failed to send verification email");
+        logger.error({ err: emailResult.error, email }, "Failed to send verification email");
+      } else {
+        logger.info({ email }, "Verification email sent successfully");
       }
 
       // Return success without auto-login
@@ -275,6 +279,56 @@ export function setupAuth(app: Express) {
     } catch (error: any) {
       logger.error({ err: error }, "Email verification error");
       res.redirect("/auth?error=verification_failed");
+    }
+  });
+
+  app.post("/api/resend-verification", registrationRateLimiter, async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({ error: "Se requiere un correo electrónico" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.json({ message: "Si el correo existe, se reenviará el enlace de verificación.", sent: true });
+      }
+
+      if (user.emailVerifiedAt) {
+        return res.json({ message: "Tu correo ya está verificado. Puedes iniciar sesión.", alreadyVerified: true });
+      }
+
+      const verificationToken = randomBytes(32).toString("hex");
+      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      await db.update(users)
+        .set({
+          emailVerificationToken: verificationToken,
+          emailVerificationExpires: verificationExpires,
+        })
+        .where(eq(users.id, user.id));
+
+      const baseUrl = process.env.VITE_APP_URL
+        || `${req.protocol}://${req.get('host')}`;
+      const verificationUrl = `${baseUrl}/api/verify-email?token=${verificationToken}`;
+
+      logger.info({ email, baseUrl }, "Resending verification email");
+
+      const emailResult = await sendVerificationEmail(email, {
+        fullName: user.fullName || user.username,
+        verificationUrl,
+      });
+
+      if (!emailResult.success) {
+        logger.error({ err: emailResult.error, email }, "Failed to resend verification email");
+        return res.status(500).json({ error: "No se pudo enviar el correo. Intenta de nuevo en unos minutos." });
+      }
+
+      logger.info({ email }, "Verification email resent successfully");
+      res.json({ message: "Correo de verificación reenviado exitosamente. Revisa tu bandeja de entrada.", sent: true });
+    } catch (error: any) {
+      logger.error({ err: error }, "Resend verification error");
+      res.status(500).json({ error: "Error al reenviar correo de verificación" });
     }
   });
 
@@ -492,9 +546,9 @@ export function setupAuth(app: Express) {
         })
         .where(eq(users.id, user.id));
 
-      // Build reset URL
-      const baseUrl = process.env.VITE_APP_URL 
-        || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : `http://localhost:5000`);
+      // Build reset URL - use request origin for correct domain in any environment
+      const baseUrl = process.env.VITE_APP_URL
+        || `${req.protocol}://${req.get('host')}`;
       const resetUrl = `${baseUrl}/restablecer-contrasena?token=${resetToken}`;
 
       // Send reset email
