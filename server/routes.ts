@@ -3805,7 +3805,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const companyName = company?.name || "Tu Empresa";
 
       // Send credentials email (outside transaction - email is not transactional)
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const baseUrl = process.env.VITE_APP_URL || `${req.protocol}://${req.get('host')}`;
       const emailResult = await sendPortalAccessEmail(worker.email, {
         workerName: worker.name,
         username,
@@ -3876,7 +3876,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const workersWithEmail = allWorkers.filter(w => w.email);
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const baseUrl = process.env.VITE_APP_URL || `${req.protocol}://${req.get('host')}`;
       const companyCache = new Map<string, string>();
 
       const results: Array<{workerId: string; name: string; email: string; status: string; username?: string; error?: string}> = [];
@@ -10863,7 +10863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         .where(eq(schema.licensedProfessionalAssignments.id, matchedAssignment.id));
                       
                       const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId));
-                      const baseUrl = `${req.protocol}://${req.get('host')}`;
+                      const baseUrl = process.env.VITE_APP_URL || `${req.protocol}://${req.get('host')}`;
                       
                       try {
                         await sendLsoPortalAccessEmail(lsoEmail, {
