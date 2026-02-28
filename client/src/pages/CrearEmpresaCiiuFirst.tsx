@@ -68,7 +68,7 @@ const colombianCities = [
 
 const createCompanySchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
-  nit: z.string().min(9, "El NIT debe tener al menos 9 caracteres").max(15, "El NIT no puede tener más de 15 caracteres"),
+  nit: z.string().transform(v => v.replace(/[\s.\-]/g, '')).pipe(z.string().min(9, "El NIT debe tener al menos 9 caracteres").max(15, "El NIT no puede tener más de 15 caracteres")),
   city: z.string().min(1, "La ciudad es obligatoria"),
   ciiuCode: z.string().min(1, "El código CIIU es obligatorio"),
   address: z.string().min(5, "La dirección debe tener al menos 5 caracteres"),
@@ -575,7 +575,11 @@ export default function CrearEmpresaCiiuFirst() {
                             <FormControl>
                               <Input 
                                 placeholder="Ej: 900123456-7" 
-                                {...field} 
+                                {...field}
+                                onChange={(e) => {
+                                  const cleaned = e.target.value.replace(/[\s.]/g, '');
+                                  field.onChange(cleaned);
+                                }}
                                 data-testid="input-nit"
                               />
                             </FormControl>

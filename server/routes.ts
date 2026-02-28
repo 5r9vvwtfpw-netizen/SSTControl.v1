@@ -1900,7 +1900,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Flexible schema for onboarding - accepts both old and new form fields
   const onboardingCompanySchema = z.object({
     name: z.string().min(1, "El nombre de la empresa es obligatorio"),
-    nit: z.string().min(1, "El NIT es obligatorio"),
+    nit: z.string().min(1, "El NIT es obligatorio").transform(v => v.replace(/[\s.\-]/g, '')),
     address: z.string().optional().default(""),
     contactPhone: z.string().optional().default(""),
     contactEmail: z.string().optional().default(""),

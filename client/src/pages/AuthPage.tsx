@@ -667,7 +667,7 @@ export default function AuthPage() {
                       <Input 
                         placeholder="Ej: 900123456-7" 
                         value={companyData.nit}
-                        onChange={(e) => setCompanyData({ ...companyData, nit: e.target.value })}
+                        onChange={(e) => setCompanyData({ ...companyData, nit: e.target.value.replace(/[\s.]/g, '') })}
                         data-testid="input-register-nit"
                       />
                     </div>
