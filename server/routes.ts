@@ -25986,6 +25986,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.text(`${porcentaje}%`, margin + 440, currentY + 5);
         currentY += 18;
       });
+      currentY += 25;
+
+      // Tabla de distribución por estándar (componente)
+      doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e7e34')
+        .text('DISTRIBUCIÓN POR ESTÁNDAR', margin, currentY);
+      currentY += 15;
+
+      const componenteStats: Array<{ nombre: string; ciclo: string; obtenido: number; maximo: number; porcentaje: number }> = [];
+      componentes.forEach(comp => {
+        const compEstandares = estandares.filter(e => e.componenteId === comp.id);
+        if (compEstandares.length === 0) return;
+        let cObtenido = 0;
+        let cMaximo = 0;
+        compEstandares.forEach(est => {
+          const puntajeKey = `puntaje${evaluacion.tipoEmpresa.charAt(0).toUpperCase()}${evaluacion.tipoEmpresa.slice(1)}` as keyof typeof est;
+          const puntajeMax = (est as any)[puntajeKey] || 0;
+          const respuesta = respuestas.find(r => r.estandarId === est.id);
+          const puntajeObt = respuesta ? (respuesta.cumple || respuesta.noAplica ? puntajeMax : 0) : 0;
+          cMaximo += puntajeMax;
+          cObtenido += puntajeObt;
+        });
+        const porcentajeComp = cMaximo > 0 ? Math.round((cObtenido / cMaximo) * 100) : 0;
+        componenteStats.push({
+          nombre: comp.nombre,
+          ciclo: (comp.cicloPhva || 'HACER').toUpperCase(),
+          obtenido: cObtenido,
+          maximo: cMaximo,
+          porcentaje: porcentajeComp,
+        });
+      });
+
+      const standardsTableHeight = (componenteStats.length + 1) * 18 + 10;
+      if (currentY + standardsTableHeight > doc.page.height - 60) {
+        doc.addPage();
+        doc.font('Helvetica').fontSize(7).fillColor('#000000');
+        currentY = 50;
+        doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e7e34')
+          .text('DISTRIBUCIÓN POR ESTÁNDAR', margin, currentY);
+        currentY += 15;
+      }
+
+      doc.rect(margin, currentY, contentWidth, 18).fill('#1e7e34');
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
+      doc.text('ESTÁNDAR', margin + 5, currentY + 5);
+      doc.text('CICLO', margin + 260, currentY + 5);
+      doc.text('OBTENIDO', margin + 320, currentY + 5);
+      doc.text('MÁXIMO', margin + 390, currentY + 5);
+      doc.text('%', margin + 450, currentY + 5);
+      currentY += 18;
+
+      componenteStats.forEach((stat, idx) => {
+        if (currentY > doc.page.height - 60) {
+          doc.addPage();
+          doc.font('Helvetica').fontSize(7).fillColor('#000000');
+          currentY = 50;
+        }
+        const bgColor = idx % 2 === 0 ? '#f8f9fa' : '#ffffff';
+        const pctColor = stat.porcentaje >= 85 ? '#28a745' : stat.porcentaje >= 60 ? '#ffc107' : '#dc3545';
+        doc.rect(margin, currentY, contentWidth, 18).fill(bgColor);
+        doc.fontSize(7).font('Helvetica').fillColor('#000000');
+        doc.text(stat.nombre, margin + 5, currentY + 5, { width: 245 });
+        doc.text(stat.ciclo, margin + 260, currentY + 5);
+        doc.text(String(stat.obtenido), margin + 320, currentY + 5);
+        doc.text(String(stat.maximo), margin + 390, currentY + 5);
+        doc.fontSize(8).font('Helvetica-Bold').fillColor(pctColor);
+        doc.text(`${stat.porcentaje}%`, margin + 450, currentY + 5);
+        currentY += 18;
+      });
       currentY += 30;
 
       // ========== PÁGINA 3: DETALLE DE ESTÁNDARES ==========
