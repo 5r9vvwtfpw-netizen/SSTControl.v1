@@ -146,6 +146,45 @@ const priorityColors: Record<string, string> = {
   critica: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
 };
 
+const slaHoursByPriority: Record<string, number> = {
+  critica: 4,
+  alta: 12,
+  media: 24,
+  baja: 48,
+};
+
+function getSlaInfo(priority: string, createdAt: string, status: string) {
+  const slaHours = slaHoursByPriority[priority] || 24;
+  const created = new Date(createdAt).getTime();
+  const deadline = created + slaHours * 60 * 60 * 1000;
+  const now = Date.now();
+  const remaining = deadline - now;
+  const isClosed = status === 'cerrado' || status === 'resuelto';
+
+  if (isClosed) {
+    return { label: 'Cerrado', color: 'text-muted-foreground', bgColor: 'bg-muted', expired: false, slaHours };
+  }
+  if (remaining <= 0) {
+    const overHours = Math.abs(remaining) / (1000 * 60 * 60);
+    if (overHours >= 24) {
+      const days = Math.floor(overHours / 24);
+      const hrs = Math.floor(overHours % 24);
+      return { label: `Vencido hace ${days}d ${hrs}h`, color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800', expired: true, slaHours };
+    }
+    return { label: `Vencido hace ${Math.floor(overHours)}h ${Math.floor((overHours % 1) * 60)}m`, color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800', expired: true, slaHours };
+  }
+  const remainingHours = remaining / (1000 * 60 * 60);
+  if (remainingHours >= 24) {
+    const days = Math.floor(remainingHours / 24);
+    const hrs = Math.floor(remainingHours % 24);
+    return { label: `${days}d ${hrs}h restantes`, color: 'text-green-700 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800', expired: false, slaHours };
+  }
+  if (remainingHours > 2) {
+    return { label: `${Math.floor(remainingHours)}h ${Math.floor((remainingHours % 1) * 60)}m restantes`, color: 'text-amber-700 dark:text-amber-400', bgColor: 'bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800', expired: false, slaHours };
+  }
+  return { label: `${Math.floor(remainingHours * 60)}m restantes`, color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800', expired: false, slaHours };
+}
+
 const categoryLabels: Record<string, string> = {
   soporte_tecnico: "Soporte Técnico",
   facturacion: "Facturación",
@@ -675,6 +714,25 @@ export default function AdminTicketsSoporte() {
                       <span>{format(new Date(selectedTicket.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}</span>
                     </div>
                   </div>
+
+                  {(() => {
+                    const sla = getSlaInfo(selectedTicket.priority, selectedTicket.createdAt, selectedTicket.status);
+                    return (
+                      <div className={`rounded-md p-3 ${sla.bgColor}`} data-testid="sla-indicator">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className={`h-4 w-4 ${sla.color}`} />
+                            <span className={`text-sm font-semibold ${sla.color}`}>
+                              SLA: {sla.label}
+                            </span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            Límite: {sla.slaHours}h ({priorityLabels[selectedTicket.priority]})
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   
                   <div className="pt-3 border-t">
                     <p className="text-sm font-medium mb-1">Descripción:</p>
