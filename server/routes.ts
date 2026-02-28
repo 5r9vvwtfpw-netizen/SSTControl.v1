@@ -3108,6 +3108,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).send("El nombre de usuario ya existe");
       }
 
+      // Check if email already exists (if provided)
+      if (validatedData.email) {
+        const existingEmail = await storage.getUserByEmail(validatedData.email);
+        if (existingEmail) {
+          return res.status(400).send(`El correo electrónico ${validatedData.email} ya está registrado en el sistema`);
+        }
+      }
+
       // Hash password before storing
       const hashedPassword = await hashPassword(validatedData.password);
       
@@ -3122,6 +3130,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password, ...userWithoutPassword } = user;
       res.status(201).json(userWithoutPassword);
     } catch (error: any) {
+      console.error('[POST /api/users] Error creating user:', error.message, error.code);
+      if (error.code === '23505') {
+        if (error.detail?.includes('email')) {
+          return res.status(400).send("El correo electrónico ya está registrado en el sistema");
+        }
+        if (error.detail?.includes('username')) {
+          return res.status(400).send("El nombre de usuario ya existe");
+        }
+        return res.status(400).send("Ya existe un registro con estos datos");
+      }
       res.status(400).send(error.message);
     }
   });

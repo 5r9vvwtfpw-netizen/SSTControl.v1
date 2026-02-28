@@ -236,8 +236,16 @@ export default function GestionUsuarios() {
         credentials: "include"
       });
       if (!res.ok) {
-        const errorData = await res.json().catch(() => null);
-        const error: any = new Error(errorData?.message || "Error al crear usuario");
+        const text = await res.text();
+        let errorData: any = null;
+        let errorMessage = "Error al crear usuario";
+        try {
+          errorData = JSON.parse(text);
+          errorMessage = errorData?.message || errorData?.error || errorMessage;
+        } catch {
+          errorMessage = text || errorMessage;
+        }
+        const error: any = new Error(errorMessage);
         error.data = errorData;
         throw error;
       }
