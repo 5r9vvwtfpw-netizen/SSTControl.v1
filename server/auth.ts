@@ -352,9 +352,9 @@ export function setupAuth(app: Express) {
         });
       }
 
-      // Block login if email is not verified (except system-created accounts like admin/superadmin)
-      const systemRoles = ['admin', 'superadmin'];
-      if (!user.emailVerifiedAt && !systemRoles.includes(user.role)) {
+      // Block login if email is not verified (except system/auto-provisioned accounts)
+      const autoVerifiedRoles = ['admin', 'superadmin', 'lso', 'trabajador', 'soporte'];
+      if (!user.emailVerifiedAt && !autoVerifiedRoles.includes(user.role)) {
         logger.warn({ username: user.username }, "Login blocked - email not verified");
         return res.status(403).json({ 
           error: "Debes verificar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada (incluyendo Spam) para el enlace de verificación.",
