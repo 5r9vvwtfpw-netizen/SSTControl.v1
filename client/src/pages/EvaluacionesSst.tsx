@@ -7,7 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, FileText, AlertTriangle, CheckCircle2, FileCheck, Download, Lock, Trash2, AlertCircle, Wrench, RefreshCw } from "lucide-react";
+import { Plus, Search, FileText, AlertTriangle, CheckCircle2, FileCheck, Download, Lock, Trash2, AlertCircle, Wrench, RefreshCw, Monitor, Shield } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -134,37 +134,9 @@ export default function EvaluacionesSst() {
     queryKey: ["/api/responsible-designations"],
   });
 
-  useEffect(() => {
-    if (!workers.length) return;
-
-    const activeDesignations = designations.filter((d: any) => d.status === "activo");
-
-    const sstKeywords = ["responsable del sg-sst", "coordinador sst", "responsable sst", "profesional sst", "lso"];
-    const responsableSst = activeDesignations.find((d: any) => {
-      const pos = (d.position || "").toLowerCase();
-      return sstKeywords.some(kw => pos.includes(kw)) && d.workerId;
-    });
-    const elaboradoId = responsableSst?.workerId || "";
-
-    let gerenteId = "";
-    if (targetCompany?.legalRepId) {
-      const repWorker = workers.find((w: any) => w.identificationNumber === targetCompany.legalRepId);
-      if (repWorker) {
-        gerenteId = repWorker.id;
-      }
-    }
-
-    const current = form.getValues();
-    if (!current.elaboradoPorId && elaboradoId && workers.some((w: any) => w.id === elaboradoId)) {
-      form.setValue("elaboradoPorId", elaboradoId);
-    }
-    if (!current.autorizadoPorId && gerenteId) {
-      form.setValue("autorizadoPorId", gerenteId);
-    }
-    if (!current.aprobadoPorId && gerenteId) {
-      form.setValue("aprobadoPorId", gerenteId);
-    }
-  }, [designations, workers, form, targetCompany]);
+  const { data: lsoAssignment } = useQuery<any>({
+    queryKey: ["/api/lso-directory-jwt/current-assignment"],
+  });
 
   // Obtener la empresa para calcular tipo de empresa automáticamente
   // Para admin: empresa seleccionada en el formulario
@@ -205,6 +177,19 @@ export default function EvaluacionesSst() {
       form.setValue("tipoEmpresa", calculatedTipoEmpresa);
     }
   }, [targetCompany, calculatedTipoEmpresa, form]);
+
+  // Auto-llenar Aprobado por con el Gerente/Representante Legal
+  useEffect(() => {
+    if (!workers.length || !targetCompany?.legalRepId) return;
+
+    const repWorker = workers.find((w: any) => w.identificationNumber === targetCompany.legalRepId);
+    if (repWorker) {
+      const current = form.getValues();
+      if (!current.aprobadoPorId) {
+        form.setValue("aprobadoPorId", repWorker.id);
+      }
+    }
+  }, [workers, form, targetCompany]);
 
   // Para usuarios no-superadmin, establecer automáticamente su companyId
   useEffect(() => {
@@ -593,68 +578,39 @@ export default function EvaluacionesSst() {
                 {/* Firmas de Aprobación */}
                 <div className="space-y-3 border-t pt-3">
                   <h3 className="font-semibold text-sm">Firmas de Aprobación (Opcional)</h3>
-                  {(designations.filter((d: any) => d.status === "activo").length > 0 || targetCompany?.legalRepId) && (
-                    <p className="text-xs text-muted-foreground">
-                      Auto-llenado: Elaborado por desde designaciones SST activas; Autorizado/Aprobado por desde el Representante Legal. Puede modificarlos si lo requiere.
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Elaborado automáticamente por el sistema. Autorizado por el LSO asignado. Aprobado por el Representante Legal.
+                  </p>
                   <div className="grid grid-cols-1 gap-3">
-                    <FormField
-                      control={form.control}
-                      name="elaboradoPorId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Elaborado por</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-elaborado-por">
-                                <SelectValue placeholder="Seleccione trabajador" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {workers.map((worker) => (
-                                <SelectItem key={`elaborado-${worker.id}`} value={worker.id}>
-                                  {worker.name} - {worker.position}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div>
+                      <FormLabel className="text-sm font-medium">Elaborado por</FormLabel>
+                      <div className="mt-1.5 flex items-center gap-2 p-2 rounded-md bg-muted/50 border" data-testid="text-elaborado-por">
+                        <Monitor className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">SADGI S.A.S. — Sistema Automatizado</span>
+                      </div>
+                    </div>
 
-                    <FormField
-                      control={form.control}
-                      name="autorizadoPorId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Autorizado por</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-autorizado-por">
-                                <SelectValue placeholder="Seleccione trabajador" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {workers.map((worker) => (
-                                <SelectItem key={`autorizado-${worker.id}`} value={worker.id}>
-                                  {worker.name} - {worker.position}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
+                    <div>
+                      <FormLabel className="text-sm font-medium">Autorizado por (LSO)</FormLabel>
+                      {lsoAssignment?.data ? (
+                        <div className="mt-1.5 flex items-center gap-2 p-2 rounded-md bg-muted/50 border" data-testid="text-autorizado-por">
+                          <Shield className="h-4 w-4 text-green-600" />
+                          <span className="text-sm">{lsoAssignment.data.name} — Licenciado SST</span>
+                        </div>
+                      ) : (
+                        <div className="mt-1.5 flex items-center gap-2 p-2 rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800" data-testid="text-autorizado-por-pendiente">
+                          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                          <span className="text-sm text-yellow-700 dark:text-yellow-400">Pendiente — Se asignará cuando se vincule un LSO a la empresa</span>
+                        </div>
                       )}
-                    />
+                    </div>
 
                     <FormField
                       control={form.control}
                       name="aprobadoPorId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Aprobado por</FormLabel>
+                          <FormLabel>Aprobado por (Gerente/Representante Legal)</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger data-testid="select-aprobado-por">
