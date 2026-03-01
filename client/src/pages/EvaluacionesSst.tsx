@@ -13,7 +13,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { EvaluacionSst, insertEvaluacionSstSchema, Worker } from "@shared/schema";
+import { EvaluacionSst, insertEvaluacionSstSchema, Worker, ResponsibleDesignation } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -129,6 +129,38 @@ export default function EvaluacionesSst() {
   const { data: workers = [] } = useQuery<Worker[]>({
     queryKey: ["/api/workers"],
   });
+
+  const { data: designations = [] } = useQuery<ResponsibleDesignation[]>({
+    queryKey: ["/api/responsible-designations"],
+  });
+
+  useEffect(() => {
+    if (!designations.length || !workers.length) return;
+    
+    const activeDesignations = designations.filter(d => d.status === "activo");
+    
+    const responsableSst = activeDesignations.find(d => 
+      d.position === "Responsable del SG-SST"
+    );
+    const empleadorGerente = activeDesignations.find(d => 
+      d.position === "Empleador/Gerente"
+    );
+    
+    const elaboradoId = responsableSst?.workerId || "";
+    const autorizadoId = empleadorGerente?.workerId || "";
+    const aprobadoId = empleadorGerente?.workerId || "";
+    
+    const current = form.getValues();
+    if (!current.elaboradoPorId && elaboradoId && workers.some(w => w.id === elaboradoId)) {
+      form.setValue("elaboradoPorId", elaboradoId);
+    }
+    if (!current.autorizadoPorId && autorizadoId && workers.some(w => w.id === autorizadoId)) {
+      form.setValue("autorizadoPorId", autorizadoId);
+    }
+    if (!current.aprobadoPorId && aprobadoId && workers.some(w => w.id === aprobadoId)) {
+      form.setValue("aprobadoPorId", aprobadoId);
+    }
+  }, [designations, workers, form]);
 
   // Obtener la empresa para calcular tipo de empresa automáticamente
   // Para admin: empresa seleccionada en el formulario
@@ -557,6 +589,11 @@ export default function EvaluacionesSst() {
                 {/* Firmas de Aprobación */}
                 <div className="space-y-3 border-t pt-3">
                   <h3 className="font-semibold text-sm">Firmas de Aprobación (Opcional)</h3>
+                  {designations.filter(d => d.status === "activo").length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Auto-llenado desde las designaciones de responsables activas. Puede modificarlos si lo requiere.
+                    </p>
+                  )}
                   <div className="grid grid-cols-1 gap-3">
                     <FormField
                       control={form.control}
