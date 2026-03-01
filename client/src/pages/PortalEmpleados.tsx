@@ -927,7 +927,6 @@ const portalNavGroups = [
     label: "Documentos",
     icon: FolderOpen,
     items: [
-      { id: "mis-documentos", label: "Mis Documentos", icon: FolderOpen },
       { id: "documentos-asignados", label: "Documentos Asignados", icon: FileCheck },
     ]
   },
@@ -1195,7 +1194,7 @@ function WorkerPortal() {
         {activeSection === "perfil" && <MiPerfilTab />}
         {activeSection === "mi-foto" && <MiFotoCarnetTab />}
         {activeSection === "cambiar-password" && <CambiarPasswordTab />}
-        {activeSection === "mis-documentos" && <MisDocumentosTab />}
+        {/* MisDocumentosTab eliminado - info duplicada con MiContratoTab */}
         {activeSection === "documentos-asignados" && <MisDocumentosAsignadosTab />}
         {activeSection === "cursos-virtuales" && <CursosVirtualesTab />}
         {activeSection === "capacitaciones" && <MisCapacitacionesTab />}
