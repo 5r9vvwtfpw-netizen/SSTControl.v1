@@ -135,32 +135,36 @@ export default function EvaluacionesSst() {
   });
 
   useEffect(() => {
-    if (!designations.length || !workers.length) return;
-    
-    const activeDesignations = designations.filter(d => d.status === "activo");
-    
-    const responsableSst = activeDesignations.find(d => 
-      d.position === "Responsable del SG-SST"
-    );
-    const empleadorGerente = activeDesignations.find(d => 
-      d.position === "Empleador/Gerente"
-    );
-    
+    if (!workers.length) return;
+
+    const activeDesignations = designations.filter((d: any) => d.status === "activo");
+
+    const sstKeywords = ["responsable del sg-sst", "coordinador sst", "responsable sst", "profesional sst", "lso"];
+    const responsableSst = activeDesignations.find((d: any) => {
+      const pos = (d.position || "").toLowerCase();
+      return sstKeywords.some(kw => pos.includes(kw)) && d.workerId;
+    });
     const elaboradoId = responsableSst?.workerId || "";
-    const autorizadoId = empleadorGerente?.workerId || "";
-    const aprobadoId = empleadorGerente?.workerId || "";
-    
+
+    let gerenteId = "";
+    if (targetCompany?.legalRepId) {
+      const repWorker = workers.find((w: any) => w.identificationNumber === targetCompany.legalRepId);
+      if (repWorker) {
+        gerenteId = repWorker.id;
+      }
+    }
+
     const current = form.getValues();
-    if (!current.elaboradoPorId && elaboradoId && workers.some(w => w.id === elaboradoId)) {
+    if (!current.elaboradoPorId && elaboradoId && workers.some((w: any) => w.id === elaboradoId)) {
       form.setValue("elaboradoPorId", elaboradoId);
     }
-    if (!current.autorizadoPorId && autorizadoId && workers.some(w => w.id === autorizadoId)) {
-      form.setValue("autorizadoPorId", autorizadoId);
+    if (!current.autorizadoPorId && gerenteId) {
+      form.setValue("autorizadoPorId", gerenteId);
     }
-    if (!current.aprobadoPorId && aprobadoId && workers.some(w => w.id === aprobadoId)) {
-      form.setValue("aprobadoPorId", aprobadoId);
+    if (!current.aprobadoPorId && gerenteId) {
+      form.setValue("aprobadoPorId", gerenteId);
     }
-  }, [designations, workers, form]);
+  }, [designations, workers, form, targetCompany]);
 
   // Obtener la empresa para calcular tipo de empresa automáticamente
   // Para admin: empresa seleccionada en el formulario
@@ -589,9 +593,9 @@ export default function EvaluacionesSst() {
                 {/* Firmas de Aprobación */}
                 <div className="space-y-3 border-t pt-3">
                   <h3 className="font-semibold text-sm">Firmas de Aprobación (Opcional)</h3>
-                  {designations.filter(d => d.status === "activo").length > 0 && (
+                  {(designations.filter((d: any) => d.status === "activo").length > 0 || targetCompany?.legalRepId) && (
                     <p className="text-xs text-muted-foreground">
-                      Auto-llenado desde las designaciones de responsables activas. Puede modificarlos si lo requiere.
+                      Auto-llenado: Elaborado por desde designaciones SST activas; Autorizado/Aprobado por desde el Representante Legal. Puede modificarlos si lo requiere.
                     </p>
                   )}
                   <div className="grid grid-cols-1 gap-3">
