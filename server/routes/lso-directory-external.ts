@@ -228,7 +228,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
               receiverId: prevLso.id, receiverName: `${prevLso.firstName || ''} ${prevLso.lastName || ''}`.trim() || prevLso.username,
               receiverRole: prevLso.role, subject: `Finalización de asignación - ${company.name}`,
               content: `Le informamos que la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) ha finalizado su asignación como profesional licenciado responsable del SG-SST a partir del ${removalDateStr}. Un nuevo profesional ha sido asignado en su lugar. Los documentos que usted firmó durante su gestión permanecen válidos.`,
-              priority: 'high', status: 'unread', relatedEntity: 'lso_assignment', relatedEntityId: existing.id,
+              priority: 'urgent', status: 'unread', relatedEntity: 'lso_assignment', relatedEntityId: existing.id,
             });
             if (prevLso.email) {
               await sendLsoRemovalNotificationEmail(prevLso.email, {
@@ -515,7 +515,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
               receiverId: lsoUser.id, receiverName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
               receiverRole: lsoUser.role, subject: `Finalización de asignación - ${company.name}`,
               content: `Le informamos que la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) ha finalizado su asignación como profesional licenciado responsable del SG-SST a partir del ${removalDateStr}. Los documentos que usted firmó durante su gestión permanecen válidos. Puede consultar el historial de sus empresas anteriores en la pestaña Empresas de su portal.`,
-              priority: 'high', status: 'unread', relatedEntity: 'lso_assignment', relatedEntityId: assignment.id,
+              priority: 'urgent', status: 'unread', relatedEntity: 'lso_assignment', relatedEntityId: assignment.id,
             });
             if (lsoUser.email) {
               await sendLsoRemovalNotificationEmail(lsoUser.email, {

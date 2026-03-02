@@ -41060,7 +41060,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             receiverRole: supportUser.role,
             subject: `Acceso Aprobado - ${company?.name || 'Empresa'}`,
             content: `Su solicitud de acceso ha sido APROBADA.\n\nEmpresa: ${company?.name || 'N/A'}\nAprobado por: ${user.fullName || user.username}\nExpira: ${expiresAt.toLocaleString('es-CO')}\n\nYa puede acceder a los datos de la empresa.`,
-            priority: 'high',
+            priority: 'urgent',
             relatedEntity: 'support_access',
             relatedEntityId: session.id,
           });
@@ -41197,7 +41197,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             receiverRole: supportUserRevoke.role,
             subject: `Acceso Revocado - ${companyRevoke?.name || 'Empresa'}`,
             content: `Su acceso ha sido REVOCADO.\n\nEmpresa: ${companyRevoke?.name || 'N/A'}\nRevocado por: ${user.fullName || user.username}\nRazón: ${revokedReason || 'No especificada'}\n\nYa no tiene acceso a los datos de esta empresa.`,
-            priority: 'high',
+            priority: 'urgent',
             relatedEntity: 'support_access',
             relatedEntityId: session.id,
           });

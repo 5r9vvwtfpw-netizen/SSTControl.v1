@@ -39,7 +39,7 @@ async function notifyLsoRemoval(assignment: any, companyId: string) {
       receiverRole: lsoUser.role,
       subject: `Finalización de asignación - ${company.name}`,
       content: `Le informamos que la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) ha finalizado su asignación como profesional licenciado responsable del SG-SST a partir del ${removalDateStr}. Los documentos que usted firmó durante su gestión permanecen válidos. Puede consultar el historial de sus empresas anteriores en la pestaña Empresas de su portal.`,
-      priority: 'high',
+      priority: 'urgent',
       status: 'unread',
       relatedEntity: 'lso_assignment',
       relatedEntityId: assignment.id,
