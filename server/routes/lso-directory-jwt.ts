@@ -386,11 +386,28 @@ router.get("/current-assignment", requireAuth, async (req: Request, res: Respons
     // Si es asignación externa, devolver datos externos + estado del usuario LSO
     if (assignment.externalLsoId) {
       let portalAccess: { hasAccount: boolean; username?: string; userId?: string } = { hasAccount: false };
+      let professionType: string | null = null;
+      let identificationNumber: string | null = null;
+      let userLicenseNumber = assignment.externalLsoLicenseNumber;
+      let userLicenseIssuer = assignment.externalLsoLicenseIssuer;
+      let userLicenseExpiry = assignment.externalLsoLicenseExpiry;
+      let userSignatureUrl = assignment.externalLsoSignatureUrl;
 
       if (assignment.externalLsoEmail) {
         const lsoUser = await storage.getUserByEmail(assignment.externalLsoEmail);
         if (lsoUser && lsoUser.role === 'lso') {
           portalAccess = { hasAccount: true, username: lsoUser.username, userId: lsoUser.id };
+          professionType = lsoUser.sstProfessionType || null;
+          if (!userLicenseNumber && lsoUser.sstLicenseNumber) userLicenseNumber = lsoUser.sstLicenseNumber;
+          if (!userLicenseIssuer && lsoUser.sstLicenseIssuer) userLicenseIssuer = lsoUser.sstLicenseIssuer;
+          if (!userLicenseExpiry && lsoUser.sstLicenseExpiresAt) userLicenseExpiry = lsoUser.sstLicenseExpiresAt;
+          if (!userSignatureUrl && lsoUser.sstSignatureUrl) userSignatureUrl = lsoUser.sstSignatureUrl;
+          if (lsoUser.workerId) {
+            const [worker] = await db.select({ identificationNumber: schema.workers.identificationNumber })
+              .from(schema.workers)
+              .where(eq(schema.workers.id, lsoUser.workerId));
+            if (worker) identificationNumber = worker.identificationNumber;
+          }
         }
       }
 
@@ -404,10 +421,12 @@ router.get("/current-assignment", requireAuth, async (req: Request, res: Respons
           email: assignment.externalLsoEmail,
           phone: assignment.externalLsoPhone,
           city: assignment.externalLsoCity,
-          licenseNumber: assignment.externalLsoLicenseNumber,
-          licenseIssuer: assignment.externalLsoLicenseIssuer,
-          licenseExpiry: assignment.externalLsoLicenseExpiry,
-          signatureUrl: assignment.externalLsoSignatureUrl,
+          licenseNumber: userLicenseNumber,
+          licenseIssuer: userLicenseIssuer,
+          licenseExpiry: userLicenseExpiry,
+          signatureUrl: userSignatureUrl,
+          professionType,
+          identificationNumber,
           assignedAt: assignment.assignedAt,
           portalAccess,
         }

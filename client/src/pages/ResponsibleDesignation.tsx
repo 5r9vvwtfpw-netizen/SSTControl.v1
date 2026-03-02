@@ -233,6 +233,37 @@ const POSITION_RESPONSIBILITIES: Record<string, string[]> = {
   ],
 };
 
+const PROFESSION_TO_NIVEL: Record<string, string> = {
+  tecnico_sst: "Técnico",
+  tecnologo_sst: "Tecnólogo",
+  profesional_sst: "Profesional",
+  especialista_sst: "Especialista",
+  medico_ocupacional: "Especialista",
+  medico_trabajo: "Especialista",
+  ingeniero_sst: "Profesional",
+  enfermero_sst: "Profesional",
+};
+
+function autoFillLsoFields(
+  form: any,
+  lso: { name?: string; licenseNumber?: string; licenseExpiry?: string; licenseIssuer?: string; professionType?: string; identificationNumber?: string; } | null
+) {
+  if (!lso) return;
+  form.setValue("licenciaSstTitular", lso.name || "");
+  form.setValue("licenciaSstNumero", lso.licenseNumber || "");
+  form.setValue("licenciaSstVigencia", lso.licenseExpiry || undefined);
+  form.setValue("externalLsoIdentificationNumber", lso.identificationNumber || "");
+  form.setValue("nivelFormacion", (lso.professionType && PROFESSION_TO_NIVEL[lso.professionType]) || undefined);
+}
+
+function clearLsoFields(form: any) {
+  form.setValue("licenciaSstTitular", "");
+  form.setValue("licenciaSstNumero", "");
+  form.setValue("licenciaSstVigencia", undefined);
+  form.setValue("externalLsoIdentificationNumber", "");
+  form.setValue("nivelFormacion", undefined);
+}
+
 export default function ResponsibleDesignationPage() {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -245,7 +276,7 @@ export default function ResponsibleDesignationPage() {
   });
 
   // Query para obtener la asignación actual de LSO (usando endpoint JWT unificado)
-  const { data: lsoAssignmentData } = useQuery<{ ok: boolean; data: { type: string; name: string; email?: string; phone?: string; city?: string; licenseNumber?: string; licenseIssuer?: string; licenseExpiry?: string; assignedAt: string; } | null }>({
+  const { data: lsoAssignmentData } = useQuery<{ ok: boolean; data: { type: string; name: string; email?: string; phone?: string; city?: string; licenseNumber?: string; licenseIssuer?: string; licenseExpiry?: string; professionType?: string; identificationNumber?: string; assignedAt: string; } | null }>({
     queryKey: ["/api/lso-directory-jwt/current-assignment"],
   });
   const lsoAssignment = lsoAssignmentData?.data;
@@ -466,19 +497,16 @@ export default function ResponsibleDesignationPage() {
     
     // Manejar LSO externo según el cargo seleccionado
     if (position === "Responsable del SG-SST" && lsoAssignment) {
-      // Si es Responsable del SG-SST y hay LSO asignado, pre-seleccionar usar LSO externo
       setUseExternalLso(true);
       form.setValue("isExternalLso", true);
       form.setValue("externalLsoName", lsoAssignment.name);
       form.setValue("workerId", undefined);
-      form.setValue("licenciaSstTitular", lsoAssignment.name || "");
-      form.setValue("licenciaSstNumero", lsoAssignment.licenseNumber || "");
-      form.setValue("licenciaSstVigencia", lsoAssignment.licenseExpiry || undefined);
+      autoFillLsoFields(form, lsoAssignment);
     } else {
-      // Para otros cargos, resetear LSO externo
       setUseExternalLso(false);
       form.setValue("isExternalLso", false);
       form.setValue("externalLsoName", undefined);
+      clearLsoFields(form);
     }
     
     toast({
@@ -590,12 +618,11 @@ export default function ResponsibleDesignationPage() {
                                 form.setValue("isExternalLso", true);
                                 form.setValue("externalLsoName", lsoAssignment.name);
                                 form.setValue("workerId", undefined);
-                                form.setValue("licenciaSstTitular", lsoAssignment.name || "");
-                                form.setValue("licenciaSstNumero", lsoAssignment.licenseNumber || "");
-                                form.setValue("licenciaSstVigencia", lsoAssignment.licenseExpiry || undefined);
+                                autoFillLsoFields(form, lsoAssignment);
                               } else {
                                 form.setValue("isExternalLso", false);
                                 form.setValue("externalLsoName", undefined);
+                                clearLsoFields(form);
                               }
                             }}
                             data-testid="checkbox-use-external-lso"
@@ -721,6 +748,12 @@ export default function ResponsibleDesignationPage() {
                             <span className="text-muted-foreground">Nombre:</span>
                             <span className="ml-2 font-medium">{lsoAssignment.name}</span>
                           </div>
+                          {lsoAssignment.identificationNumber && (
+                            <div>
+                              <span className="text-muted-foreground">Cédula:</span>
+                              <span className="ml-2 font-medium">{lsoAssignment.identificationNumber}</span>
+                            </div>
+                          )}
                           {lsoAssignment.licenseNumber && (
                             <div>
                               <span className="text-muted-foreground">Licencia:</span>
@@ -731,6 +764,12 @@ export default function ResponsibleDesignationPage() {
                             <div>
                               <span className="text-muted-foreground">Vigencia:</span>
                               <span className="ml-2 font-medium">{lsoAssignment.licenseExpiry}</span>
+                            </div>
+                          )}
+                          {lsoAssignment.professionType && PROFESSION_TO_NIVEL[lsoAssignment.professionType] && (
+                            <div>
+                              <span className="text-muted-foreground">Formación:</span>
+                              <span className="ml-2 font-medium">{PROFESSION_TO_NIVEL[lsoAssignment.professionType]}</span>
                             </div>
                           )}
                           {lsoAssignment.city && (
