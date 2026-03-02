@@ -366,7 +366,7 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     }
   });
 
-  // GET /api/portal-licenciado/empresas - Companies assigned to the LSO
+  // GET /api/portal-licenciado/empresas - Companies assigned to the LSO (enriched)
   app.get("/api/portal-licenciado/empresas", requirePermission("portal_licenciado:access"), async (req, res) => {
     try {
       const user = req.user!;
@@ -378,6 +378,7 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         city: schema.companies.city,
         riskLevel: schema.companies.riskLevel,
         numberOfWorkers: schema.companies.numberOfWorkers,
+        numberOfVehicles: schema.companies.numberOfVehicles,
         assignmentId: schema.licensedProfessionalAssignments.id,
         assignedAt: schema.licensedProfessionalAssignments.assignedAt,
       })
@@ -387,8 +388,63 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         eq(schema.licensedProfessionalAssignments.userId, user.id),
         eq(schema.licensedProfessionalAssignments.isActive, true)
       ));
+
+      const enriched = await Promise.all(empresas.map(async (empresa) => {
+        let porcentajeSst: number | null = null;
+        let nivelCumplimiento: string | null = null;
+        let subscriptionBlocked = false;
+        let lastActivity: string | null = null;
+
+        try {
+          const [lastEval] = await db.select({
+            porcentaje: schema.evaluacionesSst.porcentajeCumplimiento,
+            nivel: schema.evaluacionesSst.nivelCumplimiento,
+          })
+          .from(schema.evaluacionesSst)
+          .where(eq(schema.evaluacionesSst.companyId, empresa.id))
+          .orderBy(desc(schema.evaluacionesSst.createdAt))
+          .limit(1);
+          if (lastEval) {
+            porcentajeSst = lastEval.porcentaje;
+            nivelCumplimiento = lastEval.nivel;
+          }
+        } catch {}
+
+        try {
+          const [sub] = await db.select({
+            status: schema.pricingPluginSubscriptions.subscriptionStatus,
+            blockedAt: schema.pricingPluginSubscriptions.blockedAt,
+          })
+          .from(schema.pricingPluginSubscriptions)
+          .where(eq(schema.pricingPluginSubscriptions.companyId, empresa.id))
+          .limit(1);
+          if (sub && (sub.status === 'blocked' || sub.status === 'past_due') && sub.blockedAt) {
+            subscriptionBlocked = true;
+          }
+        } catch {}
+
+        try {
+          const [lastAuditRow] = await db.select({
+            lastSeen: sql<string>`MAX(${schema.auditLogs.timestamp})`,
+          })
+          .from(schema.auditLogs)
+          .where(eq(schema.auditLogs.companyId, empresa.id));
+          
+          if (lastAuditRow?.lastSeen) {
+            lastActivity = lastAuditRow.lastSeen;
+          }
+        } catch {}
+
+        return {
+          ...empresa,
+          porcentajeSst,
+          nivelCumplimiento,
+          subscriptionBlocked,
+          lastActivity,
+        };
+      }));
       
-      res.json(empresas);
+      res.json(enriched);
     } catch (error: any) {
       console.error('[GET /api/portal-licenciado/empresas] Error:', error.message);
       res.status(500).json({ message: "Error fetching assigned companies", error: error.message });

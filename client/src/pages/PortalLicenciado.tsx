@@ -51,7 +51,10 @@ import {
   ChevronDown,
   ChevronRight,
   Eye,
-  BarChart3
+  BarChart3,
+  MessageSquare,
+  Info,
+  Truck
 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -77,8 +80,13 @@ interface AssignedCompany {
   city: string | null;
   riskLevel: string;
   numberOfWorkers: number;
+  numberOfVehicles: number | null;
   assignmentId: string;
   assignedAt: string;
+  porcentajeSst: number | null;
+  nivelCumplimiento: string | null;
+  subscriptionBlocked: boolean;
+  lastActivity: string | null;
 }
 
 interface PendingDocument {
@@ -336,6 +344,31 @@ function DashboardTab() {
   );
 }
 
+function SstProgressBar({ porcentaje, nivel }: { porcentaje: number | null; nivel: string | null }) {
+  if (porcentaje === null) {
+    return <span className="text-xs text-muted-foreground">Sin evaluar</span>;
+  }
+
+  let colorClass = "bg-destructive";
+  if (porcentaje >= 86) colorClass = "bg-green-500";
+  else if (porcentaje >= 60) colorClass = "bg-yellow-500";
+
+  return (
+    <div className="space-y-1 min-w-[120px]" data-testid="sst-progress-bar">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium">{porcentaje}%</span>
+        {nivel && <span className="text-xs text-muted-foreground capitalize">{nivel}</span>}
+      </div>
+      <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${colorClass}`}
+          style={{ width: `${Math.min(porcentaje, 100)}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function EmpresasTab() {
   const { data: empresas = [], isLoading, isError, error } = useQuery<AssignedCompany[]>({
     queryKey: ["/api/portal-licenciado/empresas"],
@@ -384,6 +417,23 @@ function EmpresasTab() {
     );
   }
 
+  const formatLastActivity = (dateStr: string | null) => {
+    if (!dateStr) return "Sin registros";
+    try {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      if (diffDays === 0) return "Hoy";
+      if (diffDays === 1) return "Ayer";
+      if (diffDays < 7) return `Hace ${diffDays} días`;
+      if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} sem.`;
+      return format(date, "dd MMM yyyy", { locale: es });
+    } catch {
+      return "Sin registros";
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -393,34 +443,80 @@ function EmpresasTab() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Empresa</TableHead>
-              <TableHead>NIT</TableHead>
-              <TableHead>Ciudad</TableHead>
-              <TableHead>Nivel de Riesgo</TableHead>
-              <TableHead>Trabajadores</TableHead>
-              <TableHead>Fecha Asignación</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {empresas.map((empresa) => (
-              <TableRow key={empresa.id} data-testid={`row-empresa-${empresa.id}`}>
-                <TableCell className="font-medium">{empresa.name}</TableCell>
-                <TableCell>{empresa.nit}</TableCell>
-                <TableCell>{empresa.city || '-'}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">Nivel {empresa.riskLevel}</Badge>
-                </TableCell>
-                <TableCell>{empresa.numberOfWorkers}</TableCell>
-                <TableCell>
-                  {format(new Date(empresa.assignedAt), "dd MMM yyyy", { locale: es })}
-                </TableCell>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Empresa</TableHead>
+                <TableHead>NIT</TableHead>
+                <TableHead>Ciudad</TableHead>
+                <TableHead>Riesgo</TableHead>
+                <TableHead>Trabajadores</TableHead>
+                <TableHead>Vehículos</TableHead>
+                <TableHead>Avance SG-SST</TableHead>
+                <TableHead>Última Actividad</TableHead>
+                <TableHead>Asignación</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {empresas.map((empresa) => (
+                <TableRow key={empresa.id} data-testid={`row-empresa-${empresa.id}`}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{empresa.name}</span>
+                      {empresa.subscriptionBlocked && (
+                        <Badge variant="secondary" className="text-xs gap-1" data-testid={`badge-blocked-${empresa.id}`}>
+                          <Info className="h-3 w-3" />
+                          Acceso suspendido
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{empresa.nit}</TableCell>
+                  <TableCell>{empresa.city || '-'}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">Nivel {empresa.riskLevel}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                      {empresa.numberOfWorkers}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Truck className="h-3.5 w-3.5 text-muted-foreground" />
+                      {empresa.numberOfVehicles ?? 0}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <SstProgressBar porcentaje={empresa.porcentajeSst} nivel={empresa.nivelCumplimiento} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-sm">{formatLastActivity(empresa.lastActivity)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">
+                      {format(new Date(empresa.assignedAt), "dd MMM yyyy", { locale: es })}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Link href={`/mensajes-internos?empresa=${encodeURIComponent(empresa.name)}`}>
+                      <Button size="sm" variant="outline" data-testid={`button-message-${empresa.id}`}>
+                        <MessageSquare className="h-4 w-4 mr-1" />
+                        Mensaje
+                      </Button>
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );

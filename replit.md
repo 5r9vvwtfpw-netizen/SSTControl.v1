@@ -35,6 +35,8 @@ The Excel worker import system uses a tolerant normalization pipeline that accep
 
 When an external LSO is assigned to a company from the directory (`POST /api/lso-directory-jwt/assign`), the system auto-provisions a user account with the `lso` role if one doesn't already exist for that email. Credentials are generated automatically and sent via email using `sendLsoPortalAccessEmail`. The assignment card in the frontend (`AsignarLsoExterno.tsx`) displays a `portalAccess` indicator showing whether the LSO has an active portal account. Both `lso-directory-jwt.ts` and `lso-directory-external.ts` routes include this auto-provisioning logic.
 
+The LSO Portal Empresas tab (`GET /api/portal-licenciado/empresas`) returns enriched company data including: SG-SST compliance percentage and level (from latest `evaluaciones_sst`), subscription blocked status (from `pricing_plugin_subscriptions`), vehicle count, and last activity date (from `audit_logs`). The frontend displays a progress bar for SG-SST compliance (green ≥86%, yellow ≥60%, red <60%), a non-aggressive "Acceso suspendido" badge for blocked companies, and a quick "Mensaje" button that navigates to `/mensajes-internos` with the company name as context.
+
 ## External Dependencies
 
 -   **PostgreSQL (Neon/AWS RDS)**: Relational database.
