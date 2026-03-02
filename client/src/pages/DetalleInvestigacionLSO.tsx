@@ -1,12 +1,31 @@
+import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { ArrowLeft, FileText, AlertTriangle, CheckCircle, User, Building2, Calendar, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, FileText, AlertTriangle, CheckCircle, User, Building2, Calendar, Clock, Loader2, MessageSquare, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import {
@@ -73,17 +92,51 @@ interface InvestigationDetail {
     description: string;
     severity: string;
   }>;
+  adminUserId: string | null;
+  adminFullName: string | null;
 }
 
 export default function DetalleInvestigacionLSO() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const [showMessage, setShowMessage] = useState(false);
+  const [msgSubject, setMsgSubject] = useState("");
+  const [msgContent, setMsgContent] = useState("");
+  const [msgPriority, setMsgPriority] = useState<"normal" | "urgent">("normal");
 
   const { data: investigation, isLoading, error } = useQuery<InvestigationDetail>({
     queryKey: ['/api/portal-licenciado/investigacion', id],
     enabled: !!id,
   });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (data: { receiverId: string; subject: string; content: string; priority: string }) => {
+      return await apiRequest("POST", "/api/internal-messages", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/internal-messages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/internal-messages/unread-count"] });
+      toast({ title: "Mensaje enviado", description: `Mensaje enviado al administrador de ${investigation?.companyName}` });
+      setShowMessage(false);
+      setMsgSubject("");
+      setMsgContent("");
+      setMsgPriority("normal");
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "No se pudo enviar el mensaje", variant: "destructive" });
+    },
+  });
+
+  const handleSendMessage = () => {
+    if (!investigation?.adminUserId || !msgSubject.trim() || !msgContent.trim()) return;
+    sendMessageMutation.mutate({
+      receiverId: investigation.adminUserId,
+      subject: msgSubject.trim(),
+      content: msgContent.trim(),
+      priority: msgPriority,
+    });
+  };
 
   const goBackToVault = () => {
     const companyId = investigation?.companyId;
@@ -157,6 +210,22 @@ export default function DetalleInvestigacionLSO() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver a la Empresa
           </Button>
+          {investigation.adminUserId && (
+            <Button
+              size="sm"
+              variant="outline"
+              data-testid="button-message-admin"
+              onClick={() => {
+                setShowMessage(true);
+                setMsgSubject(`Investigación - ${investigation.accident?.workerName || 'Accidente'} (${format(new Date(investigation.eventDate), "dd/MM/yyyy")})`);
+                setMsgContent("");
+                setMsgPriority("normal");
+              }}
+            >
+              <MessageSquare className="h-4 w-4 mr-1" />
+              Mensaje
+            </Button>
+          )}
           <div>
             <h1 className="text-2xl font-bold" data-testid="text-page-title">Revisión de Investigación</h1>
             <p className="text-muted-foreground">Estándar 3.2.1 - Resolución 0312/2019, Resolución 1401/2007</p>
@@ -417,6 +486,72 @@ export default function DetalleInvestigacionLSO() {
           )}
         </div>
       </div>
+
+      <Dialog open={showMessage} onOpenChange={setShowMessage}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5" />
+              Mensaje a {investigation.companyName}
+            </DialogTitle>
+            <DialogDescription>
+              Destinatario: {investigation.adminFullName || 'Administrador'} — Administrador ({investigation.companyName})
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-4 gap-3">
+              <div className="col-span-3 space-y-1.5">
+                <Label>Asunto *</Label>
+                <Input
+                  placeholder="Escriba el asunto del mensaje..."
+                  value={msgSubject}
+                  onChange={(e) => setMsgSubject(e.target.value)}
+                  data-testid="input-inv-msg-subject"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Prioridad</Label>
+                <Select value={msgPriority} onValueChange={(v) => setMsgPriority(v as "normal" | "urgent")}>
+                  <SelectTrigger data-testid="select-inv-msg-priority">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="urgent">Urgente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Mensaje *</Label>
+              <Textarea
+                placeholder="Escriba el contenido del mensaje..."
+                rows={5}
+                value={msgContent}
+                onChange={(e) => setMsgContent(e.target.value)}
+                data-testid="input-inv-msg-content"
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowMessage(false)} data-testid="button-cancel-inv-msg">
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSendMessage}
+              disabled={sendMessageMutation.isPending || !msgSubject.trim() || !msgContent.trim()}
+              data-testid="button-send-inv-msg"
+            >
+              {sendMessageMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-1" />
+              )}
+              Enviar Mensaje
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -684,11 +684,32 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         .from(schema.investigationFindings)
         .where(eq(schema.investigationFindings.investigationId, id));
       
+      let adminUserId: string | null = null;
+      let adminFullName: string | null = null;
+      try {
+        const [adminUser] = await db.select({
+          id: schema.users.id,
+          fullName: schema.users.fullName,
+        })
+        .from(schema.users)
+        .where(and(
+          eq(schema.users.companyId, investigation.companyId),
+          eq(schema.users.role, 'admin')
+        ))
+        .limit(1);
+        if (adminUser) {
+          adminUserId = adminUser.id;
+          adminFullName = adminUser.fullName;
+        }
+      } catch {}
+
       res.json({
         ...investigation,
         accident,
         participants,
         findings,
+        adminUserId,
+        adminFullName,
       });
     } catch (error: any) {
       console.error('[GET /api/portal-licenciado/investigacion/:id] Error:', error.message);
