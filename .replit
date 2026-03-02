@@ -9,7 +9,7 @@ packages = ["python311", "python311Packages.openpyxl", "python311Packages.pandas
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+run = ["node", "dist/index.js"]
 
 [[ports]]
 localPort = 5000
