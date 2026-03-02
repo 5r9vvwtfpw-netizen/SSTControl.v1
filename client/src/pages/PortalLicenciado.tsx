@@ -1066,10 +1066,11 @@ function PHVADashboardPanel({ companyId }: { companyId: string }) {
   );
 }
 
-function CompanyVaultDetail({ vault, onBack, isSigning, onSign }: {
+function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign }: {
   vault: CompanyVault;
   onBack: () => void;
   isSigning: boolean;
+  signingId: string | null;
   onSign: (type: string, id: string, name: string) => void;
 }) {
   return (
@@ -1435,6 +1436,7 @@ function DocumentosTab() {
   };
 
   const isSigning = signEvaluacionMutation.isPending || signPlanMutation.isPending || signMatrizMutation.isPending;
+  const signingId = confirmSign?.id || null;
 
   if (isError) {
     return (
