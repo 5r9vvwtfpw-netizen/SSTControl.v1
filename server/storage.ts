@@ -11952,6 +11952,12 @@ export class DbStorage implements IStorage {
       };
       const blockedReason = isBlocked ? (blockedReasonMap[status] || 'Suscripcion inactiva') : null;
 
+      const colCheck = await db.execute(sql`
+        SELECT column_name FROM information_schema.columns 
+        WHERE table_name = 'pricing_plugin_subscriptions' AND column_name = 'vehiculos'
+      `);
+      const hasVehiculos = colCheck.rows && colCheck.rows.length > 0;
+
       const companyData = await db.execute(
         sql`SELECT number_of_workers, number_of_vehicles FROM companies WHERE id = ${companyId}`
       );
@@ -11963,7 +11969,7 @@ export class DbStorage implements IStorage {
       );
 
       if (!existing.rows || existing.rows.length === 0) {
-        if (isBlocked) {
+        if (hasVehiculos) {
           await db.execute(sql`
             INSERT INTO pricing_plugin_subscriptions (
               customer_id, employee_count, tier, monthly_cost, price_per_license,
@@ -11972,7 +11978,7 @@ export class DbStorage implements IStorage {
             ) VALUES (
               ${companyId}, ${workers}, 'sst_dinamico', 0, 0, 0,
               'active', ${mappedStatus}, ${trialEnd},
-              NOW(), ${blockedReason}, ${vehicles}, NOW()
+              ${isBlocked ? sql`NOW()` : sql`NULL`}, ${blockedReason}, ${vehicles}, NOW()
             )
           `);
         } else {
@@ -11980,25 +11986,25 @@ export class DbStorage implements IStorage {
             INSERT INTO pricing_plugin_subscriptions (
               customer_id, employee_count, tier, monthly_cost, price_per_license,
               minimum_fee, status, subscription_status, trial_ends_at,
-              blocked_at, blocked_reason, vehiculos, updated_at
+              blocked_at, blocked_reason, updated_at
             ) VALUES (
               ${companyId}, ${workers}, 'sst_dinamico', 0, 0, 0,
               'active', ${mappedStatus}, ${trialEnd},
-              NULL, NULL, ${vehicles}, NOW()
+              ${isBlocked ? sql`NOW()` : sql`NULL`}, ${blockedReason}, NOW()
             )
           `);
         }
         console.log(`[SUB-SYNC] Created pricing_plugin_subscriptions for company ${companyId} (status: ${mappedStatus})`);
       } else {
         const currentStatus = (existing.rows[0] as any)?.subscription_status;
-        if (isBlocked) {
+        if (hasVehiculos) {
           await db.execute(sql`
             UPDATE pricing_plugin_subscriptions
             SET subscription_status = ${mappedStatus},
                 trial_ends_at = ${trialEnd},
                 employee_count = ${workers},
                 vehiculos = ${vehicles},
-                blocked_at = NOW(),
+                blocked_at = ${isBlocked ? sql`NOW()` : sql`NULL`},
                 blocked_reason = ${blockedReason},
                 updated_at = NOW()
             WHERE customer_id = ${companyId}
@@ -12009,9 +12015,8 @@ export class DbStorage implements IStorage {
             SET subscription_status = ${mappedStatus},
                 trial_ends_at = ${trialEnd},
                 employee_count = ${workers},
-                vehiculos = ${vehicles},
-                blocked_at = NULL,
-                blocked_reason = NULL,
+                blocked_at = ${isBlocked ? sql`NOW()` : sql`NULL`},
+                blocked_reason = ${blockedReason},
                 updated_at = NOW()
             WHERE customer_id = ${companyId}
           `);

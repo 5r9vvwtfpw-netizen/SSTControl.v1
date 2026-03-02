@@ -17,6 +17,17 @@ export async function syncPricingPluginSubscriptions() {
     `);
     const hasVehiculos = colCheck.rows && colCheck.rows.length > 0;
 
+    if (!hasVehiculos) {
+      try {
+        await db.execute(sql`ALTER TABLE pricing_plugin_subscriptions ADD COLUMN vehiculos INTEGER DEFAULT 0`);
+        console.log('[Migration] ✅ Columna vehiculos agregada a pricing_plugin_subscriptions');
+      } catch (e: any) {
+        if (!e.message?.includes('already exists')) {
+          console.error('[Migration] Error agregando columna vehiculos:', e.message);
+        }
+      }
+    }
+
     const missing = await db.execute(sql`
       SELECT s.id, s.company_id, s.status, s.plan_id, s.trial_end, s.current_period_end, s.last_payment_date
       FROM subscriptions s
