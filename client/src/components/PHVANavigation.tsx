@@ -15,7 +15,13 @@ import {
   XCircle,
   User,
   Building2,
-  Car
+  Car,
+  LayoutDashboard,
+  Users,
+  FileCheck,
+  Award,
+  MessageSquare,
+  Mail
 } from "lucide-react";
 import safetyHelmetAvatar from "@assets/generated_images/safety_helmet_avatar_icon.png";
 import { Button } from "@/components/ui/button";
@@ -370,43 +376,101 @@ export function PHVANavigation() {
   // ===== NAVEGACIÓN EXCLUSIVA PARA ROL LSO (Licenciado en Salud Ocupacional) =====
   // El rol LSO solo debe ver su portal específico, no el menú PHVA completo
   if (user?.role === 'lso') {
+    const lsoNavItems = [
+      { label: "Panel", href: "/portal-licenciado?tab=dashboard", icon: LayoutDashboard, tab: "dashboard" },
+      { label: "Empresas", href: "/portal-licenciado?tab=empresas", icon: Building2, tab: "empresas" },
+      { label: "Documentos", href: "/portal-licenciado?tab=documentos", icon: FileCheck, tab: "documentos" },
+      { label: "PESV", href: "/portal-licenciado?tab=pesv", icon: Car, tab: "pesv" },
+      { label: "Mi Licencia", href: "/portal-licenciado?tab=licencia", icon: Award, tab: "licencia" },
+    ];
+
+    const isOnPortal = location.startsWith("/portal-licenciado");
+    const isOnMessages = location.startsWith("/mensajes-internos");
+    const currentTab = isOnPortal ? new URLSearchParams(window.location.search).get("tab") || "dashboard" : null;
+
     return (
       <header className="sticky top-0 z-50 phva-navigation-header">
         <div className="bg-gradient-to-r from-primary via-primary/95 to-primary/90 text-primary-foreground">
           <div className="container mx-auto px-6">
             <div className="flex items-center justify-between py-3">
-              {/* Logo */}
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
-                  <Shield className="h-7 w-7" />
+              <Link href="/portal-licenciado">
+                <div className="flex items-center gap-3 cursor-pointer">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
+                    <Shield className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h1 className="text-lg font-bold leading-tight">SG-SST</h1>
+                    <p className="text-[10px] opacity-80">Portal del Licenciado</p>
+                  </div>
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold">SG-SST</h1>
-                  <p className="text-xs opacity-90">Sistema de Gestión</p>
-                </div>
-              </div>
+              </Link>
 
-              {/* Navegación simplificada para LSO */}
-              <nav className="flex items-center gap-2">
-                <Link href="/portal-licenciado">
+              <nav className="hidden md:flex items-center gap-1" data-testid="nav-lso-menu">
+                {lsoNavItems.map((item) => {
+                  const isActive = isOnPortal && currentTab === item.tab;
+                  return (
+                    <Link key={item.tab} href={item.href}>
+                      <Button
+                        variant={isActive ? "secondary" : "ghost"}
+                        size="sm"
+                        className={isActive ? "font-semibold text-primary" : "text-white/90 hover:text-white"}
+                        data-testid={`nav-lso-${item.tab}`}
+                      >
+                        <item.icon className="mr-1.5 h-4 w-4" />
+                        {item.label}
+                      </Button>
+                    </Link>
+                  );
+                })}
+                <div className="w-px h-6 bg-white/20 mx-1" />
+                <Link href="/mensajes-internos">
                   <Button
-                    variant={location === "/portal-licenciado" || location.startsWith("/portal-licenciado") ? "secondary" : "ghost"}
-                    size="default"
-                    className={location === "/portal-licenciado" ? "font-semibold text-primary" : "text-white"}
-                    data-testid="link-portal-licenciado"
+                    variant={isOnMessages ? "secondary" : "ghost"}
+                    size="sm"
+                    className={isOnMessages ? "font-semibold text-primary" : "text-white/90 hover:text-white"}
+                    data-testid="nav-lso-mensajes"
                   >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Portal del Licenciado
+                    <Mail className="mr-1.5 h-4 w-4" />
+                    Mensajes
                   </Button>
                 </Link>
               </nav>
 
-              {/* Usuario y controles */}
-              <div className="flex items-center gap-4">
+              <div className="md:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="text-white" data-testid="button-lso-mobile-menu">
+                      <ClipboardList className="h-5 w-5 mr-1" />
+                      Menú
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="w-52">
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">Portal LSO</DropdownMenuLabel>
+                    {lsoNavItems.map((item) => (
+                      <Link key={item.tab} href={item.href}>
+                        <DropdownMenuItem className="cursor-pointer" data-testid={`mobile-nav-lso-${item.tab}`}>
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {item.label}
+                        </DropdownMenuItem>
+                      </Link>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <Link href="/mensajes-internos">
+                      <DropdownMenuItem className="cursor-pointer" data-testid="mobile-nav-lso-mensajes">
+                        <Mail className="mr-2 h-4 w-4" />
+                        Mensajes Internos
+                      </DropdownMenuItem>
+                    </Link>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <div className="flex items-center gap-3">
                 <NotificationBell />
                 
                 <div className="text-right text-xs hidden lg:block">
-                  <p className="font-medium">{user?.username}</p>
+                  <p className="font-medium">{user?.fullName || user?.username}</p>
                   <p className="opacity-75 capitalize">{roleLabels[user?.role || 'lso']}</p>
                 </div>
                 
@@ -451,20 +515,17 @@ export function PHVANavigation() {
           </div>
         </div>
 
-        {/* Barra inferior con información */}
         <div className="bg-card border-b">
           <div className="container mx-auto px-6">
-            <div className="flex items-center justify-between py-2 text-sm">
+            <div className="flex items-center justify-between gap-2 py-1.5 text-sm">
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground capitalize">{currentDate}</span>
+                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-muted-foreground capitalize text-xs">{currentDate}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-                  <User className="mr-1 h-3 w-3" />
-                  Licenciado en Salud Ocupacional
-                </Badge>
-              </div>
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30" data-testid="badge-lso-role">
+                <User className="mr-1 h-3 w-3" />
+                Licenciado en Salud Ocupacional
+              </Badge>
             </div>
           </div>
         </div>

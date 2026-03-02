@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -114,7 +114,21 @@ const SST_PROFESSION_LABELS: Record<string, string> = {
 
 export default function PortalLicenciado() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const validTabs = ["dashboard", "empresas", "documentos", "pesv", "licencia"];
+  const getInitialTab = () => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+    return tab && validTabs.includes(tab) ? tab : "dashboard";
+  };
+  const [activeTab, setActiveTab] = useState(getInitialTab);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+    if (tab && validTabs.includes(tab) && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [window.location.search]);
 
   if (user?.role !== 'lso') {
     return (
