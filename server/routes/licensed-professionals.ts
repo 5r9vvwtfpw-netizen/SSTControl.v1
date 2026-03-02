@@ -490,19 +490,23 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         let adminFullName: string | null = null;
 
         try {
-          const [adminUser] = await db.select({
-            id: schema.users.id,
-            fullName: schema.users.fullName,
-          })
-          .from(schema.users)
-          .where(and(
-            eq(schema.users.companyId, empresa.id),
-            eq(schema.users.role, 'admin')
-          ))
-          .limit(1);
-          if (adminUser) {
-            adminUserId = adminUser.id;
-            adminFullName = adminUser.fullName;
+          const adminRoles = ['admin', 'responsable_sst', 'superusuario'] as const;
+          for (const role of adminRoles) {
+            const [adminUser] = await db.select({
+              id: schema.users.id,
+              fullName: schema.users.fullName,
+            })
+            .from(schema.users)
+            .where(and(
+              eq(schema.users.companyId, empresa.id),
+              eq(schema.users.role, role)
+            ))
+            .limit(1);
+            if (adminUser) {
+              adminUserId = adminUser.id;
+              adminFullName = adminUser.fullName;
+              break;
+            }
           }
         } catch {}
 
@@ -687,19 +691,23 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       let adminUserId: string | null = null;
       let adminFullName: string | null = null;
       try {
-        const [adminUser] = await db.select({
-          id: schema.users.id,
-          fullName: schema.users.fullName,
-        })
-        .from(schema.users)
-        .where(and(
-          eq(schema.users.companyId, investigation.companyId),
-          eq(schema.users.role, 'admin')
-        ))
-        .limit(1);
-        if (adminUser) {
-          adminUserId = adminUser.id;
-          adminFullName = adminUser.fullName;
+        const adminRoles = ['admin', 'responsable_sst', 'superusuario'] as const;
+        for (const role of adminRoles) {
+          const [adminUser] = await db.select({
+            id: schema.users.id,
+            fullName: schema.users.fullName,
+          })
+          .from(schema.users)
+          .where(and(
+            eq(schema.users.companyId, investigation.companyId),
+            eq(schema.users.role, role)
+          ))
+          .limit(1);
+          if (adminUser) {
+            adminUserId = adminUser.id;
+            adminFullName = adminUser.fullName;
+            break;
+          }
         }
       } catch {}
 

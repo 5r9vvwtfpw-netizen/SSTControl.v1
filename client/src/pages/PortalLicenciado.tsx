@@ -635,8 +635,11 @@ function EmpresasTab() {
                           size="sm"
                           variant="outline"
                           data-testid={`button-message-${empresa.id}`}
-                          disabled={!empresa.adminUserId}
                           onClick={() => {
+                            if (!empresa.adminUserId) {
+                              toast({ title: "Sin destinatario", description: "Esta empresa no tiene un administrador registrado para enviar mensajes.", variant: "destructive" });
+                              return;
+                            }
                             setMessageTarget(empresa);
                             setMsgSubject("");
                             setMsgContent("");
