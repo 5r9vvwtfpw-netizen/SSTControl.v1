@@ -1715,7 +1715,7 @@ export interface IStorage {
   markMessageAsRead(id: string): Promise<InternalMessage | undefined>;
   archiveMessage(id: string): Promise<InternalMessage | undefined>;
   getUnreadMessageCount(userId: string, companyId?: string | null): Promise<number>;
-  getMessageRecipients(companyId: string, senderRole: string): Promise<Array<{ id: string; fullName: string | null; role: string }>>;
+  getMessageRecipients(companyId: string, senderRole: string): Promise<Array<{ id: string; fullName: string | null; role: string; companyName?: string | null }>>;
   
   // ============================================================================
   // SUPPORT ACCESS AUTHORIZATION SYSTEM - Transparencia y autorización de acceso
@@ -14231,24 +14231,26 @@ export class DbStorage implements IStorage {
     }
   }
 
-  async getMessageRecipients(companyId: string, senderRole: string): Promise<Array<{ id: string; fullName: string | null; role: string }>> {
+  async getMessageRecipients(companyId: string, senderRole: string): Promise<Array<{ id: string; fullName: string | null; role: string; companyName?: string | null }>> {
     if (senderRole === 'lso') {
       const responsables = await db.select({
         id: schema.users.id,
         fullName: schema.users.fullName,
         role: schema.users.role,
+        companyName: schema.companies.name,
       })
       .from(schema.users)
+      .innerJoin(schema.companies, eq(schema.users.companyId, schema.companies.id))
       .where(
         and(
           eq(schema.users.companyId, companyId),
-          eq(schema.users.role, 'responsable_sst')
+          inArray(schema.users.role, ['responsable_sst', 'admin'])
         )
       );
       return responsables;
     }
 
-    if (senderRole === 'responsable_sst') {
+    if (senderRole === 'responsable_sst' || senderRole === 'admin') {
       const assignedLsos = await db.select({
         id: schema.users.id,
         fullName: schema.users.fullName,

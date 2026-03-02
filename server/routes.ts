@@ -41235,7 +41235,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get("/api/internal-messages/recipients", requireAuth, async (req, res) => {
     try {
       const user = req.user!;
-      let allRecipients: Array<{ id: string; fullName: string | null; role: string }> = [];
+      let allRecipients: Array<{ id: string; fullName: string | null; role: string; companyName?: string | null }> = [];
       
       // Handle LSO: get recipients from all assigned companies (before companyId check since LSO may have companyId set)
       if (user.role === 'lso') {

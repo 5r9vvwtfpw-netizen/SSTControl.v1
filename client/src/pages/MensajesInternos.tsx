@@ -71,6 +71,7 @@ interface Recipient {
   id: string;
   fullName: string | null;
   role: string;
+  companyName?: string | null;
 }
 
 const priorityColors: Record<string, string> = {
@@ -520,6 +521,7 @@ export default function MensajesInternos() {
                           recipients?.map((recipient) => (
                             <SelectItem key={recipient.id} value={recipient.id}>
                               {recipient.fullName || "Sin nombre"} - {roleLabels[recipient.role] || recipient.role}
+                              {recipient.companyName ? ` (${recipient.companyName})` : ""}
                             </SelectItem>
                           ))
                         )}
