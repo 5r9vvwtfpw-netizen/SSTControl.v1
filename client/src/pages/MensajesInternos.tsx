@@ -23,7 +23,6 @@ import {
   Inbox,
   SendHorizontal,
   ArrowLeft,
-  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,26 +106,18 @@ export default function MensajesInternos() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMessage, setSelectedMessage] = useState<InternalMessage | null>(null);
   const [showNewMessage, setShowNewMessage] = useState(false);
-  const [selectedCompanyFilter, setSelectedCompanyFilter] = useState<string>("all");
-
-  const isLso = user?.role === 'lso';
-
-  const { data: lsoEmpresas } = useQuery<Array<{ id: string; name: string }>>({
-    queryKey: ["/api/portal-licenciado/empresas"],
-    enabled: isLso,
-  });
 
   // Fetch messages with auto-refresh every 30 seconds
   const { data: messages, isLoading: messagesLoading } = useQuery<InternalMessage[]>({
     queryKey: ["/api/internal-messages"],
-    refetchInterval: 30000,
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
     refetchIntervalInBackground: true,
   });
 
   // Fetch recipients - always fetch to ensure data is available
   const { data: recipients, isLoading: recipientsLoading } = useQuery<Recipient[]>({
     queryKey: ["/api/internal-messages/recipients"],
-    staleTime: 0,
+    staleTime: 0, // Always get fresh data
     refetchOnMount: true,
   });
 
@@ -194,28 +185,12 @@ export default function MensajesInternos() {
   // Track last processed timestamp to detect URL changes from notification clicks
   const [lastProcessedTimestamp, setLastProcessedTimestamp] = useState<string | null>(null);
   
-  // Check URL for ?empresa= param to auto-select company filter (from LSO Empresas tab)
-  useEffect(() => {
-    if (!isLso || !lsoEmpresas) return;
-    const params = new URLSearchParams(window.location.search);
-    const empresaParam = params.get("empresa");
-    if (empresaParam) {
-      const match = lsoEmpresas.find(e => e.name === empresaParam);
-      if (match) {
-        setSelectedCompanyFilter(match.id);
-      }
-      setShowNewMessage(true);
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete("empresa");
-      window.history.replaceState({}, "", newUrl.toString());
-    }
-  }, [isLso, lsoEmpresas, location]);
-
   // Check URL for ?new=true (only on initial mount or when ?new changes)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("new") === "true") {
       setShowNewMessage(true);
+      // Clear the URL param to prevent reopening on future renders
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete("new");
       newUrl.searchParams.delete("t");
@@ -263,13 +238,10 @@ export default function MensajesInternos() {
     }
   }, [location, messages, lastProcessedTimestamp]);
 
-  // Filter messages based on tab, search, and company filter
+  // Filter messages based on tab and search using current user ID
   const currentUserId = user?.id;
   const filteredMessages = messages?.filter((message) => {
-    if (isLso && selectedCompanyFilter !== "all" && message.companyId !== selectedCompanyFilter) {
-      return false;
-    }
-
+    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchesSearch = 
@@ -280,20 +252,19 @@ export default function MensajesInternos() {
       if (!matchesSearch) return false;
     }
 
+    // Tab filter using current user ID to distinguish sender/receiver
     if (activeTab === "archived") {
       return message.status === "archived";
     }
     
     if (activeTab === "sent") {
+      // Show only messages where I am the sender (not archived)
       return message.senderId === currentUserId && message.status !== "archived";
     }
     
+    // inbox - show only messages where I am the receiver (not archived)
     return message.receiverId === currentUserId && message.status !== "archived";
   }) || [];
-
-  const filteredRecipients = isLso && selectedCompanyFilter !== "all"
-    ? recipients?.filter(r => r.companyName === lsoEmpresas?.find(e => e.id === selectedCompanyFilter)?.name)
-    : recipients;
 
   const handleMessageClick = (message: InternalMessage) => {
     setSelectedMessage(message);
@@ -350,24 +321,6 @@ export default function MensajesInternos() {
                 </TabsList>
               </Tabs>
             </div>
-            {isLso && lsoEmpresas && lsoEmpresas.length > 0 && (
-              <div className="mt-3">
-                <Select value={selectedCompanyFilter} onValueChange={setSelectedCompanyFilter}>
-                  <SelectTrigger data-testid="select-company-filter" className="w-full">
-                    <Building2 className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
-                    <SelectValue placeholder="Filtrar por empresa..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas las empresas</SelectItem>
-                    {lsoEmpresas.map((empresa) => (
-                      <SelectItem key={empresa.id} value={empresa.id}>
-                        {empresa.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
             {/* Search */}
             <div className="relative mt-3">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -543,25 +496,6 @@ export default function MensajesInternos() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {isLso && lsoEmpresas && lsoEmpresas.length > 0 && (
-                <div>
-                  <label className="text-sm font-medium">Empresa</label>
-                  <Select value={selectedCompanyFilter} onValueChange={(v) => { setSelectedCompanyFilter(v); form.setValue("receiverId", ""); }}>
-                    <SelectTrigger data-testid="select-company-dialog" className="mt-1.5">
-                      <Building2 className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
-                      <SelectValue placeholder="Seleccionar empresa..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas las empresas</SelectItem>
-                      {lsoEmpresas.map((empresa) => (
-                        <SelectItem key={empresa.id} value={empresa.id}>
-                          {empresa.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
               <FormField
                 control={form.control}
                 name="receiverId"
@@ -579,12 +513,12 @@ export default function MensajesInternos() {
                           <SelectItem value="_loading" disabled>
                             Cargando...
                           </SelectItem>
-                        ) : filteredRecipients?.length === 0 ? (
+                        ) : recipients?.length === 0 ? (
                           <SelectItem value="_empty" disabled>
                             No hay destinatarios disponibles
                           </SelectItem>
                         ) : (
-                          filteredRecipients?.map((recipient) => (
+                          recipients?.map((recipient) => (
                             <SelectItem key={recipient.id} value={recipient.id}>
                               {recipient.fullName || "Sin nombre"} - {roleLabels[recipient.role] || recipient.role}
                               {recipient.companyName ? ` (${recipient.companyName})` : ""}
