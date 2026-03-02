@@ -486,12 +486,34 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           }
         } catch {}
 
+        let adminUserId: string | null = null;
+        let adminFullName: string | null = null;
+
+        try {
+          const [adminUser] = await db.select({
+            id: schema.users.id,
+            fullName: schema.users.fullName,
+          })
+          .from(schema.users)
+          .where(and(
+            eq(schema.users.companyId, empresa.id),
+            eq(schema.users.role, 'admin')
+          ))
+          .limit(1);
+          if (adminUser) {
+            adminUserId = adminUser.id;
+            adminFullName = adminUser.fullName;
+          }
+        } catch {}
+
         return {
           ...empresa,
           porcentajeSst,
           nivelCumplimiento,
           subscriptionBlocked,
           lastActivity,
+          adminUserId,
+          adminFullName,
         };
       }));
       

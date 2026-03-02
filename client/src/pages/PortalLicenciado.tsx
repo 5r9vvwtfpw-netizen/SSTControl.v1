@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -53,6 +54,7 @@ import {
   Eye,
   BarChart3,
   MessageSquare,
+  Send,
   Info,
   Truck,
   ArrowLeft,
@@ -91,6 +93,8 @@ interface AssignedCompany {
   nivelCumplimiento: string | null;
   subscriptionBlocked: boolean;
   lastActivity: string | null;
+  adminUserId: string | null;
+  adminFullName: string | null;
 }
 
 interface PendingDocument {
@@ -451,6 +455,7 @@ interface HistorialEmpresa {
 }
 
 function EmpresasTab() {
+  const { toast } = useToast();
   const { data: empresas = [], isLoading, isError, error } = useQuery<AssignedCompany[]>({
     queryKey: ["/api/portal-licenciado/empresas"],
   });
@@ -460,6 +465,38 @@ function EmpresasTab() {
   });
 
   const [showHistorial, setShowHistorial] = useState(false);
+  const [messageTarget, setMessageTarget] = useState<AssignedCompany | null>(null);
+  const [msgSubject, setMsgSubject] = useState("");
+  const [msgContent, setMsgContent] = useState("");
+  const [msgPriority, setMsgPriority] = useState<"normal" | "urgent">("normal");
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (data: { receiverId: string; subject: string; content: string; priority: string }) => {
+      return await apiRequest("POST", "/api/internal-messages", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/internal-messages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/internal-messages/unread-count"] });
+      toast({ title: "Mensaje enviado", description: `Mensaje enviado al administrador de ${messageTarget?.name}` });
+      setMessageTarget(null);
+      setMsgSubject("");
+      setMsgContent("");
+      setMsgPriority("normal");
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "No se pudo enviar el mensaje", variant: "destructive" });
+    },
+  });
+
+  const handleSendMessage = () => {
+    if (!messageTarget?.adminUserId || !msgSubject.trim() || !msgContent.trim()) return;
+    sendMessageMutation.mutate({
+      receiverId: messageTarget.adminUserId,
+      subject: msgSubject.trim(),
+      content: msgContent.trim(),
+      priority: msgPriority,
+    });
+  };
 
   if (isError) {
     return (
@@ -594,12 +631,21 @@ function EmpresasTab() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Link href={`/mensajes-internos?empresa=${encodeURIComponent(empresa.name)}`}>
-                          <Button size="sm" variant="outline" data-testid={`button-message-${empresa.id}`}>
-                            <MessageSquare className="h-4 w-4 mr-1" />
-                            Mensaje
-                          </Button>
-                        </Link>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          data-testid={`button-message-${empresa.id}`}
+                          disabled={!empresa.adminUserId}
+                          onClick={() => {
+                            setMessageTarget(empresa);
+                            setMsgSubject("");
+                            setMsgContent("");
+                            setMsgPriority("normal");
+                          }}
+                        >
+                          <MessageSquare className="h-4 w-4 mr-1" />
+                          Mensaje
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -609,6 +655,72 @@ function EmpresasTab() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={!!messageTarget} onOpenChange={(open) => { if (!open) setMessageTarget(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5" />
+              Mensaje a {messageTarget?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Destinatario: {messageTarget?.adminFullName || 'Administrador'} — Administrador ({messageTarget?.name})
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-4 gap-3">
+              <div className="col-span-3 space-y-1.5">
+                <Label>Asunto *</Label>
+                <Input
+                  placeholder="Escriba el asunto del mensaje..."
+                  value={msgSubject}
+                  onChange={(e) => setMsgSubject(e.target.value)}
+                  data-testid="input-msg-subject"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Prioridad</Label>
+                <Select value={msgPriority} onValueChange={(v) => setMsgPriority(v as "normal" | "urgent")}>
+                  <SelectTrigger data-testid="select-msg-priority">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="urgent">Urgente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Mensaje *</Label>
+              <Textarea
+                placeholder="Escriba el contenido del mensaje..."
+                rows={5}
+                value={msgContent}
+                onChange={(e) => setMsgContent(e.target.value)}
+                data-testid="input-msg-content"
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setMessageTarget(null)} data-testid="button-cancel-msg">
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSendMessage}
+              disabled={sendMessageMutation.isPending || !msgSubject.trim() || !msgContent.trim()}
+              data-testid="button-send-msg"
+            >
+              {sendMessageMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-1" />
+              )}
+              Enviar Mensaje
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {empresas.length === 0 && historial.length > 0 && (
         <Card>
