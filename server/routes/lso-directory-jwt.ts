@@ -14,7 +14,7 @@ import { db } from "../db";
 import * as schema from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { hashPassword } from "../auth";
-import { sendLsoPortalAccessEmail, sendLsoRemovalNotificationEmail } from "../email";
+import { sendLsoPortalAccessEmail, sendLsoRemovalNotificationEmail, sendLsoNewAssignmentEmail } from "../email";
 import { randomBytes } from "crypto";
 import { storage } from "../storage";
 
@@ -234,7 +234,23 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
     if (existingUser) {
       if (existingUser.role === 'lso') {
         lsoUserId = existingUser.id;
-        logger.info({ email: lso.email, userId: existingUser.id }, "[LSO-AUTO] Usuario LSO existente encontrado");
+        logger.info({ email: lso.email, userId: existingUser.id }, "[LSO-AUTO] Usuario LSO existente encontrado, no se generan nuevas credenciales");
+
+        const baseUrl = process.env.REPLIT_DOMAINS
+          ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+          : 'https://sst-colombia.com.co';
+
+        try {
+          await sendLsoNewAssignmentEmail(lso.email, {
+            lsoName: existingUser.fullName || lso.fullName || 'Profesional LSO',
+            companyName: company.name || 'Empresa',
+            companyNit: company.nit || undefined,
+            loginUrl: `${baseUrl}/portal-licenciado`,
+          });
+          logger.info({ email: lso.email }, "[LSO-AUTO] Notificación de nueva asignación enviada (sin credenciales)");
+        } catch (emailError: any) {
+          logger.error({ error: emailError.message }, "[LSO-AUTO] Error enviando email de nueva asignación");
+        }
       } else {
         logger.info({ email: lso.email, existingRole: existingUser.role }, "[LSO-AUTO] Email ya existe con otro rol, asignación procede sin cuenta de portal");
       }
@@ -328,7 +344,7 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
       ok: true, 
       message: autoCreatedUser
         ? `Profesional LSO asignado exitosamente. Se creó el usuario "${autoUsername}" y se enviaron credenciales a ${lso.email}.`
-        : "Profesional LSO asignado exitosamente",
+        : `Profesional LSO asignado exitosamente. Se envió notificación de nueva asignación a ${lso.email}.`,
       data: assignment,
       userAutoCreated: autoCreatedUser,
     });

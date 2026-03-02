@@ -16,7 +16,7 @@ import { db } from "../db";
 import * as schema from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { lsoDirectoryApi, type LsoRegistration } from "../services/lso-directory-api";
-import { sendLsoPortalAccessEmail, sendLsoRemovalNotificationEmail } from "../email";
+import { sendLsoPortalAccessEmail, sendLsoRemovalNotificationEmail, sendLsoNewAssignmentEmail } from "../email";
 import { randomBytes } from "crypto";
 import { storage } from "../storage";
 
@@ -258,7 +258,23 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
         if (existingUser) {
           if (existingUser.role === 'lso') {
             lsoUserId = existingUser.id;
-            console.log(`[LSO-AUTO] Usuario LSO existente encontrado para ${lsoData.email}: ${existingUser.id}`);
+            console.log(`[LSO-AUTO] Usuario LSO existente encontrado para ${lsoData.email}: ${existingUser.id}, no se generan nuevas credenciales`);
+
+            const baseUrl = process.env.REPLIT_DOMAINS
+              ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+              : 'https://sst-colombia.com.co';
+
+            try {
+              await sendLsoNewAssignmentEmail(lsoData.email, {
+                lsoName: existingUser.fullName || lsoData.fullName || 'Profesional LSO',
+                companyName: company.name || 'Empresa',
+                companyNit: company.nit || undefined,
+                loginUrl: `${baseUrl}/portal-licenciado`,
+              });
+              console.log(`[LSO-AUTO] Notificación de nueva asignación enviada a ${lsoData.email} (sin credenciales)`);
+            } catch (emailError: any) {
+              console.error(`[LSO-AUTO] Error enviando email de nueva asignación:`, emailError.message);
+            }
           } else {
             console.log(`[LSO-AUTO] Email ${lsoData.email} ya existe con rol "${existingUser.role}", asignación procede sin cuenta de portal`);
           }
@@ -354,7 +370,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
         ok: true,
         message: autoCreatedUser
           ? "LSO asignado exitosamente. Se creó el usuario automáticamente y se enviaron las credenciales por email."
-          : "LSO asignado exitosamente desde el directorio externo",
+          : `LSO asignado exitosamente. Se envió notificación de nueva asignación a ${lsoData.email}.`,
         data: assignment,
         userAutoCreated: autoCreatedUser,
       });

@@ -2100,6 +2100,101 @@ export async function sendLsoRemovalNotificationEmail(
   }
 }
 
+export interface LsoNewAssignmentEmailData {
+  lsoName: string;
+  companyName: string;
+  companyNit?: string;
+  loginUrl: string;
+}
+
+function getLsoNewAssignmentEmailHTML(data: LsoNewAssignmentEmailData): string {
+  return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nueva Asignaci\u00f3n - Portal de Licenciados LSO</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #166534 0%, #15803d 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">SST Colombia</h1>
+              <p style="margin: 8px 0 0; color: #bbf7d0; font-size: 14px;">Portal de Licenciados LSO</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #166534; padding: 12px 30px; text-align: center;">
+              <p style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 500;">Nueva Empresa Asignada</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px;">
+              <h2 style="margin: 0 0 16px; color: #166534; font-size: 20px;">Hola ${data.lsoName},</h2>
+              <p style="margin: 0 0 16px; color: #374151; font-size: 15px; line-height: 1.6;">
+                La empresa <strong>${data.companyName}</strong>${data.companyNit ? ` (NIT: ${data.companyNit})` : ''} te ha designado como profesional LSO responsable del SG-SST.
+              </p>
+              <p style="margin: 0 0 16px; color: #374151; font-size: 15px; line-height: 1.6;">
+                Ya puedes ver esta empresa y gestionar sus documentos desde tu <strong>Portal de Licenciados</strong> con tus credenciales actuales.
+              </p>
+              <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <p style="margin: 0; color: #166534; font-size: 14px; font-weight: 500;">
+                  No necesitas nuevas credenciales. Ingresa con tu usuario y contrase\u00f1a habituales.
+                </p>
+              </div>
+              <table role="presentation" style="width: 100%; margin: 24px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="${data.loginUrl}" style="display: inline-block; background-color: #166534; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 500;">
+                      Ingresar al Portal
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 24px 0 0; padding-top: 16px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px; line-height: 1.5;">
+                Este es un mensaje autom\u00e1tico del sistema SST Colombia. Si tiene preguntas, contacte al administrador de la empresa.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+}
+
+export async function sendLsoNewAssignmentEmail(
+  to: string,
+  data: LsoNewAssignmentEmailData
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const subject = `Nueva Asignaci\u00f3n - ${data.companyName} | Portal LSO SST Colombia`;
+
+    const result = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to,
+      subject,
+      html: getLsoNewAssignmentEmailHTML(data),
+    });
+
+    if (result.error) {
+      console.error('Error sending LSO new assignment email:', result.error);
+      return { success: false, error: result.error.message };
+    }
+
+    return { success: true, messageId: result.data?.id };
+  } catch (error: any) {
+    console.error('Failed to send LSO new assignment email:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function sendLsoPortalAccessEmail(
   to: string,
   data: LsoPortalAccessEmailData
