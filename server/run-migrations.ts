@@ -21,6 +21,7 @@ import { syncDocumentAcknowledgmentsColumns } from './migrations/sync-document-a
 import { syncActividadAccionMejoraLink } from './migrations/sync-actividad-accion-mejora-link';
 import { syncPcaTables } from './migrations/sync-pca-tables';
 import { syncLsoSignatureColumns } from './migrations/sync-lso-signature-columns';
+import { syncLsoIdentificationNumber } from './migrations/sync-lso-identification-number';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -53,6 +54,7 @@ export async function runMigrations() {
     await syncActividadAccionMejoraLink();
     await syncPcaTables();
     await syncLsoSignatureColumns();
+    await syncLsoIdentificationNumber();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

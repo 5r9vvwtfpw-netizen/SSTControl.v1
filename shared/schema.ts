@@ -127,6 +127,7 @@ export const users = pgTable("users", {
   sstLicenseIssuedAt: date("sst_license_issued_at"), // Fecha de expedición
   sstLicenseExpiresAt: date("sst_license_expires_at"), // Fecha de vencimiento
   sstLicenseStatus: sstLicenseStatusEnum("sst_license_status"), // Estado de la licencia
+  sstIdentificationNumber: text("sst_identification_number"), // Número de cédula del licenciado
   sstSignatureUrl: text("sst_signature_url"), // Firma digital del licenciado (imagen)
   sstPhone: text("sst_phone"), // Teléfono de contacto del licenciado
 });

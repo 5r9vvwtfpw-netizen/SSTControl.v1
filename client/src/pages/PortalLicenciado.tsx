@@ -1523,6 +1523,11 @@ function LicenciaTab() {
               <label className="text-sm font-medium text-muted-foreground">Nombre Completo</label>
               <p className="text-lg">{user?.fullName || '-'}</p>
             </div>
+
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Número de Cédula</label>
+              <p className="text-lg font-mono" data-testid="text-identification-number">{(user as any)?.sstIdentificationNumber || '-'}</p>
+            </div>
             
             <div>
               <label className="text-sm font-medium text-muted-foreground">Tipo de Profesión</label>
@@ -1651,6 +1656,7 @@ function LicenseEditDialog() {
   
   const [formData, setFormData] = useState({
     fullName: user?.fullName || '',
+    sstIdentificationNumber: (user as any)?.sstIdentificationNumber || '',
     sstProfessionType: user?.sstProfessionType || '',
     sstLicenseNumber: user?.sstLicenseNumber || '',
     sstLicenseIssuer: user?.sstLicenseIssuer || '',
@@ -1709,6 +1715,17 @@ function LicenseEditDialog() {
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                 data-testid="input-fullname"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sstIdentificationNumber">Número de Cédula</Label>
+              <Input
+                id="sstIdentificationNumber"
+                value={formData.sstIdentificationNumber}
+                onChange={(e) => setFormData({ ...formData, sstIdentificationNumber: e.target.value })}
+                placeholder="Ej: 1.234.567.890"
+                data-testid="input-identification-number"
               />
             </div>
             

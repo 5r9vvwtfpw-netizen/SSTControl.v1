@@ -402,7 +402,9 @@ router.get("/current-assignment", requireAuth, async (req: Request, res: Respons
           if (!userLicenseIssuer && lsoUser.sstLicenseIssuer) userLicenseIssuer = lsoUser.sstLicenseIssuer;
           if (!userLicenseExpiry && lsoUser.sstLicenseExpiresAt) userLicenseExpiry = lsoUser.sstLicenseExpiresAt;
           if (!userSignatureUrl && lsoUser.sstSignatureUrl) userSignatureUrl = lsoUser.sstSignatureUrl;
-          if (lsoUser.workerId) {
+          if (lsoUser.sstIdentificationNumber) {
+            identificationNumber = lsoUser.sstIdentificationNumber;
+          } else if (lsoUser.workerId) {
             const [worker] = await db.select({ identificationNumber: schema.workers.identificationNumber })
               .from(schema.workers)
               .where(eq(schema.workers.id, lsoUser.workerId));
