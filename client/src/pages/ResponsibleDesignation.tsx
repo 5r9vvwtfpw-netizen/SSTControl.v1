@@ -246,7 +246,7 @@ const PROFESSION_TO_NIVEL: Record<string, string> = {
 
 function autoFillLsoFields(
   form: any,
-  lso: { name?: string; licenseNumber?: string; licenseExpiry?: string; licenseIssuer?: string; professionType?: string; identificationNumber?: string; } | null
+  lso: { name?: string; licenseNumber?: string; licenseExpiry?: string; licenseIssuer?: string; professionType?: string; identificationNumber?: string; course50Hours?: boolean; course50HoursDate?: string; } | null
 ) {
   if (!lso) return;
   form.setValue("licenciaSstTitular", lso.name || "");
@@ -254,6 +254,8 @@ function autoFillLsoFields(
   form.setValue("licenciaSstVigencia", lso.licenseExpiry || undefined);
   form.setValue("externalLsoIdentificationNumber", lso.identificationNumber || "");
   form.setValue("nivelFormacion", (lso.professionType && PROFESSION_TO_NIVEL[lso.professionType]) || undefined);
+  form.setValue("curso50Horas", lso.course50Hours || false);
+  form.setValue("curso50HorasFecha", lso.course50HoursDate || undefined);
 }
 
 function clearLsoFields(form: any) {
@@ -262,6 +264,8 @@ function clearLsoFields(form: any) {
   form.setValue("licenciaSstVigencia", undefined);
   form.setValue("externalLsoIdentificationNumber", "");
   form.setValue("nivelFormacion", undefined);
+  form.setValue("curso50Horas", false);
+  form.setValue("curso50HorasFecha", undefined);
 }
 
 export default function ResponsibleDesignationPage() {
@@ -770,6 +774,14 @@ export default function ResponsibleDesignationPage() {
                             <div>
                               <span className="text-muted-foreground">Formación:</span>
                               <span className="ml-2 font-medium">{PROFESSION_TO_NIVEL[lsoAssignment.professionType]}</span>
+                            </div>
+                          )}
+                          {lsoAssignment.course50Hours && (
+                            <div>
+                              <span className="text-muted-foreground">Curso 50h:</span>
+                              <span className="ml-2 font-medium">
+                                Si{lsoAssignment.course50HoursDate ? ` — ${new Date(lsoAssignment.course50HoursDate).toLocaleDateString('es-CO')}` : ''}
+                              </span>
                             </div>
                           )}
                           {lsoAssignment.city && (

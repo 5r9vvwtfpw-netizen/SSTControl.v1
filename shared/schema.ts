@@ -128,6 +128,8 @@ export const users = pgTable("users", {
   sstLicenseExpiresAt: date("sst_license_expires_at"), // Fecha de vencimiento
   sstLicenseStatus: sstLicenseStatusEnum("sst_license_status"), // Estado de la licencia
   sstIdentificationNumber: text("sst_identification_number"), // Número de cédula del licenciado
+  sstCourse50Hours: boolean("sst_course_50_hours").default(false), // ¿Tiene curso de 50 horas?
+  sstCourse50HoursDate: date("sst_course_50_hours_date"), // Fecha del certificado del curso
   sstSignatureUrl: text("sst_signature_url"), // Firma digital del licenciado (imagen)
   sstPhone: text("sst_phone"), // Teléfono de contacto del licenciado
 });

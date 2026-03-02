@@ -896,7 +896,9 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         sstLicenseIssuedAt,
         sstLicenseExpiresAt,
         sstPhone,
-        sstIdentificationNumber
+        sstIdentificationNumber,
+        sstCourse50Hours,
+        sstCourse50HoursDate
       } = req.body;
       
       const updateData: any = {};
@@ -909,6 +911,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       if (sstLicenseExpiresAt !== undefined) updateData.sstLicenseExpiresAt = sstLicenseExpiresAt ? new Date(sstLicenseExpiresAt) : null;
       if (sstPhone !== undefined) updateData.sstPhone = sstPhone;
       if (sstIdentificationNumber !== undefined) updateData.sstIdentificationNumber = sstIdentificationNumber;
+      if (sstCourse50Hours !== undefined) updateData.sstCourse50Hours = sstCourse50Hours;
+      if (sstCourse50HoursDate !== undefined) updateData.sstCourse50HoursDate = sstCourse50HoursDate ? new Date(sstCourse50HoursDate) : null;
       
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ message: "No hay datos para actualizar" });

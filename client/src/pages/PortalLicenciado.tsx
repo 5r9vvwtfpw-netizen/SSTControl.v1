@@ -1572,6 +1572,15 @@ function LicenciaTab() {
               <label className="text-sm font-medium text-muted-foreground">Teléfono de Contacto</label>
               <p className="text-lg">{user?.sstPhone || '-'}</p>
             </div>
+
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Curso de 50 horas en SST</label>
+              <p className="text-lg" data-testid="text-course-50-hours">
+                {(user as any)?.sstCourse50Hours
+                  ? `Si${(user as any)?.sstCourse50HoursDate ? ` — ${new Date((user as any).sstCourse50HoursDate).toLocaleDateString('es-CO')}` : ''}`
+                  : 'No registrado'}
+              </p>
+            </div>
           </div>
           
           <div className="pt-4 border-t">
@@ -1663,6 +1672,8 @@ function LicenseEditDialog() {
     sstLicenseIssuedAt: user?.sstLicenseIssuedAt ? new Date(user.sstLicenseIssuedAt).toISOString().split('T')[0] : '',
     sstLicenseExpiresAt: user?.sstLicenseExpiresAt ? new Date(user.sstLicenseExpiresAt).toISOString().split('T')[0] : '',
     sstPhone: user?.sstPhone || '',
+    sstCourse50Hours: (user as any)?.sstCourse50Hours || false,
+    sstCourse50HoursDate: (user as any)?.sstCourse50HoursDate ? new Date((user as any).sstCourse50HoursDate).toISOString().split('T')[0] : '',
   });
 
   const updateMutation = useMutation({
@@ -1806,6 +1817,34 @@ function LicenseEditDialog() {
                 placeholder="Ej: +57 300 1234567"
                 data-testid="input-phone"
               />
+            </div>
+
+            <div className="space-y-3 rounded-md border p-3">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="sstCourse50Hours"
+                  checked={formData.sstCourse50Hours}
+                  onChange={(e) => setFormData({ ...formData, sstCourse50Hours: e.target.checked })}
+                  className="h-4 w-4 rounded border-gray-300"
+                  data-testid="checkbox-course-50-hours"
+                />
+                <Label htmlFor="sstCourse50Hours" className="cursor-pointer">
+                  Tiene Curso de 50 horas o 20 horas en SST
+                </Label>
+              </div>
+              {formData.sstCourse50Hours && (
+                <div className="space-y-2">
+                  <Label htmlFor="sstCourse50HoursDate">Fecha del Certificado</Label>
+                  <Input
+                    id="sstCourse50HoursDate"
+                    type="date"
+                    value={formData.sstCourse50HoursDate}
+                    onChange={(e) => setFormData({ ...formData, sstCourse50HoursDate: e.target.value })}
+                    data-testid="input-course-50-hours-date"
+                  />
+                </div>
+              )}
             </div>
           </div>
           

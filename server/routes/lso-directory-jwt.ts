@@ -388,6 +388,8 @@ router.get("/current-assignment", requireAuth, async (req: Request, res: Respons
       let portalAccess: { hasAccount: boolean; username?: string; userId?: string } = { hasAccount: false };
       let professionType: string | null = null;
       let identificationNumber: string | null = null;
+      let course50Hours: boolean = false;
+      let course50HoursDate: string | null = null;
       let userLicenseNumber = assignment.externalLsoLicenseNumber;
       let userLicenseIssuer = assignment.externalLsoLicenseIssuer;
       let userLicenseExpiry = assignment.externalLsoLicenseExpiry;
@@ -398,6 +400,8 @@ router.get("/current-assignment", requireAuth, async (req: Request, res: Respons
         if (lsoUser && lsoUser.role === 'lso') {
           portalAccess = { hasAccount: true, username: lsoUser.username, userId: lsoUser.id };
           professionType = lsoUser.sstProfessionType || null;
+          course50Hours = lsoUser.sstCourse50Hours || false;
+          course50HoursDate = lsoUser.sstCourse50HoursDate || null;
           if (!userLicenseNumber && lsoUser.sstLicenseNumber) userLicenseNumber = lsoUser.sstLicenseNumber;
           if (!userLicenseIssuer && lsoUser.sstLicenseIssuer) userLicenseIssuer = lsoUser.sstLicenseIssuer;
           if (!userLicenseExpiry && lsoUser.sstLicenseExpiresAt) userLicenseExpiry = lsoUser.sstLicenseExpiresAt;
@@ -429,6 +433,8 @@ router.get("/current-assignment", requireAuth, async (req: Request, res: Respons
           signatureUrl: userSignatureUrl,
           professionType,
           identificationNumber,
+          course50Hours,
+          course50HoursDate,
           assignedAt: assignment.assignedAt,
           portalAccess,
         }
