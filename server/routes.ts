@@ -41394,10 +41394,19 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // Use receiver's companyId for support users, sender's companyId otherwise
       const messageCompanyId = isSupportUser ? receiver.companyId : user.companyId;
       
+      // When company staff (admin/responsable_sst) sends to LSO, use company name as sender
+      let effectiveSenderName = user.fullName || user.username;
+      if (receiver.role === 'lso' && user.companyId && (user.role === 'admin' || user.role === 'responsable_sst')) {
+        const senderCompany = await storage.getCompany(user.companyId);
+        if (senderCompany?.name) {
+          effectiveSenderName = senderCompany.name;
+        }
+      }
+      
       const message = await storage.createInternalMessage({
         companyId: messageCompanyId,
         senderId: user.id,
-        senderName: user.fullName || user.username,
+        senderName: effectiveSenderName,
         senderRole: user.role,
         receiverId,
         receiverName: receiver.fullName || receiver.username,
