@@ -1047,4 +1047,429 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       res.status(500).json({ message: "Error al cargar la firma", error: error.message });
     }
   });
+
+  // GET /api/portal-licenciado/documentos-todos - All documents needing LSO signature (all types)
+  app.get("/api/portal-licenciado/documentos-todos", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+
+      const assignments = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+
+      const companyIds = assignments.map(a => a.companyId);
+      if (companyIds.length === 0) {
+        return res.json({ investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [] });
+      }
+
+      const pendingInvestigations = await db.select({
+        id: schema.accidentInvestigations.id,
+        companyId: schema.accidentInvestigations.companyId,
+        companyName: schema.companies.name,
+        companyNit: schema.companies.nit,
+        eventType: schema.accidentInvestigations.eventType,
+        eventDate: schema.accidentInvestigations.eventDate,
+        eventDescription: schema.accidentInvestigations.eventDescription,
+        status: schema.accidentInvestigations.status,
+        isSevere: schema.accidentInvestigations.isSevere,
+        isFatal: schema.accidentInvestigations.isFatal,
+        createdAt: schema.accidentInvestigations.createdAt,
+        licensedProfessionalName: schema.accidentInvestigations.licensedProfessionalName,
+        licensedProfessionalSignatureUrl: schema.accidentInvestigations.licensedProfessionalSignatureUrl,
+      })
+      .from(schema.accidentInvestigations)
+      .innerJoin(schema.companies, eq(schema.accidentInvestigations.companyId, schema.companies.id))
+      .where(and(
+        sql`${schema.accidentInvestigations.companyId} IN ${companyIds}`,
+        eq(schema.accidentInvestigations.requiresLicensedProfessional, 1),
+      ))
+      .orderBy(desc(schema.accidentInvestigations.createdAt));
+
+      const pendingEvaluaciones = await db.select({
+        id: schema.evaluacionesSst.id,
+        companyId: schema.evaluacionesSst.companyId,
+        companyName: schema.companies.name,
+        companyNit: schema.companies.nit,
+        anio: schema.evaluacionesSst.anio,
+        mes: schema.evaluacionesSst.mes,
+        estado: schema.evaluacionesSst.estado,
+        porcentajeCumplimiento: schema.evaluacionesSst.porcentajeCumplimiento,
+        nivelCumplimiento: schema.evaluacionesSst.nivelCumplimiento,
+        fechaEvaluacion: schema.evaluacionesSst.fechaEvaluacion,
+        responsableNombre: schema.evaluacionesSst.responsableNombre,
+        lsoSignatureName: schema.evaluacionesSst.lsoSignatureName,
+        lsoSignatureUrl: schema.evaluacionesSst.lsoSignatureUrl,
+        lsoSignedAt: schema.evaluacionesSst.lsoSignedAt,
+        createdAt: schema.evaluacionesSst.createdAt,
+      })
+      .from(schema.evaluacionesSst)
+      .innerJoin(schema.companies, eq(schema.evaluacionesSst.companyId, schema.companies.id))
+      .where(sql`${schema.evaluacionesSst.companyId} IN ${companyIds}`)
+      .orderBy(desc(schema.evaluacionesSst.createdAt));
+
+      const pendingPlanes = await db.select({
+        id: schema.planesTrabajoAnual.id,
+        companyId: schema.planesTrabajoAnual.companyId,
+        companyName: schema.companies.name,
+        companyNit: schema.companies.nit,
+        anio: schema.planesTrabajoAnual.anio,
+        estado: schema.planesTrabajoAnual.estado,
+        fechaElaboracion: schema.planesTrabajoAnual.fechaElaboracion,
+        responsableElaboracion: schema.planesTrabajoAnual.responsableElaboracion,
+        porcentajeCumplimiento: schema.planesTrabajoAnual.porcentajeCumplimiento,
+        lsoSignatureName: schema.planesTrabajoAnual.lsoSignatureName,
+        lsoSignatureUrl: schema.planesTrabajoAnual.lsoSignatureUrl,
+        lsoSignedAt: schema.planesTrabajoAnual.lsoSignedAt,
+        createdAt: schema.planesTrabajoAnual.createdAt,
+      })
+      .from(schema.planesTrabajoAnual)
+      .innerJoin(schema.companies, eq(schema.planesTrabajoAnual.companyId, schema.companies.id))
+      .where(sql`${schema.planesTrabajoAnual.companyId} IN ${companyIds}`)
+      .orderBy(desc(schema.planesTrabajoAnual.createdAt));
+
+      const pendingMatrices = await db.select({
+        id: schema.matricesIperc.id,
+        companyId: schema.matricesIperc.companyId,
+        companyName: schema.companies.name,
+        companyNit: schema.companies.nit,
+        nombre: schema.matricesIperc.nombre,
+        area: schema.matricesIperc.area,
+        estado: schema.matricesIperc.estado,
+        fechaEvaluacion: schema.matricesIperc.fechaEvaluacion,
+        metodologia: schema.matricesIperc.metodologia,
+        version: schema.matricesIperc.version,
+        lsoSignatureName: schema.matricesIperc.lsoSignatureName,
+        lsoSignatureUrl: schema.matricesIperc.lsoSignatureUrl,
+        lsoSignedAt: schema.matricesIperc.lsoSignedAt,
+        createdAt: schema.matricesIperc.createdAt,
+      })
+      .from(schema.matricesIperc)
+      .innerJoin(schema.companies, eq(schema.matricesIperc.companyId, schema.companies.id))
+      .where(sql`${schema.matricesIperc.companyId} IN ${companyIds}`)
+      .orderBy(desc(schema.matricesIperc.createdAt));
+
+      res.json({
+        investigaciones: pendingInvestigations,
+        evaluaciones: pendingEvaluaciones,
+        planesTrabajoAnual: pendingPlanes,
+        matricesIperc: pendingMatrices,
+      });
+    } catch (error: any) {
+      console.error('[GET /api/portal-licenciado/documentos-todos] Error:', error.message);
+      res.status(500).json({ message: "Error fetching all documents", error: error.message });
+    }
+  });
+
+  // PATCH /api/portal-licenciado/evaluacion-sst/:id/firmar - Sign evaluation
+  app.patch("/api/portal-licenciado/evaluacion-sst/:id/firmar", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const { id } = req.params;
+
+      const [evaluacion] = await db.select()
+        .from(schema.evaluacionesSst)
+        .where(eq(schema.evaluacionesSst.id, id));
+
+      if (!evaluacion) {
+        return res.status(404).json({ message: "Evaluación no encontrada" });
+      }
+
+      const [assignment] = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.companyId, evaluacion.companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+
+      if (!assignment) {
+        return res.status(403).json({ message: "No tiene acceso a firmar esta evaluación" });
+      }
+
+      const signatureUrl = user.sstSignatureUrl || assignment.externalLsoSignatureUrl || null;
+
+      const [updated] = await db.update(schema.evaluacionesSst)
+        .set({
+          lsoSignatureName: user.fullName || user.username,
+          lsoSignatureLicense: user.sstLicenseNumber || '',
+          lsoSignatureUrl: signatureUrl,
+          lsoSignedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.evaluacionesSst.id, id))
+        .returning();
+
+      console.log(`[LSO-FIRMA] Evaluación SST ${id} signed by ${user.username}`);
+      res.json({ message: "Evaluación firmada exitosamente", evaluacion: updated });
+    } catch (error: any) {
+      console.error('[PATCH /api/portal-licenciado/evaluacion-sst/:id/firmar] Error:', error.message);
+      res.status(500).json({ message: "Error signing evaluation", error: error.message });
+    }
+  });
+
+  // PATCH /api/portal-licenciado/plan-trabajo/:id/firmar - Sign work plan
+  app.patch("/api/portal-licenciado/plan-trabajo/:id/firmar", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const { id } = req.params;
+
+      const [plan] = await db.select()
+        .from(schema.planesTrabajoAnual)
+        .where(eq(schema.planesTrabajoAnual.id, id));
+
+      if (!plan) {
+        return res.status(404).json({ message: "Plan de trabajo no encontrado" });
+      }
+
+      const [assignment] = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.companyId, plan.companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+
+      if (!assignment) {
+        return res.status(403).json({ message: "No tiene acceso a firmar este plan" });
+      }
+
+      const signatureUrl = user.sstSignatureUrl || assignment.externalLsoSignatureUrl || null;
+
+      const [updated] = await db.update(schema.planesTrabajoAnual)
+        .set({
+          lsoSignatureName: user.fullName || user.username,
+          lsoSignatureLicense: user.sstLicenseNumber || '',
+          lsoSignatureUrl: signatureUrl,
+          lsoSignedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.planesTrabajoAnual.id, id))
+        .returning();
+
+      console.log(`[LSO-FIRMA] Plan trabajo ${id} signed by ${user.username}`);
+      res.json({ message: "Plan de trabajo firmado exitosamente", plan: updated });
+    } catch (error: any) {
+      console.error('[PATCH /api/portal-licenciado/plan-trabajo/:id/firmar] Error:', error.message);
+      res.status(500).json({ message: "Error signing work plan", error: error.message });
+    }
+  });
+
+  // PATCH /api/portal-licenciado/matriz-iperc/:id/firmar - Sign risk matrix
+  app.patch("/api/portal-licenciado/matriz-iperc/:id/firmar", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const { id } = req.params;
+
+      const [matriz] = await db.select()
+        .from(schema.matricesIperc)
+        .where(eq(schema.matricesIperc.id, id));
+
+      if (!matriz) {
+        return res.status(404).json({ message: "Matriz IPERC no encontrada" });
+      }
+
+      const [assignment] = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.companyId, matriz.companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+
+      if (!assignment) {
+        return res.status(403).json({ message: "No tiene acceso a firmar esta matriz" });
+      }
+
+      const signatureUrl = user.sstSignatureUrl || assignment.externalLsoSignatureUrl || null;
+
+      const [updated] = await db.update(schema.matricesIperc)
+        .set({
+          lsoSignatureName: user.fullName || user.username,
+          lsoSignatureLicense: user.sstLicenseNumber || '',
+          lsoSignatureUrl: signatureUrl,
+          lsoSignedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.matricesIperc.id, id))
+        .returning();
+
+      console.log(`[LSO-FIRMA] Matriz IPERC ${id} signed by ${user.username}`);
+      res.json({ message: "Matriz IPERC firmada exitosamente", matriz: updated });
+    } catch (error: any) {
+      console.error('[PATCH /api/portal-licenciado/matriz-iperc/:id/firmar] Error:', error.message);
+      res.status(500).json({ message: "Error signing risk matrix", error: error.message });
+    }
+  });
+
+  // GET /api/portal-licenciado/evaluacion-sst/:id - Get evaluation details for LSO review
+  app.get("/api/portal-licenciado/evaluacion-sst/:id", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const { id } = req.params;
+
+      const [evaluacion] = await db.select({
+        id: schema.evaluacionesSst.id,
+        companyId: schema.evaluacionesSst.companyId,
+        companyName: schema.companies.name,
+        companyNit: schema.companies.nit,
+        anio: schema.evaluacionesSst.anio,
+        mes: schema.evaluacionesSst.mes,
+        tipoEmpresa: schema.evaluacionesSst.tipoEmpresa,
+        estado: schema.evaluacionesSst.estado,
+        responsableNombre: schema.evaluacionesSst.responsableNombre,
+        responsableCargo: schema.evaluacionesSst.responsableCargo,
+        responsableLicencia: schema.evaluacionesSst.responsableLicencia,
+        puntajeTotal: schema.evaluacionesSst.puntajeTotal,
+        puntajeMaximo: schema.evaluacionesSst.puntajeMaximo,
+        porcentajeCumplimiento: schema.evaluacionesSst.porcentajeCumplimiento,
+        nivelCumplimiento: schema.evaluacionesSst.nivelCumplimiento,
+        fechaEvaluacion: schema.evaluacionesSst.fechaEvaluacion,
+        observaciones: schema.evaluacionesSst.observaciones,
+        lsoSignatureName: schema.evaluacionesSst.lsoSignatureName,
+        lsoSignatureLicense: schema.evaluacionesSst.lsoSignatureLicense,
+        lsoSignatureUrl: schema.evaluacionesSst.lsoSignatureUrl,
+        lsoSignedAt: schema.evaluacionesSst.lsoSignedAt,
+        createdAt: schema.evaluacionesSst.createdAt,
+      })
+      .from(schema.evaluacionesSst)
+      .innerJoin(schema.companies, eq(schema.evaluacionesSst.companyId, schema.companies.id))
+      .where(eq(schema.evaluacionesSst.id, id));
+
+      if (!evaluacion) {
+        return res.status(404).json({ message: "Evaluación no encontrada" });
+      }
+
+      const [assignment] = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.companyId, evaluacion.companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+
+      if (!assignment) {
+        return res.status(403).json({ message: "No tiene acceso a esta evaluación" });
+      }
+
+      res.json(evaluacion);
+    } catch (error: any) {
+      console.error('[GET /api/portal-licenciado/evaluacion-sst/:id] Error:', error.message);
+      res.status(500).json({ message: "Error fetching evaluation", error: error.message });
+    }
+  });
+
+  // GET /api/portal-licenciado/plan-trabajo/:id - Get work plan details for LSO review
+  app.get("/api/portal-licenciado/plan-trabajo/:id", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const { id } = req.params;
+
+      const [plan] = await db.select({
+        id: schema.planesTrabajoAnual.id,
+        companyId: schema.planesTrabajoAnual.companyId,
+        companyName: schema.companies.name,
+        companyNit: schema.companies.nit,
+        anio: schema.planesTrabajoAnual.anio,
+        estado: schema.planesTrabajoAnual.estado,
+        fechaElaboracion: schema.planesTrabajoAnual.fechaElaboracion,
+        objetivoGeneral: schema.planesTrabajoAnual.objetivoGeneral,
+        alcance: schema.planesTrabajoAnual.alcance,
+        presupuestoTotal: schema.planesTrabajoAnual.presupuestoTotal,
+        presupuestoEjecutado: schema.planesTrabajoAnual.presupuestoEjecutado,
+        responsableElaboracion: schema.planesTrabajoAnual.responsableElaboracion,
+        cargoResponsable: schema.planesTrabajoAnual.cargoResponsable,
+        totalActividades: schema.planesTrabajoAnual.totalActividades,
+        actividadesCompletadas: schema.planesTrabajoAnual.actividadesCompletadas,
+        porcentajeCumplimiento: schema.planesTrabajoAnual.porcentajeCumplimiento,
+        observaciones: schema.planesTrabajoAnual.observaciones,
+        lsoSignatureName: schema.planesTrabajoAnual.lsoSignatureName,
+        lsoSignatureLicense: schema.planesTrabajoAnual.lsoSignatureLicense,
+        lsoSignatureUrl: schema.planesTrabajoAnual.lsoSignatureUrl,
+        lsoSignedAt: schema.planesTrabajoAnual.lsoSignedAt,
+        createdAt: schema.planesTrabajoAnual.createdAt,
+      })
+      .from(schema.planesTrabajoAnual)
+      .innerJoin(schema.companies, eq(schema.planesTrabajoAnual.companyId, schema.companies.id))
+      .where(eq(schema.planesTrabajoAnual.id, id));
+
+      if (!plan) {
+        return res.status(404).json({ message: "Plan de trabajo no encontrado" });
+      }
+
+      const [assignment] = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.companyId, plan.companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+
+      if (!assignment) {
+        return res.status(403).json({ message: "No tiene acceso a este plan" });
+      }
+
+      res.json(plan);
+    } catch (error: any) {
+      console.error('[GET /api/portal-licenciado/plan-trabajo/:id] Error:', error.message);
+      res.status(500).json({ message: "Error fetching work plan", error: error.message });
+    }
+  });
+
+  // GET /api/portal-licenciado/matriz-iperc/:id - Get risk matrix details for LSO review
+  app.get("/api/portal-licenciado/matriz-iperc/:id", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const { id } = req.params;
+
+      const [matriz] = await db.select({
+        id: schema.matricesIperc.id,
+        companyId: schema.matricesIperc.companyId,
+        companyName: schema.companies.name,
+        companyNit: schema.companies.nit,
+        nombre: schema.matricesIperc.nombre,
+        codigo: schema.matricesIperc.codigo,
+        area: schema.matricesIperc.area,
+        proceso: schema.matricesIperc.proceso,
+        responsableEvaluacion: schema.matricesIperc.responsableEvaluacion,
+        fechaEvaluacion: schema.matricesIperc.fechaEvaluacion,
+        estado: schema.matricesIperc.estado,
+        version: schema.matricesIperc.version,
+        metodologia: schema.matricesIperc.metodologia,
+        alcance: schema.matricesIperc.alcance,
+        observaciones: schema.matricesIperc.observaciones,
+        lsoSignatureName: schema.matricesIperc.lsoSignatureName,
+        lsoSignatureLicense: schema.matricesIperc.lsoSignatureLicense,
+        lsoSignatureUrl: schema.matricesIperc.lsoSignatureUrl,
+        lsoSignedAt: schema.matricesIperc.lsoSignedAt,
+        createdAt: schema.matricesIperc.createdAt,
+      })
+      .from(schema.matricesIperc)
+      .innerJoin(schema.companies, eq(schema.matricesIperc.companyId, schema.companies.id))
+      .where(eq(schema.matricesIperc.id, id));
+
+      if (!matriz) {
+        return res.status(404).json({ message: "Matriz IPERC no encontrada" });
+      }
+
+      const [assignment] = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.companyId, matriz.companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+
+      if (!assignment) {
+        return res.status(403).json({ message: "No tiene acceso a esta matriz" });
+      }
+
+      res.json(matriz);
+    } catch (error: any) {
+      console.error('[GET /api/portal-licenciado/matriz-iperc/:id] Error:', error.message);
+      res.status(500).json({ message: "Error fetching risk matrix", error: error.message });
+    }
+  });
 }

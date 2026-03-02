@@ -2635,6 +2635,11 @@ export const evaluacionesSst = pgTable("evaluaciones_sst", {
   version: integer("version").notNull().default(1),
   evaluacionAnteriorId: varchar("evaluacion_anterior_id"), // Para comparaciones
   
+  lsoSignatureName: text("lso_signature_name"),
+  lsoSignatureLicense: text("lso_signature_license"),
+  lsoSignatureUrl: text("lso_signature_url"),
+  lsoSignedAt: timestamp("lso_signed_at"),
+
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
@@ -2956,6 +2961,11 @@ export const planesTrabajoAnual = pgTable("planes_trabajo_anual", {
   autorizadoPorId: varchar("autorizado_por_id").references(() => workers.id),
   aprobadoPorId: varchar("aprobado_por_id").references(() => workers.id),
   
+  lsoSignatureName: text("lso_signature_name"),
+  lsoSignatureLicense: text("lso_signature_license"),
+  lsoSignatureUrl: text("lso_signature_url"),
+  lsoSignedAt: timestamp("lso_signed_at"),
+
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
@@ -4786,6 +4796,11 @@ export const matricesIperc = pgTable("matrices_iperc", {
   aprobadoPorId: varchar("aprobado_por_id").references(() => users.id),
   cargoAprobador: text("cargo_aprobador"),
   
+  lsoSignatureName: text("lso_signature_name"),
+  lsoSignatureLicense: text("lso_signature_license"),
+  lsoSignatureUrl: text("lso_signature_url"),
+  lsoSignedAt: timestamp("lso_signed_at"),
+
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });

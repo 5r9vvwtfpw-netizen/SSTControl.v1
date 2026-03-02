@@ -25726,7 +25726,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Add signature footer (no LSO required for management reports)
+      // Add signature footer with frozen LSO signature if available
+      if (evaluacion.lsoSignatureName && evaluacion.lsoSignatureUrl) {
+        signers.lso = {
+          name: evaluacion.lsoSignatureName,
+          licenseNumber: evaluacion.lsoSignatureLicense || "",
+          licenseIssuer: "",
+          signatureUrl: evaluacion.lsoSignatureUrl,
+        };
+      }
       await addSignatureFooter(doc, signers, true);
 
       doc.end();
@@ -26279,6 +26287,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
 
+      if (evaluacion.lsoSignatureName && evaluacion.lsoSignatureUrl) {
+        ministerioSigners.lso = {
+          name: evaluacion.lsoSignatureName,
+          licenseNumber: evaluacion.lsoSignatureLicense || "",
+          licenseIssuer: "",
+          signatureUrl: evaluacion.lsoSignatureUrl,
+        };
+      }
       await addSignatureFooter(doc, ministerioSigners, true);
       currentY = doc.y + 20;
 
@@ -28700,7 +28716,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      await addSignatureFooter(doc, signers, false);
+      if (plan.lsoSignatureName && plan.lsoSignatureUrl) {
+        signers.lso = {
+          name: plan.lsoSignatureName,
+          licenseNumber: plan.lsoSignatureLicense || "",
+          licenseIssuer: "",
+          signatureUrl: plan.lsoSignatureUrl,
+        };
+      }
+      await addSignatureFooter(doc, signers, !!plan.lsoSignatureName);
 
       doc.end();
     } catch (error: any) {

@@ -107,6 +107,72 @@ interface PendingDocument {
   createdAt: string;
 }
 
+interface AllDocuments {
+  investigaciones: Array<{
+    id: string;
+    companyId: string;
+    companyName: string;
+    companyNit: string;
+    eventType: string;
+    eventDate: string;
+    eventDescription: string;
+    status: string;
+    isSevere: number;
+    isFatal: number;
+    createdAt: string;
+    licensedProfessionalName: string | null;
+    licensedProfessionalSignatureUrl: string | null;
+  }>;
+  evaluaciones: Array<{
+    id: string;
+    companyId: string;
+    companyName: string;
+    companyNit: string;
+    anio: number;
+    mes: number;
+    estado: string;
+    porcentajeCumplimiento: number;
+    nivelCumplimiento: string | null;
+    fechaEvaluacion: string;
+    responsableNombre: string;
+    lsoSignatureName: string | null;
+    lsoSignatureUrl: string | null;
+    lsoSignedAt: string | null;
+    createdAt: string;
+  }>;
+  planesTrabajoAnual: Array<{
+    id: string;
+    companyId: string;
+    companyName: string;
+    companyNit: string;
+    anio: number;
+    estado: string;
+    fechaElaboracion: string;
+    responsableElaboracion: string;
+    porcentajeCumplimiento: number;
+    lsoSignatureName: string | null;
+    lsoSignatureUrl: string | null;
+    lsoSignedAt: string | null;
+    createdAt: string;
+  }>;
+  matricesIperc: Array<{
+    id: string;
+    companyId: string;
+    companyName: string;
+    companyNit: string;
+    nombre: string;
+    area: string;
+    estado: string;
+    fechaEvaluacion: string;
+    metodologia: string;
+    version: number;
+    lsoSignatureName: string | null;
+    lsoSignatureUrl: string | null;
+    lsoSignedAt: string | null;
+    createdAt: string;
+  }>;
+}
+
 const SST_PROFESSION_LABELS: Record<string, string> = {
   medico_ocupacional: "Médico Ocupacional",
   profesional_sst: "Profesional SST",
@@ -523,9 +589,54 @@ function EmpresasTab() {
 }
 
 function DocumentosTab() {
-  const { data: documentos = [], isLoading, isError, error } = useQuery<PendingDocument[]>({
-    queryKey: ["/api/portal-licenciado/documentos-pendientes"],
+  const { toast } = useToast();
+  const { data: allDocs, isLoading, isError, error } = useQuery<AllDocuments>({
+    queryKey: ["/api/portal-licenciado/documentos-todos"],
   });
+
+  const signEvaluacionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("PATCH", `/api/portal-licenciado/evaluacion-sst/${id}/firmar`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Evaluación firmada exitosamente" });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal-licenciado/documentos-todos"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error al firmar", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const signPlanMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("PATCH", `/api/portal-licenciado/plan-trabajo/${id}/firmar`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Plan de trabajo firmado exitosamente" });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal-licenciado/documentos-todos"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error al firmar", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const signMatrizMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("PATCH", `/api/portal-licenciado/matriz-iperc/${id}/firmar`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Matriz IPERC firmada exitosamente" });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal-licenciado/documentos-todos"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error al firmar", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const [confirmSign, setConfirmSign] = useState<{ type: string; id: string; name: string } | null>(null);
 
   if (isError) {
     return (
@@ -533,7 +644,7 @@ function DocumentosTab() {
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Error al cargar documentos</AlertTitle>
         <AlertDescription>
-          No se pudieron cargar los documentos pendientes. 
+          No se pudieron cargar los documentos. 
           {error instanceof Error ? ` ${error.message}` : ''} 
           Por favor intente de nuevo más tarde.
         </AlertDescription>
@@ -555,15 +666,36 @@ function DocumentosTab() {
     );
   }
 
-  if (documentos.length === 0) {
+  const docs = allDocs || { investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [] };
+  const totalDocs = docs.investigaciones.length + docs.evaluaciones.length + docs.planesTrabajoAnual.length + docs.matricesIperc.length;
+  const pendingInv = docs.investigaciones.filter(d => !d.licensedProfessionalName);
+  const signedInv = docs.investigaciones.filter(d => !!d.licensedProfessionalName);
+  const pendingEval = docs.evaluaciones.filter(d => !d.lsoSignatureName);
+  const signedEval = docs.evaluaciones.filter(d => !!d.lsoSignatureName);
+  const pendingPlan = docs.planesTrabajoAnual.filter(d => !d.lsoSignatureName);
+  const signedPlan = docs.planesTrabajoAnual.filter(d => !!d.lsoSignatureName);
+  const pendingMat = docs.matricesIperc.filter(d => !d.lsoSignatureName);
+  const signedMat = docs.matricesIperc.filter(d => !!d.lsoSignatureName);
+  const totalPending = pendingInv.length + pendingEval.length + pendingPlan.length + pendingMat.length;
+
+  const handleConfirmSign = () => {
+    if (!confirmSign) return;
+    if (confirmSign.type === 'evaluacion') signEvaluacionMutation.mutate(confirmSign.id);
+    else if (confirmSign.type === 'plan') signPlanMutation.mutate(confirmSign.id);
+    else if (confirmSign.type === 'matriz') signMatrizMutation.mutate(confirmSign.id);
+    setConfirmSign(null);
+  };
+
+  const isSigning = signEvaluacionMutation.isPending || signPlanMutation.isPending || signMatrizMutation.isPending;
+
+  if (totalDocs === 0) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
           <CheckCircle2 className="h-12 w-12 text-green-500 mb-4" />
-          <h3 className="text-lg font-medium mb-2">Sin documentos pendientes</h3>
+          <h3 className="text-lg font-medium mb-2">Sin documentos</h3>
           <p className="text-muted-foreground text-center max-w-md">
-            No tiene investigaciones de accidentes pendientes de firma. 
-            Todos los documentos han sido revisados.
+            No hay documentos registrados en las empresas asignadas.
           </p>
         </CardContent>
       </Card>
@@ -571,76 +703,349 @@ function DocumentosTab() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Documentos Pendientes de Firma</CardTitle>
-        <CardDescription>
-          Investigaciones de accidentes graves/mortales que requieren su firma profesional
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Empresa</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Fecha Evento</TableHead>
-              <TableHead>Severidad</TableHead>
-              <TableHead>Estado SLA</TableHead>
-              <TableHead>Días Restantes</TableHead>
-              <TableHead>Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {documentos.map((doc) => (
-              <TableRow key={doc.id} data-testid={`row-documento-${doc.id}`}>
-                <TableCell>
-                  <div>
-                    <div className="font-medium">{doc.companyName}</div>
-                    <div className="text-xs text-muted-foreground">NIT: {doc.companyNit}</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">
-                    {doc.eventType || 'Investigación'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {format(new Date(doc.eventDate), "dd MMM yyyy", { locale: es })}
-                </TableCell>
-                <TableCell>
-                  {doc.isFatal === 1 ? (
-                    <Badge variant="destructive">Mortal</Badge>
-                  ) : doc.isSevere === 1 ? (
-                    <Badge className="bg-orange-500">Grave</Badge>
-                  ) : (
-                    <Badge variant="secondary">Leve</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <SlaStatusBadge status={doc.slaStatus} />
-                </TableCell>
-                <TableCell>
-                  {doc.daysRemaining !== null ? (
-                    <span className={doc.daysRemaining <= 3 ? "text-red-500 font-medium" : ""}>
-                      {doc.daysRemaining} días
-                    </span>
-                  ) : '-'}
-                </TableCell>
-                <TableCell>
-                  <Link href={`/portal-licenciado/investigacion/${doc.id}`}>
-                    <Button size="sm" data-testid={`button-review-${doc.id}`}>
-                      <ExternalLink className="h-4 w-4 mr-1" />
-                      Revisar
-                    </Button>
-                  </Link>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 flex-wrap">
+        <Badge variant="outline">{totalDocs} documentos totales</Badge>
+        {totalPending > 0 && (
+          <Badge variant="destructive">{totalPending} pendientes de firma</Badge>
+        )}
+        {totalDocs - totalPending > 0 && (
+          <Badge className="bg-green-600 text-white">{totalDocs - totalPending} firmados</Badge>
+        )}
+      </div>
+
+      {docs.investigaciones.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <div>
+              <CardTitle className="text-base">Investigaciones de Accidentes</CardTitle>
+              <CardDescription>Res. 1401/2007 - Accidentes graves/mortales</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {pendingInv.length > 0 && <Badge variant="destructive">{pendingInv.length} pendientes</Badge>}
+              {signedInv.length > 0 && <Badge className="bg-green-600 text-white">{signedInv.length} firmadas</Badge>}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Severidad</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {docs.investigaciones.map((inv) => (
+                  <TableRow key={inv.id} data-testid={`row-inv-${inv.id}`}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{inv.companyName}</div>
+                        <div className="text-xs text-muted-foreground">NIT: {inv.companyNit}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{inv.eventType || 'Investigación'}</Badge>
+                    </TableCell>
+                    <TableCell>{format(new Date(inv.eventDate), "dd MMM yyyy", { locale: es })}</TableCell>
+                    <TableCell>
+                      {inv.isFatal === 1 ? (
+                        <Badge variant="destructive">Mortal</Badge>
+                      ) : inv.isSevere === 1 ? (
+                        <Badge className="bg-orange-500 text-white">Grave</Badge>
+                      ) : (
+                        <Badge variant="secondary">Leve</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {inv.licensedProfessionalName ? (
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Firmada
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">Pendiente</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Link href={`/portal-licenciado/investigacion/${inv.id}`}>
+                        <Button size="sm" data-testid={`button-review-inv-${inv.id}`}>
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          {inv.licensedProfessionalName ? 'Ver' : 'Revisar'}
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {docs.evaluaciones.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <div>
+              <CardTitle className="text-base">Evaluaciones de Estándares Mínimos</CardTitle>
+              <CardDescription>Resolución 0312/2019 - Evaluación SG-SST</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {pendingEval.length > 0 && <Badge variant="destructive">{pendingEval.length} pendientes</Badge>}
+              {signedEval.length > 0 && <Badge className="bg-green-600 text-white">{signedEval.length} firmadas</Badge>}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Periodo</TableHead>
+                  <TableHead>Cumplimiento</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Firma LSO</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {docs.evaluaciones.map((ev) => (
+                  <TableRow key={ev.id} data-testid={`row-eval-${ev.id}`}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{ev.companyName}</div>
+                        <div className="text-xs text-muted-foreground">NIT: {ev.companyNit}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{ev.anio} - Mes {ev.mes}</TableCell>
+                    <TableCell>
+                      <Badge variant={ev.porcentajeCumplimiento >= 86 ? "default" : ev.porcentajeCumplimiento >= 60 ? "secondary" : "destructive"}>
+                        {ev.porcentajeCumplimiento}%
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{ev.estado}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {ev.lsoSignatureName ? (
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Firmada
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">Pendiente</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {ev.lsoSignatureName ? (
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          {ev.lsoSignatureName}
+                        </Badge>
+                      ) : (
+                        <Button 
+                          size="sm" 
+                          data-testid={`button-sign-eval-${ev.id}`}
+                          onClick={() => setConfirmSign({ type: 'evaluacion', id: ev.id, name: `Evaluación ${ev.anio} - ${ev.companyName}` })}
+                          disabled={isSigning}
+                        >
+                          <FileCheck className="h-4 w-4 mr-1" />
+                          Firmar
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {docs.planesTrabajoAnual.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <div>
+              <CardTitle className="text-base">Planes de Trabajo Anual</CardTitle>
+              <CardDescription>Decreto 1072/2015 - Plan Anual SG-SST</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {pendingPlan.length > 0 && <Badge variant="destructive">{pendingPlan.length} pendientes</Badge>}
+              {signedPlan.length > 0 && <Badge className="bg-green-600 text-white">{signedPlan.length} firmados</Badge>}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Año</TableHead>
+                  <TableHead>Avance</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Firma LSO</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {docs.planesTrabajoAnual.map((plan) => (
+                  <TableRow key={plan.id} data-testid={`row-plan-${plan.id}`}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{plan.companyName}</div>
+                        <div className="text-xs text-muted-foreground">NIT: {plan.companyNit}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{plan.anio}</TableCell>
+                    <TableCell>
+                      <Badge variant={plan.porcentajeCumplimiento >= 80 ? "default" : "secondary"}>
+                        {plan.porcentajeCumplimiento}%
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{plan.estado}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {plan.lsoSignatureName ? (
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Firmado
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">Pendiente</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {plan.lsoSignatureName ? (
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          {plan.lsoSignatureName}
+                        </Badge>
+                      ) : (
+                        <Button 
+                          size="sm"
+                          data-testid={`button-sign-plan-${plan.id}`}
+                          onClick={() => setConfirmSign({ type: 'plan', id: plan.id, name: `Plan Trabajo ${plan.anio} - ${plan.companyName}` })}
+                          disabled={isSigning}
+                        >
+                          <FileCheck className="h-4 w-4 mr-1" />
+                          Firmar
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {docs.matricesIperc.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <div>
+              <CardTitle className="text-base">Matrices de Peligros (IPERC)</CardTitle>
+              <CardDescription>GTC-45 / ISO 45001:2018 - Identificación de Peligros</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {pendingMat.length > 0 && <Badge variant="destructive">{pendingMat.length} pendientes</Badge>}
+              {signedMat.length > 0 && <Badge className="bg-green-600 text-white">{signedMat.length} firmadas</Badge>}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Área</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Firma LSO</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {docs.matricesIperc.map((mat) => (
+                  <TableRow key={mat.id} data-testid={`row-mat-${mat.id}`}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{mat.companyName}</div>
+                        <div className="text-xs text-muted-foreground">NIT: {mat.companyNit}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">{mat.nombre}</div>
+                      <div className="text-xs text-muted-foreground">v{mat.version} - {mat.metodologia}</div>
+                    </TableCell>
+                    <TableCell>{mat.area}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{mat.estado}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {mat.lsoSignatureName ? (
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Firmada
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">Pendiente</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {mat.lsoSignatureName ? (
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          {mat.lsoSignatureName}
+                        </Badge>
+                      ) : (
+                        <Button 
+                          size="sm"
+                          data-testid={`button-sign-mat-${mat.id}`}
+                          onClick={() => setConfirmSign({ type: 'matriz', id: mat.id, name: `${mat.nombre} - ${mat.companyName}` })}
+                          disabled={isSigning}
+                        >
+                          <FileCheck className="h-4 w-4 mr-1" />
+                          Firmar
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      <Dialog open={!!confirmSign} onOpenChange={(open) => { if (!open) setConfirmSign(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Firma Digital</DialogTitle>
+            <DialogDescription>
+              Está a punto de firmar digitalmente el siguiente documento:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="font-medium text-sm">{confirmSign?.name}</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Al firmar, su nombre, número de licencia profesional e imagen de firma 
+              quedarán registrados permanentemente en el documento. Esta acción no se puede deshacer.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmSign(null)} data-testid="button-cancel-sign">
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmSign} disabled={isSigning} data-testid="button-confirm-sign">
+              {isSigning && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              Confirmar Firma
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 

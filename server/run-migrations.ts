@@ -20,6 +20,7 @@ import { syncInvestigationParticipants } from './migrations/sync-investigation-p
 import { syncDocumentAcknowledgmentsColumns } from './migrations/sync-document-acknowledgments-columns';
 import { syncActividadAccionMejoraLink } from './migrations/sync-actividad-accion-mejora-link';
 import { syncPcaTables } from './migrations/sync-pca-tables';
+import { syncLsoSignatureColumns } from './migrations/sync-lso-signature-columns';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -51,6 +52,7 @@ export async function runMigrations() {
     await syncDocumentAcknowledgmentsColumns();
     await syncActividadAccionMejoraLink();
     await syncPcaTables();
+    await syncLsoSignatureColumns();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);
