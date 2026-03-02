@@ -917,12 +917,26 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ message: "No hay datos para actualizar" });
       }
+
+      const effectiveLicenseNumber = updateData.sstLicenseNumber ?? user.sstLicenseNumber;
+      const effectiveExpiresAt = updateData.sstLicenseExpiresAt ?? (user.sstLicenseExpiresAt ? new Date(user.sstLicenseExpiresAt) : null);
+
+      if (effectiveLicenseNumber && effectiveExpiresAt) {
+        const expiryDate = new Date(effectiveExpiresAt);
+        const now = new Date();
+        if (expiryDate < now) {
+          updateData.sstLicenseStatus = 'vencida';
+        } else {
+          const daysUntilExpiry = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          updateData.sstLicenseStatus = daysUntilExpiry <= 90 ? 'pendiente_verificacion' : 'vigente';
+        }
+      }
       
       await db.update(schema.users)
         .set(updateData)
         .where(eq(schema.users.id, user.id));
       
-      console.log(`[PATCH /api/portal-licenciado/license] LSO ${user.id} updated license data`);
+      console.log(`[PATCH /api/portal-licenciado/license] LSO ${user.id} updated license data, status: ${updateData.sstLicenseStatus || 'unchanged'}`);
       
       res.json({ message: "Datos de licencia actualizados exitosamente" });
     } catch (error: any) {
