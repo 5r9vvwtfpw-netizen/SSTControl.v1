@@ -270,6 +270,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
                 companyName: company.name || 'Empresa',
                 companyNit: company.nit || undefined,
                 loginUrl: `${baseUrl}/portal-licenciado`,
+                companyEmail: company.contactEmail || undefined,
               });
               console.log(`[LSO-AUTO] Notificación de nueva asignación enviada a ${lsoData.email} (sin credenciales)`);
             } catch (emailError: any) {

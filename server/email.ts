@@ -2105,6 +2105,7 @@ export interface LsoNewAssignmentEmailData {
   companyName: string;
   companyNit?: string;
   loginUrl: string;
+  companyEmail?: string;
 }
 
 function getLsoNewAssignmentEmailHTML(data: LsoNewAssignmentEmailData): string {
@@ -2176,12 +2177,16 @@ export async function sendLsoNewAssignmentEmail(
   try {
     const subject = `Nueva Asignaci\u00f3n - ${data.companyName} | Portal LSO SST Colombia`;
 
-    const result = await resend.emails.send({
+    const emailOptions: any = {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
       subject,
       html: getLsoNewAssignmentEmailHTML(data),
-    });
+    };
+    if (data.companyEmail) {
+      emailOptions.replyTo = data.companyEmail;
+    }
+    const result = await resend.emails.send(emailOptions);
 
     if (result.error) {
       console.error('Error sending LSO new assignment email:', result.error);

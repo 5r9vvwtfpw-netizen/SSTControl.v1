@@ -246,6 +246,7 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
             companyName: company.name || 'Empresa',
             companyNit: company.nit || undefined,
             loginUrl: `${baseUrl}/portal-licenciado`,
+            companyEmail: company.contactEmail || undefined,
           });
           logger.info({ email: lso.email }, "[LSO-AUTO] Notificación de nueva asignación enviada (sin credenciales)");
         } catch (emailError: any) {
