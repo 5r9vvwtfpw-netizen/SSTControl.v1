@@ -3,7 +3,6 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -162,50 +161,13 @@ export default function PortalLicenciado() {
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="dashboard" data-testid="tab-dashboard">
-            <Building2 className="h-4 w-4 mr-2" />
-            Panel
-          </TabsTrigger>
-          <TabsTrigger value="empresas" data-testid="tab-empresas">
-            <Users className="h-4 w-4 mr-2" />
-            Empresas
-          </TabsTrigger>
-          <TabsTrigger value="documentos" data-testid="tab-documentos">
-            <FileCheck className="h-4 w-4 mr-2" />
-            Documentos
-          </TabsTrigger>
-          <TabsTrigger value="pesv" data-testid="tab-pesv-auditoria">
-            <Car className="h-4 w-4 mr-2" />
-            PESV
-          </TabsTrigger>
-          <TabsTrigger value="licencia" data-testid="tab-licencia">
-            <Award className="h-4 w-4 mr-2" />
-            Mi Licencia
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="dashboard" className="mt-6">
-          <DashboardTab />
-        </TabsContent>
-
-        <TabsContent value="empresas" className="mt-6">
-          <EmpresasTab />
-        </TabsContent>
-
-        <TabsContent value="documentos" className="mt-6">
-          <DocumentosTab />
-        </TabsContent>
-
-        <TabsContent value="pesv" className="mt-6">
-          <PesvAuditoriaTab />
-        </TabsContent>
-
-        <TabsContent value="licencia" className="mt-6">
-          <LicenciaTab />
-        </TabsContent>
-      </Tabs>
+      <div data-testid="portal-lso-content">
+        {activeTab === "dashboard" && <DashboardTab />}
+        {activeTab === "empresas" && <EmpresasTab />}
+        {activeTab === "documentos" && <DocumentosTab />}
+        {activeTab === "pesv" && <PesvAuditoriaTab />}
+        {activeTab === "licencia" && <LicenciaTab />}
+      </div>
     </div>
   );
 }
