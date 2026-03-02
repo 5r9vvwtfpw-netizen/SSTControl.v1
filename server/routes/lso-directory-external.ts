@@ -237,14 +237,12 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
         const existingUser = await storage.getUserByEmail(lsoData.email);
 
         if (existingUser) {
-          if (existingUser.role !== 'lso') {
-            return res.status(400).json({
-              ok: false,
-              message: `Ya existe un usuario con el email ${lsoData.email} pero con rol "${existingUser.role}". No se puede vincular como LSO.`,
-            });
+          if (existingUser.role === 'lso') {
+            lsoUserId = existingUser.id;
+            console.log(`[LSO-AUTO] Usuario LSO existente encontrado para ${lsoData.email}: ${existingUser.id}`);
+          } else {
+            console.log(`[LSO-AUTO] Email ${lsoData.email} ya existe con rol "${existingUser.role}", asignación procede sin cuenta de portal`);
           }
-          lsoUserId = existingUser.id;
-          console.log(`[LSO-AUTO] Usuario LSO existente encontrado para ${lsoData.email}: ${existingUser.id}`);
         } else {
           const nameParts = (lsoData.fullName || 'lso').toLowerCase()
             .normalize("NFD").replace(/[\u0300-\u036f]/g, "")

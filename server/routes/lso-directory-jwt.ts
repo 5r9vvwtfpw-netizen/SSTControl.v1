@@ -212,14 +212,12 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
     const existingUser = await storage.getUserByEmail(lso.email);
 
     if (existingUser) {
-      if (existingUser.role !== 'lso') {
-        return res.status(400).json({
-          ok: false,
-          error: `Ya existe un usuario con el email ${lso.email} pero con rol "${existingUser.role}". No se puede vincular como LSO.`
-        });
+      if (existingUser.role === 'lso') {
+        lsoUserId = existingUser.id;
+        logger.info({ email: lso.email, userId: existingUser.id }, "[LSO-AUTO] Usuario LSO existente encontrado");
+      } else {
+        logger.info({ email: lso.email, existingRole: existingUser.role }, "[LSO-AUTO] Email ya existe con otro rol, asignación procede sin cuenta de portal");
       }
-      lsoUserId = existingUser.id;
-      logger.info({ email: lso.email, userId: existingUser.id }, "[LSO-AUTO] Usuario LSO existente encontrado");
     } else {
         const nameParts = (lso.fullName || 'lso').toLowerCase()
           .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
