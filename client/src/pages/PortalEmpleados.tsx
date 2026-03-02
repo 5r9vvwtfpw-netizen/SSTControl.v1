@@ -1131,7 +1131,7 @@ function WorkerPortal() {
             Información de tu contrato, perfil de cargo y canal de comunicación con el equipo SST
           </p>
         </div>
-        <HelpVideoButton customRoute={`/portal-empleados#${activeSection}`} testId="button-help-video-empleado" />
+        <HelpVideoButton customRoute="/portal-empleados" testId="button-help-video-empleado" />
       </div>
 
       {/* Navegación Profesional con Menús Desplegables */}

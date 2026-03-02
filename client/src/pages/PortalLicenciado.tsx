@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -154,16 +154,6 @@ export default function PortalLicenciado() {
     );
   }
 
-  const lsoTabRouteMap: Record<string, string> = {
-    dashboard: "/portal-licenciado#panel",
-    empresas: "/portal-licenciado#empresas",
-    documentos: "/portal-licenciado#documentos",
-    pesv: "/portal-licenciado#pesv",
-    licencia: "/portal-licenciado#mi-licencia",
-    mensajes: "/portal-licenciado#mensajes",
-  };
-  const helpVideoRoute = lsoTabRouteMap[activeTab] || "/portal-licenciado#panel";
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -175,7 +165,7 @@ export default function PortalLicenciado() {
             Gestione sus empresas asignadas y documentos que requieren su firma profesional
           </p>
         </div>
-        <HelpVideoButton customRoute={helpVideoRoute} testId="button-help-video-lso" />
+        <HelpVideoButton customRoute="/portal-licenciado" testId="button-help-video-lso" />
       </div>
 
       <div data-testid="portal-lso-content">
