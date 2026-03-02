@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import HelpVideoButton from "@/components/HelpVideoButton";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
@@ -153,15 +154,28 @@ export default function PortalLicenciado() {
     );
   }
 
+  const lsoTabRouteMap: Record<string, string> = {
+    dashboard: "/portal-licenciado#panel",
+    empresas: "/portal-licenciado#empresas",
+    documentos: "/portal-licenciado#documentos",
+    pesv: "/portal-licenciado#pesv",
+    licencia: "/portal-licenciado#mi-licencia",
+    mensajes: "/portal-licenciado#mensajes",
+  };
+  const helpVideoRoute = lsoTabRouteMap[activeTab] || "/portal-licenciado#panel";
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold" data-testid="text-page-title">
-          Portal del Profesional Licenciado
-        </h1>
-        <p className="text-muted-foreground">
-          Gestione sus empresas asignadas y documentos que requieren su firma profesional
-        </p>
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-3xl font-bold" data-testid="text-page-title">
+            Portal del Profesional Licenciado
+          </h1>
+          <p className="text-muted-foreground">
+            Gestione sus empresas asignadas y documentos que requieren su firma profesional
+          </p>
+        </div>
+        <HelpVideoButton customRoute={helpVideoRoute} testId="button-help-video-lso" />
       </div>
 
       <div data-testid="portal-lso-content">

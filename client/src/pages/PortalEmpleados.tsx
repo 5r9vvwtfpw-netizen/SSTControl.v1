@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import HelpVideoButton from "@/components/HelpVideoButton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/utils/formatters";
@@ -1121,13 +1122,16 @@ function WorkerPortal() {
       )}
 
       {/* Header */}
-      <div className="px-1">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold" data-testid="text-page-title">
-          Portal de Empleados SST
-        </h1>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Información de tu contrato, perfil de cargo y canal de comunicación con el equipo SST
-        </p>
+      <div className="flex items-center justify-between flex-wrap gap-4 px-1">
+        <div>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold" data-testid="text-page-title">
+            Portal de Empleados SST
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
+            Información de tu contrato, perfil de cargo y canal de comunicación con el equipo SST
+          </p>
+        </div>
+        <HelpVideoButton customRoute={`/portal-empleados#${activeSection}`} testId="button-help-video-empleado" />
       </div>
 
       {/* Navegación Profesional con Menús Desplegables */}
