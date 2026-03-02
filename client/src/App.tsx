@@ -176,7 +176,7 @@ import { DemoWatermark } from "@/components/DemoWatermark";
 // Componente que decide si mostrar Welcome o Dashboard según autenticación
 function HelpVideoButtonWrapper() {
   const [location] = useLocation();
-  const hiddenRoutes = ["/videos-ayuda", "/admin-videos-ayuda"];
+  const hiddenRoutes = ["/videos-ayuda", "/admin-videos-ayuda", "/portal-licenciado", "/portal-empleados"];
   const hiddenPrefixes = ["/evaluaciones-sst/"];
   if (hiddenRoutes.includes(location) || hiddenPrefixes.some(p => location.startsWith(p))) return null;
   return (
