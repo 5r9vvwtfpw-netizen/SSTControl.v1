@@ -654,24 +654,31 @@ function CompanyVaultDetail({ vault, onBack, isSigning, onSign }: {
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 flex-wrap">
-        <Button variant="ghost" size="sm" onClick={onBack} data-testid="button-back-to-vaults">
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Volver
-        </Button>
-        <div className="flex items-center gap-2">
-          <Building2 className="h-5 w-5 text-muted-foreground" />
-          <div>
-            <h3 className="font-semibold text-base leading-tight" data-testid="text-vault-company-name">{vault.companyName}</h3>
-            <p className="text-xs text-muted-foreground">NIT: {vault.companyNit}</p>
+      <Card className="border-l-0 border-r-0 border-t-0 rounded-none bg-muted/50">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            <Button variant="outline" onClick={onBack} data-testid="button-back-to-vaults">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Todas las Empresas
+            </Button>
+            <div className="h-8 w-px bg-border hidden sm:block" />
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="flex items-center justify-center h-10 w-10 rounded-md bg-background border shrink-0">
+                <Building2 className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-base leading-tight truncate" data-testid="text-vault-company-name">{vault.companyName}</h3>
+                <p className="text-xs text-muted-foreground">NIT: {vault.companyNit}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="outline">{vault.totalDocs} documentos</Badge>
+              {vault.pendingDocs > 0 && <Badge variant="destructive">{vault.pendingDocs} pendientes</Badge>}
+              {vault.signedDocs > 0 && <Badge className="bg-green-600 text-white">{vault.signedDocs} firmados</Badge>}
+            </div>
           </div>
-        </div>
-        <div className="ml-auto flex items-center gap-2 flex-wrap">
-          <Badge variant="outline">{vault.totalDocs} documentos</Badge>
-          {vault.pendingDocs > 0 && <Badge variant="destructive">{vault.pendingDocs} pendientes</Badge>}
-          {vault.signedDocs > 0 && <Badge className="bg-green-600 text-white">{vault.signedDocs} firmados</Badge>}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {vault.investigaciones.length > 0 && (
         <Card>
@@ -697,7 +704,7 @@ function CompanyVaultDetail({ vault, onBack, isSigning, onSign }: {
                 {vault.investigaciones.map((inv) => (
                   <TableRow key={inv.id} data-testid={`row-inv-${inv.id}`}>
                     <TableCell>
-                      <Badge variant="outline">{inv.eventType || 'Investigaci\u00f3n'}</Badge>
+                      <Badge variant="outline">{inv.eventType || 'Investigación'}</Badge>
                     </TableCell>
                     <TableCell>{format(new Date(inv.eventDate), "dd MMM yyyy", { locale: es })}</TableCell>
                     <TableCell>
@@ -739,8 +746,8 @@ function CompanyVaultDetail({ vault, onBack, isSigning, onSign }: {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <div>
-              <CardTitle className="text-base">Evaluaciones de Est\u00e1ndares M\u00ednimos</CardTitle>
-              <CardDescription>Resoluci\u00f3n 0312/2019 - Evaluaci\u00f3n SG-SST</CardDescription>
+              <CardTitle className="text-base">Evaluaciones de Estándares Mínimos</CardTitle>
+              <CardDescription>Resolución 0312/2019 - Evaluación SG-SST</CardDescription>
             </div>
             <Badge variant="outline">{vault.evaluaciones.length}</Badge>
           </CardHeader>
@@ -787,7 +794,7 @@ function CompanyVaultDetail({ vault, onBack, isSigning, onSign }: {
                         <Button 
                           size="sm" 
                           data-testid={`button-sign-eval-${ev.id}`}
-                          onClick={() => onSign('evaluacion', ev.id, `Evaluaci\u00f3n ${ev.anio} - ${vault.companyName}`)}
+                          onClick={() => onSign('evaluacion', ev.id, `Evaluación ${ev.anio} - ${vault.companyName}`)}
                           disabled={isSigning}
                         >
                           <FileCheck className="h-4 w-4 mr-1" />
@@ -816,7 +823,7 @@ function CompanyVaultDetail({ vault, onBack, isSigning, onSign }: {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>A\u00f1o</TableHead>
+                  <TableHead>Año</TableHead>
                   <TableHead>Avance</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Firma LSO</TableHead>
@@ -876,7 +883,7 @@ function CompanyVaultDetail({ vault, onBack, isSigning, onSign }: {
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <div>
               <CardTitle className="text-base">Matrices de Peligros (IPERC)</CardTitle>
-              <CardDescription>GTC-45 / ISO 45001:2018 - Identificaci\u00f3n de Peligros</CardDescription>
+              <CardDescription>GTC-45 / ISO 45001:2018 - Identificación de Peligros</CardDescription>
             </div>
             <Badge variant="outline">{vault.matricesIperc.length}</Badge>
           </CardHeader>
@@ -885,7 +892,7 @@ function CompanyVaultDetail({ vault, onBack, isSigning, onSign }: {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nombre</TableHead>
-                  <TableHead>\u00c1rea</TableHead>
+                  <TableHead>Área</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Firma LSO</TableHead>
                   <TableHead>Acciones</TableHead>
@@ -956,7 +963,7 @@ function DocumentosTab() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Evaluaci\u00f3n firmada exitosamente" });
+      toast({ title: "Evaluación firmada exitosamente" });
       queryClient.invalidateQueries({ queryKey: ["/api/portal-licenciado/documentos-todos"] });
     },
     onError: (err: Error) => {
@@ -1012,7 +1019,7 @@ function DocumentosTab() {
         <AlertDescription>
           No se pudieron cargar los documentos. 
           {error instanceof Error ? ` ${error.message}` : ''} 
-          Por favor intente de nuevo m\u00e1s tarde.
+          Por favor intente de nuevo más tarde.
         </AlertDescription>
       </Alert>
     );
@@ -1067,14 +1074,14 @@ function DocumentosTab() {
             <DialogHeader>
               <DialogTitle>Confirmar Firma Digital</DialogTitle>
               <DialogDescription>
-                Est\u00e1 a punto de firmar digitalmente el siguiente documento:
+                Está a punto de firmar digitalmente el siguiente documento:
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
               <p className="font-medium text-sm">{confirmSign?.name}</p>
               <p className="text-sm text-muted-foreground mt-2">
-                Al firmar, su nombre, n\u00famero de licencia profesional e imagen de firma 
-                quedar\u00e1n registrados permanentemente en el documento. Esta acci\u00f3n no se puede deshacer.
+                Al firmar, su nombre, número de licencia profesional e imagen de firma 
+                quedarán registrados permanentemente en el documento. Esta acción no se puede deshacer.
               </p>
             </div>
             <DialogFooter>
@@ -1165,12 +1172,12 @@ function DocumentosTab() {
               <div className="flex items-center gap-3 mt-2 ml-14 flex-wrap">
                 {vault.investigaciones.length > 0 && (
                   <span className="text-xs text-muted-foreground">
-                    {vault.investigaciones.length} investigaci\u00f3n{vault.investigaciones.length !== 1 ? 'es' : ''}
+                    {vault.investigaciones.length} investigación{vault.investigaciones.length !== 1 ? 'es' : ''}
                   </span>
                 )}
                 {vault.evaluaciones.length > 0 && (
                   <span className="text-xs text-muted-foreground">
-                    {vault.evaluaciones.length} evaluaci\u00f3n{vault.evaluaciones.length !== 1 ? 'es' : ''}
+                    {vault.evaluaciones.length} evaluación{vault.evaluaciones.length !== 1 ? 'es' : ''}
                   </span>
                 )}
                 {vault.planesTrabajoAnual.length > 0 && (
