@@ -378,10 +378,10 @@ export function PHVANavigation() {
   if (user?.role === 'lso') {
     const lsoNavItems = [
       { label: "Panel", icon: LayoutDashboard, tab: "dashboard" },
+      { label: "Mi Licencia", icon: Award, tab: "licencia" },
       { label: "Empresas", icon: Building2, tab: "empresas" },
       { label: "Documentos", icon: FileCheck, tab: "documentos" },
       { label: "PESV", icon: Car, tab: "pesv" },
-      { label: "Mi Licencia", icon: Award, tab: "licencia" },
     ];
 
     const isOnPortal = location.startsWith("/portal-licenciado");
