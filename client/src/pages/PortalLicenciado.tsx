@@ -657,7 +657,7 @@ function CompanyVaultDetail({ vault, onBack, isSigning, onSign }: {
       <Card className="border-l-0 border-r-0 border-t-0 rounded-none bg-muted/50">
         <CardContent className="p-4">
           <div className="flex items-center gap-4 flex-wrap">
-            <Button variant="outline" onClick={onBack} data-testid="button-back-to-vaults">
+            <Button className="bg-primary text-primary-foreground border-primary" onClick={onBack} data-testid="button-back-to-vaults">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Todas las Empresas
             </Button>
