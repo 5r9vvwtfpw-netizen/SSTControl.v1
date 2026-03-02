@@ -137,9 +137,9 @@ export default function DetalleInvestigacionLSO() {
                 </p>
               </div>
             </div>
-            <Button variant="outline" className="mt-4" onClick={() => navigate("/portal-licenciado?tab=documentos")}>
+            <Button className="mt-4" onClick={() => navigate("/portal-licenciado?tab=documentos")}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver a Documentos
+              Volver a la Empresa
             </Button>
           </CardContent>
         </Card>
@@ -153,9 +153,9 @@ export default function DetalleInvestigacionLSO() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={goBackToVault} data-testid="button-back">
+          <Button size="sm" onClick={goBackToVault} data-testid="button-back">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a la Bóveda
+            Volver a la Empresa
           </Button>
           <div>
             <h1 className="text-2xl font-bold" data-testid="text-page-title">Revisión de Investigación</h1>
