@@ -35513,6 +35513,166 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // GET /api/matrices-iperc/:id/pdf - Generar PDF de Matriz IPERC
+  app.get('/api/matrices-iperc/:id/pdf', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      let companyId: string;
+      let matriz: any;
+
+      if (isAdmin) {
+        matriz = await storage.getMatrizIpercById(req.params.id);
+        if (!matriz) return res.status(404).send('Matriz IPERC no encontrada');
+        companyId = matriz.companyId;
+      } else {
+        companyId = req.user!.companyId!;
+        if (!companyId) return res.status(403).send('Esta operación requiere pertenecer a una empresa');
+        matriz = await storage.getMatrizIperc(req.params.id, companyId);
+        if (!matriz) return res.status(404).send('Matriz IPERC no encontrada');
+      }
+
+      const company = await storage.getCompany(companyId);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const peligros = await storage.getPeligrosIperc(req.params.id, companyId);
+      const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      if (matriz.lsoSignatureName && matriz.lsoSignatureUrl) {
+        signers.lso = {
+          name: matriz.lsoSignatureName,
+          licenseNumber: matriz.lsoSignatureLicense || "",
+          licenseIssuer: "",
+          signatureUrl: matriz.lsoSignatureUrl,
+        };
+      }
+
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER', layout: 'landscape' });
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="matriz-iperc-${matriz.id}.pdf"`);
+      doc.pipe(res);
+
+      if (trialStatus.isInTrial) {
+        doc.save();
+        doc.fontSize(60).fillColor('#cccccc').opacity(0.3)
+          .translate(400, 300).rotate(-45).text('PRUEBA', -150, -30);
+        doc.restore();
+      }
+
+      const margin = 35;
+      const pageWidth = doc.page.width - margin * 2;
+
+      await addStandardHeader({
+        doc,
+        company: {
+          id: company.id,
+          name: company.name,
+          nit: company.nit || "",
+          logoUrl: company.logoUrl,
+        },
+        documentTitle: "MATRIZ DE IDENTIFICACIÓN DE PELIGROS, EVALUACIÓN Y VALORACIÓN DE RIESGOS",
+        documentCode: `IPERC-${matriz.version || 1}`,
+        version: String(matriz.version || 1),
+        date: matriz.fechaEvaluacion ? new Date(matriz.fechaEvaluacion) : new Date(),
+        logoBuffer: logo,
+      });
+
+      doc.moveDown(0.5);
+      addSectionBar(doc, 'INFORMACIÓN GENERAL');
+      doc.moveDown(0.3);
+
+      const infoY = doc.y;
+      doc.fontSize(8).font('Helvetica-Bold').fillColor(PDF_COLORS.BLACK);
+      doc.text('Área:', margin, infoY); doc.font('Helvetica').text(matriz.area || '-', margin + 60, infoY);
+      doc.font('Helvetica-Bold').text('Proceso:', margin + 250, infoY); doc.font('Helvetica').text(matriz.proceso || '-', margin + 310, infoY);
+      doc.font('Helvetica-Bold').text('Fecha Evaluación:', margin + 500, infoY); doc.font('Helvetica').text(matriz.fechaEvaluacion ? new Date(matriz.fechaEvaluacion).toLocaleDateString('es-CO') : '-', margin + 600, infoY);
+      doc.moveDown(0.3);
+      doc.font('Helvetica-Bold').text('Responsable:', margin); doc.font('Helvetica').text(matriz.responsableEvaluacion || '-', margin + 80, doc.y - doc.currentLineHeight());
+      doc.font('Helvetica-Bold').text('Estado:', margin + 250, doc.y - doc.currentLineHeight()); doc.font('Helvetica').text(matriz.estado || '-', margin + 300, doc.y - doc.currentLineHeight());
+      doc.font('Helvetica-Bold').text('Alcance:', margin + 500, doc.y - doc.currentLineHeight()); doc.font('Helvetica').text(matriz.alcance || '-', margin + 550, doc.y - doc.currentLineHeight());
+      doc.moveDown(0.5);
+
+      addSectionBar(doc, 'PELIGROS IDENTIFICADOS');
+      doc.moveDown(0.3);
+
+      if (peligros.length === 0) {
+        doc.fontSize(9).font('Helvetica').text('No se han identificado peligros en esta matriz.', margin);
+      } else {
+        const colWidths = [30, 80, 100, 100, 60, 50, 50, 50, 40, 40, 130];
+        const headers = ['#', 'Clasificación', 'Peligro', 'Fuente', 'Actividad', 'Prob.', 'Sev.', 'Riesgo', 'Nivel', 'Exp.', 'Controles Propuestos'];
+        let tableY = doc.y;
+
+        doc.fontSize(6).font('Helvetica-Bold').fillColor('#FFFFFF');
+        let xPos = margin;
+        headers.forEach((h, i) => {
+          doc.rect(xPos, tableY, colWidths[i], 14).fill(PDF_COLORS.PRIMARY);
+          doc.fillColor('#FFFFFF').text(h, xPos + 2, tableY + 3, { width: colWidths[i] - 4, align: 'center' });
+          xPos += colWidths[i];
+        });
+        tableY += 14;
+
+        doc.fillColor(PDF_COLORS.BLACK).font('Helvetica').fontSize(6);
+        peligros.forEach((p: any, idx: number) => {
+          if (tableY > doc.page.height - 80) {
+            doc.addPage();
+            tableY = margin;
+          }
+          const rowH = 20;
+          const bgColor = idx % 2 === 0 ? '#FFFFFF' : '#F8F8F8';
+          xPos = margin;
+          const vals = [
+            String(idx + 1),
+            p.clasificacion || '-',
+            (p.descripcionPeligro || '-').substring(0, 50),
+            (p.fuenteGeneradora || '-').substring(0, 50),
+            (p.actividadProceso || '-').substring(0, 30),
+            p.nivelProbabilidad || '-',
+            p.nivelSeveridad || '-',
+            p.valorRiesgo != null ? String(p.valorRiesgo) : '-',
+            p.nivelRiesgo || '-',
+            p.numeroPersonasExpuestas != null ? String(p.numeroPersonasExpuestas) : '-',
+            (p.controlesPropuestos || '-').substring(0, 60)
+          ];
+          vals.forEach((v, i) => {
+            doc.rect(xPos, tableY, colWidths[i], rowH).fill(bgColor).stroke('#DDDDDD');
+            doc.fillColor(PDF_COLORS.BLACK).text(v, xPos + 2, tableY + 3, { width: colWidths[i] - 4, height: rowH - 4 });
+            xPos += colWidths[i];
+          });
+          tableY += rowH;
+        });
+        doc.y = tableY + 5;
+      }
+
+      doc.moveDown(0.5);
+      const totalPeligros = peligros.length;
+      const riesgosAltos = peligros.filter((p: any) => p.nivelRiesgo === 'no_aceptable' || p.nivelRiesgo === 'no_aceptable_control_inmediato').length;
+      const riesgosMedios = peligros.filter((p: any) => p.nivelRiesgo === 'aceptable_con_control').length;
+      const riesgosBajos = peligros.filter((p: any) => p.nivelRiesgo === 'aceptable').length;
+
+      addSectionBar(doc, 'RESUMEN DE RIESGOS');
+      doc.moveDown(0.3);
+      doc.fontSize(8).font('Helvetica');
+      doc.text(`Total peligros identificados: ${totalPeligros}`, margin);
+      doc.text(`No aceptables (alto riesgo): ${riesgosAltos}`, margin);
+      doc.text(`Aceptables con control (medio): ${riesgosMedios}`, margin);
+      doc.text(`Aceptables (bajo): ${riesgosBajos}`, margin);
+
+      doc.moveDown(0.5);
+      await addSignatureFooter(doc, signers, !!matriz.lsoSignatureName);
+
+      doc.moveDown(0.3);
+      doc.fontSize(6).fillColor('#666')
+        .text('GTC-45:2012 / ISO 45001:2018 - Matriz de Identificación de Peligros, Evaluación y Valoración de Riesgos', { align: 'center' });
+
+      doc.end();
+    } catch (error: any) {
+      handlePdfError(error, res, 'matrices-iperc-pdf');
+    }
+  });
+
   // GET /api/matrices-iperc/:id/peligros - Obtener peligros de una matriz
   app.get('/api/matrices-iperc/:id/peligros', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
