@@ -8491,6 +8491,7 @@ export const accidentInvestigations = pgTable("accident_investigations", {
   licensedProfessionalDocument: text("licensed_professional_document"),
   licensedProfessionalLicense: text("licensed_professional_license"), // Número de licencia
   licensedProfessionalLicenseExpiry: date("licensed_professional_license_expiry"),
+  licensedProfessionalSignatureUrl: text("licensed_professional_signature_url"),
   
   // Participación COPASST/Vigía
   copasstParticipation: integer("copasst_participation").notNull().default(0), // 1=Participó

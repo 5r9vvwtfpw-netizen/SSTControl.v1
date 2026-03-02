@@ -373,20 +373,18 @@ export function addDocumentTitle(
 /**
  * Agrega el footer con firmantes ISO 45001:2018
  */
-export function addSignatureFooter(
+export async function addSignatureFooter(
   doc: typeof PDFDocument.prototype,
   signers: PdfSigners,
   includeLSO: boolean = false
-): void {
+): Promise<void> {
   const margin = PDF_CONFIG.MARGIN;
   const pageWidth = doc.page.width;
   const pageHeight = doc.page.height;
   
-  // Calcular posición del footer
-  // Si se requiere LSO, siempre usar 4 columnas (con placeholder si no hay LSO asignado)
-  const footerHeight = includeLSO ? 100 : 70;
+  const hasLsoSignatureImage = includeLSO && signers.lso?.signatureUrl;
+  const footerHeight = hasLsoSignatureImage ? 130 : (includeLSO ? 100 : 70);
   
-  // Verificar espacio disponible antes del footer
   const availableSpace = pageHeight - margin - doc.y;
   if (availableSpace < footerHeight + 20) {
     doc.addPage();
@@ -394,11 +392,11 @@ export function addSignatureFooter(
   
   const footerY = pageHeight - margin - footerHeight;
   
-  // Si se requiere LSO, siempre mostrar 4 columnas (con placeholder si no hay asignado)
   const numCols = includeLSO ? 4 : 3;
   const colWidth = (pageWidth - margin * 2) / numCols;
   const headerRowHeight = 18;
-  const nameRowHeight = 35;
+  const signatureImageHeight = hasLsoSignatureImage ? 35 : 0;
+  const nameRowHeight = 35 + signatureImageHeight;
   const totalHeight = headerRowHeight + nameRowHeight;
 
   // Dibujar tabla de firmas
@@ -444,16 +442,53 @@ export function addSignatureFooter(
   doc.fontSize(7).text(signers.aprobo.name, margin + colWidth * 2 + 4, nameY, { width: colWidth - 8, align: 'center' });
   doc.fontSize(6).text(signers.aprobo.role, margin + colWidth * 2 + 4, nameY + 12, { width: colWidth - 8, align: 'center' });
   
-  // LSO (con placeholder si no hay asignado)
   if (includeLSO) {
     if (signers.lso) {
-      doc.fontSize(7).text(signers.lso.name, margin + colWidth * 3 + 4, nameY, { width: colWidth - 8, align: 'center' });
-      doc.fontSize(6).text(`Lic. ${signers.lso.licenseNumber}`, margin + colWidth * 3 + 4, nameY + 12, { width: colWidth - 8, align: 'center' });
+      const lsoColX = margin + colWidth * 3 + 4;
+      const lsoColW = colWidth - 8;
+      let lsoTextY = nameY;
+
+      if (signers.lso.signatureUrl) {
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          let sigPath = signers.lso.signatureUrl;
+          if (sigPath.startsWith('/')) {
+            sigPath = path.join(process.cwd(), 'public', sigPath);
+          } else if (!sigPath.startsWith('http')) {
+            sigPath = path.join(process.cwd(), sigPath);
+          }
+          
+          const imgW = Math.min(lsoColW - 4, 80);
+          const imgH = signatureImageHeight - 2;
+          const imgX = lsoColX + (lsoColW - imgW) / 2;
+
+          if (sigPath.startsWith('http')) {
+            try {
+              const response = await fetch(sigPath);
+              if (response.ok) {
+                const buffer = Buffer.from(await response.arrayBuffer());
+                doc.image(buffer, imgX, nameY, { fit: [imgW, imgH], align: 'center', valign: 'center' });
+                lsoTextY = nameY + signatureImageHeight;
+              }
+            } catch (fetchErr: any) {
+              console.error('[PdfStandardizer] Error fetching remote signature:', fetchErr.message);
+            }
+          } else if (fs.existsSync(sigPath)) {
+            doc.image(sigPath, imgX, nameY, { fit: [imgW, imgH], align: 'center', valign: 'center' });
+            lsoTextY = nameY + signatureImageHeight;
+          }
+        } catch (sigError: any) {
+          console.error('[PdfStandardizer] Error rendering LSO signature image:', sigError.message);
+        }
+      }
+
+      doc.fontSize(7).text(signers.lso.name, lsoColX, lsoTextY, { width: lsoColW, align: 'center' });
+      doc.fontSize(6).text(`Lic. ${signers.lso.licenseNumber}`, lsoColX, lsoTextY + 12, { width: lsoColW, align: 'center' });
       if (signers.lso.licenseIssuer) {
-        doc.fontSize(5).text(signers.lso.licenseIssuer, margin + colWidth * 3 + 4, nameY + 20, { width: colWidth - 8, align: 'center' });
+        doc.fontSize(5).text(signers.lso.licenseIssuer, lsoColX, lsoTextY + 20, { width: lsoColW, align: 'center' });
       }
     } else {
-      // Placeholder cuando LSO es requerido pero no hay asignado
       doc.fontSize(7).fillColor('#999').text('(Pendiente asignación)', margin + colWidth * 3 + 4, nameY, { width: colWidth - 8, align: 'center' });
       doc.fontSize(6).text('Lic. SST requerido', margin + colWidth * 3 + 4, nameY + 12, { width: colWidth - 8, align: 'center' });
       doc.fillColor(PDF_COLORS.BLACK);

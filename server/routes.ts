@@ -4819,7 +4819,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add signature footer with LSO (ISO 45001:2018)
       const signers = await getSignersForCompany(company.id, true);
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       
       // Finalize PDF
       doc.end();
@@ -5245,7 +5245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Footer with signatures
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       doc.end();
 
     } catch (error: any) {
@@ -5710,7 +5710,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add signature footer with LSO for severe/fatal cases (ISO 45001:2018)
       const requiresLSO = investigation.isSevere || investigation.isFatal;
       const signers = await getSignersForCompany(investigation.companyId, requiresLSO);
-      addSignatureFooter(doc, signers, requiresLSO);
+      if (requiresLSO && investigation.licensedProfessionalName && investigation.licensedProfessionalSignatureUrl) {
+        signers.lso = {
+          name: investigation.licensedProfessionalName,
+          licenseNumber: investigation.licensedProfessionalLicense || "",
+          licenseIssuer: "",
+          signatureUrl: investigation.licensedProfessionalSignatureUrl,
+        };
+      } else if (requiresLSO && investigation.licensedProfessionalName && signers.lso) {
+        signers.lso.name = investigation.licensedProfessionalName;
+        signers.lso.licenseNumber = investigation.licensedProfessionalLicense || signers.lso.licenseNumber;
+      }
+      await addSignatureFooter(doc, signers, requiresLSO);
       
       // Legal reference
       doc.moveDown(0.3);
@@ -6017,7 +6028,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add signature footer with LSO (Standard 3.2.3 requires LSO)
       const signers = await getSignersForCompany(company.id, true);
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       
       // Legal reference
       doc.moveDown(1);
@@ -6866,7 +6877,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.fillColor("#000000");
 
       // 6. Footer con firmantes
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error) {
@@ -7094,7 +7105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add signature footer with LSO (ISO 45001:2018)
       const signers = await getSignersForCompany(company.id, true);
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       
       // Finalize PDF
       doc.end();
@@ -7743,7 +7754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Agregar footer con firmantes ISO 45001:2018
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       
       // Finalize PDF
       doc.end();
@@ -9621,7 +9632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text('• Decreto 768 de 2022 - Tabla de Clasificación de Actividades Económicas y Riesgos', margin + 10, doc.y, { width: pageWidth - 2 * margin - 15 });
       
       // Add standard signature footer
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       
       doc.end();
     } catch (error: any) {
@@ -11636,7 +11647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text('• Resolución 0312 de 2019 - Estándares Mínimos del SG-SST', margin + 10, currentY, { lineBreak: false });
 
       // Agregar footer con firmantes ISO 45001:2018
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
 
       doc.end();
 
@@ -11898,7 +11909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text('• Resolución 0312 de 2019 - Estándares Mínimos del SG-SST', margin + 10, currentY);
 
       // Agregar footer con firmantes ISO 45001:2018
-      addSignatureFooter(doc, signers, false);
+      await addSignatureFooter(doc, signers, false);
 
       doc.end();
 
@@ -12171,7 +12182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           align: 'justify'
         });
 
-      addSignatureFooter(doc, signers, false);
+      await addSignatureFooter(doc, signers, false);
       doc.end();
 
     } catch (error: any) {
@@ -12841,7 +12852,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(company.legalRepPosition || 'Gerente General', margin);
       doc.text(company.name, margin);
       
-      addSignatureFooter(doc, signers, false);
+      await addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'copasst-elecciones-convocatoria-pdf');
@@ -13036,7 +13047,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text('Jurado 2', margin + sigWidth + 20, labelY, { width: sigWidth });
       doc.text('Jurado 3', margin + (sigWidth + 20) * 2, labelY, { width: sigWidth });
       
-      addSignatureFooter(doc, signers, false);
+      await addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'copasst-elecciones-acta-escrutinio-pdf');
@@ -13276,7 +13287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.fontSize(8).moveDown(1.5);
       }
       
-      addSignatureFooter(doc, signers, false);
+      await addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'copasst-periodos-acta-constitucion-pdf');
@@ -13883,7 +13894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`${company.name} - NIT: ${company.nit}`, { align: 'center', width: pageWidth - 2 * margin });
       
       // Add signature footer (ISO 45001:2018)
-      addSignatureFooter(doc, signers, false);
+      await addSignatureFooter(doc, signers, false);
       
       doc.end();
     } catch (error: any) {
@@ -14871,7 +14882,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       // Add signature footer with LSO (ISO 45001:2018)
-      addSignatureFooter(doc, signers, true); // true = requires LSO
+      await addSignatureFooter(doc, signers, true); // true = requires LSO
       
       // Finalize PDF
       doc.end();
@@ -15154,7 +15165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           width: pageWidth - 2 * margin,
           align: 'justify'
         });
-      addSignatureFooter(doc, signers, false);
+      await addSignatureFooter(doc, signers, false);
 
       doc.end();
 
@@ -16269,7 +16280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .text('Responsable de Inducción', pageWidth - margin - 230, currentY + 35, { width: 200, align: 'center' });
 
       // Add signature footer (ISO 45001:2018)
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
 
       doc.end();
 
@@ -17377,7 +17388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`Documento generado automáticamente el: ${generationDate}`, margin, currentY, { width: contentWidth, align: 'center' });
       
       // Finalize PDF
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       doc.end();
       
     } catch (error: any) {
@@ -17981,7 +17992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Add signature footer with LSO (ISO 45001:2018)
-      addSignatureFooter(doc, signers, true); // true = requires LSO
+      await addSignatureFooter(doc, signers, true); // true = requires LSO
       
       doc.end();
     } catch (error: any) {
@@ -18171,7 +18182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           { align: 'center' }
         );
 
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       doc.end();
 
     } catch (error: any) {
@@ -19111,7 +19122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Finalize PDF with signature footer
-        addSignatureFooter(doc, signers, false);
+        await addSignatureFooter(doc, signers, false);
         doc.end();
 
       } else if (reportType === "accidentes") {
@@ -19369,7 +19380,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Add signature footer
-        addSignatureFooter(doc, signers, false);
+        await addSignatureFooter(doc, signers, false);
 
         // Finalize PDF
         doc.end();
@@ -19620,7 +19631,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Add signature footer (ISO 45001:2018)
-        addSignatureFooter(doc, signers, false);
+        await addSignatureFooter(doc, signers, false);
         
         doc.end();
 
@@ -19765,7 +19776,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           doc.y = normY + 60;
 
-          addSignatureFooter(doc, signers, false);
+          await addSignatureFooter(doc, signers, false);
           
           doc.end();
           return;
@@ -20031,7 +20042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Add signature footer
-        addSignatureFooter(doc, signers, false);
+        await addSignatureFooter(doc, signers, false);
 
         // Finalize PDF
         doc.end();
@@ -20217,7 +20228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Add signature footer
-        addSignatureFooter(doc, signers, false);
+        await addSignatureFooter(doc, signers, false);
 
         // Finalize PDF
         doc.end();
@@ -20420,7 +20431,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Add signature footer
-        addSignatureFooter(doc, signers, false);
+        await addSignatureFooter(doc, signers, false);
         
         doc.end();
 
@@ -21660,7 +21671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Footer on all pages
       // Add standardized signature footer with LSO requirement (per Estándar 3.1.7)
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -21815,7 +21826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}`, { align: 'center' });
 
       // Add signature footer
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -22353,7 +22364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Add signature footer (ISO 45001:2018)
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -22807,7 +22818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Add standardized signature footer with LSO requirement (per Estándar 3.1.7)
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -24170,7 +24181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.font('Helvetica').text(new Date(politica.fechaFirma).toLocaleDateString('es-CO'));
 
       // Add standardized signature footer (no LSO required)
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -25716,7 +25727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Add signature footer (no LSO required for management reports)
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -26268,7 +26279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
 
-      addSignatureFooter(doc, ministerioSigners, true);
+      await addSignatureFooter(doc, ministerioSigners, true);
       currentY = doc.y + 20;
 
       // Fecha de generación
@@ -26282,7 +26293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // REMOVED: Duplicate footer - ministry report has custom signatures above
       //       // Add signature footer (no LSO required for management reports)
       // REMOVED: Duplicate footer - ministry report has custom signatures above
-      //       addSignatureFooter(doc, signers, false);
+      //       await addSignatureFooter(doc, signers, false);
 
       doc.end();
     } catch (error: any) {
@@ -27448,7 +27459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .text(`Documento generado automáticamente por SGSSTN v1.0 el ${fechaActual.toLocaleDateString('es-CO')} a las ${fechaActual.toLocaleTimeString('es-CO')}`, margin, currentY, { width: contentWidth, align: 'center' });
 
       // Add signature footer (no LSO required for management reports)
-      addSignatureFooter(doc, signers, false);
+      await addSignatureFooter(doc, signers, false);
 
       // Esperar a que el PDF esté completo y enviarlo
       doc.on('end', () => {
@@ -28689,7 +28700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      addSignatureFooter(doc, signers, false);
+      await addSignatureFooter(doc, signers, false);
 
       doc.end();
     } catch (error: any) {
@@ -30985,7 +30996,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Finalizar PDF con firma estandarizada
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'cambios-sst-pdf');
@@ -31150,7 +31161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.font('Helvetica').text(recomendaciones, { align: 'justify' });
       
       // Add signature footer (no LSO required for management reports)
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
 
       // Finalizar PDF
       doc.end();
@@ -31400,7 +31411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -31656,7 +31667,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.fillColor('#000000');
 
       // Add signature footer (no LSO required for management reports)
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -31869,7 +31880,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.fontSize(8).font('Helvetica').fillColor('#666666');
       doc.text(`Documento generado automáticamente el ${new Date().toLocaleDateString('es-CO')} a las ${new Date().toLocaleTimeString('es-CO')}.`, margin, doc.y, { align: 'center', width: contentWidth });
 
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'gestion-cambios-panel-pdf');
@@ -32090,7 +32101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'evaluaciones-sst-consolidado-pdf');
@@ -32222,7 +32233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentY += 3;
       }
 
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'auditorias-internas-consolidado-pdf');
@@ -32338,7 +32349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'revisiones-direccion-consolidado-pdf');
@@ -32468,7 +32479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentY = doc.y + 3;
       }
 
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'objetivos-indicadores-consolidado-pdf');
@@ -32703,7 +32714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       currentY += 40;
 
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'perfil-sociodemografico-pdf');
@@ -33817,7 +33828,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       // Add standard signature footer
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -42393,7 +42404,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.text(company.legalRepPosition || 'Gerente General', margin);
       doc.text(company.name, margin);
       
-      addSignatureFooter(doc, signers, false);
+      await addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'convivencia-convocatoria-pdf');
@@ -42586,7 +42597,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.text('Jurado 3', margin + (sigWidth + 20) * 2, labelY, { width: sigWidth });
       
       // Add standard signature footer
-      addSignatureFooter(doc, signers, false);
+      await addSignatureFooter(doc, signers, false);
       
       doc.end();
     } catch (error: any) {
@@ -42838,7 +42849,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       // Add standard signature footer
-      addSignatureFooter(doc, signers, false);
+      await addSignatureFooter(doc, signers, false);
       
       doc.end();
     } catch (error: any) {
@@ -43243,7 +43254,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       });
       
       // Add standard signature footer
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {
@@ -43381,7 +43392,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       currentY += 20;
       if (programs.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay programas registrados.', 50, currentY); }
       else { programs.forEach((prog, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${prog.name}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Año: ${prog.year} | Categoría: ${prog.category} | Estado: ${prog.status}`, 60, currentY); currentY += 12; doc.text(`Responsable: ${prog.responsibleName || 'N/A'}`, 60, currentY); currentY += 18; }); }
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'evs-programs-pdf');
@@ -43463,7 +43474,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       currentY += 20;
       if (activities.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay actividades registradas.', 50, currentY); }
       else { activities.forEach((act, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${act.title}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Categoría: ${act.category} | Tipo: ${act.activityType} | Modalidad: ${act.modality}`, 60, currentY); currentY += 12; doc.text(`Fecha: ${act.scheduledDate ? new Date(act.scheduledDate).toLocaleDateString('es-CO') : 'N/A'} | Estado: ${act.status}`, 60, currentY); currentY += 18; }); }
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'evs-activities-pdf');
@@ -43548,7 +43559,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       currentY += 20;
       if (controls.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay controles registrados.', 50, currentY); }
       else { controls.forEach((ctrl, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${getWorkerName(ctrl.workerId)}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Tipo: ${ctrl.controlType} | Fecha: ${ctrl.controlDate ? new Date(ctrl.controlDate).toLocaleDateString('es-CO') : 'N/A'}`, 60, currentY); currentY += 12; doc.text(`Resultado: ${ctrl.result} | Realizado por: ${ctrl.performedBy || 'N/A'}`, 60, currentY); currentY += 18; }); }
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'evs-controls-pdf');
@@ -43626,7 +43637,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       currentY += 20;
       if (incidents.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay incidentes registrados.', 50, currentY); }
       else { incidents.forEach((inc, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${getWorkerName(inc.workerId)}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Tipo: ${inc.incidentType} | Severidad: ${inc.severity} | Fecha: ${inc.incidentDate ? new Date(inc.incidentDate).toLocaleDateString('es-CO') : 'N/A'}`, 60, currentY); currentY += 12; doc.text(`Estado: ${inc.status}`, 60, currentY); currentY += 18; }); }
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'evs-incidents-pdf');
@@ -43830,7 +43841,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.fontSize(9).font('Helvetica').text('Este documento contiene el listado de casos en seguimiento del programa de Estilos de Vida Saludable (EVS) de la empresa. Los casos deben ser revisados periódicamente según las fechas establecidas.', margin, currentY, { width: contentWidth });
       
       // Add standardized signature footer (no LSO required)
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       
       doc.end();
     } catch (error: any) {
@@ -43988,7 +43999,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       // Add standardized signature footer (no LSO required)
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       
       doc.end();
     } catch (error: any) {
@@ -44900,7 +44911,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       );
       
       // Footer con firmantes
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
       
       doc.end();
     } catch (error: any) {
@@ -46087,7 +46098,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
 
       // Footer con firmantes
-      addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true);
 
       doc.end();
     } catch (error: any) {

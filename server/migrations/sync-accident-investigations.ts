@@ -33,6 +33,7 @@ export async function syncAccidentInvestigationsTable(): Promise<void> {
       { name: 'approved_at', type: 'TIMESTAMP' },
       { name: 'lesson_learned', type: 'TEXT' },
       { name: 'conclusions', type: "TEXT DEFAULT ''" },
+      { name: 'licensed_professional_signature_url', type: 'TEXT' },
     ];
 
     for (const col of columnsToAdd) {

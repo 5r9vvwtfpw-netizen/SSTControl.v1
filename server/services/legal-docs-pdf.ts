@@ -517,7 +517,7 @@ export class LegalDocsPdfService {
     addProviderContactFooter(doc, { includeAllEmails: true });
 
     // Add standardized signature footer (no LSO required)
-    addSignatureFooter(doc, signers, false);
+    await addSignatureFooter(doc, signers, false);
     
     // Apply watermarks to all pages
     applyWatermarksToAllPages(doc);
@@ -682,7 +682,7 @@ export class LegalDocsPdfService {
     addProviderContactFooter(doc, { includeAllEmails: true });
 
     // Add standardized signature footer (no LSO required)
-    addSignatureFooter(doc, signers, false);
+    await addSignatureFooter(doc, signers, false);
 
     // Apply watermarks to all pages
     applyWatermarksToAllPages(doc);
@@ -884,7 +884,7 @@ export class LegalDocsPdfService {
     addProviderContactFooter(doc, { includeAllEmails: true });
 
     // Add standardized signature footer (no LSO required)
-    addSignatureFooter(doc, signers, false);
+    await addSignatureFooter(doc, signers, false);
 
     // Apply watermarks to all pages
     applyWatermarksToAllPages(doc);

@@ -622,13 +622,15 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         return res.status(403).json({ message: "No tiene acceso a firmar esta investigación" });
       }
       
-      // Update the investigation with LSO signature
+      const signatureUrl = user.sstSignatureUrl || assignment.externalLsoSignatureUrl || null;
+
       const [updated] = await db.update(schema.accidentInvestigations)
         .set({
           licensedProfessionalName: user.fullName || user.username,
-          licensedProfessionalDocument: user.sstLicenseNumber || '', // Use license number as document
+          licensedProfessionalDocument: user.sstLicenseNumber || '',
           licensedProfessionalLicense: user.sstLicenseNumber || '',
           licensedProfessionalLicenseExpiry: user.sstLicenseExpiresAt,
+          licensedProfessionalSignatureUrl: signatureUrl,
           status: 'completada',
           investigationEndDate: new Date().toISOString().split('T')[0],
           updatedAt: new Date(),
