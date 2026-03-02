@@ -8,6 +8,7 @@ import type { Request } from "express";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
+import { storage } from "../storage";
 
 // Multer configuration for LSO signature uploads
 const lsoSignatureStorage = multer.diskStorage({
@@ -1490,6 +1491,53 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     } catch (error: any) {
       console.error('[GET /api/portal-licenciado/matriz-iperc/:id] Error:', error.message);
       res.status(500).json({ message: "Error fetching risk matrix", error: error.message });
+    }
+  });
+
+  app.get("/api/portal-licenciado/empresa/:companyId/dashboard-phva", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const { companyId } = req.params;
+      const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
+
+      const [assignment] = await db.select({ id: schema.licensedProfessionalAssignments.id })
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.companyId, companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+
+      if (!assignment) {
+        return res.status(403).json({ message: "No tiene asignación activa para esta empresa" });
+      }
+
+      const [company] = await db.select({
+        id: schema.companies.id,
+        name: schema.companies.name,
+        nit: schema.companies.nit,
+        numberOfWorkers: schema.companies.numberOfWorkers,
+        riskLevel: schema.companies.riskLevel,
+      })
+      .from(schema.companies)
+      .where(eq(schema.companies.id, companyId));
+
+      const [hacer, verificar, actuar] = await Promise.all([
+        storage.getDashboardHacer(companyId, year),
+        storage.getDashboardVerificar(companyId, year),
+        storage.getDashboardActuar(companyId, year),
+      ]);
+
+      res.json({
+        company,
+        year,
+        hacer,
+        verificar,
+        actuar,
+      });
+    } catch (error: any) {
+      console.error('[GET /api/portal-licenciado/empresa/:companyId/dashboard-phva] Error:', error.message);
+      res.status(500).json({ message: "Error al obtener dashboard PHVA", error: error.message });
     }
   });
 }

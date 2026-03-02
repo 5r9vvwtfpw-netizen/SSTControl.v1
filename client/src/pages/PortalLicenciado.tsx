@@ -646,6 +646,207 @@ function buildCompanyVaults(docs: AllDocuments): CompanyVault[] {
   return Array.from(vaultMap.values()).sort((a, b) => b.pendingDocs - a.pendingDocs);
 }
 
+function PHVADashboardPanel({ companyId }: { companyId: string }) {
+  const [year, setYear] = useState(new Date().getFullYear());
+  const { data, isLoading, isError } = useQuery<{
+    company: { id: string; name: string; nit: string; numberOfWorkers: number; riskLevel: string };
+    year: number;
+    hacer: {
+      totalInspecciones: number;
+      peligrosIdentificados: number;
+      controlState: { conforme: number; noConforme: number; observacion: number };
+      porcentajeConformidad: number;
+    };
+    verificar: {
+      objetivos: { total: number; activos: number; cumplidos: number; porcentajeCumplimiento: number; promedioAvance: number };
+      indicadores: { total: number; estructura: number; proceso: number; resultado: number };
+      auditorias: { totalAnio: number; completadas: number; porcentajeConformidad: number; hallazgosPorSeveridad: { baja: number; media: number; alta: number; critica: number } };
+      cumplimientoNormativo: { ultimaEvaluacion: number | null; estandaresCriticos: number; estandaresCumplidos: number };
+      accidentalidad: { totalAccidentes: number; accidentesUltimoMes: number };
+    };
+    actuar: {
+      accionesMejora: { total: number; completadas: number; enProceso: number; pendientes: number; vencidas: number; porcentajeCompletitud: number; eficacia: { porcentajeEficacia: number } };
+      planTrabajo: { porcentajeCumplimiento: number; actividadesCompletadas: number; totalActividades: number };
+      consolidado: { totalAcciones: number; tasaCompletitud: number; tasaEficacia: number; accionesVencidasTotal: number };
+    };
+  }>({
+    queryKey: [`/api/portal-licenciado/empresa/${companyId}/dashboard-phva?year=${year}`],
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="space-y-3">
+            <Skeleton className="h-6 w-48" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-20" />)}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>No se pudo cargar el panel PHVA</AlertTitle>
+            <AlertDescription>Intente nuevamente más tarde.</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const { hacer, verificar, actuar } = data;
+  const cumplimiento = verificar.cumplimientoNormativo.ultimaEvaluacion;
+  const cumplimientoColor = cumplimiento !== null
+    ? cumplimiento >= 86 ? "text-green-600" : cumplimiento >= 60 ? "text-amber-600" : "text-red-600"
+    : "text-muted-foreground";
+
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - i);
+
+  return (
+    <Card data-testid="card-phva-dashboard">
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
+        <div>
+          <CardTitle className="text-base flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            Panel de Control PHVA
+          </CardTitle>
+          <CardDescription>Ciclo Planear-Hacer-Verificar-Actuar</CardDescription>
+        </div>
+        <Select value={year.toString()} onValueChange={(v) => setYear(parseInt(v))}>
+          <SelectTrigger className="w-24" data-testid="select-phva-year">
+            <Calendar className="h-3 w-3 mr-1" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {yearOptions.map((y) => (
+              <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {actuar.consolidado.accionesVencidasTotal > 0 && (
+          <Alert variant="destructive" data-testid="alert-acciones-vencidas">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Acciones Vencidas Requieren Atención</AlertTitle>
+            <AlertDescription>
+              Hay {actuar.consolidado.accionesVencidasTotal} acciones con fecha de compromiso vencida.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="rounded-md border p-3 space-y-1" data-testid="metric-cumplimiento-sst">
+            <p className="text-xs text-muted-foreground">Cumplimiento SG-SST</p>
+            <p className={`text-2xl font-bold ${cumplimientoColor}`}>
+              {cumplimiento !== null ? `${cumplimiento}%` : "N/A"}
+            </p>
+            <p className="text-xs text-muted-foreground">Res. 0312/2019</p>
+          </div>
+
+          <div className="rounded-md border p-3 space-y-1" data-testid="metric-acciones">
+            <p className="text-xs text-muted-foreground">Total Acciones</p>
+            <p className="text-2xl font-bold">{actuar.accionesMejora.total}</p>
+            <p className="text-xs text-muted-foreground">
+              Completitud: {actuar.accionesMejora.porcentajeCompletitud}%
+            </p>
+          </div>
+
+          <div className="rounded-md border p-3 space-y-1" data-testid="metric-eficacia">
+            <p className="text-xs text-muted-foreground">Tasa Eficacia</p>
+            <p className="text-2xl font-bold">{actuar.consolidado.tasaEficacia}%</p>
+            <p className="text-xs text-muted-foreground">Acciones verificadas</p>
+          </div>
+
+          <div className="rounded-md border p-3 space-y-1" data-testid="metric-plan-trabajo">
+            <p className="text-xs text-muted-foreground">Plan Trabajo Anual</p>
+            <p className="text-2xl font-bold">{actuar.planTrabajo.porcentajeCumplimiento}%</p>
+            <p className="text-xs text-muted-foreground">
+              {actuar.planTrabajo.actividadesCompletadas} de {actuar.planTrabajo.totalActividades} actividades
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="rounded-md border p-3 space-y-2">
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              <Shield className="h-3 w-3 text-muted-foreground" />
+              Hacer
+            </h4>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Inspecciones</span>
+                <span className="font-medium">{hacer.totalInspecciones}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Peligros</span>
+                <span className="font-medium">{hacer.peligrosIdentificados}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Conformidad</span>
+                <span className="font-medium">{hacer.porcentajeConformidad}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-md border p-3 space-y-2">
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              <Eye className="h-3 w-3 text-muted-foreground" />
+              Verificar
+            </h4>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Objetivos</span>
+                <span className="font-medium">{verificar.objetivos.cumplidos}/{verificar.objetivos.total}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Indicadores</span>
+                <span className="font-medium">{verificar.indicadores.total}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Accidentes</span>
+                <span className="font-medium">{verificar.accidentalidad.totalAccidentes}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-md border p-3 space-y-2">
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              <FileCheck className="h-3 w-3 text-muted-foreground" />
+              Actuar
+            </h4>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Completadas</span>
+                <span className="font-medium">{actuar.accionesMejora.completadas}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">En proceso</span>
+                <span className="font-medium">{actuar.accionesMejora.enProceso}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Vencidas</span>
+                <span className={`font-medium ${actuar.accionesMejora.vencidas > 0 ? 'text-red-600' : ''}`}>
+                  {actuar.accionesMejora.vencidas}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function CompanyVaultDetail({ vault, onBack, isSigning, onSign }: {
   vault: CompanyVault;
   onBack: () => void;
@@ -679,6 +880,8 @@ function CompanyVaultDetail({ vault, onBack, isSigning, onSign }: {
           </div>
         </CardContent>
       </Card>
+
+      <PHVADashboardPanel companyId={vault.companyId} />
 
       {vault.investigaciones.length > 0 && (
         <Card>
