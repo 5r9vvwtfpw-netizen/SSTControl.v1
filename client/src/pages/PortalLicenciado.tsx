@@ -1153,7 +1153,10 @@ function CompanyVaultDetail({ vault, onBack, isSigning, onSign }: {
 
 function DocumentosTab() {
   const { toast } = useToast();
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("companyId") || null;
+  });
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data: allDocs, isLoading, isError, error } = useQuery<AllDocuments>({

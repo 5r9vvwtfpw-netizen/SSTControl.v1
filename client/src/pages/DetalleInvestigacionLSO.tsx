@@ -85,6 +85,15 @@ export default function DetalleInvestigacionLSO() {
     enabled: !!id,
   });
 
+  const goBackToVault = () => {
+    const companyId = investigation?.companyId;
+    if (companyId) {
+      navigate(`/portal-licenciado?tab=documentos&companyId=${companyId}`);
+    } else {
+      navigate("/portal-licenciado?tab=documentos");
+    }
+  };
+
   const signMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("PATCH", `/api/portal-licenciado/investigacion/${id}/firmar`);
@@ -95,7 +104,7 @@ export default function DetalleInvestigacionLSO() {
         description: "La investigación ha sido firmada exitosamente.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/portal-licenciado'] });
-      navigate("/portal-licenciado");
+      goBackToVault();
     },
     onError: (error: any) => {
       toast({
@@ -128,9 +137,9 @@ export default function DetalleInvestigacionLSO() {
                 </p>
               </div>
             </div>
-            <Button variant="outline" className="mt-4" onClick={() => navigate("/portal-licenciado")}>
+            <Button variant="outline" className="mt-4" onClick={() => navigate("/portal-licenciado?tab=documentos")}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver al Portal
+              Volver a Documentos
             </Button>
           </CardContent>
         </Card>
@@ -144,9 +153,9 @@ export default function DetalleInvestigacionLSO() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={() => navigate("/portal-licenciado")} data-testid="button-back">
+          <Button variant="outline" size="sm" onClick={goBackToVault} data-testid="button-back">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver al Portal
+            Volver a la Bóveda
           </Button>
           <div>
             <h1 className="text-2xl font-bold" data-testid="text-page-title">Revisión de Investigación</h1>
