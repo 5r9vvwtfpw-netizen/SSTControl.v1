@@ -9,6 +9,54 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import { storage } from "../storage";
+import { sendLsoRemovalNotificationEmail } from "../email";
+
+async function notifyLsoRemoval(assignment: any, companyId: string) {
+  try {
+    const lsoUserId = assignment.userId || assignment.externalLsoId;
+    if (!lsoUserId && !assignment.userId) return;
+
+    const [lsoUser] = await db.select()
+      .from(schema.users)
+      .where(eq(schema.users.id, assignment.userId));
+
+    const [company] = await db.select()
+      .from(schema.companies)
+      .where(eq(schema.companies.id, companyId));
+
+    if (!lsoUser || !company) return;
+
+    const now = new Date();
+    const removalDateStr = now.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    await storage.createInternalMessage({
+      companyId: companyId,
+      senderId: lsoUser.id,
+      senderName: 'Sistema SST Colombia',
+      senderRole: 'superadmin',
+      receiverId: lsoUser.id,
+      receiverName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
+      receiverRole: lsoUser.role,
+      subject: `Finalización de asignación - ${company.name}`,
+      content: `Le informamos que la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) ha finalizado su asignación como profesional licenciado responsable del SG-SST a partir del ${removalDateStr}. Los documentos que usted firmó durante su gestión permanecen válidos. Puede consultar el historial de sus empresas anteriores en la pestaña Empresas de su portal.`,
+      priority: 'high',
+      status: 'unread',
+      relatedEntity: 'lso_assignment',
+      relatedEntityId: assignment.id,
+    });
+
+    if (lsoUser.email) {
+      await sendLsoRemovalNotificationEmail(lsoUser.email, {
+        lsoName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
+        companyName: company.name,
+        companyNit: company.nit || 'N/A',
+        removalDate: removalDateStr,
+      });
+    }
+  } catch (err) {
+    console.error('[notifyLsoRemoval] Error sending removal notification:', err);
+  }
+}
 
 // Multer configuration for LSO signature uploads
 const lsoSignatureStorage = multer.diskStorage({
@@ -279,8 +327,10 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       }
       
       await db.update(schema.licensedProfessionalAssignments)
-        .set({ isActive: false })
+        .set({ isActive: false, unassignedAt: new Date() })
         .where(eq(schema.licensedProfessionalAssignments.id, assignment.id));
+
+      await notifyLsoRemoval(assignment, companyId);
       
       res.json({ success: true, message: "Assignment removed successfully" });
     } catch (error: any) {
@@ -449,6 +499,35 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     } catch (error: any) {
       console.error('[GET /api/portal-licenciado/empresas] Error:', error.message);
       res.status(500).json({ message: "Error fetching assigned companies", error: error.message });
+    }
+  });
+
+  app.get("/api/portal-licenciado/empresas-historial", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+
+      const historial = await db.select({
+        id: schema.companies.id,
+        name: schema.companies.name,
+        nit: schema.companies.nit,
+        city: schema.companies.city,
+        riskLevel: schema.companies.riskLevel,
+        assignmentId: schema.licensedProfessionalAssignments.id,
+        assignedAt: schema.licensedProfessionalAssignments.assignedAt,
+        unassignedAt: schema.licensedProfessionalAssignments.unassignedAt,
+      })
+      .from(schema.licensedProfessionalAssignments)
+      .innerJoin(schema.companies, eq(schema.licensedProfessionalAssignments.companyId, schema.companies.id))
+      .where(and(
+        eq(schema.licensedProfessionalAssignments.userId, user.id),
+        eq(schema.licensedProfessionalAssignments.isActive, false)
+      ))
+      .orderBy(desc(schema.licensedProfessionalAssignments.unassignedAt));
+
+      res.json(historial);
+    } catch (error: any) {
+      console.error('[GET /api/portal-licenciado/empresas-historial] Error:', error.message);
+      res.status(500).json({ message: "Error fetching company history", error: error.message });
     }
   });
 

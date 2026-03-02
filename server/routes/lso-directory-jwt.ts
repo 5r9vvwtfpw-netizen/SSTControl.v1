@@ -14,7 +14,7 @@ import { db } from "../db";
 import * as schema from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { hashPassword } from "../auth";
-import { sendLsoPortalAccessEmail } from "../email";
+import { sendLsoPortalAccessEmail, sendLsoRemovalNotificationEmail } from "../email";
 import { randomBytes } from "crypto";
 import { storage } from "../storage";
 
@@ -196,8 +196,28 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
 
     for (const existing of existingAssignments) {
       await db.update(schema.licensedProfessionalAssignments)
-        .set({ isActive: false })
+        .set({ isActive: false, unassignedAt: new Date() })
         .where(eq(schema.licensedProfessionalAssignments.id, existing.id));
+
+      try {
+        const [prevLso] = await db.select().from(schema.users).where(eq(schema.users.id, existing.userId));
+        if (prevLso) {
+          const removalDateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+          await storage.createInternalMessage({
+            companyId, senderId: prevLso.id, senderName: 'Sistema SST Colombia', senderRole: 'superadmin',
+            receiverId: prevLso.id, receiverName: `${prevLso.firstName || ''} ${prevLso.lastName || ''}`.trim() || prevLso.username,
+            receiverRole: prevLso.role, subject: `Finalización de asignación - ${company.name}`,
+            content: `Le informamos que la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) ha finalizado su asignación como profesional licenciado responsable del SG-SST a partir del ${removalDateStr}. Un nuevo profesional ha sido asignado en su lugar. Los documentos que usted firmó durante su gestión permanecen válidos.`,
+            priority: 'high', status: 'unread', relatedEntity: 'lso_assignment', relatedEntityId: existing.id,
+          });
+          if (prevLso.email) {
+            await sendLsoRemovalNotificationEmail(prevLso.email, {
+              lsoName: `${prevLso.firstName || ''} ${prevLso.lastName || ''}`.trim() || prevLso.username,
+              companyName: company.name, companyNit: company.nit || 'N/A', removalDate: removalDateStr,
+            });
+          }
+        }
+      } catch (notifErr) { logger.error({ notifErr }, "[LSO-JWT-Routes] Error notifying previous LSO"); }
     }
 
     // Auto-provisionar usuario LSO si no existe
@@ -333,13 +353,42 @@ router.delete("/unassign", requireAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ ok: false, error: "No se pudo determinar la empresa" });
     }
 
-    // Desactivar todas las asignaciones activas
-    await db.update(schema.licensedProfessionalAssignments)
-      .set({ isActive: false })
+    const activeAssignments = await db.select()
+      .from(schema.licensedProfessionalAssignments)
       .where(and(
         eq(schema.licensedProfessionalAssignments.companyId, companyId),
         eq(schema.licensedProfessionalAssignments.isActive, true)
       ));
+
+    await db.update(schema.licensedProfessionalAssignments)
+      .set({ isActive: false, unassignedAt: new Date() })
+      .where(and(
+        eq(schema.licensedProfessionalAssignments.companyId, companyId),
+        eq(schema.licensedProfessionalAssignments.isActive, true)
+      ));
+
+    for (const assignment of activeAssignments) {
+      try {
+        const [lsoUser] = await db.select().from(schema.users).where(eq(schema.users.id, assignment.userId));
+        const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId));
+        if (lsoUser && company) {
+          const removalDateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+          await storage.createInternalMessage({
+            companyId, senderId: lsoUser.id, senderName: 'Sistema SST Colombia', senderRole: 'superadmin',
+            receiverId: lsoUser.id, receiverName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
+            receiverRole: lsoUser.role, subject: `Finalización de asignación - ${company.name}`,
+            content: `Le informamos que la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) ha finalizado su asignación como profesional licenciado responsable del SG-SST a partir del ${removalDateStr}. Los documentos que usted firmó durante su gestión permanecen válidos. Puede consultar el historial de sus empresas anteriores en la pestaña Empresas de su portal.`,
+            priority: 'high', status: 'unread', relatedEntity: 'lso_assignment', relatedEntityId: assignment.id,
+          });
+          if (lsoUser.email) {
+            await sendLsoRemovalNotificationEmail(lsoUser.email, {
+              lsoName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
+              companyName: company.name, companyNit: company.nit || 'N/A', removalDate: removalDateStr,
+            });
+          }
+        }
+      } catch (notifErr) { logger.error({ notifErr }, "[LSO-JWT-Routes] Error notifying LSO removal"); }
+    }
 
     logger.info({ companyId }, "[LSO-JWT-Routes] LSO externo desasignado");
 

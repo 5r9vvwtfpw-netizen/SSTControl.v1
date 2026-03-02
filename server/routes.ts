@@ -260,6 +260,7 @@ import {
   sendPortalAccessEmail,
   sendSupportAccessRequestEmail,
   sendLsoPortalAccessEmail,
+  sendLsoRemovalNotificationEmail,
   type CambioSstEmailData,
   type AprobacionCambioEmailData
 } from "./email";
@@ -11032,7 +11033,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (lsoUser) {
           await db.update(schema.licensedProfessionalAssignments)
-            .set({ isActive: false })
+            .set({ isActive: false, unassignedAt: new Date() })
             .where(and(
               eq(schema.licensedProfessionalAssignments.userId, lsoUser.id),
               eq(schema.licensedProfessionalAssignments.companyId, companyId),
@@ -11058,6 +11059,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           console.log('[AUTO-ASSIGN LSO] Revocation notification sent to LSO user:', lsoUser.id);
           try { notifyNewMessage(lsoUser.id, req.user!.id, message.id); } catch (e) { /* ignore */ }
+
+          if (lsoUser.email) {
+            const removalDateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+            await sendLsoRemovalNotificationEmail(lsoUser.email, {
+              lsoName: lsoUser.fullName || lsoUser.username,
+              companyName: company?.name || 'Sin nombre',
+              companyNit: company?.nit || 'N/A',
+              removalDate: removalDateStr,
+            });
+          }
         } else {
           console.log('[AUTO-ASSIGN LSO] No LSO user found for revocation with identification:', existingDesignation.externalLsoIdentificationNumber);
         }

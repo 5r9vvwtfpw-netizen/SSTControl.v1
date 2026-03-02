@@ -43,6 +43,8 @@ The LSO license status is auto-calculated when saving license data via `PATCH /a
 
 The LSO Portal Empresas tab (`GET /api/portal-licenciado/empresas`) returns enriched company data including: SG-SST compliance percentage and level (from latest `evaluaciones_sst`), subscription blocked status (from `pricing_plugin_subscriptions`), vehicle count, and last activity date (from `audit_logs`). The frontend displays a progress bar for SG-SST compliance (green ≥86%, yellow ≥60%, red <60%), a non-aggressive "Acceso suspendido" badge for blocked companies, and a quick "Mensaje" button that navigates to `/mensajes-internos` with the company name as context.
 
+The LSO Removal Notification System triggers when a company unassigns an LSO (via any of the 6 unassignment endpoints). It: (1) sets `unassignedAt` timestamp on the assignment record, (2) sends an internal message to the LSO's portal inbox, and (3) sends an email via Resend (`sendLsoRemovalNotificationEmail`). The LSO Portal Empresas tab includes a collapsible "Historial de Empresas" section (`GET /api/portal-licenciado/empresas-historial`) showing inactive assignments with assignment/removal dates and "Finalizada" badges.
+
 ## External Dependencies
 
 -   **PostgreSQL (Neon/AWS RDS)**: Relational database.

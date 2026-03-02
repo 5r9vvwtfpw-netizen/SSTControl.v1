@@ -2027,6 +2027,79 @@ function getLsoPortalAccessEmailHTML(data: LsoPortalAccessEmailData): string {
   `;
 }
 
+export interface LsoRemovalNotificationData {
+  lsoName: string;
+  companyName: string;
+  companyNit: string;
+  removalDate: string;
+}
+
+function getLsoRemovalNotificationHTML(data: LsoRemovalNotificationData): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f5;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 22px;">SST Colombia</h1>
+          <p style="color: #94a3b8; margin: 8px 0 0;">Sistema de Gesti\u00f3n de Seguridad y Salud en el Trabajo</p>
+        </div>
+        <div style="background: white; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <h2 style="color: #1e3a5f; margin-top: 0;">Notificaci\u00f3n de Finalizaci\u00f3n de Asignaci\u00f3n</h2>
+          <p style="color: #374151; line-height: 1.6;">Estimado(a) <strong>${data.lsoName}</strong>,</p>
+          <p style="color: #374151; line-height: 1.6;">
+            Le informamos que la empresa <strong>${data.companyName}</strong> ha finalizado su asignaci\u00f3n 
+            como profesional licenciado responsable del Sistema de Gesti\u00f3n de Seguridad y Salud en el Trabajo (SG-SST).
+          </p>
+          <div style="background: #f8fafc; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr><td style="padding: 6px 0; color: #6b7280; width: 140px;">Empresa:</td><td style="padding: 6px 0; color: #111827; font-weight: 600;">${data.companyName}</td></tr>
+              <tr><td style="padding: 6px 0; color: #6b7280;">NIT:</td><td style="padding: 6px 0; color: #111827;">${data.companyNit}</td></tr>
+              <tr><td style="padding: 6px 0; color: #6b7280;">Fecha de finalizaci\u00f3n:</td><td style="padding: 6px 0; color: #111827;">${data.removalDate}</td></tr>
+            </table>
+          </div>
+          <p style="color: #374151; line-height: 1.6;">
+            Los documentos que usted firm\u00f3 durante su gesti\u00f3n con esta empresa permanecen v\u00e1lidos y con pleno valor legal. 
+            Puede consultar el historial completo de sus empresas anteriores en la pesta\u00f1a <strong>Empresas</strong> de su portal.
+          </p>
+          <p style="color: #6b7280; font-size: 13px; margin-top: 24px; border-top: 1px solid #e5e7eb; padding-top: 16px;">
+            Este es un mensaje autom\u00e1tico del sistema SST Colombia. Si tiene preguntas sobre esta finalizaci\u00f3n, 
+            comun\u00edquese directamente con la empresa o con el administrador del sistema.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+export async function sendLsoRemovalNotificationEmail(
+  to: string,
+  data: LsoRemovalNotificationData
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const subject = `Finalizaci\u00f3n de Asignaci\u00f3n - ${data.companyName}`;
+    
+    const result = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to,
+      subject,
+      html: getLsoRemovalNotificationHTML(data),
+    });
+
+    if (result.error) {
+      console.error('Error sending LSO removal notification email:', result.error);
+      return { success: false, error: result.error.message };
+    }
+
+    return { success: true, messageId: result.data?.id };
+  } catch (error: any) {
+    console.error('Failed to send LSO removal notification email:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function sendLsoPortalAccessEmail(
   to: string,
   data: LsoPortalAccessEmailData

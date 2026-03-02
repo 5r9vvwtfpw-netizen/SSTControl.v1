@@ -57,7 +57,8 @@ import {
   Truck,
   ArrowLeft,
   FolderOpen,
-  Search
+  Search,
+  History
 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -438,10 +439,27 @@ function SstProgressBar({ porcentaje, nivel }: { porcentaje: number | null; nive
   );
 }
 
+interface HistorialEmpresa {
+  id: string;
+  name: string;
+  nit: string;
+  city: string | null;
+  riskLevel: string;
+  assignmentId: string;
+  assignedAt: string;
+  unassignedAt: string | null;
+}
+
 function EmpresasTab() {
   const { data: empresas = [], isLoading, isError, error } = useQuery<AssignedCompany[]>({
     queryKey: ["/api/portal-licenciado/empresas"],
   });
+
+  const { data: historial = [] } = useQuery<HistorialEmpresa[]>({
+    queryKey: ["/api/portal-licenciado/empresas-historial"],
+  });
+
+  const [showHistorial, setShowHistorial] = useState(false);
 
   if (isError) {
     return (
@@ -471,7 +489,7 @@ function EmpresasTab() {
     );
   }
 
-  if (empresas.length === 0) {
+  if (empresas.length === 0 && historial.length === 0) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
@@ -504,90 +522,179 @@ function EmpresasTab() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Empresas Asignadas</CardTitle>
-        <CardDescription>
-          Empresas donde está habilitado para firmar documentos SST
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Empresa</TableHead>
-                <TableHead>NIT</TableHead>
-                <TableHead>Ciudad</TableHead>
-                <TableHead>Riesgo</TableHead>
-                <TableHead>Trabajadores</TableHead>
-                <TableHead>Vehículos</TableHead>
-                <TableHead>Avance SG-SST</TableHead>
-                <TableHead>Última Actividad</TableHead>
-                <TableHead>Asignación</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {empresas.map((empresa) => (
-                <TableRow key={empresa.id} data-testid={`row-empresa-${empresa.id}`}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{empresa.name}</span>
-                      {empresa.subscriptionBlocked && (
-                        <Badge variant="secondary" className="text-xs gap-1" data-testid={`badge-blocked-${empresa.id}`}>
-                          <Info className="h-3 w-3" />
-                          Acceso suspendido
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>{empresa.nit}</TableCell>
-                  <TableCell>{empresa.city || '-'}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">Nivel {empresa.riskLevel}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                      {empresa.numberOfWorkers}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Truck className="h-3.5 w-3.5 text-muted-foreground" />
-                      {empresa.numberOfVehicles ?? 0}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <SstProgressBar porcentaje={empresa.porcentajeSst} nivel={empresa.nivelCumplimiento} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-sm">{formatLastActivity(empresa.lastActivity)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">
-                      {format(new Date(empresa.assignedAt), "dd MMM yyyy", { locale: es })}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Link href={`/mensajes-internos?empresa=${encodeURIComponent(empresa.name)}`}>
-                      <Button size="sm" variant="outline" data-testid={`button-message-${empresa.id}`}>
-                        <MessageSquare className="h-4 w-4 mr-1" />
-                        Mensaje
-                      </Button>
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      {empresas.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Empresas Asignadas</CardTitle>
+            <CardDescription>
+              Empresas donde está habilitado para firmar documentos SST
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>NIT</TableHead>
+                    <TableHead>Ciudad</TableHead>
+                    <TableHead>Riesgo</TableHead>
+                    <TableHead>Trabajadores</TableHead>
+                    <TableHead>Vehículos</TableHead>
+                    <TableHead>Avance SG-SST</TableHead>
+                    <TableHead>Última Actividad</TableHead>
+                    <TableHead>Asignación</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {empresas.map((empresa) => (
+                    <TableRow key={empresa.id} data-testid={`row-empresa-${empresa.id}`}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{empresa.name}</span>
+                          {empresa.subscriptionBlocked && (
+                            <Badge variant="secondary" className="text-xs gap-1" data-testid={`badge-blocked-${empresa.id}`}>
+                              <Info className="h-3 w-3" />
+                              Acceso suspendido
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>{empresa.nit}</TableCell>
+                      <TableCell>{empresa.city || '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">Nivel {empresa.riskLevel}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                          {empresa.numberOfWorkers}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Truck className="h-3.5 w-3.5 text-muted-foreground" />
+                          {empresa.numberOfVehicles ?? 0}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <SstProgressBar porcentaje={empresa.porcentajeSst} nivel={empresa.nivelCumplimiento} />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-sm">{formatLastActivity(empresa.lastActivity)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">
+                          {format(new Date(empresa.assignedAt), "dd MMM yyyy", { locale: es })}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Link href={`/mensajes-internos?empresa=${encodeURIComponent(empresa.name)}`}>
+                          <Button size="sm" variant="outline" data-testid={`button-message-${empresa.id}`}>
+                            <MessageSquare className="h-4 w-4 mr-1" />
+                            Mensaje
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {empresas.length === 0 && historial.length > 0 && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">Sin empresas activas</h3>
+            <p className="text-muted-foreground text-center max-w-md">
+              Actualmente no tiene empresas asignadas. Consulte el historial a continuación.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {historial.length > 0 && (
+        <Card>
+          <CardHeader className="cursor-pointer" onClick={() => setShowHistorial(!showHistorial)} data-testid="button-toggle-historial">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <CardTitle className="text-base">Historial de Empresas</CardTitle>
+                  <CardDescription>
+                    Empresas donde prestó sus servicios anteriormente ({historial.length})
+                  </CardDescription>
+                </div>
+              </div>
+              {showHistorial ? (
+                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              )}
+            </div>
+          </CardHeader>
+          {showHistorial && (
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Empresa</TableHead>
+                      <TableHead>NIT</TableHead>
+                      <TableHead>Ciudad</TableHead>
+                      <TableHead>Riesgo</TableHead>
+                      <TableHead>Fecha Asignación</TableHead>
+                      <TableHead>Fecha Finalización</TableHead>
+                      <TableHead>Estado</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {historial.map((empresa) => (
+                      <TableRow key={empresa.assignmentId} className="text-muted-foreground" data-testid={`row-historial-${empresa.assignmentId}`}>
+                        <TableCell>
+                          <span className="font-medium">{empresa.name}</span>
+                        </TableCell>
+                        <TableCell>{empresa.nit}</TableCell>
+                        <TableCell>{empresa.city || '-'}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">Nivel {empresa.riskLevel}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">
+                            {format(new Date(empresa.assignedAt), "dd MMM yyyy", { locale: es })}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">
+                            {empresa.unassignedAt 
+                              ? format(new Date(empresa.unassignedAt), "dd MMM yyyy", { locale: es })
+                              : '-'}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" data-testid={`badge-finalizada-${empresa.assignmentId}`}>
+                            Finalizada
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
+    </div>
   );
 }
 

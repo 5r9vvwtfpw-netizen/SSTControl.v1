@@ -142,6 +142,7 @@ export const licensedProfessionalAssignments = pgTable("licensed_professional_as
   assignedAt: timestamp("assigned_at").notNull().default(sql`now()`),
   assignedBy: varchar("assigned_by").references(() => users.id), // Quien hizo la asignación
   isActive: boolean("is_active").notNull().default(true),
+  unassignedAt: timestamp("unassigned_at"),
   // Campos para LSO externo (del directorio lso.sst-colombia.com.co)
   externalLsoId: varchar("external_lso_id"), // ID en el directorio externo
   externalLsoName: varchar("external_lso_name"), // Nombre completo del LSO
