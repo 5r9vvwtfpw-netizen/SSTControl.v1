@@ -54,7 +54,10 @@ import {
   BarChart3,
   MessageSquare,
   Info,
-  Truck
+  Truck,
+  ArrowLeft,
+  FolderOpen,
+  Search
 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -588,167 +591,113 @@ function EmpresasTab() {
   );
 }
 
-function DocumentosTab() {
-  const { toast } = useToast();
-  const { data: allDocs, isLoading, isError, error } = useQuery<AllDocuments>({
-    queryKey: ["/api/portal-licenciado/documentos-todos"],
-  });
+interface CompanyVault {
+  companyId: string;
+  companyName: string;
+  companyNit: string;
+  totalDocs: number;
+  pendingDocs: number;
+  signedDocs: number;
+  investigaciones: AllDocuments['investigaciones'];
+  evaluaciones: AllDocuments['evaluaciones'];
+  planesTrabajoAnual: AllDocuments['planesTrabajoAnual'];
+  matricesIperc: AllDocuments['matricesIperc'];
+}
 
-  const signEvaluacionMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await apiRequest("PATCH", `/api/portal-licenciado/evaluacion-sst/${id}/firmar`);
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Evaluación firmada exitosamente" });
-      queryClient.invalidateQueries({ queryKey: ["/api/portal-licenciado/documentos-todos"] });
-    },
-    onError: (err: Error) => {
-      toast({ title: "Error al firmar", description: err.message, variant: "destructive" });
-    },
-  });
+function buildCompanyVaults(docs: AllDocuments): CompanyVault[] {
+  const vaultMap = new Map<string, CompanyVault>();
 
-  const signPlanMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await apiRequest("PATCH", `/api/portal-licenciado/plan-trabajo/${id}/firmar`);
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Plan de trabajo firmado exitosamente" });
-      queryClient.invalidateQueries({ queryKey: ["/api/portal-licenciado/documentos-todos"] });
-    },
-    onError: (err: Error) => {
-      toast({ title: "Error al firmar", description: err.message, variant: "destructive" });
-    },
-  });
-
-  const signMatrizMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await apiRequest("PATCH", `/api/portal-licenciado/matriz-iperc/${id}/firmar`);
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Matriz IPERC firmada exitosamente" });
-      queryClient.invalidateQueries({ queryKey: ["/api/portal-licenciado/documentos-todos"] });
-    },
-    onError: (err: Error) => {
-      toast({ title: "Error al firmar", description: err.message, variant: "destructive" });
-    },
-  });
-
-  const [confirmSign, setConfirmSign] = useState<{ type: string; id: string; name: string } | null>(null);
-
-  if (isError) {
-    return (
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Error al cargar documentos</AlertTitle>
-        <AlertDescription>
-          No se pudieron cargar los documentos. 
-          {error instanceof Error ? ` ${error.message}` : ''} 
-          Por favor intente de nuevo más tarde.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-20 w-full" />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const docs = allDocs || { investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [] };
-  const totalDocs = docs.investigaciones.length + docs.evaluaciones.length + docs.planesTrabajoAnual.length + docs.matricesIperc.length;
-  const pendingInv = docs.investigaciones.filter(d => !d.licensedProfessionalName);
-  const signedInv = docs.investigaciones.filter(d => !!d.licensedProfessionalName);
-  const pendingEval = docs.evaluaciones.filter(d => !d.lsoSignatureName);
-  const signedEval = docs.evaluaciones.filter(d => !!d.lsoSignatureName);
-  const pendingPlan = docs.planesTrabajoAnual.filter(d => !d.lsoSignatureName);
-  const signedPlan = docs.planesTrabajoAnual.filter(d => !!d.lsoSignatureName);
-  const pendingMat = docs.matricesIperc.filter(d => !d.lsoSignatureName);
-  const signedMat = docs.matricesIperc.filter(d => !!d.lsoSignatureName);
-  const totalPending = pendingInv.length + pendingEval.length + pendingPlan.length + pendingMat.length;
-
-  const handleConfirmSign = () => {
-    if (!confirmSign) return;
-    if (confirmSign.type === 'evaluacion') signEvaluacionMutation.mutate(confirmSign.id);
-    else if (confirmSign.type === 'plan') signPlanMutation.mutate(confirmSign.id);
-    else if (confirmSign.type === 'matriz') signMatrizMutation.mutate(confirmSign.id);
-    setConfirmSign(null);
+  const getOrCreate = (companyId: string, companyName: string, companyNit: string): CompanyVault => {
+    if (!vaultMap.has(companyId)) {
+      vaultMap.set(companyId, {
+        companyId, companyName, companyNit,
+        totalDocs: 0, pendingDocs: 0, signedDocs: 0,
+        investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [],
+      });
+    }
+    return vaultMap.get(companyId)!;
   };
 
-  const isSigning = signEvaluacionMutation.isPending || signPlanMutation.isPending || signMatrizMutation.isPending;
-
-  if (totalDocs === 0) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <CheckCircle2 className="h-12 w-12 text-green-500 mb-4" />
-          <h3 className="text-lg font-medium mb-2">Sin documentos</h3>
-          <p className="text-muted-foreground text-center max-w-md">
-            No hay documentos registrados en las empresas asignadas.
-          </p>
-        </CardContent>
-      </Card>
-    );
+  for (const inv of docs.investigaciones) {
+    const v = getOrCreate(inv.companyId, inv.companyName, inv.companyNit);
+    v.investigaciones.push(inv);
+    v.totalDocs++;
+    if (inv.licensedProfessionalName) v.signedDocs++; else v.pendingDocs++;
+  }
+  for (const ev of docs.evaluaciones) {
+    const v = getOrCreate(ev.companyId, ev.companyName, ev.companyNit);
+    v.evaluaciones.push(ev);
+    v.totalDocs++;
+    if (ev.lsoSignatureName) v.signedDocs++; else v.pendingDocs++;
+  }
+  for (const plan of docs.planesTrabajoAnual) {
+    const v = getOrCreate(plan.companyId, plan.companyName, plan.companyNit);
+    v.planesTrabajoAnual.push(plan);
+    v.totalDocs++;
+    if (plan.lsoSignatureName) v.signedDocs++; else v.pendingDocs++;
+  }
+  for (const mat of docs.matricesIperc) {
+    const v = getOrCreate(mat.companyId, mat.companyName, mat.companyNit);
+    v.matricesIperc.push(mat);
+    v.totalDocs++;
+    if (mat.lsoSignatureName) v.signedDocs++; else v.pendingDocs++;
   }
 
+  return Array.from(vaultMap.values()).sort((a, b) => b.pendingDocs - a.pendingDocs);
+}
+
+function CompanyVaultDetail({ vault, onBack, isSigning, onSign }: {
+  vault: CompanyVault;
+  onBack: () => void;
+  isSigning: boolean;
+  onSign: (type: string, id: string, name: string) => void;
+}) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
-        <Badge variant="outline">{totalDocs} documentos totales</Badge>
-        {totalPending > 0 && (
-          <Badge variant="destructive">{totalPending} pendientes de firma</Badge>
-        )}
-        {totalDocs - totalPending > 0 && (
-          <Badge className="bg-green-600 text-white">{totalDocs - totalPending} firmados</Badge>
-        )}
+        <Button variant="ghost" size="sm" onClick={onBack} data-testid="button-back-to-vaults">
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Volver
+        </Button>
+        <div className="flex items-center gap-2">
+          <Building2 className="h-5 w-5 text-muted-foreground" />
+          <div>
+            <h3 className="font-semibold text-base leading-tight" data-testid="text-vault-company-name">{vault.companyName}</h3>
+            <p className="text-xs text-muted-foreground">NIT: {vault.companyNit}</p>
+          </div>
+        </div>
+        <div className="ml-auto flex items-center gap-2 flex-wrap">
+          <Badge variant="outline">{vault.totalDocs} documentos</Badge>
+          {vault.pendingDocs > 0 && <Badge variant="destructive">{vault.pendingDocs} pendientes</Badge>}
+          {vault.signedDocs > 0 && <Badge className="bg-green-600 text-white">{vault.signedDocs} firmados</Badge>}
+        </div>
       </div>
 
-      {docs.investigaciones.length > 0 && (
+      {vault.investigaciones.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <div>
               <CardTitle className="text-base">Investigaciones de Accidentes</CardTitle>
               <CardDescription>Res. 1401/2007 - Accidentes graves/mortales</CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              {pendingInv.length > 0 && <Badge variant="destructive">{pendingInv.length} pendientes</Badge>}
-              {signedInv.length > 0 && <Badge className="bg-green-600 text-white">{signedInv.length} firmadas</Badge>}
-            </div>
+            <Badge variant="outline">{vault.investigaciones.length}</Badge>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Empresa</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Severidad</TableHead>
-                  <TableHead>Estado</TableHead>
+                  <TableHead>Firma LSO</TableHead>
                   <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {docs.investigaciones.map((inv) => (
+                {vault.investigaciones.map((inv) => (
                   <TableRow key={inv.id} data-testid={`row-inv-${inv.id}`}>
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{inv.companyName}</div>
-                        <div className="text-xs text-muted-foreground">NIT: {inv.companyNit}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{inv.eventType || 'Investigación'}</Badge>
+                      <Badge variant="outline">{inv.eventType || 'Investigaci\u00f3n'}</Badge>
                     </TableCell>
                     <TableCell>{format(new Date(inv.eventDate), "dd MMM yyyy", { locale: es })}</TableCell>
                     <TableCell>
@@ -786,23 +735,19 @@ function DocumentosTab() {
         </Card>
       )}
 
-      {docs.evaluaciones.length > 0 && (
+      {vault.evaluaciones.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <div>
-              <CardTitle className="text-base">Evaluaciones de Estándares Mínimos</CardTitle>
-              <CardDescription>Resolución 0312/2019 - Evaluación SG-SST</CardDescription>
+              <CardTitle className="text-base">Evaluaciones de Est\u00e1ndares M\u00ednimos</CardTitle>
+              <CardDescription>Resoluci\u00f3n 0312/2019 - Evaluaci\u00f3n SG-SST</CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              {pendingEval.length > 0 && <Badge variant="destructive">{pendingEval.length} pendientes</Badge>}
-              {signedEval.length > 0 && <Badge className="bg-green-600 text-white">{signedEval.length} firmadas</Badge>}
-            </div>
+            <Badge variant="outline">{vault.evaluaciones.length}</Badge>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Empresa</TableHead>
                   <TableHead>Periodo</TableHead>
                   <TableHead>Cumplimiento</TableHead>
                   <TableHead>Estado</TableHead>
@@ -811,14 +756,8 @@ function DocumentosTab() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {docs.evaluaciones.map((ev) => (
+                {vault.evaluaciones.map((ev) => (
                   <TableRow key={ev.id} data-testid={`row-eval-${ev.id}`}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{ev.companyName}</div>
-                        <div className="text-xs text-muted-foreground">NIT: {ev.companyNit}</div>
-                      </div>
-                    </TableCell>
                     <TableCell>{ev.anio} - Mes {ev.mes}</TableCell>
                     <TableCell>
                       <Badge variant={ev.porcentajeCumplimiento >= 86 ? "default" : ev.porcentajeCumplimiento >= 60 ? "secondary" : "destructive"}>
@@ -848,7 +787,7 @@ function DocumentosTab() {
                         <Button 
                           size="sm" 
                           data-testid={`button-sign-eval-${ev.id}`}
-                          onClick={() => setConfirmSign({ type: 'evaluacion', id: ev.id, name: `Evaluación ${ev.anio} - ${ev.companyName}` })}
+                          onClick={() => onSign('evaluacion', ev.id, `Evaluaci\u00f3n ${ev.anio} - ${vault.companyName}`)}
                           disabled={isSigning}
                         >
                           <FileCheck className="h-4 w-4 mr-1" />
@@ -864,24 +803,20 @@ function DocumentosTab() {
         </Card>
       )}
 
-      {docs.planesTrabajoAnual.length > 0 && (
+      {vault.planesTrabajoAnual.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <div>
               <CardTitle className="text-base">Planes de Trabajo Anual</CardTitle>
               <CardDescription>Decreto 1072/2015 - Plan Anual SG-SST</CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              {pendingPlan.length > 0 && <Badge variant="destructive">{pendingPlan.length} pendientes</Badge>}
-              {signedPlan.length > 0 && <Badge className="bg-green-600 text-white">{signedPlan.length} firmados</Badge>}
-            </div>
+            <Badge variant="outline">{vault.planesTrabajoAnual.length}</Badge>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Empresa</TableHead>
-                  <TableHead>Año</TableHead>
+                  <TableHead>A\u00f1o</TableHead>
                   <TableHead>Avance</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Firma LSO</TableHead>
@@ -889,14 +824,8 @@ function DocumentosTab() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {docs.planesTrabajoAnual.map((plan) => (
+                {vault.planesTrabajoAnual.map((plan) => (
                   <TableRow key={plan.id} data-testid={`row-plan-${plan.id}`}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{plan.companyName}</div>
-                        <div className="text-xs text-muted-foreground">NIT: {plan.companyNit}</div>
-                      </div>
-                    </TableCell>
                     <TableCell>{plan.anio}</TableCell>
                     <TableCell>
                       <Badge variant={plan.porcentajeCumplimiento >= 80 ? "default" : "secondary"}>
@@ -926,7 +855,7 @@ function DocumentosTab() {
                         <Button 
                           size="sm"
                           data-testid={`button-sign-plan-${plan.id}`}
-                          onClick={() => setConfirmSign({ type: 'plan', id: plan.id, name: `Plan Trabajo ${plan.anio} - ${plan.companyName}` })}
+                          onClick={() => onSign('plan', plan.id, `Plan Trabajo ${plan.anio} - ${vault.companyName}`)}
                           disabled={isSigning}
                         >
                           <FileCheck className="h-4 w-4 mr-1" />
@@ -942,39 +871,29 @@ function DocumentosTab() {
         </Card>
       )}
 
-      {docs.matricesIperc.length > 0 && (
+      {vault.matricesIperc.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <div>
               <CardTitle className="text-base">Matrices de Peligros (IPERC)</CardTitle>
-              <CardDescription>GTC-45 / ISO 45001:2018 - Identificación de Peligros</CardDescription>
+              <CardDescription>GTC-45 / ISO 45001:2018 - Identificaci\u00f3n de Peligros</CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              {pendingMat.length > 0 && <Badge variant="destructive">{pendingMat.length} pendientes</Badge>}
-              {signedMat.length > 0 && <Badge className="bg-green-600 text-white">{signedMat.length} firmadas</Badge>}
-            </div>
+            <Badge variant="outline">{vault.matricesIperc.length}</Badge>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Empresa</TableHead>
                   <TableHead>Nombre</TableHead>
-                  <TableHead>Área</TableHead>
+                  <TableHead>\u00c1rea</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Firma LSO</TableHead>
                   <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {docs.matricesIperc.map((mat) => (
+                {vault.matricesIperc.map((mat) => (
                   <TableRow key={mat.id} data-testid={`row-mat-${mat.id}`}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{mat.companyName}</div>
-                        <div className="text-xs text-muted-foreground">NIT: {mat.companyNit}</div>
-                      </div>
-                    </TableCell>
                     <TableCell>
                       <div className="text-sm">{mat.nombre}</div>
                       <div className="text-xs text-muted-foreground">v{mat.version} - {mat.metodologia}</div>
@@ -1003,7 +922,7 @@ function DocumentosTab() {
                         <Button 
                           size="sm"
                           data-testid={`button-sign-mat-${mat.id}`}
-                          onClick={() => setConfirmSign({ type: 'matriz', id: mat.id, name: `${mat.nombre} - ${mat.companyName}` })}
+                          onClick={() => onSign('matriz', mat.id, `${mat.nombre} - ${vault.companyName}`)}
                           disabled={isSigning}
                         >
                           <FileCheck className="h-4 w-4 mr-1" />
@@ -1018,33 +937,268 @@ function DocumentosTab() {
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
 
-      <Dialog open={!!confirmSign} onOpenChange={(open) => { if (!open) setConfirmSign(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar Firma Digital</DialogTitle>
-            <DialogDescription>
-              Está a punto de firmar digitalmente el siguiente documento:
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="font-medium text-sm">{confirmSign?.name}</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Al firmar, su nombre, número de licencia profesional e imagen de firma 
-              quedarán registrados permanentemente en el documento. Esta acción no se puede deshacer.
-            </p>
+function DocumentosTab() {
+  const { toast } = useToast();
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const { data: allDocs, isLoading, isError, error } = useQuery<AllDocuments>({
+    queryKey: ["/api/portal-licenciado/documentos-todos"],
+  });
+
+  const signEvaluacionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("PATCH", `/api/portal-licenciado/evaluacion-sst/${id}/firmar`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Evaluaci\u00f3n firmada exitosamente" });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal-licenciado/documentos-todos"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error al firmar", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const signPlanMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("PATCH", `/api/portal-licenciado/plan-trabajo/${id}/firmar`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Plan de trabajo firmado exitosamente" });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal-licenciado/documentos-todos"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error al firmar", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const signMatrizMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("PATCH", `/api/portal-licenciado/matriz-iperc/${id}/firmar`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Matriz IPERC firmada exitosamente" });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal-licenciado/documentos-todos"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error al firmar", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const [confirmSign, setConfirmSign] = useState<{ type: string; id: string; name: string } | null>(null);
+
+  const handleConfirmSign = () => {
+    if (!confirmSign) return;
+    if (confirmSign.type === 'evaluacion') signEvaluacionMutation.mutate(confirmSign.id);
+    else if (confirmSign.type === 'plan') signPlanMutation.mutate(confirmSign.id);
+    else if (confirmSign.type === 'matriz') signMatrizMutation.mutate(confirmSign.id);
+    setConfirmSign(null);
+  };
+
+  const isSigning = signEvaluacionMutation.isPending || signPlanMutation.isPending || signMatrizMutation.isPending;
+
+  if (isError) {
+    return (
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Error al cargar documentos</AlertTitle>
+        <AlertDescription>
+          No se pudieron cargar los documentos. 
+          {error instanceof Error ? ` ${error.message}` : ''} 
+          Por favor intente de nuevo m\u00e1s tarde.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-20 w-full" />
+            ))}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmSign(null)} data-testid="button-cancel-sign">
-              Cancelar
-            </Button>
-            <Button onClick={handleConfirmSign} disabled={isSigning} data-testid="button-confirm-sign">
-              {isSigning && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-              Confirmar Firma
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const docs = allDocs || { investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [] };
+  const vaults = buildCompanyVaults(docs);
+  const totalDocs = vaults.reduce((s, v) => s + v.totalDocs, 0);
+  const totalPending = vaults.reduce((s, v) => s + v.pendingDocs, 0);
+
+  if (totalDocs === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <CheckCircle2 className="h-12 w-12 text-green-500 mb-4" />
+          <h3 className="text-lg font-medium mb-2">Sin documentos</h3>
+          <p className="text-muted-foreground text-center max-w-md">
+            No hay documentos registrados en las empresas asignadas.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const selectedVault = vaults.find(v => v.companyId === selectedCompanyId);
+
+  if (selectedVault) {
+    return (
+      <>
+        <CompanyVaultDetail
+          vault={selectedVault}
+          onBack={() => { setSelectedCompanyId(null); setConfirmSign(null); }}
+          isSigning={isSigning}
+          onSign={(type, id, name) => setConfirmSign({ type, id, name })}
+        />
+        <Dialog open={!!confirmSign} onOpenChange={(open) => { if (!open) setConfirmSign(null); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirmar Firma Digital</DialogTitle>
+              <DialogDescription>
+                Est\u00e1 a punto de firmar digitalmente el siguiente documento:
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="font-medium text-sm">{confirmSign?.name}</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Al firmar, su nombre, n\u00famero de licencia profesional e imagen de firma 
+                quedar\u00e1n registrados permanentemente en el documento. Esta acci\u00f3n no se puede deshacer.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConfirmSign(null)} data-testid="button-cancel-sign">
+                Cancelar
+              </Button>
+              <Button onClick={handleConfirmSign} disabled={isSigning} data-testid="button-confirm-sign">
+                {isSigning && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                Confirmar Firma
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
+  const filteredVaults = searchTerm
+    ? vaults.filter(v => 
+        v.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v.companyNit.includes(searchTerm)
+      )
+    : vaults;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 flex-wrap">
+        <Badge variant="outline">{vaults.length} empresas</Badge>
+        <Badge variant="outline">{totalDocs} documentos</Badge>
+        {totalPending > 0 && (
+          <Badge variant="destructive">{totalPending} pendientes de firma</Badge>
+        )}
+        {totalDocs - totalPending > 0 && (
+          <Badge className="bg-green-600 text-white">{totalDocs - totalPending} firmados</Badge>
+        )}
+      </div>
+
+      {vaults.length > 3 && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar empresa por nombre o NIT..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+            data-testid="input-search-vaults"
+          />
+        </div>
+      )}
+
+      <div className="grid gap-3">
+        {filteredVaults.map((vault) => (
+          <Card 
+            key={vault.companyId} 
+            className="cursor-pointer hover-elevate transition-colors"
+            onClick={() => setSelectedCompanyId(vault.companyId)}
+            data-testid={`card-vault-${vault.companyId}`}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center justify-center h-10 w-10 rounded-md bg-muted shrink-0">
+                  <FolderOpen className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-semibold text-sm truncate" data-testid={`text-vault-name-${vault.companyId}`}>
+                    {vault.companyName}
+                  </h4>
+                  <p className="text-xs text-muted-foreground">NIT: {vault.companyNit}</p>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {vault.pendingDocs > 0 && (
+                    <Badge variant="destructive">
+                      {vault.pendingDocs} pendiente{vault.pendingDocs !== 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                  {vault.signedDocs > 0 && (
+                    <Badge className="bg-green-600 text-white">
+                      {vault.signedDocs} firmado{vault.signedDocs !== 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <FileText className="h-3.5 w-3.5" />
+                    {vault.totalDocs}
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+              <div className="flex items-center gap-3 mt-2 ml-14 flex-wrap">
+                {vault.investigaciones.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {vault.investigaciones.length} investigaci\u00f3n{vault.investigaciones.length !== 1 ? 'es' : ''}
+                  </span>
+                )}
+                {vault.evaluaciones.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {vault.evaluaciones.length} evaluaci\u00f3n{vault.evaluaciones.length !== 1 ? 'es' : ''}
+                  </span>
+                )}
+                {vault.planesTrabajoAnual.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {vault.planesTrabajoAnual.length} plan{vault.planesTrabajoAnual.length !== 1 ? 'es' : ''}
+                  </span>
+                )}
+                {vault.matricesIperc.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {vault.matricesIperc.length} matriz{vault.matricesIperc.length !== 1 ? 'ces' : ''}
+                  </span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredVaults.length === 0 && searchTerm && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <Search className="h-8 w-8 text-muted-foreground mb-3" />
+            <p className="text-sm text-muted-foreground">
+              No se encontraron empresas para "{searchTerm}"
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
