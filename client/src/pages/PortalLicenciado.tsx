@@ -122,12 +122,15 @@ export default function PortalLicenciado() {
   const [activeTab, setActiveTab] = useState(getInitialTab);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get("tab");
-    if (tab && validTabs.includes(tab) && tab !== activeTab) {
-      setActiveTab(tab);
-    }
-  }, [window.location.search]);
+    const handler = (e: Event) => {
+      const tab = (e as CustomEvent).detail;
+      if (tab && validTabs.includes(tab)) {
+        setActiveTab(tab);
+      }
+    };
+    window.addEventListener("lso-tab-change", handler);
+    return () => window.removeEventListener("lso-tab-change", handler);
+  }, []);
 
   if (user?.role !== 'lso') {
     return (

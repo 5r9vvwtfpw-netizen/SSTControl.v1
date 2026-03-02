@@ -152,7 +152,7 @@ const pesvNavMenuItems: { label: string; path: string }[] = [
 ];
 
 export function PHVANavigation() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user, logoutMutation } = useAuth();
   const [openDropdown, setOpenDropdown] = useState<PHVASection | null>(null);
   const [pesvDropdownOpen, setPesvDropdownOpen] = useState(false);
@@ -377,16 +377,26 @@ export function PHVANavigation() {
   // El rol LSO solo debe ver su portal específico, no el menú PHVA completo
   if (user?.role === 'lso') {
     const lsoNavItems = [
-      { label: "Panel", href: "/portal-licenciado?tab=dashboard", icon: LayoutDashboard, tab: "dashboard" },
-      { label: "Empresas", href: "/portal-licenciado?tab=empresas", icon: Building2, tab: "empresas" },
-      { label: "Documentos", href: "/portal-licenciado?tab=documentos", icon: FileCheck, tab: "documentos" },
-      { label: "PESV", href: "/portal-licenciado?tab=pesv", icon: Car, tab: "pesv" },
-      { label: "Mi Licencia", href: "/portal-licenciado?tab=licencia", icon: Award, tab: "licencia" },
+      { label: "Panel", icon: LayoutDashboard, tab: "dashboard" },
+      { label: "Empresas", icon: Building2, tab: "empresas" },
+      { label: "Documentos", icon: FileCheck, tab: "documentos" },
+      { label: "PESV", icon: Car, tab: "pesv" },
+      { label: "Mi Licencia", icon: Award, tab: "licencia" },
     ];
 
     const isOnPortal = location.startsWith("/portal-licenciado");
     const isOnMessages = location.startsWith("/mensajes-internos");
-    const currentTab = isOnPortal ? new URLSearchParams(window.location.search).get("tab") || "dashboard" : null;
+    const [lsoActiveTab, setLsoActiveTab] = useState("dashboard");
+
+    const handleLsoNav = (tab: string) => {
+      setLsoActiveTab(tab);
+      if (!isOnPortal) {
+        setLocation("/portal-licenciado");
+      }
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("lso-tab-change", { detail: tab }));
+      }, isOnPortal ? 0 : 100);
+    };
 
     return (
       <header className="sticky top-0 z-50 phva-navigation-header">
@@ -407,19 +417,19 @@ export function PHVANavigation() {
 
               <nav className="hidden md:flex items-center gap-1" data-testid="nav-lso-menu">
                 {lsoNavItems.map((item) => {
-                  const isActive = isOnPortal && currentTab === item.tab;
+                  const isActive = isOnPortal && lsoActiveTab === item.tab;
                   return (
-                    <Link key={item.tab} href={item.href}>
-                      <Button
-                        variant={isActive ? "secondary" : "ghost"}
-                        size="sm"
-                        className={isActive ? "font-semibold text-primary" : "text-white/90 hover:text-white"}
-                        data-testid={`nav-lso-${item.tab}`}
-                      >
-                        <item.icon className="mr-1.5 h-4 w-4" />
-                        {item.label}
-                      </Button>
-                    </Link>
+                    <Button
+                      key={item.tab}
+                      variant={isActive ? "secondary" : "ghost"}
+                      size="sm"
+                      className={isActive ? "font-semibold text-primary" : "text-white/90"}
+                      data-testid={`nav-lso-${item.tab}`}
+                      onClick={() => handleLsoNav(item.tab)}
+                    >
+                      <item.icon className="mr-1.5 h-4 w-4" />
+                      {item.label}
+                    </Button>
                   );
                 })}
                 <div className="w-px h-6 bg-white/20 mx-1" />
@@ -427,7 +437,7 @@ export function PHVANavigation() {
                   <Button
                     variant={isOnMessages ? "secondary" : "ghost"}
                     size="sm"
-                    className={isOnMessages ? "font-semibold text-primary" : "text-white/90 hover:text-white"}
+                    className={isOnMessages ? "font-semibold text-primary" : "text-white/90"}
                     data-testid="nav-lso-mensajes"
                   >
                     <Mail className="mr-1.5 h-4 w-4" />
@@ -448,12 +458,15 @@ export function PHVANavigation() {
                   <DropdownMenuContent align="center" className="w-52">
                     <DropdownMenuLabel className="text-xs text-muted-foreground">Portal LSO</DropdownMenuLabel>
                     {lsoNavItems.map((item) => (
-                      <Link key={item.tab} href={item.href}>
-                        <DropdownMenuItem className="cursor-pointer" data-testid={`mobile-nav-lso-${item.tab}`}>
-                          <item.icon className="mr-2 h-4 w-4" />
-                          {item.label}
-                        </DropdownMenuItem>
-                      </Link>
+                      <DropdownMenuItem
+                        key={item.tab}
+                        className="cursor-pointer"
+                        data-testid={`mobile-nav-lso-${item.tab}`}
+                        onClick={() => handleLsoNav(item.tab)}
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {item.label}
+                      </DropdownMenuItem>
                     ))}
                     <DropdownMenuSeparator />
                     <Link href="/mensajes-internos">
