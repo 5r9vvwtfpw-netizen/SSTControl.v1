@@ -63,7 +63,8 @@ import {
   History,
   LifeBuoy,
   Plus,
-  CircleDot
+  CircleDot,
+  FileBarChart
 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -1620,6 +1621,17 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           Ver PDF
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          data-testid={`button-view-pdf-ministerio-${ev.id}`}
+                          onClick={() => {
+                            window.open(`/api/evaluaciones-sst/${ev.id}/pdf-ministerio`, '_blank');
+                          }}
+                        >
+                          <FileBarChart className="h-4 w-4 mr-1" />
+                          PDF Ministerio
                         </Button>
                         {ev.lsoSignatureName ? (
                           <Badge className="bg-green-600 text-white">
