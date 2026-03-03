@@ -664,7 +664,7 @@ export default function AdminTicketsSoporte() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="lg:sticky lg:top-4">
           <CardHeader>
             <CardTitle>Detalle del Ticket</CardTitle>
             <CardDescription>
@@ -684,6 +684,7 @@ export default function AdminTicketsSoporte() {
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
+              <ScrollArea className="h-[calc(100vh-220px)]">
               <div className="space-y-6">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -877,6 +878,7 @@ export default function AdminTicketsSoporte() {
                   </div>
                 </div>
               </div>
+              </ScrollArea>
             )}
           </CardContent>
         </Card>
