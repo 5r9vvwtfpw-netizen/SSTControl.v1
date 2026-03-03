@@ -617,59 +617,59 @@ export default function AdminTicketsSoporte() {
                   </p>
                 </div>
               ) : (
-                <Table>
+                <Table className="border-collapse">
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Ticket</TableHead>
-                      <TableHead>Empresa</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Prioridad</TableHead>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
+                    <TableRow className="border-none hover:bg-transparent">
+                      <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Ticket</TableHead>
+                      <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Empresa</TableHead>
+                      <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Estado</TableHead>
+                      <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Prioridad</TableHead>
+                      <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Categoría</TableHead>
+                      <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Fecha</TableHead>
+                      <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredTickets.map((ticket) => (
                       <TableRow 
                         key={ticket.id}
-                        className={`cursor-pointer transition-colors duration-300 hover:bg-accent/50 ${selectedTicket?.id === ticket.id ? 'bg-accent' : ''}`}
+                        className={`border-none cursor-pointer transition-all duration-300 hover:bg-accent/40 rounded-lg ${selectedTicket?.id === ticket.id ? 'bg-accent' : ''}`}
                         onClick={() => setSelectedTicket(ticket as TicketWithDetails)}
                         data-testid={`admin-ticket-row-${ticket.id}`}
                       >
-                        <TableCell>
+                        <TableCell className="py-4 px-5">
                           <div>
                             <p className="text-xs font-mono text-muted-foreground">{ticket.ticketNumber}</p>
                             <p className="font-medium truncate max-w-[200px]">{ticket.subject}</p>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-4 px-5">
                           <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                             <span className="text-sm truncate max-w-[120px]">{ticket.companyName}</span>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge className={statusColors[ticket.status]}>
+                        <TableCell className="py-4 px-5">
+                          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${statusColors[ticket.status]}`}>
                             {statusLabels[ticket.status] || ticket.status}
-                          </Badge>
+                          </span>
                         </TableCell>
-                        <TableCell>
-                          <Badge className={priorityColors[ticket.priority]}>
+                        <TableCell className="py-4 px-5">
+                          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${priorityColors[ticket.priority]}`}>
                             {priorityLabels[ticket.priority] || ticket.priority}
-                          </Badge>
+                          </span>
                         </TableCell>
-                        <TableCell>
-                          <span className="text-xs text-muted-foreground">
+                        <TableCell className="py-4 px-5">
+                          <span className="text-sm text-muted-foreground">
                             {categoryLabels[ticket.category] || ticket.category}
                           </span>
                         </TableCell>
-                        <TableCell>
-                          <span className="text-xs text-muted-foreground">
+                        <TableCell className="py-4 px-5">
+                          <span className="text-sm text-muted-foreground">
                             {format(new Date(ticket.createdAt), "dd/MM/yyyy", { locale: es })}
                           </span>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="py-4 px-5 text-right">
                           <Button
                             size="sm"
                             variant="outline"
