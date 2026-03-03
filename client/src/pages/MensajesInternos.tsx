@@ -55,6 +55,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { Building2 } from "lucide-react";
 import type { InternalMessage } from "@shared/schema";
 
 // Validation schema for new message
@@ -106,6 +107,7 @@ export default function MensajesInternos() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMessage, setSelectedMessage] = useState<InternalMessage | null>(null);
   const [showNewMessage, setShowNewMessage] = useState(false);
+  const [selectedCompanyFilter, setSelectedCompanyFilter] = useState<string>("");
 
   // Fetch messages with auto-refresh every 30 seconds
   const { data: messages, isLoading: messagesLoading } = useQuery<InternalMessage[]>({
@@ -291,7 +293,7 @@ export default function MensajesInternos() {
           </p>
         </div>
         <Button
-          onClick={() => setShowNewMessage(true)}
+          onClick={() => { setSelectedCompanyFilter(""); setShowNewMessage(true); }}
           data-testid="button-compose-message"
         >
           <Send className="h-4 w-4 mr-2" />
@@ -496,16 +498,62 @@ export default function MensajesInternos() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {user?.role === 'lso' && (() => {
+                const companyMap = new Map<string, string>();
+                recipients?.forEach(r => {
+                  if (r.companyName) companyMap.set(r.companyName, r.companyName);
+                });
+                const uniqueCompanies = Array.from(companyMap.keys()).sort();
+                if (uniqueCompanies.length > 0) {
+                  return (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        <Building2 className="h-4 w-4 inline mr-1" />
+                        Empresa *
+                      </label>
+                      <Select 
+                        value={selectedCompanyFilter} 
+                        onValueChange={(val) => {
+                          setSelectedCompanyFilter(val);
+                          form.setValue("receiverId", "");
+                        }}
+                      >
+                        <SelectTrigger data-testid="select-company-filter">
+                          <SelectValue placeholder="Seleccionar empresa..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {uniqueCompanies.map((company) => (
+                            <SelectItem key={company} value={company}>
+                              {company}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
               <FormField
                 control={form.control}
                 name="receiverId"
-                render={({ field }) => (
+                render={({ field }) => {
+                  const isLso = user?.role === 'lso';
+                  const filteredRecipients = isLso && selectedCompanyFilter
+                    ? recipients?.filter(r => r.companyName === selectedCompanyFilter)
+                    : recipients;
+                  return (
                   <FormItem>
                     <FormLabel>Destinatario *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                      disabled={isLso && !selectedCompanyFilter}
+                    >
                       <FormControl>
                         <SelectTrigger data-testid="select-recipient">
-                          <SelectValue placeholder="Seleccionar destinatario..." />
+                          <SelectValue placeholder={isLso && !selectedCompanyFilter ? "Primero seleccione una empresa..." : "Seleccionar destinatario..."} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -513,15 +561,14 @@ export default function MensajesInternos() {
                           <SelectItem value="_loading" disabled>
                             Cargando...
                           </SelectItem>
-                        ) : recipients?.length === 0 ? (
+                        ) : filteredRecipients?.length === 0 ? (
                           <SelectItem value="_empty" disabled>
                             No hay destinatarios disponibles
                           </SelectItem>
                         ) : (
-                          recipients?.map((recipient) => (
+                          filteredRecipients?.map((recipient) => (
                             <SelectItem key={recipient.id} value={recipient.id}>
                               {recipient.fullName || "Sin nombre"} - {roleLabels[recipient.role] || recipient.role}
-                              {recipient.companyName ? ` (${recipient.companyName})` : ""}
                             </SelectItem>
                           ))
                         )}
@@ -529,7 +576,8 @@ export default function MensajesInternos() {
                     </Select>
                     <FormMessage />
                   </FormItem>
-                )}
+                  );
+                }}
               />
 
               <div className="grid grid-cols-4 gap-4">
