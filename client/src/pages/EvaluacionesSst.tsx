@@ -180,14 +180,26 @@ export default function EvaluacionesSst() {
 
   // Auto-llenar Aprobado por con el Gerente/Representante Legal
   useEffect(() => {
-    if (!workers.length || !targetCompany?.legalRepId) return;
+    if (!workers.length || !targetCompany) return;
+    const current = form.getValues();
+    if (current.aprobadoPorId) return;
 
-    const repWorker = workers.find((w: any) => w.identificationNumber === targetCompany.legalRepId);
+    let repWorker = null;
+
+    if (targetCompany.legalRepId) {
+      repWorker = workers.find((w: any) => w.identificationNumber === targetCompany.legalRepId);
+    }
+
+    if (!repWorker && targetCompany.legalRepName) {
+      const repName = targetCompany.legalRepName.toLowerCase().trim();
+      repWorker = workers.find((w: any) => 
+        w.name?.toLowerCase().trim() === repName ||
+        `${w.firstName || ''} ${w.lastName || ''}`.toLowerCase().trim() === repName
+      );
+    }
+
     if (repWorker) {
-      const current = form.getValues();
-      if (!current.aprobadoPorId) {
-        form.setValue("aprobadoPorId", repWorker.id);
-      }
+      form.setValue("aprobadoPorId", repWorker.id);
     }
   }, [workers, form, targetCompany]);
 
