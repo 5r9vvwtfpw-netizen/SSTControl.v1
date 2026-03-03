@@ -402,21 +402,24 @@ export default function AdminTicketsSoporte() {
       </div>
 
       {criticalTickets.length > 0 && (
-        <Card className="border-red-500 bg-red-50 dark:bg-red-950/20" data-testid="card-critical-alert">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-6 w-6 text-red-600" />
-              <div>
-                <p className="font-semibold text-red-600" data-testid="text-critical-count">
-                  {criticalTickets.length} Ticket{criticalTickets.length !== 1 ? 's' : ''} Crítico{criticalTickets.length !== 1 ? 's' : ''} Pendiente{criticalTickets.length !== 1 ? 's' : ''}
-                </p>
-                <p className="text-sm text-red-600/80">
-                  Requieren atención inmediata
-                </p>
-              </div>
+        <div 
+          className="rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-orange-400 p-4 shadow-lg shadow-red-500/20"
+          data-testid="card-critical-alert"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="h-5 w-5 text-white animate-pulse" />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <p className="font-bold text-white" data-testid="text-critical-count">
+                {criticalTickets.length} Ticket{criticalTickets.length !== 1 ? 's' : ''} Crítico{criticalTickets.length !== 1 ? 's' : ''} Pendiente{criticalTickets.length !== 1 ? 's' : ''}
+              </p>
+              <p className="text-sm text-white/80">
+                Requieren atención inmediata
+              </p>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
