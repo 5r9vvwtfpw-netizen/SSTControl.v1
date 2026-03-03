@@ -25766,12 +25766,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Add signature footer with frozen LSO signature if available
-      if (evaluacion.lsoSignatureName && evaluacion.lsoSignatureUrl) {
+      if (evaluacion.lsoSignatureName) {
+        let frozenSigUrl = evaluacion.lsoSignatureUrl || null;
+        if (!frozenSigUrl) {
+          const [lsoAssignment] = await db.select().from(schema.licensedProfessionalAssignments)
+            .innerJoin(schema.users, eq(schema.licensedProfessionalAssignments.userId, schema.users.id))
+            .where(and(eq(schema.licensedProfessionalAssignments.companyId, evaluacion.companyId), eq(schema.licensedProfessionalAssignments.isActive, true)));
+          if (lsoAssignment) frozenSigUrl = lsoAssignment.users.sstSignatureUrl || lsoAssignment.licensed_professional_assignments.externalLsoSignatureUrl || null;
+          if (!frozenSigUrl) {
+            const lsoUsers = await db.select().from(schema.users).where(and(eq(schema.users.companyId, evaluacion.companyId), eq(schema.users.role, 'lso')));
+            if (lsoUsers.length > 0) frozenSigUrl = lsoUsers[0].sstSignatureUrl || null;
+          }
+        }
         signers.lso = {
           name: evaluacion.lsoSignatureName,
           licenseNumber: evaluacion.lsoSignatureLicense || "",
           licenseIssuer: "",
-          signatureUrl: evaluacion.lsoSignatureUrl,
+          signatureUrl: frozenSigUrl || undefined,
         };
       }
       await addSignatureFooter(doc, signers, true);
@@ -26342,12 +26353,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
 
-      if (evaluacion.lsoSignatureName && evaluacion.lsoSignatureUrl) {
+      if (evaluacion.lsoSignatureName) {
+        let frozenSigUrl = evaluacion.lsoSignatureUrl || null;
+        if (!frozenSigUrl) {
+          const [lsoAssignment] = await db.select().from(schema.licensedProfessionalAssignments)
+            .innerJoin(schema.users, eq(schema.licensedProfessionalAssignments.userId, schema.users.id))
+            .where(and(eq(schema.licensedProfessionalAssignments.companyId, evaluacion.companyId), eq(schema.licensedProfessionalAssignments.isActive, true)));
+          if (lsoAssignment) frozenSigUrl = lsoAssignment.users.sstSignatureUrl || lsoAssignment.licensed_professional_assignments.externalLsoSignatureUrl || null;
+          if (!frozenSigUrl) {
+            const lsoUsers = await db.select().from(schema.users).where(and(eq(schema.users.companyId, evaluacion.companyId), eq(schema.users.role, 'lso')));
+            if (lsoUsers.length > 0) frozenSigUrl = lsoUsers[0].sstSignatureUrl || null;
+          }
+        }
         ministerioSigners.lso = {
           name: evaluacion.lsoSignatureName,
           licenseNumber: evaluacion.lsoSignatureLicense || "",
           licenseIssuer: "",
-          signatureUrl: evaluacion.lsoSignatureUrl,
+          signatureUrl: frozenSigUrl || undefined,
         };
       }
       await addSignatureFooter(doc, ministerioSigners, true);
@@ -28791,12 +28813,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      if (plan.lsoSignatureName && plan.lsoSignatureUrl) {
+      if (plan.lsoSignatureName) {
+        let frozenSigUrl = plan.lsoSignatureUrl || null;
+        if (!frozenSigUrl) {
+          const [lsoAssignment] = await db.select().from(schema.licensedProfessionalAssignments)
+            .innerJoin(schema.users, eq(schema.licensedProfessionalAssignments.userId, schema.users.id))
+            .where(and(eq(schema.licensedProfessionalAssignments.companyId, plan.companyId), eq(schema.licensedProfessionalAssignments.isActive, true)));
+          if (lsoAssignment) frozenSigUrl = lsoAssignment.users.sstSignatureUrl || lsoAssignment.licensed_professional_assignments.externalLsoSignatureUrl || null;
+          if (!frozenSigUrl) {
+            const lsoUsers = await db.select().from(schema.users).where(and(eq(schema.users.companyId, plan.companyId), eq(schema.users.role, 'lso')));
+            if (lsoUsers.length > 0) frozenSigUrl = lsoUsers[0].sstSignatureUrl || null;
+          }
+        }
         signers.lso = {
           name: plan.lsoSignatureName,
           licenseNumber: plan.lsoSignatureLicense || "",
           licenseIssuer: "",
-          signatureUrl: plan.lsoSignatureUrl,
+          signatureUrl: frozenSigUrl || undefined,
         };
       }
       await addSignatureFooter(doc, signers, !!plan.lsoSignatureName);
@@ -35626,12 +35659,23 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const logo = await loadCompanyLogo(company.logoUrl);
       const signers = await getSignersForCompany(companyId, true);
 
-      if (matriz.lsoSignatureName && matriz.lsoSignatureUrl) {
+      if (matriz.lsoSignatureName) {
+        let frozenSigUrl = matriz.lsoSignatureUrl || null;
+        if (!frozenSigUrl) {
+          const [lsoAssignment] = await db.select().from(schema.licensedProfessionalAssignments)
+            .innerJoin(schema.users, eq(schema.licensedProfessionalAssignments.userId, schema.users.id))
+            .where(and(eq(schema.licensedProfessionalAssignments.companyId, matriz.companyId), eq(schema.licensedProfessionalAssignments.isActive, true)));
+          if (lsoAssignment) frozenSigUrl = lsoAssignment.users.sstSignatureUrl || lsoAssignment.licensed_professional_assignments.externalLsoSignatureUrl || null;
+          if (!frozenSigUrl) {
+            const lsoUsers = await db.select().from(schema.users).where(and(eq(schema.users.companyId, matriz.companyId), eq(schema.users.role, 'lso')));
+            if (lsoUsers.length > 0) frozenSigUrl = lsoUsers[0].sstSignatureUrl || null;
+          }
+        }
         signers.lso = {
           name: matriz.lsoSignatureName,
           licenseNumber: matriz.lsoSignatureLicense || "",
           licenseIssuer: "",
-          signatureUrl: matriz.lsoSignatureUrl,
+          signatureUrl: frozenSigUrl || undefined,
         };
       }
 

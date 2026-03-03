@@ -1622,17 +1622,6 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                           <Eye className="h-4 w-4 mr-1" />
                           Ver PDF
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          data-testid={`button-view-pdf-ministerio-${ev.id}`}
-                          onClick={() => {
-                            window.open(`/api/evaluaciones-sst/${ev.id}/pdf-ministerio`, '_blank');
-                          }}
-                        >
-                          <FileBarChart className="h-4 w-4 mr-1" />
-                          PDF Ministerio
-                        </Button>
                         {ev.lsoSignatureName ? (
                           <Badge className="bg-green-600 text-white">
                             <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -1648,6 +1637,77 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                             <FileCheck className="h-4 w-4 mr-1" />
                             Firmar
                           </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {vault.evaluaciones.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <div>
+              <CardTitle className="text-base">Reporte Ministerio del Trabajo</CardTitle>
+              <CardDescription>Resolución 0312/2019 - Informe oficial "Hilo Dorado" para el Ministerio</CardDescription>
+            </div>
+            <Badge variant="outline">{vault.evaluaciones.length}</Badge>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Periodo</TableHead>
+                  <TableHead>Cumplimiento</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Firma LSO</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vault.evaluaciones.map((ev) => (
+                  <TableRow key={`min-${ev.id}`} data-testid={`row-ministerio-${ev.id}`}>
+                    <TableCell>{ev.anio} - Mes {ev.mes}</TableCell>
+                    <TableCell>
+                      <Badge variant={ev.porcentajeCumplimiento >= 86 ? "default" : ev.porcentajeCumplimiento >= 60 ? "secondary" : "destructive"}>
+                        {ev.porcentajeCumplimiento}%
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{ev.estado}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {ev.lsoSignatureName ? (
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Firmada
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">Pendiente</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          data-testid={`button-view-pdf-ministerio-${ev.id}`}
+                          onClick={() => {
+                            window.open(`/api/evaluaciones-sst/${ev.id}/pdf-ministerio`, '_blank');
+                          }}
+                        >
+                          <FileBarChart className="h-4 w-4 mr-1" />
+                          Ver PDF Ministerio
+                        </Button>
+                        {ev.lsoSignatureName && (
+                          <Badge className="bg-green-600 text-white">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            {ev.lsoSignatureName}
+                          </Badge>
                         )}
                       </div>
                     </TableCell>
