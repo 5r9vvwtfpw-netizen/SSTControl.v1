@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Headset, LogOut, Ticket, Key, BookOpen } from "lucide-react";
+import { Headset, LogOut, Ticket, Key, BookOpen, Eye, EyeOff } from "lucide-react";
 import { Link, Redirect, useLocation } from "wouter";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useMutation } from "@tanstack/react-query";
@@ -26,6 +26,9 @@ export default function SoporteLayout({ children }: { children: React.ReactNode 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
 
   const changePasswordMutation = useMutation({
     mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
@@ -160,6 +163,9 @@ export default function SoporteLayout({ children }: { children: React.ReactNode 
           setCurrentPassword("");
           setNewPassword("");
           setConfirmPassword("");
+          setShowCurrentPw(false);
+          setShowNewPw(false);
+          setShowConfirmPw(false);
         }
       }}>
         <DialogContent className="sm:max-w-md">
@@ -172,36 +178,75 @@ export default function SoporteLayout({ children }: { children: React.ReactNode 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="current-password">Contraseña Actual</Label>
-              <Input
-                id="current-password"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Ingrese su contraseña actual"
-                data-testid="input-current-password"
-              />
+              <div className="relative">
+                <Input
+                  id="current-password"
+                  type={showCurrentPw ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Ingrese su contraseña actual"
+                  data-testid="input-current-password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full"
+                  onClick={() => setShowCurrentPw(!showCurrentPw)}
+                  tabIndex={-1}
+                  data-testid="button-toggle-current-password"
+                >
+                  {showCurrentPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="new-password">Nueva Contraseña</Label>
-              <Input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Mínimo 8 caracteres"
-                data-testid="input-new-password"
-              />
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type={showNewPw ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mínimo 8 caracteres"
+                  data-testid="input-new-password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full"
+                  onClick={() => setShowNewPw(!showNewPw)}
+                  tabIndex={-1}
+                  data-testid="button-toggle-new-password"
+                >
+                  {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm-password">Confirmar Nueva Contraseña</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repita la nueva contraseña"
-                data-testid="input-confirm-password"
-              />
+              <div className="relative">
+                <Input
+                  id="confirm-password"
+                  type={showConfirmPw ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repita la nueva contraseña"
+                  data-testid="input-confirm-password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full"
+                  onClick={() => setShowConfirmPw(!showConfirmPw)}
+                  tabIndex={-1}
+                  data-testid="button-toggle-confirm-password"
+                >
+                  {showConfirmPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
           </div>
           <DialogFooter>
