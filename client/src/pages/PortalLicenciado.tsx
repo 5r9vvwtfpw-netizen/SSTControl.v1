@@ -633,7 +633,6 @@ function EmpresasTab() {
                       <TableCell className="text-right">
                         <Button
                           size="sm"
-                          variant="outline"
                           data-testid={`button-message-${empresa.id}`}
                           onClick={() => {
                             if (!empresa.adminUserId) {
@@ -1101,7 +1100,7 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
               {vault.pendingDocs > 0 && <Badge variant="destructive">{vault.pendingDocs} pendientes</Badge>}
               {vault.signedDocs > 0 && <Badge className="bg-green-600 text-white">{vault.signedDocs} firmados</Badge>}
               {onMessage && (
-                <Button variant="outline" onClick={onMessage} data-testid="button-vault-message">
+                <Button onClick={onMessage} data-testid="button-vault-message">
                   <MessageSquare className="h-4 w-4 mr-1" />
                   Mensaje
                 </Button>
