@@ -2929,9 +2929,17 @@ function SignatureUploadSection({ currentSignatureUrl }: { currentSignatureUrl: 
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [imgError, setImgError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const { data: sigStatus, isLoading: sigLoading } = useQuery<{ hasSignature: boolean; isAccessible: boolean; wasCleared?: boolean }>({
+    queryKey: ['/api/portal-licenciado/firma/estado'],
+    enabled: !!currentSignatureUrl,
+    staleTime: 30000,
+  });
+
+  const signatureImageUrl = `/api/portal-licenciado/firma/imagen?t=${Date.now()}`;
+  const hasValidSignature = sigStatus?.hasSignature && sigStatus?.isAccessible;
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -2954,13 +2962,13 @@ function SignatureUploadSection({ currentSignatureUrl }: { currentSignatureUrl: 
     onSuccess: () => {
       toast({
         title: "Firma cargada",
-        description: "Su firma digital ha sido guardada exitosamente.",
+        description: "Su firma digital ha sido guardada exitosamente. Ahora persiste entre publicaciones.",
       });
       setIsOpen(false);
       setSelectedFile(null);
       setPreviewUrl(null);
-      setImgError(false);
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/portal-licenciado/firma/estado'] });
     },
     onError: (error: any) => {
       toast({
@@ -3001,65 +3009,101 @@ function SignatureUploadSection({ currentSignatureUrl }: { currentSignatureUrl: 
     }
   };
 
-  const hasValidSignature = currentSignatureUrl && !imgError;
+  const renderUploadDialog = (triggerButton: React.ReactNode) => (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        {triggerButton}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{hasValidSignature ? "Cambiar Firma Digital" : "Cargar Firma Digital"}</DialogTitle>
+          <DialogDescription>
+            {hasValidSignature
+              ? "Suba una nueva imagen de su firma manuscrita. Esta reemplazará la firma actual."
+              : "Suba una imagen de su firma manuscrita. Esta se utilizará para firmar documentos SST electrónicamente."}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div 
+            className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {previewUrl ? (
+              <div className="space-y-2">
+                <img src={previewUrl} alt="Vista previa" className="max-h-32 mx-auto" />
+                <p className="text-sm text-muted-foreground">{selectedFile?.name}</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Upload className="h-10 w-10 mx-auto text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Haga clic para seleccionar una imagen</p>
+                <p className="text-xs text-muted-foreground">PNG o JPG, máximo 2MB</p>
+              </div>
+            )}
+            <input ref={fileInputRef} type="file" className="hidden" accept="image/png,image/jpeg,image/jpg" onChange={handleFileChange} data-testid="input-signature-file-change" />
+          </div>
+          {!hasValidSignature && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                Asegúrese de que la firma sea clara y legible. Se recomienda usar fondo blanco o transparente.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleUpload} 
+            disabled={!selectedFile || uploadMutation.isPending}
+            data-testid="button-confirm-change-signature"
+          >
+            {uploadMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Cargando...
+              </>
+            ) : (
+              'Guardar Firma'
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  if (sigLoading && currentSignatureUrl) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground mt-2">Verificando firma...</p>
+      </div>
+    );
+  }
 
   if (hasValidSignature) {
     return (
       <div className="space-y-4">
         <div className="border rounded-lg p-4 bg-white dark:bg-muted/30">
           <img 
-            src={currentSignatureUrl} 
+            src={signatureImageUrl} 
             alt="Firma digital" 
             className="max-h-32 mx-auto"
             data-testid="img-signature"
-            onError={() => setImgError(true)}
           />
         </div>
         <p className="text-sm text-muted-foreground text-center">
           Esta firma se utilizará automáticamente en los documentos que firme.
         </p>
         <div className="flex justify-center">
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" data-testid="button-change-signature">
-                <Upload className="h-4 w-4 mr-2" />
-                Cambiar Firma
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Cambiar Firma Digital</DialogTitle>
-                <DialogDescription>
-                  Suba una nueva imagen de su firma manuscrita. Esta reemplazará la firma actual.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div 
-                  className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {previewUrl ? (
-                    <div className="space-y-2">
-                      <img src={previewUrl} alt="Vista previa" className="max-h-32 mx-auto" />
-                      <p className="text-sm text-muted-foreground">{selectedFile?.name}</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Upload className="h-10 w-10 mx-auto text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">Haga clic para seleccionar una imagen</p>
-                      <p className="text-xs text-muted-foreground">PNG o JPG, máximo 2MB</p>
-                    </div>
-                  )}
-                  <input ref={fileInputRef} type="file" className="hidden" accept="image/png,image/jpeg,image/jpg" onChange={handleFileChange} data-testid="input-signature-file-change" />
-                </div>
-                {selectedFile && (
-                  <Button onClick={handleUpload} disabled={uploadMutation.isPending} className="w-full" data-testid="button-confirm-change-signature">
-                    {uploadMutation.isPending ? "Subiendo..." : "Guardar Nueva Firma"}
-                  </Button>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
+          {renderUploadDialog(
+            <Button variant="outline" data-testid="button-change-signature">
+              <Upload className="h-4 w-4 mr-2" />
+              Cambiar Firma
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -3070,84 +3114,16 @@ function SignatureUploadSection({ currentSignatureUrl }: { currentSignatureUrl: 
       <XCircle className="h-12 w-12 text-muted-foreground mb-4" />
       <h4 className="font-medium mb-2">Sin firma digital</h4>
       <p className="text-sm text-muted-foreground mb-4">
-        {currentSignatureUrl && imgError 
-          ? "La imagen de firma anterior no se pudo cargar. Por favor suba una nueva firma."
+        {currentSignatureUrl && !sigStatus?.isAccessible 
+          ? "La imagen de firma anterior se perdió. Por favor suba una nueva firma."
           : "No tiene una firma digital cargada. Configure su firma para poder firmar documentos electrónicamente."}
       </p>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline" data-testid="button-upload-signature">
-            <Upload className="h-4 w-4 mr-2" />
-            Cargar Firma Digital
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Cargar Firma Digital</DialogTitle>
-            <DialogDescription>
-              Suba una imagen de su firma manuscrita. Esta se utilizará para firmar documentos SST electrónicamente.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div 
-              className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {previewUrl ? (
-                <div className="space-y-2">
-                  <img 
-                    src={previewUrl} 
-                    alt="Vista previa de firma" 
-                    className="max-h-32 mx-auto"
-                  />
-                  <p className="text-sm text-muted-foreground">{selectedFile?.name}</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Upload className="h-10 w-10 mx-auto text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    Haga clic para seleccionar una imagen
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    PNG o JPG, máximo 2MB
-                  </p>
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-            </div>
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription className="text-sm">
-                Asegúrese de que la firma sea clara y legible. Se recomienda usar fondo blanco o transparente.
-              </AlertDescription>
-            </Alert>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleUpload} 
-              disabled={!selectedFile || uploadMutation.isPending}
-            >
-              {uploadMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Cargando...
-                </>
-              ) : (
-                'Guardar Firma'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {renderUploadDialog(
+        <Button variant="outline" data-testid="button-upload-signature">
+          <Upload className="h-4 w-4 mr-2" />
+          Cargar Firma Digital
+        </Button>
+      )}
     </div>
   );
 }

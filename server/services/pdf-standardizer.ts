@@ -452,30 +452,51 @@ export async function addSignatureFooter(
         try {
           const fs = require('fs');
           const path = require('path');
-          let sigPath = signers.lso.signatureUrl;
-          if (sigPath.startsWith('/')) {
-            sigPath = path.join(process.cwd(), 'public', sigPath);
-          } else if (!sigPath.startsWith('http')) {
-            sigPath = path.join(process.cwd(), sigPath);
-          }
-          
           const imgW = Math.min(lsoColW - 4, 80);
           const imgH = signatureImageHeight - 2;
           const imgX = lsoColX + (lsoColW - imgW) / 2;
 
-          if (sigPath.startsWith('http')) {
+          let sigBuffer: Buffer | null = null;
+          const sigUrl = signers.lso.signatureUrl;
+
+          if (sigUrl.startsWith('/uploads/')) {
+            const localPath = path.join(process.cwd(), 'public', sigUrl);
+            if (fs.existsSync(localPath)) {
+              sigBuffer = fs.readFileSync(localPath);
+            }
+          } else if (sigUrl.startsWith('http')) {
             try {
-              const response = await fetch(sigPath);
+              const response = await fetch(sigUrl);
               if (response.ok) {
-                const buffer = Buffer.from(await response.arrayBuffer());
-                doc.image(buffer, imgX, nameY, { fit: [imgW, imgH], align: 'center', valign: 'center' });
-                lsoTextY = nameY + signatureImageHeight;
+                sigBuffer = Buffer.from(await response.arrayBuffer());
               }
             } catch (fetchErr: any) {
               console.error('[PdfStandardizer] Error fetching remote signature:', fetchErr.message);
             }
-          } else if (fs.existsSync(sigPath)) {
-            doc.image(sigPath, imgX, nameY, { fit: [imgW, imgH], align: 'center', valign: 'center' });
+          } else {
+            try {
+              const { objectStorageClient } = require('../replit_integrations/object_storage');
+              let objPath = sigUrl;
+              if (!objPath.startsWith('/')) objPath = '/' + objPath;
+              const pathParts = objPath.split('/');
+              if (pathParts.length >= 3) {
+                const bucketName = pathParts[1];
+                const objectName = pathParts.slice(2).join('/');
+                const bucket = objectStorageClient.bucket(bucketName);
+                const file = bucket.file(objectName);
+                const [exists] = await file.exists();
+                if (exists) {
+                  const [contents] = await file.download();
+                  sigBuffer = contents;
+                }
+              }
+            } catch (osErr: any) {
+              console.error('[PdfStandardizer] Error fetching signature from Object Storage:', osErr.message);
+            }
+          }
+
+          if (sigBuffer) {
+            doc.image(sigBuffer, imgX, nameY, { fit: [imgW, imgH], align: 'center', valign: 'center' });
             lsoTextY = nameY + signatureImageHeight;
           }
         } catch (sigError: any) {

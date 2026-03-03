@@ -10,6 +10,7 @@ import fs from "fs";
 import path from "path";
 import { storage } from "../storage";
 import { sendLsoRemovalNotificationEmail } from "../email";
+import { objectStorageClient, ObjectStorageService } from "../replit_integrations/object_storage";
 
 async function notifyLsoRemoval(assignment: any, companyId: string) {
   try {
@@ -58,25 +59,10 @@ async function notifyLsoRemoval(assignment: any, companyId: string) {
   }
 }
 
-// Multer configuration for LSO signature uploads
-const lsoSignatureStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = 'public/uploads/lso-signatures';
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'lso-signature-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
 const uploadLsoSignature = multer({
-  storage: lsoSignatureStorage,
+  storage: multer.memoryStorage(),
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB limit
+    fileSize: 2 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
     const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
@@ -87,6 +73,74 @@ const uploadLsoSignature = multer({
     }
   }
 });
+
+async function uploadSignatureToObjectStorage(fileBuffer: Buffer, originalName: string, mimeType: string): Promise<string> {
+  const privateDir = process.env.PRIVATE_OBJECT_DIR || '/sst-evidences';
+  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+  const ext = path.extname(originalName) || '.png';
+  const objectPath = `${privateDir}/lso-signatures/lso-signature-${uniqueSuffix}${ext}`;
+
+  const { bucketName, objectName } = parseObjectPathHelper(objectPath);
+  const bucket = objectStorageClient.bucket(bucketName);
+  const file = bucket.file(objectName);
+
+  await file.save(fileBuffer, {
+    metadata: { contentType: mimeType },
+    resumable: false,
+  });
+
+  return objectPath;
+}
+
+async function isSignatureAccessible(signatureUrl: string): Promise<boolean> {
+  if (!signatureUrl) return false;
+
+  if (signatureUrl.startsWith('/uploads/')) {
+    const localPath = path.join(process.cwd(), 'public', signatureUrl);
+    return fs.existsSync(localPath);
+  }
+
+  try {
+    const { bucketName, objectName } = parseObjectPathHelper(signatureUrl);
+    const bucket = objectStorageClient.bucket(bucketName);
+    const file = bucket.file(objectName);
+    const [exists] = await file.exists();
+    return exists;
+  } catch {
+    return false;
+  }
+}
+
+async function getSignatureBuffer(signatureUrl: string): Promise<Buffer | null> {
+  if (!signatureUrl) return null;
+
+  if (signatureUrl.startsWith('/uploads/')) {
+    const localPath = path.join(process.cwd(), 'public', signatureUrl);
+    if (fs.existsSync(localPath)) {
+      return fs.readFileSync(localPath);
+    }
+    return null;
+  }
+
+  try {
+    const { bucketName, objectName } = parseObjectPathHelper(signatureUrl);
+    const bucket = objectStorageClient.bucket(bucketName);
+    const file = bucket.file(objectName);
+    const [exists] = await file.exists();
+    if (!exists) return null;
+    const [contents] = await file.download();
+    return contents;
+  } catch {
+    return null;
+  }
+}
+
+function parseObjectPathHelper(objPath: string): { bucketName: string; objectName: string } {
+  if (!objPath.startsWith('/')) objPath = '/' + objPath;
+  const parts = objPath.split('/');
+  if (parts.length < 3) throw new Error('Invalid object path');
+  return { bucketName: parts[1], objectName: parts.slice(2).join('/') };
+}
 
 // Helper function to get effective company ID (same as in routes.ts)
 function getEffectiveCompanyId(req: Request): string | null {
@@ -789,6 +843,14 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
       }
 
+      const sigAccessible = await isSignatureAccessible(signatureUrl);
+      if (!sigAccessible) {
+        if (user.sstSignatureUrl) {
+          await db.update(schema.users).set({ sstSignatureUrl: null }).where(eq(schema.users.id, user.id));
+        }
+        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma antes de firmar documentos." });
+      }
+
       const [updated] = await db.update(schema.accidentInvestigations)
         .set({
           licensedProfessionalName: user.fullName || user.username,
@@ -1202,7 +1264,7 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     }
   });
 
-  // POST /api/portal-licenciado/firma - Upload LSO signature
+  // POST /api/portal-licenciado/firma - Upload LSO signature to Object Storage
   app.post("/api/portal-licenciado/firma", requireAuth, uploadLsoSignature.single('signature'), async (req, res) => {
     try {
       const user = req.user!;
@@ -1215,7 +1277,11 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         return res.status(400).json({ message: "No se proporcionó ningún archivo" });
       }
       
-      const signatureUrl = `/uploads/lso-signatures/${req.file.filename}`;
+      const signatureUrl = await uploadSignatureToObjectStorage(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype
+      );
       
       await db.update(schema.users)
         .set({ 
@@ -1223,7 +1289,7 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         })
         .where(eq(schema.users.id, user.id));
       
-      console.log(`[POST /api/portal-licenciado/firma] LSO ${user.id} uploaded signature: ${signatureUrl}`);
+      console.log(`[POST /api/portal-licenciado/firma] LSO ${user.id} uploaded signature to Object Storage: ${signatureUrl}`);
       
       res.json({ 
         message: "Firma cargada exitosamente",
@@ -1232,6 +1298,59 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     } catch (error: any) {
       console.error('[POST /api/portal-licenciado/firma] Error:', error.message);
       res.status(500).json({ message: "Error al cargar la firma", error: error.message });
+    }
+  });
+
+  // GET /api/portal-licenciado/firma/imagen - Serve signature image from Object Storage
+  app.get("/api/portal-licenciado/firma/imagen", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      const signatureUrl = user.sstSignatureUrl;
+
+      if (!signatureUrl) {
+        return res.status(404).json({ message: "No tiene firma digital" });
+      }
+
+      const buffer = await getSignatureBuffer(signatureUrl);
+      if (!buffer) {
+        return res.status(404).json({ message: "La imagen de firma no se encontró. Por favor suba una nueva." });
+      }
+
+      const ext = path.extname(signatureUrl).toLowerCase();
+      const contentType = ext === '.png' ? 'image/png' : 'image/jpeg';
+      res.set('Content-Type', contentType);
+      res.set('Cache-Control', 'private, max-age=3600');
+      res.send(buffer);
+    } catch (error: any) {
+      console.error('[GET /api/portal-licenciado/firma/imagen] Error:', error.message);
+      res.status(500).json({ message: "Error al obtener la imagen de firma" });
+    }
+  });
+
+  // GET /api/portal-licenciado/firma/estado - Check if signature is valid and accessible
+  app.get("/api/portal-licenciado/firma/estado", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      const signatureUrl = user.sstSignatureUrl;
+
+      if (!signatureUrl) {
+        return res.json({ hasSignature: false, isAccessible: false });
+      }
+
+      const accessible = await isSignatureAccessible(signatureUrl);
+
+      if (!accessible) {
+        await db.update(schema.users)
+          .set({ sstSignatureUrl: null })
+          .where(eq(schema.users.id, user.id));
+        console.log(`[FIRMA-ESTADO] LSO ${user.id} signature URL cleared (file not accessible): ${signatureUrl}`);
+        return res.json({ hasSignature: false, isAccessible: false, wasCleared: true });
+      }
+
+      return res.json({ hasSignature: true, isAccessible: true });
+    } catch (error: any) {
+      console.error('[GET /api/portal-licenciado/firma/estado] Error:', error.message);
+      res.status(500).json({ message: "Error al verificar estado de firma" });
     }
   });
 
@@ -1386,6 +1505,14 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
       }
 
+      const sigAccessible = await isSignatureAccessible(signatureUrl);
+      if (!sigAccessible) {
+        if (user.sstSignatureUrl) {
+          await db.update(schema.users).set({ sstSignatureUrl: null }).where(eq(schema.users.id, user.id));
+        }
+        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma antes de firmar documentos." });
+      }
+
       const [updated] = await db.update(schema.evaluacionesSst)
         .set({
           lsoSignatureName: user.fullName || user.username,
@@ -1438,6 +1565,14 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
       }
 
+      const sigAccessible = await isSignatureAccessible(signatureUrl);
+      if (!sigAccessible) {
+        if (user.sstSignatureUrl) {
+          await db.update(schema.users).set({ sstSignatureUrl: null }).where(eq(schema.users.id, user.id));
+        }
+        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma antes de firmar documentos." });
+      }
+
       const [updated] = await db.update(schema.planesTrabajoAnual)
         .set({
           lsoSignatureName: user.fullName || user.username,
@@ -1488,6 +1623,14 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
 
       if (!signatureUrl) {
         return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
+      }
+
+      const sigAccessible = await isSignatureAccessible(signatureUrl);
+      if (!sigAccessible) {
+        if (user.sstSignatureUrl) {
+          await db.update(schema.users).set({ sstSignatureUrl: null }).where(eq(schema.users.id, user.id));
+        }
+        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma antes de firmar documentos." });
       }
 
       const [updated] = await db.update(schema.matricesIperc)
