@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Calendar, CheckCircle2, Clock, FileText, TrendingUp, Sparkles, Wand2, MoreVertical, Pencil, Trash2, CalendarDays, ArrowLeft } from "lucide-react";
+import { Plus, Search, Calendar, CheckCircle2, Clock, FileText, TrendingUp, Sparkles, Wand2, MoreVertical, Pencil, Trash2, CalendarDays, ArrowLeft, Monitor, Shield, UserCheck, AlertTriangle } from "lucide-react";
 import { Link } from "wouter";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -34,9 +34,9 @@ const formSchema = insertPlanTrabajoAnualSchema.omit({
   presupuestoEjecutado: true,
 }).extend({
   companyId: z.string().optional(),
-  elaboradoPorId: z.string().min(1, "Seleccione quien elaboró el plan"),
-  autorizadoPorId: z.string().min(1, "Seleccione quien autoriza el plan"),
-  aprobadoPorId: z.string().min(1, "Seleccione quien aprueba el plan"),
+  elaboradoPorId: z.string().optional(),
+  autorizadoPorId: z.string().optional(),
+  aprobadoPorId: z.string().optional(),
 });
 
 export default function PlanesTrabajoAnual() {
@@ -125,6 +125,10 @@ export default function PlanesTrabajoAnual() {
   // Query para obtener la evaluación SST activa (del año actual)
   const { data: evaluaciones = [] } = useQuery<EvaluacionSst[]>({
     queryKey: ["/api/evaluaciones-sst"],
+  });
+
+  const { data: lsoAssignment } = useQuery<any>({
+    queryKey: ["/api/lso-directory-jwt/current-assignment"],
   });
 
   // Encontrar la evaluación del año actual o la más reciente
@@ -721,84 +725,52 @@ export default function PlanesTrabajoAnual() {
                   )}
                 />
 
-                {/* Firmas de Aprobación mediante Trabajadores */}
+                {/* Firmas de Aprobación — mismo patrón que Evaluación SST */}
                 <div className="space-y-3 border-t pt-3">
-                  <h3 className="font-semibold text-sm">Firmas de Aprobación *</h3>
+                  <h3 className="font-semibold text-sm">Firmas de Aprobación (Opcional)</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Elaborado automáticamente por el sistema. Autorizado por el LSO asignado. Aprobado por el Representante Legal.
+                  </p>
                   <div className="grid grid-cols-1 gap-3">
-                    <FormField
-                      control={form.control}
-                      name="elaboradoPorId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Elaborado por *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-elaborado-por-worker">
-                                <SelectValue placeholder="Seleccione trabajador" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {workers.map((worker) => (
-                                <SelectItem key={`elaborado-${worker.id}`} value={worker.id}>
-                                  {worker.name} - {worker.position}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div>
+                      <FormLabel className="text-sm font-medium">Elaborado por</FormLabel>
+                      <div className="mt-1.5 flex items-center gap-2 p-2 rounded-md bg-muted/50 border" data-testid="text-elaborado-por">
+                        <Monitor className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">SADGI S.A.S. — Sistema Automatizado</span>
+                      </div>
+                    </div>
 
-                    <FormField
-                      control={form.control}
-                      name="autorizadoPorId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Autorizado por *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-autorizado-por-worker">
-                                <SelectValue placeholder="Seleccione trabajador" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {workers.map((worker) => (
-                                <SelectItem key={`autorizado-${worker.id}`} value={worker.id}>
-                                  {worker.name} - {worker.position}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
+                    <div>
+                      <FormLabel className="text-sm font-medium">Autorizado por (LSO)</FormLabel>
+                      {lsoAssignment?.data ? (
+                        <div className="mt-1.5 flex items-center gap-2 p-2 rounded-md bg-muted/50 border" data-testid="text-autorizado-por">
+                          <Shield className="h-4 w-4 text-green-600" />
+                          <span className="text-sm">{lsoAssignment.data.name} — Licenciado SST</span>
+                        </div>
+                      ) : (
+                        <div className="mt-1.5 flex items-center gap-2 p-2 rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800" data-testid="text-autorizado-por-pendiente">
+                          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                          <span className="text-sm text-yellow-700 dark:text-yellow-400">Pendiente — Se asignará cuando se vincule un LSO a la empresa</span>
+                        </div>
                       )}
-                    />
+                    </div>
 
-                    <FormField
-                      control={form.control}
-                      name="aprobadoPorId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Aprobado por *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-aprobado-por-worker">
-                                <SelectValue placeholder="Seleccione trabajador" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {workers.map((worker) => (
-                                <SelectItem key={`aprobado-${worker.id}`} value={worker.id}>
-                                  {worker.name} - {worker.position}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
+                    <div>
+                      <FormLabel className="text-sm font-medium">Aprobado por (Gerente/Representante Legal)</FormLabel>
+                      {currentCompany?.legalRepName ? (
+                        <div className="mt-1.5 flex items-center gap-2 p-2 rounded-md bg-muted/50 border" data-testid="text-aprobado-por">
+                          <UserCheck className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm">
+                            {currentCompany.legalRepName} — {currentCompany.legalRepPosition || 'Representante Legal'}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="mt-1.5 flex items-center gap-2 p-2 rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800" data-testid="text-aprobado-por-pendiente">
+                          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                          <span className="text-sm text-yellow-700 dark:text-yellow-400">Pendiente — Registre el Representante Legal en los datos de la empresa</span>
+                        </div>
                       )}
-                    />
+                    </div>
                   </div>
                 </div>
 
