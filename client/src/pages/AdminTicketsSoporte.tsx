@@ -421,7 +421,7 @@ export default function AdminTicketsSoporte() {
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div 
-          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 ${statusFilter === 'abierto' ? 'ring-2 ring-primary shadow-md' : ''}`}
+          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-white/80 dark:hover:bg-white/10 transition-all duration-300 ${statusFilter === 'abierto' ? 'ring-2 ring-primary shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'abierto' ? 'todos' : 'abierto')}
           data-testid="card-stat-abierto"
         >
@@ -439,7 +439,7 @@ export default function AdminTicketsSoporte() {
         </div>
         
         <div 
-          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 ${statusFilter === 'en_revision' ? 'ring-2 ring-primary shadow-md' : ''}`}
+          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-white/80 dark:hover:bg-white/10 transition-all duration-300 ${statusFilter === 'en_revision' ? 'ring-2 ring-primary shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'en_revision' ? 'todos' : 'en_revision')}
           data-testid="card-stat-en-revision"
         >
@@ -457,7 +457,7 @@ export default function AdminTicketsSoporte() {
         </div>
 
         <div 
-          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 ${statusFilter === 'en_progreso' ? 'ring-2 ring-primary shadow-md' : ''}`}
+          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-white/80 dark:hover:bg-white/10 transition-all duration-300 ${statusFilter === 'en_progreso' ? 'ring-2 ring-primary shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'en_progreso' ? 'todos' : 'en_progreso')}
           data-testid="card-stat-en-progreso"
         >
@@ -475,7 +475,7 @@ export default function AdminTicketsSoporte() {
         </div>
 
         <div 
-          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 ${statusFilter === 'pendiente_cliente' ? 'ring-2 ring-primary shadow-md' : ''}`}
+          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-white/80 dark:hover:bg-white/10 transition-all duration-300 ${statusFilter === 'pendiente_cliente' ? 'ring-2 ring-primary shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'pendiente_cliente' ? 'todos' : 'pendiente_cliente')}
           data-testid="card-stat-pendiente"
         >
@@ -493,7 +493,7 @@ export default function AdminTicketsSoporte() {
         </div>
 
         <div 
-          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 ${statusFilter === 'resuelto' ? 'ring-2 ring-primary shadow-md' : ''}`}
+          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-white/80 dark:hover:bg-white/10 transition-all duration-300 ${statusFilter === 'resuelto' ? 'ring-2 ring-primary shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'resuelto' ? 'todos' : 'resuelto')}
           data-testid="card-stat-resuelto"
         >
@@ -511,7 +511,7 @@ export default function AdminTicketsSoporte() {
         </div>
 
         <div 
-          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 ${statusFilter === 'cerrado' ? 'ring-2 ring-primary shadow-md' : ''}`}
+          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-white/80 dark:hover:bg-white/10 transition-all duration-300 ${statusFilter === 'cerrado' ? 'ring-2 ring-primary shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'cerrado' ? 'todos' : 'cerrado')}
           data-testid="card-stat-cerrado"
         >
@@ -630,7 +630,7 @@ export default function AdminTicketsSoporte() {
                     {filteredTickets.map((ticket) => (
                       <TableRow 
                         key={ticket.id}
-                        className={`cursor-pointer ${selectedTicket?.id === ticket.id ? 'bg-accent' : ''}`}
+                        className={`cursor-pointer transition-colors duration-300 hover:bg-accent/50 ${selectedTicket?.id === ticket.id ? 'bg-accent' : ''}`}
                         onClick={() => setSelectedTicket(ticket as TicketWithDetails)}
                         data-testid={`admin-ticket-row-${ticket.id}`}
                       >
