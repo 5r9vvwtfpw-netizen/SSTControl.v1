@@ -25600,7 +25600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).send("Evaluación no encontrada");
         }
         companyId = evaluacion.companyId;
-      } else if (userRole === 'lso' && !req.user!.companyId) {
+      } else if (userRole === 'lso') {
         evaluacion = await storage.getEvaluacionSstById(req.params.id);
         if (!evaluacion) {
           return res.status(404).send("Evaluación no encontrada");
@@ -25611,7 +25611,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             eq(schema.licensedProfessionalAssignments.companyId, evaluacion.companyId),
             eq(schema.licensedProfessionalAssignments.isActive, true)
           ));
-        if (!lsoAssignEval) {
+        const hasDirectAccessEval = req.user!.companyId === evaluacion.companyId;
+        if (!lsoAssignEval && !hasDirectAccessEval) {
           return res.status(403).send("No tiene asignación activa con esta empresa");
         }
         companyId = evaluacion.companyId;
@@ -25796,6 +25797,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         evaluacion = await storage.getEvaluacionSstById(req.params.id);
         if (!evaluacion) {
           return res.status(404).send("Evaluación no encontrada");
+        }
+        companyId = evaluacion.companyId;
+      } else if (userRole === 'lso') {
+        evaluacion = await storage.getEvaluacionSstById(req.params.id);
+        if (!evaluacion) {
+          return res.status(404).send("Evaluación no encontrada");
+        }
+        const [lsoAssignMin] = await db.select().from(schema.licensedProfessionalAssignments)
+          .where(and(
+            eq(schema.licensedProfessionalAssignments.userId, req.user!.id),
+            eq(schema.licensedProfessionalAssignments.companyId, evaluacion.companyId),
+            eq(schema.licensedProfessionalAssignments.isActive, true)
+          ));
+        const hasDirectAccessMin = req.user!.companyId === evaluacion.companyId;
+        if (!lsoAssignMin && !hasDirectAccessMin) {
+          return res.status(403).send("No tiene asignación activa con esta empresa");
         }
         companyId = evaluacion.companyId;
       } else {
@@ -28476,7 +28493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       let companyId: string;
       const userRole = req.user!.role;
-      if (userRole === 'lso' && !req.user!.companyId) {
+      if (userRole === 'lso') {
         const [planCheck] = await db.select().from(schema.planesTrabajoAnual).where(eq(schema.planesTrabajoAnual.id, req.params.id));
         if (!planCheck) { return res.status(404).send("Plan no encontrado"); }
         const [lsoAssignPlan] = await db.select().from(schema.licensedProfessionalAssignments)
@@ -28485,7 +28502,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             eq(schema.licensedProfessionalAssignments.companyId, planCheck.companyId),
             eq(schema.licensedProfessionalAssignments.isActive, true)
           ));
-        if (!lsoAssignPlan) { return res.status(403).send("No tiene asignación activa con esta empresa"); }
+        const hasDirectAccessPlan = req.user!.companyId === planCheck.companyId;
+        if (!lsoAssignPlan && !hasDirectAccessPlan) { return res.status(403).send("No tiene asignación activa con esta empresa"); }
         companyId = planCheck.companyId;
       } else if (hasGlobalAccess(userRole)) {
         const [planCheck] = await db.select().from(schema.planesTrabajoAnual).where(eq(schema.planesTrabajoAnual.id, req.params.id));
@@ -35591,7 +35609,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             eq(schema.licensedProfessionalAssignments.companyId, matriz.companyId),
             eq(schema.licensedProfessionalAssignments.isActive, true)
           ));
-        if (!lsoAssignMat) return res.status(403).send('No tiene asignación activa con esta empresa');
+        const hasDirectAccessMat = req.user!.companyId === matriz.companyId;
+        if (!lsoAssignMat && !hasDirectAccessMat) return res.status(403).send('No tiene asignación activa con esta empresa');
         companyId = matriz.companyId;
       } else {
         companyId = req.user!.companyId!;
