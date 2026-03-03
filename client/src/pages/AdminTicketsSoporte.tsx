@@ -420,101 +420,113 @@ export default function AdminTicketsSoporte() {
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <Card 
-          className={`cursor-pointer hover-elevate ${statusFilter === 'abierto' ? 'ring-2 ring-primary' : ''}`}
+        <div 
+          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 ${statusFilter === 'abierto' ? 'ring-2 ring-primary shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'abierto' ? 'todos' : 'abierto')}
           data-testid="card-stat-abierto"
         >
-          <CardContent className="pt-4 pb-4">
+          <div className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">Abiertos</p>
                 <p className="text-xl font-bold text-blue-600" data-testid="text-count-abierto">{ticketsByStatus.abierto}</p>
               </div>
-              <Ticket className="h-5 w-5 text-blue-500" />
+              <div className="h-9 w-9 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <Ticket className="h-4 w-4 text-blue-600" />
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
         
-        <Card 
-          className={`cursor-pointer hover-elevate ${statusFilter === 'en_revision' ? 'ring-2 ring-primary' : ''}`}
+        <div 
+          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 ${statusFilter === 'en_revision' ? 'ring-2 ring-primary shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'en_revision' ? 'todos' : 'en_revision')}
           data-testid="card-stat-en-revision"
         >
-          <CardContent className="pt-4 pb-4">
+          <div className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">En Revisión</p>
                 <p className="text-xl font-bold text-yellow-600" data-testid="text-count-en-revision">{ticketsByStatus.en_revision}</p>
               </div>
-              <Clock className="h-5 w-5 text-yellow-500" />
+              <div className="h-9 w-9 rounded-xl bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+                <Clock className="h-4 w-4 text-yellow-600" />
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card 
-          className={`cursor-pointer hover-elevate ${statusFilter === 'en_progreso' ? 'ring-2 ring-primary' : ''}`}
+        <div 
+          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 ${statusFilter === 'en_progreso' ? 'ring-2 ring-primary shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'en_progreso' ? 'todos' : 'en_progreso')}
           data-testid="card-stat-en-progreso"
         >
-          <CardContent className="pt-4 pb-4">
+          <div className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">En Progreso</p>
                 <p className="text-xl font-bold text-purple-600" data-testid="text-count-en-progreso">{ticketsByStatus.en_progreso}</p>
               </div>
-              <RefreshCw className="h-5 w-5 text-purple-500" />
+              <div className="h-9 w-9 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                <RefreshCw className="h-4 w-4 text-purple-600" />
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card 
-          className={`cursor-pointer hover-elevate ${statusFilter === 'pendiente_cliente' ? 'ring-2 ring-primary' : ''}`}
+        <div 
+          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 ${statusFilter === 'pendiente_cliente' ? 'ring-2 ring-primary shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'pendiente_cliente' ? 'todos' : 'pendiente_cliente')}
           data-testid="card-stat-pendiente"
         >
-          <CardContent className="pt-4 pb-4">
+          <div className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">Pendiente</p>
                 <p className="text-xl font-bold text-orange-600" data-testid="text-count-pendiente">{ticketsByStatus.pendiente_cliente}</p>
               </div>
-              <AlertCircle className="h-5 w-5 text-orange-500" />
+              <div className="h-9 w-9 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <AlertCircle className="h-4 w-4 text-orange-600" />
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card 
-          className={`cursor-pointer hover-elevate ${statusFilter === 'resuelto' ? 'ring-2 ring-primary' : ''}`}
+        <div 
+          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 ${statusFilter === 'resuelto' ? 'ring-2 ring-primary shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'resuelto' ? 'todos' : 'resuelto')}
           data-testid="card-stat-resuelto"
         >
-          <CardContent className="pt-4 pb-4">
+          <div className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">Resueltos</p>
                 <p className="text-xl font-bold text-green-600" data-testid="text-count-resuelto">{ticketsByStatus.resuelto}</p>
               </div>
-              <CheckCircle className="h-5 w-5 text-green-500" />
+              <div className="h-9 w-9 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card 
-          className={`cursor-pointer hover-elevate ${statusFilter === 'cerrado' ? 'ring-2 ring-primary' : ''}`}
+        <div 
+          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 ${statusFilter === 'cerrado' ? 'ring-2 ring-primary shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'cerrado' ? 'todos' : 'cerrado')}
           data-testid="card-stat-cerrado"
         >
-          <CardContent className="pt-4 pb-4">
+          <div className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">Cerrados</p>
                 <p className="text-xl font-bold text-gray-600" data-testid="text-count-cerrado">{ticketsByStatus.cerrado}</p>
               </div>
-              <X className="h-5 w-5 text-gray-500" />
+              <div className="h-9 w-9 rounded-xl bg-gray-100 dark:bg-gray-800/30 flex items-center justify-center">
+                <X className="h-4 w-4 text-gray-600" />
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">
