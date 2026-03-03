@@ -355,6 +355,9 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         ));
       
       const companyIds = assignments.map(a => a.companyId);
+      if (companyIds.length === 0 && user.companyId) {
+        companyIds.push(user.companyId);
+      }
       
       let pendingDocuments = 0;
       let signedDocuments = 0;
@@ -422,7 +425,7 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     try {
       const user = req.user!;
       
-      const empresas = await db.select({
+      let empresas = await db.select({
         id: schema.companies.id,
         name: schema.companies.name,
         nit: schema.companies.nit,
@@ -439,6 +442,28 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         eq(schema.licensedProfessionalAssignments.userId, user.id),
         eq(schema.licensedProfessionalAssignments.isActive, true)
       ));
+
+      if (empresas.length === 0 && user.companyId) {
+        const [fallbackCompany] = await db.select({
+          id: schema.companies.id,
+          name: schema.companies.name,
+          nit: schema.companies.nit,
+          city: schema.companies.city,
+          riskLevel: schema.companies.riskLevel,
+          numberOfWorkers: schema.companies.numberOfWorkers,
+          numberOfVehicles: schema.companies.numberOfVehicles,
+        })
+        .from(schema.companies)
+        .where(eq(schema.companies.id, user.companyId));
+
+        if (fallbackCompany) {
+          empresas = [{
+            ...fallbackCompany,
+            assignmentId: 'direct-' + user.id,
+            assignedAt: new Date(),
+          }];
+        }
+      }
 
       const enriched = await Promise.all(empresas.map(async (empresa) => {
         let porcentajeSst: number | null = null;
@@ -571,6 +596,9 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         ));
       
       const companyIds = assignments.map(a => a.companyId);
+      if (companyIds.length === 0 && user.companyId) {
+        companyIds.push(user.companyId);
+      }
       
       if (companyIds.length === 0) {
         return res.json([]);
@@ -669,7 +697,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
       
-      if (!assignment) {
+      const hasDirectAccess = user.companyId === investigation.companyId;
+      if (!assignment && !hasDirectAccess) {
         return res.status(403).json({ message: "No tiene acceso a esta investigación" });
       }
       
@@ -749,11 +778,12 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
       
-      if (!assignment) {
+      const hasDirectAccess = user.companyId === investigation.companyId;
+      if (!assignment && !hasDirectAccess) {
         return res.status(403).json({ message: "No tiene acceso a firmar esta investigación" });
       }
       
-      const signatureUrl = user.sstSignatureUrl || assignment.externalLsoSignatureUrl || null;
+      const signatureUrl = user.sstSignatureUrl || assignment?.externalLsoSignatureUrl || null;
 
       if (!signatureUrl) {
         return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
@@ -1092,11 +1122,13 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
       
-      if (assignments.length === 0) {
+      const companyIds = assignments.map(a => a.companyId);
+      if (companyIds.length === 0 && user.companyId) {
+        companyIds.push(user.companyId);
+      }
+      if (companyIds.length === 0) {
         return res.json([]);
       }
-      
-      const companyIds = assignments.map(a => a.companyId);
       
       const evaluaciones = await db.select({
         id: schema.evaluacionesPesv.id,
@@ -1216,6 +1248,9 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         ));
 
       const companyIds = assignments.map(a => a.companyId);
+      if (companyIds.length === 0 && user.companyId) {
+        companyIds.push(user.companyId);
+      }
       if (companyIds.length === 0) {
         return res.json({ investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [] });
       }
@@ -1340,11 +1375,12 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
 
-      if (!assignment) {
+      const hasDirectAccess = user.companyId === evaluacion.companyId;
+      if (!assignment && !hasDirectAccess) {
         return res.status(403).json({ message: "No tiene acceso a firmar esta evaluación" });
       }
 
-      const signatureUrl = user.sstSignatureUrl || assignment.externalLsoSignatureUrl || null;
+      const signatureUrl = user.sstSignatureUrl || assignment?.externalLsoSignatureUrl || null;
 
       if (!signatureUrl) {
         return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
@@ -1391,11 +1427,12 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
 
-      if (!assignment) {
+      const hasDirectAccess = user.companyId === plan.companyId;
+      if (!assignment && !hasDirectAccess) {
         return res.status(403).json({ message: "No tiene acceso a firmar este plan" });
       }
 
-      const signatureUrl = user.sstSignatureUrl || assignment.externalLsoSignatureUrl || null;
+      const signatureUrl = user.sstSignatureUrl || assignment?.externalLsoSignatureUrl || null;
 
       if (!signatureUrl) {
         return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
@@ -1442,11 +1479,12 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
 
-      if (!assignment) {
+      const hasDirectAccess = user.companyId === matriz.companyId;
+      if (!assignment && !hasDirectAccess) {
         return res.status(403).json({ message: "No tiene acceso a firmar esta matriz" });
       }
 
-      const signatureUrl = user.sstSignatureUrl || assignment.externalLsoSignatureUrl || null;
+      const signatureUrl = user.sstSignatureUrl || assignment?.externalLsoSignatureUrl || null;
 
       if (!signatureUrl) {
         return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
@@ -1654,7 +1692,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
 
-      if (!assignment) {
+      const hasDirectAccess = user.companyId === companyId;
+      if (!assignment && !hasDirectAccess) {
         return res.status(403).json({ message: "No tiene asignación activa para esta empresa" });
       }
 
