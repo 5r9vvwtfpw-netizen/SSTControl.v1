@@ -60,7 +60,10 @@ import {
   ArrowLeft,
   FolderOpen,
   Search,
-  History
+  History,
+  LifeBuoy,
+  Plus,
+  CircleDot
 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -194,9 +197,397 @@ const SST_PROFESSION_LABELS: Record<string, string> = {
   otro: "Otro",
 };
 
+interface SupportTicket {
+  id: string;
+  ticketNumber: string;
+  subject: string;
+  description: string;
+  category: string;
+  priority: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
+  closedAt: string | null;
+  assignedToName: string | null;
+}
+
+interface TicketResponse {
+  id: string;
+  ticketId: string;
+  userName: string;
+  userRole: string;
+  isStaff: number;
+  content: string;
+  createdAt: string;
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  soporte_tecnico: "Soporte Técnico",
+  facturacion: "Facturación",
+  nueva_funcionalidad: "Nueva Funcionalidad",
+  error_bug: "Error / Bug",
+  capacitacion: "Capacitación",
+  consulta_general: "Consulta General",
+};
+
+const PRIORITY_LABELS: Record<string, string> = {
+  baja: "Baja",
+  media: "Media",
+  alta: "Alta",
+  critica: "Crítica",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  abierto: "Abierto",
+  en_revision: "En Revisión",
+  en_progreso: "En Progreso",
+  pendiente_cliente: "Pendiente Cliente",
+  resuelto: "Resuelto",
+  cerrado: "Cerrado",
+};
+
+function SoporteTab() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [newSubject, setNewSubject] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newCategory, setNewCategory] = useState("consulta_general");
+  const [newPriority, setNewPriority] = useState("media");
+  const [replyContent, setReplyContent] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const { data: tickets = [], isLoading: loadingTickets } = useQuery<SupportTicket[]>({
+    queryKey: ['/api/support-tickets'],
+  });
+
+  const { data: ticketDetail, isLoading: loadingDetail } = useQuery<{ ticket: SupportTicket; responses: TicketResponse[] }>({
+    queryKey: ['/api/support-tickets', selectedTicket?.id],
+    enabled: !!selectedTicket,
+  });
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [ticketDetail?.responses]);
+
+  const createTicketMutation = useMutation({
+    mutationFn: async (data: { subject: string; description: string; category: string; priority: string }) => {
+      return await apiRequest('POST', '/api/support-tickets', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/support-tickets'] });
+      setShowCreateForm(false);
+      setNewSubject("");
+      setNewDescription("");
+      setNewCategory("consulta_general");
+      setNewPriority("media");
+      toast({ title: "Ticket creado", description: "Su solicitud de soporte ha sido enviada al equipo." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "No se pudo crear el ticket. Intente nuevamente.", variant: "destructive" });
+    },
+  });
+
+  const replyMutation = useMutation({
+    mutationFn: async (data: { ticketId: string; content: string }) => {
+      return await apiRequest('POST', `/api/support-tickets/${data.ticketId}/responses`, { content: data.content });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/support-tickets', selectedTicket?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/support-tickets'] });
+      setReplyContent("");
+      toast({ title: "Respuesta enviada" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "No se pudo enviar la respuesta.", variant: "destructive" });
+    },
+  });
+
+  const handleCreateTicket = () => {
+    if (!newSubject.trim() || !newDescription.trim()) {
+      toast({ title: "Campos requeridos", description: "Complete el asunto y la descripción.", variant: "destructive" });
+      return;
+    }
+    createTicketMutation.mutate({ subject: newSubject, description: newDescription, category: newCategory, priority: newPriority });
+  };
+
+  const handleReply = () => {
+    if (!replyContent.trim() || !selectedTicket) return;
+    replyMutation.mutate({ ticketId: selectedTicket.id, content: replyContent });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'abierto': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+      case 'en_revision': case 'en_progreso': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+      case 'pendiente_cliente': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
+      case 'resuelto': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+      case 'cerrado': return 'bg-muted text-muted-foreground';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'critica': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+      case 'alta': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
+      case 'media': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+      case 'baja': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  if (selectedTicket && loadingDetail) {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setSelectedTicket(null)} data-testid="button-back-tickets-loading">
+          <ArrowLeft className="h-4 w-4 mr-2" /> Volver a tickets
+        </Button>
+        <div className="space-y-3">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-20" />
+          <Skeleton className="h-20" />
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedTicket && ticketDetail) {
+    const ticket = ticketDetail.ticket || ticketDetail;
+    const responses = ticketDetail.responses || [];
+
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setSelectedTicket(null)} data-testid="button-back-tickets">
+          <ArrowLeft className="h-4 w-4 mr-2" /> Volver a tickets
+        </Button>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between flex-wrap gap-2">
+              <div>
+                <CardTitle className="text-lg" data-testid="text-ticket-number">{ticket.ticketNumber}</CardTitle>
+                <CardDescription className="text-base font-medium mt-1" data-testid="text-ticket-subject">{ticket.subject}</CardDescription>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge className={getStatusColor(ticket.status)} data-testid="badge-ticket-status">
+                  {STATUS_LABELS[ticket.status] || ticket.status}
+                </Badge>
+                <Badge className={getPriorityColor(ticket.priority)} data-testid="badge-ticket-priority">
+                  {PRIORITY_LABELS[ticket.priority] || ticket.priority}
+                </Badge>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-md bg-muted/50 p-4">
+              <p className="text-sm whitespace-pre-wrap" data-testid="text-ticket-description">{ticket.description}</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                {format(new Date(ticket.createdAt), "dd MMM yyyy, HH:mm", { locale: es })}
+              </p>
+            </div>
+
+            {responses.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm text-muted-foreground">Conversación</h4>
+                {responses.map((r) => (
+                  <div
+                    key={r.id}
+                    className={`rounded-md p-3 ${r.isStaff ? 'bg-primary/5 border border-primary/10' : 'bg-muted/50'}`}
+                    data-testid={`response-${r.id}`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-sm font-medium flex items-center gap-1">
+                        {r.isStaff ? <Shield className="h-3 w-3 text-primary" /> : <User className="h-3 w-3" />}
+                        {r.userName}
+                        {r.isStaff ? <Badge variant="outline" className="text-[10px] ml-1">Soporte</Badge> : null}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(r.createdAt), "dd MMM, HH:mm", { locale: es })}
+                      </span>
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap">{r.content}</p>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+
+            {ticket.status !== 'cerrado' && ticket.status !== 'resuelto' && (
+              <div className="flex gap-2">
+                <Textarea
+                  placeholder="Escriba su respuesta..."
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  className="min-h-[80px]"
+                  data-testid="input-reply"
+                />
+                <Button
+                  onClick={handleReply}
+                  disabled={!replyContent.trim() || replyMutation.isPending}
+                  className="self-end"
+                  data-testid="button-send-reply"
+                >
+                  {replyMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <LifeBuoy className="h-5 w-5" />
+            Soporte Técnico
+          </h2>
+          <p className="text-sm text-muted-foreground">Cree y consulte sus tickets de soporte</p>
+        </div>
+        <Button onClick={() => setShowCreateForm(true)} data-testid="button-new-ticket">
+          <Plus className="h-4 w-4 mr-2" /> Nuevo Ticket
+        </Button>
+      </div>
+
+      {showCreateForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Crear Ticket de Soporte</CardTitle>
+            <CardDescription>Describa su problema o consulta y nuestro equipo le responderá lo antes posible.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="ticket-subject">Asunto *</Label>
+              <Input
+                id="ticket-subject"
+                placeholder="Resumen breve del problema"
+                value={newSubject}
+                onChange={(e) => setNewSubject(e.target.value)}
+                data-testid="input-ticket-subject"
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Categoría</Label>
+                <Select value={newCategory} onValueChange={setNewCategory}>
+                  <SelectTrigger data-testid="select-ticket-category">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Prioridad</Label>
+                <Select value={newPriority} onValueChange={setNewPriority}>
+                  <SelectTrigger data-testid="select-ticket-priority">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ticket-description">Descripción *</Label>
+              <Textarea
+                id="ticket-description"
+                placeholder="Describa en detalle su problema, incluya pasos para reproducirlo si aplica..."
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                className="min-h-[120px]"
+                data-testid="input-ticket-description"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setShowCreateForm(false); setNewSubject(""); setNewDescription(""); }} data-testid="button-cancel-ticket">
+                Cancelar
+              </Button>
+              <Button onClick={handleCreateTicket} disabled={createTicketMutation.isPending} data-testid="button-submit-ticket">
+                {createTicketMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                Enviar Ticket
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {loadingTickets ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20" />)}
+        </div>
+      ) : tickets.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <LifeBuoy className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+            <p className="text-muted-foreground">No tiene tickets de soporte aún.</p>
+            <p className="text-sm text-muted-foreground">Use el botón "Nuevo Ticket" si necesita ayuda.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {tickets.map((ticket) => (
+            <Card
+              key={ticket.id}
+              className="cursor-pointer hover-elevate"
+              onClick={() => setSelectedTicket(ticket)}
+              data-testid={`ticket-card-${ticket.id}`}
+            >
+              <CardContent className="py-3 px-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-mono text-muted-foreground" data-testid={`text-ticket-number-${ticket.id}`}>
+                        {ticket.ticketNumber}
+                      </span>
+                      <Badge className={getStatusColor(ticket.status)} data-testid={`badge-status-${ticket.id}`}>
+                        {STATUS_LABELS[ticket.status] || ticket.status}
+                      </Badge>
+                      <Badge className={getPriorityColor(ticket.priority)} data-testid={`badge-priority-${ticket.id}`}>
+                        {PRIORITY_LABELS[ticket.priority] || ticket.priority}
+                      </Badge>
+                    </div>
+                    <p className="font-medium text-sm mt-1 truncate" data-testid={`text-subject-${ticket.id}`}>
+                      {ticket.subject}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(ticket.createdAt), "dd MMM yyyy", { locale: es })}
+                    </p>
+                    {ticket.assignedToName && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
+                        <User className="h-3 w-3" /> {ticket.assignedToName}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PortalLicenciado() {
   const { user } = useAuth();
-  const validTabs = ["dashboard", "empresas", "documentos", "pesv", "licencia"];
+  const validTabs = ["dashboard", "empresas", "documentos", "pesv", "licencia", "soporte"];
   const getInitialTab = () => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get("tab");
@@ -256,6 +647,7 @@ export default function PortalLicenciado() {
         {activeTab === "documentos" && <DocumentosTab />}
         {activeTab === "pesv" && <PesvAuditoriaTab />}
         {activeTab === "licencia" && <LicenciaTab />}
+        {activeTab === "soporte" && <SoporteTab />}
       </div>
     </div>
   );

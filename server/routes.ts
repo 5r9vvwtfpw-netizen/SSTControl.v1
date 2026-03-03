@@ -40409,27 +40409,28 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // SISTEMA DE TICKETS DE SOPORTE
 
-  // GET /api/support-tickets - Get all tickets (superadmin/soporte) or company tickets (users)
+  // GET /api/support-tickets - Get all tickets (superadmin/soporte) or company/user tickets
   app.get("/api/support-tickets", requireAuth, async (req, res) => {
     try {
       const userRole = String(req.user!.role || '');
       const userCompanyId = req.user!.companyId;
-      
-      console.log(`[Support Tickets] User: ${req.user!.username}, role: '${userRole}', companyId: '${userCompanyId}'`);
+      const userId = req.user!.id;
       
       const isSupportRole = userRole === 'superadmin' || userRole === 'soporte';
       
       if (isSupportRole) {
         const tickets = await storage.getSupportTickets();
-        console.log(`[Support Tickets] Support access - returning ALL tickets: ${tickets.length}`);
         res.json(tickets);
+      } else if (userRole === 'lso') {
+        const allTickets = await db.select().from(schema.supportTickets)
+          .where(eq(schema.supportTickets.userId, userId))
+          .orderBy(desc(schema.supportTickets.createdAt));
+        res.json(allTickets);
       } else {
         if (!userCompanyId) {
-          console.log(`[Support Tickets] No companyId, returning empty`);
           return res.json([]);
         }
         const tickets = await storage.getSupportTickets(userCompanyId);
-        console.log(`[Support Tickets] Company tickets: ${tickets.length}`);
         res.json(tickets);
       }
     } catch (error: any) {
@@ -40447,12 +40448,19 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Ticket no encontrado");
       }
 
-      // Check permissions: superadmin/soporte can see all, others only their company's
+      // Check permissions: superadmin/soporte can see all, LSOs see own tickets, others see company tickets
       const userCompanyId = req.user!.companyId;
       const userRole = req.user!.role;
+      const userId = req.user!.id;
       
-      if (!hasSupportAccess(userRole) && userCompanyId !== ticket.companyId) {
-        return res.status(403).send("No tiene permisos para ver este ticket");
+      if (!hasSupportAccess(userRole)) {
+        if (userRole === 'lso') {
+          if (ticket.userId !== userId) {
+            return res.status(403).send("No tiene permisos para ver este ticket");
+          }
+        } else if (userCompanyId !== ticket.companyId) {
+          return res.status(403).send("No tiene permisos para ver este ticket");
+        }
       }
 
       // Get responses and status history
@@ -40761,9 +40769,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const userCompanyId = user.companyId;
       const userId = user.id;
       
-      // Check permissions
-      if (!hasSupportAccess(userRole) && userCompanyId !== ticket.companyId) {
-        return res.status(403).send("No tiene permisos para responder a este ticket");
+      // Check permissions: support staff can respond to all, LSOs only their own, others only company tickets
+      if (!hasSupportAccess(userRole)) {
+        if (userRole === 'lso') {
+          if (ticket.userId !== userId) {
+            return res.status(403).send("No tiene permisos para responder a este ticket");
+          }
+        } else if (userCompanyId !== ticket.companyId) {
+          return res.status(403).send("No tiene permisos para responder a este ticket");
+        }
       }
 
       // Determine if this is a staff or customer response

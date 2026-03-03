@@ -21,7 +21,8 @@ import {
   FileCheck,
   Award,
   MessageSquare,
-  Mail
+  Mail,
+  LifeBuoy
 } from "lucide-react";
 import safetyHelmetAvatar from "@assets/generated_images/safety_helmet_avatar_icon.png";
 import { Button } from "@/components/ui/button";
@@ -382,6 +383,7 @@ export function PHVANavigation() {
       { label: "Empresas", icon: Building2, tab: "empresas" },
       { label: "Documentos", icon: FileCheck, tab: "documentos" },
       { label: "PESV", icon: Car, tab: "pesv" },
+      { label: "Soporte", icon: LifeBuoy, tab: "soporte" },
     ];
 
     const isOnPortal = location.startsWith("/portal-licenciado");
