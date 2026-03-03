@@ -65,11 +65,11 @@ export default function PortalEmpleados() {
   const { user } = useAuth();
   const isAdmin = isAdminRole(user?.role);
 
-  // Log portal access once per session (SST-2025-0082)
+  // Log portal access once per session (SST-2025-0082) — only for worker roles
   useEffect(() => {
+    if (isAdmin) return;
     const sessionKey = "portal_access_logged";
     if (!sessionStorage.getItem(sessionKey)) {
-      // Log the access
       apiRequest("POST", "/api/portal/log-access", {})
         .then(() => {
           sessionStorage.setItem(sessionKey, "true");
@@ -78,7 +78,7 @@ export default function PortalEmpleados() {
           console.error("Failed to log portal access:", error);
         });
     }
-  }, []);
+  }, [isAdmin]);
 
   // Si es rol administrativo, mostrar dashboard de gestión
   if (isAdmin) {
@@ -877,7 +877,7 @@ function PortalAccessLogsTab() {
                       <td className="p-3">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{log.workerName || "Usuario sin perfil"}</span>
+                          <span className="font-medium">{log.workerName || log.userName || "Usuario sin perfil"}</span>
                         </div>
                       </td>
                       <td className="p-3 text-sm">
