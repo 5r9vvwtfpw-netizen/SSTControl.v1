@@ -1216,13 +1216,15 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                         <Badge variant="destructive">Pendiente</Badge>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell data-testid={`cell-actions-eval-${ev.id}`}>
                       <div className="flex items-center gap-2 flex-wrap">
                         <Button
                           size="sm"
                           variant="outline"
                           data-testid={`button-view-pdf-eval-${ev.id}`}
-                          onClick={() => window.open(`/api/evaluaciones-sst/${ev.id}/pdf`, '_blank')}
+                          onClick={() => {
+                            window.open(`/api/evaluaciones-sst/${ev.id}/pdf`, '_blank');
+                          }}
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           Ver PDF
