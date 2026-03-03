@@ -1069,12 +1069,13 @@ function PHVADashboardPanel({ companyId }: { companyId: string }) {
   );
 }
 
-function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign }: {
+function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMessage }: {
   vault: CompanyVault;
   onBack: () => void;
   isSigning: boolean;
   signingId: string | null;
   onSign: (type: string, id: string, name: string) => void;
+  onMessage?: () => void;
 }) {
   return (
     <div className="space-y-4">
@@ -1099,6 +1100,12 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign }: {
               <Badge variant="outline">{vault.totalDocs} documentos</Badge>
               {vault.pendingDocs > 0 && <Badge variant="destructive">{vault.pendingDocs} pendientes</Badge>}
               {vault.signedDocs > 0 && <Badge className="bg-green-600 text-white">{vault.signedDocs} firmados</Badge>}
+              {onMessage && (
+                <Button variant="outline" onClick={onMessage} data-testid="button-vault-message">
+                  <MessageSquare className="h-4 w-4 mr-1" />
+                  Mensaje
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -1434,6 +1441,43 @@ function DocumentosTab() {
 
   const [confirmSign, setConfirmSign] = useState<{ type: string; id: string; name: string } | null>(null);
 
+  const { data: empresasData = [] } = useQuery<AssignedCompany[]>({
+    queryKey: ["/api/portal-licenciado/empresas"],
+  });
+
+  const [docMessageTarget, setDocMessageTarget] = useState<{ companyName: string; adminUserId: string; adminFullName: string } | null>(null);
+  const [docMsgSubject, setDocMsgSubject] = useState("");
+  const [docMsgContent, setDocMsgContent] = useState("");
+  const [docMsgPriority, setDocMsgPriority] = useState<"normal" | "urgent">("normal");
+
+  const sendDocMessageMutation = useMutation({
+    mutationFn: async (data: { receiverId: string; subject: string; content: string; priority: string }) => {
+      return await apiRequest("POST", "/api/internal-messages", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/internal-messages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/internal-messages/unread-count"] });
+      toast({ title: "Mensaje enviado", description: `Mensaje enviado al administrador de ${docMessageTarget?.companyName}` });
+      setDocMessageTarget(null);
+      setDocMsgSubject("");
+      setDocMsgContent("");
+      setDocMsgPriority("normal");
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "No se pudo enviar el mensaje", variant: "destructive" });
+    },
+  });
+
+  const handleDocSendMessage = () => {
+    if (!docMessageTarget?.adminUserId || !docMsgSubject.trim() || !docMsgContent.trim()) return;
+    sendDocMessageMutation.mutate({
+      receiverId: docMessageTarget.adminUserId,
+      subject: docMsgSubject.trim(),
+      content: docMsgContent.trim(),
+      priority: docMsgPriority,
+    });
+  };
+
   const handleConfirmSign = () => {
     if (!confirmSign) return;
     if (confirmSign.type === 'evaluacion') signEvaluacionMutation.mutate(confirmSign.id);
@@ -1502,7 +1546,87 @@ function DocumentosTab() {
           onBack={() => { setSelectedCompanyId(null); setConfirmSign(null); }}
           isSigning={isSigning}
           onSign={(type, id, name) => setConfirmSign({ type, id, name })}
+          onMessage={() => {
+            const empresa = empresasData.find(e => e.id === selectedVault.companyId);
+            if (!empresa?.adminUserId) {
+              toast({ title: "Sin destinatario", description: "Esta empresa no tiene un administrador registrado para enviar mensajes.", variant: "destructive" });
+              return;
+            }
+            setDocMessageTarget({
+              companyName: selectedVault.companyName,
+              adminUserId: empresa.adminUserId,
+              adminFullName: empresa.adminFullName || 'Administrador',
+            });
+            setDocMsgSubject("");
+            setDocMsgContent("");
+            setDocMsgPriority("normal");
+          }}
         />
+        <Dialog open={!!docMessageTarget} onOpenChange={(open) => { if (!open) setDocMessageTarget(null); }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Send className="h-5 w-5" />
+                Mensaje a {docMessageTarget?.companyName}
+              </DialogTitle>
+              <DialogDescription>
+                Destinatario: {docMessageTarget?.adminFullName || 'Administrador'} — Administrador ({docMessageTarget?.companyName})
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-4 gap-3">
+                <div className="col-span-3 space-y-1.5">
+                  <Label>Asunto *</Label>
+                  <Input
+                    placeholder="Escriba el asunto del mensaje..."
+                    value={docMsgSubject}
+                    onChange={(e) => setDocMsgSubject(e.target.value)}
+                    data-testid="input-doc-msg-subject"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Prioridad</Label>
+                  <Select value={docMsgPriority} onValueChange={(v) => setDocMsgPriority(v as "normal" | "urgent")}>
+                    <SelectTrigger data-testid="select-doc-msg-priority">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="urgent">Urgente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Mensaje *</Label>
+                <Textarea
+                  placeholder="Escriba el contenido del mensaje..."
+                  rows={5}
+                  value={docMsgContent}
+                  onChange={(e) => setDocMsgContent(e.target.value)}
+                  data-testid="input-doc-msg-content"
+                />
+              </div>
+            </div>
+            <DialogFooter className="flex gap-2">
+              <Button variant="outline" onClick={() => setDocMessageTarget(null)} data-testid="button-cancel-doc-msg">
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleDocSendMessage}
+                disabled={sendDocMessageMutation.isPending || !docMsgSubject.trim() || !docMsgContent.trim()}
+                data-testid="button-send-doc-msg"
+              >
+                {sendDocMessageMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4 mr-1" />
+                )}
+                Enviar Mensaje
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <Dialog open={!!confirmSign} onOpenChange={(open) => { if (!open) setConfirmSign(null); }}>
           <DialogContent>
             <DialogHeader>
