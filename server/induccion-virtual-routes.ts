@@ -520,7 +520,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
               <p><strong>Importante:</strong></p>
               <ul>
                 <li>Este enlace es válido por 7 días</li>
-                <li>Debe completar toda la inducción en una sola sesión o puede continuar después</li>
+                <li>Puede completar la inducción a su ritmo, su progreso se guardará automáticamente</li>
                 <li>Al finalizar, deberá firmar digitalmente el acta de inducción</li>
               </ul>
               <p>Si tiene alguna pregunta, contacte al área de Seguridad y Salud en el Trabajo.</p>
