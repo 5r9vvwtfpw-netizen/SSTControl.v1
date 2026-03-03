@@ -1461,13 +1461,14 @@ function PHVADashboardPanel({ companyId }: { companyId: string }) {
   );
 }
 
-function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMessage }: {
+function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMessage, hasValidSignature }: {
   vault: CompanyVault;
   onBack: () => void;
   isSigning: boolean;
   signingId: string | null;
   onSign: (type: string, id: string, name: string) => void;
   onMessage?: () => void;
+  hasValidSignature: boolean;
 }) {
   return (
     <div className="space-y-4">
@@ -1502,6 +1503,22 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
           </div>
         </CardContent>
       </Card>
+
+      {!hasValidSignature && vault.pendingDocs > 0 && (
+        <Card className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+              <div>
+                <p className="font-medium text-sm text-amber-800 dark:text-amber-400">Firma digital no disponible</p>
+                <p className="text-xs text-amber-700 dark:text-amber-500 mt-0.5">
+                  Debe cargar su firma digital en la pestaña "Mi Licencia" antes de poder firmar documentos.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <PHVADashboardPanel companyId={vault.companyId} />
 
@@ -1623,11 +1640,18 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                           Ver PDF
                         </Button>
                         {ev.lsoSignatureName ? (
-                          <Badge className="bg-green-600 text-white">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            {ev.lsoSignatureName}
-                          </Badge>
-                        ) : (
+                          ev.lsoSignatureUrl ? (
+                            <Badge className="bg-green-600 text-white">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              {ev.lsoSignatureName}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-amber-500 text-amber-600">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Firmado sin imagen
+                            </Badge>
+                          )
+                        ) : hasValidSignature ? (
                           <Button 
                             size="sm" 
                             data-testid={`button-sign-eval-${ev.id}`}
@@ -1637,6 +1661,10 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                             <FileCheck className="h-4 w-4 mr-1" />
                             Firmar
                           </Button>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Requiere firma digital
+                          </Badge>
                         )}
                       </div>
                     </TableCell>
@@ -1773,11 +1801,18 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                           Ver PDF
                         </Button>
                         {plan.lsoSignatureName ? (
-                          <Badge className="bg-green-600 text-white">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            {plan.lsoSignatureName}
-                          </Badge>
-                        ) : (
+                          plan.lsoSignatureUrl ? (
+                            <Badge className="bg-green-600 text-white">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              {plan.lsoSignatureName}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-amber-500 text-amber-600">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Firmado sin imagen
+                            </Badge>
+                          )
+                        ) : hasValidSignature ? (
                           <Button 
                             size="sm"
                             data-testid={`button-sign-plan-${plan.id}`}
@@ -1787,6 +1822,10 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                             <FileCheck className="h-4 w-4 mr-1" />
                             Firmar
                           </Button>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Requiere firma digital
+                          </Badge>
                         )}
                       </div>
                     </TableCell>
@@ -1851,11 +1890,18 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                           Ver PDF
                         </Button>
                         {mat.lsoSignatureName ? (
-                          <Badge className="bg-green-600 text-white">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            {mat.lsoSignatureName}
-                          </Badge>
-                        ) : (
+                          mat.lsoSignatureUrl ? (
+                            <Badge className="bg-green-600 text-white">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              {mat.lsoSignatureName}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-amber-500 text-amber-600">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Firmado sin imagen
+                            </Badge>
+                          )
+                        ) : hasValidSignature ? (
                           <Button 
                             size="sm"
                             data-testid={`button-sign-mat-${mat.id}`}
@@ -1865,6 +1911,10 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                             <FileCheck className="h-4 w-4 mr-1" />
                             Firmar
                           </Button>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Requiere firma digital
+                          </Badge>
                         )}
                       </div>
                     </TableCell>
@@ -1884,7 +1934,11 @@ function DocumentosTab() {
   const { data: currentUser } = useQuery<{ sstSignatureUrl?: string | null }>({
     queryKey: ["/api/user"],
   });
-  const hasSignature = !!currentUser?.sstSignatureUrl;
+  const { data: sigStatus } = useQuery<{ hasSignature: boolean; isAccessible: boolean }>({
+    queryKey: ['/api/portal-licenciado/firma/estado'],
+    staleTime: 30000,
+  });
+  const hasSignature = sigStatus?.hasSignature && sigStatus?.isAccessible;
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get("companyId") || null;
@@ -2043,6 +2097,7 @@ function DocumentosTab() {
           vault={selectedVault}
           onBack={() => { setSelectedCompanyId(null); setConfirmSign(null); }}
           isSigning={isSigning}
+          hasValidSignature={!!hasSignature}
           onSign={(type, id, name) => setConfirmSign({ type, id, name })}
           onMessage={() => {
             const empresa = empresasData.find(e => e.id === selectedVault.companyId);
