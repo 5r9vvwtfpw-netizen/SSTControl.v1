@@ -810,7 +810,8 @@ app.use(requireValidLicense);
   const uploadDirs = [
     'public/uploads/logos',
     'public/uploads/afiliaciones',
-    'public/uploads/documentos'
+    'public/uploads/documentos',
+    'public/uploads/lso-signatures'
   ];
   
   uploadDirs.forEach(dir => {

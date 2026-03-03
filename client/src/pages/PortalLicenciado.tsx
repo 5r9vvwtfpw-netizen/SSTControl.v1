@@ -2612,23 +2612,7 @@ function LicenciaTab() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {user?.sstSignatureUrl ? (
-            <div className="space-y-4">
-              <div className="border rounded-lg p-4 bg-white">
-                <img 
-                  src={user.sstSignatureUrl} 
-                  alt="Firma digital" 
-                  className="max-h-32 mx-auto"
-                  data-testid="img-signature"
-                />
-              </div>
-              <p className="text-sm text-muted-foreground text-center">
-                Esta firma se utilizará automáticamente en los documentos que firme.
-              </p>
-            </div>
-          ) : (
-            <SignatureUploadSection />
-          )}
+          <SignatureUploadSection currentSignatureUrl={user?.sstSignatureUrl || null} />
         </CardContent>
       </Card>
     </div>
@@ -2881,10 +2865,11 @@ function LicenseEditDialog() {
   );
 }
 
-function SignatureUploadSection() {
+function SignatureUploadSection({ currentSignatureUrl }: { currentSignatureUrl: string | null }) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [imgError, setImgError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -2914,6 +2899,7 @@ function SignatureUploadSection() {
       setIsOpen(false);
       setSelectedFile(null);
       setPreviewUrl(null);
+      setImgError(false);
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
     },
     onError: (error: any) => {
@@ -2955,13 +2941,78 @@ function SignatureUploadSection() {
     }
   };
 
+  const hasValidSignature = currentSignatureUrl && !imgError;
+
+  if (hasValidSignature) {
+    return (
+      <div className="space-y-4">
+        <div className="border rounded-lg p-4 bg-white dark:bg-muted/30">
+          <img 
+            src={currentSignatureUrl} 
+            alt="Firma digital" 
+            className="max-h-32 mx-auto"
+            data-testid="img-signature"
+            onError={() => setImgError(true)}
+          />
+        </div>
+        <p className="text-sm text-muted-foreground text-center">
+          Esta firma se utilizará automáticamente en los documentos que firme.
+        </p>
+        <div className="flex justify-center">
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" data-testid="button-change-signature">
+                <Upload className="h-4 w-4 mr-2" />
+                Cambiar Firma
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Cambiar Firma Digital</DialogTitle>
+                <DialogDescription>
+                  Suba una nueva imagen de su firma manuscrita. Esta reemplazará la firma actual.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div 
+                  className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {previewUrl ? (
+                    <div className="space-y-2">
+                      <img src={previewUrl} alt="Vista previa" className="max-h-32 mx-auto" />
+                      <p className="text-sm text-muted-foreground">{selectedFile?.name}</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Upload className="h-10 w-10 mx-auto text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">Haga clic para seleccionar una imagen</p>
+                      <p className="text-xs text-muted-foreground">PNG o JPG, máximo 2MB</p>
+                    </div>
+                  )}
+                  <input ref={fileInputRef} type="file" className="hidden" accept="image/png,image/jpeg,image/jpg" onChange={handleFileChange} data-testid="input-signature-file-change" />
+                </div>
+                {selectedFile && (
+                  <Button onClick={handleUpload} disabled={uploadMutation.isPending} className="w-full" data-testid="button-confirm-change-signature">
+                    {uploadMutation.isPending ? "Subiendo..." : "Guardar Nueva Firma"}
+                  </Button>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center py-8 text-center">
       <XCircle className="h-12 w-12 text-muted-foreground mb-4" />
       <h4 className="font-medium mb-2">Sin firma digital</h4>
       <p className="text-sm text-muted-foreground mb-4">
-        No tiene una firma digital cargada. Configure su firma para poder 
-        firmar documentos electrónicamente.
+        {currentSignatureUrl && imgError 
+          ? "La imagen de firma anterior no se pudo cargar. Por favor suba una nueva firma."
+          : "No tiene una firma digital cargada. Configure su firma para poder firmar documentos electrónicamente."}
       </p>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
