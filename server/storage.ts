@@ -14255,7 +14255,7 @@ export class DbStorage implements IStorage {
       return responsables;
     }
 
-    if (senderRole === 'responsable_sst' || senderRole === 'admin') {
+    if (['responsable_sst', 'admin', 'superusuario', 'coordinador_sst', 'coordinador_rrhh', 'coordinador_salud'].includes(senderRole)) {
       const assignedLsos = await db.select({
         id: schema.users.id,
         fullName: schema.users.fullName,
