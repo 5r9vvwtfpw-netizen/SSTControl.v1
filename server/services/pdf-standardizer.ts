@@ -105,7 +105,7 @@ export interface StandardFooterOptions {
  * Obtiene los firmantes automáticamente de la base de datos
  * según la empresa y el tipo de documento
  */
-export async function getSignersForCompany(companyId: string, requiresLSO: boolean = false): Promise<PdfSigners> {
+export async function getSignersForCompany(companyId: string, requiresLSO: boolean = true): Promise<PdfSigners> {
   // Obtener empresa
   const [company] = await db
     .select()
