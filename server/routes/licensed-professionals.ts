@@ -755,6 +755,10 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       
       const signatureUrl = user.sstSignatureUrl || assignment.externalLsoSignatureUrl || null;
 
+      if (!signatureUrl) {
+        return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
+      }
+
       const [updated] = await db.update(schema.accidentInvestigations)
         .set({
           licensedProfessionalName: user.fullName || user.username,
@@ -1342,6 +1346,10 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
 
       const signatureUrl = user.sstSignatureUrl || assignment.externalLsoSignatureUrl || null;
 
+      if (!signatureUrl) {
+        return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
+      }
+
       const [updated] = await db.update(schema.evaluacionesSst)
         .set({
           lsoSignatureName: user.fullName || user.username,
@@ -1389,6 +1397,10 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
 
       const signatureUrl = user.sstSignatureUrl || assignment.externalLsoSignatureUrl || null;
 
+      if (!signatureUrl) {
+        return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
+      }
+
       const [updated] = await db.update(schema.planesTrabajoAnual)
         .set({
           lsoSignatureName: user.fullName || user.username,
@@ -1435,6 +1447,10 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       }
 
       const signatureUrl = user.sstSignatureUrl || assignment.externalLsoSignatureUrl || null;
+
+      if (!signatureUrl) {
+        return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
+      }
 
       const [updated] = await db.update(schema.matricesIperc)
         .set({

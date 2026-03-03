@@ -1376,6 +1376,10 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign }: {
 
 function DocumentosTab() {
   const { toast } = useToast();
+  const { data: currentUser } = useQuery<{ sstSignatureUrl?: string | null }>({
+    queryKey: ["/api/user"],
+  });
+  const hasSignature = !!currentUser?.sstSignatureUrl;
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get("companyId") || null;
@@ -1504,24 +1508,40 @@ function DocumentosTab() {
             <DialogHeader>
               <DialogTitle>Confirmar Firma Digital</DialogTitle>
               <DialogDescription>
-                Está a punto de firmar digitalmente el siguiente documento:
+                {hasSignature 
+                  ? "Está a punto de firmar digitalmente el siguiente documento:"
+                  : "No puede firmar documentos sin una firma digital cargada."
+                }
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
               <p className="font-medium text-sm">{confirmSign?.name}</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Al firmar, su nombre, número de licencia profesional e imagen de firma 
-                quedarán registrados permanentemente en el documento. Esta acción no se puede deshacer.
-              </p>
+              {hasSignature ? (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Al firmar, su nombre, número de licencia profesional e imagen de firma 
+                  quedarán registrados permanentemente en el documento. Esta acción no se puede deshacer.
+                </p>
+              ) : (
+                <div className="mt-3 p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                  <p className="text-sm text-destructive font-medium">
+                    Debe cargar su firma digital antes de poder firmar documentos.
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Vaya a la pestaña "Mi Licencia" y suba su imagen de firma en la sección "Firma Digital".
+                  </p>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setConfirmSign(null)} data-testid="button-cancel-sign">
-                Cancelar
+                {hasSignature ? "Cancelar" : "Cerrar"}
               </Button>
-              <Button onClick={handleConfirmSign} disabled={isSigning} data-testid="button-confirm-sign">
-                {isSigning && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                Confirmar Firma
-              </Button>
+              {hasSignature && (
+                <Button onClick={handleConfirmSign} disabled={isSigning} data-testid="button-confirm-sign">
+                  {isSigning && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                  Confirmar Firma
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
