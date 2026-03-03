@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { Bell, MessageSquare, Clock, Mail, MailOpen, Archive, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,8 +29,10 @@ const priorityLabels: Record<string, string> = {
 };
 
 export function NotificationBell() {
+  const { user } = useAuth();
   const [location, setLocation] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const isSupportRole = user?.role === 'soporte';
   
   // Get unread count
   const { data: unreadData } = useQuery<{ count: number }>({
@@ -215,29 +218,30 @@ export function NotificationBell() {
           )}
         </ScrollArea>
 
-        {/* Footer */}
-        <div className="border-t p-2 flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex-1"
-            onClick={handleViewAll}
-            data-testid="button-view-all-messages"
-          >
-            <Mail className="h-4 w-4 mr-2" />
-            Ver todos
-          </Button>
-          <Button 
-            variant="default" 
-            size="sm" 
-            className="flex-1"
-            onClick={handleNewMessage}
-            data-testid="button-new-message"
-          >
-            <Send className="h-4 w-4 mr-2" />
-            Nuevo
-          </Button>
-        </div>
+        {!isSupportRole && (
+          <div className="border-t p-2 flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex-1"
+              onClick={handleViewAll}
+              data-testid="button-view-all-messages"
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              Ver todos
+            </Button>
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="flex-1"
+              onClick={handleNewMessage}
+              data-testid="button-new-message"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Nuevo
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
