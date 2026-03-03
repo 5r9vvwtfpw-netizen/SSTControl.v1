@@ -119,8 +119,14 @@ export default function MensajesInternos() {
   // Fetch recipients - always fetch to ensure data is available
   const { data: recipients, isLoading: recipientsLoading } = useQuery<Recipient[]>({
     queryKey: ["/api/internal-messages/recipients"],
-    staleTime: 0, // Always get fresh data
+    staleTime: 0,
     refetchOnMount: true,
+  });
+
+  // Fetch LSO assigned companies for company selector
+  const { data: lsoEmpresas = [] } = useQuery<any[]>({
+    queryKey: ["/api/portal-licenciado/empresas"],
+    enabled: user?.role === 'lso',
   });
 
   // Form for new message
@@ -498,42 +504,32 @@ export default function MensajesInternos() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {user?.role === 'lso' && (() => {
-                const companyMap = new Map<string, string>();
-                recipients?.forEach(r => {
-                  if (r.companyName) companyMap.set(r.companyName, r.companyName);
-                });
-                const uniqueCompanies = Array.from(companyMap.keys()).sort();
-                if (uniqueCompanies.length > 0) {
-                  return (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        <Building2 className="h-4 w-4 inline mr-1" />
-                        Empresa *
-                      </label>
-                      <Select 
-                        value={selectedCompanyFilter} 
-                        onValueChange={(val) => {
-                          setSelectedCompanyFilter(val);
-                          form.setValue("receiverId", "");
-                        }}
-                      >
-                        <SelectTrigger data-testid="select-company-filter">
-                          <SelectValue placeholder="Seleccionar empresa..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {uniqueCompanies.map((company) => (
-                            <SelectItem key={company} value={company}>
-                              {company}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
+              {user?.role === 'lso' && lsoEmpresas.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    <Building2 className="h-4 w-4 inline mr-1" />
+                    Empresa *
+                  </label>
+                  <Select 
+                    value={selectedCompanyFilter} 
+                    onValueChange={(val) => {
+                      setSelectedCompanyFilter(val);
+                      form.setValue("receiverId", "");
+                    }}
+                  >
+                    <SelectTrigger data-testid="select-company-filter">
+                      <SelectValue placeholder="Seleccionar empresa..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {lsoEmpresas.map((empresa: any) => (
+                        <SelectItem key={empresa.id} value={empresa.name}>
+                          {empresa.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <FormField
                 control={form.control}
