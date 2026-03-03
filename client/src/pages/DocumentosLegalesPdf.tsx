@@ -140,14 +140,14 @@ export default function DocumentosLegalesPdf() {
       icon: <Lock className="h-8 w-8" />,
       filename: "Medidas-Seguridad-SST-Colombia.pdf"
     },
-    {
-      id: "rut-empresa",
-      title: "RUT - Registro Único Tributario",
-      description: "SADGI S.A.S. - NIT 902.036.337-4. Actualizado: 26/02/2026.",
-      endpoint: "/api/legal-docs/rut/pdf",
-      icon: <Landmark className="h-8 w-8" />,
-      filename: "RUT-SADGI-SAS-902036337-4.pdf"
-    }
+    // {
+    //   id: "rut-empresa",
+    //   title: "RUT - Registro Único Tributario",
+    //   description: "SADGI S.A.S. - NIT 902.036.337-4. Actualizado: 26/02/2026.",
+    //   endpoint: "/api/legal-docs/rut/pdf",
+    //   icon: <Landmark className="h-8 w-8" />,
+    //   filename: "RUT-SADGI-SAS-902036337-4.pdf"
+    // }
   ];
 
   const handleDownload = async (doc: DocumentDownload) => {
