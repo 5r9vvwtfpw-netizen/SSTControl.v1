@@ -1217,22 +1217,33 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                       )}
                     </TableCell>
                     <TableCell>
-                      {ev.lsoSignatureName ? (
-                        <Badge className="bg-green-600 text-white">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          {ev.lsoSignatureName}
-                        </Badge>
-                      ) : (
-                        <Button 
-                          size="sm" 
-                          data-testid={`button-sign-eval-${ev.id}`}
-                          onClick={() => onSign('evaluacion', ev.id, `Evaluación ${ev.anio} - ${vault.companyName}`)}
-                          disabled={isSigning}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          data-testid={`button-view-pdf-eval-${ev.id}`}
+                          onClick={() => window.open(`/api/evaluaciones-sst/${ev.id}/pdf`, '_blank')}
                         >
-                          <FileCheck className="h-4 w-4 mr-1" />
-                          Firmar
+                          <Eye className="h-4 w-4 mr-1" />
+                          Ver PDF
                         </Button>
-                      )}
+                        {ev.lsoSignatureName ? (
+                          <Badge className="bg-green-600 text-white">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            {ev.lsoSignatureName}
+                          </Badge>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            data-testid={`button-sign-eval-${ev.id}`}
+                            onClick={() => onSign('evaluacion', ev.id, `Evaluación ${ev.anio} - ${vault.companyName}`)}
+                            disabled={isSigning}
+                          >
+                            <FileCheck className="h-4 w-4 mr-1" />
+                            Firmar
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -1285,22 +1296,33 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                       )}
                     </TableCell>
                     <TableCell>
-                      {plan.lsoSignatureName ? (
-                        <Badge className="bg-green-600 text-white">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          {plan.lsoSignatureName}
-                        </Badge>
-                      ) : (
-                        <Button 
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Button
                           size="sm"
-                          data-testid={`button-sign-plan-${plan.id}`}
-                          onClick={() => onSign('plan', plan.id, `Plan Trabajo ${plan.anio} - ${vault.companyName}`)}
-                          disabled={isSigning}
+                          variant="outline"
+                          data-testid={`button-view-pdf-plan-${plan.id}`}
+                          onClick={() => window.open(`/api/planes-trabajo-anual/${plan.id}/pdf`, '_blank')}
                         >
-                          <FileCheck className="h-4 w-4 mr-1" />
-                          Firmar
+                          <Eye className="h-4 w-4 mr-1" />
+                          Ver PDF
                         </Button>
-                      )}
+                        {plan.lsoSignatureName ? (
+                          <Badge className="bg-green-600 text-white">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            {plan.lsoSignatureName}
+                          </Badge>
+                        ) : (
+                          <Button 
+                            size="sm"
+                            data-testid={`button-sign-plan-${plan.id}`}
+                            onClick={() => onSign('plan', plan.id, `Plan Trabajo ${plan.anio} - ${vault.companyName}`)}
+                            disabled={isSigning}
+                          >
+                            <FileCheck className="h-4 w-4 mr-1" />
+                            Firmar
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -1352,22 +1374,33 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                       )}
                     </TableCell>
                     <TableCell>
-                      {mat.lsoSignatureName ? (
-                        <Badge className="bg-green-600 text-white">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          {mat.lsoSignatureName}
-                        </Badge>
-                      ) : (
-                        <Button 
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Button
                           size="sm"
-                          data-testid={`button-sign-mat-${mat.id}`}
-                          onClick={() => onSign('matriz', mat.id, `${mat.nombre} - ${vault.companyName}`)}
-                          disabled={isSigning}
+                          variant="outline"
+                          data-testid={`button-view-pdf-mat-${mat.id}`}
+                          onClick={() => window.open(`/api/matrices-iperc/${mat.id}/pdf`, '_blank')}
                         >
-                          <FileCheck className="h-4 w-4 mr-1" />
-                          Firmar
+                          <Eye className="h-4 w-4 mr-1" />
+                          Ver PDF
                         </Button>
-                      )}
+                        {mat.lsoSignatureName ? (
+                          <Badge className="bg-green-600 text-white">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            {mat.lsoSignatureName}
+                          </Badge>
+                        ) : (
+                          <Button 
+                            size="sm"
+                            data-testid={`button-sign-mat-${mat.id}`}
+                            onClick={() => onSign('matriz', mat.id, `${mat.nombre} - ${vault.companyName}`)}
+                            disabled={isSigning}
+                          >
+                            <FileCheck className="h-4 w-4 mr-1" />
+                            Firmar
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

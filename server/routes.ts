@@ -25600,6 +25600,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).send("Evaluación no encontrada");
         }
         companyId = evaluacion.companyId;
+      } else if (userRole === 'lso' && !req.user!.companyId) {
+        evaluacion = await storage.getEvaluacionSstById(req.params.id);
+        if (!evaluacion) {
+          return res.status(404).send("Evaluación no encontrada");
+        }
+        const [lsoAssignEval] = await db.select().from(schema.licensedProfessionalAssignments)
+          .where(and(
+            eq(schema.licensedProfessionalAssignments.userId, req.user!.id),
+            eq(schema.licensedProfessionalAssignments.companyId, evaluacion.companyId),
+            eq(schema.licensedProfessionalAssignments.isActive, true)
+          ));
+        if (!lsoAssignEval) {
+          return res.status(403).send("No tiene asignación activa con esta empresa");
+        }
+        companyId = evaluacion.companyId;
       } else {
         if (!req.user!.companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
@@ -28459,10 +28474,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/planes-trabajo-anual/:id/pdf - Generar PDF del plan de trabajo
   app.get('/api/planes-trabajo-anual/:id/pdf', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
-        return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      let companyId: string;
+      const userRole = req.user!.role;
+      if (userRole === 'lso' && !req.user!.companyId) {
+        const [planCheck] = await db.select().from(schema.planesTrabajoAnual).where(eq(schema.planesTrabajoAnual.id, req.params.id));
+        if (!planCheck) { return res.status(404).send("Plan no encontrado"); }
+        const [lsoAssignPlan] = await db.select().from(schema.licensedProfessionalAssignments)
+          .where(and(
+            eq(schema.licensedProfessionalAssignments.userId, req.user!.id),
+            eq(schema.licensedProfessionalAssignments.companyId, planCheck.companyId),
+            eq(schema.licensedProfessionalAssignments.isActive, true)
+          ));
+        if (!lsoAssignPlan) { return res.status(403).send("No tiene asignación activa con esta empresa"); }
+        companyId = planCheck.companyId;
+      } else if (hasGlobalAccess(userRole)) {
+        const [planCheck] = await db.select().from(schema.planesTrabajoAnual).where(eq(schema.planesTrabajoAnual.id, req.params.id));
+        if (!planCheck) { return res.status(404).send("Plan no encontrado"); }
+        companyId = planCheck.companyId;
+      } else {
+        if (!req.user!.companyId) {
+          return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+        }
+        companyId = req.user!.companyId;
       }
-      const companyId = req.user!.companyId;
       const plan = await storage.getPlanTrabajoAnual(req.params.id, companyId);
       
       if (!plan) {
@@ -35540,12 +35574,24 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get('/api/matrices-iperc/:id/pdf', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
+      const isLso = req.user!.role === 'lso' && !req.user!.companyId;
       let companyId: string;
       let matriz: any;
 
       if (isAdmin) {
         matriz = await storage.getMatrizIpercById(req.params.id);
         if (!matriz) return res.status(404).send('Matriz IPERC no encontrada');
+        companyId = matriz.companyId;
+      } else if (isLso) {
+        matriz = await storage.getMatrizIpercById(req.params.id);
+        if (!matriz) return res.status(404).send('Matriz IPERC no encontrada');
+        const [lsoAssignMat] = await db.select().from(schema.licensedProfessionalAssignments)
+          .where(and(
+            eq(schema.licensedProfessionalAssignments.userId, req.user!.id),
+            eq(schema.licensedProfessionalAssignments.companyId, matriz.companyId),
+            eq(schema.licensedProfessionalAssignments.isActive, true)
+          ));
+        if (!lsoAssignMat) return res.status(403).send('No tiene asignación activa con esta empresa');
         companyId = matriz.companyId;
       } else {
         companyId = req.user!.companyId!;
