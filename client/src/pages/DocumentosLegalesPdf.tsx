@@ -118,7 +118,7 @@ export default function DocumentosLegalesPdf() {
   const documents: DocumentDownload[] = [
     {
       id: "protecciones-legales",
-      title: "Protecciones Legales Completas",
+      title: "Protecciones Legales",
       description: "Documento integral con las 26 categorías de protecciones legales incluyendo propiedad intelectual (DNDA 13-197-177), protección de datos, auditoría, y cumplimiento normativo.",
       endpoint: "/api/legal-docs/protecciones-legales/pdf",
       icon: <Scale className="h-8 w-8" />,
