@@ -40608,13 +40608,34 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       // Record status change if applicable
       if (status && status !== ticket.status) {
+        const statusChangeNotes = req.body.statusChangeNotes || req.body.statusNote || null;
         await storage.createTicketStatusHistory({
           ticketId: ticket.id,
           previousStatus: ticket.status,
           newStatus: status,
           changedBy: userId,
           changedByName: user.fullName || user.username,
-          reason: req.body.statusNote || null
+          reason: statusChangeNotes
+        });
+
+        const ticketStatusLabels: Record<string, string> = {
+          abierto: 'Abierto', en_revision: 'En Revisión', en_progreso: 'En Progreso',
+          pendiente_cliente: 'Pendiente Cliente', resuelto: 'Resuelto', cerrado: 'Cerrado'
+        };
+        const fromLabel = ticketStatusLabels[ticket.status] || ticket.status;
+        const toLabel = ticketStatusLabels[status] || status;
+        let systemContent = `Estado cambiado: ${fromLabel} → ${toLabel}`;
+        if (statusChangeNotes) {
+          systemContent += `\n\nNota: ${statusChangeNotes}`;
+        }
+        await storage.createTicketResponse({
+          ticketId: ticket.id,
+          userId: userId,
+          userName: user.fullName || user.username,
+          userRole: user.role,
+          isStaff: 1,
+          content: systemContent,
+          isInternal: 0,
         });
         
         // Send internal notification when ticket is resolved
