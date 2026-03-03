@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Bell, MessageSquare, Clock, Mail, MailOpen, Archive, Send } from "lucide-react";
+import { Bell, MessageSquare, Clock, Mail, MailOpen, Archive, Send, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -50,6 +50,16 @@ export function NotificationBell() {
   const markAsReadMutation = useMutation({
     mutationFn: async (messageId: string) => {
       return await apiRequest("PATCH", `/api/internal-messages/${messageId}/read`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/internal-messages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/internal-messages/unread-count"] });
+    },
+  });
+
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/internal-messages/mark-all-read");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/internal-messages"] });
@@ -218,30 +228,46 @@ export function NotificationBell() {
           )}
         </ScrollArea>
 
-        {!isSupportRole && (
-          <div className="border-t p-2 flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
+        <div className="border-t p-2 flex gap-2">
+          {isSupportRole ? (
+            <Button
+              variant="outline"
+              size="sm"
               className="flex-1"
-              onClick={handleViewAll}
-              data-testid="button-view-all-messages"
+              onClick={() => {
+                markAllAsReadMutation.mutate();
+              }}
+              disabled={unreadCount === 0 || markAllAsReadMutation.isPending}
+              data-testid="button-mark-all-read"
             >
-              <Mail className="h-4 w-4 mr-2" />
-              Ver todos
+              <CheckCheck className="h-4 w-4 mr-2" />
+              Marcar todas como leídas
             </Button>
-            <Button 
-              variant="default" 
-              size="sm" 
-              className="flex-1"
-              onClick={handleNewMessage}
-              data-testid="button-new-message"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Nuevo
-            </Button>
-          </div>
-        )}
+          ) : (
+            <>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+                onClick={handleViewAll}
+                data-testid="button-view-all-messages"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Ver todos
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm" 
+                className="flex-1"
+                onClick={handleNewMessage}
+                data-testid="button-new-message"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Nuevo
+              </Button>
+            </>
+          )}
+        </div>
       </PopoverContent>
     </Popover>
   );
