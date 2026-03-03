@@ -410,7 +410,7 @@ export function PHVANavigation() {
                   </div>
                   <div>
                     <h1 className="text-lg font-bold leading-tight">SG-SST</h1>
-                    <p className="text-[10px] opacity-80">Portal del Licenciado</p>
+                    <p className="text-[10px] opacity-80">Portal del Profesional SST</p>
                   </div>
                 </div>
               </Link>

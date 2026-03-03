@@ -177,7 +177,7 @@ export default function AsignarLsoExterno() {
         `- Firma y respaldo profesional de los documentos técnicos generados por el sistema\n` +
         `- Participación activa en el COPASST y Comité de Convivencia Laboral\n` +
         (vehicles && vehicles > 0 ? `- Gestión del PESV (Plan Estratégico de Seguridad Vial) conforme a la Resolución 40595 de 2022\n` : "") +
-        `\nIMPORTANTE: La plataforma SST Colombia cuenta con un Portal exclusivo para Licenciados en SST. Una vez vinculado, usted accederá a través de este portal dedicado donde podrá gestionar, supervisar y dar direccionamiento al SG-SST de nuestra empresa sin necesidad de ingresar al sistema interno de la empresa. Desde el Portal del Licenciado tendrá visibilidad completa del estado del programa, los indicadores, documentos y el cumplimiento normativo.\n\n` +
+        `\nIMPORTANTE: La plataforma SST Colombia cuenta con un Portal exclusivo para Licenciados en SST. Una vez vinculado, usted accederá a través de este portal dedicado donde podrá gestionar, supervisar y dar direccionamiento al SG-SST de nuestra empresa sin necesidad de ingresar al sistema interno de la empresa. Desde el Portal del Profesional SST tendrá visibilidad completa del estado del programa, los indicadores, documentos y el cumplimiento normativo.\n\n` +
         `Nos gustaría agendar una reunión para discutir en detalle:\n` +
         `- Alcance específico del acompañamiento según nuestro perfil empresarial\n` +
         `- Propuesta económica y condiciones contractuales\n` +
@@ -238,7 +238,7 @@ export default function AsignarLsoExterno() {
       toast({
         title: "LSO Asignado",
         description: wasAutoCreated
-          ? data?.message || "El profesional ha sido asignado y se le creó acceso al Portal del Licenciado automáticamente. Las credenciales fueron enviadas por email."
+          ? data?.message || "El profesional ha sido asignado y se le creó acceso al Portal del Profesional SST automáticamente. Las credenciales fueron enviadas por email."
           : "El profesional ha sido asignado exitosamente a su empresa.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/lso-directory-jwt/current-assignment"] });
@@ -458,7 +458,7 @@ export default function AsignarLsoExterno() {
                     <ShieldCheck className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-green-700 dark:text-green-400">
-                        Portal del Licenciado: Acceso activo
+                        Portal del Profesional SST: Acceso activo
                       </p>
                       <p className="text-xs text-green-600 dark:text-green-500">
                         Usuario: {assignmentData.data.portalAccess.username} — Las credenciales fueron enviadas por email al profesional.
@@ -470,7 +470,7 @@ export default function AsignarLsoExterno() {
                     <KeyRound className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                        Portal del Licenciado: Sin acceso
+                        Portal del Profesional SST: Sin acceso
                       </p>
                       <p className="text-xs text-amber-600 dark:text-amber-500">
                         El profesional aún no tiene usuario para el portal. Contacte al administrador.

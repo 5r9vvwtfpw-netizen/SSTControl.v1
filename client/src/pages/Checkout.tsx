@@ -370,7 +370,7 @@ export default function Checkout() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check className="h-3 w-3 text-green-600 shrink-0" />
-                  <span>Portal del Licenciado SST INCLUIDO</span>
+                  <span>Portal del Profesional SST INCLUIDO</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check className="h-3 w-3 text-green-600 shrink-0" />

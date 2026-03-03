@@ -254,7 +254,7 @@ export default function PlanesSuscripcion() {
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="h-3 w-3 shrink-0" />
-                      <span>Portal del Licenciado SST INCLUIDO</span>
+                      <span>Portal del Profesional SST INCLUIDO</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="h-3 w-3 shrink-0" />

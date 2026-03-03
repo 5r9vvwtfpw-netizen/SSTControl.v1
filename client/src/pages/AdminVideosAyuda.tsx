@@ -106,7 +106,7 @@ const MODULE_LIST = [
   { route: "/empresas", name: "Gestión de Empresas", group: "Administración" },
   { route: "/usuarios", name: "Gestión de Usuarios", group: "Administración" },
   { route: "/profesionales-licenciados", name: "Profesionales Licenciados", group: "Administración" },
-  { route: "/portal-licenciado", name: "Portal del Licenciado", group: "Portales" },
+  { route: "/portal-licenciado", name: "Portal del Profesional SST", group: "Portales" },
   { route: "/portal-empleados", name: "Portal del Empleado", group: "Portales" },
   { route: "/pesv", name: "PESV - Panel Principal", group: "PESV" },
   { route: "/pesv/vehiculos", name: "PESV - Vehículos", group: "PESV" },
