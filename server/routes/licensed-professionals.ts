@@ -74,13 +74,20 @@ const uploadLsoSignature = multer({
   }
 });
 
+function getObjectStorageBucketName(): string {
+  return process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || 
+    process.env.OBJECT_STORAGE_BUCKET_ID || 
+    `replit-objstore-${process.env.REPL_ID || 'default'}`;
+}
+
 async function uploadSignatureToObjectStorage(fileBuffer: Buffer, originalName: string, mimeType: string): Promise<string> {
-  const privateDir = process.env.PRIVATE_OBJECT_DIR || '/sst-evidences';
   const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
   const ext = path.extname(originalName) || '.png';
-  const objectPath = `${privateDir}/lso-signatures/lso-signature-${uniqueSuffix}${ext}`;
+  const privateDir = (process.env.PRIVATE_OBJECT_DIR || '/sst-evidences').replace(/^\//, '');
+  const objectName = `${privateDir}/lso-signatures/lso-signature-${uniqueSuffix}${ext}`;
 
-  const { bucketName, objectName } = parseObjectPathHelper(objectPath);
+  const bucketName = getObjectStorageBucketName();
+  console.log(`[Signature Upload] Uploading to bucket: ${bucketName}, object: ${objectName}`);
   const bucket = objectStorageClient.bucket(bucketName);
   const file = bucket.file(objectName);
 
@@ -89,7 +96,7 @@ async function uploadSignatureToObjectStorage(fileBuffer: Buffer, originalName: 
     resumable: false,
   });
 
-  return objectPath;
+  return `/${bucketName}/${objectName}`;
 }
 
 async function isSignatureAccessible(signatureUrl: string): Promise<boolean> {

@@ -13,6 +13,8 @@
  */
 
 import PDFDocument from 'pdfkit';
+import fs from 'fs';
+import path from 'path';
 import { db } from '../db';
 import { users, companies, licensedProfessionalAssignments, responsibleDesignations } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
@@ -450,8 +452,6 @@ export async function addSignatureFooter(
 
       if (signers.lso.signatureUrl) {
         try {
-          const fs = require('fs');
-          const path = require('path');
           const imgW = Math.min(lsoColW - 4, 80);
           const imgH = signatureImageHeight - 2;
           const imgX = lsoColX + (lsoColW - imgW) / 2;
@@ -473,23 +473,30 @@ export async function addSignatureFooter(
             } catch (fetchErr: any) {
               console.error('[PdfStandardizer] Error fetching remote signature:', fetchErr.message);
             }
-          } else {
+          } else if (sigUrl.includes('replit-objstore')) {
             try {
-              const { objectStorageClient } = require('../replit_integrations/object_storage');
+              const { objectStorageClient } = await import('../replit_integrations/object_storage/objectStorage.js');
               let objPath = sigUrl;
               if (!objPath.startsWith('/')) objPath = '/' + objPath;
-              const pathParts = objPath.split('/');
-              if (pathParts.length >= 3) {
-                const bucketName = pathParts[1];
-                const objectName = pathParts.slice(2).join('/');
+              const pathParts = objPath.split('/').filter(Boolean);
+              if (pathParts.length >= 2) {
+                const bucketName = pathParts[0];
+                const objectName = pathParts.slice(1).join('/');
                 const bucket = objectStorageClient.bucket(bucketName);
                 const file = bucket.file(objectName);
                 const [exists] = await file.exists();
                 if (exists) {
                   const [contents] = await file.download();
                   sigBuffer = contents;
+                  console.log(`[PdfStandardizer] LSO signature loaded from GCS: ${objectName}`);
                 }
               }
+            } catch (osErr: any) {
+              console.error('[PdfStandardizer] Error fetching signature from GCS:', osErr.message);
+            }
+          } else {
+            try {
+              sigBuffer = await objectStorageService.getObjectBuffer(sigUrl);
             } catch (osErr: any) {
               console.error('[PdfStandardizer] Error fetching signature from Object Storage:', osErr.message);
             }
