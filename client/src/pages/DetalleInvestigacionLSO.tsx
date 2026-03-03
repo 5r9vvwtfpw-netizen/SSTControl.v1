@@ -105,6 +105,11 @@ export default function DetalleInvestigacionLSO() {
   const [msgContent, setMsgContent] = useState("");
   const [msgPriority, setMsgPriority] = useState<"normal" | "urgent">("normal");
 
+  const { data: currentUser } = useQuery<{ sstSignatureUrl?: string | null }>({
+    queryKey: ["/api/user"],
+  });
+  const hasSignature = !!currentUser?.sstSignatureUrl;
+
   const { data: investigation, isLoading, error } = useQuery<InvestigationDetail>({
     queryKey: ['/api/portal-licenciado/investigacion', id],
     enabled: !!id,
@@ -251,20 +256,31 @@ export default function DetalleInvestigacionLSO() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Confirmar Firma</AlertDialogTitle>
+                <AlertDialogTitle>{hasSignature ? "Confirmar Firma" : "Firma Digital Requerida"}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Al firmar esta investigación, usted certifica que ha revisado el contenido
-                  y que cumple con los requisitos de la Resolución 1401/2007 para investigaciones
-                  de accidentes {investigation.isFatal ? "mortales" : "graves"}.
-                  <br /><br />
-                  Esta acción no se puede deshacer.
+                  {hasSignature ? (
+                    <>
+                      Al firmar esta investigación, usted certifica que ha revisado el contenido
+                      y que cumple con los requisitos de la Resolución 1401/2007 para investigaciones
+                      de accidentes {investigation.isFatal ? "mortales" : "graves"}.
+                      <br /><br />
+                      Esta acción no se puede deshacer.
+                    </>
+                  ) : (
+                    <>
+                      Debe cargar su firma digital antes de poder firmar documentos.
+                      Vaya a la pestaña "Mi Licencia" y suba su imagen de firma en la sección "Firma Digital".
+                    </>
+                  )}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => signMutation.mutate()}>
-                  Confirmar y Firmar
-                </AlertDialogAction>
+                <AlertDialogCancel>{hasSignature ? "Cancelar" : "Cerrar"}</AlertDialogCancel>
+                {hasSignature && (
+                  <AlertDialogAction onClick={() => signMutation.mutate()}>
+                    Confirmar y Firmar
+                  </AlertDialogAction>
+                )}
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
