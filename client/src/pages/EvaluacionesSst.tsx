@@ -7,7 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, FileText, AlertTriangle, CheckCircle2, FileCheck, Download, Lock, Trash2, AlertCircle, Wrench, RefreshCw, Monitor, Shield } from "lucide-react";
+import { Plus, Search, FileText, AlertTriangle, CheckCircle2, FileCheck, Download, Lock, Trash2, AlertCircle, Wrench, RefreshCw, Monitor, Shield, UserCheck } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -178,30 +178,6 @@ export default function EvaluacionesSst() {
     }
   }, [targetCompany, calculatedTipoEmpresa, form]);
 
-  // Auto-llenar Aprobado por con el Gerente/Representante Legal
-  useEffect(() => {
-    if (!workers.length || !targetCompany) return;
-    const current = form.getValues();
-    if (current.aprobadoPorId) return;
-
-    let repWorker = null;
-
-    if (targetCompany.legalRepId) {
-      repWorker = workers.find((w: any) => w.identificationNumber === targetCompany.legalRepId);
-    }
-
-    if (!repWorker && targetCompany.legalRepName) {
-      const repName = targetCompany.legalRepName.toLowerCase().trim();
-      repWorker = workers.find((w: any) => 
-        w.name?.toLowerCase().trim() === repName ||
-        `${w.firstName || ''} ${w.lastName || ''}`.toLowerCase().trim() === repName
-      );
-    }
-
-    if (repWorker) {
-      form.setValue("aprobadoPorId", repWorker.id);
-    }
-  }, [workers, form, targetCompany]);
 
   // Para usuarios no-superadmin, establecer automáticamente su companyId
   useEffect(() => {
@@ -617,30 +593,22 @@ export default function EvaluacionesSst() {
                       )}
                     </div>
 
-                    <FormField
-                      control={form.control}
-                      name="aprobadoPorId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Aprobado por (Gerente/Representante Legal)</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-aprobado-por">
-                                <SelectValue placeholder="Seleccione trabajador" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {workers.map((worker) => (
-                                <SelectItem key={`aprobado-${worker.id}`} value={worker.id}>
-                                  {worker.name} - {worker.position}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
+                    <div>
+                      <FormLabel className="text-sm font-medium">Aprobado por (Gerente/Representante Legal)</FormLabel>
+                      {targetCompany?.legalRepName ? (
+                        <div className="mt-1.5 flex items-center gap-2 p-2 rounded-md bg-muted/50 border" data-testid="text-aprobado-por">
+                          <UserCheck className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm">
+                            {targetCompany.legalRepName} — {targetCompany.legalRepPosition || 'Representante Legal'}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="mt-1.5 flex items-center gap-2 p-2 rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800" data-testid="text-aprobado-por-pendiente">
+                          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                          <span className="text-sm text-yellow-700 dark:text-yellow-400">Pendiente — Registre el Representante Legal en los datos de la empresa</span>
+                        </div>
                       )}
-                    />
+                    </div>
                   </div>
                 </div>
 

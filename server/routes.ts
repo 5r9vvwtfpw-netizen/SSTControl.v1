@@ -7585,10 +7585,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      if (evaluation.aprobadoPorId) {
+      if (company?.legalRepName) {
+        aproboName = `${company.legalRepName} - ${company.legalRepPosition || 'Representante Legal'}`;
+      } else if (evaluation.aprobadoPorId) {
         const worker = await storage.getWorker(evaluation.aprobadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          aproboName = `${designeeInfo.name} - ${worker.position}`;
+          aproboName = `${worker.name || worker.firstName + ' ' + worker.lastName} - ${worker.position}`;
         }
       }
       
@@ -11757,10 +11759,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      if (allocation.aprobadoPorId) {
+      if (company?.legalRepName) {
+        aproboName = `${company.legalRepName} - ${company.legalRepPosition || 'Representante Legal'}`;
+      } else if (allocation.aprobadoPorId) {
         const worker = await storage.getWorker(allocation.aprobadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          aproboName = `${designeeInfo.name} - ${worker.position}`;
+          aproboName = `${worker.name || worker.firstName + ' ' + worker.lastName} - ${worker.position}`;
         }
       }
 
@@ -22959,7 +22963,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      if (politica.aprobadoPorId) {
+      if (company?.legalRepName) {
+        aproboName = `${company.legalRepName} - ${company.legalRepPosition || 'Representante Legal'}`;
+      } else if (politica.aprobadoPorId) {
         const worker = await storage.getWorker(politica.aprobadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
           aproboName = `${worker.fullName} - ${worker.position}`;
