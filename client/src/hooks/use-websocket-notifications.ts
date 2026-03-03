@@ -32,7 +32,7 @@ export function useWebSocketNotifications() {
 
       ws.onopen = () => {
         reconnectAttemptsRef.current = 0;
-        // Authentication is handled via session cookie on connection
+        (window as any).__wsConnection = ws;
       };
 
       ws.onmessage = (event) => {
@@ -54,6 +54,9 @@ export function useWebSocketNotifications() {
               break;
 
             case "auth_success":
+              break;
+
+            default:
               break;
           }
         } catch (error) {

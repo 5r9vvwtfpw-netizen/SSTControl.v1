@@ -17,7 +17,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { eq, and, sql, desc, ne, inArray } from "drizzle-orm";
-import { initializeWebSocket, notifyNewMessage, notifyMessageRead, setSessionParser } from "./websocket";
+import { initializeWebSocket, notifyNewMessage, notifyMessageRead, setSessionParser, broadcastToSupportAgents, getOnlineSupportUserIds } from "./websocket";
 import { setupAuth, getSessionMiddleware, requireAuth as authRequireAuth, requirePermission, requireAnyPermission, requireRole, hashPassword, stripPassword, requireActiveSubscription } from "./auth";
 import { demoReadOnlyMiddleware } from "../plugins/demo-engine/readonly-middleware";
 import { isDemoEnabled } from "../plugins/demo-engine/types";
@@ -1757,6 +1757,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       '/api/companies',
       '/api/notifications',
       '/api/admin/support-users',
+      '/api/support-chat',
+      '/api/internal-messages',
+      '/api/change-password',
       '/user',
       '/logout',
       '/support-tickets',
@@ -1765,6 +1768,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       '/companies',
       '/notifications',
       '/admin/support-users',
+      '/support-chat',
+      '/internal-messages',
+      '/change-password',
     ];
     
     const requestPath = req.originalUrl?.split('?')[0] || req.path;
@@ -40740,6 +40746,37 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         });
       }
 
+      // Notify support staff when a customer responds
+      if (!isStaff) {
+        try {
+          const supportUsers = await storage.getUsersByRoleGlobal("soporte");
+          const superadmins = await storage.getUsersByRoleGlobal("superadmin");
+          const allSupportStaff = [...supportUsers, ...superadmins];
+
+          for (const staffUser of allSupportStaff) {
+            if (staffUser.id === userId) continue;
+            const msg = await storage.createInternalMessage({
+              companyId: ticket.companyId || staffUser.companyId || '',
+              senderId: userId,
+              senderName: 'Sistema SST Colombia',
+              senderRole: 'superadmin',
+              receiverId: staffUser.id,
+              receiverName: staffUser.fullName || staffUser.username,
+              receiverRole: staffUser.role,
+              subject: `Respuesta en Ticket ${ticket.ticketNumber}`,
+              content: `El cliente ha respondido al ticket "${ticket.subject}" (${ticket.ticketNumber}).\n\nCompañía: ${ticket.companyName || 'N/A'}\nPrioridad: ${ticket.priority}\n\nRevise el ticket en el panel de soporte.`,
+              priority: ticket.priority === 'alta' || ticket.priority === 'critica' ? 'urgent' : 'normal',
+              status: 'unread',
+              relatedEntity: 'support_ticket',
+              relatedEntityId: ticket.id,
+            });
+            try { notifyNewMessage(staffUser.id, userId, msg.id); } catch (e) { /* ignore */ }
+          }
+        } catch (notifErr) {
+          console.error('[Support Tickets] Error notifying staff of customer response:', notifErr);
+        }
+      }
+
       res.status(201).json(response);
     } catch (error: any) {
       console.error('Error creating ticket response:', error);
@@ -41389,6 +41426,107 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     } catch (error: any) {
       console.error('Error starting access session:', error);
       res.status(500).send('Error al iniciar sesión de acceso');
+    }
+  });
+
+  // ============================================================================
+  // SUPPORT CHAT SYSTEM - Chat interno entre agentes de soporte
+  // ============================================================================
+
+  // GET /api/support-chat/messages - Get chat messages by channel
+  app.get("/api/support-chat/messages", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      if (!hasSupportAccess(user.role)) {
+        return res.status(403).send("Solo personal de soporte puede acceder al chat");
+      }
+
+      const channel = (req.query.channel as string) || 'general';
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+
+      const messages = await db
+        .select()
+        .from(schema.supportChatMessages)
+        .where(eq(schema.supportChatMessages.channel, channel as any))
+        .orderBy(desc(schema.supportChatMessages.createdAt))
+        .limit(limit);
+
+      res.json(messages.reverse());
+    } catch (error: any) {
+      console.error('Error fetching chat messages:', error);
+      res.status(500).send('Error al obtener mensajes del chat');
+    }
+  });
+
+  // POST /api/support-chat/messages - Send chat message
+  app.post("/api/support-chat/messages", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      if (!hasSupportAccess(user.role)) {
+        return res.status(403).send("Solo personal de soporte puede enviar mensajes");
+      }
+
+      const chatMessageSchema = z.object({
+        content: z.string().min(1, "El mensaje no puede estar vacío").max(5000),
+        channel: z.enum(['general', 'soporte_tecnico', 'facturacion', 'nueva_funcionalidad', 'error_bug', 'capacitacion']).default('general'),
+        replyToId: z.string().nullable().optional(),
+        ticketRef: z.string().nullable().optional(),
+      });
+
+      const parsed = chatMessageSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Datos inválidos" });
+      }
+
+      const { content, channel: msgChannel, replyToId, ticketRef } = parsed.data;
+
+      const [message] = await db
+        .insert(schema.supportChatMessages)
+        .values({
+          senderId: user.id,
+          senderName: user.fullName || user.username,
+          content: content.trim(),
+          channel: msgChannel,
+          replyToId: replyToId || null,
+          ticketRef: ticketRef || null,
+        })
+        .returning();
+
+      broadcastToSupportAgents({
+        type: 'support_chat_message',
+        message,
+        timestamp: new Date().toISOString(),
+      });
+
+      res.status(201).json(message);
+    } catch (error: any) {
+      console.error('Error sending chat message:', error);
+      res.status(500).send('Error al enviar mensaje');
+    }
+  });
+
+  // GET /api/support-chat/online - Get online support agents
+  app.get("/api/support-chat/online", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      if (!hasSupportAccess(user.role)) {
+        return res.status(403).send("Solo personal de soporte puede ver esta información");
+      }
+
+      const onlineIds = getOnlineSupportUserIds();
+      const onlineAgents: Array<{ id: string; name: string; role: string }> = [];
+
+      for (const uid of onlineIds) {
+        const u = await storage.getUser(uid);
+        if (u && (u.role === 'soporte' || u.role === 'superadmin')) {
+          onlineAgents.push({ id: u.id, name: u.fullName || u.username, role: u.role });
+        }
+      }
+
+      res.json(onlineAgents);
+    } catch (error: any) {
+      console.error('Error fetching online agents:', error);
+      res.status(500).send('Error al obtener agentes online');
     }
   });
 

@@ -10566,3 +10566,32 @@ export const certificacionesProfesionales = pgTable("certificaciones_profesional
 export const insertCertificacionProfesionalSchema = createInsertSchema(certificacionesProfesionales).omit({ id: true, createdAt: true });
 export type InsertCertificacionProfesional = z.infer<typeof insertCertificacionProfesionalSchema>;
 export type CertificacionProfesional = typeof certificacionesProfesionales.$inferSelect;
+
+// ============================================================================
+// SUPPORT CHAT SYSTEM - Chat interno entre agentes de soporte
+// ============================================================================
+
+export const supportChatChannelEnum = pgEnum("support_chat_channel", [
+  "general",
+  "soporte_tecnico",
+  "facturacion",
+  "nueva_funcionalidad",
+  "error_bug",
+  "capacitacion",
+]);
+
+export const supportChatMessages = pgTable("support_chat_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  senderId: varchar("sender_id").notNull().references(() => users.id),
+  senderName: text("sender_name").notNull(),
+  content: text("content").notNull(),
+  channel: supportChatChannelEnum("channel").notNull().default("general"),
+  replyToId: varchar("reply_to_id"),
+  ticketRef: varchar("ticket_ref"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const insertSupportChatMessageSchema = createInsertSchema(supportChatMessages)
+  .omit({ id: true, createdAt: true });
+export type InsertSupportChatMessage = z.infer<typeof insertSupportChatMessageSchema>;
+export type SupportChatMessage = typeof supportChatMessages.$inferSelect;

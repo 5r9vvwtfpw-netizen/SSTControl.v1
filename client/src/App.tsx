@@ -148,6 +148,7 @@ import InduccionVirtualPublica from "@/pages/InduccionVirtualPublica";
 import ConfiguracionInduccion from "@/pages/ConfiguracionInduccion";
 import ConfiguracionNotificaciones from "@/pages/ConfiguracionNotificaciones";
 import ManualSoporte from "@/pages/ManualSoporte";
+import ChatSoporte from "@/pages/ChatSoporte";
 import IndicadoresAccidentalidad from "@/pages/IndicadoresAccidentalidad";
 import IndiceSeveridadILI from "@/pages/IndiceSeveridadILI";
 import IndiceFrequenciaSeveridad from "@/pages/IndiceFrequenciaSeveridad";
@@ -423,6 +424,7 @@ function SupportRouter() {
   return (
     <Switch>
       <Route path="/soporte/tickets" component={AdminTicketsSoporte} />
+      <Route path="/soporte/chat" component={ChatSoporte} />
       <Route path="/soporte/manual" component={ManualSoporte} />
       <Route path="/soporte/login" component={LoginSoporte} />
       <Route>

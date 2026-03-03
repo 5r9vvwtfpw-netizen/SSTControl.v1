@@ -14,6 +14,7 @@ interface NotificationMessage {
 
 interface AuthenticatedWebSocket extends WebSocket {
   userId?: string;
+  userRole?: string;
   isAlive?: boolean;
   isAuthenticated?: boolean;
 }
@@ -62,6 +63,7 @@ export function initializeWebSocket(server: Server): void {
         }
 
         ws.userId = userId;
+        ws.userRole = user.role;
         ws.isAuthenticated = true;
 
         if (!clients.has(userId)) {
@@ -152,4 +154,30 @@ export function notifyMessageArchived(receiverId: string, messageId: string): vo
     messageId,
     timestamp: new Date().toISOString(),
   });
+}
+
+export function broadcastToSupportAgents(data: any): void {
+  const message = JSON.stringify(data);
+  if (!wss) return;
+  wss.clients.forEach((ws) => {
+    const authWs = ws as AuthenticatedWebSocket;
+    if (
+      authWs.readyState === WebSocket.OPEN &&
+      authWs.isAuthenticated &&
+      authWs.userId &&
+      (authWs.userRole === 'soporte' || authWs.userRole === 'superadmin')
+    ) {
+      authWs.send(message);
+    }
+  });
+}
+
+export function getOnlineSupportUserIds(): string[] {
+  const onlineIds: string[] = [];
+  clients.forEach((sockets, userId) => {
+    if (sockets.size > 0) {
+      onlineIds.push(userId);
+    }
+  });
+  return onlineIds;
 }

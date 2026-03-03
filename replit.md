@@ -45,6 +45,8 @@ The LSO Portal Empresas tab (`GET /api/portal-licenciado/empresas`) returns enri
 
 The LSO Removal Notification System triggers when a company unassigns an LSO (via any of the 6 unassignment endpoints). It: (1) sets `unassignedAt` timestamp on the assignment record, (2) sends an internal message to the LSO's portal inbox, and (3) sends an email via Resend (`sendLsoRemovalNotificationEmail`). The LSO Portal Empresas tab includes a collapsible "Historial de Empresas" section (`GET /api/portal-licenciado/empresas-historial`) showing inactive assignments with assignment/removal dates and "Finalizada" badges.
 
+The Support Portal includes a real-time internal chat system (`/soporte/chat`) for agent coordination. It uses 6 channels matching ticket categories: General, Soporte Técnico, Facturación, Nueva Funcionalidad, Error/Bug, and Capacitación. Messages are stored in the `support_chat_messages` table with channel-based filtering. WebSocket broadcasts are role-restricted to `soporte`/`superadmin` users only via `broadcastToSupportAgents()`. The chat supports ticket references (#SST-YYYY-NNNN), shows online agents, and auto-scrolls. API endpoints: `GET/POST /api/support-chat/messages`, `GET /api/support-chat/online`. Customer ticket responses now trigger automatic notifications to all support staff via internal messages and WebSocket, visible in the NotificationBell.
+
 ## External Dependencies
 
 -   **PostgreSQL (Neon/AWS RDS)**: Relational database.
