@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -232,6 +232,18 @@ export default function AdminTicketsSoporte() {
     retry: 2,
     retryDelay: 1000,
   });
+
+  useEffect(() => {
+    if (tickets.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const ticketId = params.get('ticket');
+    if (ticketId && !selectedTicket) {
+      const found = tickets.find(t => t.id === ticketId);
+      if (found) {
+        setSelectedTicket(found as TicketWithDetails);
+      }
+    }
+  }, [tickets]);
 
   const { data: selectedTicketDetails, isLoading: isLoadingDetails } = useQuery<TicketWithDetails>({
     queryKey: ['/api/support-tickets', selectedTicket?.id],

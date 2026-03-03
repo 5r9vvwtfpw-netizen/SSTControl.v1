@@ -67,12 +67,20 @@ export function NotificationBell() {
     markAsReadMutation.mutate(messageId);
   };
   
-  // Handle message click - use programmatic navigation to ensure it works even when already in the module
-  const handleMessageClick = (e: React.MouseEvent, messageId: string) => {
+  const handleMessageClick = (e: React.MouseEvent, message: InternalMessage) => {
     e.preventDefault();
     setIsOpen(false);
-    // Add timestamp to force navigation even if path is the same
-    const targetUrl = `/mensajes-internos?mensaje=${messageId}&t=${Date.now()}`;
+
+    if (message.status === 'unread') {
+      markAsReadMutation.mutate(message.id);
+    }
+
+    if (message.relatedEntity === 'support_ticket' && message.relatedEntityId) {
+      setLocation(`/soporte/tickets?ticket=${message.relatedEntityId}&t=${Date.now()}`);
+      return;
+    }
+
+    const targetUrl = `/mensajes-internos?mensaje=${message.id}&t=${Date.now()}`;
     setLocation(targetUrl);
   };
 
@@ -141,7 +149,7 @@ export function NotificationBell() {
               {recentMessages.map((message) => (
                 <div 
                   key={message.id}
-                  onClick={(e) => handleMessageClick(e, message.id)}
+                  onClick={(e) => handleMessageClick(e, message)}
                   className={cn(
                     "p-3 hover-elevate cursor-pointer transition-colors",
                     message.status === 'unread' && "bg-primary/5"
