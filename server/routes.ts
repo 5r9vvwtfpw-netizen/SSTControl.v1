@@ -40579,17 +40579,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       let updateData: any = {};
       
-      // Users can only close their own tickets
+      // Clients cannot change ticket status — only support/superadmin can close/resolve tickets
       if (!hasSupportAccess(userRole)) {
-        if (status && status !== 'cerrado') {
-          return res.status(403).send("Solo puede cerrar sus propios tickets");
+        if (status) {
+          return res.status(403).send("Solo el equipo de soporte puede cambiar el estado de los tickets");
         }
         if (assignedTo !== undefined) {
           return res.status(403).send("Solo administradores pueden asignar tickets");
-        }
-        if (status === 'cerrado') {
-          updateData.status = 'cerrado';
-          updateData.closedAt = new Date();
         }
       } else {
         // Superadmin/soporte can change everything

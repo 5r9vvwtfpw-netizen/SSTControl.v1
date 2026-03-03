@@ -872,15 +872,6 @@ export default function TicketsSoporte() {
                           </>
                         )}
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => closeTicketMutation.mutate(selectedTicketDetails.id)}
-                        disabled={closeTicketMutation.isPending}
-                        data-testid="button-close-ticket"
-                      >
-                        Cerrar Ticket
-                      </Button>
                     </div>
                   </div>
                 )}
