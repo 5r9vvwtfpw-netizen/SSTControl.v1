@@ -783,19 +783,26 @@ app.use(requireValidLicense);
   const isProduction = process.env.NODE_ENV === 'production';
   const port = parseInt(process.env.PORT || '5000', 10);
 
-  // PRODUCTION FAST-BOOT: Start HTTP server immediately so healthchecks pass
-  // while database seeding runs in the background
-  let earlyHttpServer: any = null;
+  // PRODUCTION FAST-BOOT: Use a single shared HTTP server for the entire lifecycle.
+  // The Express app handles healthchecks immediately while initialization continues.
+  // This eliminates port conflicts entirely — no second server is ever created.
+  let sharedHttpServer: any = null;
   if (isProduction) {
     const http = await import('http');
-    earlyHttpServer = http.createServer(app);
+    sharedHttpServer = http.createServer(app);
     
-    // Temporary healthcheck route - responds 200 for "/" during initialization
-    app.get("/", (_req, res) => {
-      res.status(200).send("<!DOCTYPE html><html><body>Initializing...</body></html>");
+    sharedHttpServer.on('error', (err: any) => {
+      logger.error({ err }, `[FastBoot] Server error: ${err.message}`);
+      if (err.code === 'EADDRINUSE') {
+        logger.error(`[FastBoot] Port ${port} in use. Retrying in 2 seconds...`);
+        setTimeout(() => {
+          sharedHttpServer.close();
+          sharedHttpServer.listen({ port, host: "0.0.0.0" });
+        }, 2000);
+      }
     });
     
-    earlyHttpServer.listen({ port, host: "0.0.0.0" }, () => {
+    sharedHttpServer.listen({ port, host: "0.0.0.0" }, () => {
       logger.info(`[FastBoot] Server listening on port ${port} - healthchecks will pass`);
     });
   }
@@ -946,7 +953,7 @@ app.use(requireValidLicense);
   app.use(featureGateMiddleware());
   logger.info("✅ Feature Gate middleware registrado (control de acceso por suscripción)");
 
-  const server = await registerRoutes(app);
+  const server = await registerRoutes(app, sharedHttpServer || undefined);
 
   // Mount plugin routes (Arquitectura Sidecar - Independiente del sistema principal)
   try {
@@ -1043,22 +1050,12 @@ app.use(requireValidLicense);
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
-  if (isProduction && earlyHttpServer) {
-    await new Promise<void>((resolve, reject) => {
-      earlyHttpServer.close((err: any) => {
-        if (err) {
-          logger.error({ err }, '[FastBoot] Error closing early boot server');
-        } else {
-          logger.info('[FastBoot] Early boot server closed');
-        }
-        resolve();
-      });
-    });
-    await new Promise<void>(resolve => setTimeout(resolve, 500));
-    server.listen({ port, host: "0.0.0.0" }, () => {
-      log(`serving on port ${port}`);
-      logger.info('[FastBoot] Full server now active');
-    });
+  if (isProduction && sharedHttpServer) {
+    // In production the shared server is already listening on the port.
+    // registerRoutes attached WebSocket to it. Routes were added to the Express app.
+    // Nothing else to do — the server is live and fully initialized.
+    log(`serving on port ${port}`);
+    logger.info('[FastBoot] Full application initialized — server already active');
   } else {
     server.listen({ port, host: "0.0.0.0" }, () => {
       log(`serving on port ${port}`);
