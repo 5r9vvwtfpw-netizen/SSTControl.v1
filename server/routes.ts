@@ -9778,6 +9778,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update validatedData with resolved workerId
       validatedData.workerId = workerId;
+
+      if (!validatedData.jobProfileId && worker && worker.jobProfileId) {
+        validatedData.jobProfileId = worker.jobProfileId;
+      }
       
       // Auto-generate contract number if not provided or empty
       // Format: CONT-{COMPANY_CODE}-{YEAR}-{SEQUENCE}
@@ -34550,13 +34554,20 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).json({ error: "No se encontró un contrato activo" });
       }
 
-      // Verificar que el contrato tiene un perfil de cargo asociado
-      if (!activeContract.jobProfileId) {
-        return res.status(404).json({ error: "El contrato no tiene un perfil de cargo asociado" });
+      let jobProfileId = activeContract.jobProfileId;
+
+      if (!jobProfileId) {
+        const worker = await storage.getWorker(workerId, companyId);
+        if (worker) {
+          jobProfileId = worker.jobProfileId || null;
+        }
       }
 
-      // Obtener el perfil de cargo
-      const jobProfile = await storage.getJobProfile(activeContract.jobProfileId, companyId);
+      if (!jobProfileId) {
+        return res.status(404).json({ error: "No se encontró un perfil de cargo asociado al contrato ni al trabajador" });
+      }
+
+      const jobProfile = await storage.getJobProfile(jobProfileId, companyId);
       
       if (!jobProfile) {
         return res.status(404).json({ error: "Perfil de cargo no encontrado" });
