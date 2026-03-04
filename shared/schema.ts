@@ -1423,10 +1423,14 @@ export const responsibleDesignations = pgTable("responsible_designations", {
   curso50Horas: boolean("curso_50_horas").default(false), // ¿Tiene certificado del curso de 50 horas?
   curso50HorasFecha: date("curso_50_horas_fecha"), // Fecha del certificado del curso de 50 horas
   nivelFormacion: text("nivel_formacion"), // Técnico, Tecnólogo, Profesional, Especialista
+  lsoSignatureName: text("lso_signature_name"),
+  lsoSignatureLicense: text("lso_signature_license"),
+  lsoSignatureUrl: text("lso_signature_url"),
+  lsoSignedAt: timestamp("lso_signed_at"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
-export const insertResponsibleDesignationSchema = createInsertSchema(responsibleDesignations).omit({ id: true, createdAt: true, companyId: true });
+export const insertResponsibleDesignationSchema = createInsertSchema(responsibleDesignations).omit({ id: true, createdAt: true, companyId: true, lsoSignatureName: true, lsoSignatureLicense: true, lsoSignatureUrl: true, lsoSignedAt: true });
 export type InsertResponsibleDesignation = z.infer<typeof insertResponsibleDesignationSchema>;
 export type ResponsibleDesignation = typeof responsibleDesignations.$inferSelect;
 

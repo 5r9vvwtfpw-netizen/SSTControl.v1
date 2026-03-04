@@ -73,6 +73,30 @@ export async function syncExternalLsoColumns(): Promise<void> {
     `);
     console.log('[Migration] ✅ Columna curso_50_horas_fecha verificada/agregada');
 
+    await db.execute(sql`
+      ALTER TABLE responsible_designations 
+      ADD COLUMN IF NOT EXISTS lso_signature_name TEXT
+    `);
+    console.log('[Migration] ✅ Columna lso_signature_name verificada/agregada');
+
+    await db.execute(sql`
+      ALTER TABLE responsible_designations 
+      ADD COLUMN IF NOT EXISTS lso_signature_license TEXT
+    `);
+    console.log('[Migration] ✅ Columna lso_signature_license verificada/agregada');
+
+    await db.execute(sql`
+      ALTER TABLE responsible_designations 
+      ADD COLUMN IF NOT EXISTS lso_signature_url TEXT
+    `);
+    console.log('[Migration] ✅ Columna lso_signature_url verificada/agregada');
+
+    await db.execute(sql`
+      ALTER TABLE responsible_designations 
+      ADD COLUMN IF NOT EXISTS lso_signed_at TIMESTAMP
+    `);
+    console.log('[Migration] ✅ Columna lso_signed_at verificada/agregada');
+
     console.log('[Migration] ✅ Todas las columnas sincronizadas correctamente en responsible_designations');
   } catch (error: any) {
     console.error('[Migration] ✗ Error sincronizando columnas en responsible_designations:', error.message);

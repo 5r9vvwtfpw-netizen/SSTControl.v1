@@ -926,6 +926,118 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     }
   });
 
+  // GET /api/portal-licenciado/designaciones-pendientes - Pending designation acts needing LSO signature
+  app.get("/api/portal-licenciado/designaciones-pendientes", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const assignments = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+      const companyIds = assignments.map(a => a.companyId);
+      if (companyIds.length === 0 && user.companyId) {
+        companyIds.push(user.companyId);
+      }
+      if (companyIds.length === 0) return res.json([]);
+
+      const designations = await db.select({
+        id: schema.responsibleDesignations.id,
+        companyId: schema.responsibleDesignations.companyId,
+        companyName: schema.companies.name,
+        companyNit: schema.companies.nit,
+        designationDate: schema.responsibleDesignations.designationDate,
+        position: schema.responsibleDesignations.position,
+        externalLsoName: schema.responsibleDesignations.externalLsoName,
+        licenciaSstNumero: schema.responsibleDesignations.licenciaSstNumero,
+        status: schema.responsibleDesignations.status,
+        lsoSignedAt: schema.responsibleDesignations.lsoSignedAt,
+        lsoSignatureName: schema.responsibleDesignations.lsoSignatureName,
+        createdAt: schema.responsibleDesignations.createdAt,
+      })
+      .from(schema.responsibleDesignations)
+      .innerJoin(schema.companies, eq(schema.responsibleDesignations.companyId, schema.companies.id))
+      .where(and(
+        sql`${schema.responsibleDesignations.companyId} IN ${companyIds}`,
+        eq(schema.responsibleDesignations.status, 'activo'),
+      ))
+      .orderBy(desc(schema.responsibleDesignations.createdAt));
+
+      const result = designations.map(d => ({
+        ...d,
+        isSigned: !!d.lsoSignedAt,
+        type: 'designacion',
+      }));
+
+      res.json(result);
+    } catch (error: any) {
+      console.error('[GET /api/portal-licenciado/designaciones-pendientes] Error:', error.message);
+      res.status(500).json({ message: "Error fetching pending designations", error: error.message });
+    }
+  });
+
+  // PATCH /api/portal-licenciado/designacion/:id/firmar - LSO signs the designation act
+  app.patch("/api/portal-licenciado/designacion/:id/firmar", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const { id } = req.params;
+
+      const [designation] = await db.select()
+        .from(schema.responsibleDesignations)
+        .where(eq(schema.responsibleDesignations.id, id));
+
+      if (!designation) {
+        return res.status(404).json({ message: "Designación no encontrada" });
+      }
+
+      const [assignment] = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.companyId, designation.companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+
+      const hasDirectAccess = user.companyId === designation.companyId;
+      if (!assignment && !hasDirectAccess) {
+        return res.status(403).json({ message: "No tiene acceso a firmar esta designación" });
+      }
+
+      const signatureUrl = user.sstSignatureUrl || assignment?.externalLsoSignatureUrl || null;
+      if (!signatureUrl) {
+        return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
+      }
+
+      const sigAccessible = await isSignatureAccessible(signatureUrl);
+      if (!sigAccessible) {
+        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma desde 'Mi Licencia'." });
+      }
+
+      if (designation.lsoSignedAt) {
+        return res.status(400).json({ message: "Esta designación ya fue firmada" });
+      }
+
+      const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.fullName || user.username;
+
+      const [updated] = await db.update(schema.responsibleDesignations)
+        .set({
+          lsoSignatureName: fullName,
+          lsoSignatureLicense: user.sstLicenseNumber || '',
+          lsoSignatureUrl: signatureUrl,
+          lsoSignedAt: new Date(),
+        })
+        .where(eq(schema.responsibleDesignations.id, id))
+        .returning();
+
+      console.log(`[LSO-FIRMA] Designation ${id} signed by ${user.username}`);
+      res.json({ message: "Acta de designación firmada exitosamente", designation: updated });
+    } catch (error: any) {
+      console.error('[PATCH /api/portal-licenciado/designacion/:id/firmar] Error:', error.message);
+      res.status(500).json({ message: "Error signing designation", error: error.message });
+    }
+  });
+
   // GET /api/companies/:companyId/licensed-professionals - Get licensed professionals assigned to a company
   app.get("/api/companies/:companyId/licensed-professionals", requireAuth, async (req, res) => {
     try {

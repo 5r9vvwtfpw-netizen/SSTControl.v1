@@ -11407,17 +11407,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY = doc.y + 15;
       
       // Signature section
-      checkPageSpace(doc, 120);
-      if (currentY > doc.page.height - 130) {
+      checkPageSpace(doc, 180);
+      if (currentY > doc.page.height - 190) {
         doc.addPage();
         doc.font('Helvetica').fontSize(8).fillColor('#000000');
         currentY = 50;
       }
       
       doc.fontSize(8).text('En constancia de lo anterior, se firma la presente acta:', margin, currentY, { lineBreak: false });
-      currentY += 50;
+      currentY += 20;
       
       const signatureWidth = (contentWidth - 40) / 2;
+      const sigImgHeight = 50;
+      
+      // Load LSO digital signature image if signed
+      let lsoSigBuffer: Buffer | null = null;
+      if (designation.lsoSignatureUrl) {
+        try {
+          const { ObjectStorageService } = await import('./replit_integrations/object_storage');
+          const osService = new ObjectStorageService();
+          lsoSigBuffer = await osService.getObjectBuffer(designation.lsoSignatureUrl);
+        } catch (sigErr: any) {
+          console.error('[PDF-Designacion] Error loading LSO signature image:', sigErr.message);
+        }
+      }
+
+      // Draw signature images
+      if (lsoSigBuffer) {
+        try {
+          doc.image(lsoSigBuffer, margin + signatureWidth + 40, currentY, { fit: [120, sigImgHeight], align: 'center' });
+        } catch (imgErr: any) {
+          console.error('[PDF-Designacion] Error rendering LSO signature:', imgErr.message);
+        }
+      }
+
+      currentY += sigImgHeight + 5;
       
       doc.text('_________________________________', margin, currentY, { lineBreak: false });
       doc.text('_________________________________', margin + signatureWidth + 40, currentY, { lineBreak: false });
@@ -11433,18 +11457,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const repLegalPosition = company.legalRepPosition || '__________________________';
       
       doc.text(`Nombre: ${repLegalName}`, margin, currentY, { lineBreak: false });
-      doc.text(`Nombre: ${designeeInfo.name}`, margin + signatureWidth + 40, currentY, { lineBreak: false });
+      const lsoDisplayName = designation.lsoSignatureName || designeeInfo.name;
+      doc.text(`Nombre: ${lsoDisplayName}`, margin + signatureWidth + 40, currentY, { lineBreak: false });
       currentY += 12;
       
       doc.text(`C.C.: ${repLegalId}`, margin, currentY, { lineBreak: false });
       doc.text(`C.C.: ${designeeInfo.identificationNumber}`, margin + signatureWidth + 40, currentY, { lineBreak: false });
       currentY += 12;
       
-      const licenciaResponsable = designation.licenciaSstNumero 
-        ? `Licencia SST No. ${designation.licenciaSstNumero}`
+      const licenciaResponsable = designation.lsoSignatureLicense || designation.licenciaSstNumero 
+        ? `Licencia SST No. ${designation.lsoSignatureLicense || designation.licenciaSstNumero}`
         : 'Licencia SST: ___________________';
       doc.text(`Cargo: ${repLegalPosition}`, margin, currentY, { lineBreak: false });
       doc.text(licenciaResponsable, margin + signatureWidth + 40, currentY, { lineBreak: false });
+      
+      if (designation.lsoSignedAt) {
+        currentY += 12;
+        doc.fontSize(7).fillColor('#666666');
+        const signedDate = new Date(designation.lsoSignedAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        doc.text(`Firmado digitalmente: ${signedDate}`, margin + signatureWidth + 40, currentY, { lineBreak: false });
+      }
       
       doc.end();
     } catch (error: any) {
