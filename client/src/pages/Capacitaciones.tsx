@@ -475,21 +475,13 @@ export default function Capacitaciones() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="instructor">Instructor (opcional)</Label>
-                    <Select
+                    <Input
+                      id="instructor"
+                      placeholder="Nombre del instructor"
                       value={formData.instructor}
-                      onValueChange={(value) => setFormData({ ...formData, instructor: value })}
-                    >
-                      <SelectTrigger id="instructor" data-testid="select-instructor">
-                        <SelectValue placeholder="Seleccione un instructor" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {workers?.map((worker) => (
-                          <SelectItem key={worker.id} value={`${worker.name} - ${worker.position}`}>
-                            {worker.name} - {worker.position}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
+                      data-testid="input-instructor"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="date">Fecha *</Label>
@@ -621,21 +613,13 @@ export default function Capacitaciones() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-instructor">Instructor (opcional)</Label>
-                <Select
+                <Input
+                  id="edit-instructor"
+                  placeholder="Nombre del instructor"
                   value={editFormData.instructor}
-                  onValueChange={(value) => setEditFormData({ ...editFormData, instructor: value })}
-                >
-                  <SelectTrigger id="edit-instructor" data-testid="select-edit-instructor">
-                    <SelectValue placeholder="Seleccione un instructor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {workers?.map((worker) => (
-                      <SelectItem key={worker.id} value={`${worker.name} - ${worker.position}`}>
-                        {worker.name} - {worker.position}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(e) => setEditFormData({ ...editFormData, instructor: e.target.value })}
+                  data-testid="input-edit-instructor"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-date">Fecha *</Label>

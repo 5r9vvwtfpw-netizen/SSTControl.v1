@@ -936,7 +936,6 @@ const portalNavGroups = [
     label: "Formación",
     icon: GraduationCap,
     items: [
-      { id: "cursos-virtuales", label: "Cursos Virtuales", icon: BookOpen },
       { id: "capacitaciones", label: "Capacitaciones", icon: GraduationCap },
       { id: "mis-inducciones", label: "Mis Inducciones", icon: ClipboardList },
       { id: "inducciones-virtuales", label: "Inducciones Virtuales", icon: Monitor },
@@ -1200,7 +1199,7 @@ function WorkerPortal() {
         {activeSection === "cambiar-password" && <CambiarPasswordTab />}
         {/* MisDocumentosTab eliminado - info duplicada con MiContratoTab */}
         {activeSection === "documentos-asignados" && <MisDocumentosAsignadosTab />}
-        {activeSection === "cursos-virtuales" && <CursosVirtualesTab />}
+
         {activeSection === "capacitaciones" && <MisCapacitacionesTab />}
         {activeSection === "mis-inducciones" && <MisInduccionesTab />}
         {activeSection === "inducciones-virtuales" && <InduccionesVirtualesTab />}
