@@ -1573,7 +1573,7 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         }
       }
       if (companyIds.length === 0) {
-        return res.json({ investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [] });
+        return res.json({ investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [], designaciones: [] });
       }
 
       const pendingInvestigations = await db.select({

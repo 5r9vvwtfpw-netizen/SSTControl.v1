@@ -2437,6 +2437,11 @@ function DocumentosTab() {
                     {vault.matricesIperc.length} matriz{vault.matricesIperc.length !== 1 ? 'ces' : ''}
                   </span>
                 )}
+                {vault.designaciones.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {vault.designaciones.length} designación{vault.designaciones.length !== 1 ? 'es' : ''}
+                  </span>
+                )}
               </div>
             </CardContent>
           </Card>
