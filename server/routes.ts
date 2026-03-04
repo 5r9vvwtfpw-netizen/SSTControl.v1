@@ -34154,13 +34154,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertReporteTrabajadorSchema.parse(req.body);
       const reporte = await storage.createReporteTrabajador({
         ...validatedData,
-        reportadoPor: validatedData.esAnonimo ? null : userId,
+        reportadoPor: userId,
       }, companyId, userId!);
       
-      // TODO: Enviar notificación por email si es urgente
-      // if (reporte.prioridad === 'urgente') {
-      //   await sendReporteUrgenteEmail(reporte);
-      // }
+      try {
+        const companyAdmins = await storage.getUsersByRole(["admin", "company_admin"], companyId);
+        const senderName = validatedData.esAnonimo ? "Trabajador (Anónimo)" : (req.user?.fullName || req.user?.username || "Trabajador");
+        for (const admin of companyAdmins) {
+          const msg = await storage.createInternalMessage({
+            companyId,
+            senderId: userId!,
+            senderName,
+            senderRole: req.user!.role,
+            receiverId: admin.id,
+            receiverName: admin.fullName || admin.username,
+            receiverRole: admin.role,
+            subject: `Nuevo reporte SST: ${reporte.asunto}`,
+            content: `Se ha recibido un nuevo reporte (${reporte.codigo}) de tipo "${reporte.categoria}" con prioridad "${reporte.prioridad}". ${validatedData.esAnonimo ? 'El reporte fue enviado de forma anónima.' : ''} Requiere revisión.`,
+            priority: reporte.prioridad === 'urgente' || reporte.prioridad === 'alta' ? 'high' : 'normal',
+            status: 'unread',
+            relatedEntity: 'reporte_trabajador',
+            relatedEntityId: reporte.id,
+          });
+          notifyNewMessage(admin.id, userId!, msg.id);
+        }
+      } catch (notifErr: any) {
+        console.error('[Report Notification] Error sending notification to admins:', notifErr.message);
+      }
       
       res.status(201).json(reporte);
     } catch (error: any) {
