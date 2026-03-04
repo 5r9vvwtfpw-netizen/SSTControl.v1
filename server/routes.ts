@@ -40534,8 +40534,19 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // Get company name for denormalization
       const company = userCompanyId ? await storage.getCompany(userCompanyId) : null;
       
+      const categoryLabels: Record<string, string> = {
+        soporte_tecnico: "Soporte Técnico",
+        facturacion: "Facturación",
+        nueva_funcionalidad: "Nueva Funcionalidad",
+        error_bug: "Error / Bug",
+        capacitacion: "Capacitación",
+        consulta_general: "Consulta General",
+      };
+      const autoSubject = req.body.subject?.trim() || categoryLabels[req.body.category] || "Ticket de Soporte";
+      
       const ticketData = {
         ...req.body,
+        subject: autoSubject,
         userId: userId,
         userName: user.fullName || user.username,
         userEmail: user.email || null,
