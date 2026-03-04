@@ -6423,6 +6423,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         workerId,
         attended: 0,
       }, effectiveCompanyId!);
+
+      try {
+        const workerUser = await storage.getUserByWorkerId(workerId);
+        if (workerUser) {
+          const fechaStr = training.date ? new Date(training.date).toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Fecha por confirmar';
+          const msg = await storage.createInternalMessage({
+            companyId: training.companyId,
+            senderId: req.user!.id,
+            senderName: req.user!.fullName || req.user!.username,
+            senderRole: req.user!.role,
+            receiverId: workerUser.id,
+            receiverName: workerUser.fullName || workerUser.username,
+            receiverRole: workerUser.role,
+            subject: `Invitación a capacitación: ${training.topic || training.title || 'Capacitación programada'}`,
+            content: `Has sido invitado(a) a la capacitación "${training.topic || training.title || 'Capacitación programada'}" programada para el ${fechaStr}. Por favor confirma tu asistencia desde el Portal de Empleados.`,
+            priority: 'normal',
+            status: 'unread',
+            relatedEntity: 'training',
+            relatedEntityId: trainingId,
+          });
+          notifyNewMessage(workerUser.id, req.user!.id, msg.id);
+          console.log(`[Training Notification] Sent to worker user ${workerUser.id} for training ${trainingId}`);
+        }
+      } catch (notifErr: any) {
+        console.error('[Training Notification] Error sending notification:', notifErr.message);
+      }
       
       res.json(attendee);
     } catch (error: any) {
@@ -15595,6 +15621,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validated = schema.insertCapacitacionAsistenteSchema.parse(asistenteData);
       const asistente = await storage.createCapacitacionAsistente(validated, companyId);
+
+      try {
+        const workerUser = await storage.getUserByWorkerId(req.body.workerId);
+        if (workerUser) {
+          const fechaStr = evento.fechaInicio ? new Date(evento.fechaInicio).toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Fecha por confirmar';
+          const horaStr = evento.horaInicio ? ` a las ${evento.horaInicio}` : '';
+          const lugarStr = evento.lugar ? ` en ${evento.lugar}` : '';
+          const msg = await storage.createInternalMessage({
+            companyId,
+            senderId: req.user!.id,
+            senderName: req.user!.fullName || req.user!.username,
+            senderRole: req.user!.role,
+            receiverId: workerUser.id,
+            receiverName: workerUser.fullName || workerUser.username,
+            receiverRole: workerUser.role,
+            subject: `Invitación a capacitación: ${evento.tituloCurso}`,
+            content: `Has sido invitado(a) a la capacitación "${evento.tituloCurso}" programada para el ${fechaStr}${horaStr}${lugarStr}. Por favor confirma tu asistencia desde el Portal de Empleados.`,
+            priority: 'normal',
+            status: 'unread',
+            relatedEntity: 'capacitacion_evento',
+            relatedEntityId: evento.id,
+          });
+          notifyNewMessage(workerUser.id, req.user!.id, msg.id);
+          console.log(`[Training Notification] Sent to worker user ${workerUser.id} for evento ${evento.id}`);
+        }
+      } catch (notifErr: any) {
+        console.error('[Training Notification] Error sending notification:', notifErr.message);
+      }
+
       res.status(201).json(asistente);
     } catch (error: any) {
       if (error.name === 'ZodError') {
