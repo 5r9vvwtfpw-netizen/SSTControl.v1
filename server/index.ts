@@ -1043,14 +1043,16 @@ app.use(requireValidLicense);
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   if (isProduction && earlyHttpServer) {
-    // In production: start full server (with WebSocket) alongside early server using reusePort,
-    // then close the early server once the main one is ready
-    server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
-      log(`serving on port ${port}`);
-      // Now close the early boot server - main server is ready
+    // Close the early boot server first, then start the full server
+    await new Promise<void>((resolve) => {
       earlyHttpServer.close(() => {
-        logger.info('[FastBoot] Early boot server closed, full server active');
+        logger.info('[FastBoot] Early boot server closed, starting full server...');
+        resolve();
       });
+    });
+    server.listen({ port, host: "0.0.0.0" }, () => {
+      log(`serving on port ${port}`);
+      logger.info('[FastBoot] Full server active with all routes');
     });
   } else {
     server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
