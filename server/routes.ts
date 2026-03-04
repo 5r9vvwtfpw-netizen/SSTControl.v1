@@ -1536,7 +1536,7 @@ function canAccessMedicalData(role: UserRole): boolean {
   return role === 'superadmin' || role === 'superusuario' || role === 'admin' || role === 'coordinador_salud';
 }
 
-export async function registerRoutes(app: Express, existingServer?: Server): Promise<Server> {
+export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
 
@@ -49251,7 +49251,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
-  const httpServer = existingServer || createServer(app);
+  const httpServer = createServer(app);
+  // Initialize WebSocket for real-time notifications
   initializeWebSocket(httpServer);
 
   return httpServer;

@@ -783,19 +783,20 @@ app.use(requireValidLicense);
   const isProduction = process.env.NODE_ENV === 'production';
   const port = parseInt(process.env.PORT || '5000', 10);
 
-  // PRODUCTION FAST-BOOT: Start a lightweight HTTP server immediately so
-  // Replit healthchecks pass while the full app initializes (DB migrations, seeding, etc.)
-  // Once the full app is ready, this server is closed and the main server takes over.
+  // PRODUCTION FAST-BOOT: Start HTTP server immediately so healthchecks pass
+  // while database seeding runs in the background
   let earlyHttpServer: any = null;
   if (isProduction) {
     const http = await import('http');
-    const earlyApp = (await import('express')).default();
-    earlyApp.use((_req, res) => {
-      res.status(200).send('<!DOCTYPE html><html><head><meta charset="utf-8"><title>SST Colombia</title><meta http-equiv="refresh" content="5"><style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f5f5f5}div{text-align:center}h2{color:#333}.spinner{border:4px solid #ddd;border-top:4px solid #2563eb;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:20px auto}@keyframes spin{to{transform:rotate(360deg)}}</style></head><body><div><div class="spinner"></div><h2>Iniciando sistema SST Colombia...</h2><p>Por favor espere unos segundos.</p></div></body></html>');
+    earlyHttpServer = http.createServer(app);
+    
+    // Temporary healthcheck route - responds 200 for "/" during initialization
+    app.get("/", (_req, res) => {
+      res.status(200).send("<!DOCTYPE html><html><body>Initializing...</body></html>");
     });
-    earlyHttpServer = http.createServer(earlyApp);
-    earlyHttpServer.listen({ port, host: "0.0.0.0" }, () => {
-      logger.info(`[FastBoot] Early server listening on port ${port} - healthchecks will pass`);
+    
+    earlyHttpServer.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
+      logger.info(`[FastBoot] Server listening on port ${port} - healthchecks will pass`);
     });
   }
 
@@ -1043,23 +1044,17 @@ app.use(requireValidLicense);
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   if (isProduction && earlyHttpServer) {
-    // Close the early boot server first, then start the main one
-    await new Promise<void>((resolve) => {
-      earlyHttpServer.close(() => {
-        logger.info('[FastBoot] Early boot server closed');
-        resolve();
-      });
-      // Force-close after 3 seconds if graceful close hangs
-      setTimeout(() => resolve(), 3000);
-    });
-    // Small delay to ensure the port is fully released
-    await new Promise<void>(resolve => setTimeout(resolve, 300));
-    server.listen({ port, host: "0.0.0.0" }, () => {
+    // In production: start full server (with WebSocket) alongside early server using reusePort,
+    // then close the early server once the main one is ready
+    server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
       log(`serving on port ${port}`);
-      logger.info('[FastBoot] Main server active — full application ready');
+      // Now close the early boot server - main server is ready
+      earlyHttpServer.close(() => {
+        logger.info('[FastBoot] Early boot server closed, full server active');
+      });
     });
   } else {
-    server.listen({ port, host: "0.0.0.0" }, () => {
+    server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
       log(`serving on port ${port}`);
     });
   }
