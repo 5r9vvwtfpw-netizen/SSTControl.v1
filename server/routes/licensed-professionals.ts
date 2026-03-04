@@ -852,10 +852,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
 
       const sigAccessible = await isSignatureAccessible(signatureUrl);
       if (!sigAccessible) {
-        if (user.sstSignatureUrl) {
-          await db.update(schema.users).set({ sstSignatureUrl: null }).where(eq(schema.users.id, user.id));
-        }
-        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma antes de firmar documentos." });
+        console.log(`[FIRMA] LSO ${user.id} signature not accessible during signing (URL preserved): ${signatureUrl}`);
+        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma desde 'Mi Licencia'." });
       }
 
       const [updated] = await db.update(schema.accidentInvestigations)
@@ -1347,14 +1345,11 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       const accessible = await isSignatureAccessible(signatureUrl);
 
       if (!accessible) {
-        await db.update(schema.users)
-          .set({ sstSignatureUrl: null })
-          .where(eq(schema.users.id, user.id));
-        console.log(`[FIRMA-ESTADO] LSO ${user.id} signature URL cleared (file not accessible): ${signatureUrl}`);
-        return res.json({ hasSignature: false, isAccessible: false, wasCleared: true });
+        console.log(`[FIRMA-ESTADO] LSO ${user.id} signature not accessible (URL preserved): ${signatureUrl}`);
+        return res.json({ hasSignature: true, isAccessible: false, signatureUrl });
       }
 
-      return res.json({ hasSignature: true, isAccessible: true });
+      return res.json({ hasSignature: true, isAccessible: true, signatureUrl });
     } catch (error: any) {
       console.error('[GET /api/portal-licenciado/firma/estado] Error:', error.message);
       res.status(500).json({ message: "Error al verificar estado de firma" });
@@ -1514,10 +1509,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
 
       const sigAccessible = await isSignatureAccessible(signatureUrl);
       if (!sigAccessible) {
-        if (user.sstSignatureUrl) {
-          await db.update(schema.users).set({ sstSignatureUrl: null }).where(eq(schema.users.id, user.id));
-        }
-        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma antes de firmar documentos." });
+        console.log(`[FIRMA] LSO ${user.id} signature not accessible during signing (URL preserved): ${signatureUrl}`);
+        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma desde 'Mi Licencia'." });
       }
 
       const [updated] = await db.update(schema.evaluacionesSst)
@@ -1574,10 +1567,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
 
       const sigAccessible = await isSignatureAccessible(signatureUrl);
       if (!sigAccessible) {
-        if (user.sstSignatureUrl) {
-          await db.update(schema.users).set({ sstSignatureUrl: null }).where(eq(schema.users.id, user.id));
-        }
-        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma antes de firmar documentos." });
+        console.log(`[FIRMA] LSO ${user.id} signature not accessible during signing (URL preserved): ${signatureUrl}`);
+        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma desde 'Mi Licencia'." });
       }
 
       const [updated] = await db.update(schema.planesTrabajoAnual)
@@ -1634,10 +1625,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
 
       const sigAccessible = await isSignatureAccessible(signatureUrl);
       if (!sigAccessible) {
-        if (user.sstSignatureUrl) {
-          await db.update(schema.users).set({ sstSignatureUrl: null }).where(eq(schema.users.id, user.id));
-        }
-        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma antes de firmar documentos." });
+        console.log(`[FIRMA] LSO ${user.id} signature not accessible during signing (URL preserved): ${signatureUrl}`);
+        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma desde 'Mi Licencia'." });
       }
 
       const [updated] = await db.update(schema.matricesIperc)
