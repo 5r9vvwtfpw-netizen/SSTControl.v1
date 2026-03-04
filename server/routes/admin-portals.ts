@@ -62,8 +62,16 @@ export function registerAdminPortalsRoutes(app: Express) {
             eq(schema.licensedProfessionalAssignments.isActive, true)
           ));
           return {
-            ...user,
-            activeAssignmentsCount: Number(countResult?.count || 0),
+            id: user.id,
+            fullName: user.fullName,
+            email: user.email || "",
+            profession: user.sstProfessionType || "",
+            licenseNumber: user.sstLicenseNumber || null,
+            licenseIssuer: user.sstLicenseIssuer || null,
+            licenseExpiryDate: user.sstLicenseExpiresAt || null,
+            licenseStatus: user.sstLicenseStatus || null,
+            hasSignature: !!user.sstSignatureUrl,
+            assignedCompanies: Number(countResult?.count || 0),
           };
         })
       );
@@ -105,8 +113,25 @@ export function registerAdminPortalsRoutes(app: Express) {
       const { password, ...userWithoutPassword } = user;
 
       res.json({
-        ...userWithoutPassword,
-        assignments,
+        id: userWithoutPassword.id,
+        fullName: userWithoutPassword.fullName,
+        email: userWithoutPassword.email || "",
+        profession: userWithoutPassword.sstProfessionType || "",
+        licenseNumber: userWithoutPassword.sstLicenseNumber || null,
+        licenseIssuer: userWithoutPassword.sstLicenseIssuer || null,
+        licenseIssueDate: userWithoutPassword.sstLicenseIssuedAt || null,
+        licenseExpiryDate: userWithoutPassword.sstLicenseExpiresAt || null,
+        licenseStatus: userWithoutPassword.sstLicenseStatus || null,
+        hasSignature: !!userWithoutPassword.sstSignatureUrl,
+        signatureUrl: userWithoutPassword.sstSignatureUrl || null,
+        assignedCompanies: assignments.filter(a => a.isActive).length,
+        assignments: assignments.map(a => ({
+          id: a.id,
+          companyId: a.companyId,
+          companyName: a.companyName,
+          assignedAt: a.assignedAt ? new Date(a.assignedAt).toLocaleDateString('es-CO') : "-",
+          isActive: a.isActive,
+        })),
       });
     } catch (error: any) {
       console.error('[GET /api/admin/portal-lso/users/:id] Error:', error.message);
@@ -294,7 +319,16 @@ export function registerAdminPortalsRoutes(app: Express) {
       .leftJoin(schema.companies, eq(schema.users.companyId, schema.companies.id))
       .where(eq(schema.users.role, 'trabajador'));
 
-      res.json(workerUsers);
+      const mapped = workerUsers.map(w => ({
+        id: w.id,
+        fullName: w.fullName,
+        email: w.email || "",
+        companyName: w.companyName || "Sin empresa",
+        createdAt: w.createdAt ? new Date(w.createdAt).toLocaleDateString('es-CO') : "-",
+        isActive: true,
+      }));
+
+      res.json(mapped);
     } catch (error: any) {
       console.error('[GET /api/admin/portal-empleados/users] Error:', error.message);
       res.status(500).json({ error: "Error al obtener usuarios trabajadores" });
