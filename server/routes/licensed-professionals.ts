@@ -11,6 +11,7 @@ import path from "path";
 import { storage } from "../storage";
 import { sendLsoRemovalNotificationEmail } from "../email";
 import { objectStorageClient, ObjectStorageService } from "../replit_integrations/object_storage";
+import { notifyNewMessage } from "../websocket";
 
 async function notifyLsoRemoval(assignment: any, companyId: string) {
   try {
@@ -30,7 +31,7 @@ async function notifyLsoRemoval(assignment: any, companyId: string) {
     const now = new Date();
     const removalDateStr = now.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
 
-    await storage.createInternalMessage({
+    const msg = await storage.createInternalMessage({
       companyId: companyId,
       senderId: lsoUser.id,
       senderName: 'Sistema SST Colombia',
@@ -45,6 +46,7 @@ async function notifyLsoRemoval(assignment: any, companyId: string) {
       relatedEntity: 'lso_assignment',
       relatedEntityId: assignment.id,
     });
+    try { notifyNewMessage(lsoUser.id, lsoUser.id, msg.id); } catch (e) { /* ignore ws error */ }
 
     if (lsoUser.email) {
       await sendLsoRemovalNotificationEmail(lsoUser.email, {
@@ -348,9 +350,32 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       if (existingAssignment) {
         if (!existingAssignment.isActive) {
           const [reactivated] = await db.update(schema.licensedProfessionalAssignments)
-            .set({ isActive: true, assignedAt: new Date(), assignedBy: user.id })
+            .set({ isActive: true, assignedAt: new Date(), assignedBy: user.id, unassignedAt: null })
             .where(eq(schema.licensedProfessionalAssignments.id, existingAssignment.id))
             .returning();
+
+          try {
+            const assignDateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+            const msg = await storage.createInternalMessage({
+              companyId,
+              senderId: user.id,
+              senderName: 'Sistema SST Colombia',
+              senderRole: 'superadmin',
+              receiverId: professional.id,
+              receiverName: `${professional.firstName || ''} ${professional.lastName || ''}`.trim() || professional.username,
+              receiverRole: professional.role,
+              subject: `Nueva asignación - ${company.name}`,
+              content: `Le informamos que ha sido asignado nuevamente como profesional licenciado responsable del SG-SST para la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) a partir del ${assignDateStr}. Puede gestionar esta empresa desde la pestaña Empresas de su portal.`,
+              priority: 'normal',
+              status: 'unread',
+              relatedEntity: 'lso_assignment',
+              relatedEntityId: reactivated.id,
+            });
+            try { notifyNewMessage(professional.id, user.id, msg.id); } catch (e) { /* ignore ws error */ }
+          } catch (notifErr) {
+            console.error('[LSO-Reactivation] Error creating notification:', notifErr);
+          }
+
           return res.json(reactivated);
         }
         return res.status(400).json({ message: "Professional is already assigned to this company" });
@@ -363,7 +388,29 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           assignedBy: user.id,
         })
         .returning();
-      
+
+      try {
+        const assignDateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+        const msg = await storage.createInternalMessage({
+          companyId,
+          senderId: user.id,
+          senderName: 'Sistema SST Colombia',
+          senderRole: 'superadmin',
+          receiverId: professional.id,
+          receiverName: `${professional.firstName || ''} ${professional.lastName || ''}`.trim() || professional.username,
+          receiverRole: professional.role,
+          subject: `Nueva asignación - ${company.name}`,
+          content: `Le informamos que ha sido asignado como profesional licenciado responsable del SG-SST para la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) a partir del ${assignDateStr}. Puede gestionar esta empresa desde la pestaña Empresas de su portal.`,
+          priority: 'normal',
+          status: 'unread',
+          relatedEntity: 'lso_assignment',
+          relatedEntityId: assignment.id,
+        });
+        try { notifyNewMessage(professional.id, user.id, msg.id); } catch (e) { /* ignore ws error */ }
+      } catch (notifErr) {
+        console.error('[LSO-Assignment] Error creating assignment notification:', notifErr);
+      }
+
       res.status(201).json(assignment);
     } catch (error: any) {
       console.error('[POST /api/licensed-professionals/:id/assignments] Error:', error.message);

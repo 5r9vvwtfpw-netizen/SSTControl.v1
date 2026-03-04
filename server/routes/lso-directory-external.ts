@@ -19,6 +19,7 @@ import { lsoDirectoryApi, type LsoRegistration } from "../services/lso-directory
 import { sendLsoPortalAccessEmail, sendLsoRemovalNotificationEmail, sendLsoNewAssignmentEmail } from "../email";
 import { randomBytes } from "crypto";
 import { storage } from "../storage";
+import { notifyNewMessage } from "../websocket";
 
 // Helper function to get effective company ID
 function getEffectiveCompanyId(req: any): string | null {
@@ -223,13 +224,14 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
           const [prevLso] = await db.select().from(schema.users).where(eq(schema.users.id, existing.userId));
           if (prevLso) {
             const removalDateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
-            await storage.createInternalMessage({
+            const removalMsg = await storage.createInternalMessage({
               companyId, senderId: prevLso.id, senderName: 'Sistema SST Colombia', senderRole: 'superadmin',
               receiverId: prevLso.id, receiverName: `${prevLso.firstName || ''} ${prevLso.lastName || ''}`.trim() || prevLso.username,
               receiverRole: prevLso.role, subject: `Finalización de asignación - ${company.name}`,
               content: `Le informamos que la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) ha finalizado su asignación como profesional licenciado responsable del SG-SST a partir del ${removalDateStr}. Un nuevo profesional ha sido asignado en su lugar. Los documentos que usted firmó durante su gestión permanecen válidos.`,
               priority: 'urgent', status: 'unread', relatedEntity: 'lso_assignment', relatedEntityId: existing.id,
             });
+            try { notifyNewMessage(prevLso.id, prevLso.id, removalMsg.id); } catch (e) { /* ignore */ }
             if (prevLso.email) {
               await sendLsoRemovalNotificationEmail(prevLso.email, {
                 lsoName: `${prevLso.firstName || ''} ${prevLso.lastName || ''}`.trim() || prevLso.username,
@@ -359,6 +361,31 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
         } catch (emailError: any) {
           console.error(`[LSO-AUTO] Error enviando email de credenciales:`, emailError.message);
         }
+      }
+
+      try {
+        const [lsoUser] = await db.select().from(schema.users).where(eq(schema.users.id, lsoUserId));
+        if (lsoUser) {
+          const assignDateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+          const assignMsg = await storage.createInternalMessage({
+            companyId,
+            senderId: user.id,
+            senderName: 'Sistema SST Colombia',
+            senderRole: 'superadmin',
+            receiverId: lsoUser.id,
+            receiverName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
+            receiverRole: lsoUser.role,
+            subject: `Nueva asignación - ${company.name}`,
+            content: `Le informamos que ha sido asignado como profesional licenciado responsable del SG-SST para la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) a partir del ${assignDateStr}. Puede gestionar esta empresa desde la pestaña Empresas de su portal.`,
+            priority: 'normal',
+            status: 'unread',
+            relatedEntity: 'lso_assignment',
+            relatedEntityId: assignment.id,
+          });
+          try { notifyNewMessage(lsoUser.id, user.id, assignMsg.id); } catch (e) { /* ignore */ }
+        }
+      } catch (notifErr) {
+        console.error('[LSO-External] Error creating assignment notification:', notifErr);
       }
 
       console.log(`[POST /api/lso-directory/assign-external] LSO externo ${externalLsoId} asignado a empresa ${companyId} (usuario: ${lsoUserId}, auto-creado: ${autoCreatedUser})`);
@@ -506,13 +533,14 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
           const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId));
           if (lsoUser && company) {
             const removalDateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
-            await storage.createInternalMessage({
+            const delMsg = await storage.createInternalMessage({
               companyId, senderId: lsoUser.id, senderName: 'Sistema SST Colombia', senderRole: 'superadmin',
               receiverId: lsoUser.id, receiverName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
               receiverRole: lsoUser.role, subject: `Finalización de asignación - ${company.name}`,
               content: `Le informamos que la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) ha finalizado su asignación como profesional licenciado responsable del SG-SST a partir del ${removalDateStr}. Los documentos que usted firmó durante su gestión permanecen válidos. Puede consultar el historial de sus empresas anteriores en la pestaña Empresas de su portal.`,
               priority: 'urgent', status: 'unread', relatedEntity: 'lso_assignment', relatedEntityId: assignment.id,
             });
+            try { notifyNewMessage(lsoUser.id, lsoUser.id, delMsg.id); } catch (e) { /* ignore */ }
             if (lsoUser.email) {
               await sendLsoRemovalNotificationEmail(lsoUser.email, {
                 lsoName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
