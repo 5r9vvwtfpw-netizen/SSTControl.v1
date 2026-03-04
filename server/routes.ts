@@ -40913,6 +40913,34 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         });
       }
 
+      // Notify the ticket creator when staff responds
+      if (isStaff && ticket.userId && ticket.userId !== userId) {
+        try {
+          const ticketCreator = await storage.getUser(ticket.userId);
+          if (ticketCreator) {
+            const staffName = user.fullName || user.username;
+            const msg = await storage.createInternalMessage({
+              companyId: ticket.companyId || ticketCreator.companyId || '',
+              senderId: userId,
+              senderName: 'Soporte SST Colombia',
+              senderRole: userRole,
+              receiverId: ticketCreator.id,
+              receiverName: ticketCreator.fullName || ticketCreator.username,
+              receiverRole: ticketCreator.role,
+              subject: `Respuesta a su Ticket ${ticket.ticketNumber}`,
+              content: `El equipo de soporte ha respondido a su ticket "${ticket.subject}" (${ticket.ticketNumber}).\n\nResponsable: ${staffName}\n\nRevise la respuesta en la sección de Soporte.`,
+              priority: ticket.priority === 'alta' || ticket.priority === 'critica' ? 'urgent' : 'normal',
+              status: 'unread',
+              relatedEntity: 'support_ticket',
+              relatedEntityId: ticket.id,
+            });
+            try { notifyNewMessage(ticketCreator.id, userId, msg.id); } catch (e) { /* ignore ws error */ }
+          }
+        } catch (notifErr) {
+          console.error('[Support Tickets] Error notifying customer of staff response:', notifErr);
+        }
+      }
+
       // Notify support staff when a customer responds
       if (!isStaff) {
         try {
