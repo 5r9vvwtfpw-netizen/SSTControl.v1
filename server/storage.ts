@@ -4720,6 +4720,28 @@ export class DbStorage implements IStorage {
         eq(schema.contracts.companyId, companyId)
       ))
       .returning();
+
+    if (updated && updated.status === 'activo' && updated.workerId) {
+      const syncFields: Record<string, any> = {};
+      if (contract.position !== undefined) syncFields.position = contract.position;
+      if (contract.department !== undefined) syncFields.department = contract.department;
+      if (contract.jobProfileId !== undefined) syncFields.jobProfileId = contract.jobProfileId;
+
+      if (Object.keys(syncFields).length > 0) {
+        try {
+          await db.update(schema.workers)
+            .set(syncFields)
+            .where(and(
+              eq(schema.workers.id, updated.workerId),
+              eq(schema.workers.companyId, companyId)
+            ));
+          console.log(`[Contract→Worker Sync] Contract ${id} updated fields [${Object.keys(syncFields).join(', ')}] synced to worker ${updated.workerId}`);
+        } catch (syncErr: any) {
+          console.error(`[Contract→Worker Sync] Error syncing contract ${id} to worker ${updated.workerId}:`, syncErr.message);
+        }
+      }
+    }
+
     return updated;
   }
 
