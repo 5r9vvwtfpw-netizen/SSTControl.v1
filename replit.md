@@ -50,6 +50,14 @@ The Support Portal includes a real-time internal chat system for agent coordinat
 -   **Deployment**: Replit Autoscale (4 vCPU / 8 GiB RAM / 3 Max). Domains: `sst-colombia.com`, `sst.sagisas.co`, `sst-control--sgsstcumplimien.replit.app`.
 -   **FastBoot**: Production uses a flag-based loading system. The server starts listening immediately (healthchecks pass with 200), showing a loading page while migrations and routes register (~2 min). Once ready, the flag flips and the full app is served. This avoids `EADDRINUSE` crashes from dual-server approaches.
 
+#### FastBoot Critical Rules (DO NOT VIOLATE)
+1. **Single server only**: NEVER create two HTTP servers on the same port. Use `http.createServer(app)` once at the top of the async block, then reuse it.
+2. **Loading middleware FIRST**: The FastBoot loading-page middleware MUST be registered BEFORE any middleware that requires database access (e.g., `requireValidLicense`, `featureGateMiddleware`). If a middleware runs before FastBoot and tries to query the DB during startup, healthchecks will return 500 instead of 200.
+3. **No variable hoisting**: The `server` variable from `registerRoutes(app)` is only available AFTER that call. NEVER reference `server` before `registerRoutes()`. Use `earlyHttpServer` (created with `http.createServer(app)`) for initial listening.
+4. **Transition sequence**: (a) Close `earlyHttpServer` → (b) Wait 500ms for port release → (c) Start `server` (from `registerRoutes`) with WebSocket support → (d) Set `serverReady = true`.
+5. **Healthcheck contract**: Replit Autoscale sends GET `/` to port 1104 (mapped from 5000). It MUST return 200 within seconds of deployment start. The loading page satisfies this.
+6. **Middleware order in `server/index.ts`**: `express.json()` → `cors` → `session` → `passport` → `static` → `requestLogger` → **FastBoot loading middleware** → `requireValidLicense` → `featureGate` → routes.
+
 ### Development Environment
 -   **Database**: Replit-provisioned Neon PostgreSQL (development only). Uses `DATABASE_URL` env var with `@neondatabase/serverless` driver and WebSocket transport. This is NOT the production database.
 -   **Connection Logic** (`server/db.ts`): When `NODE_ENV=production` AND `AWS_RDS_HOST`/`AWS_RDS_PASSWORD` are set, the app connects to AWS RDS. Otherwise, it falls back to Neon via `DATABASE_URL`.
