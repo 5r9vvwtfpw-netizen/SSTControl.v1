@@ -40563,7 +40563,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       if (isSupportRole) {
         const tickets = await storage.getSupportTickets();
-        res.json(tickets);
+        const enrichedTickets = await Promise.all(tickets.map(async (t) => {
+          try {
+            const ticketUser = await storage.getUser(t.userId);
+            return { ...t, userRole: ticketUser?.role || 'unknown' };
+          } catch { return { ...t, userRole: 'unknown' }; }
+        }));
+        res.json(enrichedTickets);
       } else if (userRole === 'lso') {
         const allTickets = await db.select().from(schema.supportTickets)
           .where(eq(schema.supportTickets.userId, userId))

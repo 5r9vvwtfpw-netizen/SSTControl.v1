@@ -75,6 +75,7 @@ interface SupportTicket {
   userId: string;
   userName: string;
   userEmail: string | null;
+  userRole?: string;
   assignedTo: string | null;
   assignedToName: string | null;
   attachments: string[] | null;
@@ -661,9 +662,12 @@ export default function AdminTicketsSoporte() {
                           </div>
                         </TableCell>
                         <TableCell className="py-4 px-5">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                             <span className="text-sm truncate max-w-[120px]">{ticket.companyName}</span>
+                            {ticket.userRole === 'lso' && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-blue-500 text-blue-600 dark:text-blue-400">Portal LSO</Badge>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="py-4 px-5">
@@ -743,9 +747,12 @@ export default function AdminTicketsSoporte() {
                   <h3 className="font-semibold">{selectedTicket.subject}</h3>
                   
                   <div className="text-sm space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Building2 className="h-4 w-4 text-muted-foreground" />
                       <span>{selectedTicket.companyName}</span>
+                      {selectedTicket.userRole === 'lso' && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-blue-500 text-blue-600 dark:text-blue-400">Portal LSO</Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-muted-foreground" />
