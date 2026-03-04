@@ -260,9 +260,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
             lsoUserId = existingUser.id;
             console.log(`[LSO-AUTO] Usuario LSO existente encontrado para ${lsoData.email}: ${existingUser.id}, no se generan nuevas credenciales`);
 
-            const baseUrl = process.env.REPLIT_DOMAINS
-              ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
-              : 'https://sst-colombia.com.co';
+            const baseUrl = process.env.VITE_APP_URL || 'https://sst-colombia.com';
 
             try {
               await sendLsoNewAssignmentEmail(lsoData.email, {
@@ -346,9 +344,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
 
       // Enviar credenciales por email al LSO si se auto-creó
       if (autoCreatedUser && lsoData.email && temporaryPassword) {
-        const baseUrl = process.env.REPLIT_DOMAINS
-          ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
-          : 'https://sst-colombia.com.co';
+        const baseUrl = process.env.VITE_APP_URL || 'https://sst-colombia.com';
 
         try {
           await sendLsoPortalAccessEmail(lsoData.email, {

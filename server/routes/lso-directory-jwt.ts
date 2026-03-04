@@ -236,9 +236,7 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
         lsoUserId = existingUser.id;
         logger.info({ email: lso.email, userId: existingUser.id }, "[LSO-AUTO] Usuario LSO existente encontrado, no se generan nuevas credenciales");
 
-        const baseUrl = process.env.REPLIT_DOMAINS
-          ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
-          : 'https://sst-colombia.com.co';
+        const baseUrl = process.env.VITE_APP_URL || 'https://sst-colombia.com';
 
         try {
           await sendLsoNewAssignmentEmail(lso.email, {
@@ -301,9 +299,7 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
 
         logger.info({ username, userId: newLsoUser.id, companyId }, "[LSO-AUTO] Usuario LSO auto-creado");
 
-        const baseUrl = process.env.REPLIT_DOMAINS
-          ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
-          : 'https://sst-colombia.com.co';
+        const baseUrl = process.env.VITE_APP_URL || 'https://sst-colombia.com';
 
         try {
           await sendLsoPortalAccessEmail(lso.email, {
