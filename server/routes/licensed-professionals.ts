@@ -13,6 +13,18 @@ import { sendLsoRemovalNotificationEmail } from "../email";
 import { objectStorageClient, ObjectStorageService } from "../replit_integrations/object_storage";
 import { notifyNewMessage } from "../websocket";
 
+async function shouldIncludeFallbackCompany(userId: string, companyId: string): Promise<boolean> {
+  const [wasUnassigned] = await db.select({ id: schema.licensedProfessionalAssignments.id })
+    .from(schema.licensedProfessionalAssignments)
+    .where(and(
+      eq(schema.licensedProfessionalAssignments.userId, userId),
+      eq(schema.licensedProfessionalAssignments.companyId, companyId),
+      eq(schema.licensedProfessionalAssignments.isActive, false)
+    ))
+    .limit(1);
+  return !wasUnassigned;
+}
+
 async function notifyLsoRemoval(assignment: any, companyId: string) {
   try {
     const lsoUserId = assignment.userId || assignment.externalLsoId;
@@ -464,7 +476,9 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       
       const companyIds = assignments.map(a => a.companyId);
       if (companyIds.length === 0 && user.companyId) {
-        companyIds.push(user.companyId);
+        if (await shouldIncludeFallbackCompany(user.id, user.companyId)) {
+          companyIds.push(user.companyId);
+        }
       }
       
       let pendingDocuments = 0;
@@ -552,24 +566,35 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       ));
 
       if (empresas.length === 0 && user.companyId) {
-        const [fallbackCompany] = await db.select({
-          id: schema.companies.id,
-          name: schema.companies.name,
-          nit: schema.companies.nit,
-          city: schema.companies.city,
-          riskLevel: schema.companies.riskLevel,
-          numberOfWorkers: schema.companies.numberOfWorkers,
-          numberOfVehicles: schema.companies.numberOfVehicles,
-        })
-        .from(schema.companies)
-        .where(eq(schema.companies.id, user.companyId));
+        const [wasUnassigned] = await db.select({ id: schema.licensedProfessionalAssignments.id })
+          .from(schema.licensedProfessionalAssignments)
+          .where(and(
+            eq(schema.licensedProfessionalAssignments.userId, user.id),
+            eq(schema.licensedProfessionalAssignments.companyId, user.companyId),
+            eq(schema.licensedProfessionalAssignments.isActive, false)
+          ))
+          .limit(1);
 
-        if (fallbackCompany) {
-          empresas = [{
-            ...fallbackCompany,
-            assignmentId: 'direct-' + user.id,
-            assignedAt: new Date(),
-          }];
+        if (!wasUnassigned) {
+          const [fallbackCompany] = await db.select({
+            id: schema.companies.id,
+            name: schema.companies.name,
+            nit: schema.companies.nit,
+            city: schema.companies.city,
+            riskLevel: schema.companies.riskLevel,
+            numberOfWorkers: schema.companies.numberOfWorkers,
+            numberOfVehicles: schema.companies.numberOfVehicles,
+          })
+          .from(schema.companies)
+          .where(eq(schema.companies.id, user.companyId));
+
+          if (fallbackCompany) {
+            empresas = [{
+              ...fallbackCompany,
+              assignmentId: 'direct-' + user.id,
+              assignedAt: new Date(),
+            }];
+          }
         }
       }
 
@@ -705,7 +730,9 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       
       const companyIds = assignments.map(a => a.companyId);
       if (companyIds.length === 0 && user.companyId) {
-        companyIds.push(user.companyId);
+        if (await shouldIncludeFallbackCompany(user.id, user.companyId)) {
+          companyIds.push(user.companyId);
+        }
       }
       
       if (companyIds.length === 0) {
@@ -938,7 +965,9 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         ));
       const companyIds = assignments.map(a => a.companyId);
       if (companyIds.length === 0 && user.companyId) {
-        companyIds.push(user.companyId);
+        if (await shouldIncludeFallbackCompany(user.id, user.companyId)) {
+          companyIds.push(user.companyId);
+        }
       }
       if (companyIds.length === 0) return res.json([]);
 
@@ -1350,7 +1379,9 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       
       const companyIds = assignments.map(a => a.companyId);
       if (companyIds.length === 0 && user.companyId) {
-        companyIds.push(user.companyId);
+        if (await shouldIncludeFallbackCompany(user.id, user.companyId)) {
+          companyIds.push(user.companyId);
+        }
       }
       if (companyIds.length === 0) {
         return res.json([]);
@@ -1529,7 +1560,17 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
 
       const companyIds = assignments.map(a => a.companyId);
       if (companyIds.length === 0 && user.companyId) {
-        companyIds.push(user.companyId);
+        const [wasUnassigned] = await db.select({ id: schema.licensedProfessionalAssignments.id })
+          .from(schema.licensedProfessionalAssignments)
+          .where(and(
+            eq(schema.licensedProfessionalAssignments.userId, user.id),
+            eq(schema.licensedProfessionalAssignments.companyId, user.companyId),
+            eq(schema.licensedProfessionalAssignments.isActive, false)
+          ))
+          .limit(1);
+        if (!wasUnassigned) {
+          companyIds.push(user.companyId);
+        }
       }
       if (companyIds.length === 0) {
         return res.json({ investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [] });
