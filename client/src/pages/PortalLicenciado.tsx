@@ -2987,9 +2987,8 @@ function SignatureUploadSection({ currentSignatureUrl }: { currentSignatureUrl: 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const { data: sigStatus, isLoading: sigLoading } = useQuery<{ hasSignature: boolean; isAccessible: boolean; wasCleared?: boolean }>({
+  const { data: sigStatus, isLoading: sigLoading } = useQuery<{ hasSignature: boolean; isAccessible: boolean; signatureUrl?: string }>({
     queryKey: ['/api/portal-licenciado/firma/estado'],
-    enabled: !!currentSignatureUrl,
     staleTime: 30000,
   });
 
