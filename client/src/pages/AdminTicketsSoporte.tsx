@@ -233,17 +233,34 @@ export default function AdminTicketsSoporte() {
     retryDelay: 1000,
   });
 
+  const [urlTicketProcessed, setUrlTicketProcessed] = useState<string | null>(null);
+
   useEffect(() => {
     if (tickets.length === 0) return;
     const params = new URLSearchParams(window.location.search);
     const ticketId = params.get('ticket');
-    if (ticketId && !selectedTicket) {
+    const urlTimestamp = params.get('t');
+    const urlKey = ticketId ? `${ticketId}_${urlTimestamp || ''}` : null;
+    if (ticketId && urlKey !== urlTicketProcessed) {
       const found = tickets.find(t => t.id === ticketId);
       if (found) {
         setSelectedTicket(found as TicketWithDetails);
+        setUrlTicketProcessed(urlKey);
       }
     }
-  }, [tickets]);
+  }, [tickets, urlTicketProcessed]);
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const params = new URLSearchParams(window.location.search);
+      const ticketId = params.get('ticket');
+      if (ticketId) {
+        setUrlTicketProcessed(null);
+      }
+    };
+    window.addEventListener('popstate', handleUrlChange);
+    return () => window.removeEventListener('popstate', handleUrlChange);
+  }, []);
 
   const { data: selectedTicketDetails, isLoading: isLoadingDetails } = useQuery<TicketWithDetails>({
     queryKey: ['/api/support-tickets', selectedTicket?.id],
@@ -394,7 +411,7 @@ export default function AdminTicketsSoporte() {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button onClick={() => refetch()} variant="outline" data-testid="button-refresh-tickets">
+          <Button onClick={() => { setUrlTicketProcessed(null); refetch(); }} variant="outline" data-testid="button-refresh-tickets">
             <RefreshCw className="h-4 w-4 mr-2" />
             Actualizar
           </Button>
