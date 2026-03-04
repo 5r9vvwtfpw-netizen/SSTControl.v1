@@ -43,9 +43,21 @@ The Superadmin Portal Administration panel provides comprehensive management of 
 
 The Support Portal includes a real-time internal chat system for agent coordination, utilizing WebSocket for role-restricted broadcasts.
 
+## Database & Infrastructure
+
+### Production Environment
+-   **Database**: AWS RDS PostgreSQL (production). Connection configured via `AWS_RDS_HOST`, `AWS_RDS_PASSWORD`, `AWS_RDS_USER`, `AWS_RDS_PORT`, `AWS_RDS_DATABASE` environment variables. Uses the `pg` driver with SSL and Drizzle ORM (`drizzle-orm/node-postgres`). Pool: max 15, min 2 connections with keep-alive every 60s.
+-   **Deployment**: Replit Autoscale (4 vCPU / 8 GiB RAM / 3 Max). Domains: `sst-colombia.com`, `sst.sagisas.co`, `sst-control--sgsstcumplimien.replit.app`.
+-   **FastBoot**: Production uses a flag-based loading system. The server starts listening immediately (healthchecks pass with 200), showing a loading page while migrations and routes register (~2 min). Once ready, the flag flips and the full app is served. This avoids `EADDRINUSE` crashes from dual-server approaches.
+
+### Development Environment
+-   **Database**: Replit-provisioned Neon PostgreSQL (development only). Uses `DATABASE_URL` env var with `@neondatabase/serverless` driver and WebSocket transport. This is NOT the production database.
+-   **Connection Logic** (`server/db.ts`): When `NODE_ENV=production` AND `AWS_RDS_HOST`/`AWS_RDS_PASSWORD` are set, the app connects to AWS RDS. Otherwise, it falls back to Neon via `DATABASE_URL`.
+
 ## External Dependencies
 
--   **PostgreSQL (Neon/AWS RDS)**: Relational database.
+-   **AWS RDS PostgreSQL**: Production relational database.
+-   **Neon PostgreSQL**: Development-only database (Replit-provisioned).
 -   **TanStack Query v5**: Frontend data fetching.
 -   **Wouter**: React routing.
 -   **React Hook Form + Zod**: Form management and validation.
