@@ -28,6 +28,13 @@ import {
   ChevronDown,
   ChevronRight,
   Copy,
+  UserCheck,
+  PenTool,
+  Building2,
+  KeyRound,
+  FileSignature,
+  ShieldAlert,
+  FolderOpen,
 } from "lucide-react";
 
 const ESTADOS = [
@@ -348,6 +355,179 @@ const DIAGNOSTICO_RAPIDO = [
   { sintoma: "Suscripción bloqueada o expirada", diagnostico: "La suscripción venció o el pago falló.", respuesta: "Hola [Nombre]. Si su suscripción está bloqueada, puede deberse a: 1) Período de prueba vencido — active su suscripción en Configuración > Mi Suscripción. 2) Pago rechazado — verifique su método de pago y reintente. 3) Si cree que es un error, proporciónenos el nombre de su empresa y revisaremos internamente." },
 ];
 
+const PORTAL_LSO_PROBLEMAS = [
+  {
+    categoria: "Acceso y Credenciales",
+    icono: "KeyRound",
+    problemas: [
+      {
+        problema: "El LSO no puede iniciar sesión en el portal",
+        diagnostico: "Credenciales incorrectas o cuenta no creada automáticamente.",
+        respuesta: "Hola [Nombre]. Verifique lo siguiente: 1) Las credenciales del Portal LSO se envían por correo electrónico cuando la empresa le asigna como responsable SST. Revise su bandeja de entrada y spam. 2) El acceso al portal es en la misma URL del sistema, con su usuario y contraseña asignados. 3) Si no recibió las credenciales, solicite al administrador de la empresa que lo reasigne desde Configuración > Responsable SST. El sistema generará nuevas credenciales automáticamente. Si el problema persiste, proporciónenos su correo electrónico y el nombre de la empresa para verificar internamente.",
+      },
+      {
+        problema: "El LSO olvidó su contraseña",
+        diagnostico: "No hay opción de recuperación automática desde el portal.",
+        respuesta: "Hola [Nombre]. Actualmente el restablecimiento de contraseña del Portal LSO se gestiona por soporte. Necesitamos: 1) Su nombre completo. 2) Su correo electrónico registrado. 3) Número de licencia SST. Una vez verificada su identidad, le enviaremos una nueva contraseña temporal a su correo. Le recomendamos cambiarla después de ingresar.",
+      },
+      {
+        problema: "El LSO tiene cuenta pero le aparece acceso restringido",
+        diagnostico: "El rol del usuario no tiene permisos de portal LSO.",
+        respuesta: "Hola [Nombre]. El acceso al Portal LSO requiere que su usuario tenga el rol 'lso' en el sistema. Esto se configura automáticamente cuando una empresa lo asigna como profesional SST externo. Si antes tenía acceso y ya no lo tiene, es posible que todas las empresas lo hayan desasignado. Contacte a la empresa que desea asignarle para que lo haga desde Configuración > Responsable SST.",
+      },
+    ],
+  },
+  {
+    categoria: "Firma Digital",
+    icono: "PenTool",
+    problemas: [
+      {
+        problema: "El LSO no puede subir su firma digital",
+        diagnostico: "Formato de imagen no compatible o tamaño excedido.",
+        respuesta: "Hola [Nombre]. Para subir su firma digital correctamente: 1) Vaya a la pestaña 'Mi Licencia' en su portal. 2) La imagen debe ser PNG o JPG. 3) El tamaño máximo es 2 MB. 4) Se recomienda una imagen con fondo blanco y firma en tinta negra o azul oscuro. 5) Puede dibujar su firma en papel blanco, tomarle foto con buena iluminación y recortarla. Si el sistema muestra error al subir, intente con una imagen más pequeña o en otro formato.",
+      },
+      {
+        problema: "La firma aparece como 'no configurada' aunque ya la subió",
+        diagnostico: "Error de almacenamiento o imagen no accesible.",
+        respuesta: "Hola [Nombre]. Esto puede ocurrir si hubo un problema al guardar la imagen. Por favor intente: 1) Vaya a Mi Licencia > sección Firma Digital. 2) Suba nuevamente la imagen de su firma. 3) Espere a que el sistema confirme 'Firma guardada exitosamente'. 4) Recargue la página (Ctrl+Shift+R) y verifique que aparezca la vista previa. Si sigue sin funcionar, envíenos un screenshot del error que aparece.",
+      },
+      {
+        problema: "Al firmar un documento dice 'Debe configurar su firma primero'",
+        diagnostico: "La firma no está registrada o no es accesible.",
+        respuesta: "Hola [Nombre]. Antes de firmar cualquier documento, debe configurar su firma digital: 1) Vaya a la pestaña 'Mi Licencia'. 2) En la sección 'Firma Digital', suba su imagen de firma (PNG o JPG, máximo 2 MB). 3) Verifique que aparezca la vista previa de la firma. 4) Una vez configurada, podrá firmar documentos desde la pestaña 'Documentos'. Si ya tiene firma configurada y sigue viendo este error, intente subirla nuevamente.",
+      },
+      {
+        problema: "La firma se ve cortada o borrosa en el PDF",
+        diagnostico: "Imagen de baja resolución o proporciones incorrectas.",
+        respuesta: "Hola [Nombre]. Para que su firma se vea correctamente en los PDFs: 1) Use una imagen con resolución mínima de 300x150 píxeles. 2) El formato ideal es horizontal (más ancho que alto). 3) Procure que la firma ocupe la mayor parte de la imagen, con poco margen blanco alrededor. 4) Use fondo blanco limpio sin sombras. 5) Suba la nueva imagen desde Mi Licencia > Firma Digital. La firma se actualizará automáticamente en los próximos documentos que firme.",
+      },
+    ],
+  },
+  {
+    categoria: "Empresas Asignadas",
+    icono: "Building2",
+    problemas: [
+      {
+        problema: "El LSO no ve ninguna empresa asignada",
+        diagnostico: "No tiene asignaciones activas o fue desasignado.",
+        respuesta: "Hola [Nombre]. Si no ve empresas en su portal: 1) Verifique en la pestaña 'Empresas' que no tenga filtros activos. 2) Revise la sección 'Historial de Empresas' al final de la página: si aparecen empresas con estado 'Desasignado', significa que la empresa lo retiró como responsable. 3) Si cree que debería tener empresas asignadas, contacte directamente al administrador de la empresa para que lo reasigne desde Configuración > Responsable SST. El sistema notificará automáticamente cuando sea asignado.",
+      },
+      {
+        problema: "Aparece una empresa que ya no debería ver",
+        diagnostico: "Caché del navegador mostrando datos antiguos.",
+        respuesta: "Hola [Nombre]. Si ve una empresa que ya no le corresponde: 1) Presione Ctrl+Shift+R para recargar sin caché. 2) Cierre sesión y vuelva a ingresar. 3) Si sigue apareciendo después de estos pasos, repórtelo como nota interna para que el equipo técnico lo revise. Normalmente cuando una empresa desasigna a un LSO, este deja de ver la empresa inmediatamente.",
+      },
+      {
+        problema: "El LSO quiere ver datos de una empresa pero le aparece vacío",
+        diagnostico: "La empresa no ha registrado información en el sistema aún.",
+        respuesta: "Hola [Nombre]. Si puede ver la empresa pero los datos aparecen vacíos, significa que la empresa aún no ha registrado información en ese módulo. Como profesional LSO, usted puede ver la información que la empresa ha cargado, pero no puede ingresar datos directamente. Contacte al administrador de la empresa para indicarle qué información necesita que registre en el sistema.",
+      },
+    ],
+  },
+  {
+    categoria: "Firma de Documentos",
+    icono: "FileSignature",
+    problemas: [
+      {
+        problema: "El LSO no encuentra documentos pendientes para firmar",
+        diagnostico: "No hay documentos generados por las empresas asignadas, o ya fueron firmados.",
+        respuesta: "Hola [Nombre]. Los documentos para firmar aparecen cuando las empresas los generan: 1) Vaya a la pestaña 'Documentos'. 2) Seleccione la empresa para ver su 'Bóveda de Documentos'. 3) Los documentos pendientes aparecen con un indicador visual. 4) Los tipos de documentos que puede firmar son: Evaluaciones SST, Planes de Trabajo Anual, Matrices IPERC, Investigaciones de Accidentes y Actas de Designación. Si no ve documentos, es porque la empresa no ha generado ninguno aún. Contacte al administrador de la empresa para coordinar.",
+      },
+      {
+        problema: "Error al intentar firmar un documento",
+        diagnostico: "Problema de conectividad o firma no accesible.",
+        respuesta: "Hola [Nombre]. Si recibe error al firmar: 1) Verifique que su firma digital esté configurada (Mi Licencia > Firma Digital). 2) Intente recargar la página (Ctrl+Shift+R). 3) Verifique su conexión a internet. 4) Si el error persiste, intente desde otro navegador (Chrome es el recomendado). 5) Si ninguna opción funciona, envíenos un screenshot del error exacto y el nombre del documento que intenta firmar.",
+      },
+      {
+        problema: "El LSO firmó un documento pero no aparece la firma en el PDF",
+        diagnostico: "El PDF se generó antes de la firma o hay un problema de renderizado.",
+        respuesta: "Hola [Nombre]. La firma aparece en el PDF al momento de descargarlo. Si descargó el PDF antes de firmar, descárguelo nuevamente: 1) Vaya al documento en la Bóveda de la empresa. 2) Verifique que diga 'Firmado' con la fecha. 3) Descargue el PDF nuevamente. El nuevo PDF incluirá su firma digital, nombre, número de licencia SST y la fecha de firma.",
+      },
+      {
+        problema: "El LSO quiere modificar o retirar su firma de un documento",
+        diagnostico: "Las firmas son inmutables por diseño de cumplimiento normativo.",
+        respuesta: "Hola [Nombre]. Por cumplimiento normativo colombiano, una vez firmado un documento, la firma no puede ser retirada ni modificada. Esto garantiza la trazabilidad y validez legal del documento. Si considera que firmó un documento por error, documente la situación y contacte al administrador de la empresa para que genere un nuevo documento con las correcciones necesarias. El nuevo documento requerirá una nueva firma.",
+      },
+    ],
+  },
+  {
+    categoria: "Licencia SST",
+    icono: "ShieldAlert",
+    problemas: [
+      {
+        problema: "La licencia aparece como 'vencida' pero el LSO dice que la renovó",
+        diagnostico: "Los datos de la licencia no han sido actualizados en el sistema.",
+        respuesta: "Hola [Nombre]. El estado de la licencia se calcula automáticamente según la fecha de vencimiento registrada. Para actualizar su licencia: 1) Vaya a la pestaña 'Mi Licencia'. 2) Actualice la fecha de vencimiento con la nueva vigencia de su resolución. 3) El sistema recalculará automáticamente el estado. Si no tiene acceso para editar los datos, proporciónenos: número de licencia, entidad emisora, fecha de expedición y nueva fecha de vencimiento, y lo actualizaremos internamente.",
+      },
+      {
+        problema: "La licencia aparece como 'por vencer'",
+        diagnostico: "La fecha de vencimiento está próxima (menos de 90 días).",
+        respuesta: "Hola [Nombre]. El sistema genera alertas automáticas cuando la licencia SST está a menos de 90 días de vencer. Esto es informativo para que gestione la renovación a tiempo. Una vez renovada, actualice la nueva fecha de vencimiento en Mi Licencia y el estado cambiará a 'Vigente' automáticamente.",
+      },
+      {
+        problema: "El LSO quiere actualizar su tipo de profesión o datos de licencia",
+        diagnostico: "Los campos de licencia son editables desde el portal.",
+        respuesta: "Hola [Nombre]. Puede actualizar sus datos profesionales desde la pestaña 'Mi Licencia': 1) Número de licencia SST. 2) Entidad emisora (Secretaría de Salud). 3) Fecha de expedición y vencimiento. 4) Tipo de profesión (Tecnólogo, Profesional, Especialista). 5) Curso de 50 horas. Si algún campo no le permite editar, indíquenos qué dato necesita cambiar y lo actualizaremos.",
+      },
+    ],
+  },
+  {
+    categoria: "Panel PHVA y Bóveda",
+    icono: "FolderOpen",
+    problemas: [
+      {
+        problema: "El panel PHVA muestra datos en cero para una empresa",
+        diagnostico: "La empresa no ha registrado actividades en esos módulos.",
+        respuesta: "Hola [Nombre]. El panel PHVA muestra un resumen del avance de la empresa en el ciclo Planear-Hacer-Verificar-Actuar. Si todo aparece en cero: 1) La empresa aún no ha registrado actividades en esos módulos. 2) Como LSO, puede contactar al administrador de la empresa (botón 'Mensaje' en la pestaña Empresas) para orientarlo sobre qué información debe cargar. 3) A medida que la empresa registre datos (trabajadores, capacitaciones, inspecciones, evaluaciones), el panel se actualizará automáticamente.",
+      },
+      {
+        problema: "No puede acceder a la bóveda de documentos de una empresa",
+        diagnostico: "Problema de carga o la empresa no tiene documentos.",
+        respuesta: "Hola [Nombre]. Para acceder a la bóveda de documentos: 1) Vaya a la pestaña 'Documentos'. 2) Haga clic en la tarjeta de la empresa que desea consultar. 3) Se abrirá la vista detallada con el panel PHVA y los documentos organizados por tipo. Si la tarjeta de la empresa no aparece, verifique que sigue asignado a esa empresa en la pestaña 'Empresas'. Si aparece la tarjeta pero está vacía, la empresa no ha generado documentos firmables aún.",
+      },
+    ],
+  },
+  {
+    categoria: "Soporte desde el Portal LSO",
+    icono: "MessageCircle",
+    problemas: [
+      {
+        problema: "El LSO quiere crear un ticket de soporte",
+        diagnostico: "El portal tiene una pestaña de soporte integrada.",
+        respuesta: "Hola [Nombre]. Puede crear tickets de soporte directamente desde su portal: 1) Vaya a la pestaña 'Soporte'. 2) Haga clic en 'Nuevo Ticket'. 3) Complete el asunto, seleccione la prioridad y describa su consulta. 4) El ticket será atendido por nuestro equipo de soporte. Puede hacer seguimiento del estado y responder desde el mismo portal.",
+      },
+      {
+        problema: "El LSO quiere comunicarse con el administrador de una empresa",
+        diagnostico: "Existe un sistema de mensajería interna en la pestaña Empresas.",
+        respuesta: "Hola [Nombre]. Para comunicarse con una empresa asignada: 1) Vaya a la pestaña 'Empresas'. 2) Busque la empresa en la lista. 3) Haga clic en el botón 'Mensaje'. 4) Complete el asunto, seleccione la prioridad y escriba el contenido. 5) El mensaje llegará al administrador de la empresa como notificación interna del sistema. Esta es la vía recomendada para coordinar actividades de SST con sus empresas asignadas.",
+      },
+    ],
+  },
+];
+
+const PORTAL_EMPLEADOS_PROBLEMAS = [
+  {
+    problema: "El trabajador no puede acceder al portal de empleados",
+    diagnostico: "Credenciales no generadas o portal no activado por la empresa.",
+    respuesta: "Hola [Nombre]. El acceso al Portal de Empleados debe ser activado por el administrador de su empresa. Comuníquese con el responsable de SST de su empresa para que le genere las credenciales de acceso desde el sistema. Si ya tiene credenciales y no puede ingresar, verifique que esté usando el usuario y contraseña correctos. Si olvidó su contraseña, solicite al administrador que la restablezca.",
+  },
+  {
+    problema: "El trabajador no ve sus exámenes médicos en el portal",
+    diagnostico: "La empresa no ha registrado los exámenes o no los ha notificado.",
+    respuesta: "Hola [Nombre]. Los exámenes médicos aparecen en su portal cuando el administrador de la empresa los registra y le envía la notificación. Si no ve sus exámenes: 1) Es posible que la empresa aún no los haya registrado en el sistema. 2) Contacte al responsable de SST de su empresa para verificar. Los exámenes que aparezcan requerirán su confirmación de lectura.",
+  },
+  {
+    problema: "El trabajador quiere reportar una condición insegura o sugerencia",
+    diagnostico: "Existe un buzón de sugerencias en el portal.",
+    respuesta: "Hola [Nombre]. Puede reportar condiciones inseguras o hacer sugerencias desde su portal de empleado: 1) Busque la sección 'Buzón de Sugerencias' o 'Reportar Condición'. 2) Complete el formulario describiendo la situación. 3) El reporte llegará al responsable de SST de su empresa para su gestión. Su identidad se mantiene confidencial según la política de la empresa.",
+  },
+  {
+    problema: "El trabajador no puede ver documentos o capacitaciones",
+    diagnostico: "La empresa debe compartir los documentos a través del portal.",
+    respuesta: "Hola [Nombre]. Los documentos y capacitaciones aparecen en su portal cuando la empresa los comparte con usted. Si no ve información: 1) La empresa puede no haber activado la opción de compartir esos documentos. 2) Contacte al responsable de SST para que verifique qué información está disponible en el portal. El portal muestra únicamente la información que la empresa decide compartir con sus trabajadores.",
+  },
+];
+
 function CollapsibleSection({ title, icon, children, defaultOpen = false }: { title: string; icon: ReactNode; children: ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
@@ -423,6 +603,14 @@ export default function ManualSoporte() {
 
   const filteredNoContacto = PROTOCOLO_NO_CONTACTO.filter(p =>
     filterBySearch(`${p.situacion} ${p.respuesta}`)
+  );
+
+  const filteredLSOProblemas = PORTAL_LSO_PROBLEMAS.filter(cat =>
+    cat.problemas.some(p => filterBySearch(`${cat.categoria} ${p.problema} ${p.diagnostico} ${p.respuesta}`))
+  );
+
+  const filteredEmpleadosProblemas = PORTAL_EMPLEADOS_PROBLEMAS.filter(p =>
+    filterBySearch(`portal empleados trabajador ${p.problema} ${p.diagnostico} ${p.respuesta}`)
   );
 
   return (
@@ -543,6 +731,71 @@ export default function ManualSoporte() {
                 </div>
                 <Separator />
                 <CopyableResponse text={d.respuesta} />
+              </div>
+            ))}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {(!searchTerm || filteredLSOProblemas.length > 0) && (
+        <CollapsibleSection
+          title={`Portal LSO - Guía de Soporte (${filteredLSOProblemas.reduce((acc, cat) => acc + cat.problemas.length, 0)} soluciones en ${filteredLSOProblemas.length} categorías)`}
+          icon={<UserCheck className="h-5 w-5 text-teal-600" />}
+          defaultOpen={!!searchTerm}
+        >
+          <p className="text-sm text-muted-foreground mb-4">
+            El Portal LSO es la herramienta de los profesionales en SST (Licenciados en Salud Ocupacional) para gestionar las empresas que tienen asignadas, firmar documentos digitalmente, y hacer seguimiento al cumplimiento normativo. Los problemas más comunes son de acceso, firma digital y visualización de empresas.
+          </p>
+          <div className="space-y-6">
+            {filteredLSOProblemas.map((cat, catIdx) => (
+              <div key={catIdx} className="space-y-3">
+                <div className="flex items-center gap-2 pb-1 border-b">
+                  {cat.icono === "KeyRound" && <KeyRound className="h-4 w-4 text-teal-600" />}
+                  {cat.icono === "PenTool" && <PenTool className="h-4 w-4 text-teal-600" />}
+                  {cat.icono === "Building2" && <Building2 className="h-4 w-4 text-teal-600" />}
+                  {cat.icono === "FileSignature" && <FileSignature className="h-4 w-4 text-teal-600" />}
+                  {cat.icono === "ShieldAlert" && <ShieldAlert className="h-4 w-4 text-teal-600" />}
+                  {cat.icono === "FolderOpen" && <FolderOpen className="h-4 w-4 text-teal-600" />}
+                  {cat.icono === "MessageCircle" && <MessageCircle className="h-4 w-4 text-teal-600" />}
+                  <p className="font-medium text-sm">{cat.categoria}</p>
+                  <Badge variant="outline">{cat.problemas.length}</Badge>
+                </div>
+                {cat.problemas
+                  .filter(p => filterBySearch(`${cat.categoria} ${p.problema} ${p.diagnostico} ${p.respuesta}`))
+                  .map((p, pIdx) => (
+                  <div key={pIdx} className="border rounded-md p-4 space-y-2 ml-2">
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                      <p className="font-medium text-sm">{p.problema}</p>
+                      <Badge variant="secondary">{p.diagnostico}</Badge>
+                    </div>
+                    <Separator />
+                    <CopyableResponse text={p.respuesta} />
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {(!searchTerm || filteredEmpleadosProblemas.length > 0) && (
+        <CollapsibleSection
+          title={`Portal Empleados - Guía de Soporte (${filteredEmpleadosProblemas.length} soluciones)`}
+          icon={<HardHat className="h-5 w-5 text-indigo-600" />}
+          defaultOpen={!!searchTerm}
+        >
+          <p className="text-sm text-muted-foreground mb-4">
+            El Portal de Empleados permite a los trabajadores consultar su información de SST, confirmar lectura de exámenes médicos, reportar condiciones inseguras y acceder a documentos compartidos por la empresa.
+          </p>
+          <div className="space-y-4">
+            {filteredEmpleadosProblemas.map((p, idx) => (
+              <div key={idx} className="border rounded-md p-4 space-y-2">
+                <div className="flex items-start justify-between gap-2 flex-wrap">
+                  <p className="font-medium text-sm">{p.problema}</p>
+                  <Badge variant="secondary">{p.diagnostico}</Badge>
+                </div>
+                <Separator />
+                <CopyableResponse text={p.respuesta} />
               </div>
             ))}
           </div>
@@ -750,7 +1003,7 @@ export default function ManualSoporte() {
       <Card>
         <CardContent className="py-4">
           <p className="text-center text-sm text-muted-foreground">
-            SADGI S.A.S. — NIT 902.036.337-4 — Manual de Soporte v2.0 — Actualizado {new Date().toLocaleDateString('es-CO')}
+            SADGI S.A.S. — NIT 902.036.337-4 — Manual de Soporte v3.0 — Actualizado {new Date().toLocaleDateString('es-CO')}
           </p>
         </CardContent>
       </Card>
