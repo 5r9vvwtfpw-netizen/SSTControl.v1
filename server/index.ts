@@ -787,18 +787,20 @@ app.use(requireValidLicense);
   // with a middleware that serves a loading page until initialization is complete.
   // This avoids dual-server EADDRINUSE issues entirely.
   let serverReady = !isProduction; // dev is always ready immediately
+  let earlyHttpServer: any = null;
   if (isProduction) {
     const loadingHtml = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SST Colombia</title><meta http-equiv="refresh" content="5"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f8fafc;color:#334155}.c{text-align:center;padding:2rem}.spinner{width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1.5rem}@keyframes spin{to{transform:rotate(360deg)}}h1{font-size:1.25rem;margin-bottom:.5rem}p{color:#64748b;font-size:.875rem}</style></head><body><div class="c"><div class="spinner"></div><h1>Iniciando SST Colombia</h1><p>El sistema se est&aacute; preparando. Esta p&aacute;gina se actualizar&aacute; autom&aacute;ticamente.</p></div></body></html>`;
     
     // This middleware runs BEFORE all other routes; once serverReady=true it does nothing
     app.use((req, res, next) => {
       if (serverReady) return next();
-      // Always return 200 so healthchecks pass
       res.status(200).set("Content-Type", "text/html").send(loadingHtml);
     });
     
-    // Start listening immediately so healthchecks pass
-    server.listen({ port, host: "0.0.0.0" }, () => {
+    // Create a temporary HTTP server from the app and start listening immediately
+    const http = await import('http');
+    earlyHttpServer = http.createServer(app);
+    earlyHttpServer.listen({ port, host: "0.0.0.0" }, () => {
       logger.info(`[FastBoot] Server listening on port ${port} - healthchecks will pass while initializing`);
     });
   }
@@ -1046,11 +1048,21 @@ app.use(requireValidLicense);
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
-  if (isProduction) {
-    // Server is already listening from FastBoot above; just flip the ready flag
-    serverReady = true;
-    logger.info('[FastBoot] ✅ Initialization complete - server is fully ready');
-    log(`serving on port ${port}`);
+  if (isProduction && earlyHttpServer) {
+    // Close the early HTTP server, then start the full server (with WebSocket support)
+    await new Promise<void>((resolve) => {
+      earlyHttpServer.close(() => {
+        logger.info('[FastBoot] Early boot server closed');
+        resolve();
+      });
+    });
+    // Small delay to ensure port is fully released
+    await new Promise(resolve => setTimeout(resolve, 500));
+    server.listen({ port, host: "0.0.0.0" }, () => {
+      serverReady = true;
+      log(`serving on port ${port}`);
+      logger.info('[FastBoot] ✅ Full server active with all routes and WebSocket');
+    });
   } else {
     server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
       log(`serving on port ${port}`);
