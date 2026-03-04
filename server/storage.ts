@@ -2935,6 +2935,27 @@ export class DbStorage implements IStorage {
       ))
       .returning();
     
+    if (updated) {
+      const contractSyncFields: Partial<{ position: string; department: string; jobProfileId: string | null }> = {};
+      if (worker.position) contractSyncFields.position = worker.position;
+      if (worker.department !== undefined) contractSyncFields.department = worker.department ?? undefined;
+      if (worker.jobProfileId !== undefined) contractSyncFields.jobProfileId = worker.jobProfileId;
+
+      if (Object.keys(contractSyncFields).length > 0) {
+        try {
+          await db.update(schema.contracts)
+            .set(contractSyncFields)
+            .where(and(
+              eq(schema.contracts.workerId, id),
+              eq(schema.contracts.companyId, companyId),
+              eq(schema.contracts.status, 'activo')
+            ));
+        } catch (syncErr: any) {
+          logger.warn({ err: syncErr, workerId: id }, 'Failed to sync worker fields to active contract');
+        }
+      }
+    }
+
     // Audit logging (Bloque 2: Legal Compliance)
     if (updated && userId && oldWorker) {
       try {
@@ -2957,7 +2978,6 @@ export class DbStorage implements IStorage {
           });
         }
       } catch (auditError) {
-        // Log audit error but don't fail worker update
         logger.error({ err: auditError, workerId: updated.id }, 'Failed to log worker update audit event');
       }
     }
