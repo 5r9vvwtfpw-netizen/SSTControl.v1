@@ -783,27 +783,19 @@ app.use(requireValidLicense);
   const isProduction = process.env.NODE_ENV === 'production';
   const port = parseInt(process.env.PORT || '5000', 10);
 
-  // PRODUCTION FAST-BOOT: Use a single shared HTTP server for the entire lifecycle.
-  // The Express app handles healthchecks immediately while initialization continues.
-  // This eliminates port conflicts entirely — no second server is ever created.
-  let sharedHttpServer: any = null;
+  // PRODUCTION FAST-BOOT: Start a lightweight HTTP server immediately so
+  // Replit healthchecks pass while the full app initializes (DB migrations, seeding, etc.)
+  // Once the full app is ready, this server is closed and the main server takes over.
+  let earlyHttpServer: any = null;
   if (isProduction) {
     const http = await import('http');
-    sharedHttpServer = http.createServer(app);
-    
-    sharedHttpServer.on('error', (err: any) => {
-      logger.error({ err }, `[FastBoot] Server error: ${err.message}`);
-      if (err.code === 'EADDRINUSE') {
-        logger.error(`[FastBoot] Port ${port} in use. Retrying in 2 seconds...`);
-        setTimeout(() => {
-          sharedHttpServer.close();
-          sharedHttpServer.listen({ port, host: "0.0.0.0" });
-        }, 2000);
-      }
+    const earlyApp = (await import('express')).default();
+    earlyApp.use((_req, res) => {
+      res.status(200).send('<!DOCTYPE html><html><head><meta charset="utf-8"><title>SST Colombia</title><meta http-equiv="refresh" content="5"><style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f5f5f5}div{text-align:center}h2{color:#333}.spinner{border:4px solid #ddd;border-top:4px solid #2563eb;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:20px auto}@keyframes spin{to{transform:rotate(360deg)}}</style></head><body><div><div class="spinner"></div><h2>Iniciando sistema SST Colombia...</h2><p>Por favor espere unos segundos.</p></div></body></html>');
     });
-    
-    sharedHttpServer.listen({ port, host: "0.0.0.0" }, () => {
-      logger.info(`[FastBoot] Server listening on port ${port} - healthchecks will pass`);
+    earlyHttpServer = http.createServer(earlyApp);
+    earlyHttpServer.listen({ port, host: "0.0.0.0" }, () => {
+      logger.info(`[FastBoot] Early server listening on port ${port} - healthchecks will pass`);
     });
   }
 
@@ -953,7 +945,7 @@ app.use(requireValidLicense);
   app.use(featureGateMiddleware());
   logger.info("✅ Feature Gate middleware registrado (control de acceso por suscripción)");
 
-  const server = await registerRoutes(app, sharedHttpServer || undefined);
+  const server = await registerRoutes(app);
 
   // Mount plugin routes (Arquitectura Sidecar - Independiente del sistema principal)
   try {
@@ -1050,12 +1042,22 @@ app.use(requireValidLicense);
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
-  if (isProduction && sharedHttpServer) {
-    // In production the shared server is already listening on the port.
-    // registerRoutes attached WebSocket to it. Routes were added to the Express app.
-    // Nothing else to do — the server is live and fully initialized.
-    log(`serving on port ${port}`);
-    logger.info('[FastBoot] Full application initialized — server already active');
+  if (isProduction && earlyHttpServer) {
+    // Close the early boot server first, then start the main one
+    await new Promise<void>((resolve) => {
+      earlyHttpServer.close(() => {
+        logger.info('[FastBoot] Early boot server closed');
+        resolve();
+      });
+      // Force-close after 3 seconds if graceful close hangs
+      setTimeout(() => resolve(), 3000);
+    });
+    // Small delay to ensure the port is fully released
+    await new Promise<void>(resolve => setTimeout(resolve, 300));
+    server.listen({ port, host: "0.0.0.0" }, () => {
+      log(`serving on port ${port}`);
+      logger.info('[FastBoot] Main server active — full application ready');
+    });
   } else {
     server.listen({ port, host: "0.0.0.0" }, () => {
       log(`serving on port ${port}`);
