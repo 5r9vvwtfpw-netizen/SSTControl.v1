@@ -183,6 +183,20 @@ interface AllDocuments {
     lsoSignedAt: string | null;
     createdAt: string;
   }>;
+  designaciones: Array<{
+    id: string;
+    companyId: string;
+    companyName: string;
+    companyNit: string;
+    designationDate: string;
+    position: string;
+    externalLsoName: string | null;
+    licenciaSstNumero: string | null;
+    status: string;
+    lsoSignedAt: string | null;
+    lsoSignatureName: string | null;
+    createdAt: string;
+  }>;
 }
 
 const SST_PROFESSION_LABELS: Record<string, string> = {
@@ -1216,6 +1230,7 @@ interface CompanyVault {
   evaluaciones: AllDocuments['evaluaciones'];
   planesTrabajoAnual: AllDocuments['planesTrabajoAnual'];
   matricesIperc: AllDocuments['matricesIperc'];
+  designaciones: AllDocuments['designaciones'];
 }
 
 function buildCompanyVaults(docs: AllDocuments): CompanyVault[] {
@@ -1226,7 +1241,7 @@ function buildCompanyVaults(docs: AllDocuments): CompanyVault[] {
       vaultMap.set(companyId, {
         companyId, companyName, companyNit,
         totalDocs: 0, pendingDocs: 0, signedDocs: 0,
-        investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [],
+        investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [], designaciones: [],
       });
     }
     return vaultMap.get(companyId)!;
@@ -1255,6 +1270,12 @@ function buildCompanyVaults(docs: AllDocuments): CompanyVault[] {
     v.matricesIperc.push(mat);
     v.totalDocs++;
     if (mat.lsoSignatureName) v.signedDocs++; else v.pendingDocs++;
+  }
+  for (const des of (docs.designaciones || [])) {
+    const v = getOrCreate(des.companyId, des.companyName, des.companyNit);
+    v.designaciones.push(des);
+    v.totalDocs++;
+    if (des.lsoSignatureName) v.signedDocs++; else v.pendingDocs++;
   }
 
   return Array.from(vaultMap.values()).sort((a, b) => b.pendingDocs - a.pendingDocs);
@@ -1521,6 +1542,90 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
       )}
 
       <PHVADashboardPanel companyId={vault.companyId} />
+
+      {vault.designaciones.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <div>
+              <CardTitle className="text-base">Actas de Designación del Responsable</CardTitle>
+              <CardDescription>Estándar 1.1.1 - Res. 0312/2019 - Designación del responsable del SG-SST</CardDescription>
+            </div>
+            <Badge variant="outline">{vault.designaciones.length}</Badge>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha Designación</TableHead>
+                  <TableHead>Cargo</TableHead>
+                  <TableHead>LSO Asignado</TableHead>
+                  <TableHead>Firma LSO</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vault.designaciones.map((des) => (
+                  <TableRow key={des.id} data-testid={`row-des-${des.id}`}>
+                    <TableCell>{format(new Date(des.designationDate), "dd MMM yyyy", { locale: es })}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{des.position || 'Responsable SST'}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">{des.externalLsoName || 'No asignado'}</div>
+                      {des.licenciaSstNumero && (
+                        <div className="text-xs text-muted-foreground">Lic. {des.licenciaSstNumero}</div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {des.lsoSignatureName ? (
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Firmada
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">Pendiente</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          data-testid={`button-view-pdf-des-${des.id}`}
+                          onClick={() => window.open(`/api/responsible-designations/${des.id}/acta-pdf`, '_blank')}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Ver PDF
+                        </Button>
+                        {des.lsoSignatureName ? (
+                          <Badge className="bg-green-600 text-white">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            {des.lsoSignatureName}
+                          </Badge>
+                        ) : hasValidSignature ? (
+                          <Button 
+                            size="sm"
+                            data-testid={`button-sign-des-${des.id}`}
+                            onClick={() => onSign('designacion', des.id, `Acta Designación - ${vault.companyName}`)}
+                            disabled={isSigning}
+                          >
+                            <FileCheck className="h-4 w-4 mr-1" />
+                            Firmar
+                          </Button>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Requiere firma digital
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {vault.investigaciones.length > 0 && (
         <Card>
@@ -1991,6 +2096,20 @@ function DocumentosTab() {
     },
   });
 
+  const signDesignacionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("PATCH", `/api/portal-licenciado/designacion/${id}/firmar`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Acta de designación firmada exitosamente" });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal-licenciado/documentos-todos"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error al firmar", description: err.message, variant: "destructive" });
+    },
+  });
+
   const [confirmSign, setConfirmSign] = useState<{ type: string; id: string; name: string } | null>(null);
 
   const { data: empresasData = [] } = useQuery<AssignedCompany[]>({
@@ -2035,10 +2154,11 @@ function DocumentosTab() {
     if (confirmSign.type === 'evaluacion') signEvaluacionMutation.mutate(confirmSign.id);
     else if (confirmSign.type === 'plan') signPlanMutation.mutate(confirmSign.id);
     else if (confirmSign.type === 'matriz') signMatrizMutation.mutate(confirmSign.id);
+    else if (confirmSign.type === 'designacion') signDesignacionMutation.mutate(confirmSign.id);
     setConfirmSign(null);
   };
 
-  const isSigning = signEvaluacionMutation.isPending || signPlanMutation.isPending || signMatrizMutation.isPending;
+  const isSigning = signEvaluacionMutation.isPending || signPlanMutation.isPending || signMatrizMutation.isPending || signDesignacionMutation.isPending;
   const signingId = confirmSign?.id || null;
 
   if (isError) {
@@ -2069,7 +2189,7 @@ function DocumentosTab() {
     );
   }
 
-  const docs = allDocs || { investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [] };
+  const docs = allDocs || { investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [], designaciones: [] };
   const vaults = buildCompanyVaults(docs);
   const totalDocs = vaults.reduce((s, v) => s + v.totalDocs, 0);
   const totalPending = vaults.reduce((s, v) => s + v.pendingDocs, 0);

@@ -1662,11 +1662,34 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       .where(sql`${schema.matricesIperc.companyId} IN ${companyIds}`)
       .orderBy(desc(schema.matricesIperc.createdAt));
 
+      const pendingDesignaciones = await db.select({
+        id: schema.responsibleDesignations.id,
+        companyId: schema.responsibleDesignations.companyId,
+        companyName: schema.companies.name,
+        companyNit: schema.companies.nit,
+        designationDate: schema.responsibleDesignations.designationDate,
+        position: schema.responsibleDesignations.position,
+        externalLsoName: schema.responsibleDesignations.externalLsoName,
+        licenciaSstNumero: schema.responsibleDesignations.licenciaSstNumero,
+        status: schema.responsibleDesignations.status,
+        lsoSignedAt: schema.responsibleDesignations.lsoSignedAt,
+        lsoSignatureName: schema.responsibleDesignations.lsoSignatureName,
+        createdAt: schema.responsibleDesignations.createdAt,
+      })
+      .from(schema.responsibleDesignations)
+      .innerJoin(schema.companies, eq(schema.responsibleDesignations.companyId, schema.companies.id))
+      .where(and(
+        sql`${schema.responsibleDesignations.companyId} IN ${companyIds}`,
+        eq(schema.responsibleDesignations.status, 'activo'),
+      ))
+      .orderBy(desc(schema.responsibleDesignations.createdAt));
+
       res.json({
         investigaciones: pendingInvestigations,
         evaluaciones: pendingEvaluaciones,
         planesTrabajoAnual: pendingPlanes,
         matricesIperc: pendingMatrices,
+        designaciones: pendingDesignaciones,
       });
     } catch (error: any) {
       console.error('[GET /api/portal-licenciado/documentos-todos] Error:', error.message);
