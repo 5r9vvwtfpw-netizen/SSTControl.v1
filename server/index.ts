@@ -776,8 +776,8 @@ app.use(express.static('public'));
 // Request logging middleware with Pino (Bloque 2: Infrastructure)
 app.use(requestLoggerMiddleware);
 
-// License validation middleware - blocks writes if license invalid
-app.use(requireValidLicense);
+// NOTE: requireValidLicense is registered INSIDE the async block, AFTER FastBoot loading middleware.
+// This is critical: if it runs before FastBoot, healthchecks return 500 during startup.
 
 (async () => {
   const isProduction = process.env.NODE_ENV === 'production';
@@ -804,6 +804,10 @@ app.use(requireValidLicense);
       logger.info(`[FastBoot] Server listening on port ${port} - healthchecks will pass while initializing`);
     });
   }
+
+  // License validation middleware - blocks writes if license invalid
+  // CRITICAL: Must be AFTER FastBoot loading middleware so healthchecks return 200 during startup
+  app.use(requireValidLicense);
 
   // Esperar un poco para que la base de datos esté lista en producción
   if (isProduction) {
