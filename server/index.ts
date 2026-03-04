@@ -783,18 +783,17 @@ app.use(requireValidLicense);
   const isProduction = process.env.NODE_ENV === 'production';
   const port = parseInt(process.env.PORT || '5000', 10);
 
-  // PRODUCTION FAST-BOOT: Start HTTP server immediately so healthchecks pass
-  // while database seeding runs in the background
+  // PRODUCTION FAST-BOOT: Start a minimal HTTP server immediately so healthchecks pass
+  // while database seeding and route registration runs in the background.
+  // Uses a separate Express instance to avoid middleware (license check, logging) that requires DB.
   let earlyHttpServer: any = null;
   if (isProduction) {
     const http = await import('http');
-    earlyHttpServer = http.createServer(app);
-    
-    // Temporary healthcheck route - responds 200 for "/" during initialization
-    app.get("/", (_req, res) => {
+    const earlyApp = express();
+    earlyApp.get("*", (_req, res) => {
       res.status(200).send("<!DOCTYPE html><html><body>Initializing...</body></html>");
     });
-    
+    earlyHttpServer = http.createServer(earlyApp);
     earlyHttpServer.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
       logger.info(`[FastBoot] Server listening on port ${port} - healthchecks will pass`);
     });
