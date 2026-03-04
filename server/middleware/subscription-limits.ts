@@ -62,7 +62,7 @@ const DEFAULT_ESENCIAL_LIMITS: SubscriptionLimits = {
   hasMatrizLegal: false,
   hasObjetivosIndicadores: false,
   hasEvaluacionProveedores: false,
-  hasComunicacionSST: false,
+  hasComunicacionSST: true,
   hasAdquisicionesSST: false,
   hasDashboardsEjecutivos: false,
   hasPDFsNormativos: false,

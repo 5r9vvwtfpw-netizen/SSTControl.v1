@@ -59,7 +59,7 @@ const FEATURE_GATE_RULES: FeatureGateRule[] = [
 
   { pathPrefix: "/api/objetivos-sst", featureKey: "hasObjetivosIndicadores", featureName: "Objetivos e Indicadores SST", requiredPlan: "Pequeña Empresa" },
 
-  { pathPrefix: "/api/comunicacion-sst", featureKey: "hasComunicacionSST", featureName: "Comunicación SST", requiredPlan: "Mediana Empresa" },
+  { pathPrefix: "/api/comunicacion-sst", featureKey: "hasComunicacionSST", featureName: "Comunicación SST", requiredPlan: "Esencial" },
 
   { pathPrefix: "/api/adquisiciones-sst", featureKey: "hasAdquisicionesSST", featureName: "Adquisiciones SST", requiredPlan: "Mediana Empresa" },
 
@@ -73,9 +73,9 @@ const FEATURE_GATE_RULES: FeatureGateRule[] = [
 
   { pathPrefix: "/api/sustancias-quimicas", featureKey: "hasSustanciasQuimicas", featureName: "Sustancias Químicas", requiredPlan: "Mediana Empresa" },
 
-  { pathPrefix: "/api/comunicaciones-sst", featureKey: "hasComunicacionSST", featureName: "Comunicaciones SST", requiredPlan: "Mediana Empresa" },
-  { pathPrefix: "/api/plan-comunicacion-sst", featureKey: "hasComunicacionSST", featureName: "Plan de Comunicación SST", requiredPlan: "Mediana Empresa" },
-  { pathPrefix: "/api/lecturas-comunicacion", featureKey: "hasComunicacionSST", featureName: "Lecturas de Comunicación SST", requiredPlan: "Mediana Empresa" },
+  { pathPrefix: "/api/comunicaciones-sst", featureKey: "hasComunicacionSST", featureName: "Comunicaciones SST", requiredPlan: "Esencial" },
+  { pathPrefix: "/api/plan-comunicacion-sst", featureKey: "hasComunicacionSST", featureName: "Plan de Comunicación SST", requiredPlan: "Esencial" },
+  { pathPrefix: "/api/lecturas-comunicacion", featureKey: "hasComunicacionSST", featureName: "Lecturas de Comunicación SST", requiredPlan: "Esencial" },
 ];
 
 const GLOBAL_ACCESS_ROLES = ["superadmin", "admin", "soporte"];
