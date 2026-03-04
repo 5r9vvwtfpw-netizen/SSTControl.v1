@@ -795,7 +795,7 @@ app.use(requireValidLicense);
       res.status(200).send("<!DOCTYPE html><html><body>Initializing...</body></html>");
     });
     
-    earlyHttpServer.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
+    earlyHttpServer.listen({ port, host: "0.0.0.0" }, () => {
       logger.info(`[FastBoot] Server listening on port ${port} - healthchecks will pass`);
     });
   }
@@ -1044,17 +1044,23 @@ app.use(requireValidLicense);
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   if (isProduction && earlyHttpServer) {
-    // In production: start full server (with WebSocket) alongside early server using reusePort,
-    // then close the early server once the main one is ready
-    server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
-      log(`serving on port ${port}`);
-      // Now close the early boot server - main server is ready
-      earlyHttpServer.close(() => {
-        logger.info('[FastBoot] Early boot server closed, full server active');
+    await new Promise<void>((resolve, reject) => {
+      earlyHttpServer.close((err: any) => {
+        if (err) {
+          logger.error({ err }, '[FastBoot] Error closing early boot server');
+        } else {
+          logger.info('[FastBoot] Early boot server closed');
+        }
+        resolve();
       });
     });
+    await new Promise<void>(resolve => setTimeout(resolve, 500));
+    server.listen({ port, host: "0.0.0.0" }, () => {
+      log(`serving on port ${port}`);
+      logger.info('[FastBoot] Full server now active');
+    });
   } else {
-    server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
+    server.listen({ port, host: "0.0.0.0" }, () => {
       log(`serving on port ${port}`);
     });
   }
