@@ -776,37 +776,10 @@ app.use(express.static('public'));
 // Request logging middleware with Pino (Bloque 2: Infrastructure)
 app.use(requestLoggerMiddleware);
 
-// NOTE: requireValidLicense is registered INSIDE the async block, AFTER FastBoot loading middleware.
-// This is critical: if it runs before FastBoot, healthchecks return 500 during startup.
-
 (async () => {
   const isProduction = process.env.NODE_ENV === 'production';
   const port = parseInt(process.env.PORT || '5000', 10);
 
-  // PRODUCTION FAST-BOOT: Flag-based approach. The main Express app starts immediately 
-  // with a middleware that serves a loading page until initialization is complete.
-  // This avoids dual-server EADDRINUSE issues entirely.
-  let serverReady = !isProduction; // dev is always ready immediately
-  let earlyHttpServer: any = null;
-  if (isProduction) {
-    const loadingHtml = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SST Colombia</title><meta http-equiv="refresh" content="5"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f8fafc;color:#334155}.c{text-align:center;padding:2rem}.spinner{width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1.5rem}@keyframes spin{to{transform:rotate(360deg)}}h1{font-size:1.25rem;margin-bottom:.5rem}p{color:#64748b;font-size:.875rem}</style></head><body><div class="c"><div class="spinner"></div><h1>Iniciando SST Colombia</h1><p>El sistema se est&aacute; preparando. Esta p&aacute;gina se actualizar&aacute; autom&aacute;ticamente.</p></div></body></html>`;
-    
-    // This middleware runs BEFORE all other routes; once serverReady=true it does nothing
-    app.use((req, res, next) => {
-      if (serverReady) return next();
-      res.status(200).set("Content-Type", "text/html").send(loadingHtml);
-    });
-    
-    // Create a temporary HTTP server from the app and start listening immediately
-    const http = await import('http');
-    earlyHttpServer = http.createServer(app);
-    earlyHttpServer.listen({ port, host: "0.0.0.0" }, () => {
-      logger.info(`[FastBoot] Server listening on port ${port} - healthchecks will pass while initializing`);
-    });
-  }
-
-  // License validation middleware - blocks writes if license invalid
-  // CRITICAL: Must be AFTER FastBoot loading middleware so healthchecks return 200 during startup
   app.use(requireValidLicense);
 
   // Esperar un poco para que la base de datos esté lista en producción
@@ -1051,27 +1024,9 @@ app.use(requestLoggerMiddleware);
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  if (isProduction && earlyHttpServer) {
-    // Close the early HTTP server, then start the full server (with WebSocket support)
-    await new Promise<void>((resolve) => {
-      earlyHttpServer.close(() => {
-        logger.info('[FastBoot] Early boot server closed');
-        resolve();
-      });
-    });
-    // Small delay to ensure port is fully released
-    await new Promise(resolve => setTimeout(resolve, 500));
-    server.listen({ port, host: "0.0.0.0" }, () => {
-      serverReady = true;
-      log(`serving on port ${port}`);
-      logger.info('[FastBoot] ✅ Full server active with all routes and WebSocket');
-    });
-  } else {
-    server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
-      log(`serving on port ${port}`);
-    });
-  }
+  server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
+    log(`serving on port ${port}`);
+  });
 })();
 
 process.on('uncaughtException', (err) => {
