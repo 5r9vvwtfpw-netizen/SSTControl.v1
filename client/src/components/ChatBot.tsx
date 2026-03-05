@@ -123,12 +123,6 @@ function ExpandableMessage({ text }: { text: string }) {
   );
 }
 
-const SUGGESTIONS = [
-  "¿Como agrego trabajadores?",
-  "¿Como hago una evaluacion SST?",
-  "¿Donde registro un accidente?",
-  "¿Que es el ciclo PHVA?",
-];
 
 export function ChatBot() {
   const { data: user } = useQuery<any>({ queryKey: ["/api/user"] });
@@ -387,18 +381,6 @@ export function ChatBot() {
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       Puedo ayudarte con normativa colombiana, uso de la plataforma y mucho mas.
                     </p>
-                  </div>
-                  <div className="flex flex-wrap justify-center gap-2 px-3 mt-1">
-                    {SUGGESTIONS.map((s, i) => (
-                      <button
-                        key={i}
-                        data-testid={`button-suggestion-${i}`}
-                        className="text-xs px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer transition-colors duration-150 hover:border-[#357947] hover:text-[#357947] dark:hover:text-green-400"
-                        onClick={() => sendMessage(s)}
-                      >
-                        {s}
-                      </button>
-                    ))}
                   </div>
                 </div>
               )}
