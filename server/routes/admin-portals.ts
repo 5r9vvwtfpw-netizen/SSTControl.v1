@@ -350,8 +350,8 @@ export function registerAdminPortalsRoutes(app: Express) {
         return res.status(404).json({ error: "Usuario trabajador no encontrado" });
       }
 
-      const temporaryPassword = generateRandomPassword();
-      const hashedPassword = await hashPassword(temporaryPassword);
+      const newPassword = req.body?.newPassword || generateRandomPassword();
+      const hashedPassword = await hashPassword(newPassword);
 
       await db.update(schema.users)
         .set({ password: hashedPassword })
@@ -359,7 +359,7 @@ export function registerAdminPortalsRoutes(app: Express) {
 
       res.json({
         success: true,
-        temporaryPassword,
+        temporaryPassword: newPassword,
         message: "Contraseña restablecida exitosamente",
       });
     } catch (error: any) {
