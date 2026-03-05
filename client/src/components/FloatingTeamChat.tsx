@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { playNotificationSound } from "@/lib/notification-sound";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -146,13 +147,18 @@ export function FloatingTeamChat() {
   };
 
   useEffect(() => {
-    if (!isOpen) return;
     const handleWsMessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.type === "support_chat_message" && data.message?.channel === activeChannel) {
-          queryClient.invalidateQueries({ queryKey: ["/api/support-chat/messages", activeChannel] });
-          setShouldAutoScroll(true);
+        if (data.type === "support_chat_message") {
+          const isFromOther = data.message?.senderId !== user?.id;
+          if (isFromOther) {
+            playNotificationSound("message");
+          }
+          if (isOpen && data.message?.channel === activeChannel) {
+            queryClient.invalidateQueries({ queryKey: ["/api/support-chat/messages", activeChannel] });
+            setShouldAutoScroll(true);
+          }
         }
       } catch { /* ignore */ }
     };
@@ -161,7 +167,7 @@ export function FloatingTeamChat() {
       ws.addEventListener("message", handleWsMessage);
       return () => ws.removeEventListener("message", handleWsMessage);
     }
-  }, [activeChannel, isOpen]);
+  }, [activeChannel, isOpen, user?.id]);
 
   useEffect(() => {
     if (shouldAutoScroll && messagesEndRef.current) {

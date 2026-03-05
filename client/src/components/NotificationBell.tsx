@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Bell, MessageSquare, Clock, Mail, MailOpen, Archive, Send, CheckCheck } from "lucide-react";
+import { playNotificationSound } from "@/lib/notification-sound";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -33,12 +34,21 @@ export function NotificationBell() {
   const [location, setLocation] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const isSupportRole = user?.role === 'soporte';
+  const prevUnreadRef = useRef<number | null>(null);
   
   // Get unread count
   const { data: unreadData } = useQuery<{ count: number }>({
     queryKey: ["/api/internal-messages/unread-count"],
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 15000,
   });
+
+  useEffect(() => {
+    const currentCount = unreadData?.count ?? 0;
+    if (prevUnreadRef.current !== null && currentCount > prevUnreadRef.current) {
+      playNotificationSound("ticket");
+    }
+    prevUnreadRef.current = currentCount;
+  }, [unreadData?.count]);
 
   // Get recent messages
   const { data: messages, isLoading } = useQuery<InternalMessage[]>({
