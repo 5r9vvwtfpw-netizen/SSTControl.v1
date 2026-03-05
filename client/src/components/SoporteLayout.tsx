@@ -3,7 +3,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Headset, LogOut, Ticket, Key, BookOpen, Eye, EyeOff, MessageSquare } from "lucide-react";
+import { Headset, LogOut, Ticket, Key, BookOpen, Eye, EyeOff } from "lucide-react";
+import { FloatingTeamChat } from "@/components/FloatingTeamChat";
 import { Link, Redirect, useLocation } from "wouter";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useMutation } from "@tanstack/react-query";
@@ -106,16 +107,6 @@ export default function SoporteLayout({ children }: { children: React.ReactNode 
                     Tickets
                   </Button>
                 </Link>
-                <Link href="/soporte/chat">
-                  <Button 
-                    variant="ghost" 
-                    className={`text-white ${location === '/soporte/chat' ? 'bg-white/20' : ''}`}
-                    data-testid="nav-soporte-chat"
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Chat Equipo
-                  </Button>
-                </Link>
                 <a href="/soporte/manual" target="_blank" rel="noopener noreferrer">
                   <Button 
                     variant="ghost" 
@@ -166,6 +157,8 @@ export default function SoporteLayout({ children }: { children: React.ReactNode 
           SST Colombia - Centro de Soporte Técnico
         </div>
       </footer>
+
+      <FloatingTeamChat />
 
       <Dialog open={showPasswordDialog} onOpenChange={(open) => {
         setShowPasswordDialog(open);

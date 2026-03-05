@@ -426,7 +426,7 @@ function SupportRouter() {
   return (
     <Switch>
       <Route path="/soporte/tickets" component={AdminTicketsSoporte} />
-      <Route path="/soporte/chat" component={ChatSoporte} />
+      {/* Chat de equipo ahora es ventana flotante en SoporteLayout */}
       <Route path="/soporte/manual" component={ManualSoporte} />
       <Route path="/soporte/login" component={LoginSoporte} />
       <Route>
