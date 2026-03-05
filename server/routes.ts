@@ -24544,7 +24544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         puntajeMaximoTipo3: allEstandares.filter(e => e.puntajeTipo3 !== null).reduce((sum, e) => sum + (e.puntajeTipo3 || 0), 0),
         puntajeMaximoTipo4: allEstandares.filter(e => e.puntajeTipo4 !== null).reduce((sum, e) => sum + (e.puntajeTipo4 || 0), 0),
         esperado: {
-          tipo1: { estandares: 7, puntajeMaximo: 95, descripcion: "Cap. I - Microempresa (≤10 trab, riesgo I-III)" },
+          tipo1: { estandares: 8, puntajeMaximo: 102, descripcion: "Cap. I - Microempresa (≤10 trab, riesgo I-III)" },
           tipo2: { estandares: 21, puntajeMaximo: 420, descripcion: "Cap. II - Pequeña (11-50 trab, riesgo I-III)" },
           tipo3: { estandares: 61, puntajeMaximo: 1000, descripcion: "Cap. III - Mediana/Grande, riesgo I-III" },
           tipo4: { estandares: 61, puntajeMaximo: 1000, descripcion: "Cap. III - Mediana/Grande, riesgo IV-V" }
@@ -24577,6 +24577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "1.1.1": 5,  // Asignación persona que diseña el SG-SST
         "1.1.4": 5,  // Afiliación al Sistema de Seguridad Social Integral
         "1.2.1": 15, // Programa de capacitación anual en SST
+        "1.2.2": 2,  // Inducción y reinducción en SST
         "2.4.1": 10, // Plan Anual de Trabajo
         "3.1.4": 15, // Evaluaciones médicas ocupacionales
         "4.1.1": 30, // Identificación de peligros, evaluación y valoración de riesgos

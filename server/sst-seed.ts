@@ -214,7 +214,7 @@ const estandaresSst = [
     nombre: "Inducción y reinducción en SST",
     descripcion: "Realizar la inducción y reinducción en los aspectos generales y específicos de las actividades por realizar que incluya entre otros, la identificación de peligros y control de los riesgos en su trabajo, y la prevención de accidentes de trabajo y enfermedades laborales.",
     marcoLegal: "Decreto 1072 de 2015, artículo 2.2.4.6.11",
-    puntajeTipo1: null,
+    puntajeTipo1: 2,
     puntajeTipo2: 2,
     puntajeTipo3: 2,
     puntajeTipo4: 2,
@@ -1187,6 +1187,11 @@ export async function seedSstCatalog() {
         .onConflictDoNothing();
     }
     console.log(`✅ ${estandaresSst.length} estándares SST insertados/verificados`);
+    
+    await db.update(schema.estandaresSst)
+      .set({ puntajeTipo1: 2 })
+      .where(eq(schema.estandaresSst.numeroEstandar, "1.2.2"));
+    console.log("✅ Estándar 1.2.2 liberado para tipo 1 (puntajeTipo1: 2)");
     
     console.log("🎉 Seed de datos maestros SST completado exitosamente");
     
