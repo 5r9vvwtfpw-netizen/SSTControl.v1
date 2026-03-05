@@ -327,7 +327,7 @@ function SoporteTab() {
       toast({ title: "Campos requeridos", description: "Complete el asunto y la descripción.", variant: "destructive" });
       return;
     }
-    createTicketMutation.mutate({ subject: newSubject, description: newDescription, category: newCategory, priority: newPriority });
+    createTicketMutation.mutate({ subject: newSubject, description: newDescription, category: newCategory });
   };
 
   const handleReply = () => {
@@ -498,19 +498,6 @@ function SoporteTab() {
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Prioridad</Label>
-                <Select value={newPriority} onValueChange={setNewPriority}>
-                  <SelectTrigger data-testid="select-ticket-priority">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
                       <SelectItem key={value} value={value}>{label}</SelectItem>
                     ))}
                   </SelectContent>

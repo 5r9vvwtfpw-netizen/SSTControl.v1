@@ -158,8 +158,7 @@ export default function TicketsSoporte() {
   const [newTicket, setNewTicket] = useState({
     subject: "",
     description: "",
-    category: "consulta_general",
-    priority: "media"
+    category: "consulta_general"
   });
   
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -188,8 +187,7 @@ export default function TicketsSoporte() {
       setNewTicket({
         subject: "",
         description: "",
-        category: "consulta_general",
-        priority: "media"
+        category: "consulta_general"
       });
     },
     onError: (error: any) => {
@@ -321,8 +319,7 @@ export default function TicketsSoporte() {
       setNewTicket({
         subject: "",
         description: "",
-        category: "consulta_general",
-        priority: "media"
+        category: "consulta_general"
       });
       setSelectedFiles([]);
     } catch (error: any) {
@@ -414,23 +411,6 @@ export default function TicketsSoporte() {
                   </Select>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="priority">Prioridad</Label>
-                  <Select
-                    value={newTicket.priority}
-                    onValueChange={(value) => setNewTicket({ ...newTicket, priority: value })}
-                  >
-                    <SelectTrigger data-testid="select-ticket-priority">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="baja">Baja</SelectItem>
-                      <SelectItem value="media">Media</SelectItem>
-                      <SelectItem value="alta">Alta</SelectItem>
-                      <SelectItem value="critica">Crítica</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
               
               <div className="space-y-2">

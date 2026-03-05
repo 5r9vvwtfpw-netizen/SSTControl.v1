@@ -40759,9 +40759,20 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       };
       const autoSubject = req.body.subject?.trim() || categoryLabels[req.body.category] || "Ticket de Soporte";
       
+      const categoryPriorityMap: Record<string, string> = {
+        error_bug: 'alta',
+        soporte_tecnico: 'alta',
+        facturacion: 'media',
+        capacitacion: 'media',
+        nueva_funcionalidad: 'baja',
+        consulta_general: 'baja',
+      };
+      const autoPriority = categoryPriorityMap[req.body.category] || 'media';
+      
       const ticketData = {
         ...req.body,
         subject: autoSubject,
+        priority: autoPriority,
         userId: userId,
         userName: user.fullName || user.username,
         userEmail: user.email || null,
