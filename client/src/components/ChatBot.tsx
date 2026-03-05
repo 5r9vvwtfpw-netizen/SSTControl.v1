@@ -149,7 +149,8 @@ export function ChatBot() {
     }
   }, [isOpen]);
 
-  if (!user) return null;
+  const isSupportPortal = window.location.pathname.startsWith("/soporte");
+  if (!user || isSupportPortal || user.role === 'soporte') return null;
 
   const sendMessage = async (text: string) => {
     const trimmed = text.trim();
