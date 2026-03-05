@@ -90,7 +90,11 @@ export function NotificationBell() {
 
     if (message.relatedEntity === 'support_ticket' && message.relatedEntityId) {
       queryClient.invalidateQueries({ queryKey: ['/api/support-tickets'] });
-      setLocation(`/soporte/tickets?ticket=${message.relatedEntityId}&t=${Date.now()}`);
+      if (isSupportRole) {
+        setLocation(`/soporte/tickets?ticket=${message.relatedEntityId}&t=${Date.now()}`);
+      } else {
+        setLocation(`/tickets-soporte?ticket=${message.relatedEntityId}&t=${Date.now()}`);
+      }
       return;
     }
 
