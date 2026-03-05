@@ -56,12 +56,24 @@ export function NotificationBell() {
     refetchInterval: 30000,
   });
 
-  // Mark as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: async (messageId: string) => {
       return await apiRequest("PATCH", `/api/internal-messages/${messageId}/read`);
     },
-    onSuccess: () => {
+    onMutate: async (messageId: string) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/internal-messages/unread-count"] });
+      const prev = queryClient.getQueryData<{ count: number }>(["/api/internal-messages/unread-count"]);
+      if (prev && prev.count > 0) {
+        queryClient.setQueryData(["/api/internal-messages/unread-count"], { count: prev.count - 1 });
+      }
+      return { prev };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.prev) {
+        queryClient.setQueryData(["/api/internal-messages/unread-count"], context.prev);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/internal-messages"] });
       queryClient.invalidateQueries({ queryKey: ["/api/internal-messages/unread-count"] });
     },
@@ -71,7 +83,18 @@ export function NotificationBell() {
     mutationFn: async () => {
       return await apiRequest("POST", "/api/internal-messages/mark-all-read");
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["/api/internal-messages/unread-count"] });
+      const prev = queryClient.getQueryData<{ count: number }>(["/api/internal-messages/unread-count"]);
+      queryClient.setQueryData(["/api/internal-messages/unread-count"], { count: 0 });
+      return { prev };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) {
+        queryClient.setQueryData(["/api/internal-messages/unread-count"], context.prev);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/internal-messages"] });
       queryClient.invalidateQueries({ queryKey: ["/api/internal-messages/unread-count"] });
     },
