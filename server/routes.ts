@@ -34105,7 +34105,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const reportes = await storage.getReportesTrabajadores(companyId);
-      res.json(reportes);
+      const reportesMasked = reportes.map(r => {
+        if (r.esAnonimo === 1) {
+          return { ...r, reportadoPor: null, nombreReportante: "Anónimo", departamento: null, emailContacto: null, workerId: null };
+        }
+        return r;
+      });
+      res.json(reportesMasked);
     } catch (error: any) {
       console.error('Error fetching reportes trabajadores:', error);
       res.status(500).json({ error: error.message || "Error al obtener reportes" });
@@ -34121,6 +34127,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const reporte = await storage.getReporteTrabajadorById(req.params.id, companyId);
       if (!reporte) {
         return res.status(404).json({ error: "Reporte no encontrado" });
+      }
+      if (reporte.esAnonimo === 1) {
+        res.json({ ...reporte, reportadoPor: null, nombreReportante: "Anónimo", departamento: null, emailContacto: null, workerId: null });
+        return;
       }
       res.json(reporte);
     } catch (error: any) {
@@ -34159,24 +34169,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         const companyAdmins = await storage.getUsersByRole(["admin", "company_admin"], companyId);
-        const senderName = validatedData.esAnonimo ? "Trabajador (Anónimo)" : (req.user?.fullName || req.user?.username || "Trabajador");
+        const isAnon = validatedData.esAnonimo === 1;
+        const senderName = isAnon ? "Sistema SST" : (req.user?.fullName || req.user?.username || "Trabajador");
+        const effectiveSenderId = isAnon ? "system" : userId!;
         for (const admin of companyAdmins) {
           const msg = await storage.createInternalMessage({
             companyId,
-            senderId: userId!,
+            senderId: effectiveSenderId,
             senderName,
-            senderRole: req.user!.role,
+            senderRole: isAnon ? "system" : req.user!.role,
             receiverId: admin.id,
             receiverName: admin.fullName || admin.username,
             receiverRole: admin.role,
             subject: `Nuevo reporte SST: ${reporte.asunto}`,
-            content: `Se ha recibido un nuevo reporte (${reporte.codigo}) de tipo "${reporte.categoria}" con prioridad "${reporte.prioridad}". ${validatedData.esAnonimo ? 'El reporte fue enviado de forma anónima.' : ''} Requiere revisión.`,
+            content: `Se ha recibido un nuevo reporte ${isAnon ? 'anónimo ' : ''}(${reporte.codigo}) de tipo "${reporte.categoria}" con prioridad "${reporte.prioridad}". Requiere revisión.`,
             priority: reporte.prioridad === 'urgente' || reporte.prioridad === 'alta' ? 'high' : 'normal',
             status: 'unread',
             relatedEntity: 'reporte_trabajador',
             relatedEntityId: reporte.id,
           });
-          notifyNewMessage(admin.id, userId!, msg.id);
+          notifyNewMessage(admin.id, effectiveSenderId, msg.id);
         }
       } catch (notifErr: any) {
         console.error('[Report Notification] Error sending notification to admins:', notifErr.message);
@@ -34220,7 +34232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const reporte = await storage.updateReporteTrabajador(req.params.id, {
         respuesta,
         accionesTomadas,
-        estado,
+        estado: estado || "resuelto",
         fechaRespuesta: new Date(),
         respondidoPor: userId,
       }, companyId, userId!);
@@ -34229,10 +34241,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Reporte no encontrado" });
       }
       
-      // TODO: Enviar notificación al reportante si no es anónimo
-      // if (!reporte.esAnonimo && reporte.reportadoPor && reporte.emailContacto) {
-      //   await sendRespuestaReporteEmail(reporte);
-      // }
+      if (reporte.reportadoPor && reporte.reportadoPor !== userId) {
+        try {
+          const reporterUser = await storage.getUser(reporte.reportadoPor);
+          if (reporterUser) {
+            const msg = await storage.createInternalMessage({
+              companyId,
+              senderId: userId,
+              senderName: req.user!.fullName || req.user!.username || "Equipo SST",
+              senderRole: req.user!.role,
+              receiverId: reporterUser.id,
+              receiverName: reporterUser.fullName || reporterUser.username,
+              receiverRole: reporterUser.role,
+              subject: `Respuesta a tu reporte: ${reporte.asunto}`,
+              content: `Tu reporte (${reporte.codigo}) ha sido respondido por el equipo SST. Revisa la respuesta en la sección "Mis Reportes" del Portal de Empleados.`,
+              priority: 'normal',
+              status: 'unread',
+              relatedEntity: 'reporte_trabajador',
+              relatedEntityId: reporte.id,
+            });
+            notifyNewMessage(reporterUser.id, userId, msg.id);
+          }
+        } catch (notifErr: any) {
+          console.error('[Report Response Notification] Error:', notifErr.message);
+        }
+      }
       
       res.json(reporte);
     } catch (error: any) {
@@ -34420,7 +34453,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const reportes = await storage.getReportesTrabajadores(companyId);
-      res.json(reportes);
+      const reportesMasked = reportes.map(r => {
+        if (r.esAnonimo === 1) {
+          return { ...r, reportadoPor: null, nombreReportante: "Anónimo", departamento: null, emailContacto: null, workerId: null };
+        }
+        return r;
+      });
+      res.json(reportesMasked);
     } catch (error: any) {
       console.error('Error fetching reportes trabajadores:', error);
       res.status(500).json({ error: error.message || "Error al obtener reportes" });
@@ -34437,8 +34476,35 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const validatedData = insertReporteTrabajadorSchema.parse(req.body);
       const reporte = await storage.createReporteTrabajador({
         ...validatedData,
-        reportadoPor: validatedData.esAnonimo ? null : userId,
+        reportadoPor: userId,
       }, companyId, userId!);
+      
+      try {
+        const companyAdmins = await storage.getUsersByRole(["admin", "company_admin"], companyId);
+        const isAnon = validatedData.esAnonimo === 1;
+        const senderName = isAnon ? "Sistema SST" : (req.user?.fullName || req.user?.username || "Trabajador");
+        const effectiveSenderId = isAnon ? "system" : userId!;
+        for (const admin of companyAdmins) {
+          const msg = await storage.createInternalMessage({
+            companyId,
+            senderId: effectiveSenderId,
+            senderName,
+            senderRole: isAnon ? "system" : req.user!.role,
+            receiverId: admin.id,
+            receiverName: admin.fullName || admin.username,
+            receiverRole: admin.role,
+            subject: `Nuevo reporte SST: ${reporte.asunto}`,
+            content: `Se ha recibido un nuevo reporte ${isAnon ? 'anónimo ' : ''}(${reporte.codigo}) de tipo "${reporte.categoria}" con prioridad "${reporte.prioridad}". Requiere revisión.`,
+            priority: reporte.prioridad === 'urgente' || reporte.prioridad === 'alta' ? 'high' : 'normal',
+            status: 'unread',
+            relatedEntity: 'reporte_trabajador',
+            relatedEntityId: reporte.id,
+          });
+          notifyNewMessage(admin.id, effectiveSenderId, msg.id);
+        }
+      } catch (notifErr: any) {
+        console.error('[Report Notification] Error sending notification to admins:', notifErr.message);
+      }
       
       res.status(201).json(reporte);
     } catch (error: any) {

@@ -567,9 +567,10 @@ function PendingReportCard({ report }: { report: ReporteTrabajador }) {
   
   const respondMutation = useMutation({
     mutationFn: ({ id, respuesta }: { id: string; respuesta: string }) =>
-      apiRequest("POST", `/api/reportes-trabajadores/${id}/responder`, { respuesta }),
+      apiRequest("POST", `/api/reportes-trabajadores/${id}/responder`, { respuesta, estado: "resuelto" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reportes-trabajadores"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/comunicacion-sst/mis-reportes"] });
       setRespuesta("");
       setIsExpanded(false);
       toast({
