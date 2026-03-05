@@ -530,68 +530,10 @@ Cuando un usuario pregunte por un estándar específico, usa esta referencia:
 - **7.1.3** Acciones de mejora por investigación de accidentes: Vinculadas a accidentes investigados.
 - **7.1.4** Plan de mejoramiento: Documentado con acciones, responsables, fechas y seguimiento.
 
-## DIAGNÓSTICO RÁPIDO DE PROBLEMAS TÉCNICOS
-Cuando un usuario reporte un problema técnico, usa esta guía:
-
-- **Pantalla en blanco o no carga**: Intente Ctrl+Shift+R para recargar sin caché. Limpie el caché del navegador. Pruebe con Chrome. Verifique su conexión a internet.
-- **Error rojo al guardar un formulario**: Revise todos los campos con asterisco (*), campos de fecha con formato válido, campos numéricos sin letras. Desplácese por todo el formulario para encontrar el campo en rojo.
-- **No aparece un módulo en el menú**: Puede ser restricción de plan (Configuración > Mi Suscripción) o restricción de rol (consulte con el administrador de su empresa).
-- **PDF se descarga vacío o incompleto**: Verifique que la evaluación tenga estándares calificados. Para el PDF del Ministerio necesita al menos una evaluación con respuestas. Actualice la página e intente de nuevo.
-- **No puede crear más trabajadores**: Límite de plan alcanzado. Verifique en Configuración > Mi Suscripción. Puede actualizar su plan.
+## CONSEJOS GENERALES DE USO DE LA PLATAFORMA
+- **No aparece un módulo en el menú**: Puede ser restricción de su plan de suscripción o de su rol. Si es por plan, vaya a Configuración > Mi Suscripción para verificar. Si es por rol, consulte con el administrador de su empresa.
 - **La empresa no ve el módulo PESV**: El módulo PESV se activa cuando la empresa registra al menos un vehículo. Vaya a Configuración > Datos de la Empresa y actualice el campo 'Número de Vehículos'.
-- **Error al importar Excel de trabajadores**: Use la plantilla oficial (botón 'Descargar Plantilla'). No modifique encabezados. Guarde como .xlsx. Los campos aceptan variaciones con/sin tildes.
-- **Suscripción bloqueada o expirada**: Período de prueba vencido (active en Mi Suscripción), pago rechazado (verifique método de pago), o error (proporcione nombre de empresa).
-
-## PROBLEMAS DEL PORTAL LSO (Licenciado en Salud Ocupacional)
-
-### Acceso y Credenciales
-- **No puede iniciar sesión**: Las credenciales se envían por correo cuando la empresa lo asigna. Revise bandeja de entrada/spam. Si no las recibió, solicite reasignación desde Configuración > Responsable SST.
-- **Olvidó su contraseña**: Restablecimiento por soporte. Se necesita: nombre completo, correo electrónico, número de licencia SST.
-- **Acceso restringido**: Requiere rol 'lso' configurado automáticamente al ser asignado. Si perdió acceso, puede que todas las empresas lo hayan desasignado.
-
-### Firma Digital
-- **No puede subir firma**: Formato PNG o JPG, máximo 2 MB. Fondo blanco, firma en tinta negra o azul. Vaya a Mi Licencia > Firma Digital.
-- **Firma aparece como 'no configurada'**: Suba nuevamente la imagen, espere confirmación, recargue con Ctrl+Shift+R.
-- **'Debe configurar su firma primero'**: Configure la firma en Mi Licencia > Firma Digital antes de firmar documentos.
-- **Firma cortada o borrosa en PDF**: Resolución mínima 300x150 px, formato horizontal, poco margen blanco.
-
-### Empresas Asignadas
-- **No ve empresas asignadas**: Verifique pestaña 'Empresas' sin filtros. Revise 'Historial de Empresas' para ver si fue desasignado. Contacte al administrador de la empresa.
-- **Ve empresa que ya no debería ver**: Ctrl+Shift+R o cierre/abra sesión. Si persiste, reportar como nota interna.
-- **Datos de empresa vacíos**: La empresa aún no ha registrado información. Como LSO, puede contactar al administrador para orientarlo.
-
-### Firma de Documentos
-- **No encuentra documentos para firmar**: Los documentos aparecen cuando las empresas los generan. Vaya a Documentos > seleccione empresa. Tipos: Evaluaciones SST, Planes de Trabajo, Matrices IPERC, Investigaciones, Actas de Designación.
-- **Error al firmar**: Verifique firma configurada, recargue página, pruebe con Chrome.
-- **Firma no aparece en PDF**: Descargue el PDF nuevamente después de firmar.
-- **Quiere retirar firma de documento**: Por cumplimiento normativo, las firmas son inmutables. Genere un nuevo documento con correcciones.
-
-### Licencia SST
-- **Licencia aparece como 'vencida' pero la renovó**: Actualice la fecha de vencimiento en Mi Licencia. El estado se recalcula automáticamente.
-- **Licencia 'por vencer'**: Alerta automática a menos de 90 días. Gestione renovación y actualice la fecha.
-
-### Panel PHVA y Bóveda
-- **Panel PHVA en cero**: La empresa no ha registrado actividades. Contacte al administrador para orientarlo.
-- **No puede acceder a la bóveda**: Vaya a Documentos > clic en tarjeta de empresa. Si no aparece, verifique asignación en pestaña Empresas.
-
-### Soporte desde Portal LSO
-- **Crear ticket**: Pestaña 'Soporte' > 'Nuevo Ticket'. Complete asunto, prioridad y descripción.
-- **Comunicarse con empresa**: Pestaña 'Empresas' > botón 'Mensaje'. Complete asunto, prioridad y contenido.
-
-## PROBLEMAS DEL PORTAL DE EMPLEADOS
-
-- **No puede acceder al portal**: El acceso debe ser activado por el administrador de la empresa. Comuníquese con el responsable de SST.
-- **No ve exámenes médicos**: Los exámenes aparecen cuando el administrador los registra y notifica. Contacte al responsable de SST.
-- **Quiere reportar condición insegura o sugerencia**: Use el buzón de sugerencias/reportar condición en el portal. El reporte llega al responsable de SST.
-- **No puede ver documentos o capacitaciones**: La empresa debe compartirlos a través del portal. Contacte al responsable de SST.
-
-## PROTOCOLO DE NO CONTACTO (Solo para agentes de soporte)
-El servicio opera exclusivamente por canal de tickets. No se realizan llamadas, reuniones virtuales ni acceso remoto.
-- Si piden llamada: Ofrecer instrucciones escritas paso a paso por tickets.
-- Si piden reunión virtual: Ofrecer instrucciones escritas claras que pueden consultar en cualquier momento.
-- Si piden acceso remoto: Por seguridad y Ley 1581/2012, no se realiza acceso remoto. Se proporcionan instrucciones detalladas.
-- Si insisten en hablar con alguien: El canal de tickets es la vía más rápida. Ofrecer escalar a prioridad Alta si es urgente.
-- Si quieren que les hagan el trabajo: La plataforma es autogestión. Se envían instrucciones paso a paso.
+- **Error al importar Excel de trabajadores**: Use la plantilla oficial (botón 'Descargar Plantilla'). No modifique los encabezados. Guarde como .xlsx.
 `;
 
 const ROLE_LABELS: Record<string, string> = {
