@@ -40676,6 +40676,28 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // GET /api/support-tickets/agents - List available agents for escalation (must be before /:id)
+  app.get("/api/support-tickets/agents", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      if (!hasSupportAccess(user.role)) {
+        return res.status(403).send("Solo el equipo de soporte puede ver agentes");
+      }
+      const supportUsers = await storage.getUsersByRoleGlobal("soporte");
+      const superadmins = await storage.getUsersByRoleGlobal("superadmin");
+      const allAgents = [...supportUsers, ...superadmins].map(u => ({
+        id: u.id,
+        username: u.username,
+        fullName: u.fullName,
+        role: u.role,
+      }));
+      res.json(allAgents);
+    } catch (error: any) {
+      console.error('Error listing support agents:', error);
+      res.status(500).send("Error al listar agentes de soporte");
+    }
+  });
+
   // GET /api/support-tickets/:id - Get single ticket with responses
   app.get("/api/support-tickets/:id", requireAuth, async (req, res) => {
     try {
@@ -41003,6 +41025,83 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // POST /api/support-tickets/:id/escalate - Escalate ticket to another agent
+  app.post("/api/support-tickets/:id/escalate", requireAuth, async (req, res) => {
+    try {
+      const ticket = await storage.getSupportTicket(req.params.id);
+      if (!ticket) {
+        return res.status(404).send("Ticket no encontrado");
+      }
+
+      const user = req.user!;
+      const userRole = user.role;
+      if (!hasSupportAccess(userRole)) {
+        return res.status(403).send("Solo el equipo de soporte puede escalar tickets");
+      }
+
+      const { assignToUserId, reason } = req.body;
+      if (!assignToUserId || !reason) {
+        return res.status(400).send("assignToUserId y reason son requeridos");
+      }
+
+      const targetUser = await storage.getUser(assignToUserId);
+      if (!targetUser) {
+        return res.status(404).send("Usuario destino no encontrado");
+      }
+
+      const previousAssignedName = ticket.assignedToName || 'Sin asignar';
+      const targetName = targetUser.fullName || targetUser.username;
+      const escalatorName = user.fullName || user.username;
+
+      const updatedTicket = await storage.updateSupportTicket(ticket.id, {
+        assignedTo: assignToUserId,
+        assignedToName: targetName,
+        status: ticket.status === 'abierto' ? 'en_progreso' : ticket.status,
+      });
+
+      await storage.createTicketStatusHistory({
+        ticketId: ticket.id,
+        previousStatus: ticket.status,
+        newStatus: updatedTicket.status,
+        changedBy: user.id,
+        changedByName: escalatorName,
+        reason: `Escalado de ${previousAssignedName} a ${targetName}. Motivo: ${reason}`
+      });
+
+      await storage.createTicketResponse({
+        ticketId: ticket.id,
+        userId: user.id,
+        userName: escalatorName,
+        userRole: userRole,
+        isStaff: 1,
+        content: `Ticket escalado a ${targetName}.\n\nMotivo: ${reason}`,
+        isInternal: 1,
+      });
+
+      const msg = await storage.createInternalMessage({
+        companyId: ticket.companyId || targetUser.companyId || '',
+        senderId: user.id,
+        senderName: escalatorName,
+        senderRole: userRole,
+        receiverId: targetUser.id,
+        receiverName: targetName,
+        receiverRole: targetUser.role,
+        subject: `Ticket ${ticket.ticketNumber} escalado a usted`,
+        content: `${escalatorName} le ha escalado el ticket "${ticket.subject}" (${ticket.ticketNumber}).\n\nMotivo: ${reason}\n\nCompañía: ${ticket.companyName}\nPrioridad: ${ticket.priority}\n\nRevise el ticket en el panel de soporte.`,
+        priority: ticket.priority === 'alta' || ticket.priority === 'critica' ? 'urgent' : 'normal',
+        status: 'unread',
+        relatedEntity: 'support_ticket',
+        relatedEntityId: ticket.id,
+      });
+      try { notifyNewMessage(targetUser.id, user.id, msg.id); } catch (e) { /* ignore */ }
+
+      res.json(updatedTicket);
+    } catch (error: any) {
+      console.error('Error escalating support ticket:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // POST /api/support-tickets/:id/responses - Add response to ticket
   app.post("/api/support-tickets/:id/responses", requireAuth, async (req, res) => {
     try {
@@ -41073,8 +41172,39 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         });
       }
 
-      // Notify the ticket creator when staff responds
-      if (isStaff && ticket.userId && ticket.userId !== userId) {
+      // Notify based on whether it's an internal note or a public response
+      if (isStaff && responseData.isInternal === 1) {
+        // Internal note: notify OTHER support staff, NOT the customer
+        try {
+          const supportUsers = await storage.getUsersByRoleGlobal("soporte");
+          const superadmins = await storage.getUsersByRoleGlobal("superadmin");
+          const allSupportStaff = [...supportUsers, ...superadmins];
+          const staffName = user.fullName || user.username;
+
+          for (const staffUser of allSupportStaff) {
+            if (staffUser.id === userId) continue;
+            const msg = await storage.createInternalMessage({
+              companyId: ticket.companyId || staffUser.companyId || '',
+              senderId: userId,
+              senderName: staffName,
+              senderRole: userRole,
+              receiverId: staffUser.id,
+              receiverName: staffUser.fullName || staffUser.username,
+              receiverRole: staffUser.role,
+              subject: `Nota interna en Ticket ${ticket.ticketNumber}`,
+              content: `${staffName} agregó una nota interna al ticket "${ticket.subject}" (${ticket.ticketNumber}).\n\nNota: ${req.body.content?.substring(0, 200)}${(req.body.content?.length || 0) > 200 ? '...' : ''}\n\nRevise el ticket en el panel de soporte.`,
+              priority: ticket.priority === 'alta' || ticket.priority === 'critica' ? 'urgent' : 'normal',
+              status: 'unread',
+              relatedEntity: 'support_ticket',
+              relatedEntityId: ticket.id,
+            });
+            try { notifyNewMessage(staffUser.id, userId, msg.id); } catch (e) { /* ignore ws error */ }
+          }
+        } catch (notifErr) {
+          console.error('[Support Tickets] Error notifying staff of internal note:', notifErr);
+        }
+      } else if (isStaff && ticket.userId && ticket.userId !== userId) {
+        // Public staff response: notify the customer
         try {
           const ticketCreator = await storage.getUser(ticket.userId);
           if (ticketCreator) {

@@ -57,7 +57,8 @@ import {
   History,
   Paperclip,
   Download,
-  Key
+  Key,
+  ArrowUpRight
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -211,6 +212,9 @@ export default function AdminTicketsSoporte() {
   const [statusChangeNotes, setStatusChangeNotes] = useState("");
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [showEscalateDialog, setShowEscalateDialog] = useState(false);
+  const [escalateToUserId, setEscalateToUserId] = useState("");
+  const [escalateReason, setEscalateReason] = useState("");
 
   if (user?.role !== 'superadmin' && user?.role !== 'soporte') {
     return (
@@ -322,6 +326,47 @@ export default function AdminTicketsSoporte() {
       });
     }
   });
+
+  const { data: supportAgents = [] } = useQuery<{ id: string; username: string; fullName: string | null; role: string }[]>({
+    queryKey: ['/api/support-tickets/agents'],
+    enabled: user?.role === 'superadmin' || user?.role === 'soporte',
+  });
+
+  const escalateMutation = useMutation({
+    mutationFn: async (data: { ticketId: string; assignToUserId: string; reason: string }) => {
+      return await apiRequest('POST', `/api/support-tickets/${data.ticketId}/escalate`, {
+        assignToUserId: data.assignToUserId,
+        reason: data.reason
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/support-tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/support-tickets', selectedTicket?.id] });
+      toast({
+        title: "Ticket escalado",
+        description: "El ticket ha sido escalado exitosamente y se notificó al agente."
+      });
+      setShowEscalateDialog(false);
+      setEscalateToUserId("");
+      setEscalateReason("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo escalar el ticket",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleEscalate = () => {
+    if (!escalateToUserId || !escalateReason.trim() || !selectedTicket) return;
+    escalateMutation.mutate({
+      ticketId: selectedTicket.id,
+      assignToUserId: escalateToUserId,
+      reason: escalateReason.trim()
+    });
+  };
 
   const filteredTickets = tickets.filter(ticket => {
     const matchesSearch = 
@@ -643,6 +688,7 @@ export default function AdminTicketsSoporte() {
                       <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Estado</TableHead>
                       <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Prioridad</TableHead>
                       <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Categoría</TableHead>
+                      <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Asignado</TableHead>
                       <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Fecha</TableHead>
                       <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Acciones</TableHead>
                     </TableRow>
@@ -683,6 +729,11 @@ export default function AdminTicketsSoporte() {
                         <TableCell className="py-4 px-5">
                           <span className="text-sm text-muted-foreground">
                             {categoryLabels[ticket.category] || ticket.category}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-4 px-5">
+                          <span className="text-sm text-muted-foreground truncate max-w-[100px] block">
+                            {ticket.assignedToName || '—'}
                           </span>
                         </TableCell>
                         <TableCell className="py-4 px-5">
@@ -850,7 +901,21 @@ export default function AdminTicketsSoporte() {
                   >
                     Cambiar Estado
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowEscalateDialog(true)}
+                    data-testid="button-escalate-ticket"
+                  >
+                    <ArrowUpRight className="h-4 w-4 mr-1" />
+                    Escalar
+                  </Button>
                 </div>
+                {selectedTicket.assignedToName && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Asignado a: <span className="font-medium">{selectedTicket.assignedToName}</span>
+                  </p>
+                )}
 
                 <div className="border-t pt-4">
                   <p className="text-sm font-medium mb-3">Respuestas</p>
@@ -1043,6 +1108,68 @@ export default function AdminTicketsSoporte() {
               </p>
             )}
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEscalateDialog} onOpenChange={setShowEscalateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Escalar Ticket</DialogTitle>
+            <DialogDescription>
+              {selectedTicket?.ticketNumber} - {selectedTicket?.subject}
+              {selectedTicket?.assignedToName && (
+                <span className="block mt-1">Actualmente asignado a: {selectedTicket.assignedToName}</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Escalar a</Label>
+              <Select value={escalateToUserId} onValueChange={setEscalateToUserId}>
+                <SelectTrigger data-testid="select-escalate-agent">
+                  <SelectValue placeholder="Seleccione un agente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {supportAgents
+                    .filter(a => a.id !== user?.id)
+                    .map(agent => (
+                      <SelectItem key={agent.id} value={agent.id}>
+                        {agent.fullName || agent.username} ({agent.role === 'superadmin' ? 'Superadmin' : 'Soporte'})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Motivo del escalamiento</Label>
+              <Textarea
+                placeholder="Describa por qué se escala este ticket..."
+                value={escalateReason}
+                onChange={(e) => setEscalateReason(e.target.value)}
+                rows={3}
+                data-testid="textarea-escalate-reason"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEscalateDialog(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleEscalate}
+              disabled={!escalateToUserId || !escalateReason.trim() || escalateMutation.isPending}
+              data-testid="button-confirm-escalate"
+            >
+              {escalateMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Escalar Ticket"
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
