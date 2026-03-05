@@ -331,10 +331,10 @@ Este es el ARCHIVO MAESTRO del SG-SST. Todos los estándares de la Resolución 0
 - **Cómo crear una acción de mejora desde un estándar**: Dentro de la evaluación SST, al calificar un estándar como 'No Cumple', el sistema le permite crear directamente una acción de mejora vinculada. Así queda la trazabilidad completa entre el estándar incumplido y la acción correctiva.
 
 ### Trabajadores
-Evidencia para estándares 1.1.4, 3.1.1.
-- **No puede registrar un trabajador**: Abra su Evaluación SST (Verificar > Evaluaciones SST). Busque el estándar que necesita (ej: 1.1.4 Afiliaciones). Al hacer clic verá el modo de verificación que le indica qué evidencia necesita. El sistema le sugiere el módulo de Trabajadores donde puede registrar la información. Si aparece un error de límite de trabajadores, verifique su plan en Configuración > Mi Suscripción.
-- **Quiere importar trabajadores masivamente**: Primero revise qué estándares necesitan datos de trabajadores abriendo su Evaluación SST. Para importar masivamente, desde la lista de trabajadores use el botón 'Importar Excel'. Descargue la plantilla, llénela y súbala. El sistema acepta variaciones en los nombres de campos.
-- **No encuentra un trabajador registrado**: Desde la lista de trabajadores, use la barra de búsqueda por nombre o documento. Verifique que no haya filtros activos.
+Evidencia para estándares 1.1.4, 3.1.1. Los trabajadores deben registrarse ANTES de iniciar la evaluación de estándares.
+- **Cómo registrar un trabajador**: Vaya al menú Planear > Trabajadores. Use el botón 'Nuevo Trabajador' para agregar trabajadores uno a uno. Complete datos personales, cargo, tipo de contrato y afiliaciones. Este paso debe hacerse ANTES de calificar estándares en la Evaluación SST, ya que los trabajadores son evidencia para estándares como 1.1.4 (Afiliaciones) y 3.1.1 (Descripción sociodemográfica). Si aparece un error de límite, verifique su plan en Configuración > Mi Suscripción.
+- **Importar trabajadores masivamente**: Vaya a Planear > Trabajadores y use el botón 'Importar Excel'. Descargue la plantilla oficial, llénela y súbala. El sistema acepta variaciones en los nombres de campos (con o sin tildes). Complete este paso antes de iniciar la calificación de estándares.
+- **No encuentra un trabajador registrado**: Vaya a Planear > Trabajadores y use la barra de búsqueda por nombre o documento. Verifique que no haya filtros activos.
 
 ### Capacitaciones
 Evidencia para estándares 1.2.1, 1.2.2, 1.2.3.

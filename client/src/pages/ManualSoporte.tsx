@@ -92,11 +92,11 @@ const MODULOS_SST = [
   {
     modulo: "Trabajadores",
     ruta: "Evidencia para estándares 1.1.4, 3.1.1",
-    descripcion: "Registro de empleados. Los datos aquí sirven como evidencia de soporte cuando califique estándares en la Evaluación SST.",
+    descripcion: "Registro de empleados. Los trabajadores deben registrarse ANTES de iniciar la evaluación de estándares, ya que son necesarios como evidencia para múltiples estándares.",
     preguntasFrecuentes: [
-      { pregunta: "No puede registrar un trabajador", respuesta: "Hola [Nombre]. Abra su Evaluación SST (Verificar > Evaluaciones SST). Busque el estándar que necesita (ej: 1.1.4 Afiliaciones). Al hacer clic verá el modo de verificación que le indica qué evidencia necesita. El sistema le sugiere el módulo de Trabajadores donde puede registrar la información. Si aparece un error de límite de trabajadores, verifique su plan en Configuración > Mi Suscripción." },
-      { pregunta: "Quiere importar trabajadores masivamente", respuesta: "Hola [Nombre]. Primero revise qué estándares necesitan datos de trabajadores abriendo su Evaluación SST. Para importar masivamente, desde la lista de trabajadores use el botón 'Importar Excel'. Descargue la plantilla, llénela y súbala. El sistema acepta variaciones en los nombres de campos." },
-      { pregunta: "No encuentra un trabajador registrado", respuesta: "Hola [Nombre]. Desde la lista de trabajadores, use la barra de búsqueda por nombre o documento. Verifique que no haya filtros activos." },
+      { pregunta: "No puede registrar un trabajador", respuesta: "Hola [Nombre]. Para registrar trabajadores vaya al menú Planear > Trabajadores. Desde ahí puede agregar trabajadores uno a uno con el botón 'Nuevo Trabajador'. Complete los datos personales, cargo, tipo de contrato y afiliaciones. Este paso debe hacerse ANTES de calificar estándares en la Evaluación SST, ya que los trabajadores son evidencia para estándares como 1.1.4 (Afiliaciones) y 3.1.1 (Descripción sociodemográfica). Si aparece un error de límite de trabajadores, verifique su plan en Configuración > Mi Suscripción." },
+      { pregunta: "Quiere importar trabajadores masivamente", respuesta: "Hola [Nombre]. Vaya al menú Planear > Trabajadores y use el botón 'Importar Excel'. Descargue la plantilla oficial, llénela con los datos de sus trabajadores y súbala al sistema. El sistema acepta variaciones en los nombres de campos (con o sin tildes). Este paso debe completarse antes de iniciar la calificación de estándares en la Evaluación SST." },
+      { pregunta: "No encuentra un trabajador registrado", respuesta: "Hola [Nombre]. Vaya a Planear > Trabajadores y use la barra de búsqueda por nombre o documento. Verifique que no haya filtros activos." },
     ],
   },
   {
