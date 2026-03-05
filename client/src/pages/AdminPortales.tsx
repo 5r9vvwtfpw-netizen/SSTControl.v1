@@ -99,19 +99,23 @@ interface WorkerUser {
 
 interface AccessLog {
   id: string;
-  userId: string;
   userName: string;
-  action: string;
+  companyName: string;
+  accessTime: string;
   ipAddress: string;
-  createdAt: string;
+  deviceType: string;
 }
 
 interface WorkerReport {
   id: string;
-  userId: string;
+  codigo: string;
   userName: string;
   reportType: string;
+  subject: string;
   description: string;
+  priority: string;
+  status: string;
+  companyName: string;
   createdAt: string;
 }
 
@@ -562,7 +566,6 @@ function PortalEmpleadosTab() {
 
   const { data: workerReports = [] } = useQuery<WorkerReport[]>({
     queryKey: ["/api/admin/portal-empleados/reports"],
-    enabled: showReports,
   });
 
   const resetPasswordMutation = useMutation({
@@ -748,25 +751,27 @@ function PortalEmpleadosTab() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Usuario</TableHead>
-                    <TableHead>Accion</TableHead>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>Dispositivo</TableHead>
                     <TableHead>IP</TableHead>
-                    <TableHead>Fecha</TableHead>
+                    <TableHead>Fecha Acceso</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {accessLogs.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
                         No hay logs de acceso recientes
                       </TableCell>
                     </TableRow>
                   ) : (
                     accessLogs.map((log) => (
                       <TableRow key={log.id} data-testid={`row-access-log-${log.id}`}>
-                        <TableCell>{log.userName}</TableCell>
-                        <TableCell>{log.action}</TableCell>
+                        <TableCell className="font-medium">{log.userName}</TableCell>
+                        <TableCell>{log.companyName}</TableCell>
+                        <TableCell>{log.deviceType}</TableCell>
                         <TableCell className="font-mono text-sm">{log.ipAddress}</TableCell>
-                        <TableCell>{log.createdAt}</TableCell>
+                        <TableCell>{log.accessTime}</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -790,9 +795,12 @@ function PortalEmpleadosTab() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Usuario</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Descripcion</TableHead>
+                    <TableHead>Codigo</TableHead>
+                    <TableHead>Reportante</TableHead>
+                    <TableHead>Categoria</TableHead>
+                    <TableHead>Asunto</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Empresa</TableHead>
                     <TableHead>Fecha</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
@@ -800,16 +808,27 @@ function PortalEmpleadosTab() {
                 <TableBody>
                   {workerReports.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                         No hay reportes de trabajadores
                       </TableCell>
                     </TableRow>
                   ) : (
                     workerReports.map((report) => (
                       <TableRow key={report.id} data-testid={`row-report-${report.id}`}>
+                        <TableCell className="font-mono text-sm">{report.codigo}</TableCell>
                         <TableCell>{report.userName}</TableCell>
                         <TableCell>{report.reportType}</TableCell>
-                        <TableCell className="max-w-[200px] truncate">{report.description}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{report.subject}</TableCell>
+                        <TableCell>
+                          <Badge className={
+                            report.status === "resuelto" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" :
+                            report.status === "en_proceso" ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" :
+                            "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                          }>
+                            {report.status === "pendiente" ? "Pendiente" : report.status === "en_proceso" ? "En Proceso" : report.status === "resuelto" ? "Resuelto" : report.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{report.companyName}</TableCell>
                         <TableCell>{report.createdAt}</TableCell>
                         <TableCell className="text-right">
                           <Button

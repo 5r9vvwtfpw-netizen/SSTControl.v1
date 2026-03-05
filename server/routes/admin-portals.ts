@@ -407,13 +407,33 @@ export function registerAdminPortalsRoutes(app: Express) {
 
       const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-      const logs = await db.select()
+      const logs = await db.select({
+        id: schema.workerPortalAccessLogs.id,
+        userId: schema.workerPortalAccessLogs.userId,
+        userName: schema.workerPortalAccessLogs.userName,
+        workerName: schema.workerPortalAccessLogs.workerName,
+        accessTime: schema.workerPortalAccessLogs.accessTime,
+        ipAddress: schema.workerPortalAccessLogs.ipAddress,
+        userAgent: schema.workerPortalAccessLogs.userAgent,
+        deviceType: schema.workerPortalAccessLogs.deviceType,
+        companyName: schema.companies.name,
+      })
         .from(schema.workerPortalAccessLogs)
+        .leftJoin(schema.companies, eq(schema.workerPortalAccessLogs.companyId, schema.companies.id))
         .where(whereClause)
         .orderBy(desc(schema.workerPortalAccessLogs.accessTime))
         .limit(100);
 
-      res.json(logs);
+      const mapped = logs.map(log => ({
+        id: log.id,
+        userName: log.workerName || log.userName || "Desconocido",
+        companyName: log.companyName || "Sin empresa",
+        accessTime: log.accessTime ? new Date(log.accessTime).toLocaleString('es-CO') : "-",
+        ipAddress: log.ipAddress || "-",
+        deviceType: log.deviceType || "-",
+      }));
+
+      res.json(mapped);
     } catch (error: any) {
       console.error('[GET /api/admin/portal-empleados/access-logs] Error:', error.message);
       res.status(500).json({ error: "Error al obtener registros de acceso" });
@@ -434,12 +454,38 @@ export function registerAdminPortalsRoutes(app: Express) {
 
       const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-      const reports = await db.select()
+      const reports = await db.select({
+        id: schema.reportesTrabajadores.id,
+        codigo: schema.reportesTrabajadores.codigo,
+        nombreReportante: schema.reportesTrabajadores.nombreReportante,
+        esAnonimo: schema.reportesTrabajadores.esAnonimo,
+        categoria: schema.reportesTrabajadores.categoria,
+        prioridad: schema.reportesTrabajadores.prioridad,
+        asunto: schema.reportesTrabajadores.asunto,
+        descripcion: schema.reportesTrabajadores.descripcion,
+        estado: schema.reportesTrabajadores.estado,
+        createdAt: schema.reportesTrabajadores.createdAt,
+        companyName: schema.companies.name,
+      })
         .from(schema.reportesTrabajadores)
+        .leftJoin(schema.companies, eq(schema.reportesTrabajadores.companyId, schema.companies.id))
         .where(whereClause)
         .orderBy(desc(schema.reportesTrabajadores.createdAt));
 
-      res.json(reports);
+      const mapped = reports.map(r => ({
+        id: r.id,
+        codigo: r.codigo,
+        userName: r.esAnonimo === 1 ? "Anonimo" : (r.nombreReportante || "Sin nombre"),
+        reportType: r.categoria,
+        subject: r.asunto,
+        description: r.descripcion,
+        priority: r.prioridad,
+        status: r.estado,
+        companyName: r.companyName || "Sin empresa",
+        createdAt: r.createdAt ? new Date(r.createdAt).toLocaleDateString('es-CO') : "-",
+      }));
+
+      res.json(mapped);
     } catch (error: any) {
       console.error('[GET /api/admin/portal-empleados/reports] Error:', error.message);
       res.status(500).json({ error: "Error al obtener reportes de trabajadores" });
