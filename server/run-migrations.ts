@@ -24,6 +24,7 @@ import { syncLsoSignatureColumns } from './migrations/sync-lso-signature-columns
 import { syncLsoIdentificationNumber } from './migrations/sync-lso-identification-number';
 import { syncUnassignedAtColumn } from './migrations/sync-unassigned-at-column';
 import { createNgoOnboardedCompanies } from './migrations/create-ngo-onboarded-companies';
+import { createSupportChatMessages } from './migrations/create-support-chat-messages';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -59,6 +60,7 @@ export async function runMigrations() {
     await syncLsoIdentificationNumber();
     await syncUnassignedAtColumn();
     await createNgoOnboardedCompanies();
+    await createSupportChatMessages();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);
