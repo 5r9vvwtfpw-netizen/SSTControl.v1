@@ -318,6 +318,280 @@ Todo lo de Capítulo II MÁS: Evaluación de Proveedores, Gestión de Cambios, A
 - **Resolución 1401 de 2007**: Investigación de Accidentes de Trabajo
 - **Ley 1581 de 2012**: Protección de Datos Personales
 - **Ley 1010 de 2006**: Acoso Laboral (Comité de Convivencia obligatorio)
+
+## PREGUNTAS FRECUENTES POR MÓDULO (MANUAL DE SOPORTE)
+
+### Evaluación de Estándares SST (Archivo Maestro)
+Ruta: Verificar > Evaluaciones SST > [Abrir Evaluación]
+Este es el ARCHIVO MAESTRO del SG-SST. Todos los estándares de la Resolución 0312/2019 se gestionan desde aquí. Al hacer clic en un estándar se abre un diálogo donde se califica Cumple/No Cumple/No Aplica. El sistema sugiere enlaces a los módulos relacionados como evidencia.
+- **Cómo calificar un estándar**: Vaya a Verificar > Evaluaciones SST y abra su evaluación activa. Verá los estándares agrupados por componente. Haga clic en el estándar que desea calificar y se abrirá un diálogo con las opciones: 'Cumple' (otorga puntaje), 'No Cumple' (0 puntos) o 'No Aplica' (mantiene puntaje si se justifica). El sistema calcula automáticamente el porcentaje total.
+- **Cuántos estándares me aplican**: Depende del tamaño y riesgo de su empresa: Microempresa (hasta 10 trabajadores, Riesgo I-III) = 7 estándares. Pequeña empresa (11-50, Riesgo I-III) = 21 estándares. Mediana/Grande (más de 50 o Riesgo IV-V) = 61 estándares. El sistema lo calcula automáticamente al crear la evaluación.
+- **No encuentro un estándar específico**: Dentro de su evaluación SST, los estándares están agrupados por 7 componentes (Recursos, Gestión Integral, Gestión de Salud, etc.). Desplácese por la lista o use el componente correspondiente para encontrar el estándar. El número del estándar (ej: 1.1.1) le ayuda a ubicarlo rápidamente.
+- **Cómo generar el PDF del Ministerio**: Abra su evaluación SST en Verificar > Evaluaciones SST y busque el botón 'PDF Ministerio del Trabajo'. Se generará un informe completo con secciones A-I incluyendo el Hilo Dorado de trazabilidad que conecta estándares, acciones de mejora y actividades del plan de trabajo.
+- **Cómo crear una acción de mejora desde un estándar**: Dentro de la evaluación SST, al calificar un estándar como 'No Cumple', el sistema le permite crear directamente una acción de mejora vinculada. Así queda la trazabilidad completa entre el estándar incumplido y la acción correctiva.
+
+### Trabajadores
+Evidencia para estándares 1.1.4, 3.1.1.
+- **No puede registrar un trabajador**: Abra su Evaluación SST (Verificar > Evaluaciones SST). Busque el estándar que necesita (ej: 1.1.4 Afiliaciones). Al hacer clic verá el modo de verificación que le indica qué evidencia necesita. El sistema le sugiere el módulo de Trabajadores donde puede registrar la información. Si aparece un error de límite de trabajadores, verifique su plan en Configuración > Mi Suscripción.
+- **Quiere importar trabajadores masivamente**: Primero revise qué estándares necesitan datos de trabajadores abriendo su Evaluación SST. Para importar masivamente, desde la lista de trabajadores use el botón 'Importar Excel'. Descargue la plantilla, llénela y súbala. El sistema acepta variaciones en los nombres de campos.
+- **No encuentra un trabajador registrado**: Desde la lista de trabajadores, use la barra de búsqueda por nombre o documento. Verifique que no haya filtros activos.
+
+### Capacitaciones
+Evidencia para estándares 1.2.1, 1.2.2, 1.2.3.
+- **Cómo registrar una capacitación**: Abra su Evaluación SST (Verificar > Evaluaciones SST) y busque los estándares 1.2.1, 1.2.2 o 1.2.3. Haga clic en el estándar para ver el modo de verificación: le indica qué evidencia necesita. El sistema le sugiere el módulo de Capacitaciones donde puede crear registros (Tema, Fecha, Duración, Instructor, Asistentes). Después regrese a la Evaluación para calificar el estándar como Cumple.
+- **Cómo registrar asistencia**: Abra la capacitación registrada y en la sección de Asistentes, marque cada trabajador que asistió. Esta evidencia respalda los estándares 1.2.1-1.2.3 que califica desde su Evaluación SST.
+- **Qué capacitaciones son obligatorias**: Abra su Evaluación SST y revise los estándares 1.2.1 (programa anual), 1.2.2 (inducción/reinducción) y 1.2.3 (curso 50 horas). Al hacer clic en cada uno verá el modo de verificación que describe exactamente qué se necesita.
+
+### Inspecciones de Seguridad
+Evidencia para estándar 4.2.5.
+- **Cómo crear una inspección**: Abra su Evaluación SST y busque el estándar 4.2.5 (inspecciones sistemáticas). Haga clic para ver el modo de verificación. El sistema le sugiere el módulo de Inspecciones donde puede crear registros (tipo, fecha, área, hallazgos). Después regrese a la Evaluación para calificar.
+- **Qué tipos de inspección hay**: El sistema soporta: inspección general, de EPP, orden y aseo, extintores y botiquines.
+
+### Accidentes e Incidentes
+Evidencia para estándares 3.2.1, 3.2.2, 3.2.3.
+- **Cómo registrar un accidente**: Abra su Evaluación SST y busque los estándares 3.2.1 (reporte), 3.2.2 (investigación) o 3.2.3 (registro estadístico). El sistema le sugiere el módulo de Accidentes donde puede registrar el tipo, fecha, trabajador afectado y medidas tomadas.
+- **Cómo hacer la investigación del accidente**: El estándar 3.2.2 de su Evaluación SST requiere investigación de accidentes. Abra el accidente registrado, busque la sección de Investigación y complete: participantes, hallazgos, causas raíz y acciones correctivas.
+
+### Exámenes Médicos
+Evidencia para estándares 3.1.1, 3.1.2, 3.1.3.
+- **Cómo registrar un examen médico**: Abra su Evaluación SST y busque los estándares 3.1.1 a 3.1.3. El sistema le sugiere el módulo de Exámenes Médicos donde puede registrar trabajador, tipo, fecha y concepto.
+- **Cómo ver exámenes próximos a vencer**: El sistema envía alertas automáticas cuando los exámenes están próximos a vencer. Puede ver el listado desde el módulo de Exámenes Médicos ordenando por fecha de vencimiento.
+
+### Entrega de EPP
+Evidencia para estándar 4.2.4.
+- **Cómo registrar entrega de EPP**: Abra su Evaluación SST y busque el estándar 4.2.4. El sistema le sugiere el módulo de Entrega EPP donde puede registrar trabajador, elementos del catálogo, cantidad y fechas.
+
+### Plan de Trabajo Anual
+Evidencia para estándar 2.4.1.
+- **Cómo crear el plan anual**: Abra su Evaluación SST y busque el estándar 2.4.1. El sistema le sugiere el módulo de Plan de Trabajo donde puede crear el plan con actividades, responsables, cronograma y recursos. Las actividades se pueden vincular a acciones del Plan de Mejora.
+- **Cómo marcar una actividad como completada**: En el detalle del plan, cada actividad tiene un toggle para completarla. Si está vinculada a una acción de mejora, el avance se recalcula automáticamente.
+
+### Matriz IPERC
+Evidencia para estándares 4.1.1 a 4.1.4.
+- **Cómo crear la matriz de riesgos**: Abra su Evaluación SST y busque los estándares 4.1.1 a 4.1.4. El sistema le sugiere el módulo Matriz IPERC donde puede agregar procesos, peligros, niveles de riesgo y controles.
+
+### Indicadores de Accidentalidad
+Evidencia para estándares 3.3.1 a 3.3.6.
+- **Cómo se calculan los indicadores**: El sistema los calcula automáticamente a partir de los accidentes registrados. Verifique los valores y luego califique cada estándar en la Evaluación.
+
+### Objetivos SST
+Evidencia para estándar 2.2.1.
+- **Cómo vincular objetivos con estándares**: Al crear objetivos, puede vincularlos con estándares específicos para trazabilidad formal.
+
+### Matriz Legal
+Evidencia para estándar 2.7.1.
+- **Cómo agregar un requisito legal**: El sistema le sugiere el módulo donde puede registrar normas, artículos, obligaciones y responsables.
+
+### Plan de Emergencias
+Evidencia para estándares 5.1.1 a 5.1.3.
+- **Qué incluye el plan de emergencias**: El modo de verificación le indica qué evidencia necesita (amenazas, brigadas, simulacros). El sistema le sugiere el módulo de Plan de Emergencias.
+
+### Auditorías Internas
+Evidencia para estándares 6.1.2, 6.1.4.
+- **Cómo crear una auditoría**: El sistema le sugiere el módulo de Auditorías donde puede crear registros con criterios pre-cargados.
+
+### Revisión por la Dirección
+Evidencia para estándar 6.1.3.
+- **Qué debe incluir la revisión**: El modo de verificación le indica qué debe incluir (auditorías, indicadores, acciones correctivas, conclusiones).
+
+### Plan de Mejoramiento
+Evidencia para estándares 7.1.1 a 7.1.4.
+- **Cómo crear una acción de mejora**: Al calificar un estándar como 'No Cumple', el sistema le permite crear directamente una acción de mejora vinculada al estándar. Las acciones se vinculan automáticamente al Plan de Trabajo para seguimiento del avance.
+
+### COPASST / Vigía
+Evidencia para estándares 1.1.6, 1.1.7.
+- **Diferencia entre COPASST y Vigía**: Menos de 10 trabajadores = Vigía, 10 o más = COPASST. El sistema se adapta automáticamente.
+
+### Gestión del Cambio
+Evidencia para estándar 2.11.1.
+- **Cuándo registrar un cambio**: Cuando hay cambios en procesos, equipos, instalaciones, personal, sustancias o normas.
+
+### Comunicación SST
+Evidencia para estándar 2.8.1.
+- **Qué comunicaciones debo registrar**: Políticas, cambios, alertas, convocatorias sobre SST.
+
+### Mi Cuenta / Suscripción
+- **Cómo cambiar de plan**: Vaya a Configuración > Mi Suscripción. Al cambiar datos como número de trabajadores o vehículos, el precio se recalcula automáticamente.
+- **Cómo ver facturas**: En Configuración > Mi Suscripción encontrará el historial de facturas, próxima fecha de cobro y método de pago.
+- **Cómo agregar usuarios**: Vaya a Configuración > Usuarios > 'Nuevo Usuario'. Cada rol administrativo incluye un usuario sin costo adicional.
+
+## GUÍA DE PASOS PESV (Plan Estratégico de Seguridad Vial)
+Todos los pasos se gestionan desde la Evaluación PESV (archivo maestro). Abra PESV > Evaluaciones PESV y busque su evaluación activa.
+
+### Fase PLANEAR
+- **P01 - Equipo de Trabajo**: Pestaña 'Planear', paso P01. El sistema muestra módulos relacionados (Comité PESV) donde registrar evidencia.
+- **P02 - Liderazgo y Compromiso**: Pestaña 'Planear', paso P02. Evidencia: política de seguridad vial, compromisos de la dirección.
+- **P03 - Diagnóstico / Contexto**: Pestaña 'Planear', paso P03. El sistema pre-llena datos según nivel de complejidad.
+- **P04 - Evaluación de Riesgos Viales**: Pestaña 'Planear', paso P04. Identificación de peligros por factor humano, vehículo, infraestructura y condiciones ambientales.
+- **P05 - Objetivos e Indicadores**: Pestaña 'Planear', paso P05. Metas medibles de reducción de siniestralidad.
+- **P06 - Programas y Planes**: Pestaña 'Planear', paso P06. Módulos de factores de desempeño.
+- **P07 - Roles y Responsabilidades**: Pestaña 'Planear', paso P07.
+- **P08 - Recursos**: Pestaña 'Planear', paso P08. Presupuesto, equipos y personal.
+
+### Fase HACER
+- **H01 - Factor Humano - Conductores**: Pestaña 'Hacer', paso H01. Módulo de Conductores (datos, licencia, exámenes médicos).
+- **H02 - Capacitación Vial**: Pestaña 'Hacer', paso H02. Módulo de Capacitaciones PESV (manejo defensivo, normativa, primeros auxilios viales).
+- **H03 - Documentación de Conductores**: Pestaña 'Hacer', paso H03. Seguimiento de licencias, certificaciones, exámenes y sanciones.
+- **H04 - Vehículos Seguros**: Pestaña 'Hacer', paso H04. Módulo de Vehículos (placa, marca, modelo, SOAT, revisión tecnomecánica).
+- **H05 - Mantenimiento Preventivo**: Pestaña 'Hacer', paso H05. Módulo de Mantenimiento (preventivo y correctivo).
+- **H06 - Inspecciones Preoperacionales**: Pestaña 'Hacer', paso H06. Lista de verificación diaria (frenos, luces, llantas, documentos).
+- **H07 - Gestión de Velocidad**: Pestaña 'Hacer', paso H07. Monitoreo GPS para seguimiento de velocidad y alertas.
+- **H08 - Rutas Seguras**: Pestaña 'Hacer', paso H08. Rutas con origen, destino, distancia, puntos críticos y medidas de control.
+- **H09 - Fatiga y Somnolencia**: Pestaña 'Hacer', paso H09. Control de jornadas, pausas activas, programas de descanso.
+- **H10 - Sustancias Psicoactivas**: Pestaña 'Hacer', paso H10. Política de alcohol y drogas, pruebas, programas de prevención.
+- **H11 - Atención a Víctimas**: Pestaña 'Hacer', paso H11. Protocolo de primeros auxilios, directorio de emergencias viales.
+
+### Fase VERIFICAR
+- **V01 - Indicadores de Gestión**: Pestaña 'Verificar', paso V01. Módulo de Indicadores PESV (tasa de siniestralidad, cobertura de capacitaciones).
+- **V02 - Registro y Análisis de Siniestros**: Pestaña 'Verificar', paso V02. Módulo de Siniestros (fecha, ubicación, vehículo, conductor, daños, causa).
+- **V03 - Auditorías PESV**: Pestaña 'Verificar', paso V03. Evaluación de cada paso, hallazgos y no conformidades.
+
+### Fase ACTUAR
+- **A01 - Mejora Continua PESV**: Pestaña 'Actuar', paso A01. Acciones preventivas, correctivas y de mejora.
+- **A02 - Revisión por la Dirección PESV**: Pestaña 'Actuar', paso A02. Análisis de resultados, conclusiones y compromisos.
+
+## RESPUESTAS POR ESTÁNDAR (Resolución 0312/2019)
+Cuando un usuario pregunte por un estándar específico, usa esta referencia:
+
+### Componente: Recursos
+- **1.1.1** Asignación del responsable del SG-SST: Documento de asignación con funciones, horas dedicadas y perfil.
+- **1.1.2** Asignación de responsabilidades en SST: Documento que asigne responsabilidades SST a todos los niveles.
+- **1.1.3** Asignación de recursos para SG-SST: Documento con asignación de recursos financieros, técnicos, humanos.
+- **1.1.4** Afiliación al Sistema de Seguridad Social Integral: Soportes de afiliación a EPS, AFP y ARL de todos los trabajadores.
+- **1.1.5** Identificación de trabajadores de alto riesgo: Trabajadores clase IV/V con cotización especial de pensiones.
+- **1.1.6** Conformación COPASST / Vigía: Acta de conformación del COPASST (10+ trabajadores) o designación del Vigía SST (menos de 10).
+- **1.1.7** Capacitación COPASST / Vigía: Soportes de capacitación de los miembros del COPASST o Vigía.
+- **1.1.8** Conformación Comité de Convivencia Laboral: Acta con representantes del empleador y trabajadores.
+- **1.2.1** Programa de capacitación anual: Programa anual documentado en el módulo de Capacitaciones.
+- **1.2.2** Inducción y reinducción en SST: Registros de inducción y reinducción para todos los trabajadores.
+- **1.2.3** Curso Virtual de 50 horas en SST: Certificado del responsable del SG-SST.
+
+### Componente: Gestión Integral
+- **2.1.1** Política de Seguridad y Salud en el Trabajo: Firmada, fechada, comunicada y accesible.
+- **2.2.1** Objetivos de SST: Claros, medibles, cuantificables con metas definidas. Módulo de Objetivos SST.
+- **2.3.1** Evaluación Inicial del SG-SST: La propia evaluación que se está realizando.
+- **2.4.1** Plan Anual de Trabajo: Con objetivos, metas, responsables, recursos y cronograma. Módulo Plan de Trabajo Anual.
+- **2.5.1** Archivo y retención documental: El sistema digital cumple esta función automáticamente.
+- **2.6.1** Rendición de cuentas: Informe anual. El PDF del Ministerio incluye esta información.
+- **2.7.1** Matriz legal: Actualizada y con seguimiento. Módulo Matriz Legal.
+- **2.8.1** Mecanismos de comunicación: Módulo de Comunicación SST.
+- **2.9.1** Adquisición de bienes y servicios: Procedimiento con especificaciones SST.
+- **2.10.1** Evaluación de proveedores y contratistas: Criterios SST en selección.
+- **2.11.1** Gestión del cambio: Evaluar impacto SST de cambios. Módulo Gestión del Cambio.
+
+### Componente: Gestión de la Salud
+- **3.1.1** Descripción sociodemográfica: Módulo de Trabajadores y Exámenes Médicos.
+- **3.1.2** Actividades de medicina del trabajo: Capacitaciones y Exámenes Médicos.
+- **3.1.3** Perfiles de cargos: Requisitos de aptitud física y mental.
+- **3.1.4** Evaluaciones médicas ocupacionales: Ingreso, periódicas y egreso. Módulo Exámenes Médicos.
+- **3.1.5** Custodia de Historias Clínicas: Confidencialidad.
+- **3.1.6** Restricciones y recomendaciones médicas: Seguimiento en Exámenes Médicos.
+- **3.1.7** Estilos de vida saludables: Prevención de tabaquismo, alcoholismo, farmacodependencia.
+- **3.1.8** Servicios de higiene y agua potable.
+- **3.1.9** Manejo de residuos.
+- **3.2.1** Reporte de accidentes y enfermedad laboral: A ARL, EPS y Ministerio. Módulo de Accidentes.
+- **3.2.2** Investigación de accidentes: Causas raíz y acciones correctivas. Accidentes > Investigación.
+- **3.2.3** Registro y análisis estadístico: Generado automáticamente.
+- **3.3.1** Frecuencia de accidentalidad: Calculado automáticamente en Indicadores.
+- **3.3.2** Severidad de accidentalidad: Calculado automáticamente.
+- **3.3.3** Mortalidad por accidentes: Calculado automáticamente.
+- **3.3.4** Prevalencia de enfermedad laboral: Calculado automáticamente.
+- **3.3.5** Incidencia de enfermedad laboral: Calculado automáticamente.
+- **3.3.6** Ausentismo laboral: Calculado automáticamente.
+
+### Componente: Peligros y Riesgos
+- **4.1.1** Metodología IPERC: GTC 45. Módulo Matriz IPERC.
+- **4.1.2** Identificación de peligros con participación de todos los niveles.
+- **4.1.3** Sustancias carcinógenas o con toxicidad aguda: Peligro químico en Matriz IPERC.
+- **4.1.4** Mediciones ambientales: Agentes químicos, físicos y biológicos.
+
+### Componente: Control de Riesgos
+- **4.2.1** Medidas de prevención y control: Jerarquía (eliminación, sustitución, ingeniería, administrativos, EPP).
+- **4.2.2** Aplicación de medidas por trabajadores: Inspecciones y capacitaciones como evidencia.
+- **4.2.3** Procedimientos e instructivos de SST.
+- **4.2.4** Inspecciones a instalaciones y equipos: Módulo de Inspecciones.
+- **4.2.5** Mantenimiento de instalaciones y equipos.
+- **4.2.6** Entrega de EPP: Con capacitación en uso. Módulo Entrega de EPP.
+
+### Componente: Gestión de Amenazas
+- **5.1.1** Plan de emergencias: Módulo Plan de Emergencias.
+- **5.1.2** Brigada de emergencias: Conformación, capacitación y dotación.
+- **5.1.3** Simulacros de emergencias: Al menos una vez al año.
+
+### Componente: Verificación
+- **6.1.1** Indicadores de gestión del SG-SST: Estructura, proceso y resultado.
+- **6.1.2** Auditoría anual: Módulo Auditorías Internas.
+- **6.1.3** Revisión por la alta dirección: Módulo Revisión por la Dirección.
+- **6.1.4** Auditoría con COPASST: Incluir al COPASST en auditorías.
+
+### Componente: Mejoramiento
+- **7.1.1** Acciones preventivas y correctivas: Módulo Plan de Mejoramiento.
+- **7.1.2** Acciones de mejora por revisión de la Dirección: Vinculadas automáticamente.
+- **7.1.3** Acciones de mejora por investigación de accidentes: Vinculadas a accidentes investigados.
+- **7.1.4** Plan de mejoramiento: Documentado con acciones, responsables, fechas y seguimiento.
+
+## DIAGNÓSTICO RÁPIDO DE PROBLEMAS TÉCNICOS
+Cuando un usuario reporte un problema técnico, usa esta guía:
+
+- **Pantalla en blanco o no carga**: Intente Ctrl+Shift+R para recargar sin caché. Limpie el caché del navegador. Pruebe con Chrome. Verifique su conexión a internet.
+- **Error rojo al guardar un formulario**: Revise todos los campos con asterisco (*), campos de fecha con formato válido, campos numéricos sin letras. Desplácese por todo el formulario para encontrar el campo en rojo.
+- **No aparece un módulo en el menú**: Puede ser restricción de plan (Configuración > Mi Suscripción) o restricción de rol (consulte con el administrador de su empresa).
+- **PDF se descarga vacío o incompleto**: Verifique que la evaluación tenga estándares calificados. Para el PDF del Ministerio necesita al menos una evaluación con respuestas. Actualice la página e intente de nuevo.
+- **No puede crear más trabajadores**: Límite de plan alcanzado. Verifique en Configuración > Mi Suscripción. Puede actualizar su plan.
+- **La empresa no ve el módulo PESV**: El módulo PESV se activa cuando la empresa registra al menos un vehículo. Vaya a Configuración > Datos de la Empresa y actualice el campo 'Número de Vehículos'.
+- **Error al importar Excel de trabajadores**: Use la plantilla oficial (botón 'Descargar Plantilla'). No modifique encabezados. Guarde como .xlsx. Los campos aceptan variaciones con/sin tildes.
+- **Suscripción bloqueada o expirada**: Período de prueba vencido (active en Mi Suscripción), pago rechazado (verifique método de pago), o error (proporcione nombre de empresa).
+
+## PROBLEMAS DEL PORTAL LSO (Licenciado en Salud Ocupacional)
+
+### Acceso y Credenciales
+- **No puede iniciar sesión**: Las credenciales se envían por correo cuando la empresa lo asigna. Revise bandeja de entrada/spam. Si no las recibió, solicite reasignación desde Configuración > Responsable SST.
+- **Olvidó su contraseña**: Restablecimiento por soporte. Se necesita: nombre completo, correo electrónico, número de licencia SST.
+- **Acceso restringido**: Requiere rol 'lso' configurado automáticamente al ser asignado. Si perdió acceso, puede que todas las empresas lo hayan desasignado.
+
+### Firma Digital
+- **No puede subir firma**: Formato PNG o JPG, máximo 2 MB. Fondo blanco, firma en tinta negra o azul. Vaya a Mi Licencia > Firma Digital.
+- **Firma aparece como 'no configurada'**: Suba nuevamente la imagen, espere confirmación, recargue con Ctrl+Shift+R.
+- **'Debe configurar su firma primero'**: Configure la firma en Mi Licencia > Firma Digital antes de firmar documentos.
+- **Firma cortada o borrosa en PDF**: Resolución mínima 300x150 px, formato horizontal, poco margen blanco.
+
+### Empresas Asignadas
+- **No ve empresas asignadas**: Verifique pestaña 'Empresas' sin filtros. Revise 'Historial de Empresas' para ver si fue desasignado. Contacte al administrador de la empresa.
+- **Ve empresa que ya no debería ver**: Ctrl+Shift+R o cierre/abra sesión. Si persiste, reportar como nota interna.
+- **Datos de empresa vacíos**: La empresa aún no ha registrado información. Como LSO, puede contactar al administrador para orientarlo.
+
+### Firma de Documentos
+- **No encuentra documentos para firmar**: Los documentos aparecen cuando las empresas los generan. Vaya a Documentos > seleccione empresa. Tipos: Evaluaciones SST, Planes de Trabajo, Matrices IPERC, Investigaciones, Actas de Designación.
+- **Error al firmar**: Verifique firma configurada, recargue página, pruebe con Chrome.
+- **Firma no aparece en PDF**: Descargue el PDF nuevamente después de firmar.
+- **Quiere retirar firma de documento**: Por cumplimiento normativo, las firmas son inmutables. Genere un nuevo documento con correcciones.
+
+### Licencia SST
+- **Licencia aparece como 'vencida' pero la renovó**: Actualice la fecha de vencimiento en Mi Licencia. El estado se recalcula automáticamente.
+- **Licencia 'por vencer'**: Alerta automática a menos de 90 días. Gestione renovación y actualice la fecha.
+
+### Panel PHVA y Bóveda
+- **Panel PHVA en cero**: La empresa no ha registrado actividades. Contacte al administrador para orientarlo.
+- **No puede acceder a la bóveda**: Vaya a Documentos > clic en tarjeta de empresa. Si no aparece, verifique asignación en pestaña Empresas.
+
+### Soporte desde Portal LSO
+- **Crear ticket**: Pestaña 'Soporte' > 'Nuevo Ticket'. Complete asunto, prioridad y descripción.
+- **Comunicarse con empresa**: Pestaña 'Empresas' > botón 'Mensaje'. Complete asunto, prioridad y contenido.
+
+## PROBLEMAS DEL PORTAL DE EMPLEADOS
+
+- **No puede acceder al portal**: El acceso debe ser activado por el administrador de la empresa. Comuníquese con el responsable de SST.
+- **No ve exámenes médicos**: Los exámenes aparecen cuando el administrador los registra y notifica. Contacte al responsable de SST.
+- **Quiere reportar condición insegura o sugerencia**: Use el buzón de sugerencias/reportar condición en el portal. El reporte llega al responsable de SST.
+- **No puede ver documentos o capacitaciones**: La empresa debe compartirlos a través del portal. Contacte al responsable de SST.
+
+## PROTOCOLO DE NO CONTACTO (Solo para agentes de soporte)
+El servicio opera exclusivamente por canal de tickets. No se realizan llamadas, reuniones virtuales ni acceso remoto.
+- Si piden llamada: Ofrecer instrucciones escritas paso a paso por tickets.
+- Si piden reunión virtual: Ofrecer instrucciones escritas claras que pueden consultar en cualquier momento.
+- Si piden acceso remoto: Por seguridad y Ley 1581/2012, no se realiza acceso remoto. Se proporcionan instrucciones detalladas.
+- Si insisten en hablar con alguien: El canal de tickets es la vía más rápida. Ofrecer escalar a prioridad Alta si es urgente.
+- Si quieren que les hagan el trabajo: La plataforma es autogestión. Se envían instrucciones paso a paso.
 `;
 
 const ROLE_LABELS: Record<string, string> = {
