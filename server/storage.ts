@@ -2088,6 +2088,10 @@ export interface IStorage {
   getCertificacionesProfesionales(): Promise<schema.CertificacionProfesional[]>;
   createCertificacionProfesional(data: schema.InsertCertificacionProfesional): Promise<schema.CertificacionProfesional>;
   deleteCertificacionProfesional(id: number): Promise<void>;
+
+  createNgoOnboardedCompany(data: schema.InsertNgoOnboardedCompany): Promise<schema.NgoOnboardedCompany>;
+  getNgoOnboardedCompanyByInviteId(sidecarInviteId: string): Promise<schema.NgoOnboardedCompany | undefined>;
+  listNgoOnboardedCompanies(filters?: { projectId?: string; region?: string }): Promise<schema.NgoOnboardedCompany[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -17344,6 +17348,31 @@ export class DbStorage implements IStorage {
   async deleteCertificacionProfesional(id: number): Promise<void> {
     await db.delete(schema.certificacionesProfesionales)
       .where(eq(schema.certificacionesProfesionales.id, id));
+  }
+
+  async createNgoOnboardedCompany(data: schema.InsertNgoOnboardedCompany): Promise<schema.NgoOnboardedCompany> {
+    const [record] = await db.insert(schema.ngoOnboardedCompanies).values(data).returning();
+    return record;
+  }
+
+  async getNgoOnboardedCompanyByInviteId(sidecarInviteId: string): Promise<schema.NgoOnboardedCompany | undefined> {
+    const [record] = await db
+      .select()
+      .from(schema.ngoOnboardedCompanies)
+      .where(eq(schema.ngoOnboardedCompanies.sidecarInviteId, sidecarInviteId))
+      .limit(1);
+    return record;
+  }
+
+  async listNgoOnboardedCompanies(filters?: { projectId?: string; region?: string }): Promise<schema.NgoOnboardedCompany[]> {
+    const conditions = [];
+    if (filters?.projectId) conditions.push(eq(schema.ngoOnboardedCompanies.projectId, filters.projectId));
+    if (filters?.region) conditions.push(eq(schema.ngoOnboardedCompanies.region, filters.region));
+    return db
+      .select()
+      .from(schema.ngoOnboardedCompanies)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(schema.ngoOnboardedCompanies.createdAt));
   }
 }
 

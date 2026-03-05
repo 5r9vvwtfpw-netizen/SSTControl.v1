@@ -13,7 +13,7 @@
  */
 
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, bigint, date, pgEnum, jsonb, boolean, numeric, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, bigint, date, pgEnum, jsonb, boolean, numeric, serial, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -10599,3 +10599,45 @@ export const insertSupportChatMessageSchema = createInsertSchema(supportChatMess
   .omit({ id: true, createdAt: true });
 export type InsertSupportChatMessage = z.infer<typeof insertSupportChatMessageSchema>;
 export type SupportChatMessage = typeof supportChatMessages.$inferSelect;
+
+// ============================================================================
+// NGO ONBOARDED COMPANIES - Empresas registradas vía portal NGO
+// ============================================================================
+
+export const ngoOnboardedCompanies = pgTable("ngo_onboarded_companies", {
+  id: serial("id").primaryKey(),
+  sidecarCompanyId: varchar("sidecar_company_id", { length: 100 }).notNull(),
+  sidecarInviteId: varchar("sidecar_invite_id", { length: 100 }).notNull().unique(),
+  ngoId: varchar("ngo_id", { length: 100 }).notNull(),
+  projectId: varchar("project_id", { length: 100 }).notNull(),
+  projectName: text("project_name").notNull(),
+  companyName: text("company_name").notNull(),
+  companyEmail: varchar("company_email", { length: 255 }).notNull(),
+  ciio: text("ciio"),
+  city: text("city"),
+  region: text("region"),
+  employeesCount: integer("employees_count"),
+  riskLevel: varchar("risk_level", { length: 10 }),
+  consultantName: text("consultant_name").notNull(),
+  consultantEmail: varchar("consultant_email", { length: 255 }).notNull(),
+  consultantSidecarId: varchar("consultant_sidecar_id", { length: 100 }).notNull(),
+  lsoEmail: varchar("lso_email", { length: 255 }),
+  lsoName: text("lso_name"),
+  lsoMode: varchar("lso_mode", { length: 20 }),
+  lsoSidecarId: varchar("lso_sidecar_id", { length: 100 }),
+  lsoLocalRecordId: integer("lso_local_record_id"),
+  couponCode: text("coupon_code"),
+  onboardedAt: timestamp("onboarded_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_ngo_company_email").on(table.companyEmail),
+  index("idx_ngo_company_project").on(table.projectId),
+  index("idx_ngo_company_invite").on(table.sidecarInviteId),
+]);
+
+export const insertNgoOnboardedCompanySchema = createInsertSchema(ngoOnboardedCompanies).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertNgoOnboardedCompany = z.infer<typeof insertNgoOnboardedCompanySchema>;
+export type NgoOnboardedCompany = typeof ngoOnboardedCompanies.$inferSelect;
