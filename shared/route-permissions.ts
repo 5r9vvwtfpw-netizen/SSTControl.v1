@@ -31,6 +31,7 @@ export const routePermissions: Record<string, Permission[]> = {
   "/profesionales-licenciados": ["licensed_professionals:view"], // Gestión de profesionales licenciados en salud ocupacional
   "/directorio-profesionales": [], // Directorio informativo de profesionales SST (accesible para todos)
   "/documentos-legales": ["users:edit"], // Solo superadmin y admin (documentos legales PDF)
+  "/admin-portales": ["billing:global_view"], // Solo superadmin (administración de portales LSO y empleados)
   "/admin-videos-ayuda": ["billing:global_view"], // Solo superadmin (gestión de videos de ayuda)
   "/videos-ayuda": [], // Accesible para todos los usuarios autenticados (biblioteca de videos)
   "/mensajes-internos": [], // Accesible para todos los usuarios autenticados (comunicación LSO ↔ Responsable SST)
