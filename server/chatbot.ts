@@ -319,100 +319,88 @@ Todo lo de Capítulo II MÁS: Evaluación de Proveedores, Gestión de Cambios, A
 - **Ley 1581 de 2012**: Protección de Datos Personales
 - **Ley 1010 de 2006**: Acoso Laboral (Comité de Convivencia obligatorio)
 
-## PREGUNTAS FRECUENTES POR MÓDULO (MANUAL DE SOPORTE)
+## CÓMO FUNCIONA EL SISTEMA (FLUJO PRINCIPAL)
+El sistema se opera desde la Evaluación Inicial. El flujo es:
+1. Primero registre sus trabajadores desde el menú Planear > Trabajadores (es lo ÚNICO que se hace fuera de la Evaluación Inicial).
+2. Cree su Evaluación Inicial. Desde ahí se gestiona TODO el SG-SST.
+3. Dentro de la Evaluación Inicial, haga clic en cualquier estándar. Se abre el modo de verificación donde encontrará los módulos correspondientes para gestionar la evidencia.
+El flujo siempre es: Evaluación Inicial > estándar > clic > modo de verificación > módulo correspondiente.
 
-### Evaluación de Estándares SST (Archivo Maestro)
-Ruta: Verificar > Evaluaciones SST > [Abrir Evaluación]
-Este es el ARCHIVO MAESTRO del SG-SST. Todos los estándares de la Resolución 0312/2019 se gestionan desde aquí. Al hacer clic en un estándar se abre un diálogo donde se califica Cumple/No Cumple/No Aplica. El sistema sugiere enlaces a los módulos relacionados como evidencia.
-- **Cómo calificar un estándar**: Vaya a Verificar > Evaluaciones SST y abra su evaluación activa. Verá los estándares agrupados por componente. Haga clic en el estándar que desea calificar y se abrirá un diálogo con las opciones: 'Cumple' (otorga puntaje), 'No Cumple' (0 puntos) o 'No Aplica' (mantiene puntaje si se justifica). El sistema calcula automáticamente el porcentaje total.
-- **Cuántos estándares me aplican**: Depende del tamaño y riesgo de su empresa: Microempresa (hasta 10 trabajadores, Riesgo I-III) = 7 estándares. Pequeña empresa (11-50, Riesgo I-III) = 21 estándares. Mediana/Grande (más de 50 o Riesgo IV-V) = 61 estándares. El sistema lo calcula automáticamente al crear la evaluación.
-- **No encuentro un estándar específico**: Dentro de su evaluación SST, los estándares están agrupados por 7 componentes (Recursos, Gestión Integral, Gestión de Salud, etc.). Desplácese por la lista o use el componente correspondiente para encontrar el estándar. El número del estándar (ej: 1.1.1) le ayuda a ubicarlo rápidamente.
-- **Cómo generar el PDF del Ministerio**: Abra su evaluación SST en Verificar > Evaluaciones SST y busque el botón 'PDF Ministerio del Trabajo'. Se generará un informe completo con secciones A-I incluyendo el Hilo Dorado de trazabilidad que conecta estándares, acciones de mejora y actividades del plan de trabajo.
-- **Cómo crear una acción de mejora desde un estándar**: Dentro de la evaluación SST, al calificar un estándar como 'No Cumple', el sistema le permite crear directamente una acción de mejora vinculada. Así queda la trazabilidad completa entre el estándar incumplido y la acción correctiva.
+## PREGUNTAS FRECUENTES POR MÓDULO
 
-### Trabajadores
-Evidencia para estándares 1.1.4, 3.1.1. Los trabajadores deben registrarse ANTES de iniciar la evaluación de estándares.
-- **Cómo registrar un trabajador**: Vaya al menú Planear > Trabajadores. Use el botón 'Nuevo Trabajador' para agregar trabajadores uno a uno. Complete datos personales, cargo, tipo de contrato y afiliaciones. Este paso debe hacerse ANTES de calificar estándares en la Evaluación SST, ya que los trabajadores son evidencia para estándares como 1.1.4 (Afiliaciones) y 3.1.1 (Descripción sociodemográfica). Si aparece un error de límite, verifique su plan en Configuración > Mi Suscripción.
-- **Importar trabajadores masivamente**: Vaya a Planear > Trabajadores y use el botón 'Importar Excel'. Descargue la plantilla oficial, llénela y súbala. El sistema acepta variaciones en los nombres de campos (con o sin tildes). Complete este paso antes de iniciar la calificación de estándares.
-- **No encuentra un trabajador registrado**: Vaya a Planear > Trabajadores y use la barra de búsqueda por nombre o documento. Verifique que no haya filtros activos.
+### Evaluación Inicial (Archivo Maestro del SG-SST)
+La Evaluación Inicial es el centro de gestión de todo el SG-SST. Desde aquí se accede a todos los estándares y sus módulos correspondientes.
+- **Cómo crear una Evaluación Inicial**: Abra el módulo de Evaluación Inicial y haga clic en 'Nueva Evaluación'. El sistema detecta automáticamente el tamaño y nivel de riesgo de su empresa y le asigna los estándares que le aplican según la Resolución 0312/2019. Una vez creada, desde ahí podrá gestionar todo su SG-SST.
+- **Cuántos estándares me aplican**: Depende del tamaño y riesgo de su empresa: Microempresa (hasta 10 trabajadores, Riesgo I-III) = 7 estándares. Pequeña empresa (11-50, Riesgo I-III) = 21 estándares. Mediana/Grande (más de 50 o Riesgo IV-V) = 61 estándares. El sistema lo calcula automáticamente al crear la Evaluación Inicial.
+- **Cómo funciona el modo de verificación**: Dentro de su Evaluación Inicial, haga clic en cualquier estándar. Se abrirá el modo de verificación que le muestra exactamente qué evidencia necesita y los módulos correspondientes donde puede gestionarla.
+- **Cómo generar el PDF del Ministerio**: Abra su Evaluación Inicial y busque el botón 'PDF Ministerio del Trabajo'. Se generará un informe completo con el Hilo Dorado de trazabilidad.
 
-### Capacitaciones
-Evidencia para estándares 1.2.1, 1.2.2, 1.2.3.
-- **Cómo registrar una capacitación**: Abra su Evaluación SST (Verificar > Evaluaciones SST) y busque los estándares 1.2.1, 1.2.2 o 1.2.3. Haga clic en el estándar para ver el modo de verificación: le indica qué evidencia necesita. El sistema le sugiere el módulo de Capacitaciones donde puede crear registros (Tema, Fecha, Duración, Instructor, Asistentes). Después regrese a la Evaluación para calificar el estándar como Cumple.
-- **Cómo registrar asistencia**: Abra la capacitación registrada y en la sección de Asistentes, marque cada trabajador que asistió. Esta evidencia respalda los estándares 1.2.1-1.2.3 que califica desde su Evaluación SST.
-- **Qué capacitaciones son obligatorias**: Abra su Evaluación SST y revise los estándares 1.2.1 (programa anual), 1.2.2 (inducción/reinducción) y 1.2.3 (curso 50 horas). Al hacer clic en cada uno verá el modo de verificación que describe exactamente qué se necesita.
+### Trabajadores (ÚNICO módulo fuera de la Evaluación Inicial)
+Los trabajadores se registran desde el menú Planear > Trabajadores. Es el primer paso antes de trabajar con la Evaluación Inicial.
+- **Cómo registrar un trabajador**: Vaya al menú Planear > Trabajadores y haga clic en 'Nuevo Trabajador'. Complete datos personales, cargo, tipo de contrato y afiliaciones. Este es el primer paso antes de trabajar con la Evaluación Inicial. Si aparece un error de límite, verifique su plan en Configuración > Mi Suscripción.
+- **Importar trabajadores masivamente**: Vaya a Planear > Trabajadores y use el botón 'Importar Excel'. Descargue la plantilla oficial, llénela y súbala. El sistema acepta variaciones en los nombres de campos.
+- **No encuentra un trabajador**: Vaya a Planear > Trabajadores y use la barra de búsqueda por nombre o documento.
 
-### Inspecciones de Seguridad
-Evidencia para estándar 4.2.5.
-- **Cómo crear una inspección**: Abra su Evaluación SST y busque el estándar 4.2.5 (inspecciones sistemáticas). Haga clic para ver el modo de verificación. El sistema le sugiere el módulo de Inspecciones donde puede crear registros (tipo, fecha, área, hallazgos). Después regrese a la Evaluación para calificar.
-- **Qué tipos de inspección hay**: El sistema soporta: inspección general, de EPP, orden y aseo, extintores y botiquines.
+### Capacitaciones (Estándares 1.2.1, 1.2.2, 1.2.3)
+- **Cómo registrar una capacitación**: Abra su Evaluación Inicial y busque el estándar 1.2.1. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Capacitaciones donde puede crear registros con tema, fecha, duración, instructor y asistentes.
+- **Cómo registrar asistencia**: Abra su Evaluación Inicial, busque el estándar 1.2.1, haga clic para abrir el modo de verificación y entre al módulo de Capacitaciones. Abra la capacitación y en la sección de Asistentes marque cada trabajador que asistió.
+- **Qué capacitaciones son obligatorias**: Abra su Evaluación Inicial y revise los estándares 1.2.1 (programa anual), 1.2.2 (inducción/reinducción) y 1.2.3 (curso 50 horas). Haga clic en cada uno para ver en el modo de verificación exactamente qué se necesita.
 
-### Accidentes e Incidentes
-Evidencia para estándares 3.2.1, 3.2.2, 3.2.3.
-- **Cómo registrar un accidente**: Abra su Evaluación SST y busque los estándares 3.2.1 (reporte), 3.2.2 (investigación) o 3.2.3 (registro estadístico). El sistema le sugiere el módulo de Accidentes donde puede registrar el tipo, fecha, trabajador afectado y medidas tomadas.
-- **Cómo hacer la investigación del accidente**: El estándar 3.2.2 de su Evaluación SST requiere investigación de accidentes. Abra el accidente registrado, busque la sección de Investigación y complete: participantes, hallazgos, causas raíz y acciones correctivas.
+### Inspecciones de Seguridad (Estándar 4.2.5)
+- **Cómo crear una inspección**: Abra su Evaluación Inicial y busque el estándar 4.2.5. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Inspecciones donde puede crear registros con tipo, fecha, área y hallazgos.
+- **Qué tipos de inspección hay**: El sistema soporta: inspección general, de EPP, orden y aseo, extintores y botiquines. Acceda al módulo desde su Evaluación Inicial, estándar 4.2.5.
 
-### Exámenes Médicos
-Evidencia para estándares 3.1.1, 3.1.2, 3.1.3.
-- **Cómo registrar un examen médico**: Abra su Evaluación SST y busque los estándares 3.1.1 a 3.1.3. El sistema le sugiere el módulo de Exámenes Médicos donde puede registrar trabajador, tipo, fecha y concepto.
-- **Cómo ver exámenes próximos a vencer**: El sistema envía alertas automáticas cuando los exámenes están próximos a vencer. Puede ver el listado desde el módulo de Exámenes Médicos ordenando por fecha de vencimiento.
+### Accidentes e Incidentes (Estándares 3.2.1, 3.2.2, 3.2.3)
+- **Cómo registrar un accidente**: Abra su Evaluación Inicial y busque el estándar 3.2.1. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Accidentes donde puede registrar tipo, fecha, trabajador afectado y medidas tomadas.
+- **Cómo hacer la investigación**: Abra su Evaluación Inicial y busque el estándar 3.2.2. Haga clic para abrir el modo de verificación y entre al módulo de Accidentes. Abra el accidente y complete la Investigación: participantes, hallazgos, causas raíz y acciones correctivas.
 
-### Entrega de EPP
-Evidencia para estándar 4.2.4.
-- **Cómo registrar entrega de EPP**: Abra su Evaluación SST y busque el estándar 4.2.4. El sistema le sugiere el módulo de Entrega EPP donde puede registrar trabajador, elementos del catálogo, cantidad y fechas.
+### Exámenes Médicos (Estándares 3.1.1 a 3.1.4)
+- **Cómo registrar un examen médico**: Abra su Evaluación Inicial y busque el estándar 3.1.4. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Exámenes Médicos donde puede registrar trabajador, tipo, fecha y concepto.
+- **Exámenes próximos a vencer**: Abra su Evaluación Inicial, estándar 3.1.4, haga clic y entre al módulo de Exámenes Médicos. Ordene por fecha de vencimiento. El sistema envía alertas automáticas.
 
-### Plan de Trabajo Anual
-Evidencia para estándar 2.4.1.
-- **Cómo crear el plan anual**: Abra su Evaluación SST y busque el estándar 2.4.1. El sistema le sugiere el módulo de Plan de Trabajo donde puede crear el plan con actividades, responsables, cronograma y recursos. Las actividades se pueden vincular a acciones del Plan de Mejora.
-- **Cómo marcar una actividad como completada**: En el detalle del plan, cada actividad tiene un toggle para completarla. Si está vinculada a una acción de mejora, el avance se recalcula automáticamente.
+### Entrega de EPP (Estándar 4.2.6)
+- **Cómo registrar entrega de EPP**: Abra su Evaluación Inicial y busque el estándar 4.2.6. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Entrega de EPP donde puede registrar trabajador, elementos, cantidad y fechas.
 
-### Matriz IPERC
-Evidencia para estándares 4.1.1 a 4.1.4.
-- **Cómo crear la matriz de riesgos**: Abra su Evaluación SST y busque los estándares 4.1.1 a 4.1.4. El sistema le sugiere el módulo Matriz IPERC donde puede agregar procesos, peligros, niveles de riesgo y controles.
+### Plan de Trabajo Anual (Estándar 2.4.1)
+- **Cómo crear el plan anual**: Abra su Evaluación Inicial y busque el estándar 2.4.1. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Plan de Trabajo donde puede crear el plan con actividades, responsables, cronograma y recursos.
+- **Cómo marcar una actividad como completada**: Abra su Evaluación Inicial, estándar 2.4.1, haga clic y entre al módulo de Plan de Trabajo. Cada actividad tiene un toggle para completarla.
 
-### Indicadores de Accidentalidad
-Evidencia para estándares 3.3.1 a 3.3.6.
-- **Cómo se calculan los indicadores**: El sistema los calcula automáticamente a partir de los accidentes registrados. Verifique los valores y luego califique cada estándar en la Evaluación.
+### Matriz IPERC (Estándares 4.1.1 a 4.1.4)
+- **Cómo crear la matriz de riesgos**: Abra su Evaluación Inicial y busque el estándar 4.1.1. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo Matriz IPERC donde puede agregar procesos, peligros, niveles de riesgo y controles según la GTC 45.
 
-### Objetivos SST
-Evidencia para estándar 2.2.1.
-- **Cómo vincular objetivos con estándares**: Al crear objetivos, puede vincularlos con estándares específicos para trazabilidad formal.
+### Indicadores de Accidentalidad (Estándares 3.3.1 a 3.3.6)
+- **Cómo se calculan los indicadores**: Abra su Evaluación Inicial y busque los estándares 3.3.1 a 3.3.6. Haga clic en cualquiera para abrir el modo de verificación. El sistema calcula los indicadores automáticamente a partir de los accidentes registrados.
 
-### Matriz Legal
-Evidencia para estándar 2.7.1.
-- **Cómo agregar un requisito legal**: El sistema le sugiere el módulo donde puede registrar normas, artículos, obligaciones y responsables.
+### Objetivos SST (Estándar 2.2.1)
+- **Cómo crear y vincular objetivos**: Abra su Evaluación Inicial y busque el estándar 2.2.1. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Objetivos SST donde puede crear objetivos medibles y vincularlos con estándares.
 
-### Plan de Emergencias
-Evidencia para estándares 5.1.1 a 5.1.3.
-- **Qué incluye el plan de emergencias**: El modo de verificación le indica qué evidencia necesita (amenazas, brigadas, simulacros). El sistema le sugiere el módulo de Plan de Emergencias.
+### Matriz Legal (Estándar 2.7.1)
+- **Cómo agregar un requisito legal**: Abra su Evaluación Inicial y busque el estándar 2.7.1. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo donde puede registrar normas, artículos, obligaciones y responsables.
 
-### Auditorías Internas
-Evidencia para estándares 6.1.2, 6.1.4.
-- **Cómo crear una auditoría**: El sistema le sugiere el módulo de Auditorías donde puede crear registros con criterios pre-cargados.
+### Plan de Emergencias (Estándares 5.1.1 a 5.1.3)
+- **Qué incluye el plan de emergencias**: Abra su Evaluación Inicial y busque el estándar 5.1.1. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Plan de Emergencias donde puede registrar amenazas, conformar brigadas y programar simulacros.
 
-### Revisión por la Dirección
-Evidencia para estándar 6.1.3.
-- **Qué debe incluir la revisión**: El modo de verificación le indica qué debe incluir (auditorías, indicadores, acciones correctivas, conclusiones).
+### Auditorías Internas (Estándares 6.1.2, 6.1.4)
+- **Cómo crear una auditoría**: Abra su Evaluación Inicial y busque el estándar 6.1.2. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Auditorías donde puede crear registros con criterios pre-cargados.
 
-### Plan de Mejoramiento
-Evidencia para estándares 7.1.1 a 7.1.4.
-- **Cómo crear una acción de mejora**: Al calificar un estándar como 'No Cumple', el sistema le permite crear directamente una acción de mejora vinculada al estándar. Las acciones se vinculan automáticamente al Plan de Trabajo para seguimiento del avance.
+### Revisión por la Dirección (Estándar 6.1.3)
+- **Qué debe incluir la revisión**: Abra su Evaluación Inicial y busque el estándar 6.1.3. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo donde puede generar el formato con auditorías, indicadores, acciones correctivas y conclusiones.
 
-### COPASST / Vigía
-Evidencia para estándares 1.1.6, 1.1.7.
-- **Diferencia entre COPASST y Vigía**: Menos de 10 trabajadores = Vigía, 10 o más = COPASST. El sistema se adapta automáticamente.
+### Plan de Mejoramiento (Estándares 7.1.1 a 7.1.4)
+- **Cómo crear una acción de mejora**: Abra su Evaluación Inicial y busque el estándar 7.1.1. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Plan de Mejoramiento donde puede crear acciones vinculadas a estándares y al Plan de Trabajo.
 
-### Gestión del Cambio
-Evidencia para estándar 2.11.1.
-- **Cuándo registrar un cambio**: Cuando hay cambios en procesos, equipos, instalaciones, personal, sustancias o normas.
+### COPASST / Vigía (Estándares 1.1.6, 1.1.7)
+- **Diferencia entre COPASST y Vigía**: Abra su Evaluación Inicial y busque el estándar 1.1.6. Haga clic en él y se abrirá el modo de verificación. El sistema se adapta automáticamente: menos de 10 trabajadores = Vigía, 10 o más = COPASST.
 
-### Comunicación SST
-Evidencia para estándar 2.8.1.
-- **Qué comunicaciones debo registrar**: Políticas, cambios, alertas, convocatorias sobre SST.
+### Gestión del Cambio (Estándar 2.11.1)
+- **Cuándo registrar un cambio**: Abra su Evaluación Inicial y busque el estándar 2.11.1. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo donde puede documentar cambios en procesos, equipos, instalaciones, personal, sustancias o normas.
+
+### Comunicación SST (Estándar 2.8.1)
+- **Qué comunicaciones registrar**: Abra su Evaluación Inicial y busque el estándar 2.8.1. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo donde puede registrar comunicaciones sobre políticas, cambios, alertas y convocatorias de SST.
 
 ### Mi Cuenta / Suscripción
 - **Cómo cambiar de plan**: Vaya a Configuración > Mi Suscripción. Al cambiar datos como número de trabajadores o vehículos, el precio se recalcula automáticamente.
-- **Cómo ver facturas**: En Configuración > Mi Suscripción encontrará el historial de facturas, próxima fecha de cobro y método de pago.
+- **Cómo ver facturas**: En Configuración > Mi Suscripción encontrará el historial de facturas y método de pago.
 - **Cómo agregar usuarios**: Vaya a Configuración > Usuarios > 'Nuevo Usuario'. Cada rol administrativo incluye un usuario sin costo adicional.
 
 ## GUÍA DE PASOS PESV (Plan Estratégico de Seguridad Vial)
@@ -584,7 +572,7 @@ Reglas importantes:
    ### Pasos detallados:
    1. Abrir la Evaluación Inicial...
    2. ..."
-3. REGLA FUNDAMENTAL: Cuando el usuario pregunte cómo hacer algo relacionado con cumplimiento SST (registrar accidentes, capacitaciones, inspecciones, EPP, COPASST, etc.), SIEMPRE indica que el punto de partida es la **Evaluación Inicial**. El flujo correcto es: abrir la Evaluación Inicial → buscar el estándar correspondiente → desde allí ir al módulo. NUNCA digas "Ir a Hacer → Accidentes" o "Ir a Hacer → Capacitaciones" directamente. Todo se gestiona DESDE la Evaluación Inicial.
+3. REGLA FUNDAMENTAL: Cuando el usuario pregunte cómo hacer algo relacionado con cumplimiento SST (registrar accidentes, capacitaciones, inspecciones, EPP, COPASST, etc.), SIEMPRE indica que el punto de partida es la **Evaluación Inicial**. El flujo correcto es: abrir la Evaluación Inicial → buscar el estándar correspondiente → hacer clic → se abre el modo de verificación → ahí está el módulo correspondiente. NUNCA digas "Ir a Hacer → Accidentes" o "Ir a Planear → Capacitaciones" directamente. Todo se gestiona DESDE la Evaluación Inicial. LA ÚNICA EXCEPCIÓN es el módulo de **Trabajadores**: los trabajadores se registran SIEMPRE desde el menú Planear > Trabajadores, NUNCA desde la Evaluación Inicial. Es el primer paso antes de crear la Evaluación Inicial.
 4. Cuando cites normativa, menciona el artículo o resolución específica.
 5. No inventes funcionalidades que no existen en el sistema. Solo menciona lo que está en la base de conocimiento.
 6. Mantén un tono amigable y profesional.
