@@ -353,7 +353,7 @@ const estandaresSst = [
     nombre: "Mecanismos de comunicación",
     descripcion: "Establecer mecanismos eficaces para recibir y dar respuesta a las comunicaciones internas y externas relativas a la SST, así como para disponer de canales que permitan recolectar inquietudes, ideas y aportes de los trabajadores.",
     marcoLegal: "Decreto 1072 de 2015, artículo 2.2.4.6.14",
-    puntajeTipo1: null,
+    puntajeTipo1: 1,
     puntajeTipo2: null,
     puntajeTipo3: 1,
     puntajeTipo4: 1,
@@ -1191,7 +1191,10 @@ export async function seedSstCatalog() {
     await db.update(schema.estandaresSst)
       .set({ puntajeTipo1: 2 })
       .where(eq(schema.estandaresSst.numeroEstandar, "1.2.2"));
-    console.log("✅ Estándar 1.2.2 liberado para tipo 1 (puntajeTipo1: 2)");
+    await db.update(schema.estandaresSst)
+      .set({ puntajeTipo1: 1 })
+      .where(eq(schema.estandaresSst.numeroEstandar, "2.8.1"));
+    console.log("✅ Estándares 1.2.2 y 2.8.1 liberados para tipo 1");
     
     console.log("🎉 Seed de datos maestros SST completado exitosamente");
     
