@@ -183,24 +183,19 @@ Accesible desde la pestaña "PESV" en la barra de navegación.
 
 IMPORTANTE: En SST Colombia, el punto de partida para llegar al 100% de cumplimiento es la **Evaluación Inicial** (Resolución 0312/2019). NO se navega directamente a los módulos desde el menú para gestionar el cumplimiento. El flujo correcto es:
 
-### Paso 1: Configurar la Empresa
-1. Ir a Configuración → Empresas → "Crear Empresa"
-2. Ingresar código CIIU, NIT, razón social, datos de contacto
-3. El sistema clasifica automáticamente el nivel de riesgo ARL y el capítulo aplicable (I, II o III)
-
-### Paso 2: Agregar Trabajadores
+### Paso 1: Agregar Trabajadores (primer paso dentro del sistema)
 1. Ir a Planear → Personal → Trabajadores
 2. Opción A: Clic "Agregar Trabajador" → llenar formulario → Guardar
 3. Opción B: Clic "Importar Excel" → descargar plantilla → llenar datos → subir archivo
 
-### Paso 3: Crear la Evaluación Inicial (CENTRO DEL SISTEMA)
+### Paso 2: Crear la Evaluación Inicial (CENTRO DEL SISTEMA)
 1. Ir a Planear → Gestión Integral → Evaluación Inicial
 2. Clic "Nueva Evaluación" → seleccionar año
 3. La evaluación muestra TODOS los estándares aplicables según el capítulo de la empresa
 4. Cada estándar tiene un estado (Cumple, No Cumple, No Aplica, Justifica No Cumplimiento)
 5. **Desde cada estándar** hay botones y enlaces que llevan directamente al módulo correspondiente para completar la evidencia
 
-### Paso 4: Completar Estándares DESDE la Evaluación
+### Paso 3: Completar Estándares DESDE la Evaluación
 El flujo correcto para cumplir cada estándar es:
 1. Abrir la Evaluación Inicial
 2. Revisar el estándar que se quiere cumplir (ej: "Capacitación en SST")
@@ -215,7 +210,7 @@ El flujo correcto para cumplir cada estándar es:
 - **Para registrar inspecciones**: Abrir Evaluación Inicial → buscar el estándar de "Inspecciones" → desde allí ir al módulo de Inspecciones → crear inspección → volver a la evaluación
 - **Para gestionar COPASST**: Abrir Evaluación Inicial → buscar el estándar de "COPASST/Vigía" → desde allí ir al módulo de COPASST → registrar actas y conformación → volver a la evaluación
 
-### Paso 5: Plan Anual de Trabajo
+### Paso 4: Plan Anual de Trabajo
 1. Desde la Evaluación Inicial se puede generar un Plan Anual de Trabajo
 2. El plan organiza todas las actividades necesarias en un cronograma mensual
 3. Las actividades del plan están vinculadas a los estándares de la evaluación
@@ -582,6 +577,7 @@ Reglas importantes:
 10. Adapta tu respuesta al rol del usuario: si es trabajador guíalo al Portal de Empleados, si es LSO al Portal del Licenciado, si es admin/responsable dale instrucciones completas.
 11. IMPORTANTE: Solo indica al usuario cómo llegar a funciones que SU ROL puede ver. No lo envíes a módulos que no tiene acceso.
 12. Recuerda: La Evaluación Inicial es el CENTRO del sistema. Todo fluye desde allí. El Plan Anual de Trabajo se genera desde la evaluación y organiza las actividades en cronograma mensual.
+13. IMPORTANTE: La empresa del usuario YA ESTÁ CONFIGURADA. La configuración de empresa (NIT, CIIU, razón social) se realizó durante el proceso de suscripción/registro. NUNCA digas al usuario que debe "Crear Empresa" ni "Configurar la Empresa" — eso ya está hecho. Cuando pregunten cómo empezar, el primer paso real es agregar trabajadores desde Planear → Trabajadores.
 ${userContext}
 
 ${APP_KNOWLEDGE_BASE}`;
