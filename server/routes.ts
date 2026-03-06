@@ -28309,7 +28309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { minChapter: 3, ciclo: "planear", programa: "capacitacion", actividad: "Programa de Capacitación Anual en SST", objetivo: "Planificar formación continua en SST", meta: "Programa aprobado y ejecutado", cargo: "Responsable SG-SST", meses: ["enero"] },
         
         // Estándar 1.1.6 - Inducción y reinducción
-        { minChapter: 3, ciclo: "hacer", programa: "capacitacion", actividad: "Inducción y Reinducción en SST", objetivo: "Capacitar a nuevos y antiguos trabajadores", meta: "100% trabajadores inducidos", cargo: "Responsable SG-SST", meses: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"] },
+        { minChapter: 1, ciclo: "hacer", programa: "capacitacion", actividad: "Inducción y Reinducción en SST", objetivo: "Capacitar a nuevos y antiguos trabajadores", meta: "100% trabajadores inducidos", cargo: "Responsable SG-SST", meses: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"] },
         
         // Estándar 3.1.3 - Perfiles de cargo
         { minChapter: 3, ciclo: "planear", programa: "otro", actividad: "Actualización de Perfiles de Cargo", objetivo: "Definir requisitos y riesgos por cargo", meta: "100% cargos con perfil actualizado", cargo: "Responsable SG-SST", meses: ["abril"] },
