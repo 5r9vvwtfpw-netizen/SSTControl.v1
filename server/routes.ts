@@ -41155,11 +41155,20 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       const response = await storage.createTicketResponse(responseData);
       
+      // Auto-assign ticket to the first staff member who responds (if not internal note and not already assigned)
+      if (isStaff && !ticket.assignedTo && responseData.isInternal !== 1) {
+        await storage.updateSupportTicket(ticket.id, {
+          assignedTo: userId,
+          assignedToName: user.fullName || user.username,
+        });
+        ticket.assignedTo = userId;
+        ticket.assignedToName = user.fullName || user.username;
+      }
+
       // Update ticket status based on response
       let newStatus = ticket.status;
       
       if (isStaff) {
-        // Staff response: mark as pendiente_cliente if currently abierto or en_progreso
         if (ticket.status === 'abierto' || ticket.status === 'en_progreso') {
           newStatus = 'pendiente_cliente';
         }
