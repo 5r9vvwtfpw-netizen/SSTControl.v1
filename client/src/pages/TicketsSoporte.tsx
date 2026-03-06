@@ -143,6 +143,43 @@ const categoryLabels: Record<string, string> = {
   consulta_general: "Consulta General"
 };
 
+const slaHoursByPriority: Record<string, number> = {
+  critica: 4,
+  alta: 12,
+  media: 24,
+  baja: 48,
+};
+
+function getSlaInfo(priority: string, createdAt: string, status: string) {
+  const slaHours = slaHoursByPriority[priority] || 24;
+  const created = new Date(createdAt).getTime();
+  const deadline = created + slaHours * 60 * 60 * 1000;
+  const now = Date.now();
+  const remaining = deadline - now;
+  const isClosed = status === 'cerrado' || status === 'resuelto';
+
+  if (isClosed) {
+    return { label: '', expired: false, slaHours, show: false };
+  }
+  if (remaining <= 0) {
+    const overHours = Math.abs(remaining) / (1000 * 60 * 60);
+    if (overHours >= 24) {
+      const days = Math.floor(overHours / 24);
+      const hrs = Math.floor(overHours % 24);
+      return { label: `Vencido hace ${days}d ${hrs}h`, expired: true, slaHours, show: true };
+    }
+    return { label: `Vencido hace ${Math.floor(overHours)}h ${Math.floor((overHours % 1) * 60)}m`, expired: true, slaHours, show: true };
+  }
+  const remainingHours = remaining / (1000 * 60 * 60);
+  if (remainingHours <= slaHours * 0.25) {
+    if (remainingHours >= 1) {
+      return { label: `${Math.floor(remainingHours)}h ${Math.floor((remainingHours % 1) * 60)}m`, expired: false, slaHours, show: true };
+    }
+    return { label: `${Math.floor(remainingHours * 60)}m`, expired: false, slaHours, show: true };
+  }
+  return { label: '', expired: false, slaHours, show: false };
+}
+
 export default function TicketsSoporte() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -691,13 +728,31 @@ export default function TicketsSoporte() {
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="text-xs font-mono text-muted-foreground">
                             {ticket.ticketNumber}
                           </span>
                           <Badge className={priorityColors[ticket.priority]} variant="secondary">
                             {priorityLabels[ticket.priority]}
                           </Badge>
+                          {(() => {
+                            const sla = getSlaInfo(ticket.priority, ticket.createdAt, ticket.status);
+                            if (!sla.show) return null;
+                            if (sla.expired) {
+                              return (
+                                <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 border border-red-200 dark:border-red-800" data-testid={`sla-badge-${ticket.id}`}>
+                                  <AlertCircle className="h-2.5 w-2.5" />
+                                  {sla.label}
+                                </span>
+                              );
+                            }
+                            return (
+                              <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800" data-testid={`sla-badge-${ticket.id}`}>
+                                <Clock className="h-2.5 w-2.5" />
+                                {sla.label}
+                              </span>
+                            );
+                          })()}
                         </div>
                         <h4 className="font-medium truncate">{ticket.subject}</h4>
                         <p className="text-sm text-muted-foreground truncate">

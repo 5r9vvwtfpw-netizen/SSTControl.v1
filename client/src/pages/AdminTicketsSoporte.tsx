@@ -167,27 +167,25 @@ function getSlaInfo(priority: string, createdAt: string, status: string) {
   const isClosed = status === 'cerrado' || status === 'resuelto';
 
   if (isClosed) {
-    return { label: 'Cerrado', color: 'text-muted-foreground', bgColor: 'bg-muted', expired: false, slaHours };
+    return { label: '', expired: false, slaHours, show: false };
   }
   if (remaining <= 0) {
     const overHours = Math.abs(remaining) / (1000 * 60 * 60);
     if (overHours >= 24) {
       const days = Math.floor(overHours / 24);
       const hrs = Math.floor(overHours % 24);
-      return { label: `Vencido hace ${days}d ${hrs}h`, color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800', expired: true, slaHours };
+      return { label: `Vencido hace ${days}d ${hrs}h`, expired: true, slaHours, show: true };
     }
-    return { label: `Vencido hace ${Math.floor(overHours)}h ${Math.floor((overHours % 1) * 60)}m`, color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800', expired: true, slaHours };
+    return { label: `Vencido hace ${Math.floor(overHours)}h ${Math.floor((overHours % 1) * 60)}m`, expired: true, slaHours, show: true };
   }
   const remainingHours = remaining / (1000 * 60 * 60);
-  if (remainingHours >= 24) {
-    const days = Math.floor(remainingHours / 24);
-    const hrs = Math.floor(remainingHours % 24);
-    return { label: `${days}d ${hrs}h restantes`, color: 'text-green-700 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800', expired: false, slaHours };
+  if (remainingHours <= slaHours * 0.25) {
+    if (remainingHours >= 1) {
+      return { label: `${Math.floor(remainingHours)}h ${Math.floor((remainingHours % 1) * 60)}m`, expired: false, slaHours, show: true };
+    }
+    return { label: `${Math.floor(remainingHours * 60)}m`, expired: false, slaHours, show: true };
   }
-  if (remainingHours > 2) {
-    return { label: `${Math.floor(remainingHours)}h ${Math.floor((remainingHours % 1) * 60)}m restantes`, color: 'text-amber-700 dark:text-amber-400', bgColor: 'bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800', expired: false, slaHours };
-  }
-  return { label: `${Math.floor(remainingHours * 60)}m restantes`, color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800', expired: false, slaHours };
+  return { label: '', expired: false, slaHours, show: false };
 }
 
 function timeAgo(dateStr: string): string {
@@ -949,7 +947,27 @@ export default function AdminTicketsSoporte() {
                       >
                         <TableCell className="py-4 px-5">
                           <div>
-                            <p className="text-xs font-mono text-muted-foreground">{ticket.ticketNumber}</p>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="text-xs font-mono text-muted-foreground">{ticket.ticketNumber}</p>
+                              {(() => {
+                                const sla = getSlaInfo(ticket.priority, ticket.createdAt, ticket.status);
+                                if (!sla.show) return null;
+                                if (sla.expired) {
+                                  return (
+                                    <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 border border-red-200 dark:border-red-800" data-testid={`sla-badge-${ticket.id}`}>
+                                      <AlertCircle className="h-2.5 w-2.5" />
+                                      {sla.label}
+                                    </span>
+                                  );
+                                }
+                                return (
+                                  <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800" data-testid={`sla-badge-${ticket.id}`}>
+                                    <Clock className="h-2.5 w-2.5" />
+                                    {sla.label}
+                                  </span>
+                                );
+                              })()}
+                            </div>
                             <p className="font-medium truncate max-w-[200px]">{ticket.subject}</p>
                           </div>
                         </TableCell>
@@ -1073,13 +1091,24 @@ export default function AdminTicketsSoporte() {
 
                   {(() => {
                     const sla = getSlaInfo(selectedTicket.priority, selectedTicket.createdAt, selectedTicket.status);
+                    const bgColor = sla.expired
+                      ? 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800'
+                      : sla.show
+                        ? 'bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800'
+                        : 'bg-muted';
+                    const textColor = sla.expired
+                      ? 'text-red-700 dark:text-red-400'
+                      : sla.show
+                        ? 'text-amber-700 dark:text-amber-400'
+                        : 'text-muted-foreground';
+                    const displayLabel = sla.show ? sla.label : 'Dentro del plazo';
                     return (
-                      <div className={`rounded-md p-3 ${sla.bgColor}`} data-testid="sla-indicator">
-                        <div className="flex items-center justify-between">
+                      <div className={`rounded-md p-3 ${bgColor}`} data-testid="sla-indicator">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
                           <div className="flex items-center gap-2">
-                            <AlertCircle className={`h-4 w-4 ${sla.color}`} />
-                            <span className={`text-sm font-semibold ${sla.color}`}>
-                              SLA: {sla.label}
+                            <AlertCircle className={`h-4 w-4 ${textColor}`} />
+                            <span className={`text-sm font-semibold ${textColor}`}>
+                              SLA: {displayLabel}
                             </span>
                           </div>
                           <span className="text-xs text-muted-foreground">
