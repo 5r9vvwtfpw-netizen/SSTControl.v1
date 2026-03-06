@@ -9,8 +9,9 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Search, Download, AlertCircle, CheckCircle2, Eye, CreditCard, FileText, Upload, User, Trash2, AlertTriangle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Plus, Search, Download, AlertCircle, CheckCircle2, Eye, CreditCard, FileText, Upload, User, Trash2, AlertTriangle, Building2, ChevronRight, ArrowLeft, Users } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Worker, insertWorkerSchema, Company, Contract, insertContractSchema, JobProfile } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -88,9 +89,12 @@ export default function Trabajadores() {
   // isSuperadmin = true only for superadmin/soporte (can select any company when creating workers)
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("all");
+  const [selectedVaultCompanyId, setSelectedVaultCompanyId] = useState<string | null>(null);
   
   // Effective company ID for filtering: global admins use selectedCompanyId, others use their own companyId
-  const effectiveCompanyId = hasGlobalCompanyAccess ? selectedCompanyId : (user?.companyId || "");
+  const effectiveCompanyId = hasGlobalCompanyAccess 
+    ? (selectedVaultCompanyId || selectedCompanyId) 
+    : (user?.companyId || "");
   
   // Filtros para informes
   const [filterCedula, setFilterCedula] = useState("");
@@ -171,6 +175,37 @@ export default function Trabajadores() {
   const { data: jobProfiles = [] } = useQuery<JobProfile[]>({
     queryKey: ["/api/job-profiles"],
   });
+
+  const companyMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    companies.forEach((c) => { map[c.id] = c.name; });
+    return map;
+  }, [companies]);
+
+  const companyVaults = useMemo(() => {
+    if (!hasGlobalCompanyAccess || workers.length === 0) return [];
+    const grouped: Record<string, { companyId: string; companyName: string; total: number; activos: number; inactivos: number; departments: Set<string> }> = {};
+    workers.forEach((w) => {
+      if (!w.companyId) return;
+      if (!grouped[w.companyId]) {
+        grouped[w.companyId] = {
+          companyId: w.companyId,
+          companyName: companyMap[w.companyId] || "Empresa desconocida",
+          total: 0,
+          activos: 0,
+          inactivos: 0,
+          departments: new Set(),
+        };
+      }
+      grouped[w.companyId].total++;
+      if (w.status === "activo") grouped[w.companyId].activos++;
+      else grouped[w.companyId].inactivos++;
+      if (w.department) grouped[w.companyId].departments.add(w.department);
+    });
+    return Object.values(grouped).sort((a, b) => b.total - a.total);
+  }, [workers, companyMap, hasGlobalCompanyAccess]);
+
+  const selectedVaultCompanyName = selectedVaultCompanyId ? (companyMap[selectedVaultCompanyId] || "Empresa") : "";
 
   const getContractStatus = (workerId: string): "activo" | "vencido" | "sin_contrato" => {
     const workerContracts = contracts.filter(c => c.workerId === workerId);
@@ -2472,15 +2507,155 @@ export default function Trabajadores() {
         </TabsList>
 
         <TabsContent value="lista" className="space-y-4">
-          {hasGlobalCompanyAccess && (
+          {hasGlobalCompanyAccess && !selectedVaultCompanyId ? (
+            <>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar empresa por nombre..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  data-testid="input-search-vaults"
+                />
+              </div>
+
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">Cargando trabajadores...</p>
+                </div>
+              ) : companyVaults.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No se encontraron empresas con trabajadores</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {companyVaults
+                    .filter(v => !searchTerm || v.companyName.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map((vault) => (
+                    <Card
+                      key={vault.companyId}
+                      className="hover-elevate cursor-pointer transition-colors"
+                      onClick={() => {
+                        setSelectedVaultCompanyId(vault.companyId);
+                        setSearchTerm("");
+                      }}
+                      data-testid={`vault-company-${vault.companyId}`}
+                    >
+                      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Building2 className="h-5 w-5 text-muted-foreground shrink-0" />
+                          <CardTitle className="text-base truncate" data-testid={`vault-name-${vault.companyId}`}>{vault.companyName}</CardTitle>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium" data-testid={`vault-total-${vault.companyId}`}>{vault.total} trabajador{vault.total !== 1 ? "es" : ""}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          <Badge variant="default" data-testid={`vault-activos-${vault.companyId}`}>
+                            {vault.activos} activo{vault.activos !== 1 ? "s" : ""}
+                          </Badge>
+                          {vault.inactivos > 0 && (
+                            <Badge variant="secondary" data-testid={`vault-inactivos-${vault.companyId}`}>
+                              {vault.inactivos} inactivo{vault.inactivos !== 1 ? "s" : ""}
+                            </Badge>
+                          )}
+                        </div>
+                        {vault.departments.size > 0 && (
+                          <p className="text-xs text-muted-foreground truncate" data-testid={`vault-departments-${vault.companyId}`}>
+                            {vault.departments.size} departamento{vault.departments.size !== 1 ? "s" : ""}: {Array.from(vault.departments).slice(0, 3).join(", ")}{vault.departments.size > 3 ? "..." : ""}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {hasGlobalCompanyAccess && selectedVaultCompanyId && (
+                <div className="flex items-center gap-3 mb-2">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setSelectedVaultCompanyId(null);
+                      setSearchTerm("");
+                    }}
+                    data-testid="button-back-to-vaults"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Volver a empresas
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold" data-testid="text-vault-company-name">{selectedVaultCompanyName}</h3>
+                    <Badge variant="secondary" data-testid="text-vault-worker-count">
+                      {filteredWorkers.length} trabajador{filteredWorkers.length !== 1 ? "es" : ""}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nombre, cargo o departamento..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  data-testid="input-search-workers"
+                />
+              </div>
+
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">Cargando trabajadores...</p>
+                </div>
+              ) : filteredWorkers.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No se encontraron trabajadores</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredWorkers.map((worker) => (
+                    <WorkerCard
+                      key={worker.id}
+                      id={worker.id}
+                      name={worker.name}
+                      position={worker.position}
+                      department={worker.department}
+                      contract={worker.contractType}
+                      startDate={formatDateShort(worker.startDate)}
+                      status={worker.status}
+                      email={worker.email}
+                      photoUrl={worker.photoUrl}
+                      hasUserAccount={!!worker.userId}
+                      contractStatus={getContractStatus(worker.id)}
+                      onEdit={user?.role && hasCompanyAdminAccess(user.role) ? () => handleEdit(worker) : undefined}
+                      onDelete={user?.role && hasCompanyAdminAccess(user.role) ? () => handleDelete(worker.id) : undefined}
+                      onCreatePortalAccess={user?.role && hasCompanyAdminAccess(user.role) && worker.email && !worker.userId ? () => createPortalAccessMutation.mutate(worker.id) : undefined}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </TabsContent>
+
+        <TabsContent value="informes" className="space-y-4">
+          {hasGlobalCompanyAccess && !selectedVaultCompanyId && (
             <div className="mb-4">
-              <Label htmlFor="company-filter">Filtrar por empresa</Label>
+              <Label htmlFor="company-filter-informes">Filtrar por empresa</Label>
               <Select
                 value={selectedCompanyId}
                 onValueChange={setSelectedCompanyId}
-                data-testid="select-company-filter"
+                data-testid="select-company-filter-informes"
               >
-                <SelectTrigger id="company-filter">
+                <SelectTrigger id="company-filter-informes">
                   <SelectValue placeholder="Todas las empresas" />
                 </SelectTrigger>
                 <SelectContent>
@@ -2494,52 +2669,25 @@ export default function Trabajadores() {
               </Select>
             </div>
           )}
-          
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nombre, cargo o departamento..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              data-testid="input-search-workers"
-            />
-          </div>
-
-          {isLoading ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Cargando trabajadores...</p>
-            </div>
-          ) : filteredWorkers.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No se encontraron trabajadores</p>
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredWorkers.map((worker) => (
-                <WorkerCard
-                  key={worker.id}
-                  id={worker.id}
-                  name={worker.name}
-                  position={worker.position}
-                  department={worker.department}
-                  contract={worker.contractType}
-                  startDate={formatDateShort(worker.startDate)}
-                  status={worker.status}
-                  email={worker.email}
-                  photoUrl={worker.photoUrl}
-                  hasUserAccount={!!worker.userId}
-                  contractStatus={getContractStatus(worker.id)}
-                  onEdit={user?.role && hasCompanyAdminAccess(user.role) ? () => handleEdit(worker) : undefined}
-                  onDelete={user?.role && hasCompanyAdminAccess(user.role) ? () => handleDelete(worker.id) : undefined}
-                  onCreatePortalAccess={user?.role && hasCompanyAdminAccess(user.role) && worker.email && !worker.userId ? () => createPortalAccessMutation.mutate(worker.id) : undefined}
-                />
-              ))}
+          {hasGlobalCompanyAccess && selectedVaultCompanyId && (
+            <div className="flex items-center gap-3 mb-2">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSelectedVaultCompanyId(null);
+                  setSearchTerm("");
+                }}
+                data-testid="button-back-to-vaults-informes"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Volver a empresas
+              </Button>
+              <div className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-muted-foreground" />
+                <span className="text-lg font-semibold">{selectedVaultCompanyName}</span>
+              </div>
             </div>
           )}
-        </TabsContent>
-
-        <TabsContent value="informes" className="space-y-4">
           <div className="bg-card rounded-lg border p-6 space-y-4">
             <h2 className="text-xl font-semibold">Filtros de Búsqueda</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -45,6 +45,8 @@ The Support Portal includes a real-time internal chat system for agent coordinat
 
 The Evaluaciones SST page (`/evaluaciones-sst`) uses a **Company Vault System** for superadmin users: evaluations are grouped by company as clickable vault cards showing company name, latest compliance score, and year badges. Clicking a vault shows that company's evaluations with a year filter dropdown. Regular (non-superadmin) users see the traditional flat list of their own company's evaluations.
 
+The Trabajadores page (`/trabajadores`) also uses a **Company Vault System** for superadmin users: workers are grouped by company as clickable vault cards showing company name, total worker count, active/inactive badges, and department count. Clicking a vault shows that company's workers with a back button. The Informes tab retains a company dropdown when no vault is selected and shows company context when a vault is active. Regular (non-superadmin) users see the traditional flat worker list.
+
 The NGO Portal Integration receives `company.onboarded` webhooks from the external NGO sidecar at `POST /api/v1/ngo/company-onboarded`. Authentication uses a shared JWT secret (`CORE_API_JWT`). Records are stored in the `ngo_onboarded_companies` table with idempotency via `sidecar_invite_id`. A read endpoint at `GET /api/v1/ngo/onboarded-companies` lists all onboarded companies with optional `projectId` and `region` filters. Route file: `server/routes/ngo-webhook.ts`.
 
 ## Database & Infrastructure
