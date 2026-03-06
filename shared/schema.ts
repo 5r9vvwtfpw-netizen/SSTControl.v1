@@ -10592,6 +10592,8 @@ export const supportChatMessages = pgTable("support_chat_messages", {
   channel: supportChatChannelEnum("channel").notNull().default("general"),
   replyToId: varchar("reply_to_id"),
   ticketRef: varchar("ticket_ref"),
+  attachments: text("attachments").array(),
+  mentions: text("mentions").array(),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 

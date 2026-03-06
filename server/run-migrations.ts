@@ -8,6 +8,7 @@ import { syncExternalLsoColumns } from './migrations/sync-external-lso-columns';
 import { syncDocumentSourceColumns } from './migrations/sync-document-source-columns';
 import { syncCompanyVehiclesColumn } from './migrations/sync-company-vehicles-column';
 import { syncPesvEvaluationColumns } from './migrations/sync-pesv-evaluation-columns';
+import { addChatAttachmentsMentions } from './migrations/add-chat-attachments-mentions';
 import { createPesvTables } from './migrations/create-pesv-tables';
 import { syncQuoteColumns } from './migrations/sync-quote-columns';
 import { syncInvoiceSnapshotColumns } from './migrations/sync-invoice-snapshot-columns';
@@ -61,6 +62,7 @@ export async function runMigrations() {
     await syncUnassignedAtColumn();
     await createNgoOnboardedCompanies();
     await createSupportChatMessages();
+    await addChatAttachmentsMentions();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

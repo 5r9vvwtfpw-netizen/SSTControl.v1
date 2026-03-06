@@ -41977,6 +41977,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         channel: z.enum(['general', 'soporte_tecnico', 'facturacion', 'nueva_funcionalidad', 'error_bug', 'capacitacion']).default('general'),
         replyToId: z.string().nullable().optional(),
         ticketRef: z.string().nullable().optional(),
+        attachments: z.array(z.string()).nullable().optional(),
+        mentions: z.array(z.string()).nullable().optional(),
       });
 
       const parsed = chatMessageSchema.safeParse(req.body);
@@ -41984,7 +41986,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(400).json({ error: parsed.error.errors[0]?.message || "Datos inválidos" });
       }
 
-      const { content, channel: msgChannel, replyToId, ticketRef } = parsed.data;
+      const { content, channel: msgChannel, replyToId, ticketRef, attachments, mentions } = parsed.data;
 
       const [message] = await db
         .insert(schema.supportChatMessages)
@@ -41995,6 +41997,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           channel: msgChannel,
           replyToId: replyToId || null,
           ticketRef: ticketRef || null,
+          attachments: attachments || null,
+          mentions: mentions || null,
         })
         .returning();
 
@@ -42033,6 +42037,57 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     } catch (error: any) {
       console.error('Error fetching online agents:', error);
       res.status(500).send('Error al obtener agentes online');
+    }
+  });
+
+  // POST /api/support-chat/upload - Upload file for chat
+  const uploadChatFile = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req: any, file: any, cb: any) => {
+      const allowedMimeTypes = [
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf',
+        'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain', 'text/csv',
+      ];
+      if (allowedMimeTypes.includes(file.mimetype)) {
+        return cb(null, true);
+      }
+      cb(new Error('Tipo de archivo no permitido. Permitidos: imágenes, PDF, Word, Excel, TXT, CSV'));
+    }
+  });
+
+  app.post("/api/support-chat/upload", requireAuth, uploadChatFile.single('file'), async (req, res) => {
+    try {
+      const user = req.user!;
+      if (!hasSupportAccess(user.role)) {
+        return res.status(403).send("Solo personal de soporte puede subir archivos");
+      }
+      if (!req.file) {
+        return res.status(400).json({ error: "No se proporcionó archivo" });
+      }
+
+      const extension = path.extname(req.file.originalname) || '';
+      const objectPath = await objectStorageService.uploadObject(
+        `chat-files/${Date.now()}-${Math.random().toString(36).slice(2)}${extension}`,
+        req.file.buffer,
+        req.file.mimetype
+      );
+
+      const isImage = req.file.mimetype.startsWith('image/');
+
+      res.json({
+        url: objectPath,
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        isImage,
+      });
+    } catch (error: any) {
+      console.error('Error uploading chat file:', error);
+      res.status(500).json({ error: error.message || 'Error al subir archivo' });
     }
   });
 
