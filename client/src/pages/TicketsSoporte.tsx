@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -148,12 +148,14 @@ export default function TicketsSoporte() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const searchString = useSearch();
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<TicketWithDetails | null>(null);
   const [responseContent, setResponseContent] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [urlTicketProcessed, setUrlTicketProcessed] = useState<string | null>(null);
   
   const [newTicket, setNewTicket] = useState({
     subject: "",
@@ -167,6 +169,21 @@ export default function TicketsSoporte() {
   const { data: tickets = [], isLoading } = useQuery<SupportTicket[]>({
     queryKey: ['/api/support-tickets']
   });
+
+  useEffect(() => {
+    if (tickets.length === 0) return;
+    const params = new URLSearchParams(searchString);
+    const ticketId = params.get("ticket");
+    const urlTimestamp = params.get("t");
+    const urlKey = ticketId ? `${ticketId}_${urlTimestamp || ''}` : null;
+    if (ticketId && urlKey !== urlTicketProcessed) {
+      const found = tickets.find(t => t.id === ticketId);
+      if (found) {
+        setSelectedTicket(found as any);
+        setUrlTicketProcessed(urlKey);
+      }
+    }
+  }, [searchString, tickets, urlTicketProcessed]);
 
   const { data: selectedTicketDetails, isLoading: isLoadingDetails } = useQuery<TicketWithDetails>({
     queryKey: ['/api/support-tickets', selectedTicket?.id],
