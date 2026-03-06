@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import HelpVideoButton from "@/components/HelpVideoButton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/utils/formatters";
@@ -1123,7 +1122,6 @@ function WorkerPortal() {
             Información de tu contrato, perfil de cargo y canal de comunicación con el equipo SST
           </p>
         </div>
-        <HelpVideoButton customRoute="/portal-empleados" testId="button-help-video-empleado" />
       </div>
 
       {/* Navegación Profesional con Menús Desplegables */}
