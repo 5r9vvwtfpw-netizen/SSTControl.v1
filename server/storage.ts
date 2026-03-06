@@ -2551,35 +2551,124 @@ export class DbStorage implements IStorage {
         }
       }
       
-      // Antes de eliminar la empresa, NULL-ificar referencias cruzadas de usuarios
-      // en tablas de OTRAS empresas que podrían apuntar a usuarios de ESTA empresa
-      const crossCompanyUserRefs = [
-        { table: 'lso_company_assignments', columns: ['assigned_by', 'unassigned_by'] },
-        { table: 'lso_invitations', columns: ['invited_by'] },
-        { table: 'lso_registrations', columns: ['reviewed_by'] },
-        { table: 'support_access_sessions', columns: ['support_user_id', 'approved_by'] },
-        { table: 'support_tickets', columns: ['assigned_to', 'resolved_by'] },
-        { table: 'ticket_responses', columns: ['user_id'] },
-        { table: 'ticket_status_history', columns: ['changed_by'] },
-      ];
+      // Dinámicamente encontrar TODAS las foreign keys que apuntan a users.id
+      // y limpiar referencias cruzadas antes de eliminar los usuarios
+      const fkResult = await client.query(`
+        SELECT
+          tc.table_name,
+          kcu.column_name,
+          c.is_nullable
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name
+          AND tc.table_schema = kcu.table_schema
+        JOIN information_schema.referential_constraints rc
+          ON tc.constraint_name = rc.constraint_name
+          AND tc.table_schema = rc.constraint_schema
+        JOIN information_schema.key_column_usage kcu2
+          ON rc.unique_constraint_name = kcu2.constraint_name
+          AND rc.unique_constraint_schema = kcu2.constraint_schema
+        JOIN information_schema.columns c
+          ON c.table_name = kcu.table_name
+          AND c.column_name = kcu.column_name
+          AND c.table_schema = kcu.table_schema
+        WHERE kcu2.table_name = 'users'
+          AND kcu2.column_name = 'id'
+          AND tc.table_schema = 'public'
+          AND tc.constraint_type = 'FOREIGN KEY'
+          AND kcu.table_name != 'users'
+      `);
 
-      for (const ref of crossCompanyUserRefs) {
-        if (!existingTables.has(ref.table)) continue;
-        const cols = tableColumns.get(ref.table);
-        if (!cols) continue;
-        for (const col of ref.columns) {
-          if (!cols.has(col)) continue;
+      // Agrupar por tabla
+      const crossRefsByTable = new Map<string, { column: string; nullable: boolean }[]>();
+      for (const row of fkResult.rows) {
+        if (!crossRefsByTable.has(row.table_name)) {
+          crossRefsByTable.set(row.table_name, []);
+        }
+        crossRefsByTable.get(row.table_name)!.push({
+          column: row.column_name,
+          nullable: row.is_nullable === 'YES'
+        });
+      }
+
+      // Limpiar cada referencia: NULL si es nullable, DELETE si no lo es
+      const userIdsSubquery = 'SELECT id FROM users WHERE company_id = $1';
+      for (const [tableName, columns] of crossRefsByTable) {
+        if (!existingTables.has(tableName)) continue;
+
+        for (const { column, nullable } of columns) {
+          const spName = `crossref_${tableName}_${column}`.replace(/[^a-z0-9_]/gi, '_');
           try {
-            await client.query(`SAVEPOINT nullify_${ref.table}_${col}`);
+            await client.query(`SAVEPOINT ${spName}`);
+            if (nullable) {
+              await client.query(
+                `UPDATE ${tableName} SET ${column} = NULL WHERE ${column} IN (${userIdsSubquery})`,
+                [id]
+              );
+            } else {
+              await client.query(
+                `DELETE FROM ${tableName} WHERE ${column} IN (${userIdsSubquery})`,
+                [id]
+              );
+            }
+            await client.query(`RELEASE SAVEPOINT ${spName}`);
+          } catch (crossErr: any) {
+            try { await client.query(`ROLLBACK TO SAVEPOINT ${spName}`); } catch (e) {}
+            console.warn(`[DeleteCompany] Could not clean ${tableName}.${column}:`, crossErr.message);
+          }
+        }
+      }
+
+      // También limpiar foreign keys que apuntan a companies.id desde otras tablas
+      const companyFkResult = await client.query(`
+        SELECT
+          tc.table_name,
+          kcu.column_name,
+          c.is_nullable
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name
+          AND tc.table_schema = kcu.table_schema
+        JOIN information_schema.referential_constraints rc
+          ON tc.constraint_name = rc.constraint_name
+          AND tc.table_schema = rc.constraint_schema
+        JOIN information_schema.key_column_usage kcu2
+          ON rc.unique_constraint_name = kcu2.constraint_name
+          AND rc.unique_constraint_schema = kcu2.constraint_schema
+        JOIN information_schema.columns c
+          ON c.table_name = kcu.table_name
+          AND c.column_name = kcu.column_name
+          AND c.table_schema = kcu.table_schema
+        WHERE kcu2.table_name = 'companies'
+          AND kcu2.column_name = 'id'
+          AND tc.table_schema = 'public'
+          AND tc.constraint_type = 'FOREIGN KEY'
+          AND kcu.table_name != 'companies'
+      `);
+
+      for (const row of companyFkResult.rows) {
+        if (!existingTables.has(row.table_name)) continue;
+        const cols = tableColumns.get(row.table_name);
+        if (!cols || !cols.has(row.column_name)) continue;
+
+        const spName = `compref_${row.table_name}_${row.column_name}`.replace(/[^a-z0-9_]/gi, '_');
+        try {
+          await client.query(`SAVEPOINT ${spName}`);
+          if (row.is_nullable === 'YES') {
             await client.query(
-              `UPDATE ${ref.table} SET ${col} = NULL WHERE ${col} IN (SELECT id FROM users WHERE company_id = $1)`,
+              `UPDATE ${row.table_name} SET ${row.column_name} = NULL WHERE ${row.column_name} = $1`,
               [id]
             );
-            await client.query(`RELEASE SAVEPOINT nullify_${ref.table}_${col}`);
-          } catch (nullErr: any) {
-            try { await client.query(`ROLLBACK TO SAVEPOINT nullify_${ref.table}_${col}`); } catch (e) {}
-            console.warn(`[DeleteCompany] Could not nullify ${ref.table}.${col}:`, nullErr.message);
+          } else {
+            await client.query(
+              `DELETE FROM ${row.table_name} WHERE ${row.column_name} = $1`,
+              [id]
+            );
           }
+          await client.query(`RELEASE SAVEPOINT ${spName}`);
+        } catch (compRefErr: any) {
+          try { await client.query(`ROLLBACK TO SAVEPOINT ${spName}`); } catch (e) {}
+          console.warn(`[DeleteCompany] Could not clean company ref ${row.table_name}.${row.column_name}:`, compRefErr.message);
         }
       }
 
