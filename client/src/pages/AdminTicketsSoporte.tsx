@@ -58,7 +58,8 @@ import {
   Paperclip,
   Download,
   Key,
-  ArrowUpRight
+  ArrowUpRight,
+  Archive
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -231,6 +232,7 @@ export default function AdminTicketsSoporte() {
   const [showEscalateDialog, setShowEscalateDialog] = useState(false);
   const [escalateToUserId, setEscalateToUserId] = useState("");
   const [escalateReason, setEscalateReason] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
 
   if (user?.role !== 'superadmin' && user?.role !== 'soporte') {
     return (
@@ -384,7 +386,14 @@ export default function AdminTicketsSoporte() {
     });
   };
 
-  const filteredTickets = tickets.filter(ticket => {
+  const isArchivedStatus = (status: string) => status === 'cerrado' || status === 'resuelto';
+
+  const activeTickets = tickets.filter(t => !isArchivedStatus(t.status));
+  const archivedTickets = tickets.filter(t => isArchivedStatus(t.status));
+
+  const visibleTickets = showArchived ? archivedTickets : activeTickets;
+
+  const filteredTickets = visibleTickets.filter(ticket => {
     const matchesSearch = 
       ticket.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -472,7 +481,19 @@ export default function AdminTicketsSoporte() {
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button 
+            onClick={() => {
+              setShowArchived(!showArchived);
+              setStatusFilter('todos');
+              setSelectedTicket(null);
+            }} 
+            variant={showArchived ? "default" : "outline"}
+            data-testid="button-toggle-archived"
+          >
+            <Archive className="h-4 w-4 mr-2" />
+            {showArchived ? `Archivo (${archivedTickets.length})` : `Ver archivo (${archivedTickets.length})`}
+          </Button>
           <Button onClick={() => { setUrlTicketProcessed(null); refetch(); }} variant="outline" data-testid="button-refresh-tickets">
             <RefreshCw className="h-4 w-4 mr-2" />
             Actualizar
@@ -501,7 +522,28 @@ export default function AdminTicketsSoporte() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {showArchived && (
+        <div className="rounded-2xl bg-muted/50 border border-border p-4 flex items-center justify-between" data-testid="banner-archive-mode">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
+              <Archive className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="font-semibold">Archivo de Tickets</p>
+              <p className="text-sm text-muted-foreground">
+                {archivedTickets.length} ticket{archivedTickets.length !== 1 ? 's' : ''} cerrado{archivedTickets.length !== 1 ? 's' : ''} y resuelto{archivedTickets.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+          </div>
+          <Button variant="outline" onClick={() => { setShowArchived(false); setStatusFilter('todos'); }} data-testid="button-back-to-active">
+            Volver a tickets activos
+          </Button>
+        </div>
+      )}
+
+      <div className={`grid gap-4 ${showArchived ? 'grid-cols-2 md:grid-cols-2 lg:grid-cols-2' : 'grid-cols-2 md:grid-cols-2 lg:grid-cols-4'}`}>
+        {!showArchived && (
+        <>
         <div 
           className={`cursor-pointer rounded-2xl bg-blue-50/80 dark:bg-blue-950/30 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-blue-100/80 dark:hover:bg-blue-950/50 transition-all duration-300 border border-blue-200/50 dark:border-blue-800/30 ${statusFilter === 'abierto' ? 'ring-2 ring-blue-500 shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'abierto' ? 'todos' : 'abierto')}
@@ -573,7 +615,11 @@ export default function AdminTicketsSoporte() {
             </div>
           </div>
         </div>
+        </>
+        )}
 
+        {showArchived && (
+        <>
         <div 
           className={`cursor-pointer rounded-2xl bg-green-50/80 dark:bg-green-950/30 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-green-100/80 dark:hover:bg-green-950/50 transition-all duration-300 border border-green-200/50 dark:border-green-800/30 ${statusFilter === 'resuelto' ? 'ring-2 ring-green-500 shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'resuelto' ? 'todos' : 'resuelto')}
@@ -609,6 +655,8 @@ export default function AdminTicketsSoporte() {
             </div>
           </div>
         </div>
+        </>
+        )}
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">
