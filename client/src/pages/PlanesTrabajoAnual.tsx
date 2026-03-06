@@ -49,7 +49,6 @@ export default function PlanesTrabajoAnual() {
   const [autoFilledFields, setAutoFilledFields] = useState<string[]>([]);
   const [lastAutoFilledCompanyId, setLastAutoFilledCompanyId] = useState<string | null>(null);
   const [showOtroCargoElaborador, setShowOtroCargoElaborador] = useState(false);
-  const [showOtroCargoAprobador, setShowOtroCargoAprobador] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<PlanTrabajoAnual | null>(null);
   const hasGlobalAccessFlag = user?.role ? hasGlobalAccess(user.role) : false;
@@ -76,7 +75,7 @@ export default function PlanesTrabajoAnual() {
       responsableElaboracion: user?.fullName || user?.username || "",
       cargoResponsable: "Responsable SG-SST",
       aprobadoPor: "",
-      cargoAprobador: "Gerente General",
+      cargoAprobador: "",
       objetivoGeneral: "",
       alcance: "Aplica a todos los trabajadores, contratistas y visitantes de la empresa",
       presupuestoTotal: 0,
@@ -177,18 +176,6 @@ export default function PlanesTrabajoAnual() {
     
     const fieldsToAutoFill: string[] = [];
     
-    // Auto-llenar "Aprobado Por" con el representante legal
-    if (company.legalRepName) {
-      form.setValue("aprobadoPor", company.legalRepName);
-      fieldsToAutoFill.push("aprobadoPor");
-    }
-    
-    // Auto-llenar "Cargo Aprobador" con el cargo del representante legal
-    if (company.legalRepPosition) {
-      form.setValue("cargoAprobador", company.legalRepPosition);
-      fieldsToAutoFill.push("cargoAprobador");
-    }
-    
     // Auto-llenar objetivo general con texto estándar
     form.setValue("objetivoGeneral", objetivoGeneralEstandar);
     fieldsToAutoFill.push("objetivoGeneral");
@@ -238,8 +225,13 @@ export default function PlanesTrabajoAnual() {
 
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
+      const company = hasGlobalAccessFlag 
+        ? companies.find(c => c.id === data.companyId)
+        : contextCompany;
       const payload = {
         ...data,
+        aprobadoPor: company?.legalRepName || null,
+        cargoAprobador: company?.legalRepPosition || "Representante Legal",
         elaboradoPorId: data.elaboradoPorId || null,
         autorizadoPorId: data.autorizadoPorId || null,
         aprobadoPorId: data.aprobadoPorId || null,
@@ -565,122 +557,6 @@ export default function PlanesTrabajoAnual() {
                             >
                               <FormControl>
                                 <SelectTrigger data-testid="select-cargo-elaborador">
-                                  <SelectValue placeholder="Seleccione cargo" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {cargosSstComunes.map((cargo) => (
-                                  <SelectItem key={cargo} value={cargo}>
-                                    {cargo}
-                                  </SelectItem>
-                                ))}
-                                <SelectItem value="__otro__">Otro...</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
-                          <FormMessage />
-                        </FormItem>
-                      );
-                    }}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="aprobadoPor"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          Aprobado Por
-                          {autoFilledFields.includes("aprobadoPor") && (
-                            <Badge variant="secondary" className="text-xs py-0 px-1.5 font-normal">
-                              <Sparkles className="h-3 w-3 mr-1" />
-                              Auto
-                            </Badge>
-                          )}
-                        </FormLabel>
-                        <Select 
-                          value={field.value || ""} 
-                          onValueChange={(val) => {
-                            field.onChange(val);
-                            // Auto-completar cargo si la persona tiene uno
-                            const person = personOptions.find(p => p.name === val);
-                            if (person && person.position && !showOtroCargoAprobador) {
-                              form.setValue("cargoAprobador", person.position);
-                            }
-                          }}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-aprobado-por">
-                              <SelectValue placeholder="Seleccione trabajador" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {personOptions.map((person) => (
-                              <SelectItem key={person.id} value={person.name}>
-                                {person.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="cargoAprobador"
-                    render={({ field }) => {
-                      const isCustomValue = field.value && !cargosSstComunes.includes(field.value);
-                      const showTextInput = showOtroCargoAprobador || isCustomValue;
-                      return (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            Cargo Aprobador
-                            {autoFilledFields.includes("cargoAprobador") && (
-                              <Badge variant="secondary" className="text-xs py-0 px-1.5 font-normal">
-                                <Sparkles className="h-3 w-3 mr-1" />
-                                Auto
-                              </Badge>
-                            )}
-                          </FormLabel>
-                          {showTextInput ? (
-                            <div className="flex gap-2">
-                              <FormControl>
-                                <Input 
-                                  {...field} 
-                                  value={field.value || ""}
-                                  placeholder="Escriba el cargo" 
-                                  data-testid="input-cargo-aprobador-otro" 
-                                />
-                              </FormControl>
-                              <Button 
-                                type="button" 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  setShowOtroCargoAprobador(false);
-                                  field.onChange("Gerente General");
-                                }}
-                              >
-                                Lista
-                              </Button>
-                            </div>
-                          ) : (
-                            <Select 
-                              value={field.value || ""} 
-                              onValueChange={(val) => {
-                                if (val === "__otro__") {
-                                  setShowOtroCargoAprobador(true);
-                                  field.onChange("");
-                                } else {
-                                  field.onChange(val);
-                                }
-                              }}
-                            >
-                              <FormControl>
-                                <SelectTrigger data-testid="select-cargo-aprobador">
                                   <SelectValue placeholder="Seleccione cargo" />
                                 </SelectTrigger>
                               </FormControl>
