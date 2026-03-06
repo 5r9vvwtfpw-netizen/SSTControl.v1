@@ -187,6 +187,22 @@ function getSlaInfo(priority: string, createdAt: string, status: string) {
   return { label: `${Math.floor(remainingHours * 60)}m restantes`, color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800', expired: false, slaHours };
 }
 
+function timeAgo(dateStr: string): string {
+  const now = Date.now();
+  const created = new Date(dateStr).getTime();
+  const diff = now - created;
+  const minutes = Math.floor(diff / (1000 * 60));
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  if (minutes < 1) return "ahora";
+  if (minutes < 60) return `hace ${minutes}m`;
+  if (hours < 24) return `hace ${hours}h`;
+  if (days === 1) return "hace 1 día";
+  if (days < 30) return `hace ${days} días`;
+  const months = Math.floor(days / 30);
+  return `hace ${months} mes${months > 1 ? 'es' : ''}`;
+}
+
 const categoryLabels: Record<string, string> = {
   soporte_tecnico: "Soporte Técnico",
   facturacion: "Facturación",
@@ -487,14 +503,14 @@ export default function AdminTicketsSoporte() {
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div 
-          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-white/80 dark:hover:bg-white/10 transition-all duration-300 ${statusFilter === 'abierto' ? 'ring-2 ring-primary shadow-md' : ''}`}
+          className={`cursor-pointer rounded-2xl bg-blue-50/80 dark:bg-blue-950/30 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-blue-100/80 dark:hover:bg-blue-950/50 transition-all duration-300 border border-blue-200/50 dark:border-blue-800/30 ${statusFilter === 'abierto' ? 'ring-2 ring-blue-500 shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'abierto' ? 'todos' : 'abierto')}
           data-testid="card-stat-abierto"
         >
           <div className="p-4">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Abiertos</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-blue-700/70 dark:text-blue-400/70">Abiertos</p>
                 <p className="text-3xl font-extrabold text-blue-600 leading-tight" data-testid="text-count-abierto">{ticketsByStatus.abierto}</p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -505,14 +521,14 @@ export default function AdminTicketsSoporte() {
         </div>
         
         <div 
-          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-white/80 dark:hover:bg-white/10 transition-all duration-300 ${statusFilter === 'en_revision' ? 'ring-2 ring-primary shadow-md' : ''}`}
+          className={`cursor-pointer rounded-2xl bg-yellow-50/80 dark:bg-yellow-950/30 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-yellow-100/80 dark:hover:bg-yellow-950/50 transition-all duration-300 border border-yellow-200/50 dark:border-yellow-800/30 ${statusFilter === 'en_revision' ? 'ring-2 ring-yellow-500 shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'en_revision' ? 'todos' : 'en_revision')}
           data-testid="card-stat-en-revision"
         >
           <div className="p-4">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">En Revisión</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-yellow-700/70 dark:text-yellow-400/70">En Revisión</p>
                 <p className="text-3xl font-extrabold text-yellow-600 leading-tight" data-testid="text-count-en-revision">{ticketsByStatus.en_revision}</p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
@@ -523,14 +539,14 @@ export default function AdminTicketsSoporte() {
         </div>
 
         <div 
-          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-white/80 dark:hover:bg-white/10 transition-all duration-300 ${statusFilter === 'en_progreso' ? 'ring-2 ring-primary shadow-md' : ''}`}
+          className={`cursor-pointer rounded-2xl bg-purple-50/80 dark:bg-purple-950/30 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-purple-100/80 dark:hover:bg-purple-950/50 transition-all duration-300 border border-purple-200/50 dark:border-purple-800/30 ${statusFilter === 'en_progreso' ? 'ring-2 ring-purple-500 shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'en_progreso' ? 'todos' : 'en_progreso')}
           data-testid="card-stat-en-progreso"
         >
           <div className="p-4">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">En Progreso</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-purple-700/70 dark:text-purple-400/70">En Progreso</p>
                 <p className="text-3xl font-extrabold text-purple-600 leading-tight" data-testid="text-count-en-progreso">{ticketsByStatus.en_progreso}</p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
@@ -541,14 +557,14 @@ export default function AdminTicketsSoporte() {
         </div>
 
         <div 
-          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-white/80 dark:hover:bg-white/10 transition-all duration-300 ${statusFilter === 'pendiente_cliente' ? 'ring-2 ring-primary shadow-md' : ''}`}
+          className={`cursor-pointer rounded-2xl bg-orange-50/80 dark:bg-orange-950/30 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-orange-100/80 dark:hover:bg-orange-950/50 transition-all duration-300 border border-orange-200/50 dark:border-orange-800/30 ${statusFilter === 'pendiente_cliente' ? 'ring-2 ring-orange-500 shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'pendiente_cliente' ? 'todos' : 'pendiente_cliente')}
           data-testid="card-stat-pendiente"
         >
           <div className="p-4">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Pendiente</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-orange-700/70 dark:text-orange-400/70">Pendiente</p>
                 <p className="text-3xl font-extrabold text-orange-600 leading-tight" data-testid="text-count-pendiente">{ticketsByStatus.pendiente_cliente}</p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
@@ -559,14 +575,14 @@ export default function AdminTicketsSoporte() {
         </div>
 
         <div 
-          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-white/80 dark:hover:bg-white/10 transition-all duration-300 ${statusFilter === 'resuelto' ? 'ring-2 ring-primary shadow-md' : ''}`}
+          className={`cursor-pointer rounded-2xl bg-green-50/80 dark:bg-green-950/30 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-green-100/80 dark:hover:bg-green-950/50 transition-all duration-300 border border-green-200/50 dark:border-green-800/30 ${statusFilter === 'resuelto' ? 'ring-2 ring-green-500 shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'resuelto' ? 'todos' : 'resuelto')}
           data-testid="card-stat-resuelto"
         >
           <div className="p-4">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Resueltos</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-green-700/70 dark:text-green-400/70">Resueltos</p>
                 <p className="text-3xl font-extrabold text-green-600 leading-tight" data-testid="text-count-resuelto">{ticketsByStatus.resuelto}</p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -577,14 +593,14 @@ export default function AdminTicketsSoporte() {
         </div>
 
         <div 
-          className={`cursor-pointer rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-white/80 dark:hover:bg-white/10 transition-all duration-300 ${statusFilter === 'cerrado' ? 'ring-2 ring-primary shadow-md' : ''}`}
+          className={`cursor-pointer rounded-2xl bg-gray-50/80 dark:bg-gray-900/30 backdrop-blur-sm shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-gray-100/80 dark:hover:bg-gray-900/50 transition-all duration-300 border border-gray-200/50 dark:border-gray-700/30 ${statusFilter === 'cerrado' ? 'ring-2 ring-gray-500 shadow-md' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'cerrado' ? 'todos' : 'cerrado')}
           data-testid="card-stat-cerrado"
         >
           <div className="p-4">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Cerrados</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Cerrados</p>
                 <p className="text-3xl font-extrabold text-gray-600 leading-tight" data-testid="text-count-cerrado">{ticketsByStatus.cerrado}</p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-gray-100 dark:bg-gray-800/30 flex items-center justify-center">
@@ -732,14 +748,21 @@ export default function AdminTicketsSoporte() {
                           </span>
                         </TableCell>
                         <TableCell className="py-4 px-5">
-                          <span className="text-sm text-muted-foreground truncate max-w-[100px] block">
-                            {ticket.assignedToName || '—'}
-                          </span>
+                          {ticket.assignedToName ? (
+                            <span className="text-sm truncate max-w-[100px] block">{ticket.assignedToName}</span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/60 italic">Sin asignar</span>
+                          )}
                         </TableCell>
                         <TableCell className="py-4 px-5">
-                          <span className="text-sm text-muted-foreground">
-                            {format(new Date(ticket.createdAt), "dd/MM/yyyy", { locale: es })}
-                          </span>
+                          <div>
+                            <span className="text-sm text-muted-foreground">
+                              {format(new Date(ticket.createdAt), "dd MMM yyyy", { locale: es })}
+                            </span>
+                            <p className="text-xs text-muted-foreground/70" data-testid={`text-time-ago-${ticket.id}`}>
+                              {timeAgo(ticket.createdAt)}
+                            </p>
+                          </div>
                         </TableCell>
                         <TableCell className="py-4 px-5 text-right">
                           <Button
@@ -918,8 +941,13 @@ export default function AdminTicketsSoporte() {
                 )}
 
                 <div className="border-t pt-4">
-                  <p className="text-sm font-medium mb-3">Respuestas</p>
-                  <ScrollArea className="h-[200px] mb-4">
+                  <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                    Respuestas
+                    {selectedTicketDetails?.responses && selectedTicketDetails.responses.length > 0 && (
+                      <Badge variant="secondary" className="text-xs">{selectedTicketDetails.responses.length}</Badge>
+                    )}
+                  </p>
+                  <ScrollArea className="h-[400px] mb-4">
                     {selectedTicketDetails?.responses && selectedTicketDetails.responses.length > 0 ? (
                       <div className="space-y-3">
                         {selectedTicketDetails.responses.map((response) => (
