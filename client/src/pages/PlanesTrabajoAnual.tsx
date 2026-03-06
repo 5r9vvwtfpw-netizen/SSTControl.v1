@@ -44,6 +44,11 @@ export default function PlanesTrabajoAnual() {
   const { toast } = useToast();
   const { selectedCompany: contextCompany } = useCompanyContext();
   const [, setLocation] = useLocation();
+
+  const { data: userCompany } = useQuery<Company>({
+    queryKey: ["/api/company/current"],
+    enabled: !!user && !!user.companyId,
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [autoFilledFields, setAutoFilledFields] = useState<string[]>([]);
@@ -146,10 +151,9 @@ export default function PlanesTrabajoAnual() {
     w.companyId === currentCompanyId && w.status === 'activo'
   );
 
-  // Obtener empresa actual para dropdown de representante legal
   const currentCompany = hasGlobalAccessFlag 
     ? companies.find(c => c.id === selectedCompanyId)
-    : contextCompany;
+    : (userCompany || contextCompany);
 
   // Crear opciones para los dropdowns de personas (incluye representante legal si existe)
   const personOptions = [
@@ -227,7 +231,7 @@ export default function PlanesTrabajoAnual() {
     mutationFn: async (data: z.infer<typeof formSchema>) => {
       const company = hasGlobalAccessFlag 
         ? companies.find(c => c.id === data.companyId)
-        : contextCompany;
+        : (userCompany || contextCompany);
       const payload = {
         ...data,
         aprobadoPor: company?.legalRepName || null,
