@@ -324,8 +324,11 @@ export default function EvaluacionesSst() {
 
   const selectedVault = useMemo(() => {
     if (!selectedVaultCompanyId) return null;
-    return companyVaults.find(v => v.companyId === selectedVaultCompanyId) || null;
-  }, [companyVaults, selectedVaultCompanyId]);
+    const found = companyVaults.find(v => v.companyId === selectedVaultCompanyId);
+    if (found) return found;
+    const name = companyMap[selectedVaultCompanyId]?.name || selectedVaultCompanyId;
+    return { companyId: selectedVaultCompanyId, companyName: name, evaluaciones: [], latestScore: 0, latestStatus: "", years: [] };
+  }, [companyVaults, selectedVaultCompanyId, companyMap]);
 
   const vaultEvaluaciones = useMemo(() => {
     if (!selectedVault) return [];
