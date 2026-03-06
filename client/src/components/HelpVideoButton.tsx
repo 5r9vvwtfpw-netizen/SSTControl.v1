@@ -23,6 +23,9 @@ const EXCLUDED_ROUTES = [
   "/planes",
   "/welcome",
   "/soporte",
+  "/tickets-soporte",
+  "/admin-tickets",
+  "/admin-usuarios-soporte",
   "/documentos-legales",
   "/dashboard-hacer",
   "/dashboard-verificar",
@@ -110,9 +113,11 @@ export default function HelpVideoButton({ customRoute, label, testId }: HelpVide
   const { user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
 
-  const isExcluded = !customRoute && (EXCLUDED_ROUTES.some(
+  const isSupportRole = user?.role === "soporte";
+
+  const isExcluded = isSupportRole || (!customRoute && (EXCLUDED_ROUTES.some(
     (route) => location === route || location.startsWith(route + "/")
-  ) || EXCLUDED_ROUTE_PATTERNS.some((pattern) => pattern.test(location)));
+  ) || EXCLUDED_ROUTE_PATTERNS.some((pattern) => pattern.test(location))));
 
   const routeForLookup = customRoute || location;
   const encodedRoute = encodeURIComponent(routeForLookup);
