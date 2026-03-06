@@ -7,8 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag } from "lucide-react";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search } from "lucide-react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation, useRouter } from "wouter";
 import { Company, insertCompanySchema } from "@shared/schema";
@@ -123,6 +123,8 @@ export default function CompanyManagement() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [pricingChangeDialogOpen, setPricingChangeDialogOpen] = useState(false);
+  const [companySearchTerm, setCompanySearchTerm] = useState("");
+  const [subscriptionFilter, setSubscriptionFilter] = useState<string>("all");
   const [pendingPricingUpdate, setPendingPricingUpdate] = useState<{ changedFields: string[] } | null>(null);
   
   const [livePrice, setLivePrice] = useState<{ base: number; current: number } | null>(null);
@@ -203,6 +205,27 @@ export default function CompanyManagement() {
     const found = companyStats.find((s: CompanyStats) => s.companyId === companyId);
     return found?.subscription || null;
   };
+
+  const filteredCompanies = useMemo(() => {
+    const statsMap = new Map(companyStats.map(s => [s.companyId, s.subscription]));
+    return companies.filter((company) => {
+      if (companySearchTerm) {
+        const term = companySearchTerm.toLowerCase();
+        const matchesName = company.name.toLowerCase().includes(term);
+        const matchesNit = company.nit?.toLowerCase().includes(term);
+        if (!matchesName && !matchesNit) return false;
+      }
+      if (isSuperAdmin && subscriptionFilter !== "all" && companyStats.length > 0) {
+        const sub = statsMap.get(company.id) ?? null;
+        if (subscriptionFilter === "sin_suscripcion") {
+          if (sub) return false;
+        } else {
+          if (!sub || sub.status !== subscriptionFilter) return false;
+        }
+      }
+      return true;
+    });
+  }, [companies, companySearchTerm, subscriptionFilter, isSuperAdmin, companyStats]);
 
   const createCompanyMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -1039,6 +1062,40 @@ export default function CompanyManagement() {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-end gap-3 mb-4">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nombre o NIT..."
+            className="pl-10"
+            value={companySearchTerm}
+            onChange={(e) => setCompanySearchTerm(e.target.value)}
+            data-testid="input-search-companies"
+          />
+        </div>
+        {isSuperAdmin && (
+          <div className="w-[200px]">
+            <Select value={subscriptionFilter} onValueChange={setSubscriptionFilter}>
+              <SelectTrigger data-testid="select-subscription-filter">
+                <SelectValue placeholder="Suscripción" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="active">Activas</SelectItem>
+                <SelectItem value="trial">Trial</SelectItem>
+                <SelectItem value="past_due">Vencidas</SelectItem>
+                <SelectItem value="blocked">Bloqueadas</SelectItem>
+                <SelectItem value="cancelled">Canceladas</SelectItem>
+                <SelectItem value="sin_suscripcion">Sin suscripción</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        <Badge variant="secondary" data-testid="text-company-count">
+          {filteredCompanies.length} de {companies.length} empresa{companies.length !== 1 ? "s" : ""}
+        </Badge>
+      </div>
+
       <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
@@ -1074,14 +1131,16 @@ export default function CompanyManagement() {
                   Cargando empresas...
                 </TableCell>
               </TableRow>
-            ) : companies.length === 0 ? (
+            ) : filteredCompanies.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={isSuperAdmin ? 8 : 6} className="text-center" data-testid="text-no-companies">
-                  No hay empresas registradas. Cree la primera empresa para comenzar.
+                  {companySearchTerm || subscriptionFilter !== "all" 
+                    ? "No se encontraron empresas con los filtros aplicados" 
+                    : "No hay empresas registradas. Cree la primera empresa para comenzar."}
                 </TableCell>
               </TableRow>
             ) : (
-              companies.map((company) => {
+              filteredCompanies.map((company) => {
                 const stats = getCompanyStats(company.id);
                 return (
                   <TableRow key={company.id} data-testid={`row-company-${company.id}`}>
