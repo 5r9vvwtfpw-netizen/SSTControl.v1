@@ -41,7 +41,9 @@ The LSO Portal Empresas tab displays enriched company data, including SG-SST com
 
 The Superadmin Portal Administration panel provides comprehensive management of LSO and Worker portals, including user details, password resets, and assignment management.
 
-The Support Portal includes a real-time internal chat system for agent coordination, utilizing WebSocket for role-restricted broadcasts. The team chat is available as a floating window in the support portal layout (FloatingTeamChat component).
+The Support Portal includes a real-time internal chat system for agent coordination, utilizing WebSocket for role-restricted broadcasts. The team chat is available as a floating window in the support portal layout (FloatingTeamChat component). Support tickets have an archive system: closed/resolved tickets are hidden from the main view by default and accessible via a "Ver archivo" toggle button. Auto-assignment assigns tickets to the first agent who responds publicly.
+
+The Evaluaciones SST page (`/evaluaciones-sst`) uses a **Company Vault System** for superadmin users: evaluations are grouped by company as clickable vault cards showing company name, latest compliance score, and year badges. Clicking a vault shows that company's evaluations with a year filter dropdown. Regular (non-superadmin) users see the traditional flat list of their own company's evaluations.
 
 The NGO Portal Integration receives `company.onboarded` webhooks from the external NGO sidecar at `POST /api/v1/ngo/company-onboarded`. Authentication uses a shared JWT secret (`CORE_API_JWT`). Records are stored in the `ngo_onboarded_companies` table with idempotency via `sidecar_invite_id`. A read endpoint at `GET /api/v1/ngo/onboarded-companies` lists all onboarded companies with optional `projectId` and `region` filters. Route file: `server/routes/ngo-webhook.ts`.
 

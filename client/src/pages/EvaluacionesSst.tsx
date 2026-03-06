@@ -7,7 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, FileText, AlertTriangle, CheckCircle2, FileCheck, Download, Lock, Trash2, AlertCircle, Wrench, RefreshCw, Monitor, Shield, UserCheck } from "lucide-react";
+import { Plus, Search, FileText, AlertTriangle, CheckCircle2, FileCheck, Download, Lock, Trash2, AlertCircle, Wrench, RefreshCw, Monitor, Shield, UserCheck, Building2, ChevronRight, ArrowLeft, Calendar, TrendingUp } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -88,6 +88,8 @@ export default function EvaluacionesSst() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [evaluacionToDelete, setEvaluacionToDelete] = useState<EvaluacionSst | null>(null);
   const [importarAnterior, setImportarAnterior] = useState(false);
+  const [selectedVaultCompanyId, setSelectedVaultCompanyId] = useState<string | null>(null);
+  const [yearFilter, setYearFilter] = useState<string>("todos");
 
   const isSuperAdmin = user?.role === "superadmin";
   
@@ -272,6 +274,75 @@ export default function EvaluacionesSst() {
       deleteMutation.mutate(evaluacionToDelete.id);
     }
   };
+
+  const companyMap = useMemo(() => {
+    const map: Record<string, { id: string; name: string }> = {};
+    for (const c of companies) {
+      map[c.id] = { id: c.id, name: c.name || c.id };
+    }
+    return map;
+  }, [companies]);
+
+  const companyVaults = useMemo(() => {
+    if (!isSuperAdmin) return [];
+    const grouped: Record<string, { companyId: string; companyName: string; evaluaciones: EvaluacionSst[]; latestScore: number; latestStatus: string; years: number[] }> = {};
+    for (const ev of evaluaciones) {
+      const cId = ev.companyId;
+      if (!grouped[cId]) {
+        grouped[cId] = {
+          companyId: cId,
+          companyName: companyMap[cId]?.name || cId,
+          evaluaciones: [],
+          latestScore: 0,
+          latestStatus: "",
+          years: [],
+        };
+      }
+      grouped[cId].evaluaciones.push(ev);
+      if (!grouped[cId].years.includes(ev.anio)) {
+        grouped[cId].years.push(ev.anio);
+      }
+    }
+    for (const key of Object.keys(grouped)) {
+      const evs = grouped[key].evaluaciones;
+      evs.sort((a, b) => b.anio - a.anio || b.mes - a.mes);
+      grouped[key].latestScore = evs[0]?.porcentajeCumplimiento ?? 0;
+      grouped[key].latestStatus = evs[0]?.estado || "";
+      grouped[key].years.sort((a, b) => b - a);
+    }
+    return Object.values(grouped);
+  }, [evaluaciones, companyMap, isSuperAdmin]);
+
+  const filteredVaults = useMemo(() => {
+    if (!searchTerm) return companyVaults;
+    const lower = searchTerm.toLowerCase();
+    return companyVaults.filter(v =>
+      v.companyName.toLowerCase().includes(lower) ||
+      v.evaluaciones.some(e => e.responsableNombre.toLowerCase().includes(lower))
+    );
+  }, [companyVaults, searchTerm]);
+
+  const selectedVault = useMemo(() => {
+    if (!selectedVaultCompanyId) return null;
+    return companyVaults.find(v => v.companyId === selectedVaultCompanyId) || null;
+  }, [companyVaults, selectedVaultCompanyId]);
+
+  const vaultEvaluaciones = useMemo(() => {
+    if (!selectedVault) return [];
+    let evs = selectedVault.evaluaciones;
+    if (yearFilter !== "todos") {
+      evs = evs.filter(e => e.anio === parseInt(yearFilter));
+    }
+    if (searchTerm) {
+      const lower = searchTerm.toLowerCase();
+      evs = evs.filter(e =>
+        e.anio.toString().includes(lower) ||
+        e.responsableNombre.toLowerCase().includes(lower) ||
+        (e.observaciones?.toLowerCase().includes(lower) ?? false)
+      );
+    }
+    return evs;
+  }, [selectedVault, yearFilter, searchTerm]);
 
   const filteredEvaluaciones = evaluaciones.filter((evaluacion) => {
     const searchLower = searchTerm.toLowerCase();
@@ -642,19 +713,233 @@ export default function EvaluacionesSst() {
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Buscar por año, responsable..."
+            placeholder={isSuperAdmin && !selectedVaultCompanyId ? "Buscar empresa..." : "Buscar por año, responsable..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
             data-testid="input-search"
           />
         </div>
+        {isSuperAdmin && selectedVaultCompanyId && selectedVault && (
+          <Select value={yearFilter} onValueChange={setYearFilter}>
+            <SelectTrigger className="w-[140px]" data-testid="select-year-filter">
+              <Calendar className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Año" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos los años</SelectItem>
+              {selectedVault.years.map(y => (
+                <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <p className="text-muted-foreground">Cargando evaluaciones...</p>
         </div>
+      ) : isSuperAdmin && !selectedVaultCompanyId ? (
+        <>
+          {filteredVaults.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-lg font-semibold mb-2">No hay evaluaciones registradas</p>
+                <p className="text-muted-foreground text-center mb-4">
+                  Aún no hay empresas con evaluaciones del SG-SST
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground" data-testid="text-vault-count">
+                  {filteredVaults.length} empresa{filteredVaults.length !== 1 ? 's' : ''} con evaluaciones
+                </p>
+                <Badge className="bg-muted text-muted-foreground" data-testid="badge-total-evaluations">
+                  {evaluaciones.length} evaluaciones en total
+                </Badge>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredVaults.map((vault) => {
+                  const scoreColor = vault.latestScore >= 86 ? "text-green-600" : vault.latestScore >= 60 ? "text-yellow-600" : "text-red-600";
+                  const scoreBg = vault.latestScore >= 86 ? "bg-green-50 dark:bg-green-950/30" : vault.latestScore >= 60 ? "bg-yellow-50 dark:bg-yellow-950/30" : "bg-red-50 dark:bg-red-950/30";
+                  return (
+                    <Card
+                      key={vault.companyId}
+                      className="hover-elevate active-elevate-2 cursor-pointer"
+                      onClick={() => {
+                        setSelectedVaultCompanyId(vault.companyId);
+                        setSearchTerm("");
+                        setYearFilter("todos");
+                      }}
+                      data-testid={`card-vault-${vault.companyId}`}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`h-10 w-10 rounded-xl ${scoreBg} flex items-center justify-center shrink-0`}>
+                              <Building2 className={`h-5 w-5 ${scoreColor}`} />
+                            </div>
+                            <div className="min-w-0">
+                              <CardTitle className="text-base truncate" data-testid={`text-vault-name-${vault.companyId}`}>
+                                {vault.companyName}
+                              </CardTitle>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {vault.evaluaciones.length} evaluaci{vault.evaluaciones.length !== 1 ? 'ones' : 'ón'}
+                              </p>
+                            </div>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Último cumplimiento</p>
+                            <p className={`text-lg font-bold ${scoreColor}`} data-testid={`text-vault-score-${vault.companyId}`}>{vault.latestScore}%</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground">Años</p>
+                            <div className="flex gap-1 flex-wrap justify-end">
+                              {vault.years.slice(0, 3).map(y => (
+                                <Badge key={y} variant="outline" className="text-xs">{y}</Badge>
+                              ))}
+                              {vault.years.length > 3 && (
+                                <Badge variant="outline" className="text-xs">+{vault.years.length - 3}</Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </>
+      ) : isSuperAdmin && selectedVaultCompanyId && selectedVault ? (
+        <>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSelectedVaultCompanyId(null);
+                setSearchTerm("");
+                setYearFilter("todos");
+              }}
+              data-testid="button-back-to-vaults"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver
+            </Button>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold" data-testid="text-vault-company-name">{selectedVault.companyName}</h2>
+            </div>
+            <Badge variant="outline" data-testid="badge-vault-evaluation-count">
+              {selectedVault.evaluaciones.length} evaluaci{selectedVault.evaluaciones.length !== 1 ? 'ones' : 'ón'}
+            </Badge>
+          </div>
+
+          {vaultEvaluaciones.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-lg font-semibold mb-2">No hay evaluaciones para este filtro</p>
+                <p className="text-muted-foreground text-center mb-4">
+                  Ajuste el filtro de año para ver más evaluaciones
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {vaultEvaluaciones.map((evaluacion) => (
+                <Card
+                  key={evaluacion.id}
+                  className="hover-elevate active-elevate-2 cursor-pointer"
+                  onClick={() => setLocation(`/evaluaciones-sst/${evaluacion.id}`)}
+                  data-testid={`card-evaluation-${evaluacion.id}`}
+                >
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-xl mb-2">
+                          Evaluación {evaluacion.anio} - {new Date(2024, evaluacion.mes - 1).toLocaleDateString('es-CO', { month: 'long' })}
+                        </CardTitle>
+                        <CardDescription>
+                          <div className="space-y-1">
+                            <p className="font-medium">Responsable: {evaluacion.responsableNombre}</p>
+                            <p>Cargo: {evaluacion.responsableCargo}</p>
+                            <p>Fecha evaluación: {new Date(evaluacion.fechaEvaluacion).toLocaleDateString('es-CO')}</p>
+                          </div>
+                        </CardDescription>
+                      </div>
+                      <div className="flex flex-col gap-2 items-end">
+                        {getEstadoBadge(evaluacion.estado)}
+                        {getNivelBadge(evaluacion.nivelCumplimiento, evaluacion.porcentajeCumplimiento)}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Tipo de Empresa</p>
+                        <p className="font-semibold">Tipo {evaluacion.tipoEmpresa.slice(-1)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Puntaje</p>
+                        <p className="font-semibold">
+                          {evaluacion.puntajeTotal ?? 0} / {evaluacion.puntajeMaximo ?? 100}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Cumplimiento</p>
+                        <p className="font-semibold">{evaluacion.porcentajeCumplimiento ?? 0}%</p>
+                      </div>
+                      {evaluacion.fechaEnvio && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Fecha Envío</p>
+                          <p className="font-semibold">{new Date(evaluacion.fechaEnvio).toLocaleDateString('es-CO')}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {evaluacion.estado === 'completada' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadPDF(evaluacion.id, evaluacion.anio);
+                          }}
+                          data-testid={`button-download-pdf-${evaluacion.id}`}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Descargar Reporte PDF
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                        onClick={(e) => handleDeleteClick(e, evaluacion)}
+                        data-testid={`button-delete-evaluation-${evaluacion.id}`}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Eliminar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
       ) : filteredEvaluaciones.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
