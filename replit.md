@@ -51,6 +51,16 @@ The Gestión de Empresas page (`/empresas`) includes a search bar for filtering 
 
 The Gestión de Usuarios page (`/usuarios`) uses a **Company Vault System** for superadmin/global users: users are grouped by company as clickable vault cards showing company name, user count, and role distribution badges. Users without a companyId are grouped under "Sin empresa asignada". Clicking a vault shows that company's users with search and a back button. Regular users see the traditional flat user table.
 
+The Gestión de Tickets Admin page (`/admin-tickets`) uses a **Company Vault System** for superadmin users: tickets are grouped by company as clickable vault cards showing company name, open ticket count, pending count, highest priority, and last ticket date. Clicking a vault shows that company's tickets with all existing filters (status, priority, category, archive). Support role users see the traditional flat ticket list.
+
+The Panel de Facturación page (`/dashboard-facturacion`) uses a **Company Vault System**: global KPIs (MRR, active subscriptions, churn, revenue chart) remain at the top. Below, subscriptions are grouped by company as vault cards showing company name, plan, status badge, monthly price, and next renewal. Clicking a vault shows detailed subscription info with actions (suspend/reactivate/cancel). Status filter works on vault cards. Companies without subscription section remains separate.
+
+The Profesionales Licenciados page (`/profesionales-licenciados`) uses a **Professional Vault System** for superadmin: LSO professionals are shown as vault cards with name, SST profession, license status badge, signature indicator, assigned companies count, and expiry date. Clicking a vault shows full LSO detail with personal data, license info, digital signature preview, assigned companies list with remove actions, and admin actions (reset password, delete signature, edit data).
+
+The Mensajes Internos page (`/mensajes-internos`) uses a **Company Vault System** for superadmin: messages are grouped by company as vault cards showing company name, unread count, total messages, and last message date. Clicking a vault filters the inbox to that company's messages. A "Todos los mensajes" button shows all messages without filter. Backend supports `?companyId=X` and `?all=true` query params for superadmin.
+
+The Admin Portales page (`/admin-portales`) uses vault systems in both tabs. The **Portal Empleados** tab groups workers by company as vault cards showing company name, worker count, pending reports, and access status. The **Portal LSO** tab groups LSO professionals as vault cards showing name, license status, signature status, and assigned companies. Both tabs maintain global summary cards above the vaults.
+
 The NGO Portal Integration receives `company.onboarded` webhooks from the external NGO sidecar at `POST /api/v1/ngo/company-onboarded`. Authentication uses a shared JWT secret (`CORE_API_JWT`). Records are stored in the `ngo_onboarded_companies` table with idempotency via `sidecar_invite_id`. A read endpoint at `GET /api/v1/ngo/onboarded-companies` lists all onboarded companies with optional `projectId` and `region` filters. Route file: `server/routes/ngo-webhook.ts`.
 
 ## Database & Infrastructure

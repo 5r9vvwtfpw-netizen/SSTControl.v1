@@ -42082,6 +42082,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get("/api/internal-messages", requireAuth, async (req, res) => {
     try {
       const user = req.user!;
+      const queryCompanyId = req.query.companyId as string | undefined;
+      
+      if (user.role === 'superadmin' && queryCompanyId) {
+        const messages = await storage.getAllInternalMessagesByCompany(queryCompanyId);
+        return res.json(messages);
+      }
+      
+      if (user.role === 'superadmin' && req.query.all === 'true') {
+        const messages = await storage.getAllInternalMessages();
+        return res.json(messages);
+      }
       
       const messages = await storage.getInternalMessages(user.id, user.companyId || null);
       res.json(messages);

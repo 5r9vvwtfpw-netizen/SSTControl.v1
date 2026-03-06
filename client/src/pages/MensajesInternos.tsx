@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
@@ -23,6 +23,7 @@ import {
   Inbox,
   SendHorizontal,
   ArrowLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,9 +57,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Building2 } from "lucide-react";
-import type { InternalMessage } from "@shared/schema";
+import type { InternalMessage, Company } from "@shared/schema";
 
-// Validation schema for new message
 const messageFormSchema = z.object({
   receiverId: z.string().min(1, "Seleccione un destinatario"),
   subject: z.string().min(3, "El asunto debe tener al menos 3 caracteres").max(200, "El asunto es muy largo"),
@@ -73,6 +73,14 @@ interface Recipient {
   fullName: string | null;
   role: string;
   companyName?: string | null;
+}
+
+interface CompanyVault {
+  companyId: string;
+  companyName: string;
+  totalMessages: number;
+  unreadMessages: number;
+  lastMessageDate: string | null;
 }
 
 const priorityColors: Record<string, string> = {
@@ -108,13 +116,100 @@ export default function MensajesInternos() {
   const [selectedMessage, setSelectedMessage] = useState<InternalMessage | null>(null);
   const [showNewMessage, setShowNewMessage] = useState(false);
   const [selectedCompanyFilter, setSelectedCompanyFilter] = useState<string>("");
+  const [selectedVaultCompanyId, setSelectedVaultCompanyId] = useState<string | null>(null);
+  const [vaultSearchTerm, setVaultSearchTerm] = useState("");
 
-  // Fetch messages with auto-refresh every 30 seconds
-  const { data: messages, isLoading: messagesLoading } = useQuery<InternalMessage[]>({
-    queryKey: ["/api/internal-messages"],
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
-    refetchIntervalInBackground: true,
+  const isSuperadmin = user?.role === 'superadmin';
+
+  const { data: companies } = useQuery<Company[]>({
+    queryKey: ["/api/companies"],
+    enabled: isSuperadmin,
   });
+
+  const { data: allMessages, isLoading: allMessagesLoading } = useQuery<InternalMessage[]>({
+    queryKey: ["/api/internal-messages", { all: "true" }],
+    queryFn: async () => {
+      const res = await fetch("/api/internal-messages?all=true", { credentials: "include" });
+      if (!res.ok) throw new Error("Error fetching messages");
+      return res.json();
+    },
+    enabled: isSuperadmin && !selectedVaultCompanyId,
+    refetchInterval: 30000,
+  });
+
+  const { data: vaultMessages, isLoading: vaultMessagesLoading } = useQuery<InternalMessage[]>({
+    queryKey: ["/api/internal-messages", { companyId: selectedVaultCompanyId }],
+    queryFn: async () => {
+      const url = selectedVaultCompanyId === "__all__"
+        ? "/api/internal-messages?all=true"
+        : `/api/internal-messages?companyId=${selectedVaultCompanyId}`;
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error("Error fetching messages");
+      return res.json();
+    },
+    enabled: isSuperadmin && !!selectedVaultCompanyId,
+    refetchInterval: 30000,
+  });
+
+  const { data: regularMessages, isLoading: regularMessagesLoading } = useQuery<InternalMessage[]>({
+    queryKey: ["/api/internal-messages"],
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
+    enabled: !isSuperadmin,
+  });
+
+  const messages = isSuperadmin
+    ? (selectedVaultCompanyId ? vaultMessages : undefined)
+    : regularMessages;
+  const messagesLoading = isSuperadmin
+    ? (selectedVaultCompanyId ? vaultMessagesLoading : allMessagesLoading)
+    : regularMessagesLoading;
+
+  const companyMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    (companies || []).forEach((c) => { map[c.id] = c.name; });
+    return map;
+  }, [companies]);
+
+  const companyVaults = useMemo<CompanyVault[]>(() => {
+    if (!isSuperadmin || !allMessages) return [];
+    const grouped: Record<string, CompanyVault> = {};
+    allMessages.forEach((msg) => {
+      const cId = msg.companyId || "__unknown__";
+      if (!grouped[cId]) {
+        grouped[cId] = {
+          companyId: cId,
+          companyName: companyMap[cId] || "Empresa desconocida",
+          totalMessages: 0,
+          unreadMessages: 0,
+          lastMessageDate: null,
+        };
+      }
+      grouped[cId].totalMessages++;
+      if (msg.status === "unread") grouped[cId].unreadMessages++;
+      const msgDate = typeof msg.createdAt === 'string' ? msg.createdAt : new Date(msg.createdAt).toISOString();
+      if (!grouped[cId].lastMessageDate || new Date(msgDate) > new Date(grouped[cId].lastMessageDate!)) {
+        grouped[cId].lastMessageDate = msgDate;
+      }
+    });
+    return Object.values(grouped).sort((a, b) => {
+      if (a.unreadMessages !== b.unreadMessages) return b.unreadMessages - a.unreadMessages;
+      return b.totalMessages - a.totalMessages;
+    });
+  }, [isSuperadmin, allMessages, companyMap]);
+
+  const filteredVaults = useMemo(() => {
+    if (!vaultSearchTerm.trim()) return companyVaults;
+    const term = vaultSearchTerm.toLowerCase();
+    return companyVaults.filter(v => v.companyName.toLowerCase().includes(term));
+  }, [companyVaults, vaultSearchTerm]);
+
+  const showVaults = isSuperadmin && !selectedVaultCompanyId;
+  const selectedVaultName = useMemo(() => {
+    if (!selectedVaultCompanyId) return "";
+    if (selectedVaultCompanyId === "__all__") return "Todos los mensajes";
+    return companyMap[selectedVaultCompanyId] || "Empresa";
+  }, [selectedVaultCompanyId, companyMap]);
 
   // Fetch recipients - always fetch to ensure data is available
   const { data: recipients, isLoading: recipientsLoading } = useQuery<Recipient[]>({
@@ -246,10 +341,9 @@ export default function MensajesInternos() {
     }
   }, [location, messages, lastProcessedTimestamp]);
 
-  // Filter messages based on tab and search using current user ID
   const currentUserId = user?.id;
+  const isSuperadminVaultView = isSuperadmin && !!selectedVaultCompanyId;
   const filteredMessages = messages?.filter((message) => {
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchesSearch = 
@@ -260,17 +354,20 @@ export default function MensajesInternos() {
       if (!matchesSearch) return false;
     }
 
-    // Tab filter using current user ID to distinguish sender/receiver
+    if (isSuperadminVaultView) {
+      if (activeTab === "archived") return message.status === "archived";
+      if (activeTab === "sent") return message.status !== "archived";
+      return message.status !== "archived";
+    }
+
     if (activeTab === "archived") {
       return message.status === "archived";
     }
     
     if (activeTab === "sent") {
-      // Show only messages where I am the sender (not archived)
       return message.senderId === currentUserId && message.status !== "archived";
     }
     
-    // inbox - show only messages where I am the receiver (not archived)
     return message.receiverId === currentUserId && message.status !== "archived";
   }) || [];
 
@@ -288,26 +385,131 @@ export default function MensajesInternos() {
   return (
     <div className="container mx-auto p-6" data-testid="page-mensajes-internos">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
-            <MessageSquare className="h-6 w-6" />
-            Mensajes Internos
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Comunicación interna entre LSO y Responsables SST
-          </p>
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <div className="flex items-center gap-3">
+          {isSuperadmin && selectedVaultCompanyId && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setSelectedVaultCompanyId(null);
+                setSelectedMessage(null);
+                setSearchQuery("");
+              }}
+              data-testid="button-back-to-vaults"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
+              <MessageSquare className="h-6 w-6" />
+              {showVaults ? "Mensajes Internos" : selectedVaultName ? `Mensajes — ${selectedVaultName}` : "Mensajes Internos"}
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {showVaults
+                ? "Seleccione una empresa para ver sus mensajes"
+                : "Comunicación interna entre LSO y Responsables SST"}
+            </p>
+          </div>
         </div>
-        <Button
-          onClick={() => { setSelectedCompanyFilter(""); setShowNewMessage(true); }}
-          data-testid="button-compose-message"
-        >
-          <Send className="h-4 w-4 mr-2" />
-          Nuevo Mensaje
-        </Button>
+        {!showVaults && (
+          <Button
+            onClick={() => { setSelectedCompanyFilter(""); setShowNewMessage(true); }}
+            data-testid="button-compose-message"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            Nuevo Mensaje
+          </Button>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Vault view for superadmin */}
+      {showVaults && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar empresa..."
+                value={vaultSearchTerm}
+                onChange={(e) => setVaultSearchTerm(e.target.value)}
+                className="pl-9"
+                data-testid="input-vault-search"
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedVaultCompanyId("__all__");
+              }}
+              data-testid="button-view-all-messages"
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              Todos los mensajes
+            </Button>
+          </div>
+
+          {allMessagesLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            </div>
+          ) : filteredVaults.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                <Building2 className="h-12 w-12 mb-4 opacity-30" />
+                <p className="text-lg font-medium">No hay mensajes</p>
+                <p className="text-sm mt-1">No se encontraron empresas con mensajes internos</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredVaults.map((vault) => (
+                <Card
+                  key={vault.companyId}
+                  className="cursor-pointer hover-elevate transition-colors"
+                  onClick={() => {
+                    setSelectedVaultCompanyId(vault.companyId);
+                    setSelectedMessage(null);
+                    setSearchQuery("");
+                  }}
+                  data-testid={`vault-card-${vault.companyId}`}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="truncate" data-testid={`vault-name-${vault.companyId}`}>{vault.companyName}</span>
+                      </CardTitle>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-sm" data-testid={`vault-total-${vault.companyId}`}>{vault.totalMessages} total</span>
+                      </div>
+                      {vault.unreadMessages > 0 && (
+                        <Badge variant="default" className="text-xs" data-testid={`vault-unread-${vault.companyId}`}>
+                          {vault.unreadMessages} sin leer
+                        </Badge>
+                      )}
+                    </div>
+                    {vault.lastMessageDate && (
+                      <p className="text-xs text-muted-foreground mt-2" data-testid={`vault-last-date-${vault.companyId}`}>
+                        Último: {formatDistanceToNow(new Date(vault.lastMessageDate), { addSuffix: true, locale: es })}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!showVaults && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Messages List */}
         <Card className="lg:col-span-1">
           <CardHeader className="pb-3">
@@ -487,7 +689,7 @@ export default function MensajesInternos() {
             </div>
           )}
         </Card>
-      </div>
+      </div>}
 
       {/* New Message Dialog */}
       <Dialog open={showNewMessage} onOpenChange={setShowNewMessage}>

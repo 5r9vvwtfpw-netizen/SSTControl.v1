@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,7 +59,9 @@ import {
   Download,
   Key,
   ArrowUpRight,
-  Archive
+  Archive,
+  ArrowLeft,
+  ChevronRight
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -233,6 +235,8 @@ export default function AdminTicketsSoporte() {
   const [escalateToUserId, setEscalateToUserId] = useState("");
   const [escalateReason, setEscalateReason] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  const [selectedVaultCompanyId, setSelectedVaultCompanyId] = useState<string | null>(null);
+  const [vaultSearchTerm, setVaultSearchTerm] = useState("");
 
   if (user?.role !== 'superadmin' && user?.role !== 'soporte') {
     return (
@@ -415,6 +419,79 @@ export default function AdminTicketsSoporte() {
   };
 
   const criticalTickets = tickets.filter(t => t.priority === 'critica' && t.status !== 'cerrado' && t.status !== 'resuelto');
+
+  const isSuperadmin = user?.role === 'superadmin';
+
+  interface CompanyVault {
+    companyId: string;
+    companyName: string;
+    ticketsAbiertos: number;
+    ticketsPendientes: number;
+    highestPriority: string | null;
+    lastTicketDate: string | null;
+    totalTickets: number;
+  }
+
+  const companyVaults = useMemo<CompanyVault[]>(() => {
+    if (!isSuperadmin || tickets.length === 0) return [];
+    const grouped: Record<string, CompanyVault> = {};
+    const priorityOrder: Record<string, number> = { critica: 4, alta: 3, media: 2, baja: 1 };
+
+    tickets.forEach((t) => {
+      const key = t.companyId || "__unknown__";
+      if (!grouped[key]) {
+        grouped[key] = {
+          companyId: key,
+          companyName: t.companyName || "Sin empresa",
+          ticketsAbiertos: 0,
+          ticketsPendientes: 0,
+          highestPriority: null,
+          lastTicketDate: null,
+          totalTickets: 0,
+        };
+      }
+      const v = grouped[key];
+      v.totalTickets++;
+      if (t.status === 'abierto') v.ticketsAbiertos++;
+      if (t.status === 'pendiente_cliente') v.ticketsPendientes++;
+      if (!isArchivedStatus(t.status)) {
+        const currentPrio = priorityOrder[t.priority] || 0;
+        const existingPrio = v.highestPriority ? (priorityOrder[v.highestPriority] || 0) : 0;
+        if (currentPrio > existingPrio) v.highestPriority = t.priority;
+      }
+      if (!v.lastTicketDate || new Date(t.createdAt) > new Date(v.lastTicketDate)) {
+        v.lastTicketDate = t.createdAt;
+      }
+    });
+
+    return Object.values(grouped).sort((a, b) => {
+      const aPrio = a.highestPriority ? (priorityOrder[a.highestPriority] || 0) : 0;
+      const bPrio = b.highestPriority ? (priorityOrder[b.highestPriority] || 0) : 0;
+      if (bPrio !== aPrio) return bPrio - aPrio;
+      return b.ticketsAbiertos - a.ticketsAbiertos;
+    });
+  }, [tickets, isSuperadmin]);
+
+  const filteredVaults = useMemo(() => {
+    if (!vaultSearchTerm.trim()) return companyVaults;
+    const term = vaultSearchTerm.toLowerCase();
+    return companyVaults.filter(v => v.companyName.toLowerCase().includes(term));
+  }, [companyVaults, vaultSearchTerm]);
+
+  const showVaults = isSuperadmin && !selectedVaultCompanyId;
+
+  const vaultFilteredTickets = useMemo(() => {
+    if (!selectedVaultCompanyId) return filteredTickets;
+    return filteredTickets.filter(t => (t.companyId || "__unknown__") === selectedVaultCompanyId);
+  }, [filteredTickets, selectedVaultCompanyId]);
+
+  const selectedVaultName = useMemo(() => {
+    if (!selectedVaultCompanyId) return "";
+    const vault = companyVaults.find(v => v.companyId === selectedVaultCompanyId);
+    return vault?.companyName || "Empresa";
+  }, [selectedVaultCompanyId, companyVaults]);
+
+  const displayTickets = showVaults ? [] : (selectedVaultCompanyId ? vaultFilteredTickets : filteredTickets);
 
   const handleSendResponse = () => {
     if (!responseContent.trim() || !selectedTicket) return;
@@ -659,6 +736,109 @@ export default function AdminTicketsSoporte() {
         )}
       </div>
 
+      {showVaults ? (
+        <>
+          <div className="relative">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar empresa por nombre..."
+              className="pl-10"
+              value={vaultSearchTerm}
+              onChange={(e) => setVaultSearchTerm(e.target.value)}
+              data-testid="input-search-ticket-vaults"
+            />
+          </div>
+
+          {filteredVaults.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Building2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No se encontraron empresas{vaultSearchTerm ? ` para "${vaultSearchTerm}"` : ""}</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" data-testid="grid-ticket-vaults">
+              {filteredVaults.map((vault) => (
+                <Card
+                  key={vault.companyId}
+                  className="hover-elevate cursor-pointer transition-colors"
+                  onClick={() => {
+                    setSelectedVaultCompanyId(vault.companyId);
+                    setVaultSearchTerm("");
+                    setSearchTerm("");
+                    setStatusFilter("todos");
+                    setPriorityFilter("todos");
+                    setCategoryFilter("todos");
+                    setSelectedTicket(null);
+                  }}
+                  data-testid={`vault-ticket-company-${vault.companyId}`}
+                >
+                  <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Building2 className="h-5 w-5 text-muted-foreground shrink-0" />
+                      <CardTitle className="text-base truncate" data-testid={`vault-ticket-name-${vault.companyId}`}>{vault.companyName}</CardTitle>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <Ticket className="h-4 w-4 text-blue-500" />
+                        <span className="text-sm font-medium" data-testid={`vault-ticket-open-${vault.companyId}`}>{vault.ticketsAbiertos} abierto{vault.ticketsAbiertos !== 1 ? 's' : ''}</span>
+                      </div>
+                      {vault.ticketsPendientes > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <AlertCircle className="h-4 w-4 text-orange-500" />
+                          <span className="text-sm font-medium" data-testid={`vault-ticket-pending-${vault.companyId}`}>{vault.ticketsPendientes} pendiente{vault.ticketsPendientes !== 1 ? 's' : ''}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {vault.highestPriority && (
+                        <Badge className={priorityColors[vault.highestPriority]} data-testid={`vault-ticket-priority-${vault.companyId}`}>
+                          {priorityLabels[vault.highestPriority]}
+                        </Badge>
+                      )}
+                      <Badge variant="secondary" data-testid={`vault-ticket-total-${vault.companyId}`}>
+                        {vault.totalTickets} total
+                      </Badge>
+                    </div>
+                    {vault.lastTicketDate && (
+                      <p className="text-xs text-muted-foreground" data-testid={`vault-ticket-last-${vault.companyId}`}>
+                        Último ticket: {timeAgo(vault.lastTicketDate)}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+      <>
+      {selectedVaultCompanyId && (
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setSelectedVaultCompanyId(null);
+              setSearchTerm("");
+              setSelectedTicket(null);
+              setStatusFilter("todos");
+              setPriorityFilter("todos");
+              setCategoryFilter("todos");
+              setShowArchived(false);
+            }}
+            data-testid="button-back-to-ticket-vaults"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver a empresas
+          </Button>
+          <div className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-muted-foreground" />
+            <span className="text-lg font-semibold" data-testid="text-vault-ticket-company-name">{selectedVaultName}</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -729,14 +909,16 @@ export default function AdminTicketsSoporte() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Tickets del Sistema</CardTitle>
+            <CardTitle>
+              {selectedVaultCompanyId ? `Tickets — ${selectedVaultName}` : 'Tickets del Sistema'}
+            </CardTitle>
             <CardDescription>
-              {filteredTickets.length} ticket{filteredTickets.length !== 1 ? 's' : ''} encontrado{filteredTickets.length !== 1 ? 's' : ''}
+              {displayTickets.length} ticket{displayTickets.length !== 1 ? 's' : ''} encontrado{displayTickets.length !== 1 ? 's' : ''}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[600px]">
-              {filteredTickets.length === 0 ? (
+              {displayTickets.length === 0 ? (
                 <div className="text-center py-8">
                   <Ticket className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">
@@ -758,7 +940,7 @@ export default function AdminTicketsSoporte() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTickets.map((ticket) => (
+                    {displayTickets.map((ticket) => (
                       <TableRow 
                         key={ticket.id}
                         className={`border-none cursor-pointer transition-all duration-300 hover:bg-accent/40 rounded-lg ${selectedTicket?.id === ticket.id ? 'bg-accent' : ''}`}
@@ -1075,6 +1257,8 @@ export default function AdminTicketsSoporte() {
           </CardContent>
         </Card>
       </div>
+      </>
+      )}
 
       <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
         <DialogContent>

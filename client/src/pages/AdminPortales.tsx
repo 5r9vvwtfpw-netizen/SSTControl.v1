@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -56,9 +56,12 @@ import {
   UserX,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   Loader2,
   Copy,
   Check,
+  ArrowLeft,
+  Building2,
 } from "lucide-react";
 
 interface LsoUser {
@@ -119,6 +122,23 @@ interface WorkerReport {
   createdAt: string;
 }
 
+interface EmployeeVault {
+  companyName: string;
+  totalWorkers: number;
+  pendingReports: number;
+  lastAccess: string | null;
+}
+
+interface LsoVault {
+  id: string;
+  fullName: string;
+  email: string;
+  licenseStatus: string | null;
+  hasSignature: boolean;
+  assignedCompanies: number;
+  licenseExpiryDate: string | null;
+}
+
 function getLicenseStatusBadge(status: string | null) {
   switch (status) {
     case "vigente":
@@ -135,6 +155,8 @@ function getLicenseStatusBadge(status: string | null) {
 function PortalLsoTab() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [vaultSearchTerm, setVaultSearchTerm] = useState("");
+  const [selectedLsoId, setSelectedLsoId] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [resetPasswordUserId, setResetPasswordUserId] = useState<string | null>(null);
@@ -194,11 +216,34 @@ function PortalLsoTab() {
     },
   });
 
-  const filteredUsers = lsoUsers.filter(
-    (u) =>
-      u.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const lsoVaults = useMemo<LsoVault[]>(() => {
+    return lsoUsers.map((u) => ({
+      id: u.id,
+      fullName: u.fullName,
+      email: u.email,
+      licenseStatus: u.licenseStatus,
+      hasSignature: u.hasSignature,
+      assignedCompanies: u.assignedCompanies,
+      licenseExpiryDate: u.licenseExpiryDate,
+    }));
+  }, [lsoUsers]);
+
+  const filteredVaults = useMemo(() => {
+    if (!vaultSearchTerm.trim()) return lsoVaults;
+    const term = vaultSearchTerm.toLowerCase();
+    return lsoVaults.filter(
+      (v) =>
+        v.fullName.toLowerCase().includes(term) ||
+        v.email.toLowerCase().includes(term)
+    );
+  }, [lsoVaults, vaultSearchTerm]);
+
+  const showVaults = !selectedLsoId;
+
+  const selectedLsoUser = useMemo(() => {
+    if (!selectedLsoId) return null;
+    return lsoUsers.find((u) => u.id === selectedLsoId) || null;
+  }, [selectedLsoId, lsoUsers]);
 
   const totalLsos = lsoUsers.length;
   const withSignature = lsoUsers.filter((u) => u.hasSignature).length;
@@ -260,95 +305,185 @@ function PortalLsoTab() {
         </Card>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nombre o email..."
-          className="pl-10"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          data-testid="input-search-lso"
-        />
-      </div>
+      {showVaults ? (
+        <>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar LSO por nombre o email..."
+              className="pl-10"
+              value={vaultSearchTerm}
+              onChange={(e) => setVaultSearchTerm(e.target.value)}
+              data-testid="input-search-lso-vaults"
+            />
+          </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Licencia</TableHead>
-                <TableHead>Estado Licencia</TableHead>
-                <TableHead>Firma</TableHead>
-                <TableHead>Empresas Asignadas</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    No se encontraron usuarios LSO
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredUsers.map((user) => (
-                  <TableRow key={user.id} data-testid={`row-lso-user-${user.id}`}>
-                    <TableCell className="font-medium">{user.fullName}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.licenseNumber || "-"}</TableCell>
-                    <TableCell>{getLicenseStatusBadge(user.licenseStatus)}</TableCell>
-                    <TableCell>
-                      {user.hasSignature ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <XCircle className="h-5 w-5 text-red-500" />
-                      )}
-                    </TableCell>
-                    <TableCell>{user.assignedCompanies}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setSelectedUserId(user.id);
-                            setShowDetailDialog(true);
-                          }}
-                          data-testid={`button-detail-lso-${user.id}`}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setResetPasswordUserId(user.id);
-                            setResetPasswordResult(null);
-                          }}
-                          data-testid={`button-reset-password-lso-${user.id}`}
-                        >
-                          <KeyRound className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => setDeleteSignatureUserId(user.id)}
-                          disabled={!user.hasSignature}
-                          data-testid={`button-delete-signature-${user.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+          {filteredVaults.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No se encontraron LSOs{vaultSearchTerm ? ` para "${vaultSearchTerm}"` : ""}</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" data-testid="grid-lso-vaults">
+              {filteredVaults.map((vault) => (
+                <Card
+                  key={vault.id}
+                  className="hover-elevate cursor-pointer transition-colors"
+                  onClick={() => {
+                    setSelectedLsoId(vault.id);
+                    setVaultSearchTerm("");
+                  }}
+                  data-testid={`vault-lso-${vault.id}`}
+                >
+                  <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Award className="h-5 w-5 text-muted-foreground shrink-0" />
+                      <CardTitle className="text-base truncate" data-testid={`vault-lso-name-${vault.id}`}>{vault.fullName}</CardTitle>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-muted-foreground truncate">{vault.email}</p>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {getLicenseStatusBadge(vault.licenseStatus)}
+                      <div className="flex items-center gap-1.5">
+                        {vault.hasSignature ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        )}
+                        <span className="text-xs text-muted-foreground">Firma</span>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="secondary" data-testid={`vault-lso-companies-${vault.id}`}>
+                        {vault.assignedCompanies} empresa{vault.assignedCompanies !== 1 ? "s" : ""}
+                      </Badge>
+                    </div>
+                    {vault.licenseExpiryDate && (
+                      <p className="text-xs text-muted-foreground" data-testid={`vault-lso-expiry-${vault.id}`}>
+                        Vence: {vault.licenseExpiryDate}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSelectedLsoId(null);
+                setSearchTerm("");
+              }}
+              data-testid="button-back-to-lso-vaults"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver a LSOs
+            </Button>
+            <div className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-muted-foreground" />
+              <span className="text-lg font-semibold" data-testid="text-vault-lso-name">{selectedLsoUser?.fullName || "LSO"}</span>
+            </div>
+          </div>
+
+          {selectedLsoUser && (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Informacion del Profesional</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Nombre</Label>
+                      <p className="font-medium" data-testid="text-lso-detail-name">{selectedLsoUser.fullName}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Email</Label>
+                      <p className="font-medium" data-testid="text-lso-detail-email">{selectedLsoUser.email}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Profesion</Label>
+                      <p className="font-medium">{selectedLsoUser.profession || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">No. Licencia</Label>
+                      <p className="font-medium">{selectedLsoUser.licenseNumber || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Estado Licencia</Label>
+                      <div className="mt-1">{getLicenseStatusBadge(selectedLsoUser.licenseStatus)}</div>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Firma Digital</Label>
+                      <div className="mt-1 flex items-center gap-2">
+                        {selectedLsoUser.hasSignature ? (
+                          <>
+                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            <span className="text-sm">Registrada</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-4 w-4 text-red-500" />
+                            <span className="text-sm">Sin firma</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Empresas Asignadas</Label>
+                      <p className="font-medium">{selectedLsoUser.assignedCompanies}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Vencimiento Licencia</Label>
+                      <p className="font-medium">{selectedLsoUser.licenseExpiryDate || "-"}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedUserId(selectedLsoUser.id);
+                    setShowDetailDialog(true);
+                  }}
+                  data-testid={`button-detail-lso-${selectedLsoUser.id}`}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Ver detalle completo
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setResetPasswordUserId(selectedLsoUser.id);
+                    setResetPasswordResult(null);
+                  }}
+                  data-testid={`button-reset-password-lso-${selectedLsoUser.id}`}
+                >
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  Resetear contrasena
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteSignatureUserId(selectedLsoUser.id)}
+                  disabled={!selectedLsoUser.hasSignature}
+                  data-testid={`button-delete-signature-${selectedLsoUser.id}`}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Borrar firma
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       <Dialog open={showDetailDialog} onOpenChange={(open) => {
         if (!open) {
@@ -548,6 +683,8 @@ function PortalLsoTab() {
 function PortalEmpleadosTab() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [vaultSearchTerm, setVaultSearchTerm] = useState("");
+  const [selectedVaultCompany, setSelectedVaultCompany] = useState<string | null>(null);
   const [resetPasswordUserId, setResetPasswordUserId] = useState<string | null>(null);
   const [resetPasswordResult, setResetPasswordResult] = useState<string | null>(null);
   const [deactivateUserId, setDeactivateUserId] = useState<string | null>(null);
@@ -610,15 +747,78 @@ function PortalEmpleadosTab() {
     },
   });
 
-  const filteredUsers = workerUsers.filter(
-    (u) =>
-      u.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const companyVaults = useMemo<EmployeeVault[]>(() => {
+    if (workerUsers.length === 0) return [];
+    const grouped: Record<string, EmployeeVault> = {};
+
+    workerUsers.forEach((w) => {
+      const key = w.companyName || "Sin empresa";
+      if (!grouped[key]) {
+        grouped[key] = {
+          companyName: key,
+          totalWorkers: 0,
+          pendingReports: 0,
+          lastAccess: null,
+        };
+      }
+      grouped[key].totalWorkers++;
+    });
+
+    workerReports.forEach((r) => {
+      const key = r.companyName || "Sin empresa";
+      if (!grouped[key]) {
+        grouped[key] = {
+          companyName: key,
+          totalWorkers: 0,
+          pendingReports: 0,
+          lastAccess: null,
+        };
+      }
+      if (r.status === "pendiente" || r.status === "en_proceso") {
+        grouped[key].pendingReports++;
+      }
+    });
+
+    return Object.values(grouped).sort((a, b) => b.totalWorkers - a.totalWorkers);
+  }, [workerUsers, workerReports]);
+
+  const filteredVaults = useMemo(() => {
+    if (!vaultSearchTerm.trim()) return companyVaults;
+    const term = vaultSearchTerm.toLowerCase();
+    return companyVaults.filter((v) => v.companyName.toLowerCase().includes(term));
+  }, [companyVaults, vaultSearchTerm]);
+
+  const showVaults = !selectedVaultCompany;
+
+  const vaultFilteredWorkers = useMemo(() => {
+    if (!selectedVaultCompany) return workerUsers;
+    return workerUsers.filter((w) => (w.companyName || "Sin empresa") === selectedVaultCompany);
+  }, [workerUsers, selectedVaultCompany]);
+
+  const vaultFilteredReports = useMemo(() => {
+    if (!selectedVaultCompany) return workerReports;
+    return workerReports.filter((r) => (r.companyName || "Sin empresa") === selectedVaultCompany);
+  }, [workerReports, selectedVaultCompany]);
+
+  const vaultFilteredLogs = useMemo(() => {
+    if (!selectedVaultCompany) return accessLogs;
+    return accessLogs.filter((l) => (l.companyName || "Sin empresa") === selectedVaultCompany);
+  }, [accessLogs, selectedVaultCompany]);
+
+  const displayWorkers = useMemo(() => {
+    const workers = selectedVaultCompany ? vaultFilteredWorkers : workerUsers;
+    if (!searchTerm.trim()) return workers;
+    const term = searchTerm.toLowerCase();
+    return workers.filter(
+      (u) =>
+        u.fullName.toLowerCase().includes(term) ||
+        u.email.toLowerCase().includes(term)
+    );
+  }, [workerUsers, vaultFilteredWorkers, selectedVaultCompany, searchTerm]);
 
   const totalWorkers = workerUsers.length;
   const withAccess = workerUsers.filter((u) => u.isActive).length;
-  const pendingReports = workerReports.length;
+  const pendingReports = workerReports.filter((r) => r.status === "pendiente" || r.status === "en_proceso").length;
 
   const copyPassword = async (pw: string) => {
     await navigator.clipboard.writeText(pw);
@@ -666,180 +866,151 @@ function PortalEmpleadosTab() {
         </Card>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nombre o email..."
-          className="pl-10"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          data-testid="input-search-workers"
-        />
-      </div>
+      {showVaults ? (
+        <>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar empresa por nombre..."
+              className="pl-10"
+              value={vaultSearchTerm}
+              onChange={(e) => setVaultSearchTerm(e.target.value)}
+              data-testid="input-search-employee-vaults"
+            />
+          </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Empresa</TableHead>
-                <TableHead>Fecha Creacion</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    No se encontraron trabajadores
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredUsers.map((worker) => (
-                  <TableRow key={worker.id} data-testid={`row-worker-${worker.id}`}>
-                    <TableCell className="font-medium">{worker.fullName}</TableCell>
-                    <TableCell>{worker.email}</TableCell>
-                    <TableCell>{worker.companyName}</TableCell>
-                    <TableCell>{worker.createdAt}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setResetPasswordUserId(worker.id);
-                            setResetPasswordResult(null);
-                          }}
-                          data-testid={`button-reset-password-worker-${worker.id}`}
-                        >
-                          <KeyRound className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => setDeactivateUserId(worker.id)}
-                          disabled={!worker.isActive}
-                          data-testid={`button-deactivate-worker-${worker.id}`}
-                        >
-                          <UserX className="h-4 w-4" />
-                        </Button>
+          {filteredVaults.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Building2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No se encontraron empresas{vaultSearchTerm ? ` para "${vaultSearchTerm}"` : ""}</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" data-testid="grid-employee-vaults">
+              {filteredVaults.map((vault) => (
+                <Card
+                  key={vault.companyName}
+                  className="hover-elevate cursor-pointer transition-colors"
+                  onClick={() => {
+                    setSelectedVaultCompany(vault.companyName);
+                    setVaultSearchTerm("");
+                    setSearchTerm("");
+                    setShowAccessLogs(false);
+                    setShowReports(false);
+                  }}
+                  data-testid={`vault-employee-company-${vault.companyName}`}
+                >
+                  <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Building2 className="h-5 w-5 text-muted-foreground shrink-0" />
+                      <CardTitle className="text-base truncate" data-testid={`vault-employee-name-${vault.companyName}`}>{vault.companyName}</CardTitle>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <Users className="h-4 w-4 text-blue-500" />
+                        <span className="text-sm font-medium" data-testid={`vault-employee-workers-${vault.companyName}`}>{vault.totalWorkers} trabajador{vault.totalWorkers !== 1 ? "es" : ""}</span>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {vault.pendingReports > 0 && (
+                        <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" data-testid={`vault-employee-reports-${vault.companyName}`}>
+                          {vault.pendingReports} reporte{vault.pendingReports !== 1 ? "s" : ""} pendiente{vault.pendingReports !== 1 ? "s" : ""}
+                        </Badge>
+                      )}
+                      <Badge variant="secondary">
+                        {vault.totalWorkers} con acceso
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSelectedVaultCompany(null);
+                setSearchTerm("");
+                setShowAccessLogs(false);
+                setShowReports(false);
+              }}
+              data-testid="button-back-to-employee-vaults"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver a empresas
+            </Button>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-muted-foreground" />
+              <span className="text-lg font-semibold" data-testid="text-vault-employee-company-name">{selectedVaultCompany}</span>
+            </div>
+          </div>
 
-      <div className="space-y-4">
-        <div
-          className="flex items-center justify-between gap-2 cursor-pointer rounded-md border p-3"
-          onClick={() => setShowAccessLogs(!showAccessLogs)}
-          data-testid="button-toggle-access-logs"
-        >
-          <span className="font-medium">Logs de Acceso</span>
-          {showAccessLogs ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </div>
-        {showAccessLogs && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nombre o email..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              data-testid="input-search-workers"
+            />
+          </div>
+
           <Card>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Usuario</TableHead>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Empresa</TableHead>
-                    <TableHead>Dispositivo</TableHead>
-                    <TableHead>IP</TableHead>
-                    <TableHead>Fecha Acceso</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {accessLogs.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                        No hay logs de acceso recientes
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    accessLogs.map((log) => (
-                      <TableRow key={log.id} data-testid={`row-access-log-${log.id}`}>
-                        <TableCell className="font-medium">{log.userName}</TableCell>
-                        <TableCell>{log.companyName}</TableCell>
-                        <TableCell>{log.deviceType}</TableCell>
-                        <TableCell className="font-mono text-sm">{log.ipAddress}</TableCell>
-                        <TableCell>{log.accessTime}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
-
-        <div
-          className="flex items-center justify-between gap-2 cursor-pointer rounded-md border p-3"
-          onClick={() => setShowReports(!showReports)}
-          data-testid="button-toggle-reports"
-        >
-          <span className="font-medium">Reportes de Trabajadores</span>
-          {showReports ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </div>
-        {showReports && (
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Codigo</TableHead>
-                    <TableHead>Reportante</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Asunto</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Empresa</TableHead>
-                    <TableHead>Fecha</TableHead>
+                    <TableHead>Fecha Creacion</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {workerReports.length === 0 ? (
+                  {displayWorkers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                        No hay reportes de trabajadores
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        No se encontraron trabajadores
                       </TableCell>
                     </TableRow>
                   ) : (
-                    workerReports.map((report) => (
-                      <TableRow key={report.id} data-testid={`row-report-${report.id}`}>
-                        <TableCell className="font-mono text-sm">{report.codigo}</TableCell>
-                        <TableCell>{report.userName}</TableCell>
-                        <TableCell>{report.reportType}</TableCell>
-                        <TableCell className="max-w-[200px] truncate">{report.subject}</TableCell>
-                        <TableCell>
-                          <Badge className={
-                            report.status === "resuelto" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" :
-                            report.status === "en_proceso" ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" :
-                            "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
-                          }>
-                            {report.status === "pendiente" ? "Pendiente" : report.status === "en_proceso" ? "En Proceso" : report.status === "resuelto" ? "Resuelto" : report.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{report.companyName}</TableCell>
-                        <TableCell>{report.createdAt}</TableCell>
+                    displayWorkers.map((worker) => (
+                      <TableRow key={worker.id} data-testid={`row-worker-${worker.id}`}>
+                        <TableCell className="font-medium">{worker.fullName}</TableCell>
+                        <TableCell>{worker.email}</TableCell>
+                        <TableCell>{worker.companyName}</TableCell>
+                        <TableCell>{worker.createdAt}</TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => deleteReportMutation.mutate(report.id)}
-                            disabled={deleteReportMutation.isPending}
-                            data-testid={`button-delete-report-${report.id}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => {
+                                setResetPasswordUserId(worker.id);
+                                setResetPasswordResult(null);
+                              }}
+                              data-testid={`button-reset-password-worker-${worker.id}`}
+                            >
+                              <KeyRound className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => setDeactivateUserId(worker.id)}
+                              disabled={!worker.isActive}
+                              data-testid={`button-deactivate-worker-${worker.id}`}
+                            >
+                              <UserX className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -848,8 +1019,124 @@ function PortalEmpleadosTab() {
               </Table>
             </CardContent>
           </Card>
-        )}
-      </div>
+
+          <div className="space-y-4">
+            <div
+              className="flex items-center justify-between gap-2 cursor-pointer rounded-md border p-3"
+              onClick={() => setShowAccessLogs(!showAccessLogs)}
+              data-testid="button-toggle-access-logs"
+            >
+              <span className="font-medium">Logs de Acceso</span>
+              {showAccessLogs ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </div>
+            {showAccessLogs && (
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Usuario</TableHead>
+                        <TableHead>Empresa</TableHead>
+                        <TableHead>Dispositivo</TableHead>
+                        <TableHead>IP</TableHead>
+                        <TableHead>Fecha Acceso</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {vaultFilteredLogs.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                            No hay logs de acceso recientes
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        vaultFilteredLogs.map((log) => (
+                          <TableRow key={log.id} data-testid={`row-access-log-${log.id}`}>
+                            <TableCell className="font-medium">{log.userName}</TableCell>
+                            <TableCell>{log.companyName}</TableCell>
+                            <TableCell>{log.deviceType}</TableCell>
+                            <TableCell className="font-mono text-sm">{log.ipAddress}</TableCell>
+                            <TableCell>{log.accessTime}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+
+            <div
+              className="flex items-center justify-between gap-2 cursor-pointer rounded-md border p-3"
+              onClick={() => setShowReports(!showReports)}
+              data-testid="button-toggle-reports"
+            >
+              <span className="font-medium">Reportes de Trabajadores</span>
+              {showReports ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </div>
+            {showReports && (
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Codigo</TableHead>
+                        <TableHead>Reportante</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead>Asunto</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Empresa</TableHead>
+                        <TableHead>Fecha</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {vaultFilteredReports.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                            No hay reportes de trabajadores
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        vaultFilteredReports.map((report) => (
+                          <TableRow key={report.id} data-testid={`row-report-${report.id}`}>
+                            <TableCell className="font-mono text-sm">{report.codigo}</TableCell>
+                            <TableCell>{report.userName}</TableCell>
+                            <TableCell>{report.reportType}</TableCell>
+                            <TableCell className="max-w-[200px] truncate">{report.subject}</TableCell>
+                            <TableCell>
+                              <Badge className={
+                                report.status === "resuelto" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" :
+                                report.status === "en_proceso" ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" :
+                                "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                              }>
+                                {report.status === "pendiente" ? "Pendiente" : report.status === "en_proceso" ? "En Proceso" : report.status === "resuelto" ? "Resuelto" : report.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{report.companyName}</TableCell>
+                            <TableCell>{report.createdAt}</TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => deleteReportMutation.mutate(report.id)}
+                                disabled={deleteReportMutation.isPending}
+                                data-testid={`button-delete-report-${report.id}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </>
+      )}
 
       <Dialog open={!!resetPasswordUserId} onOpenChange={(open) => {
         if (!open) {

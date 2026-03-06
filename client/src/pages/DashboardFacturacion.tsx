@@ -2,6 +2,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -28,8 +29,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { DollarSign, Users, TrendingUp, TrendingDown, Loader2, Ban, CheckCircle, XCircle, ShieldAlert, AlertTriangle, Plus } from "lucide-react";
-import { useState } from "react";
+import { DollarSign, Users, TrendingUp, TrendingDown, Loader2, Ban, CheckCircle, XCircle, ShieldAlert, AlertTriangle, Plus, Search, ArrowLeft, Building2, CalendarClock, ChevronRight } from "lucide-react";
+import { useState, useMemo } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -73,6 +74,15 @@ type CompanyWithoutSubscription = {
   createdAt: Date;
 };
 
+type CompanyVault = {
+  companyId: string;
+  companyName: string;
+  subscription: SubscriptionWithDetails;
+  planDisplay: string;
+  priceDisplay: string;
+  nextRenewal: string;
+};
+
 export default function DashboardFacturacion() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -86,7 +96,9 @@ export default function DashboardFacturacion() {
     open: false,
     company: null
   });
-  // Verificación de acceso: Solo superadmin puede ver este dashboard
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedVaultCompanyId, setSelectedVaultCompanyId] = useState<string | null>(null);
+
   if (user?.role !== 'superadmin') {
     return (
       <div className="flex items-center justify-center min-h-[60vh]" data-testid="access-denied-container">
@@ -106,27 +118,22 @@ export default function DashboardFacturacion() {
     );
   }
 
-  // Fetch metrics
   const { data: metrics, isLoading: metricsLoading } = useQuery<BillingMetrics>({
     queryKey: ['/api/billing/admin/metrics'],
   });
 
-  // Fetch subscriptions
   const { data: subscriptions, isLoading: subscriptionsLoading } = useQuery<SubscriptionWithDetails[]>({
     queryKey: ['/api/billing/admin/subscriptions'],
   });
 
-  // Fetch revenue chart data
   const { data: revenueData, isLoading: revenueLoading } = useQuery<RevenueDataPoint[]>({
     queryKey: ['/api/billing/admin/revenue-chart'],
   });
 
-  // Fetch companies without subscription
-  const { data: companiesWithoutSub, isLoading: companiesWithoutSubLoading } = useQuery<{ count: number; companies: CompanyWithoutSubscription[] }>({
+  const { data: companiesWithoutSub } = useQuery<{ count: number; companies: CompanyWithoutSubscription[] }>({
     queryKey: ['/api/billing/admin/companies-without-subscription'],
   });
 
-  // Assign trial mutation
   const assignTrialMutation = useMutation({
     mutationFn: async ({ companyId, planId, trialDays }: { companyId: string; planId: string; trialDays: number }) => {
       const response = await apiRequest(
@@ -155,7 +162,6 @@ export default function DashboardFacturacion() {
     }
   });
 
-  // Status change mutation
   const statusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const response = await apiRequest(
@@ -236,9 +242,33 @@ export default function DashboardFacturacion() {
     }
   };
 
-  const filteredSubscriptions = subscriptions?.filter(sub => 
-    statusFilter === "all" || sub.status === statusFilter
-  ) || [];
+  const companyVaults = useMemo<CompanyVault[]>(() => {
+    if (!subscriptions) return [];
+    return subscriptions.map((sub) => ({
+      companyId: sub.companyId,
+      companyName: sub.companyName,
+      subscription: sub,
+      planDisplay: sub.planId === 'sst_dinamico' ? 'Plan Dinámico' : sub.planName,
+      priceDisplay: sub.planId === 'sst_dinamico' ? 'Calculado' : formatCurrency(sub.planPrice),
+      nextRenewal: formatDate(sub.currentPeriodEnd),
+    }));
+  }, [subscriptions]);
+
+  const filteredVaults = useMemo(() => {
+    let result = companyVaults;
+    if (statusFilter !== "all") {
+      result = result.filter(v => v.subscription.status === statusFilter);
+    }
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      result = result.filter(v => v.companyName.toLowerCase().includes(term));
+    }
+    return result;
+  }, [companyVaults, statusFilter, searchTerm]);
+
+  const selectedVault = selectedVaultCompanyId
+    ? companyVaults.find(v => v.companyId === selectedVaultCompanyId) || null
+    : null;
 
   if (metricsLoading || subscriptionsLoading || revenueLoading) {
     return (
@@ -259,10 +289,9 @@ export default function DashboardFacturacion() {
         </p>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <Card data-testid="card-mrr">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">MRR (Ingreso Mensual Recurrente)</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -277,7 +306,7 @@ export default function DashboardFacturacion() {
         </Card>
 
         <Card data-testid="card-subscriptions">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Suscripciones Activas</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -292,7 +321,7 @@ export default function DashboardFacturacion() {
         </Card>
 
         <Card data-testid="card-churn">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tasa de Churn</CardTitle>
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -307,7 +336,6 @@ export default function DashboardFacturacion() {
         </Card>
       </div>
 
-      {/* Revenue Chart */}
       <Card className="mb-8" data-testid="card-revenue-chart">
         <CardHeader>
           <CardTitle>Ingresos Mensuales</CardTitle>
@@ -334,141 +362,263 @@ export default function DashboardFacturacion() {
         </CardContent>
       </Card>
 
-      {/* Subscriptions Table */}
-      <Card data-testid="card-subscriptions-table">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Gestión de Suscripciones</CardTitle>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
-              <SelectValue placeholder="Filtrar por estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="active">Activas</SelectItem>
-              <SelectItem value="trial">Pruebas</SelectItem>
-              <SelectItem value="past_due">Vencidas</SelectItem>
-              <SelectItem value="suspended">Suspendidas</SelectItem>
-              <SelectItem value="canceled">Canceladas</SelectItem>
-            </SelectContent>
-          </Select>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Empresa</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Precio Mensual</TableHead>
-                <TableHead>Fecha Inicio</TableHead>
-                <TableHead>Próxima Renovación</TableHead>
-                <TableHead>Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSubscriptions.map((sub) => (
-                <TableRow key={sub.id} data-testid={`row-subscription-${sub.id}`}>
-                  <TableCell className="font-medium">{sub.companyName}</TableCell>
-                  <TableCell>{sub.planId === 'sst_dinamico' ? 'Plan Din\u00e1mico' : sub.planName}</TableCell>
-                  <TableCell>{getStatusBadge(sub.status)}</TableCell>
-                  <TableCell>{sub.planId === 'sst_dinamico' ? 'Calculado' : formatCurrency(sub.planPrice)}</TableCell>
-                  <TableCell>{formatDate(sub.createdAt)}</TableCell>
-                  <TableCell>{formatDate(sub.currentPeriodEnd)}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      {sub.status === 'active' && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleAction(sub, 'suspend')}
-                            data-testid={`button-suspend-${sub.id}`}
-                          >
-                            Suspender
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleAction(sub, 'cancel')}
-                            data-testid={`button-cancel-${sub.id}`}
-                          >
-                            Cancelar
-                          </Button>
-                        </>
-                      )}
-                      {(sub.status === 'suspended' || sub.status === 'past_due') && (
-                        <Button
-                          size="sm"
-                          variant="default"
-                          onClick={() => handleAction(sub, 'activate')}
-                          data-testid={`button-activate-${sub.id}`}
-                        >
-                          Reactivar
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Companies Without Subscription Section */}
-      {companiesWithoutSub && companiesWithoutSub.count > 0 && (
-        <Card className="mt-8" data-testid="card-companies-without-subscription">
+      {selectedVault ? (
+        <Card data-testid="card-vault-detail">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-warning" />
-              <CardTitle className="text-warning">Empresas sin Suscripción ({companiesWithoutSub.count})</CardTitle>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedVaultCompanyId(null)}
+                data-testid="button-back-to-vaults"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Volver a empresas
+              </Button>
+              <div className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>{selectedVault.companyName}</CardTitle>
+              </div>
             </div>
-            <CardDescription>
-              Estas empresas se registraron pero no tienen plan asignado. Asígnales un período de prueba.
-            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Empresa</TableHead>
-                  <TableHead>NIT</TableHead>
-                  <TableHead>Fecha Registro</TableHead>
-                  <TableHead>Acción</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {companiesWithoutSub.companies.map((company) => (
-                  <TableRow key={company.id} data-testid={`row-company-no-sub-${company.id}`}>
-                    <TableCell className="font-medium">{company.name}</TableCell>
-                    <TableCell>{company.nit}</TableCell>
-                    <TableCell>{formatDate(company.createdAt)}</TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        onClick={() => setAssignTrialDialog({ open: true, company })}
-                        data-testid={`button-assign-trial-${company.id}`}
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Asignar Trial
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Plan</p>
+                <p className="font-medium" data-testid="text-vault-plan">{selectedVault.planDisplay}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Estado</p>
+                <div data-testid="text-vault-status">{getStatusBadge(selectedVault.subscription.status)}</div>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Precio Mensual</p>
+                <p className="font-medium" data-testid="text-vault-price">{selectedVault.priceDisplay}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Fecha Inicio</p>
+                <p className="font-medium" data-testid="text-vault-start">{formatDate(selectedVault.subscription.createdAt)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Próxima Renovación</p>
+                <p className="font-medium" data-testid="text-vault-renewal">{selectedVault.nextRenewal}</p>
+              </div>
+              {selectedVault.subscription.trialEnd && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Fin del Trial</p>
+                  <p className="font-medium" data-testid="text-vault-trial-end">{formatDate(selectedVault.subscription.trialEnd)}</p>
+                </div>
+              )}
+            </div>
+            {selectedVault.subscription.suspendedAt && (
+              <div>
+                <p className="text-sm text-muted-foreground">Suspendida desde</p>
+                <p className="font-medium text-destructive" data-testid="text-vault-suspended-at">{formatDate(selectedVault.subscription.suspendedAt)}</p>
+              </div>
+            )}
+            {selectedVault.subscription.canceledAt && (
+              <div>
+                <p className="text-sm text-muted-foreground">Cancelada el</p>
+                <p className="font-medium text-destructive" data-testid="text-vault-canceled-at">{formatDate(selectedVault.subscription.canceledAt)}</p>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-4 border-t flex-wrap">
+              {selectedVault.subscription.status === 'active' && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleAction(selectedVault.subscription, 'suspend')}
+                    data-testid="button-vault-suspend"
+                  >
+                    <Ban className="h-4 w-4 mr-1" />
+                    Suspender
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleAction(selectedVault.subscription, 'cancel')}
+                    data-testid="button-vault-cancel"
+                  >
+                    <XCircle className="h-4 w-4 mr-1" />
+                    Cancelar
+                  </Button>
+                </>
+              )}
+              {(selectedVault.subscription.status === 'suspended' || selectedVault.subscription.status === 'past_due') && (
+                <Button
+                  onClick={() => handleAction(selectedVault.subscription, 'activate')}
+                  data-testid="button-vault-activate"
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Reactivar
+                </Button>
+              )}
+              {selectedVault.subscription.status === 'trial' && (
+                <>
+                  <Button
+                    onClick={() => handleAction(selectedVault.subscription, 'activate')}
+                    data-testid="button-vault-activate-trial"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Activar (Fin de Trial)
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleAction(selectedVault.subscription, 'cancel')}
+                    data-testid="button-vault-cancel-trial"
+                  >
+                    <XCircle className="h-4 w-4 mr-1" />
+                    Cancelar
+                  </Button>
+                </>
+              )}
+            </div>
           </CardContent>
         </Card>
+      ) : (
+        <>
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+              <h2 className="text-xl font-semibold" data-testid="text-vaults-title">Suscripciones por Empresa</h2>
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar empresa..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 w-[220px]"
+                    data-testid="input-search-vaults"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
+                    <SelectValue placeholder="Filtrar por estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="active">Activas</SelectItem>
+                    <SelectItem value="trial">Pruebas</SelectItem>
+                    <SelectItem value="past_due">Vencidas</SelectItem>
+                    <SelectItem value="suspended">Suspendidas</SelectItem>
+                    <SelectItem value="canceled">Canceladas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {filteredVaults.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground" data-testid="text-no-vaults">
+                    {searchTerm || statusFilter !== "all"
+                      ? "No se encontraron empresas con los filtros aplicados"
+                      : "No hay suscripciones registradas"}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="grid-vaults">
+                {filteredVaults.map((vault) => (
+                  <Card
+                    key={vault.companyId}
+                    className="hover-elevate cursor-pointer"
+                    onClick={() => setSelectedVaultCompanyId(vault.companyId)}
+                    data-testid={`card-vault-${vault.companyId}`}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Building2 className="h-5 w-5 text-muted-foreground shrink-0" />
+                          <CardTitle className="text-base truncate">{vault.companyName}</CardTitle>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="text-sm text-muted-foreground">Plan</span>
+                        <span className="text-sm font-medium" data-testid={`text-vault-plan-${vault.companyId}`}>{vault.planDisplay}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="text-sm text-muted-foreground">Estado</span>
+                        <span data-testid={`text-vault-status-${vault.companyId}`}>{getStatusBadge(vault.subscription.status)}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="text-sm text-muted-foreground">Precio</span>
+                        <span className="text-sm font-medium" data-testid={`text-vault-price-${vault.companyId}`}>{vault.priceDisplay}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="text-sm text-muted-foreground flex items-center gap-1">
+                          <CalendarClock className="h-3 w-3" />
+                          Renovación
+                        </span>
+                        <span className="text-sm" data-testid={`text-vault-renewal-${vault.companyId}`}>{vault.nextRenewal}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {companiesWithoutSub && companiesWithoutSub.count > 0 && (
+            <Card className="mt-8" data-testid="card-companies-without-subscription">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-warning" />
+                  <CardTitle className="text-warning">Empresas sin Suscripción ({companiesWithoutSub.count})</CardTitle>
+                </div>
+                <CardDescription>
+                  Estas empresas se registraron pero no tienen plan asignado. Asígnales un período de prueba.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Empresa</TableHead>
+                      <TableHead>NIT</TableHead>
+                      <TableHead>Fecha Registro</TableHead>
+                      <TableHead>Acción</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {companiesWithoutSub.companies.map((company) => (
+                      <TableRow key={company.id} data-testid={`row-company-no-sub-${company.id}`}>
+                        <TableCell className="font-medium">{company.name}</TableCell>
+                        <TableCell>{company.nit}</TableCell>
+                        <TableCell>{formatDate(company.createdAt)}</TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            onClick={() => setAssignTrialDialog({ open: true, company })}
+                            data-testid={`button-assign-trial-${company.id}`}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Asignar Trial
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
-      {/* Assign Trial Dialog */}
       <AlertDialog open={assignTrialDialog.open} onOpenChange={(open) => setAssignTrialDialog({ ...assignTrialDialog, open })}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Asignar Per\u00edodo de Prueba</AlertDialogTitle>
+            <AlertDialogTitle>Asignar Período de Prueba</AlertDialogTitle>
             <AlertDialogDescription>
-              Asignar un per\u00edodo de prueba de 7 d\u00edas a <strong>{assignTrialDialog.company?.name}</strong> con el plan din\u00e1mico SST Colombia.
-              El precio se calcular\u00e1 autom\u00e1ticamente seg\u00fan el perfil de la empresa.
+              Asignar un período de prueba de 7 días a <strong>{assignTrialDialog.company?.name}</strong> con el plan dinámico SST Colombia.
+              El precio se calculará automáticamente según el perfil de la empresa.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -495,7 +645,6 @@ export default function DashboardFacturacion() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Confirmation Dialog */}
       <AlertDialog open={actionDialog.open} onOpenChange={(open) => setActionDialog({ ...actionDialog, open })}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -1710,6 +1710,8 @@ export interface IStorage {
   // SISTEMA DE MENSAJERÍA INTERNA - Comunicación LSO ↔ Responsable SST
   // ============================================================================
   getInternalMessages(userId: string, companyId?: string | null): Promise<InternalMessage[]>;
+  getAllInternalMessagesByCompany(companyId: string): Promise<InternalMessage[]>;
+  getAllInternalMessages(): Promise<InternalMessage[]>;
   getInternalMessage(id: string): Promise<InternalMessage | undefined>;
   createInternalMessage(message: InsertInternalMessage): Promise<InternalMessage>;
   markMessageAsRead(id: string): Promise<InternalMessage | undefined>;
@@ -14286,6 +14288,17 @@ export class DbStorage implements IStorage {
   // ============================================================================
   // SISTEMA DE MENSAJERÍA INTERNA - Comunicación LSO ↔ Responsable SST
   // ============================================================================
+
+  async getAllInternalMessagesByCompany(companyId: string): Promise<InternalMessage[]> {
+    return await db.select().from(schema.internalMessages)
+      .where(eq(schema.internalMessages.companyId, companyId))
+      .orderBy(desc(schema.internalMessages.createdAt));
+  }
+
+  async getAllInternalMessages(): Promise<InternalMessage[]> {
+    return await db.select().from(schema.internalMessages)
+      .orderBy(desc(schema.internalMessages.createdAt));
+  }
 
   async getInternalMessages(userId: string, companyId?: string | null): Promise<InternalMessage[]> {
     // Si hay companyId, filtrar por empresa Y usuario
