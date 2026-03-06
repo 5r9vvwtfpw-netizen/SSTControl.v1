@@ -44,7 +44,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema, type User, type UserRole } from "@shared/schema";
 import { roleLabels, roleDescriptions, hasGlobalAccess } from "@shared/permissions";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, Pencil, Trash2, Shield, Info, Building2, Award, Search, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Shield, Info, Building2, Award, Search, X, ChevronRight, ArrowLeft, Users } from "lucide-react";
 import { z } from "zod";
 import type { Company } from "@shared/schema";
 
@@ -168,6 +168,7 @@ export default function GestionUsuarios() {
   const [extraSeatPurchaseInfo, setExtraSeatPurchaseInfo] = useState<ExtraSeatPurchaseInfo | null>(null);
   const [isPurchaseLoading, setIsPurchaseLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedVaultCompanyId, setSelectedVaultCompanyId] = useState<string | null>(null);
   
   const { data: users, isLoading } = useQuery<UserWithoutPassword[]>({
     queryKey: ["/api/users"],
@@ -177,6 +178,47 @@ export default function GestionUsuarios() {
   const { data: companies } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
   });
+
+  const hasGlobalCompanyAccess = currentUser?.role ? hasGlobalAccess(currentUser.role) : false;
+
+  const companyMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    (companies || []).forEach((c) => { map[c.id] = c.name; });
+    return map;
+  }, [companies]);
+
+  const companyVaults = useMemo(() => {
+    if (!hasGlobalCompanyAccess || !users || users.length === 0) return [];
+    const grouped: Record<string, { companyId: string; companyName: string; total: number; roles: Record<string, number> }> = {};
+    const noCompany = { companyId: "__no_company__", companyName: "Sin empresa asignada", total: 0, roles: {} as Record<string, number> };
+    users.forEach((u) => {
+      const key = u.companyId || "__no_company__";
+      if (key === "__no_company__") {
+        noCompany.total++;
+        const roleName = roleLabels[u.role] || u.role;
+        noCompany.roles[roleName] = (noCompany.roles[roleName] || 0) + 1;
+      } else {
+        if (!grouped[key]) {
+          grouped[key] = {
+            companyId: key,
+            companyName: companyMap[key] || "Empresa desconocida",
+            total: 0,
+            roles: {},
+          };
+        }
+        grouped[key].total++;
+        const roleName = roleLabels[u.role] || u.role;
+        grouped[key].roles[roleName] = (grouped[key].roles[roleName] || 0) + 1;
+      }
+    });
+    const result = Object.values(grouped).sort((a, b) => b.total - a.total);
+    if (noCompany.total > 0) result.push(noCompany);
+    return result;
+  }, [users, companyMap, hasGlobalCompanyAccess]);
+
+  const selectedVaultCompanyName = selectedVaultCompanyId === "__no_company__"
+    ? "Sin empresa asignada"
+    : selectedVaultCompanyId ? (companyMap[selectedVaultCompanyId] || "Empresa") : "";
   
   // Roles que solo deben ser visibles para usuarios con acceso global (proveedor)
   const providerOnlyRoles = ['superadmin', 'admin', 'soporte'];
@@ -916,25 +958,27 @@ export default function GestionUsuarios() {
               {users?.length || 0} usuarios registrados
             </CardDescription>
           </div>
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar usuario, nombre, email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-9"
-              data-testid="input-search-users"
-            />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                data-testid="button-clear-search-users"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+          {(!hasGlobalCompanyAccess || selectedVaultCompanyId) && (
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar usuario, nombre, email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 pr-9"
+                data-testid="input-search-users"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  data-testid="button-clear-search-users"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -945,10 +989,74 @@ export default function GestionUsuarios() {
             <div className="text-center py-8 text-muted-foreground">
               No hay usuarios registrados
             </div>
+          ) : hasGlobalCompanyAccess && !selectedVaultCompanyId ? (
+            <>
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar empresa por nombre..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  data-testid="input-search-user-vaults"
+                />
+              </div>
+              {companyVaults.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No se encontraron empresas con usuarios
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {companyVaults
+                    .filter(v => !searchTerm || v.companyName.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map((vault) => (
+                    <Card
+                      key={vault.companyId}
+                      className="hover-elevate cursor-pointer transition-colors"
+                      onClick={() => {
+                        setSelectedVaultCompanyId(vault.companyId);
+                        setSearchTerm("");
+                      }}
+                      data-testid={`vault-company-${vault.companyId}`}
+                    >
+                      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Building2 className="h-5 w-5 text-muted-foreground shrink-0" />
+                          <CardTitle className="text-base truncate" data-testid={`vault-name-${vault.companyId}`}>{vault.companyName}</CardTitle>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium" data-testid={`vault-total-${vault.companyId}`}>{vault.total} usuario{vault.total !== 1 ? "s" : ""}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {Object.entries(vault.roles).slice(0, 4).map(([roleName, count]) => (
+                            <Badge key={roleName} variant="secondary">
+                              {count} {roleName}
+                            </Badge>
+                          ))}
+                          {Object.keys(vault.roles).length > 4 && (
+                            <Badge variant="outline">+{Object.keys(vault.roles).length - 4} más</Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
           ) : (() => {
+            const vaultFilteredUsers = hasGlobalCompanyAccess && selectedVaultCompanyId
+              ? users.filter(u => {
+                  if (selectedVaultCompanyId === "__no_company__") return !u.companyId;
+                  return u.companyId === selectedVaultCompanyId;
+                })
+              : users;
             const normalizedSearch = searchTerm.toLowerCase().trim();
             const filteredUsers = normalizedSearch
-              ? users.filter((u) => {
+              ? vaultFilteredUsers.filter((u) => {
                   const roleName = roleLabels[u.role] || u.role;
                   return (
                     u.username.toLowerCase().includes(normalizedSearch) ||
@@ -958,13 +1066,37 @@ export default function GestionUsuarios() {
                     roleName.toLowerCase().includes(normalizedSearch)
                   );
                 })
-              : users;
-            return filteredUsers.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No se encontraron usuarios para "{searchTerm}"</p>
-              </div>
-            ) : (
+              : vaultFilteredUsers;
+            return (
+              <>
+                {hasGlobalCompanyAccess && selectedVaultCompanyId && (
+                  <div className="flex items-center gap-3 mb-4">
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setSelectedVaultCompanyId(null);
+                        setSearchTerm("");
+                      }}
+                      data-testid="button-back-to-user-vaults"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Volver a empresas
+                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-lg font-semibold" data-testid="text-vault-company-name">{selectedVaultCompanyName}</span>
+                      <Badge variant="secondary" data-testid="text-vault-user-count">
+                        {filteredUsers.length} usuario{filteredUsers.length !== 1 ? "s" : ""}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+                {filteredUsers.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No se encontraron usuarios{searchTerm ? ` para "${searchTerm}"` : ""}</p>
+                  </div>
+                ) : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -1045,6 +1177,8 @@ export default function GestionUsuarios() {
                 ))}
               </TableBody>
             </Table>
+                )}
+              </>
             );
           })()}
         </CardContent>
