@@ -81,6 +81,7 @@ class AccountingIntegrationService {
       origen: 'sst-colombia',
       facturaOrigenId: data.invoiceId,
       facturaOrigenNumero: data.invoiceNumber,
+      enviarDian: true,
       cliente: {
         razonSocial: data.customerName,
         numeroDocumento: data.customerNit,
