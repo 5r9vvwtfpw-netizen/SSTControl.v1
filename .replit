@@ -66,6 +66,7 @@ ENABLE_CHATBOT = "true"
 DEMO_GOLDEN_MASTER_ID = "8be87733-e323-4386-917f-aed929b9dae5"
 ENABLE_INDUCCION_VIRTUAL_PLUGIN = "true"
 ACCOUNTING_API_URL = "https://conta.sagisas.co"
+ACCOUNTING_INTEGRATION_ENABLED = "true"
 
 [userenv.development]
 AUTO_VERIFY_EMAIL = "true"
