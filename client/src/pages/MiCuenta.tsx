@@ -221,7 +221,7 @@ export default function MiCuenta() {
   const handleDownloadInvoice = (invoiceId: string, invoiceNumber: string) => {
     const link = document.createElement('a');
     link.href = `/api/billing/invoice/${invoiceId}/download`;
-    link.download = `Factura-${invoiceNumber}.pdf`;
+    link.download = `Comprobante-${invoiceNumber}.pdf`;
     link.click();
   };
 

@@ -1216,7 +1216,7 @@ export function registerBillingRoutes(app: Express) {
 
       // Send PDF file
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="Factura-${invoice.invoiceNumber}.pdf"`);
+      res.setHeader('Content-Disposition', `attachment; filename="Comprobante-${invoice.invoiceNumber}.pdf"`);
       res.send(pdfBuffer);
     } catch (error: any) {
       console.error('Error downloading invoice:', error);

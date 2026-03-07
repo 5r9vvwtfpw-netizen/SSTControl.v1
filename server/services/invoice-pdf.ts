@@ -94,7 +94,7 @@ export class InvoicePdfService {
 
     doc.fontSize(11).font('Helvetica-Bold')
        .fillColor(this.GREEN)
-       .text('FACTURA DE VENTA', boxX, boxY + 10, { width: boxW, align: 'center' });
+       .text('COMPROBANTE DE PAGO', boxX, boxY + 10, { width: boxW, align: 'center' });
     
     doc.fontSize(12).font('Helvetica-Bold')
        .fillColor(this.DARK)
@@ -168,7 +168,7 @@ export class InvoicePdfService {
 
     doc.fontSize(9).font('Helvetica-Bold')
        .fillColor(this.GREEN)
-       .text('DATOS DE LA FACTURA', colRightX, ry, { width: colRightW });
+       .text('DATOS DEL COMPROBANTE', colRightX, ry, { width: colRightW });
     ry += 16;
 
     const dateRows: Array<{ label: string; value: string; valueColor?: string }> = [
