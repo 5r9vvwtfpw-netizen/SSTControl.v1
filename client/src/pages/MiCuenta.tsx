@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   User, Building2, CreditCard, FileText, Download, Calendar, 
   AlertCircle, Loader2, Mail, Phone, MapPin, Shield, Users, Check, CheckCircle,
-  Car, Briefcase, MapPinned
+  Car, Briefcase, MapPinned, ExternalLink, Receipt
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -55,6 +55,10 @@ type Invoice = {
   snapshotCiiuCode: string | null;
   snapshotNumberOfWorkers: number | null;
   snapshotNumberOfVehicles: number | null;
+  dianCufe: string | null;
+  dianPdfUrl: string | null;
+  dianXmlUrl: string | null;
+  receiptUrl: string | null;
 };
 
 type MySubscriptionResponse = {
@@ -683,40 +687,79 @@ export default function MiCuenta() {
                   {invoices.map((invoice) => (
                     <div 
                       key={invoice.id} 
-                      className="flex items-center justify-between p-4 border rounded-lg hover-elevate"
+                      className="p-4 border rounded-lg hover-elevate"
                       data-testid={`invoice-${invoice.id}`}
                     >
-                      <div className="flex items-start gap-4">
-                        <FileText className="h-5 w-5 text-muted-foreground mt-1" />
-                        <div>
-                          <p className="font-medium" data-testid={`text-invoice-number-${invoice.id}`}>
-                            {invoice.invoiceNumber}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Emitida: {formatDate(invoice.issueDate)}
-                          </p>
-                          {invoice.paidDate && (
-                            <p className="text-sm text-muted-foreground">
-                              Pagada: {formatDate(invoice.paidDate)}
+                      <div className="flex items-center justify-between gap-4 flex-wrap">
+                        <div className="flex items-start gap-4">
+                          <FileText className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
+                          <div>
+                            <p className="font-medium" data-testid={`text-invoice-number-${invoice.id}`}>
+                              {invoice.invoiceNumber}
                             </p>
-                          )}
+                            <p className="text-sm text-muted-foreground">
+                              Emitida: {formatDate(invoice.issueDate)}
+                            </p>
+                            {invoice.paidDate && (
+                              <p className="text-sm text-muted-foreground">
+                                Pagada: {formatDate(invoice.paidDate)}
+                              </p>
+                            )}
+                            {invoice.dianCufe && (
+                              <p className="text-xs text-muted-foreground mt-1 font-mono truncate max-w-[280px]" data-testid={`text-cufe-${invoice.id}`}>
+                                CUFE: {invoice.dianCufe.substring(0, 20)}...
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-4">
                         <div className="text-right">
                           <p className="text-lg font-bold" data-testid={`text-invoice-amount-${invoice.id}`}>
                             {formatPrice(invoice.total)}
                           </p>
                           {getInvoiceStatusBadge(invoice.status)}
                         </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-3 pt-3 border-t flex-wrap">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleDownloadInvoice(invoice.id, invoice.invoiceNumber)}
                           data-testid={`button-download-${invoice.id}`}
                         >
-                          <Download className="h-4 w-4" />
+                          <Download className="h-4 w-4 mr-1.5" />
+                          Comprobante SST
                         </Button>
+                        {invoice.dianPdfUrl && (
+                          <a href={invoice.dianPdfUrl} target="_blank" rel="noopener noreferrer">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              data-testid={`button-dian-pdf-${invoice.id}`}
+                            >
+                              <FileText className="h-4 w-4 mr-1.5" />
+                              Factura Electrónica
+                              <ExternalLink className="h-3 w-3 ml-1" />
+                            </Button>
+                          </a>
+                        )}
+                        {invoice.receiptUrl && (
+                          <a href={invoice.receiptUrl} target="_blank" rel="noopener noreferrer">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              data-testid={`button-stripe-receipt-${invoice.id}`}
+                            >
+                              <Receipt className="h-4 w-4 mr-1.5" />
+                              Recibo de Pago
+                              <ExternalLink className="h-3 w-3 ml-1" />
+                            </Button>
+                          </a>
+                        )}
+                        {!invoice.dianPdfUrl && !invoice.receiptUrl && invoice.dianCufe && (
+                          <span className="text-xs text-muted-foreground">
+                            Factura electrónica emitida (CUFE disponible)
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}
