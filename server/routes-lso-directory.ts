@@ -14,6 +14,7 @@ import {
 import { db } from "./db";
 import { companies } from "@shared/schema"
 import { eq } from "drizzle-orm";
+import { contactFormRateLimiter, publicSearchRateLimiter } from "./middleware/rate-limit";
 
 // Identificador único para esta aplicación
 const COMPANY_CLIENT_ID = "sst-colombia-landing";
@@ -36,7 +37,7 @@ export function registerLsoDirectoryRoutes(app: Express) {
   });
 
   // Buscar profesionales en directorio externo LSO
-  app.get("/api/lso/search", async (req, res) => {
+  app.get("/api/lso/search", publicSearchRateLimiter, async (req, res) => {
     try {
       const { name, department, city, professionType, limit, offset } = req.query;
       
@@ -59,7 +60,7 @@ export function registerLsoDirectoryRoutes(app: Express) {
   });
 
   // Contactar a un profesional
-  app.post("/api/lso/contact", async (req, res) => {
+  app.post("/api/lso/contact", contactFormRateLimiter, async (req, res) => {
     try {
       const { lsoRegistrationId, notes } = req.body;
       

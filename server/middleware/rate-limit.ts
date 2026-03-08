@@ -227,6 +227,68 @@ export const webhookRateLimiter = rateLimit({
 });
 
 /**
+ * Contact form rate limiter
+ * Allows 5 contact requests per 15 minutes per IP
+ * Prevents bot spam and abuse of contact/form endpoints
+ */
+export const contactFormRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 contact requests per window
+  message: {
+    error: 'Demasiadas solicitudes de contacto. Por favor espere 15 minutos.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: false,
+  skipFailedRequests: false,
+  handler: (req, res) => {
+    const reqLogger = (req as any).log || logger;
+    reqLogger.warn({
+      ip: req.ip,
+      path: req.path,
+      method: req.method
+    }, 'Contact form rate limit exceeded - possible bot spam');
+    
+    res.status(429).json({
+      error: 'Demasiadas solicitudes de contacto. Por favor espere 15 minutos.',
+      retryAfter: '15 minutes'
+    });
+  }
+});
+
+/**
+ * Public search rate limiter
+ * Allows 30 search requests per 15 minutes per IP
+ * Prevents scraping of public directories
+ */
+export const publicSearchRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // 30 searches per window
+  message: {
+    error: 'Demasiadas búsquedas. Por favor espere 15 minutos.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: false,
+  skipFailedRequests: false,
+  handler: (req, res) => {
+    const reqLogger = (req as any).log || logger;
+    reqLogger.warn({
+      ip: req.ip,
+      path: req.path,
+      method: req.method
+    }, 'Public search rate limit exceeded - possible scraping');
+    
+    res.status(429).json({
+      error: 'Demasiadas búsquedas. Por favor espere 15 minutos.',
+      retryAfter: '15 minutes'
+    });
+  }
+});
+
+/**
  * Upload rate limiter
  * Allows 30 file uploads per 15 minutes per IP
  * Prevents abuse of file upload endpoints
