@@ -1,4 +1,68 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+
+interface DailyChallenge {
+  dragEmoji: string;
+  dropEmoji: string;
+  dragName: string;
+  successEmoji: string;
+  successMessage: string;
+}
+
+function getDailyChallenge(): DailyChallenge {
+  const day = new Date().getDay();
+  const challenges: Record<number, DailyChallenge> = {
+    1: {
+      dragEmoji: "⛑️",
+      dropEmoji: "👷",
+      dragName: "Casco de Seguridad",
+      successEmoji: "👷‍♂️",
+      successMessage: "EPP listo. A trabajar seguro!",
+    },
+    2: {
+      dragEmoji: "🍎",
+      dropEmoji: "❤️",
+      dragName: "Manzana Saludable",
+      successEmoji: "💪",
+      successMessage: "Salud ocupacional al dia!",
+    },
+    3: {
+      dragEmoji: "🧯",
+      dropEmoji: "🔥",
+      dragName: "Extintor",
+      successEmoji: "✅",
+      successMessage: "Emergencia controlada!",
+    },
+    4: {
+      dragEmoji: "📋",
+      dropEmoji: "🎓",
+      dragName: "Plan de Capacitacion",
+      successEmoji: "🏆",
+      successMessage: "Capacitacion registrada!",
+    },
+    5: {
+      dragEmoji: "🛡️",
+      dropEmoji: "⚠️",
+      dragName: "Escudo de Prevencion",
+      successEmoji: "🦺",
+      successMessage: "Riesgos bajo control!",
+    },
+    6: {
+      dragEmoji: "📊",
+      dropEmoji: "📈",
+      dragName: "Informe de Gestion",
+      successEmoji: "💯",
+      successMessage: "Indicadores al dia!",
+    },
+    0: {
+      dragEmoji: "🚗",
+      dropEmoji: "🛣️",
+      dragName: "Vehiculo Seguro",
+      successEmoji: "🏁",
+      successMessage: "PESV: Seguridad vial activa!",
+    },
+  };
+  return challenges[day];
+}
 
 const captchaStyles = `
 :root {
@@ -99,11 +163,12 @@ interface CaptchaSSTProps {
 }
 
 export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
+  const challenge = useMemo(() => getDailyChallenge(), []);
   const [status, setStatus] = useState("Estado: Esperando seguridad...");
   const [verified, setVerified] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [itemVisible, setItemVisible] = useState(true);
-  const [dropContent, setDropContent] = useState("🎯");
+  const [dropContent, setDropContent] = useState(challenge.dropEmoji);
 
   const handleDragStart = useCallback((e: React.DragEvent) => {
     e.dataTransfer.setData("text", "secured");
@@ -121,19 +186,19 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setHovered(false);
-    setStatus("✅ ¡Listo! Que tengas un gran día productivo.");
+    setStatus(`✅ ${challenge.successMessage}`);
     setVerified(true);
-    setDropContent("👷");
+    setDropContent(challenge.successEmoji);
     setItemVisible(false);
     onVerified();
-  }, [onVerified]);
+  }, [onVerified, challenge]);
 
   return (
     <>
       <style>{captchaStyles}</style>
       <div className="captcha-container" data-testid="captcha-container">
         <p className="captcha-hint">
-          ¡Hola! Para empezar bien, arrastra el <strong>Casco de Seguridad</strong> al círculo.
+          ¡Hola! Para empezar bien, arrastra el <strong>{challenge.dragName}</strong> a su destino.
         </p>
 
         <div className="captcha-track">
@@ -145,7 +210,7 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
               onDragStart={handleDragStart}
               data-testid="captcha-drag-item"
             >
-              🦺
+              {challenge.dragEmoji}
             </div>
           )}
           <div
