@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 
 interface DailyChallenge {
   dragEmoji: string;
@@ -389,15 +389,17 @@ function getDailyChallenge(): DailyChallenge {
   return ALL_CHALLENGES[index];
 }
 
+const CAPTCHA_STYLE_ID = "captcha-sst-styles";
+
 const captchaStyles = `
-:root {
-  --sst-blue: #1A237E;
-  --sst-accent: #FBC02D;
-  --sst-success: #43A047;
-  --bg-soft: #F0F2F5;
+#captcha-sst-wrapper {
+  --sst-cap-blue: #1A237E;
+  --sst-cap-accent: #FBC02D;
+  --sst-cap-success: #43A047;
+  --sst-cap-bg: #F0F2F5;
 }
 
-.captcha-container {
+#captcha-sst-wrapper .captcha-container {
   font-family: 'Inter', -apple-system, sans-serif;
   background: #ffffff;
   padding: 24px;
@@ -405,35 +407,34 @@ const captchaStyles = `
   box-shadow: 0 10px 25px rgba(26, 35, 126, 0.1);
   max-width: 380px;
   text-align: center;
-  border-top: 5px solid var(--sst-blue);
+  border-top: 5px solid var(--sst-cap-blue);
   margin: 0 auto;
 }
 
-.captcha-hint {
+#captcha-sst-wrapper .captcha-hint {
   font-size: 0.95rem;
   color: #455A64;
   line-height: 1.4;
   margin-bottom: 25px;
 }
 
-.captcha-hint strong {
-  color: var(--sst-blue);
+#captcha-sst-wrapper .captcha-hint strong {
+  color: var(--sst-cap-blue);
 }
 
-.captcha-track {
+#captcha-sst-wrapper .captcha-track {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--bg-soft);
+  background: var(--sst-cap-bg);
   padding: 20px;
   border-radius: 12px;
   margin-bottom: 20px;
   border: 2px solid #E0E0E0;
   position: relative;
-  overflow: hidden;
 }
 
-.emoji-item {
+#captcha-sst-wrapper .emoji-item {
   font-size: 2.5rem;
   cursor: grab;
   filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
@@ -441,16 +442,16 @@ const captchaStyles = `
   transition: transform 0.2s ease;
 }
 
-.emoji-item:active {
+#captcha-sst-wrapper .emoji-item:active {
   cursor: grabbing;
   transform: scale(1.1);
 }
 
-.drop-target {
+#captcha-sst-wrapper .drop-target {
   width: 65px;
   height: 65px;
   border-radius: 12px;
-  border: 2px dashed var(--sst-blue);
+  border: 2px dashed var(--sst-cap-blue);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -459,37 +460,32 @@ const captchaStyles = `
   transition: all 0.3s ease;
 }
 
-.drop-target.hovered {
-  background: var(--sst-accent) !important;
-  border-color: var(--sst-blue) !important;
+#captcha-sst-wrapper .drop-target.hovered {
+  background: var(--sst-cap-accent) !important;
+  border-color: var(--sst-cap-blue) !important;
   transform: scale(1.1);
   box-shadow: 0 0 15px rgba(251, 192, 45, 0.5);
 }
 
-#captcha-status {
+#captcha-sst-wrapper .captcha-status {
   font-size: 0.85rem;
   font-weight: 600;
   color: #78909C;
   min-height: 20px;
 }
 
-.success-message {
-  color: var(--sst-success) !important;
+#captcha-sst-wrapper .captcha-success {
+  color: var(--sst-cap-success) !important;
   font-size: 0.9rem;
   font-weight: bold;
   margin-top: 10px;
   display: block;
-  animation: bounce 0.5s ease;
+  animation: captchaBounce 0.5s ease;
 }
 
-@keyframes bounce {
+@keyframes captchaBounce {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
-}
-
-.captcha-container + button[disabled],
-.captcha-container ~ button[disabled] {
-  transition: background-color 0.3s ease;
 }
 `;
 
@@ -505,13 +501,18 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
   const [dragging, setDragging] = useState(false);
   const [itemVisible, setItemVisible] = useState(true);
   const [dropSuccess, setDropSuccess] = useState(false);
+  const styleInjected = useRef(false);
 
-  const missionText = useMemo(() => {
-    return challenge.successMessage.replace(
-      /\*\*(.*?)\*\*/g,
-      "<strong>$1</strong>"
-    );
-  }, [challenge]);
+  useEffect(() => {
+    if (styleInjected.current) return;
+    if (!document.getElementById(CAPTCHA_STYLE_ID)) {
+      const style = document.createElement("style");
+      style.id = CAPTCHA_STYLE_ID;
+      style.textContent = captchaStyles;
+      document.head.appendChild(style);
+    }
+    styleInjected.current = true;
+  }, []);
 
   const hintText = useMemo(() => {
     return `Arrastra el <strong>${challenge.dragName}</strong> ${challenge.dragEmoji} hasta su destino ${challenge.dropEmoji}`;
@@ -550,11 +551,9 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
   }, [onVerified, challenge]);
 
   return (
-    <>
-      <style>{captchaStyles}</style>
+    <div id="captcha-sst-wrapper" data-testid="captcha-wrapper">
       <div className="captcha-container" data-testid="captcha-container">
         <p
-          id="captcha-text"
           className="captcha-hint"
           dangerouslySetInnerHTML={{ __html: hintText }}
           data-testid="captcha-text"
@@ -562,7 +561,6 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
 
         <div className="captcha-track">
           <div
-            id="drag-item"
             className="emoji-item"
             draggable={!verified}
             onDragStart={handleDragStart}
@@ -576,14 +574,13 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
             {challenge.dragEmoji}
           </div>
           <div
-            id="drop-zone"
             className={`drop-target${hovered ? " hovered" : ""}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             style={dropSuccess ? {
-              background: "var(--sst-success)",
-              borderColor: "var(--sst-success)",
+              background: "var(--sst-cap-success)",
+              borderColor: "var(--sst-cap-success)",
               color: "white",
             } : undefined}
             data-testid="captcha-drop-zone"
@@ -593,13 +590,12 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
         </div>
 
         <p
-          id="captcha-status"
-          className={verified ? "success-message" : ""}
+          className={verified ? "captcha-success" : "captcha-status"}
           data-testid="captcha-status"
         >
           {status}
         </p>
       </div>
-    </>
+    </div>
   );
 }
