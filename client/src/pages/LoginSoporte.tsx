@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -10,16 +10,27 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Headset, XCircle, Shield, Eye, EyeOff } from "lucide-react";
 import { Redirect, Link } from "wouter";
 import type { User } from "@shared/schema";
+import SimpleCaptcha from "@/components/SimpleCaptcha";
 
 export default function LoginSoporte() {
   const { user } = useAuth();
   const [loginData, setLoginData] = useState({ username: "", password: "" });
   const [loginError, setLoginError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaAnswer, setCaptchaAnswer] = useState<number | null>(null);
+  const handleCaptchaVerified = useCallback((token: string, answer: number) => {
+    setCaptchaToken(token);
+    setCaptchaAnswer(answer);
+  }, []);
+  const handleCaptchaReset = useCallback(() => {
+    setCaptchaToken("");
+    setCaptchaAnswer(null);
+  }, []);
 
   // Dedicated support login mutation - uses /api/support-login endpoint
   const supportLoginMutation = useMutation({
-    mutationFn: async (credentials: { username: string; password: string }) => {
+    mutationFn: async (credentials: { username: string; password: string; captchaToken: string; captchaAnswer: number | null }) => {
       const res = await apiRequest("POST", "/api/support-login", credentials);
       if (!res.ok) {
         const data = await res.json();
@@ -47,7 +58,7 @@ export default function LoginSoporte() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
-    supportLoginMutation.mutate(loginData);
+    supportLoginMutation.mutate({ ...loginData, captchaToken, captchaAnswer });
   };
 
   return (
@@ -110,10 +121,15 @@ export default function LoginSoporte() {
                   </button>
                 </div>
               </div>
+              <SimpleCaptcha
+                onVerified={handleCaptchaVerified}
+                onReset={handleCaptchaReset}
+                variant="blue"
+              />
               <Button 
                 type="submit" 
                 className="w-full bg-blue-600 hover:bg-blue-700" 
-                disabled={supportLoginMutation.isPending}
+                disabled={supportLoginMutation.isPending || !captchaToken || captchaAnswer === null}
                 data-testid="button-soporte-login"
               >
                 {supportLoginMutation.isPending ? "Iniciando sesión..." : "Iniciar Sesión"}

@@ -2,7 +2,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { scrypt, randomBytes, timingSafeEqual, createHmac } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser, UserRole } from "@shared/schema";
@@ -14,6 +14,59 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { loginRateLimiter, passwordResetRateLimiter, registrationRateLimiter } from "./middleware/rate-limit";
 import logger from "./lib/logger";
+
+const CAPTCHA_SECRET = process.env.SESSION_SECRET || 'sst-captcha-secret-key-2026';
+const CAPTCHA_TTL_MS = 5 * 60 * 1000;
+
+function generateCaptchaChallenge(): { question: string; token: string } {
+  const operators = ['+', '-', 'x'] as const;
+  const op = operators[Math.floor(Math.random() * operators.length)];
+  let a: number, b: number, answer: number;
+
+  switch (op) {
+    case '+':
+      a = Math.floor(Math.random() * 20) + 1;
+      b = Math.floor(Math.random() * 20) + 1;
+      answer = a + b;
+      break;
+    case '-':
+      a = Math.floor(Math.random() * 20) + 5;
+      b = Math.floor(Math.random() * a) + 1;
+      answer = a - b;
+      break;
+    case 'x':
+      a = Math.floor(Math.random() * 9) + 2;
+      b = Math.floor(Math.random() * 9) + 2;
+      answer = a * b;
+      break;
+  }
+
+  const expiresAt = Date.now() + CAPTCHA_TTL_MS;
+  const payload = `${answer}:${expiresAt}`;
+  const hmac = createHmac('sha256', CAPTCHA_SECRET).update(payload).digest('hex');
+  const token = `${expiresAt}:${hmac}`;
+
+  return { question: `${a} ${op} ${b} = ?`, token };
+}
+
+function verifyCaptchaToken(token: string, userAnswer: number): boolean {
+  try {
+    const parts = token.split(':');
+    if (parts.length !== 2) return false;
+    
+    const expiresAt = parseInt(parts[0], 10);
+    const providedHmac = parts[1];
+    
+    if (Date.now() > expiresAt) return false;
+    
+    const payload = `${userAnswer}:${expiresAt}`;
+    const expectedHmac = createHmac('sha256', CAPTCHA_SECRET).update(payload).digest('hex');
+    
+    return timingSafeEqual(Buffer.from(providedHmac, 'hex'), Buffer.from(expectedHmac, 'hex'));
+  } catch {
+    return false;
+  }
+}
 
 const registrationSchema = z.object({
   username: z.string().min(3, "El usuario debe tener al menos 3 caracteres"),
@@ -332,7 +385,20 @@ export function setupAuth(app: Express) {
     }
   });
 
+  app.get("/api/captcha", (req, res) => {
+    const challenge = generateCaptchaChallenge();
+    res.json(challenge);
+  });
+
   app.post("/api/login", loginRateLimiter, (req, res, next) => {
+    const { captchaToken, captchaAnswer } = req.body;
+    if (!captchaToken || captchaAnswer === undefined || captchaAnswer === null) {
+      return res.status(400).json({ error: "Debe completar la verificación de seguridad" });
+    }
+    if (!verifyCaptchaToken(captchaToken, parseInt(String(captchaAnswer), 10))) {
+      return res.status(400).json({ error: "Respuesta de verificación incorrecta. Intente de nuevo." });
+    }
+
     passport.authenticate("local", (err: any, user: SelectUser | false, info: any) => {
       if (err) {
         logger.error({ err }, "Login error");
@@ -384,7 +450,15 @@ export function setupAuth(app: Express) {
   });
 
   // Dedicated support login endpoint - only allows soporte and superadmin roles
-  app.post("/api/support-login", (req, res, next) => {
+  app.post("/api/support-login", loginRateLimiter, (req, res, next) => {
+    const { captchaToken, captchaAnswer } = req.body;
+    if (!captchaToken || captchaAnswer === undefined || captchaAnswer === null) {
+      return res.status(400).json({ error: "Debe completar la verificación de seguridad" });
+    }
+    if (!verifyCaptchaToken(captchaToken, parseInt(String(captchaAnswer), 10))) {
+      return res.status(400).json({ error: "Respuesta de verificación incorrecta. Intente de nuevo." });
+    }
+
     passport.authenticate("local", (err: any, user: SelectUser | false, info: any) => {
       if (err) {
         logger.error({ err }, "Support login error");

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,11 +7,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Shield, CheckCircle2, XCircle, Eye, EyeOff } from "lucide-react";
 import { Redirect, Link } from "wouter";
+import SimpleCaptcha from "@/components/SimpleCaptcha";
 
 export default function LoginEmpresa() {
   const { user, loginMutation } = useAuth();
   const [loginData, setLoginData] = useState({ username: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaAnswer, setCaptchaAnswer] = useState<number | null>(null);
+  const handleCaptchaVerified = useCallback((token: string, answer: number) => {
+    setCaptchaToken(token);
+    setCaptchaAnswer(answer);
+  }, []);
+  const handleCaptchaReset = useCallback(() => {
+    setCaptchaToken("");
+    setCaptchaAnswer(null);
+  }, []);
 
   const searchParams = new URLSearchParams(window.location.search);
   const verified = searchParams.get("verified");
@@ -36,7 +47,7 @@ export default function LoginEmpresa() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    loginMutation.mutate(loginData);
+    loginMutation.mutate({ ...loginData, captchaToken, captchaAnswer });
   };
 
   return (
@@ -117,10 +128,14 @@ export default function LoginEmpresa() {
                   </button>
                 </div>
               </div>
+              <SimpleCaptcha
+                onVerified={handleCaptchaVerified}
+                onReset={handleCaptchaReset}
+              />
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={loginMutation.isPending}
+                disabled={loginMutation.isPending || !captchaToken || captchaAnswer === null}
                 data-testid="button-login"
               >
                 {loginMutation.isPending ? "Iniciando sesión..." : "Iniciar Sesión"}
