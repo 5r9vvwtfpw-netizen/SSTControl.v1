@@ -490,6 +490,19 @@ const captchaStyles = `
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
 }
+
+#btn-login:disabled {
+  background-color: #bdc3c7 !important;
+  color: #ffffff !important;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+#btn-login:enabled {
+  background-color: #2e7d32 !important;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
 `;
 
 interface CaptchaSSTProps {

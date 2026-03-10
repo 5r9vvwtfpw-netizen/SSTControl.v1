@@ -115,9 +115,9 @@ export default function LoginSoporte() {
               <CaptchaSST onVerified={() => setCaptchaVerified(true)} />
               <Button 
                 type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700" 
+                id="btn-login"
+                className="w-full" 
                 disabled={!captchaVerified || supportLoginMutation.isPending}
-                style={!captchaVerified ? { backgroundColor: "#9E9E9E", cursor: "not-allowed" } : undefined}
                 data-testid="button-soporte-login"
               >
                 {supportLoginMutation.isPending ? "Iniciando sesión..." : "Iniciar Sesión"}
