@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 const captchaStyles = `
 .captcha-container {
@@ -63,6 +63,10 @@ const captchaStyles = `
   font-weight: bold;
   color: #666;
 }
+
+#captcha-status.verified {
+  color: #28a745;
+}
 `;
 
 interface CaptchaSSTProps {
@@ -72,6 +76,32 @@ interface CaptchaSSTProps {
 export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
   const [status, setStatus] = useState("Estado: Esperando seguridad...");
   const [verified, setVerified] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [itemVisible, setItemVisible] = useState(true);
+  const [dropContent, setDropContent] = useState("🎯");
+
+  const handleDragStart = useCallback((e: React.DragEvent) => {
+    e.dataTransfer.setData("text", "secured");
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setHovered(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setHovered(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setHovered(false);
+    setStatus("✅ ¡Listo! Que tengas un gran día productivo.");
+    setVerified(true);
+    setDropContent("👷");
+    setItemVisible(false);
+    onVerified();
+  }, [onVerified]);
 
   return (
     <>
@@ -82,24 +112,36 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
         </p>
 
         <div className="captcha-track">
-          <div
-            id="drag-item"
-            className="emoji-item"
-            draggable="true"
-            data-testid="captcha-drag-item"
-          >
-            🦺
-          </div>
+          {itemVisible && (
+            <div
+              id="drag-item"
+              className="emoji-item"
+              draggable="true"
+              onDragStart={handleDragStart}
+              data-testid="captcha-drag-item"
+            >
+              🦺
+            </div>
+          )}
           <div
             id="drop-zone"
-            className="drop-target"
+            className={`drop-target${hovered ? " hovered" : ""}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
             data-testid="captcha-drop-zone"
           >
-            🎯
+            {dropContent}
           </div>
         </div>
 
-        <p id="captcha-status" data-testid="captcha-status">{status}</p>
+        <p
+          id="captcha-status"
+          className={verified ? "verified" : ""}
+          data-testid="captcha-status"
+        >
+          {status}
+        </p>
       </div>
     </>
   );
