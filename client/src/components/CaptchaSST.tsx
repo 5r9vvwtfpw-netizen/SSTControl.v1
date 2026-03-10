@@ -15,6 +15,16 @@ function getDailyChallenge(): DailyChallenge {
   return ALL_CHALLENGES[index];
 }
 
+const SUCCESS_SOUND_URL = "https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3";
+
+function playSuccessSound() {
+  try {
+    const audio = new Audio(SUCCESS_SOUND_URL);
+    audio.volume = 0.5;
+    audio.play().catch(() => {});
+  } catch {}
+}
+
 function launchConfetti() {
   const duration = 2000;
   const end = Date.now() + duration;
@@ -206,6 +216,7 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
       setVerified(true);
       setItemVisible(false);
       launchConfetti();
+      playSuccessSound();
       onVerified();
     }
   }, [onVerified, challenge]);
