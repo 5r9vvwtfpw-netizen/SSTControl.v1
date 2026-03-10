@@ -7,11 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Shield, CheckCircle2, XCircle, Eye, EyeOff } from "lucide-react";
 import { Redirect, Link } from "wouter";
+import CaptchaSST from "@/components/CaptchaSST";
 
 export default function LoginEmpresa() {
   const { user, loginMutation } = useAuth();
   const [loginData, setLoginData] = useState({ username: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
 
   const searchParams = new URLSearchParams(window.location.search);
   const verified = searchParams.get("verified");
@@ -117,10 +119,12 @@ export default function LoginEmpresa() {
                   </button>
                 </div>
               </div>
+              <CaptchaSST onVerified={() => setCaptchaVerified(true)} />
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={loginMutation.isPending}
+                disabled={!captchaVerified || loginMutation.isPending}
+                style={!captchaVerified ? { backgroundColor: "#9E9E9E", cursor: "not-allowed" } : undefined}
                 data-testid="button-login"
               >
                 {loginMutation.isPending ? "Iniciando sesión..." : "Iniciar Sesión"}
