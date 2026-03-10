@@ -460,9 +460,10 @@ const captchaStyles = `
 }
 
 .drop-target.hovered {
-  background: var(--sst-accent);
-  border-style: solid;
-  transform: scale(1.05);
+  background: var(--sst-accent) !important;
+  border-color: var(--sst-blue) !important;
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(251, 192, 45, 0.5);
 }
 
 #captcha-status {
@@ -474,6 +475,10 @@ const captchaStyles = `
 
 .success-message {
   color: var(--sst-success) !important;
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-top: 10px;
+  display: block;
   animation: bounce 0.5s ease;
 }
 
