@@ -465,9 +465,9 @@ export default function AuthPage() {
                   <CaptchaSST onVerified={() => setCaptchaVerified(true)} />
                   <Button 
                     type="submit" 
-                    id="btn-login"
                     className="w-full" 
                     disabled={!captchaVerified || loginMutation.isPending}
+                    style={!captchaVerified ? { backgroundColor: "#9E9E9E", cursor: "not-allowed" } : undefined}
                     data-testid="button-login"
                   >
                     {loginMutation.isPending ? "Iniciando sesión..." : "Iniciar Sesión"}

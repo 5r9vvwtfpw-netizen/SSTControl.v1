@@ -397,9 +397,6 @@ const captchaStyles = `
   --sst-cap-accent: #FBC02D;
   --sst-cap-success: #43A047;
   --sst-cap-bg: #F0F2F5;
-  margin: 15px 0;
-  border: 1px solid #e0e6ed;
-  border-radius: 16px;
 }
 
 #captcha-sst-wrapper .captcha-container {
@@ -490,28 +487,6 @@ const captchaStyles = `
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
 }
-
-#captcha-sst-wrapper .success-bounce {
-  animation: captchaSuccessBounce 0.5s ease;
-}
-
-@keyframes captchaSuccessBounce {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-#btn-login:disabled {
-  background-color: #bdc3c7 !important;
-  color: #ffffff !important;
-  cursor: not-allowed;
-  filter: grayscale(1);
-}
-
-#btn-login:enabled {
-  background-color: #2e7d32 !important;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
 `;
 
 interface CaptchaSSTProps {
@@ -599,7 +574,7 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
             {challenge.dragEmoji}
           </div>
           <div
-            className={`drop-target${hovered ? " hovered" : ""}${dropSuccess ? " success-bounce" : ""}`}
+            className={`drop-target${hovered ? " hovered" : ""}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
