@@ -44,7 +44,7 @@ const captchaStyles = `
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  border: 2px solid #0056b3;
+  border: 2px solid #1A237E;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -54,7 +54,8 @@ const captchaStyles = `
 }
 
 .drop-target.hovered {
-  background: #e3f2fd;
+  background: #FBC02D33;
+  border-color: #FBC02D;
   border-style: solid;
 }
 
@@ -65,7 +66,7 @@ const captchaStyles = `
 }
 
 #captcha-status.verified {
-  color: #28a745;
+  color: #2E7D32;
 }
 `;
 
