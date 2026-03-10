@@ -144,16 +144,24 @@ const captchaStyles = `
 }
 
 #captcha-sst-wrapper .captcha-success {
-  color: var(--sst-cap-success) !important;
-  font-size: 1rem;
+  color: #2E7D32 !important;
+  font-size: 1.1rem;
   font-weight: 700;
-  margin-top: 12px;
-  padding: 8px 12px;
+  margin-top: 14px;
+  padding: 10px 14px;
   display: block;
-  background: rgba(67, 160, 71, 0.1);
-  border-radius: 8px;
-  border: 1px solid rgba(67, 160, 71, 0.3);
-  animation: captchaBounce 0.5s ease;
+  background: linear-gradient(135deg, rgba(67, 160, 71, 0.12), rgba(46, 125, 50, 0.08));
+  border-radius: 10px;
+  border: 2px solid rgba(67, 160, 71, 0.4);
+  animation: captchaFadeIn 0.6s ease;
+  text-align: center;
+  letter-spacing: 0.3px;
+  line-height: 1.5;
+}
+
+@keyframes captchaFadeIn {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes captchaBounce {
@@ -216,7 +224,7 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
       setHovered(false);
       setDragging(false);
       setDropSuccess(true);
-      setStatus(`✅ ${challenge.successMessage}`);
+      setStatus(`${challenge.successEmoji} ${challenge.successMessage}`);
       setVerified(true);
       setItemVisible(false);
       launchConfetti();
