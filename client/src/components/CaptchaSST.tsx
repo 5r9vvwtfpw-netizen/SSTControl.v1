@@ -491,6 +491,15 @@ const captchaStyles = `
   50% { transform: translateY(-5px); }
 }
 
+#captcha-sst-wrapper .success-bounce {
+  animation: captchaSuccessBounce 0.5s ease;
+}
+
+@keyframes captchaSuccessBounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
 #btn-login:disabled {
   background-color: #bdc3c7 !important;
   color: #ffffff !important;
@@ -590,7 +599,7 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
             {challenge.dragEmoji}
           </div>
           <div
-            className={`drop-target${hovered ? " hovered" : ""}`}
+            className={`drop-target${hovered ? " hovered" : ""}${dropSuccess ? " success-bounce" : ""}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
