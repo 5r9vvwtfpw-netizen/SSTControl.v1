@@ -145,10 +145,14 @@ const captchaStyles = `
 
 #captcha-sst-wrapper .captcha-success {
   color: var(--sst-cap-success) !important;
-  font-size: 0.9rem;
-  font-weight: bold;
-  margin-top: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-top: 12px;
+  padding: 8px 12px;
   display: block;
+  background: rgba(67, 160, 71, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(67, 160, 71, 0.3);
   animation: captchaBounce 0.5s ease;
 }
 
