@@ -489,11 +489,17 @@ interface CaptchaSSTProps {
 
 export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
   const challenge = useMemo(() => getDailyChallenge(), []);
-  const [status, setStatus] = useState("Estado: Esperando seguridad...");
+  const [status, setStatus] = useState("Estado: Esperando validacion...");
   const [verified, setVerified] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [itemVisible, setItemVisible] = useState(true);
-  const [dropContent, setDropContent] = useState(challenge.dropEmoji);
+  const [hintText, setHintText] = useState("Cargando mision de seguridad...");
+  const [dropContent, setDropContent] = useState("?");
+
+  useState(() => {
+    setHintText(`Arrastra el <strong>${challenge.dragName}</strong> ${challenge.dragEmoji} hasta su destino ${challenge.dropEmoji}`);
+    setDropContent(challenge.dropEmoji);
+  });
 
   const handleDragStart = useCallback((e: React.DragEvent) => {
     e.dataTransfer.setData("text", "secured");
@@ -511,7 +517,7 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setHovered(false);
-    setStatus(`✅ ${challenge.successMessage}`);
+    setStatus(`${challenge.successEmoji} ${challenge.successMessage}`);
     setVerified(true);
     setDropContent(challenge.successEmoji);
     setItemVisible(false);
@@ -522,12 +528,15 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
     <>
       <style>{captchaStyles}</style>
       <div className="captcha-container" data-testid="captcha-container">
-        <p className="captcha-hint">
-          ¡Hola! Para empezar bien, arrastra el <strong>{challenge.dragName}</strong> a su destino.
-        </p>
+        <p
+          id="captcha-text"
+          className="captcha-hint"
+          dangerouslySetInnerHTML={{ __html: hintText }}
+          data-testid="captcha-text"
+        />
 
         <div className="captcha-track">
-          {itemVisible && (
+          {itemVisible ? (
             <div
               id="drag-item"
               className="emoji-item"
@@ -535,6 +544,10 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
               onDragStart={handleDragStart}
               data-testid="captcha-drag-item"
             >
+              {challenge.dragEmoji}
+            </div>
+          ) : (
+            <div className="emoji-item" style={{ visibility: "hidden" }}>
               {challenge.dragEmoji}
             </div>
           )}
