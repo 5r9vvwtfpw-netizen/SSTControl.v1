@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import CaptchaSST from "@/components/CaptchaSST";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -67,6 +68,7 @@ export default function AuthPage() {
   const [resendResult, setResendResult] = useState<{ success: boolean; message: string } | null>(null);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
   const [quotePreFilled, setQuotePreFilled] = useState<{
     companyName?: boolean;
     ciiuCode?: boolean;
@@ -460,10 +462,12 @@ export default function AuthPage() {
                       </button>
                     </div>
                   </div>
+                  <CaptchaSST onVerified={() => setCaptchaVerified(true)} />
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={loginMutation.isPending}
+                    disabled={!captchaVerified || loginMutation.isPending}
+                    style={!captchaVerified ? { backgroundColor: "#9E9E9E", cursor: "not-allowed" } : undefined}
                     data-testid="button-login"
                   >
                     {loginMutation.isPending ? "Iniciando sesión..." : "Iniciar Sesión"}

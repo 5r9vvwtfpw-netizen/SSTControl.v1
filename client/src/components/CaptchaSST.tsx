@@ -486,6 +486,11 @@ const captchaStyles = `
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
 }
+
+.captcha-container + button[disabled],
+.captcha-container ~ button[disabled] {
+  transition: background-color 0.3s ease;
+}
 `;
 
 interface CaptchaSSTProps {

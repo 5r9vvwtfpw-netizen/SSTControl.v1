@@ -5,6 +5,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import CaptchaSST from "@/components/CaptchaSST";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Headset, XCircle, Shield, Eye, EyeOff } from "lucide-react";
@@ -16,6 +17,7 @@ export default function LoginSoporte() {
   const [loginData, setLoginData] = useState({ username: "", password: "" });
   const [loginError, setLoginError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
 
   // Dedicated support login mutation - uses /api/support-login endpoint
   const supportLoginMutation = useMutation({
@@ -110,10 +112,12 @@ export default function LoginSoporte() {
                   </button>
                 </div>
               </div>
+              <CaptchaSST onVerified={() => setCaptchaVerified(true)} />
               <Button 
                 type="submit" 
                 className="w-full bg-blue-600 hover:bg-blue-700" 
-                disabled={supportLoginMutation.isPending}
+                disabled={!captchaVerified || supportLoginMutation.isPending}
+                style={!captchaVerified ? { backgroundColor: "#9E9E9E", cursor: "not-allowed" } : undefined}
                 data-testid="button-soporte-login"
               >
                 {supportLoginMutation.isPending ? "Iniciando sesión..." : "Iniciar Sesión"}
