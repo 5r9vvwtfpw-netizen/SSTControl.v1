@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import { ALL_CHALLENGES, type DailyChallenge } from "./captcha-misiones";
+import { getFraseDelDia } from "./captcha-motivacion";
 
 function getDayOfYear(): number {
   const now = new Date();
@@ -168,6 +169,22 @@ const captchaStyles = `
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
 }
+
+#captcha-sst-wrapper .captcha-motivacion {
+  color: var(--sst-cap-blue) !important;
+  font-size: 0.85rem;
+  font-style: italic;
+  font-weight: 500;
+  margin-top: 10px;
+  padding: 8px 12px;
+  display: block;
+  background: linear-gradient(135deg, rgba(26, 35, 126, 0.06), rgba(26, 35, 126, 0.03));
+  border-radius: 8px;
+  border-left: 3px solid var(--sst-cap-blue);
+  text-align: left;
+  line-height: 1.5;
+  animation: captchaFadeIn 1s ease 0.4s both;
+}
 `;
 
 interface CaptchaSSTProps {
@@ -278,6 +295,15 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
         >
           {status}
         </p>
+
+        {verified && (
+          <p
+            className="captcha-motivacion"
+            data-testid="captcha-motivacion"
+          >
+            {getFraseDelDia()}
+          </p>
+        )}
       </div>
     </div>
   );
