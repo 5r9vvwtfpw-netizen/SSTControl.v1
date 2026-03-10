@@ -30,10 +30,10 @@ function launchConfetti() {
   const end = Date.now() + duration;
 
   confetti({
-    particleCount: 80,
+    particleCount: 100,
     spread: 70,
     origin: { y: 0.6 },
-    colors: ["#1A237E", "#FBC02D", "#43A047", "#E53935", "#1565C0"],
+    colors: ["#1A237E", "#FBC02D", "#FFFFFF"],
   });
 
   const interval = setInterval(() => {
@@ -46,14 +46,14 @@ function launchConfetti() {
       angle: 60,
       spread: 55,
       origin: { x: 0 },
-      colors: ["#1A237E", "#FBC02D", "#43A047"],
+      colors: ["#1A237E", "#FBC02D", "#FFFFFF"],
     });
     confetti({
       particleCount: 30,
       angle: 120,
       spread: 55,
       origin: { x: 1 },
-      colors: ["#1A237E", "#FBC02D", "#43A047"],
+      colors: ["#1A237E", "#FBC02D", "#FFFFFF"],
     });
   }, 250);
 }
