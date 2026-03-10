@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Shield, AlertCircle, CheckCircle2, Mail, XCircle, Sparkles, Eye, EyeOff, Building2, Briefcase, Users, MapPin, Phone, AlertTriangle, Truck, LinkIcon } from "lucide-react";
 import { Redirect, useLocation, Link } from "wouter";
 import sstLogoPath from "@assets/SST-Colombia-logo-3_1768408022586.png";
-import SimpleCaptcha from "@/components/SimpleCaptcha";
 import { CIIU_CODES, CIIU_SECTIONS } from "@/lib/ciiu-codes";
 import { getRiskLevelFromCiiu, getCiiuClassification } from "@shared/ciiu-risk-classification";
 import { calculateChapter } from "@shared/utils";
@@ -68,16 +67,6 @@ export default function AuthPage() {
   const [resendResult, setResendResult] = useState<{ success: boolean; message: string } | null>(null);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState("");
-  const [captchaAnswer, setCaptchaAnswer] = useState<number | null>(null);
-  const handleCaptchaVerified = useCallback((token: string, answer: number) => {
-    setCaptchaToken(token);
-    setCaptchaAnswer(answer);
-  }, []);
-  const handleCaptchaReset = useCallback(() => {
-    setCaptchaToken("");
-    setCaptchaAnswer(null);
-  }, []);
   const [quotePreFilled, setQuotePreFilled] = useState<{
     companyName?: boolean;
     ciiuCode?: boolean;
