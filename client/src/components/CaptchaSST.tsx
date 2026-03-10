@@ -492,17 +492,28 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
   const [status, setStatus] = useState("Estado: Esperando validacion...");
   const [verified, setVerified] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [itemVisible, setItemVisible] = useState(true);
-  const [hintText, setHintText] = useState("Cargando mision de seguridad...");
-  const [dropContent, setDropContent] = useState("?");
+  const [dropSuccess, setDropSuccess] = useState(false);
 
-  useState(() => {
-    setHintText(`Arrastra el <strong>${challenge.dragName}</strong> ${challenge.dragEmoji} hasta su destino ${challenge.dropEmoji}`);
-    setDropContent(challenge.dropEmoji);
-  });
+  const missionText = useMemo(() => {
+    return challenge.successMessage.replace(
+      /\*\*(.*?)\*\*/g,
+      "<strong>$1</strong>"
+    );
+  }, [challenge]);
+
+  const hintText = useMemo(() => {
+    return `Arrastra el <strong>${challenge.dragName}</strong> ${challenge.dragEmoji} hasta su destino ${challenge.dropEmoji}`;
+  }, [challenge]);
 
   const handleDragStart = useCallback((e: React.DragEvent) => {
-    e.dataTransfer.setData("text", "secured");
+    e.dataTransfer.setData("text", "valid");
+    setDragging(true);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDragging(false);
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -516,12 +527,16 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setHovered(false);
-    setStatus(`${challenge.successEmoji} ${challenge.successMessage}`);
-    setVerified(true);
-    setDropContent(challenge.successEmoji);
-    setItemVisible(false);
-    onVerified();
+    const data = e.dataTransfer.getData("text");
+    if (data === "valid") {
+      setHovered(false);
+      setDragging(false);
+      setDropSuccess(true);
+      setStatus(`✅ ${challenge.successMessage}`);
+      setVerified(true);
+      setItemVisible(false);
+      onVerified();
+    }
   }, [onVerified, challenge]);
 
   return (
@@ -536,30 +551,34 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
         />
 
         <div className="captcha-track">
-          {itemVisible ? (
-            <div
-              id="drag-item"
-              className="emoji-item"
-              draggable="true"
-              onDragStart={handleDragStart}
-              data-testid="captcha-drag-item"
-            >
-              {challenge.dragEmoji}
-            </div>
-          ) : (
-            <div className="emoji-item" style={{ visibility: "hidden" }}>
-              {challenge.dragEmoji}
-            </div>
-          )}
+          <div
+            id="drag-item"
+            className="emoji-item"
+            draggable={!verified}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            style={{
+              opacity: dragging ? 0.5 : 1,
+              display: itemVisible ? "block" : "none",
+            }}
+            data-testid="captcha-drag-item"
+          >
+            {challenge.dragEmoji}
+          </div>
           <div
             id="drop-zone"
             className={`drop-target${hovered ? " hovered" : ""}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
+            style={dropSuccess ? {
+              background: "var(--sst-success)",
+              borderColor: "var(--sst-success)",
+              color: "white",
+            } : undefined}
             data-testid="captcha-drop-zone"
           >
-            {dropContent}
+            {dropSuccess ? challenge.dropEmoji : "?"}
           </div>
         </div>
 

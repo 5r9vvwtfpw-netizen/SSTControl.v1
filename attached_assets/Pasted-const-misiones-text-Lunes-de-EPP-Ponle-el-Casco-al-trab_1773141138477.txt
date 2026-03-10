@@ -1,0 +1,60 @@
+const misiones = [
+  { text: "¡Lunes de EPP! Ponle el **Casco** al trabajador.", item: "⛑️", target: "👷", success: "¡Seguridad ante todo!" },
+  { text: "Día de hidratación. Lleva el **Agua** al deportista.", item: "💧", target: "🏃", success: "¡Cuerpo sano, mente sana!" },
+  { text: "Pausa activa: Lleva la **Manzana** al nutricionista.", item: "🍎", target: "🍏", success: "¡Buena energía para hoy!" },
+  { text: "Prevención: Lleva el **Extintor** a la zona de fuego.", item: "🧯", target: "🔥", success: "¡Riesgo controlado!" },
+  { text: "Ergonomía: Pon la **Silla** en la oficina.", item: "🪑", target: "💻", success: "¡Cuida tu postura!" }
+];
+
+// Seleccionar una misión al azar
+const misionActual = misiones[Math.floor(Math.random() * misiones.length)];
+
+// Elementos del DOM
+const dragItem = document.getElementById('drag-item');
+const dropZone = document.getElementById('drop-zone');
+const captchaText = document.getElementById('captcha-text');
+const status = document.getElementById('captcha-status');
+
+// Configurar la misión visualmente
+captchaText.innerHTML = misionActual.text;
+dragItem.innerText = misionActual.item;
+
+// --- Lógica de Arrastrar y Soltar ---
+
+dragItem.addEventListener('dragstart', (e) => {
+  e.dataTransfer.setData('text', 'valid');
+  dragItem.style.opacity = "0.5";
+});
+
+dragItem.addEventListener('dragend', () => {
+  dragItem.style.opacity = "1";
+});
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('hovered');
+});
+
+dropZone.addEventListener('dragleave', () => {
+  dropZone.classList.remove('hovered');
+});
+
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  const data = e.dataTransfer.getData('text');
+  
+  if (data === 'valid') {
+    dropZone.innerText = misionActual.target;
+    dropZone.classList.remove('hovered');
+    dropZone.style.background = "var(--sst-success)";
+    dropZone.style.borderColor = "var(--sst-success)";
+    dropZone.style.color = "white";
+    
+    dragItem.style.display = "none";
+    status.innerText = `✅ ${misionActual.success}`;
+    status.classList.add('success-message');
+    
+    // Aquí puedes habilitar el botón de LOGIN de tu formulario
+    // document.getElementById('btn-login').disabled = false;
+  }
+});
