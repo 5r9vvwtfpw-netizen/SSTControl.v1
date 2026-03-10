@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import confetti from "canvas-confetti";
 import { ALL_CHALLENGES, type DailyChallenge } from "./captcha-misiones";
 
 function getDayOfYear(): number {
@@ -12,6 +13,39 @@ function getDailyChallenge(): DailyChallenge {
   const dayOfYear = getDayOfYear();
   const index = dayOfYear % ALL_CHALLENGES.length;
   return ALL_CHALLENGES[index];
+}
+
+function launchConfetti() {
+  const duration = 2000;
+  const end = Date.now() + duration;
+
+  confetti({
+    particleCount: 80,
+    spread: 70,
+    origin: { y: 0.6 },
+    colors: ["#1A237E", "#FBC02D", "#43A047", "#E53935", "#1565C0"],
+  });
+
+  const interval = setInterval(() => {
+    if (Date.now() > end) {
+      clearInterval(interval);
+      return;
+    }
+    confetti({
+      particleCount: 30,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0 },
+      colors: ["#1A237E", "#FBC02D", "#43A047"],
+    });
+    confetti({
+      particleCount: 30,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1 },
+      colors: ["#1A237E", "#FBC02D", "#43A047"],
+    });
+  }, 250);
 }
 
 const CAPTCHA_STYLE_ID = "captcha-sst-styles";
@@ -171,6 +205,7 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
       setStatus(`✅ ${challenge.successMessage}`);
       setVerified(true);
       setItemVisible(false);
+      launchConfetti();
       onVerified();
     }
   }, [onVerified, challenge]);
