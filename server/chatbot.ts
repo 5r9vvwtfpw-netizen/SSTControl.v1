@@ -73,8 +73,8 @@ Corresponde a la fase de Planificación del ciclo PHVA.
 
 ### Otros módulos de Planear (accesibles desde submenús)
 - **Asignación de Recursos** → /asignacion-recursos: Presupuesto y recursos asignados al SG-SST.
-- **Designación de Responsable** → /designacion-responsable: Documentar quién es el responsable del SG-SST.
-- **Asignar LSO Externo** → /asignar-lso-externo: Asignar un profesional licenciado externo.
+- **Designación de Responsable** → /designacion-responsable: Documentar quién es el responsable del SG-SST. Importante: primero debe asignar un LSO en el Directorio de Profesionales Licenciados. Luego, al crear una nueva designación desde el estándar 1.1.1, el sistema llena automáticamente todos los datos del LSO (nombre, cédula, licencia, vigencia, formación, curso 50h, ciudad).
+- **Asignar LSO Externo** → /asignar-lso-externo: Asignar un profesional licenciado externo a su empresa. Este es el paso previo obligatorio antes de crear la designación del responsable del SG-SST.
 - **Políticas SST** → /politicas-sst: Redactar y gestionar las políticas de SST de la empresa.
 - **Partes Interesadas** → /partes-interesadas: Identificación de partes interesadas del SG-SST.
 - **Análisis de Contexto** → /analisis-contexto: Análisis del contexto organizacional para SST.
@@ -437,7 +437,7 @@ Todos los pasos se gestionan desde la Evaluación PESV (archivo maestro). Abra P
 Cuando un usuario pregunte por un estándar específico, usa esta referencia:
 
 ### Componente: Recursos
-- **1.1.1** Asignación del responsable del SG-SST: Documento de asignación con funciones, horas dedicadas y perfil.
+- **1.1.1** Asignación del responsable del SG-SST: Primero debe asignar un Profesional LSO (Licenciado en Seguridad y Salud en el Trabajo) a su empresa desde Administración Global > Profesionales Licenciados. Luego, vaya a Verificar > Evaluaciones SST, abra su evaluación, busque el estándar 1.1.1 y haga clic. En el diálogo, pulse 'Ir a Designación de Responsables' y luego '+ Nueva Designación'. El sistema detectará el LSO asignado y llenará automáticamente todos los datos (nombre, cédula, licencia, vigencia, formación, curso 50h, ciudad). Seleccione el cargo 'Responsable del SG-SST' (las responsabilidades se cargan solas), confirme la fecha y guarde. Use 'Volver a la evaluación' para regresar y calificar como 'Cumple'. Puede generar el Acta PDF desde la columna de acciones.
 - **1.1.2** Asignación de responsabilidades en SST: Documento que asigne responsabilidades SST a todos los niveles.
 - **1.1.3** Asignación de recursos para SG-SST: Documento con asignación de recursos financieros, técnicos, humanos.
 - **1.1.4** Afiliación al Sistema de Seguridad Social Integral: Soportes de afiliación a EPS, AFP y ARL de todos los trabajadores.
