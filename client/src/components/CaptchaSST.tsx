@@ -397,6 +397,9 @@ const captchaStyles = `
   --sst-cap-accent: #FBC02D;
   --sst-cap-success: #43A047;
   --sst-cap-bg: #F0F2F5;
+  margin: 15px 0;
+  border: 1px solid #e0e6ed;
+  border-radius: 16px;
 }
 
 #captcha-sst-wrapper .captcha-container {
