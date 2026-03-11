@@ -193,7 +193,7 @@ interface CaptchaSSTProps {
 
 export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
   const challenge = useMemo(() => getDailyChallenge(), []);
-  const [status, setStatus] = useState("Estado: Esperando validacion...");
+  const [status, setStatus] = useState("Estado: Esperando validación...");
   const [verified, setVerified] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [dragging, setDragging] = useState(false);
