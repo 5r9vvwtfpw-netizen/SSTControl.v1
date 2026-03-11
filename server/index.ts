@@ -49,6 +49,7 @@ import { accountingService } from "./services/accounting-integration";
 
 
 const app = express();
+app.disable('x-powered-by');
 
 // CRITICAL: Register Stripe webhook route BEFORE express.json()
 // Webhooks need raw Buffer, not parsed JSON
