@@ -213,7 +213,7 @@ export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
   }, []);
 
   const hintText = useMemo(() => {
-    return `Arrastra el <strong>${challenge.dragName}</strong> ${challenge.dragEmoji} hasta su destino ${challenge.dropEmoji}`;
+    return `Arrastra ${challenge.article} <strong>${challenge.dragName}</strong> ${challenge.dragEmoji} hasta su destino ${challenge.dropEmoji}`;
   }, [challenge]);
 
   const handleDragStart = useCallback((e: React.DragEvent) => {
