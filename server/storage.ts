@@ -446,7 +446,8 @@ export interface IStorage {
   getWorkers(companyId: string): Promise<Worker[]>;
   getAllWorkers(): Promise<Worker[]>; // For admin: get all workers from all companies
   getWorker(id: string, companyId: string): Promise<Worker | undefined>;
-  getWorkerById(id: string): Promise<Worker | undefined>; // For admin: get worker by id without company filter
+  getWorkerById(id: string): Promise<Worker | undefined>;
+  getWorkersByIds(ids: string[], companyId?: string): Promise<Worker[]>;
   getWorkerByContract(contractNumber: string, companyId: string): Promise<Worker | undefined>;
   getWorkerByEmail(email: string, companyId: string): Promise<Worker | undefined>;
   createWorker(worker: InsertWorker, companyId: string, userId?: string, auditContext?: AuditContext): Promise<Worker>;
@@ -1483,6 +1484,7 @@ export interface IStorage {
   getSubscriptionPlanByName(name: string): Promise<SubscriptionPlan | undefined>;
   
   // Subscriptions - Company subscription management
+  getAllSubscriptions(): Promise<Subscription[]>;
   getSubscriptionByCompany(companyId: string): Promise<Subscription | undefined>;
   getSubscription(id: string): Promise<Subscription | undefined>;
   createSubscription(subscription: InsertSubscription): Promise<Subscription>;
@@ -2833,16 +2835,19 @@ export class DbStorage implements IStorage {
   }
 
   // Worker methods (company-scoped for multi-tenant isolation)
-  async getWorkers(companyId: string): Promise<Worker[]> {
+  async getWorkers(companyId: string, paginationLimit: number = 0, paginationOffset: number = 0): Promise<Worker[]> {
     return await db.select().from(schema.workers)
       .where(eq(schema.workers.companyId, companyId))
-      .orderBy(desc(schema.workers.createdAt));
+      .orderBy(desc(schema.workers.createdAt))
+      .limit(paginationLimit || 10000)
+      .offset(paginationOffset);
   }
 
-  async getAllWorkers(): Promise<Worker[]> {
-    // For admin: get all workers from all companies
+  async getAllWorkers(paginationLimit: number = 0, paginationOffset: number = 0): Promise<Worker[]> {
     return await db.select().from(schema.workers)
-      .orderBy(desc(schema.workers.createdAt));
+      .orderBy(desc(schema.workers.createdAt))
+      .limit(paginationLimit || 10000)
+      .offset(paginationOffset);
   }
 
   async getWorker(id: string, companyId: string): Promise<Worker | undefined> {
@@ -2855,10 +2860,19 @@ export class DbStorage implements IStorage {
   }
 
   async getWorkerById(id: string): Promise<Worker | undefined> {
-    // For admin: get worker by id without company filter
     const [worker] = await db.select().from(schema.workers)
       .where(eq(schema.workers.id, id));
     return worker;
+  }
+
+  async getWorkersByIds(ids: string[], companyId?: string): Promise<Worker[]> {
+    if (ids.length === 0) return [];
+    const conditions = [inArray(schema.workers.id, ids)];
+    if (companyId) {
+      conditions.push(eq(schema.workers.companyId, companyId));
+    }
+    return await db.select().from(schema.workers)
+      .where(and(...conditions));
   }
 
   async getWorkerByContract(contractNumber: string, companyId: string): Promise<Worker | undefined> {
@@ -3492,15 +3506,19 @@ export class DbStorage implements IStorage {
   }
 
   // Accident methods (company-scoped for multi-tenant isolation)
-  async getAccidents(companyId: string): Promise<Accident[]> {
+  async getAccidents(companyId: string, paginationLimit: number = 0, paginationOffset: number = 0): Promise<Accident[]> {
     return await db.select().from(schema.accidents)
       .where(eq(schema.accidents.companyId, companyId))
-      .orderBy(desc(schema.accidents.createdAt));
+      .orderBy(desc(schema.accidents.createdAt))
+      .limit(paginationLimit || 10000)
+      .offset(paginationOffset);
   }
 
-  async getAllAccidents(): Promise<Accident[]> {
+  async getAllAccidents(paginationLimit: number = 0, paginationOffset: number = 0): Promise<Accident[]> {
     return await db.select().from(schema.accidents)
-      .orderBy(desc(schema.accidents.createdAt));
+      .orderBy(desc(schema.accidents.createdAt))
+      .limit(paginationLimit || 10000)
+      .offset(paginationOffset);
   }
 
   async getAccident(id: string, companyId: string): Promise<Accident | undefined> {
@@ -3546,15 +3564,19 @@ export class DbStorage implements IStorage {
   }
 
   // Training methods (company-scoped for multi-tenant isolation)
-  async getTrainings(companyId: string): Promise<Training[]> {
+  async getTrainings(companyId: string, paginationLimit: number = 0, paginationOffset: number = 0): Promise<Training[]> {
     return await db.select().from(schema.trainings)
       .where(eq(schema.trainings.companyId, companyId))
-      .orderBy(desc(schema.trainings.createdAt));
+      .orderBy(desc(schema.trainings.createdAt))
+      .limit(paginationLimit || 10000)
+      .offset(paginationOffset);
   }
 
-  async getAllTrainings(): Promise<Training[]> {
+  async getAllTrainings(paginationLimit: number = 0, paginationOffset: number = 0): Promise<Training[]> {
     return await db.select().from(schema.trainings)
-      .orderBy(desc(schema.trainings.createdAt));
+      .orderBy(desc(schema.trainings.createdAt))
+      .limit(paginationLimit || 10000)
+      .offset(paginationOffset);
   }
 
   async getTraining(id: string, companyId: string): Promise<Training | undefined> {
@@ -3661,15 +3683,19 @@ export class DbStorage implements IStorage {
   }
 
   // Inspection methods (company-scoped for multi-tenant isolation)
-  async getInspections(companyId: string): Promise<Inspection[]> {
+  async getInspections(companyId: string, paginationLimit: number = 0, paginationOffset: number = 0): Promise<Inspection[]> {
     return await db.select().from(schema.inspections)
       .where(eq(schema.inspections.companyId, companyId))
-      .orderBy(desc(schema.inspections.createdAt));
+      .orderBy(desc(schema.inspections.createdAt))
+      .limit(paginationLimit || 10000)
+      .offset(paginationOffset);
   }
 
-  async getAllInspections(): Promise<Inspection[]> {
+  async getAllInspections(paginationLimit: number = 0, paginationOffset: number = 0): Promise<Inspection[]> {
     return await db.select().from(schema.inspections)
-      .orderBy(desc(schema.inspections.createdAt));
+      .orderBy(desc(schema.inspections.createdAt))
+      .limit(paginationLimit || 10000)
+      .offset(paginationOffset);
   }
 
   async getInspection(id: string, companyId: string): Promise<Inspection | undefined> {
@@ -10746,11 +10772,13 @@ export class DbStorage implements IStorage {
       .orderBy(desc(schema.hallazgosAuditoria.fechaDeteccion), desc(schema.hallazgosAuditoria.createdAt));
   }
 
-  async getAllHallazgosAuditoria(companyId: string): Promise<schema.HallazgoAuditoria[]> {
+  async getAllHallazgosAuditoria(companyId: string, paginationLimit: number = 0, paginationOffset: number = 0): Promise<schema.HallazgoAuditoria[]> {
     return await db.select()
       .from(schema.hallazgosAuditoria)
       .where(eq(schema.hallazgosAuditoria.companyId, companyId))
-      .orderBy(desc(schema.hallazgosAuditoria.fechaDeteccion), desc(schema.hallazgosAuditoria.createdAt));
+      .orderBy(desc(schema.hallazgosAuditoria.fechaDeteccion), desc(schema.hallazgosAuditoria.createdAt))
+      .limit(paginationLimit || 10000)
+      .offset(paginationOffset);
   }
 
   async getHallazgoAuditoria(id: string, companyId: string): Promise<schema.HallazgoAuditoria | undefined> {
@@ -12059,6 +12087,10 @@ export class DbStorage implements IStorage {
   }
 
   // Subscriptions
+  async getAllSubscriptions(): Promise<Subscription[]> {
+    return await db.select().from(schema.subscriptions);
+  }
+
   async getSubscriptionByCompany(companyId: string): Promise<Subscription | undefined> {
     const [subscription] = await db.select().from(schema.subscriptions).where(eq(schema.subscriptions.companyId, companyId));
     return subscription;
@@ -14199,14 +14231,18 @@ export class DbStorage implements IStorage {
   // SISTEMA DE TICKETS DE SOPORTE
   // ============================================================================
 
-  async getSupportTickets(companyId?: string): Promise<SupportTicket[]> {
+  async getSupportTickets(companyId?: string, paginationLimit: number = 0, paginationOffset: number = 0): Promise<SupportTicket[]> {
     if (companyId) {
       return await db.select().from(schema.supportTickets)
         .where(eq(schema.supportTickets.companyId, companyId))
-        .orderBy(desc(schema.supportTickets.createdAt));
+        .orderBy(desc(schema.supportTickets.createdAt))
+        .limit(paginationLimit || 10000)
+        .offset(paginationOffset);
     }
     return await db.select().from(schema.supportTickets)
-      .orderBy(desc(schema.supportTickets.createdAt));
+      .orderBy(desc(schema.supportTickets.createdAt))
+      .limit(paginationLimit || 10000)
+      .offset(paginationOffset);
   }
 
   async getSupportTicket(id: string): Promise<SupportTicket | undefined> {

@@ -251,6 +251,7 @@ import {
   requiresLSOSignature,
   handlePdfError
 } from "./services/pdf-standardizer";
+import { withPdfSemaphore } from "./services/pdf-semaphore";
 import { validatePdfContext } from "./lib/pdf-context-validator";
 import {
   sendExamRenewalEmail,
@@ -1547,6 +1548,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("✅ Demo Read-Only middleware registrado (modo vitrina)");
   }
 
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && req.path.endsWith('/pdf')) {
+      withPdfSemaphore(async () => {
+        return new Promise<void>((resolve) => {
+          res.on('finish', resolve);
+          res.on('close', resolve);
+          next();
+        });
+      }).catch((err) => {
+        console.error('PDF semaphore error:', err);
+        if (!res.headersSent) {
+          res.status(503).json({ error: 'Servidor ocupado generando PDFs, intente de nuevo' });
+        }
+      });
+    } else {
+      next();
+    }
+  });
+
   // ========== RESPONSE SANITIZATION MIDDLEWARE ==========
   // Intercepta respuestas de error para ocultar mensajes técnicos (SSL, certificados, etc.)
   // IMPORTANTE: Este middleware debe estar ANTES de todas las rutas
@@ -2460,28 +2480,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const userRole = req.user!.role;
     const isAdmin = hasGlobalAccess(userRole);
     
-    // Helper function to add subscription info to a company
-    const addSubscriptionInfo = async (company: any) => {
-      const subscription = await storage.getSubscriptionByCompany(company.id);
-      let subscriptionPlanSlug: string | null = null;
-      if (subscription) {
-        const plan = await storage.getSubscriptionPlan(subscription.planId);
-        subscriptionPlanSlug = plan?.name || null;
-      }
-      return {
-        ...company,
-        subscriptionPlanSlug,
-        subscriptionStatus: subscription?.status || null,
-      };
-    };
-    
     // Admin: can see all companies (for support/management)
     if (isAdmin) {
-      const companies = await storage.getCompanies();
-      // Add subscription info to each company for chapter restrictions
-      const companiesWithSubscription = await Promise.all(
-        companies.map(company => addSubscriptionInfo(company))
-      );
+      const [companies, allSubscriptions, allPlans] = await Promise.all([
+        storage.getCompanies(),
+        storage.getAllSubscriptions(),
+        storage.getSubscriptionPlans(),
+      ]);
+      const subsMap = new Map(allSubscriptions.map(s => [s.companyId, s]));
+      const plansMap = new Map(allPlans.map(p => [p.id, p]));
+      const companiesWithSubscription = companies.map(company => {
+        const subscription = subsMap.get(company.id);
+        let subscriptionPlanSlug: string | null = null;
+        if (subscription) {
+          const plan = plansMap.get(subscription.planId);
+          subscriptionPlanSlug = plan?.name || null;
+        }
+        return {
+          ...company,
+          subscriptionPlanSlug,
+          subscriptionStatus: subscription?.status || null,
+        };
+      });
       return res.json(companiesWithSubscription);
     }
     
@@ -2498,8 +2518,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     // Return as array for consistency with admin response (with subscription info)
-    const companyWithSubscription = await addSubscriptionInfo(company);
-    res.json([companyWithSubscription]);
+    const subscription = await storage.getSubscriptionByCompany(companyId);
+    let subscriptionPlanSlug: string | null = null;
+    if (subscription) {
+      const plan = await storage.getSubscriptionPlan(subscription.planId);
+      subscriptionPlanSlug = plan?.name || null;
+    }
+    res.json([{
+      ...company,
+      subscriptionPlanSlug,
+      subscriptionStatus: subscription?.status || null,
+    }]);
   });
 
   // Estadísticas de todas las empresas para superadmin
@@ -35138,21 +35167,22 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const candidatos = await storage.getCopasstCandidatos(eleccionId);
       
       // Obtener información de cada trabajador candidato
-      const candidatosConInfo = await Promise.all(
-        candidatos.map(async (c) => {
-          const worker = await storage.getWorkerById(c.workerId);
-          return {
-            ...c,
-            worker: worker ? {
-              id: worker.id,
-              name: worker.name,
-              identificationNumber: worker.identificationNumber,
-              position: worker.position,
-              department: worker.department,
-            } : null
-          };
-        })
-      );
+      const workerIds = candidatos.map(c => c.workerId).filter(Boolean);
+      const workers = await storage.getWorkersByIds(workerIds, companyId);
+      const workersMap = new Map(workers.map(w => [w.id, w]));
+      const candidatosConInfo = candidatos.map(c => {
+        const worker = workersMap.get(c.workerId);
+        return {
+          ...c,
+          worker: worker ? {
+            id: worker.id,
+            name: worker.name,
+            identificationNumber: worker.identificationNumber,
+            position: worker.position,
+            department: worker.department,
+          } : null
+        };
+      });
 
       res.json({ candidatos: candidatosConInfo });
     } catch (error: any) {
@@ -35324,20 +35354,21 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const candidatos = await storage.getCopasstResultados(eleccionId);
       
       // Obtener información de cada trabajador candidato
-      const resultados = await Promise.all(
-        candidatos.map(async (c) => {
-          const worker = await storage.getWorkerById(c.workerId);
-          return {
-            ...c,
-            worker: worker ? {
-              id: worker.id,
-              name: worker.name,
-              position: worker.position,
-              department: worker.department,
-            } : null
-          };
-        })
-      );
+      const resWorkerIds = candidatos.map(c => c.workerId).filter(Boolean);
+      const resWorkers = await storage.getWorkersByIds(resWorkerIds, companyId);
+      const resWorkersMap = new Map(resWorkers.map(w => [w.id, w]));
+      const resultados = candidatos.map(c => {
+        const worker = resWorkersMap.get(c.workerId);
+        return {
+          ...c,
+          worker: worker ? {
+            id: worker.id,
+            name: worker.name,
+            position: worker.position,
+            department: worker.department,
+          } : null
+        };
+      });
 
       res.json({ 
         eleccion,
@@ -35444,21 +35475,22 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const candidatos = await storage.getConvivenciaCandidatos(eleccionId);
       
       // Obtener información de cada trabajador candidato
-      const candidatosConInfo = await Promise.all(
-        candidatos.map(async (c) => {
-          const worker = await storage.getWorkerById(c.workerId);
-          return {
-            ...c,
-            worker: worker ? {
-              id: worker.id,
-              name: worker.name,
-              identificationNumber: worker.identificationNumber,
-              position: worker.position,
-              department: worker.department,
-            } : null
-          };
-        })
-      );
+      const workerIds = candidatos.map(c => c.workerId).filter(Boolean);
+      const workers = await storage.getWorkersByIds(workerIds, companyId);
+      const workersMap = new Map(workers.map(w => [w.id, w]));
+      const candidatosConInfo = candidatos.map(c => {
+        const worker = workersMap.get(c.workerId);
+        return {
+          ...c,
+          worker: worker ? {
+            id: worker.id,
+            name: worker.name,
+            identificationNumber: worker.identificationNumber,
+            position: worker.position,
+            department: worker.department,
+          } : null
+        };
+      });
 
       res.json({ candidatos: candidatosConInfo });
     } catch (error: any) {
@@ -35629,22 +35661,23 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       const { candidatos, totalVotos, totalVotantes } = await storage.getConvivenciaResults(eleccionId);
       
-      // Obtener información de cada trabajador candidato
-      const resultados = await Promise.all(
-        candidatos.map(async (c) => {
-          const worker = await storage.getWorkerById(c.workerId);
-          return {
-            ...c,
-            votosObtenidos: c.votosRecibidos || 0,
-            worker: worker ? {
-              id: worker.id,
-              name: worker.name,
-              position: worker.position,
-              department: worker.department,
-            } : null
-          };
-        })
-      );
+      // Batch fetch workers (avoid N+1)
+      const convWorkerIds = candidatos.map(c => c.workerId).filter(Boolean);
+      const convWorkers = await storage.getWorkersByIds(convWorkerIds, companyId);
+      const convWorkersMap = new Map(convWorkers.map(w => [w.id, w]));
+      const resultados = candidatos.map(c => {
+        const worker = convWorkersMap.get(c.workerId);
+        return {
+          ...c,
+          votosObtenidos: c.votosRecibidos || 0,
+          worker: worker ? {
+            id: worker.id,
+            name: worker.name,
+            position: worker.position,
+            department: worker.department,
+          } : null
+        };
+      });
 
       // Sort by votes descending
       resultados.sort((a, b) => (b.votosRecibidos || 0) - (a.votosRecibidos || 0));
@@ -39713,34 +39746,34 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       const acknowledgedDocIds = new Set(acknowledgments.map(a => a.documentId));
 
-      // Get document details for each assignment
-      const documentsWithStatus = await Promise.all(
-        assignments.map(async (assignment) => {
-          const document = await storage.getSstDocument(assignment.documentId, companyId);
-          if (!document || document.status !== "vigente") return null;
-          
-          const isAcknowledged = acknowledgedDocIds.has(assignment.documentId);
-          const ack = acknowledgments.find(a => a.documentId === assignment.documentId);
-          
-          return {
-            assignmentId: assignment.id,
-            documentId: document.id,
-            title: document.title,
-            code: document.code,
-            category: document.category,
-            description: document.description,
-            fileUrl: document.fileUrl,
-            fileName: document.fileName,
-            assignedAt: assignment.assignedAt,
-            dueDate: assignment.dueDate,
-            isRequired: assignment.isRequired,
-            priority: assignment.priority,
-            message: assignment.message,
-            isAcknowledged,
-            acknowledgedAt: ack?.acknowledgedAt || null,
-          };
-        })
-      );
+      // Batch fetch all documents for assignments (avoid N+1)
+      const allDocs = await storage.getSstDocuments(companyId);
+      const docsMap = new Map(allDocs.map(d => [d.id, d]));
+      const documentsWithStatus = assignments.map(assignment => {
+        const document = docsMap.get(assignment.documentId);
+        if (!document || document.status !== "vigente") return null;
+        
+        const isAcknowledged = acknowledgedDocIds.has(assignment.documentId);
+        const ack = acknowledgments.find(a => a.documentId === assignment.documentId);
+        
+        return {
+          assignmentId: assignment.id,
+          documentId: document.id,
+          title: document.title,
+          code: document.code,
+          category: document.category,
+          description: document.description,
+          fileUrl: document.fileUrl,
+          fileName: document.fileName,
+          assignedAt: assignment.assignedAt,
+          dueDate: assignment.dueDate,
+          isRequired: assignment.isRequired,
+          priority: assignment.priority,
+          message: assignment.message,
+          isAcknowledged,
+          acknowledgedAt: ack?.acknowledgedAt || null,
+        };
+      });
 
       // Filter out null values (documents that were deleted or not vigente)
       const validDocuments = documentsWithStatus.filter(d => d !== null);
@@ -39992,25 +40025,26 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       const acknowledgedWorkerIds = new Set(acknowledgments.map(a => a.workerId));
 
-      // Get worker details for each assignment
-      const workersStatus = await Promise.all(
-        assignments.map(async (assignment) => {
-          const worker = await storage.getWorker(assignment.workerId, companyId);
-          const ack = acknowledgments.find(a => a.workerId === assignment.workerId);
-          
-          return {
-            workerId: assignment.workerId,
-            workerName: worker ? worker.name : 'Trabajador desconocido',
-            workerDocument: worker?.identificationNumber || '',
-            assignedAt: assignment.assignedAt,
-            dueDate: assignment.dueDate,
-            isRequired: assignment.isRequired,
-            isAcknowledged: acknowledgedWorkerIds.has(assignment.workerId),
-            acknowledgedAt: ack?.acknowledgedAt || null,
-            comments: ack?.comments || null,
-          };
-        })
-      );
+      // Batch fetch all workers for assignments (avoid N+1)
+      const assignWorkerIds = assignments.map(a => a.workerId).filter(Boolean);
+      const assignWorkers = await storage.getWorkersByIds(assignWorkerIds, companyId);
+      const assignWorkersMap = new Map(assignWorkers.map(w => [w.id, w]));
+      const workersStatus = assignments.map(assignment => {
+        const worker = assignWorkersMap.get(assignment.workerId);
+        const ack = acknowledgments.find(a => a.workerId === assignment.workerId);
+        
+        return {
+          workerId: assignment.workerId,
+          workerName: worker ? worker.name : 'Trabajador desconocido',
+          workerDocument: worker?.identificationNumber || '',
+          assignedAt: assignment.assignedAt,
+          dueDate: assignment.dueDate,
+          isRequired: assignment.isRequired,
+          isAcknowledged: acknowledgedWorkerIds.has(assignment.workerId),
+          acknowledgedAt: ack?.acknowledgedAt || null,
+          comments: ack?.comments || null,
+        };
+      });
 
       // Get stats (resilient)
       let stats = { totalAssigned: assignments.length, totalAcknowledged: acknowledgments.length };

@@ -11,7 +11,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const hasAwsRds = !!(process.env.AWS_RDS_HOST && process.env.AWS_RDS_PASSWORD);
 
 const poolConfig = {
-  max: 15,
+  max: 30,
   min: 2,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 15000,
