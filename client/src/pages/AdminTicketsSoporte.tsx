@@ -61,7 +61,8 @@ import {
   ArrowUpRight,
   Archive,
   ArrowLeft,
-  ChevronRight
+  ChevronRight,
+  Eye
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -212,6 +213,81 @@ const categoryLabels: Record<string, string> = {
   capacitacion: "Capacitación",
   consulta_general: "Consulta General"
 };
+
+const statusDotColors: Record<string, string> = {
+  abierto: "bg-blue-500",
+  en_revision: "bg-yellow-500",
+  en_progreso: "bg-purple-500",
+  pendiente_cliente: "bg-orange-500",
+  resuelto: "bg-green-500",
+  cerrado: "bg-gray-400"
+};
+
+function InlineStatusSelect({ ticket, onStatusChange, disabled }: { 
+  ticket: SupportTicket; 
+  onStatusChange: (ticketId: string, status: string) => void;
+  disabled: boolean;
+}) {
+  return (
+    <Select
+      value={ticket.status}
+      onValueChange={(val) => {
+        if (val !== ticket.status) {
+          onStatusChange(ticket.id, val);
+        }
+      }}
+      disabled={disabled}
+    >
+      <SelectTrigger 
+        className={`h-8 w-[155px] text-xs font-medium border-0 gap-1.5 px-2.5 rounded-full ${statusColors[ticket.status]}`}
+        data-testid={`inline-status-select-${ticket.id}`}
+      >
+        <span className="flex items-center gap-1.5">
+          <span className={`h-2 w-2 rounded-full flex-shrink-0 ${statusDotColors[ticket.status]}`} />
+          <span className="truncate">{statusLabels[ticket.status] || ticket.status}</span>
+        </span>
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="abierto" data-testid="inline-status-abierto">
+          <span className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-blue-500" />
+            Abierto
+          </span>
+        </SelectItem>
+        <SelectItem value="en_revision" data-testid="inline-status-en_revision">
+          <span className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-yellow-500" />
+            En Revisión
+          </span>
+        </SelectItem>
+        <SelectItem value="en_progreso" data-testid="inline-status-en_progreso">
+          <span className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-purple-500" />
+            En Progreso
+          </span>
+        </SelectItem>
+        <SelectItem value="pendiente_cliente" data-testid="inline-status-pendiente_cliente">
+          <span className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-orange-500" />
+            Pendiente Cliente
+          </span>
+        </SelectItem>
+        <SelectItem value="resuelto" data-testid="inline-status-resuelto">
+          <span className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-green-500" />
+            Resuelto
+          </span>
+        </SelectItem>
+        <SelectItem value="cerrado" data-testid="inline-status-cerrado">
+          <span className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-gray-400" />
+            Cerrado
+          </span>
+        </SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
 
 function AdminResponsesList({ responses }: { responses: TicketResponse[] }) {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -972,7 +1048,7 @@ export default function AdminTicketsSoporte() {
                       <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Categoría</TableHead>
                       <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Asignado</TableHead>
                       <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Fecha</TableHead>
-                      <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Acciones</TableHead>
+                      <TableHead className="py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Detalle</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1018,10 +1094,14 @@ export default function AdminTicketsSoporte() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="py-4 px-5">
-                          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${statusColors[ticket.status]}`}>
-                            {statusLabels[ticket.status] || ticket.status}
-                          </span>
+                        <TableCell className="py-4 px-5" onClick={(e) => e.stopPropagation()}>
+                          <InlineStatusSelect
+                            ticket={ticket}
+                            onStatusChange={(ticketId, newSt) => {
+                              updateStatusMutation.mutate({ ticketId, status: newSt });
+                            }}
+                            disabled={updateStatusMutation.isPending}
+                          />
                         </TableCell>
                         <TableCell className="py-4 px-5">
                           <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${priorityColors[ticket.priority]}`}>
@@ -1053,14 +1133,15 @@ export default function AdminTicketsSoporte() {
                         <TableCell className="py-4 px-5 text-right">
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant="ghost"
                             onClick={(e) => {
                               e.stopPropagation();
-                              openStatusDialog(ticket);
+                              setSelectedTicket(ticket as TicketWithDetails);
                             }}
-                            data-testid={`button-change-status-${ticket.id}`}
+                            data-testid={`button-view-ticket-${ticket.id}`}
                           >
-                            Cambiar Estado
+                            <Eye className="h-4 w-4 mr-1" />
+                            Ver
                           </Button>
                         </TableCell>
                       </TableRow>
