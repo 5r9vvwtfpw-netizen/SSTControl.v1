@@ -301,7 +301,7 @@ export default function IndicadoresAccidentalidad() {
         </div>
         <Button onClick={handleNewRecord} data-testid="button-new-record">
           <Plus className="h-4 w-4 mr-2" />
-          Nuevo Registro Anual
+          Nuevo Registro
         </Button>
       </div>
       
