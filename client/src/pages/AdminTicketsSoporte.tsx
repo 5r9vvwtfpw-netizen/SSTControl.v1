@@ -1110,14 +1110,11 @@ export default function AdminTicketsSoporte() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="py-4 px-5" onClick={(e) => e.stopPropagation()}>
-                          <InlineStatusSelect
-                            ticket={ticket}
-                            onStatusChange={(ticketId, newSt) => {
-                              updateStatusMutation.mutate({ ticketId, status: newSt });
-                            }}
-                            disabled={pendingStatusTicketIds.has(ticket.id)}
-                          />
+                        <TableCell className="py-4 px-5">
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${statusColors[ticket.status]}`}>
+                            <span className={`h-2 w-2 rounded-full flex-shrink-0 ${statusDotColors[ticket.status]}`} />
+                            {statusLabels[ticket.status] || ticket.status}
+                          </span>
                         </TableCell>
                         <TableCell className="py-4 px-5">
                           <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${priorityColors[ticket.priority]}`}>
