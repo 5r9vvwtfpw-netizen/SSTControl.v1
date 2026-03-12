@@ -243,7 +243,11 @@ function InlineStatusSelect({ ticket, onStatusChange, disabled }: {
         data-testid={`inline-status-select-${ticket.id}`}
       >
         <span className="flex items-center gap-1.5">
-          <span className={`h-2 w-2 rounded-full flex-shrink-0 ${statusDotColors[ticket.status]}`} />
+          {disabled ? (
+            <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" />
+          ) : (
+            <span className={`h-2 w-2 rounded-full flex-shrink-0 ${statusDotColors[ticket.status]}`} />
+          )}
           <span className="truncate">{statusLabels[ticket.status] || ticket.status}</span>
         </span>
       </SelectTrigger>
@@ -349,6 +353,7 @@ export default function AdminTicketsSoporte() {
   const [showArchived, setShowArchived] = useState(false);
   const [selectedVaultCompanyId, setSelectedVaultCompanyId] = useState<string | null>(null);
   const [vaultSearchTerm, setVaultSearchTerm] = useState("");
+  const [pendingStatusTicketIds, setPendingStatusTicketIds] = useState<Set<string>>(new Set());
 
   if (user?.role !== 'superadmin' && user?.role !== 'soporte') {
     return (
@@ -436,23 +441,34 @@ export default function AdminTicketsSoporte() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async (data: { ticketId: string; status: string; notes?: string }) => {
+      setPendingStatusTicketIds(prev => new Set(prev).add(data.ticketId));
       return await apiRequest('PATCH', `/api/support-tickets/${data.ticketId}`, { 
         status: data.status,
         statusChangeNotes: data.notes
       });
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      setPendingStatusTicketIds(prev => {
+        const next = new Set(prev);
+        next.delete(variables.ticketId);
+        return next;
+      });
       queryClient.invalidateQueries({ queryKey: ['/api/support-tickets'] });
       queryClient.invalidateQueries({ queryKey: ['/api/support-tickets', selectedTicket?.id] });
       toast({
         title: "Estado actualizado",
-        description: "El estado del ticket ha sido actualizado."
+        description: `Ticket actualizado a "${statusLabels[variables.status] || variables.status}".`
       });
       setShowStatusDialog(false);
       setNewStatus("");
       setStatusChangeNotes("");
     },
-    onError: (error: any) => {
+    onError: (error: any, variables) => {
+      setPendingStatusTicketIds(prev => {
+        const next = new Set(prev);
+        next.delete(variables.ticketId);
+        return next;
+      });
       toast({
         title: "Error",
         description: error.message || "No se pudo actualizar el estado",
@@ -1100,7 +1116,7 @@ export default function AdminTicketsSoporte() {
                             onStatusChange={(ticketId, newSt) => {
                               updateStatusMutation.mutate({ ticketId, status: newSt });
                             }}
-                            disabled={updateStatusMutation.isPending}
+                            disabled={pendingStatusTicketIds.has(ticket.id)}
                           />
                         </TableCell>
                         <TableCell className="py-4 px-5">
