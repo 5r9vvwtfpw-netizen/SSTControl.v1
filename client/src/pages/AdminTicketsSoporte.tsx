@@ -1301,7 +1301,14 @@ export default function AdminTicketsSoporte() {
                   )}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <InlineStatusSelect
+                    ticket={selectedTicket}
+                    onStatusChange={(ticketId, newSt) => {
+                      updateStatusMutation.mutate({ ticketId, status: newSt });
+                    }}
+                    disabled={pendingStatusTicketIds.has(selectedTicket.id)}
+                  />
                   <Button
                     size="sm"
                     variant="outline"
@@ -1310,13 +1317,6 @@ export default function AdminTicketsSoporte() {
                   >
                     <History className="h-4 w-4 mr-1" />
                     Historial
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => openStatusDialog(selectedTicket)}
-                    data-testid="button-change-status-detail"
-                  >
-                    Cambiar Estado
                   </Button>
                   <Button
                     size="sm"
