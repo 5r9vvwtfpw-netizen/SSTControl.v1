@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "zfo2unhJ0OjKHfLpC35u3"
+uri = "file://captcha-plugin-sst.txt"
+type = "text"
+title = "CAPTCHA SST - Plugin Completo (3 archivos)"

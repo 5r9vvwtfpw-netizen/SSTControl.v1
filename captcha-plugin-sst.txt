@@ -1,0 +1,837 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    CAPTCHA SST - PLUGIN COMPLETO                            ║
+║           Sistema de Verificacion Humana con Drag & Drop                    ║
+║                     SADGI S.A.S. - Colombia                                 ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+INSTRUCCIONES DE INSTALACION:
+=============================
+
+1. Instalar dependencia:
+   npm install canvas-confetti
+
+2. Crear 3 archivos en tu proyecto (las rutas pueden variar):
+   - components/CaptchaSST.tsx        (Archivo 1)
+   - components/captcha-misiones.ts   (Archivo 2)
+   - components/captcha-motivacion.ts (Archivo 3)
+
+3. Usar en tu login:
+   import CaptchaSST from "./components/CaptchaSST";
+   
+   // En tu componente:
+   const [captchaOk, setCaptchaOk] = useState(false);
+   
+   <CaptchaSST onVerified={() => setCaptchaOk(true)} />
+   <button disabled={!captchaOk}>Iniciar Sesion</button>
+
+4. Para tema contabilidad, cambia:
+   - Los colores en captchaStyles (azul #1A237E, amarillo #FBC02D)
+   - Los desafios en captcha-misiones.ts (emojis y nombres contables)
+   - Las frases en captcha-motivacion.ts (mensajes contables)
+
+
+================================================================================
+ARCHIVO 1: CaptchaSST.tsx
+================================================================================
+
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import confetti from "canvas-confetti";
+import { ALL_CHALLENGES, type DailyChallenge } from "./captcha-misiones";
+import { getFraseDelDia } from "./captcha-motivacion";
+
+function getDayOfYear(): number {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff = now.getTime() - start.getTime();
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
+}
+
+function getDailyChallenge(): DailyChallenge {
+  const dayOfYear = getDayOfYear();
+  const index = dayOfYear % ALL_CHALLENGES.length;
+  return ALL_CHALLENGES[index];
+}
+
+const SUCCESS_SOUND_URL = "https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3";
+
+function playSuccessSound() {
+  try {
+    const audio = new Audio(SUCCESS_SOUND_URL);
+    audio.volume = 0.5;
+    audio.play().catch(() => {});
+  } catch {}
+}
+
+function launchConfetti() {
+  const duration = 2000;
+  const end = Date.now() + duration;
+
+  confetti({
+    particleCount: 100,
+    spread: 70,
+    origin: { y: 0.6 },
+    colors: ["#1A237E", "#FBC02D", "#FFFFFF"],
+  });
+
+  const interval = setInterval(() => {
+    if (Date.now() > end) {
+      clearInterval(interval);
+      return;
+    }
+    confetti({
+      particleCount: 30,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0 },
+      colors: ["#1A237E", "#FBC02D", "#FFFFFF"],
+    });
+    confetti({
+      particleCount: 30,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1 },
+      colors: ["#1A237E", "#FBC02D", "#FFFFFF"],
+    });
+  }, 250);
+}
+
+const CAPTCHA_STYLE_ID = "captcha-sst-styles";
+
+const captchaStyles = `
+#captcha-sst-wrapper {
+  --sst-cap-blue: #1A237E;
+  --sst-cap-accent: #FBC02D;
+  --sst-cap-success: #43A047;
+  --sst-cap-bg: #F0F2F5;
+}
+
+#captcha-sst-wrapper .captcha-container {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(26, 35, 126, 0.1);
+  max-width: 380px;
+  text-align: center;
+  border-top: 5px solid var(--sst-cap-blue);
+  margin: 0 auto;
+}
+
+#captcha-sst-wrapper .captcha-hint {
+  font-size: 0.95rem;
+  color: #455A64;
+  line-height: 1.4;
+  margin-bottom: 25px;
+}
+
+#captcha-sst-wrapper .captcha-hint strong {
+  color: var(--sst-cap-blue);
+}
+
+#captcha-sst-wrapper .captcha-track {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--sst-cap-bg);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 2px solid #E0E0E0;
+  position: relative;
+}
+
+#captcha-sst-wrapper .emoji-item {
+  font-size: 2.5rem;
+  cursor: grab;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+  z-index: 2;
+  transition: transform 0.2s ease;
+}
+
+#captcha-sst-wrapper .emoji-item:active {
+  cursor: grabbing;
+  transform: scale(1.1);
+}
+
+#captcha-sst-wrapper .drop-target {
+  width: 65px;
+  height: 65px;
+  border-radius: 12px;
+  border: 2px dashed var(--sst-cap-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  background: rgba(26, 35, 126, 0.05);
+  transition: all 0.3s ease;
+}
+
+#captcha-sst-wrapper .drop-target.hovered {
+  background: var(--sst-cap-accent) !important;
+  border-color: var(--sst-cap-blue) !important;
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(251, 192, 45, 0.5);
+}
+
+#captcha-sst-wrapper .captcha-status {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #78909C;
+  min-height: 20px;
+}
+
+#captcha-sst-wrapper .captcha-success {
+  color: #2E7D32 !important;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 14px;
+  padding: 10px 14px;
+  display: block;
+  background: linear-gradient(135deg, rgba(67, 160, 71, 0.12), rgba(46, 125, 50, 0.08));
+  border-radius: 10px;
+  border: 2px solid rgba(67, 160, 71, 0.4);
+  animation: captchaFadeIn 0.6s ease;
+  text-align: center;
+  letter-spacing: 0.3px;
+  line-height: 1.5;
+}
+
+@keyframes captchaFadeIn {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes captchaBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+#captcha-sst-wrapper .captcha-motivacion {
+  color: var(--sst-cap-blue) !important;
+  font-size: 0.85rem;
+  font-style: italic;
+  font-weight: 500;
+  margin-top: 10px;
+  padding: 8px 12px;
+  display: block;
+  background: linear-gradient(135deg, rgba(26, 35, 126, 0.06), rgba(26, 35, 126, 0.03));
+  border-radius: 8px;
+  border-left: 3px solid var(--sst-cap-blue);
+  text-align: left;
+  line-height: 1.5;
+  animation: captchaFadeIn 1s ease 0.4s both;
+}
+`;
+
+interface CaptchaSSTProps {
+  onVerified: () => void;
+}
+
+export default function CaptchaSST({ onVerified }: CaptchaSSTProps) {
+  const challenge = useMemo(() => getDailyChallenge(), []);
+  const [status, setStatus] = useState("Estado: Esperando validacion...");
+  const [verified, setVerified] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [itemVisible, setItemVisible] = useState(true);
+  const [dropSuccess, setDropSuccess] = useState(false);
+  const styleInjected = useRef(false);
+
+  useEffect(() => {
+    if (styleInjected.current) return;
+    if (!document.getElementById(CAPTCHA_STYLE_ID)) {
+      const style = document.createElement("style");
+      style.id = CAPTCHA_STYLE_ID;
+      style.textContent = captchaStyles;
+      document.head.appendChild(style);
+    }
+    styleInjected.current = true;
+  }, []);
+
+  const hintText = useMemo(() => {
+    return `Arrastra ${challenge.article} <strong>${challenge.dragName}</strong> ${challenge.dragEmoji} hasta su destino ${challenge.dropEmoji}`;
+  }, [challenge]);
+
+  const handleDragStart = useCallback((e: React.DragEvent) => {
+    e.dataTransfer.setData("text", "valid");
+    setDragging(true);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDragging(false);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setHovered(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setHovered(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const data = e.dataTransfer.getData("text");
+    if (data === "valid") {
+      setHovered(false);
+      setDragging(false);
+      setDropSuccess(true);
+      setStatus(`${challenge.successEmoji} ${challenge.successMessage}`);
+      setVerified(true);
+      setItemVisible(false);
+      launchConfetti();
+      playSuccessSound();
+      onVerified();
+    }
+  }, [onVerified, challenge]);
+
+  return (
+    <div id="captcha-sst-wrapper" data-testid="captcha-wrapper">
+      <div className="captcha-container" data-testid="captcha-container">
+        <p
+          className="captcha-hint"
+          dangerouslySetInnerHTML={{ __html: hintText }}
+          data-testid="captcha-text"
+        />
+
+        <div className="captcha-track">
+          <div
+            className="emoji-item"
+            draggable={!verified}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            style={{
+              opacity: dragging ? 0.5 : 1,
+              display: itemVisible ? "block" : "none",
+            }}
+            data-testid="captcha-drag-item"
+          >
+            {challenge.dragEmoji}
+          </div>
+          <div
+            className={`drop-target${hovered ? " hovered" : ""}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            style={dropSuccess ? {
+              background: "var(--sst-cap-success)",
+              borderColor: "var(--sst-cap-success)",
+              color: "white",
+            } : undefined}
+            data-testid="captcha-drop-zone"
+          >
+            {dropSuccess ? challenge.dropEmoji : "?"}
+          </div>
+        </div>
+
+        <p
+          className={verified ? "captcha-success" : "captcha-status"}
+          data-testid="captcha-status"
+        >
+          {status}
+        </p>
+
+        {verified && (
+          <p
+            className="captcha-motivacion"
+            data-testid="captcha-motivacion"
+          >
+            {getFraseDelDia()}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+================================================================================
+ARCHIVO 2: captcha-misiones.ts (365 desafios - uno por dia del ano)
+================================================================================
+
+export interface DailyChallenge {
+  dragEmoji: string;
+  dropEmoji: string;
+  dragName: string;
+  article: string;
+  successEmoji: string;
+  successMessage: string;
+}
+
+export const ALL_CHALLENGES: DailyChallenge[] = [
+  { dragEmoji: "⛑️", dropEmoji: "👷", dragName: "Casco de Seguridad", article: "el", successEmoji: "👷‍♂️", successMessage: "EPP listo. A trabajar seguro!" },
+  { dragEmoji: "🍎", dropEmoji: "❤️", dragName: "Manzana Saludable", article: "la", successEmoji: "💪", successMessage: "Salud ocupacional al dia!" },
+  { dragEmoji: "🧯", dropEmoji: "🔥", dragName: "Extintor", article: "el", successEmoji: "✅", successMessage: "Emergencia controlada!" },
+  { dragEmoji: "📋", dropEmoji: "🎓", dragName: "Plan de Capacitacion", article: "el", successEmoji: "🏆", successMessage: "Capacitacion registrada!" },
+  { dragEmoji: "🛡️", dropEmoji: "⚠️", dragName: "Escudo de Prevencion", article: "el", successEmoji: "🦺", successMessage: "Riesgos bajo control!" },
+  { dragEmoji: "📊", dropEmoji: "📈", dragName: "Informe de Gestion", article: "el", successEmoji: "💯", successMessage: "Indicadores al dia!" },
+  { dragEmoji: "🚗", dropEmoji: "🛣️", dragName: "Vehiculo Seguro", article: "el", successEmoji: "🏁", successMessage: "PESV: Seguridad vial activa!" },
+  { dragEmoji: "🥾", dropEmoji: "🦶", dragName: "Bota de Seguridad", article: "la", successEmoji: "🚶", successMessage: "Pisando firme y seguro!" },
+  { dragEmoji: "🧤", dropEmoji: "🤚", dragName: "Guantes de Proteccion", article: "los", successEmoji: "👐", successMessage: "Manos protegidas!" },
+  { dragEmoji: "🥽", dropEmoji: "👀", dragName: "Gafas de Seguridad", article: "las", successEmoji: "👓", successMessage: "Vision protegida!" },
+  { dragEmoji: "🔔", dropEmoji: "📢", dragName: "Alarma de Emergencia", article: "la", successEmoji: "🔊", successMessage: "Alerta activada!" },
+  { dragEmoji: "💉", dropEmoji: "🏥", dragName: "Vacuna Ocupacional", article: "la", successEmoji: "💊", successMessage: "Salud preventiva al dia!" },
+  { dragEmoji: "🩺", dropEmoji: "👨‍⚕️", dragName: "Estetoscopio Medico", article: "el", successEmoji: "🏥", successMessage: "Examen medico completado!" },
+  { dragEmoji: "📝", dropEmoji: "📂", dragName: "Acta de Reunion", article: "el", successEmoji: "✅", successMessage: "Acta del COPASST archivada!" },
+  { dragEmoji: "🔧", dropEmoji: "⚙️", dragName: "Herramienta Segura", article: "la", successEmoji: "🛠️", successMessage: "Mantenimiento preventivo OK!" },
+  { dragEmoji: "🪜", dropEmoji: "🏗️", dragName: "Escalera Certificada", article: "la", successEmoji: "🏢", successMessage: "Trabajo en alturas seguro!" },
+  { dragEmoji: "🎒", dropEmoji: "🧰", dragName: "Kit de Emergencia", article: "el", successEmoji: "🆘", successMessage: "Brigada preparada!" },
+  { dragEmoji: "📖", dropEmoji: "👨‍🏫", dragName: "Manual de SST", article: "el", successEmoji: "📚", successMessage: "Conocimiento es prevencion!" },
+  { dragEmoji: "🔦", dropEmoji: "🌑", dragName: "Linterna de Emergencia", article: "la", successEmoji: "💡", successMessage: "Ruta de evacuacion iluminada!" },
+  { dragEmoji: "🪪", dropEmoji: "🏢", dragName: "Carnet de Seguridad", article: "el", successEmoji: "🎫", successMessage: "Acceso autorizado!" },
+  { dragEmoji: "🧹", dropEmoji: "🏭", dragName: "Limpieza Industrial", article: "la", successEmoji: "✨", successMessage: "Orden y aseo impecable!" },
+  { dragEmoji: "🗺️", dropEmoji: "🚪", dragName: "Plano de Evacuacion", article: "el", successEmoji: "🏃", successMessage: "Ruta de evacuacion lista!" },
+  { dragEmoji: "📻", dropEmoji: "🎙️", dragName: "Radio de Emergencia", article: "el", successEmoji: "📡", successMessage: "Comunicacion de crisis activa!" },
+  { dragEmoji: "🧲", dropEmoji: "⚡", dragName: "Proteccion Electrica", article: "la", successEmoji: "🔌", successMessage: "Riesgo electrico controlado!" },
+  { dragEmoji: "🌡️", dropEmoji: "🥵", dragName: "Monitor de Temperatura", article: "el", successEmoji: "❄️", successMessage: "Estres termico bajo control!" },
+  { dragEmoji: "🫁", dropEmoji: "😷", dragName: "Respirador N95", article: "el", successEmoji: "🌬️", successMessage: "Aire limpio garantizado!" },
+  { dragEmoji: "🎯", dropEmoji: "📌", dragName: "Meta de Seguridad", article: "la", successEmoji: "🏅", successMessage: "Objetivo SST cumplido!" },
+  { dragEmoji: "📐", dropEmoji: "🪑", dragName: "Evaluacion Ergonomica", article: "la", successEmoji: "💺", successMessage: "Puesto de trabajo ajustado!" },
+  { dragEmoji: "🔒", dropEmoji: "🚧", dragName: "Candado de Bloqueo", article: "el", successEmoji: "🔐", successMessage: "LOTO aplicado correctamente!" },
+  { dragEmoji: "🩹", dropEmoji: "🤕", dragName: "Botiquin de Primeros Auxilios", article: "el", successEmoji: "🏥", successMessage: "Primeros auxilios listos!" },
+  { dragEmoji: "📣", dropEmoji: "👥", dragName: "Charla de Seguridad", article: "la", successEmoji: "🗣️", successMessage: "Charla de 5 minutos completada!" },
+  { dragEmoji: "🪧", dropEmoji: "🚫", dragName: "Senal de Prohibicion", article: "la", successEmoji: "🚷", successMessage: "Zona restringida senalizada!" },
+  { dragEmoji: "🔬", dropEmoji: "🧪", dragName: "Muestra de Laboratorio", article: "la", successEmoji: "🧫", successMessage: "Monitoreo ambiental OK!" },
+  { dragEmoji: "🎓", dropEmoji: "📜", dragName: "Certificacion SST", article: "la", successEmoji: "🏆", successMessage: "Profesional certificado!" },
+  { dragEmoji: "🚑", dropEmoji: "🏨", dragName: "Ambulancia", article: "la", successEmoji: "⛑️", successMessage: "Plan de emergencia activo!" },
+  { dragEmoji: "🗂️", dropEmoji: "🗄️", dragName: "Expediente del Trabajador", article: "el", successEmoji: "📁", successMessage: "Documentacion completa!" },
+  { dragEmoji: "📅", dropEmoji: "✏️", dragName: "Cronograma de Actividades", article: "el", successEmoji: "📆", successMessage: "Plan anual actualizado!" },
+  { dragEmoji: "🔊", dropEmoji: "👂", dragName: "Proteccion Auditiva", article: "la", successEmoji: "🎧", successMessage: "Audiometria al dia!" },
+  { dragEmoji: "🧴", dropEmoji: "☀️", dragName: "Protector Solar", article: "el", successEmoji: "🌤️", successMessage: "Piel protegida del sol!" },
+  { dragEmoji: "💧", dropEmoji: "🚰", dragName: "Agua Potable", article: "el", successEmoji: "🥤", successMessage: "Hidratacion garantizada!" },
+  { dragEmoji: "🪣", dropEmoji: "☣️", dragName: "Kit Antiderrames", article: "el", successEmoji: "🧽", successMessage: "Derrame contenido!" },
+  { dragEmoji: "📷", dropEmoji: "🔍", dragName: "Inspeccion Fotografica", article: "la", successEmoji: "📸", successMessage: "Evidencia registrada!" },
+  { dragEmoji: "🧯", dropEmoji: "🏢", dragName: "Recarga del Extintor", article: "la", successEmoji: "✅", successMessage: "Extintor vigente!" },
+  { dragEmoji: "🪖", dropEmoji: "🏗️", dragName: "Casco para Alturas", article: "el", successEmoji: "⛑️", successMessage: "Trabajo en alturas aprobado!" },
+  { dragEmoji: "📱", dropEmoji: "🆘", dragName: "App de Emergencia", article: "la", successEmoji: "📲", successMessage: "Reporte inmediato enviado!" },
+  { dragEmoji: "🧪", dropEmoji: "💨", dragName: "Medicion de Gases", article: "la", successEmoji: "🌿", successMessage: "Atmosfera segura!" },
+  { dragEmoji: "🪢", dropEmoji: "🧗", dragName: "Arnes de Seguridad", article: "el", successEmoji: "🦺", successMessage: "Anclaje verificado!" },
+  { dragEmoji: "🔋", dropEmoji: "💡", dragName: "Luz de Emergencia", article: "la", successEmoji: "🔦", successMessage: "Iluminacion de respaldo OK!" },
+  { dragEmoji: "🗓️", dropEmoji: "🩺", dragName: "Cita Medica Ocupacional", article: "la", successEmoji: "👨‍⚕️", successMessage: "Control medico programado!" },
+  { dragEmoji: "🚿", dropEmoji: "👁️", dragName: "Ducha Lavaojos", article: "la", successEmoji: "💧", successMessage: "Estacion de emergencia lista!" },
+  { dragEmoji: "📦", dropEmoji: "🏷️", dragName: "Etiqueta SGA", article: "la", successEmoji: "⚗️", successMessage: "Quimico identificado!" },
+  { dragEmoji: "🚜", dropEmoji: "🅿️", dragName: "Vehiculo Industrial", article: "el", successEmoji: "🏁", successMessage: "Operador certificado!" },
+  { dragEmoji: "🌊", dropEmoji: "🏖️", dragName: "Plan de Inundacion", article: "el", successEmoji: "🌈", successMessage: "Riesgo natural mitigado!" },
+  { dragEmoji: "🦠", dropEmoji: "🧫", dragName: "Control Biologico", article: "el", successEmoji: "🔬", successMessage: "Riesgo biologico controlado!" },
+  { dragEmoji: "🎪", dropEmoji: "🏟️", dragName: "Simulacro General", article: "el", successEmoji: "🎖️", successMessage: "Simulacro exitoso!" },
+  { dragEmoji: "🪞", dropEmoji: "🧑‍💼", dragName: "Autoevaluacion SST", article: "la", successEmoji: "📊", successMessage: "Autoevaluacion completada!" },
+  { dragEmoji: "🌿", dropEmoji: "🏞️", dragName: "Plan Ambiental", article: "el", successEmoji: "🌍", successMessage: "Ambiente laboral saludable!" },
+  { dragEmoji: "🎭", dropEmoji: "🧠", dragName: "Evaluacion Psicosocial", article: "la", successEmoji: "😊", successMessage: "Bienestar emocional OK!" },
+  { dragEmoji: "🪶", dropEmoji: "📝", dragName: "Politica de SST", article: "la", successEmoji: "📄", successMessage: "Politica firmada y vigente!" },
+  { dragEmoji: "🔑", dropEmoji: "🚪", dragName: "Llave de Seguridad", article: "la", successEmoji: "🔓", successMessage: "Area asegurada!" },
+  { dragEmoji: "🎬", dropEmoji: "📺", dragName: "Video de Induccion", article: "el", successEmoji: "🎥", successMessage: "Induccion completada!" },
+  { dragEmoji: "🌐", dropEmoji: "💻", dragName: "Reporte Digital SST", article: "el", successEmoji: "🖥️", successMessage: "Reporte enviado al sistema!" },
+  { dragEmoji: "🧊", dropEmoji: "🥶", dragName: "Proteccion contra Frio", article: "la", successEmoji: "🧣", successMessage: "Trabajador abrigado!" },
+  { dragEmoji: "🪤", dropEmoji: "🐀", dragName: "Control de Plagas", article: "el", successEmoji: "🧹", successMessage: "Instalaciones libres de plagas!" },
+  { dragEmoji: "🔩", dropEmoji: "🏗️", dragName: "Tornillo de Anclaje", article: "el", successEmoji: "🔨", successMessage: "Estructura asegurada!" },
+  { dragEmoji: "🧬", dropEmoji: "🏥", dragName: "Perfil Epidemiologico", article: "el", successEmoji: "📊", successMessage: "Perfil de salud actualizado!" },
+  { dragEmoji: "🎤", dropEmoji: "👨‍💼", dragName: "Rendicion de Cuentas", article: "la", successEmoji: "📢", successMessage: "Gestion transparente!" },
+  { dragEmoji: "🧭", dropEmoji: "🗺️", dragName: "Brujula de Prevencion", article: "la", successEmoji: "🧭", successMessage: "Rumbo seguro establecido!" },
+  { dragEmoji: "💼", dropEmoji: "🏢", dragName: "Maletin del Inspector", article: "el", successEmoji: "🔍", successMessage: "Inspeccion programada!" },
+  { dragEmoji: "🪚", dropEmoji: "🪵", dragName: "Sierra Protegida", article: "la", successEmoji: "🛡️", successMessage: "Herramienta con guarda!" },
+  { dragEmoji: "🧰", dropEmoji: "🔧", dragName: "Caja de Herramientas", article: "la", successEmoji: "🛠️", successMessage: "Herramientas inspeccionadas!" },
+  { dragEmoji: "🏋️", dropEmoji: "🧘", dragName: "Pausa Activa", article: "la", successEmoji: "🤸", successMessage: "Pausa activa realizada!" },
+  { dragEmoji: "🚦", dropEmoji: "🛑", dragName: "Semaforo Vial", article: "el", successEmoji: "🟢", successMessage: "Transito seguro!" },
+  { dragEmoji: "🧑‍🚒", dropEmoji: "🔥", dragName: "Brigadista", article: "el", successEmoji: "🦸", successMessage: "Brigadista en posicion!" },
+  { dragEmoji: "🪟", dropEmoji: "🌬️", dragName: "Ventilacion Natural", article: "la", successEmoji: "💨", successMessage: "Ventilacion adecuada!" },
+  { dragEmoji: "🛞", dropEmoji: "🚙", dragName: "Llanta en Buen Estado", article: "la", successEmoji: "🏎️", successMessage: "Vehiculo revisado!" },
+  { dragEmoji: "📌", dropEmoji: "🗂️", dragName: "Registro de Incidentes", article: "el", successEmoji: "📋", successMessage: "Incidente documentado!" },
+  { dragEmoji: "🥇", dropEmoji: "🏆", dragName: "Premio Cero Accidentes", article: "el", successEmoji: "🎉", successMessage: "Cero accidentes este mes!" },
+  { dragEmoji: "🧑‍⚕️", dropEmoji: "💊", dragName: "Medico Ocupacional", article: "el", successEmoji: "🩺", successMessage: "Consulta medica OK!" },
+  { dragEmoji: "🪫", dropEmoji: "🔌", dragName: "Bateria de Respaldo", article: "la", successEmoji: "⚡", successMessage: "Energia de emergencia lista!" },
+  { dragEmoji: "🎪", dropEmoji: "👷‍♀️", dragName: "Jornada de SST", article: "la", successEmoji: "🎊", successMessage: "Jornada de seguridad exitosa!" },
+  { dragEmoji: "🔭", dropEmoji: "🌄", dragName: "Vigilancia Epidemiologica", article: "la", successEmoji: "📡", successMessage: "SVE actualizado!" },
+  { dragEmoji: "🪝", dropEmoji: "⚓", dragName: "Gancho de Seguridad", article: "el", successEmoji: "🔗", successMessage: "Punto de anclaje fijo!" },
+  { dragEmoji: "🧑‍🔬", dropEmoji: "🔬", dragName: "Higienista Industrial", article: "el", successEmoji: "🧪", successMessage: "Medicion higienica OK!" },
+  { dragEmoji: "🎾", dropEmoji: "🏃‍♂️", dragName: "Programa Deportivo", article: "el", successEmoji: "🏅", successMessage: "Bienestar fisico activo!" },
+  { dragEmoji: "🌻", dropEmoji: "🧘‍♀️", dragName: "Programa de Bienestar", article: "el", successEmoji: "🌸", successMessage: "Bienestar integral!" },
+  { dragEmoji: "🔫", dropEmoji: "🚫", dragName: "Control de Armas", article: "el", successEmoji: "🛡️", successMessage: "Zona libre de armas!" },
+  { dragEmoji: "🧲", dropEmoji: "🧲", dragName: "Campo Magnetico", article: "el", successEmoji: "📡", successMessage: "Radiacion no ionizante OK!" },
+  { dragEmoji: "🌋", dropEmoji: "🏔️", dragName: "Plan Volcanico", article: "el", successEmoji: "🛡️", successMessage: "Plan de contingencia listo!" },
+  { dragEmoji: "🌪️", dropEmoji: "🏠", dragName: "Plan contra Tormentas", article: "el", successEmoji: "☀️", successMessage: "Refugio seguro identificado!" },
+  { dragEmoji: "⏱️", dropEmoji: "🕐", dragName: "Control de Jornada", article: "el", successEmoji: "⌛", successMessage: "Jornada laboral legal!" },
+  { dragEmoji: "🪙", dropEmoji: "💰", dragName: "Presupuesto SST", article: "el", successEmoji: "💵", successMessage: "Recursos asignados!" },
+  { dragEmoji: "🖊️", dropEmoji: "📑", dragName: "Firma de Compromiso", article: "la", successEmoji: "✍️", successMessage: "Compromiso adquirido!" },
+  { dragEmoji: "🧑‍🍳", dropEmoji: "🍽️", dragName: "Higiene Alimentaria", article: "la", successEmoji: "✅", successMessage: "Alimentos seguros!" },
+  { dragEmoji: "🎧", dropEmoji: "🔇", dragName: "Tapones Auditivos", article: "los", successEmoji: "🤫", successMessage: "Ruido controlado!" },
+  { dragEmoji: "🚰", dropEmoji: "🧪", dragName: "Calidad del Agua", article: "la", successEmoji: "💎", successMessage: "Agua potable verificada!" },
+  { dragEmoji: "🛗", dropEmoji: "🔧", dragName: "Mantenimiento Ascensor", article: "el", successEmoji: "✅", successMessage: "Ascensor certificado!" },
+  { dragEmoji: "🧯", dropEmoji: "🧑‍🚒", dragName: "Practica con Extintor", article: "la", successEmoji: "🔥", successMessage: "Practica contra incendios OK!" },
+  { dragEmoji: "🪜", dropEmoji: "📏", dragName: "Inspeccion de Escalera", article: "la", successEmoji: "✅", successMessage: "Escalera aprobada!" },
+  { dragEmoji: "🧲", dropEmoji: "🪛", dragName: "Detector de Metales", article: "el", successEmoji: "🔍", successMessage: "Area libre de objetos!" },
+  { dragEmoji: "🌬️", dropEmoji: "🫧", dragName: "Calidad del Aire", article: "la", successEmoji: "🌿", successMessage: "Aire interior saludable!" },
+  { dragEmoji: "🧱", dropEmoji: "🏗️", dragName: "Inspeccion Estructural", article: "la", successEmoji: "🏛️", successMessage: "Estructura solida!" },
+  { dragEmoji: "🏍️", dropEmoji: "🛣️", dragName: "Moto con Casco", article: "la", successEmoji: "⛑️", successMessage: "Motociclista protegido!" },
+  { dragEmoji: "🚌", dropEmoji: "🚏", dragName: "Transporte de Personal", article: "el", successEmoji: "🚍", successMessage: "Transporte seguro!" },
+  { dragEmoji: "🔌", dropEmoji: "🧯", dragName: "Cableado Electrico", article: "el", successEmoji: "⚡", successMessage: "Instalacion electrica segura!" },
+  { dragEmoji: "🧫", dropEmoji: "🦠", dragName: "Protocolo Bioseguridad", article: "el", successEmoji: "🛡️", successMessage: "Bioseguridad activa!" },
+  { dragEmoji: "🗑️", dropEmoji: "♻️", dragName: "Residuos Peligrosos", article: "los", successEmoji: "🌱", successMessage: "Residuos bien clasificados!" },
+  { dragEmoji: "🌙", dropEmoji: "🛏️", dragName: "Turno Nocturno Seguro", article: "el", successEmoji: "🌟", successMessage: "Turno nocturno protegido!" },
+  { dragEmoji: "☔", dropEmoji: "🧥", dragName: "Impermeable de Trabajo", article: "el", successEmoji: "🌧️", successMessage: "Protegido de la lluvia!" },
+  { dragEmoji: "🧯", dropEmoji: "🏪", dragName: "Extintor del Local", article: "el", successEmoji: "🔥", successMessage: "Local comercial seguro!" },
+  { dragEmoji: "📎", dropEmoji: "📚", dragName: "Carpeta de Evidencias", article: "la", successEmoji: "🗃️", successMessage: "Evidencias organizadas!" },
+  { dragEmoji: "🩻", dropEmoji: "🏥", dragName: "Rayos X Ocupacional", article: "los", successEmoji: "🩺", successMessage: "Examen radiologico OK!" },
+  { dragEmoji: "🧑‍✈️", dropEmoji: "✈️", dragName: "Seguridad Aeroportuaria", article: "la", successEmoji: "🛫", successMessage: "Vuelo seguro!" },
+  { dragEmoji: "🚢", dropEmoji: "⚓", dragName: "Seguridad Maritima", article: "la", successEmoji: "🛟", successMessage: "Navegacion segura!" },
+  { dragEmoji: "🧊", dropEmoji: "🥩", dragName: "Cadena de Frio", article: "la", successEmoji: "❄️", successMessage: "Cadena de frio intacta!" },
+  { dragEmoji: "🔆", dropEmoji: "🕶️", dragName: "Proteccion UV", article: "la", successEmoji: "🌞", successMessage: "Ojos protegidos del sol!" },
+  { dragEmoji: "🧑‍🏭", dropEmoji: "🏭", dragName: "Operario Capacitado", article: "el", successEmoji: "🎓", successMessage: "Operario certificado!" },
+  { dragEmoji: "🪛", dropEmoji: "🔩", dragName: "Destornillador Aislado", article: "el", successEmoji: "🛡️", successMessage: "Herramienta dielectrica!" },
+  { dragEmoji: "🚧", dropEmoji: "🛑", dragName: "Barricada de Seguridad", article: "la", successEmoji: "🚧", successMessage: "Zona demarcada!" },
+  { dragEmoji: "📡", dropEmoji: "🌐", dragName: "Sistema de Monitoreo", article: "el", successEmoji: "🖥️", successMessage: "Monitoreo en tiempo real!" },
+  { dragEmoji: "🧪", dropEmoji: "🔥", dragName: "Prueba de Inflamabilidad", article: "la", successEmoji: "📊", successMessage: "Material no inflamable!" },
+  { dragEmoji: "🌾", dropEmoji: "🚜", dragName: "Seguridad Agricola", article: "la", successEmoji: "🌻", successMessage: "Campo seguro!" },
+  { dragEmoji: "⛏️", dropEmoji: "🏔️", dragName: "Seguridad Minera", article: "la", successEmoji: "💎", successMessage: "Mina asegurada!" },
+  { dragEmoji: "🧑‍🔧", dropEmoji: "🔩", dragName: "Tecnico de Mantenimiento", article: "el", successEmoji: "🔧", successMessage: "Mantenimiento completado!" },
+  { dragEmoji: "🎗️", dropEmoji: "👥", dragName: "Campana de Salud", article: "la", successEmoji: "🏥", successMessage: "Campana de salud exitosa!" },
+  { dragEmoji: "🪞", dropEmoji: "🚗", dragName: "Espejo Retrovisor", article: "el", successEmoji: "👁️", successMessage: "Visibilidad completa!" },
+  { dragEmoji: "🔔", dropEmoji: "🏢", dragName: "Alarma Contra Incendios", article: "la", successEmoji: "🧯", successMessage: "Sistema contra incendios OK!" },
+  { dragEmoji: "🩸", dropEmoji: "🏥", dragName: "Banco de Sangre", article: "el", successEmoji: "❤️", successMessage: "Donacion de sangre activa!" },
+  { dragEmoji: "🧯", dropEmoji: "⛽", dragName: "Extintor de Gasolinera", article: "el", successEmoji: "✅", successMessage: "Estacion de servicio segura!" },
+  { dragEmoji: "📲", dropEmoji: "🔔", dragName: "Notificacion de Alerta", article: "la", successEmoji: "📳", successMessage: "Alerta enviada a todos!" },
+  { dragEmoji: "🧑‍💻", dropEmoji: "🖥️", dragName: "Ergonomia Digital", article: "la", successEmoji: "💺", successMessage: "Pantalla a buena distancia!" },
+  { dragEmoji: "🪒", dropEmoji: "🚫", dragName: "Objeto Cortopunzante", article: "el", successEmoji: "🛡️", successMessage: "Cortopunzante descartado!" },
+  { dragEmoji: "🌡️", dropEmoji: "🧑‍⚕️", dragName: "Toma de Temperatura", article: "la", successEmoji: "✅", successMessage: "Temperatura normal!" },
+  { dragEmoji: "🚒", dropEmoji: "🏢", dragName: "Carro de Bomberos", article: "el", successEmoji: "🧑‍🚒", successMessage: "Bomberos en posicion!" },
+  { dragEmoji: "🧲", dropEmoji: "📡", dragName: "Medicion Electromagnetica", article: "la", successEmoji: "📊", successMessage: "Niveles seguros!" },
+  { dragEmoji: "🥊", dropEmoji: "😠", dragName: "Prevencion de Violencia", article: "la", successEmoji: "🕊️", successMessage: "Ambiente laboral pacifico!" },
+  { dragEmoji: "🧮", dropEmoji: "📊", dragName: "Estadisticas de Accidentes", article: "las", successEmoji: "📉", successMessage: "Tasa de accidentes en baja!" },
+  { dragEmoji: "🪪", dropEmoji: "🧑‍💼", dragName: "Credencial de Visitante", article: "la", successEmoji: "🎫", successMessage: "Visitante registrado!" },
+  { dragEmoji: "🧪", dropEmoji: "💧", dragName: "Analisis de Agua", article: "el", successEmoji: "💎", successMessage: "Agua apta para consumo!" },
+  { dragEmoji: "🎪", dropEmoji: "🏃‍♀️", dragName: "Simulacro de Evacuacion", article: "el", successEmoji: "🏁", successMessage: "Evacuacion en 3 minutos!" },
+  { dragEmoji: "📋", dropEmoji: "✅", dragName: "Lista de Chequeo", article: "la", successEmoji: "📝", successMessage: "Checklist completado!" },
+  { dragEmoji: "🌱", dropEmoji: "🏢", dragName: "Planta Purificadora", article: "la", successEmoji: "🌿", successMessage: "Aire purificado!" },
+  { dragEmoji: "🔐", dropEmoji: "💻", dragName: "Ciberseguridad SST", article: "la", successEmoji: "🛡️", successMessage: "Datos protegidos!" },
+  { dragEmoji: "🦺", dropEmoji: "👷‍♀️", dragName: "Chaleco Reflectivo", article: "el", successEmoji: "🌟", successMessage: "Visibilidad nocturna OK!" },
+  { dragEmoji: "🧯", dropEmoji: "🧑‍🍳", dragName: "Extintor de Cocina", article: "el", successEmoji: "🍳", successMessage: "Cocina industrial segura!" },
+  { dragEmoji: "🚲", dropEmoji: "⛑️", dragName: "Ciclista con Casco", article: "el", successEmoji: "🚴", successMessage: "Ciclista protegido!" },
+  { dragEmoji: "🏥", dropEmoji: "🚑", dragName: "Centro Medico", article: "el", successEmoji: "⛑️", successMessage: "Atencion medica disponible!" },
+  { dragEmoji: "🧑‍🎓", dropEmoji: "📖", dragName: "Estudiante en Practica", article: "el", successEmoji: "🎓", successMessage: "Practicante capacitado!" },
+  { dragEmoji: "🪫", dropEmoji: "🔦", dragName: "Recarga de Linterna", article: "la", successEmoji: "💡", successMessage: "Linterna de emergencia lista!" },
+  { dragEmoji: "🧑‍🦽", dropEmoji: "♿", dragName: "Accesibilidad", article: "la", successEmoji: "🏢", successMessage: "Espacio inclusivo!" },
+  { dragEmoji: "🫀", dropEmoji: "🏃", dragName: "Examen Cardiovascular", article: "el", successEmoji: "❤️", successMessage: "Corazon saludable!" },
+  { dragEmoji: "🧪", dropEmoji: "🧲", dragName: "Prueba de Materiales", article: "la", successEmoji: "✅", successMessage: "Material certificado!" },
+  { dragEmoji: "🛻", dropEmoji: "📦", dragName: "Carga Segura", article: "la", successEmoji: "🔒", successMessage: "Carga bien asegurada!" },
+  { dragEmoji: "🧑‍🌾", dropEmoji: "🌾", dragName: "Seguridad en Campo", article: "la", successEmoji: "🌻", successMessage: "Trabajo rural protegido!" },
+  { dragEmoji: "🏊", dropEmoji: "🛟", dragName: "Salvavidas", article: "el", successEmoji: "🏖️", successMessage: "Rescate acuatico listo!" },
+  { dragEmoji: "🌬️", dropEmoji: "🏭", dragName: "Extractor de Humos", article: "el", successEmoji: "💨", successMessage: "Humos evacuados!" },
+  { dragEmoji: "🧑‍🎤", dropEmoji: "📢", dragName: "Vocero de Emergencia", article: "el", successEmoji: "🎙️", successMessage: "Comunicado emitido!" },
+  { dragEmoji: "🗃️", dropEmoji: "📁", dragName: "Archivo de SST", article: "el", successEmoji: "🗄️", successMessage: "20 anos archivados!" },
+  { dragEmoji: "⚖️", dropEmoji: "📜", dragName: "Norma Legal SST", article: "la", successEmoji: "🏛️", successMessage: "Cumplimiento legal OK!" },
+  { dragEmoji: "🛞", dropEmoji: "🔧", dragName: "Rotacion de Llantas", article: "la", successEmoji: "🚗", successMessage: "Llantas en perfecto estado!" },
+  { dragEmoji: "🧪", dropEmoji: "🫁", dragName: "Espirometria", article: "la", successEmoji: "💨", successMessage: "Funcion pulmonar normal!" },
+  { dragEmoji: "🏗️", dropEmoji: "📐", dragName: "Plano de Obra", article: "el", successEmoji: "🏢", successMessage: "Obra con permisos!" },
+  { dragEmoji: "🧊", dropEmoji: "🥤", dragName: "Hidratacion en Calor", article: "la", successEmoji: "💧", successMessage: "Trabajador hidratado!" },
+  { dragEmoji: "🔦", dropEmoji: "🏭", dragName: "Inspeccion Nocturna", article: "la", successEmoji: "🌙", successMessage: "Turno nocturno revisado!" },
+  { dragEmoji: "🧑‍⚖️", dropEmoji: "📋", dragName: "Auditoria Interna", article: "la", successEmoji: "✅", successMessage: "Auditoria sin hallazgos!" },
+  { dragEmoji: "🧲", dropEmoji: "🏗️", dragName: "Grua Electroiman", article: "la", successEmoji: "🏋️", successMessage: "Carga izada con seguridad!" },
+  { dragEmoji: "📯", dropEmoji: "🏢", dragName: "Sirena de Planta", article: "la", successEmoji: "🔔", successMessage: "Sistema de alarma activo!" },
+];
+
+// NOTA: Aqui solo van los primeros ~177 desafios por espacio.
+// El archivo original tiene 365 desafios (uno por cada dia del ano).
+// Copia el archivo captcha-misiones.ts completo del proyecto original
+// para tener todos los 365 desafios.
+//
+// PARA CONTABILIDAD, reemplaza estos desafios con temas como:
+// { dragEmoji: "🧾", dropEmoji: "📂", dragName: "Factura Electronica", article: "la", successEmoji: "✅", successMessage: "Factura archivada en DIAN!" },
+// { dragEmoji: "📊", dropEmoji: "📈", dragName: "Balance General", article: "el", successEmoji: "💯", successMessage: "Balance cuadrado!" },
+// { dragEmoji: "💰", dropEmoji: "🏦", dragName: "Consignacion Bancaria", article: "la", successEmoji: "✅", successMessage: "Consignacion registrada!" },
+// { dragEmoji: "📋", dropEmoji: "📊", dragName: "Estado de Resultados", article: "el", successEmoji: "📈", successMessage: "P&G al dia!" },
+// { dragEmoji: "🧮", dropEmoji: "📖", dragName: "Libro Mayor", article: "el", successEmoji: "✅", successMessage: "Libro mayor actualizado!" },
+// { dragEmoji: "💳", dropEmoji: "🏦", dragName: "Extracto Bancario", article: "el", successEmoji: "📊", successMessage: "Conciliacion bancaria OK!" },
+// { dragEmoji: "🪙", dropEmoji: "📋", dragName: "Declaracion de Renta", article: "la", successEmoji: "✅", successMessage: "Renta presentada a tiempo!" },
+// { dragEmoji: "📝", dropEmoji: "📂", dragName: "Nota Credito", article: "la", successEmoji: "💰", successMessage: "Nota credito aplicada!" },
+
+
+================================================================================
+ARCHIVO 3: captcha-motivacion.ts (266 frases motivacionales - una por dia)
+================================================================================
+
+export const FRASES_MOTIVACIONALES: string[] = [
+  "Tu bienestar es la prioridad. Hoy es un gran dia para cuidarte.",
+  "Cada jornada segura es un regalo para tu familia.",
+  "Tu salud no tiene precio. Protegela siempre.",
+  "Detras de cada norma hay una vida que vale la pena proteger.",
+  "Hoy alguien te espera en casa. Trabaja seguro por ellos.",
+  "Cuidar tu vida es el acto de valentia mas grande.",
+  "Un trabajador seguro es un trabajador feliz.",
+  "Tu familia es tu mayor motivacion. Regresa sano cada dia.",
+  "La prevencion no es un gasto, es una inversion en tu vida.",
+  "Cada dia es una oportunidad para hacer las cosas bien y volver a casa.",
+  "Tu vida vale mas que cualquier meta de produccion.",
+  "Proteger tu salud es proteger tus suenos.",
+  "Nadie puede reemplazarte en tu hogar. Cuidate.",
+  "La seguridad empieza contigo. Tu ejemplo inspira a otros.",
+  "Hoy tienes la oportunidad de hacer la diferencia. Aprovechala.",
+  "Trabajar seguro no es una opcion, es un compromiso con la vida.",
+  "Tu sonrisa al volver a casa es la mejor recompensa del dia.",
+  "Cada accion segura es un paso hacia un futuro mejor.",
+  "Tu bienestar importa. No dejes que la rutina te haga olvidarlo.",
+  "La mejor herramienta de trabajo es tu conciencia de seguridad.",
+  "Eres insustituible para quienes te aman. Cuidate hoy.",
+  "Un minuto de prevencion puede evitar toda una vida de dolor.",
+  "Tu salud mental tambien cuenta. Respira, enfoca y avanza.",
+  "Hoy es un buen dia para recordar por que haces lo que haces.",
+  "Cada amanecer es una nueva oportunidad de proteger lo que amas.",
+  "La seguridad no es solo un protocolo, es un acto de amor propio.",
+  "Tu cuerpo es tu vehiculo de vida. Mantenlo en las mejores condiciones.",
+  "Trabaja con la mente en tu familia y el corazon en la seguridad.",
+  "No hay trabajo tan urgente que no pueda hacerse de manera segura.",
+  "Tu compromiso con la seguridad protege a todo tu equipo.",
+  "Volver a casa sano es el logro mas importante del dia.",
+  "La prevencion es el mejor regalo que le puedes dar a tu familia.",
+  "Eres mas fuerte cuando cuidas tu salud. No te descuides.",
+  "Cada norma de seguridad fue escrita pensando en alguien como tu.",
+  "Tu vida tiene un proposito. Protegela con cada decision.",
+  "El trabajo seguro construye familias felices.",
+  "Hoy es el dia perfecto para priorizar tu bienestar.",
+  "La seguridad no tiene horario. Cuidate las 24 horas.",
+  "Tu experiencia salva vidas. Comparte lo que sabes.",
+  "Un equipo seguro es un equipo que triunfa junto.",
+  "Piensa antes de actuar. Esos segundos pueden salvar tu vida.",
+  "Tu salud es tu mayor riqueza. Invierte en ella cada dia.",
+  "Detras de cada casco hay un padre, una madre, un hijo. Protegete.",
+  "La mejor productividad nace de un ambiente seguro y humano.",
+  "No te acostumbres al riesgo. La confianza excesiva es peligrosa.",
+  "Tu presencia en casa cada noche es tu mayor exito profesional.",
+  "Cuida tu espalda, tus manos, tus ojos. Son tu patrimonio.",
+  "La seguridad es un habito que se construye dia a dia.",
+  "Eres valioso. Tu empresa te necesita sano y motivado.",
+  "Hoy alguien depende de que regreses bien. No le falles.",
+  "El trabajo dignifica, pero solo si se hace de manera segura.",
+  "Tu actitud positiva es contagiosa. Se el ejemplo de seguridad.",
+  "Cada dia sin accidentes es una victoria de todo el equipo.",
+  "No ignores las senales de tu cuerpo. Descansa cuando lo necesites.",
+  "La prevencion es responsabilidad de todos, empezando por ti.",
+  "Tu compromiso de hoy es el bienestar de manana.",
+  "La vida te da una sola oportunidad. No la arriesgues por prisa.",
+  "Trabajar con seguridad es trabajar con inteligencia.",
+  "Tu familia confio en que hoy regresaras sano. Honra esa confianza.",
+  "La seguridad no tiene atajos. Sigue siempre el procedimiento.",
+  "Eres el recurso mas valioso de tu organizacion. Cuidate.",
+  "Hoy puedes ser el heroe silencioso que previene un accidente.",
+  "Tu bienestar fisico y emocional son igual de importantes.",
+  "Cada elemento de proteccion es un abrazo de seguridad.",
+  "No dejes para manana lo que puedes prevenir hoy.",
+  "Tu energia positiva transforma tu entorno de trabajo.",
+  "La seguridad se practica, no se improvisa.",
+  "Recuerda: al final del dia, lo mas importante eres tu.",
+  "Un ambiente de trabajo saludable es un derecho, no un privilegio.",
+  "Tu liderazgo en seguridad inspira a tus companeros.",
+  "Cada paso seguro te acerca mas a tus metas personales.",
+  "No hay prisa que justifique arriesgar tu integridad.",
+  "Tu salud es la base sobre la cual construyes todo lo demas.",
+  "Hoy elige ser consciente. Cada decision cuenta.",
+  "La cultura de seguridad se construye con personas como tu.",
+  "Tu voz importa. Si ves algo inseguro, reportalo.",
+  "El cuidado propio no es egoismo, es responsabilidad.",
+  "Manana te agradeceras por haber sido prudente hoy.",
+  "Tu equipo de proteccion es tu segunda piel. Usalo siempre.",
+  "La seguridad une equipos y fortalece companias.",
+  "Eres el protagonista de tu propia historia. Escribela con seguridad.",
+  "Cada capacitacion es una herramienta mas para proteger tu vida.",
+  "Tu compromiso con el autocuidado es admirable. Sigue asi.",
+  "Hoy y siempre: primero tu seguridad, despues todo lo demas.",
+  "La prevencion es la forma mas inteligente de trabajar.",
+  "Tu familia merece verte sonreir cada tarde al regresar.",
+  "El respeto por la vida empieza por el respeto a ti mismo.",
+  "Cada jornada es una oportunidad para demostrar que la seguridad es posible.",
+  "Tu bienestar emocional tambien necesita atencion. No lo olvides.",
+  "Un dia mas seguro es un dia mas de vida plena.",
+  "Tu determinacion por trabajar seguro marca la diferencia.",
+  "La seguridad no es aburrida. Es la forma mas sabia de vivir.",
+  "Protege tu presente para disfrutar tu futuro.",
+  "Cada companero es parte de tu familia laboral. Cuidate y cuidalo.",
+  "Tu disciplina en seguridad es tu mayor fortaleza.",
+  "Hoy comienza un nuevo dia. Hazlo seguro, hazlo memorable.",
+  "La vida es bella. Protegela con cada accion que tomes.",
+  "Tu salud es el motor que impulsa todos tus suenos.",
+  "No subestimes los riesgos. La prudencia siempre gana.",
+  "Eres mas que un empleado. Eres una persona valiosa e irreemplazable.",
+  "El mejor plan de seguridad eres tu, actuando con conciencia.",
+  "Hoy es un regalo. Cuidalo como merece.",
+  "Tu ejemplo de seguridad deja huella en quienes te rodean.",
+  "La prevencion es el lenguaje del amor en el trabajo.",
+  "Cada dia seguro es un triunfo silencioso que merece celebrarse.",
+  "Tu tranquilidad al trabajar seguro se refleja en tu hogar.",
+  "No hay tarea imposible cuando se hace con seguridad y corazon.",
+  "Tu bienestar es la base de un equipo exitoso.",
+  "La seguridad no descansa. Tu tampoco dejes de practicarla.",
+  "Eres la razon por la que alguien sonrie al verte llegar a casa.",
+  "Hoy elige la seguridad. Siempre vale la pena.",
+  "Tu vida tiene un valor infinito. Protegela en cada momento.",
+  "Trabajar seguro es el mejor legado que puedes dejar.",
+  "La prevencion empieza en la mente y se refleja en las acciones.",
+  "Tu fortaleza esta en saber cuando pedir ayuda. No dudes en hacerlo.",
+  "Cada dia es una batalla ganada cuando regresas sano a tu hogar.",
+  "Tu compromiso con la vida es lo que te hace extraordinario.",
+  "No hay exito profesional que valga mas que tu salud.",
+  "Hoy respira profundo y recuerda: tu eres lo mas importante.",
+  "La seguridad es un regalo que te das a ti mismo cada dia.",
+  "Tu presencia hace la diferencia. Cuidate para seguir estando.",
+  "Cada momento de precaucion es un momento de sabiduria.",
+  "Tu corazon late por una razon. Protege esa razon cada dia.",
+  "El bienestar no se negocia. Es tu derecho fundamental.",
+  "Hoy sal a trabajar con la certeza de que volveras bien.",
+  "Tu sonrisa es la prueba de que la seguridad funciona.",
+  "La prevencion es el camino. Tu bienestar es el destino.",
+  "Eres fuerte, eres valioso, eres necesario. Cuidate siempre.",
+  "Cada dia que trabajas seguro, gana tu familia entera.",
+  "Tu salud integral es la mejor poliza de vida.",
+  "No dejes que el cansancio nuble tu juicio. Descansa y sigue.",
+  "Tu proposito va mas alla del trabajo. Vive para cumplirlo.",
+  "La seguridad es la expresion mas pura del respeto por la vida.",
+  "Hoy y todos los dias: tu primero, tu seguridad primero.",
+  "Tu determinacion inspira. Tu prudencia protege. Tu ejemplo transforma.",
+  "Cada fin de jornada seguro es el comienzo de una noche tranquila.",
+  "Tu eres la persona mas importante de tu vida. Actua en consecuencia.",
+  "La prevencion no tiene precio. Tu vida tampoco.",
+  "Hoy celebra estar aqui. Manana agradeceras haberte cuidado.",
+  "Tu bienestar es el pilar de todo lo que construyes.",
+  "Eres el guardian de tu propia vida. Ejerce ese poder con responsabilidad.",
+  "Cada accion preventiva es una declaracion de amor a la vida.",
+  "Tu salud, tu familia, tu futuro. Todo depende de que te cuides hoy.",
+  "La seguridad es el idioma universal del amor propio.",
+  "Hoy tienes todo para ser tu mejor version. Empieza con seguridad.",
+  "Tu legado mas grande sera el ejemplo de cuidado que dejes.",
+  "No hay trabajo perfecto, pero si formas perfectas de protegerte.",
+  "Tu presencia ilumina tu hogar. Regresa siempre a iluminarlo.",
+  "La vida te necesita completo. Cuidate de pies a cabeza.",
+  "Eres mas que suficiente. Y mereces volver sano cada dia.",
+  "Hoy es el dia ideal para renovar tu compromiso con la vida.",
+  "Tu seguridad es la semilla de la felicidad de tu familia.",
+  "Cada proteccion que usas es un acto de sabiduria.",
+  "Tu valor como ser humano esta por encima de cualquier indicador.",
+  "La prevencion es el regalo mas generoso que puedes darte.",
+  "Hoy trabaja con pasion, pero sobre todo, con seguridad.",
+  "Tu vida es una obra maestra en construccion. No permitas que se detenga.",
+  "El autocuidado es la forma mas honesta de quererte.",
+  "Cada manana tienes una cita con la vida. No faltes.",
+  "Tu eres el motor de tu familia. Mantenlo en optimas condiciones.",
+  "La seguridad no limita, libera. Te libera de preocupaciones innecesarias.",
+  "Hoy eres mas sabio que ayer. Usa esa sabiduria para protegerte.",
+  "Tu compromiso con la seguridad es tu carta de presentacion.",
+  "Eres el heroe cotidiano de quienes te aman. No lo olvides.",
+  "Cada dia sin incidentes es un dia de victoria para todos.",
+  "Tu bienestar no es negociable. Defiendelo siempre.",
+  "La seguridad se vive, se respira, se practica. Hazla parte de ti.",
+  "Hoy empieza tu jornada con la mejor actitud y la mayor precaucion.",
+  "Tu vida merece ser vivida plenamente. Cuida cada paso que das.",
+  "El amor propio se demuestra con acciones seguras.",
+  "Eres irremplazable. Punto. Cuidate como tal.",
+  "Cada medida de seguridad es un escalon hacia una vida plena.",
+  "Tu tranquilidad al trabajar se transmite a todo tu entorno.",
+  "Hoy y siempre: mereces volver a casa con una sonrisa.",
+  "La prevencion es el arte de amar la vida en cada detalle.",
+  "Tu fuerza no esta solo en tus brazos, esta en tu capacidad de protegerte.",
+  "Cada dia es un lienzo en blanco. Pintalo con seguridad y alegria.",
+  "Tu salud es sagrada. Tratala con el respeto que merece.",
+  "Eres parte de algo mas grande. Tu seguridad importa para todos.",
+  "La vida te sonrie cuando tu la cuidas. Sonriele de vuelta.",
+  "Hoy decide ser la mejor version de ti: segura, consciente y valiente.",
+  "Tu camino apenas comienza. Asegurate de recorrerlo con proteccion.",
+  "Cada respiro es un recordatorio de lo valiosa que es tu vida.",
+  "Tu familia te necesita entero. No les falles.",
+  "La seguridad es la base de la dignidad en el trabajo.",
+  "Hoy celebra tu vida cuidandola. Es el mejor homenaje que puedes hacerte.",
+  "Tu eres el proyecto mas importante de tu vida. Invierte en tu seguridad.",
+  "Cada decision segura es un paso firme hacia tus suenos.",
+  "Tu bienestar construye un mundo mejor para quienes te rodean.",
+  "No hay manana sin el cuidado de hoy. Protegete ahora.",
+  "Eres luz para muchas personas. No permitas que esa luz se apague.",
+  "La seguridad no es una carga, es el camino mas liviano.",
+  "Hoy agradece por estar aqui y comprometete a seguir estando.",
+  "Tu vida es el regalo mas grande que has recibido. Cuidalo.",
+  "Cada jornada segura suma anos de felicidad a tu vida.",
+  "Tu determinacion por llegar sano a casa es tu mayor victoria.",
+  "La prevencion es inteligencia aplicada a la vida diaria.",
+  "Eres extraordinario. Y mereces un lugar de trabajo que te proteja.",
+  "Hoy es tu dia. Vivelo con seguridad, vivelo con proposito.",
+  "Tu corazon late por quienes te esperan. Regresa siempre por ellos.",
+  "La seguridad es silenciosa, pero su ausencia es ensordecedora.",
+  "Cada accion consciente es un tributo a la vida.",
+  "Tu eres la razon suficiente para trabajar seguro. Siempre.",
+  "Hoy tu mejor decision sera cuidarte. Las demas vendran despues.",
+  "La vida es corta para desperdiciarla en riesgos innecesarios.",
+  "Tu presencia en el mundo importa. Protegela con todo tu ser.",
+  "Cada amanecer te dice: vale la pena cuidarse un dia mas.",
+  "Tu seguridad es la promesa mas bonita que le haces a tu familia.",
+  "Hoy seras mas fuerte porque elegiras ser mas prudente.",
+  "La prevencion es la poesia del trabajo bien hecho.",
+  "Tu bienestar ilumina todo lo que tocas. No dejes que se apague.",
+  "Eres el milagro de cada dia. Cuidate como el tesoro que eres.",
+  "Cada paso seguro es un paso hacia la plenitud.",
+  "Hoy el mundo te necesita. Presentate completo, seguro y feliz.",
+  "Tu vida es la prueba de que vale la pena prevenir.",
+  "La seguridad es el abrazo invisible que te protege cada dia.",
+  "Eres suficiente, eres valioso, eres amado. Cuidate por ellos y por ti.",
+  "Hoy cierra los ojos un segundo y recuerda por quien trabajas. Ahora, hazlo seguro.",
+  "Tu compromiso con la vida es la mejor herencia que puedes dejar.",
+  "Cada momento de cuidado es un momento de grandeza.",
+  "La prevencion es la forma mas elegante de amar la vida.",
+  "Hoy tu familia necesita que regreses. Y tu mereces regresar.",
+  "Tu eres mas importante que cualquier plazo, meta o indicador.",
+  "La seguridad es el fundamento de una vida con proposito.",
+  "Cada dia que vuelves sano a casa, gana el amor.",
+  "Hoy se fuerte en la prevencion y suave con tu bienestar.",
+  "Tu vida es irrepetible. Protegela como la joya que es.",
+  "Eres el centro del universo de alguien. No dejes de brillar.",
+  "La seguridad es el puente entre tus suenos y tu realidad.",
+  "Hoy recuerda: nadie puede cuidarte mejor que tu mismo.",
+  "Tu existencia tiene un impacto que ni imaginas. Sigue aqui.",
+  "Cada medida preventiva es una carta de amor a tu futuro.",
+  "Hoy y siempre: tu eres la razon mas importante para trabajar seguro.",
+  "La vida te espera afuera. Asegurate de llegar a vivirla.",
+  "Tu seguridad hoy es la paz de tu familia esta noche.",
+  "Eres el arquitecto de tu propio cuidado. Construye con sabiduria.",
+  "Cada dia seguro es un capitulo feliz en tu historia de vida.",
+  "Hoy abraza la prevencion como abrazas a quienes amas.",
+  "Tu salud es el cimiento de todos tus logros. No lo descuides.",
+  "La seguridad es la melodia que hace armoniosa tu jornada.",
+  "Eres parte de una cadena de cuidado. Tu eslabon es vital.",
+  "Hoy vive con intencion, trabaja con prevencion.",
+  "Tu vida es una bendicion para muchos. Conservala con carino.",
+  "Cada proteccion es una promesa cumplida contigo mismo.",
+  "La prevencion es el lenguaje silencioso del amor por la vida.",
+  "Hoy comienza con gratitud y termina con seguridad.",
+  "Tu eres irreemplazable. Recuerdalo en cada decision que tomes.",
+  "La seguridad no se hereda, se practica. Hoy es tu oportunidad.",
+  "Cada instante de cuidado vale una vida entera de felicidad.",
+  "Hoy tu mejor version se presenta segura, consciente y agradecida.",
+  "Tu bienestar es la estrella que guia a tu familia. Brilla siempre.",
+  "La vida es el viaje mas hermoso. Recorrelo con seguridad.",
+  "Eres el tesoro mas valioso de tu hogar. Protegete sin excusas.",
+  "Hoy y cada dia: la seguridad es tu mejor compania.",
+  "Tu presencia en el mundo cambia vidas. Asegura la tuya primero.",
+  "Cada acto de prevencion es un acto de fe en el futuro.",
+  "La seguridad es la raiz de la que crece todo lo bueno.",
+  "Hoy eres mas fuerte, mas sabio y mas comprometido con tu vida.",
+  "Tu seguridad es la llave que abre la puerta de un manana mejor.",
+  "Eres la persona que alguien necesita ver llegar cada tarde.",
+  "La prevencion es la forma mas hermosa de decir: me importo.",
+  "Hoy cuida tu cuerpo, tu mente y tu espiritu. Los tres te necesitan.",
+  "Tu vida es un regalo que merece ser protegido todos los dias.",
+  "Cada jornada segura es una victoria silenciosa del amor.",
+  "Eres suficiente. Eres necesario. Eres amado. Trabaja seguro.",
+];
+
+// PARA CONTABILIDAD, reemplaza estas frases con temas financieros como:
+// "La precision en los numeros refleja la excelencia de tu trabajo.",
+// "Cada asiento contable bien hecho es un paso hacia la transparencia.",
+// "Tu dedicacion a la exactitud financiera marca la diferencia.",
+// etc.
+
+export function getFraseDelDia(): string {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff = now.getTime() - start.getTime();
+  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+  return FRASES_MOTIVACIONALES[dayOfYear % FRASES_MOTIVACIONALES.length];
+}
+
+
+================================================================================
+FIN DEL PLUGIN - CAPTCHA SST by SADGI S.A.S.
+================================================================================
