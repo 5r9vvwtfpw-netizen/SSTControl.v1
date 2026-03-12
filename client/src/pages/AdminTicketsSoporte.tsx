@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -212,6 +212,44 @@ const categoryLabels: Record<string, string> = {
   capacitacion: "Capacitación",
   consulta_general: "Consulta General"
 };
+
+function AdminResponsesList({ responses }: { responses: TicketResponse[] }) {
+  const bottomRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [responses.length]);
+  return (
+    <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1 mb-4" data-testid="admin-responses-list">
+      {responses.map((response) => (
+        <div 
+          key={response.id}
+          className={`p-3 rounded-lg text-sm ${
+            response.isStaff 
+              ? response.isInternal 
+                ? 'bg-yellow-50 dark:bg-yellow-900/20 border-l-2 border-yellow-500' 
+                : 'bg-primary/10 border-l-2 border-primary'
+              : 'bg-muted'
+          }`}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-medium">{response.userName}</span>
+            {response.isStaff === 1 && (
+              <Badge variant="outline" className="text-xs">Staff</Badge>
+            )}
+            {response.isInternal === 1 && (
+              <Badge variant="secondary" className="text-xs">Interno</Badge>
+            )}
+          </div>
+          <p className="text-muted-foreground whitespace-pre-wrap">{response.content}</p>
+          <p className="text-xs text-muted-foreground mt-2">
+            {format(new Date(response.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
+          </p>
+        </div>
+      ))}
+      <div ref={bottomRef} />
+    </div>
+  );
+}
 
 export default function AdminTicketsSoporte() {
   const { user } = useAuth();
@@ -1206,42 +1244,13 @@ export default function AdminTicketsSoporte() {
                       <Badge variant="secondary" className="text-xs">{selectedTicketDetails.responses.length}</Badge>
                     )}
                   </p>
-                  <ScrollArea className="h-[400px] mb-4">
-                    {selectedTicketDetails?.responses && selectedTicketDetails.responses.length > 0 ? (
-                      <div className="space-y-3">
-                        {selectedTicketDetails.responses.map((response) => (
-                          <div 
-                            key={response.id}
-                            className={`p-3 rounded-lg text-sm ${
-                              response.isStaff 
-                                ? response.isInternal 
-                                  ? 'bg-yellow-50 dark:bg-yellow-900/20 border-l-2 border-yellow-500' 
-                                  : 'bg-primary/10 border-l-2 border-primary'
-                                : 'bg-muted'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium">{response.userName}</span>
-                              {response.isStaff === 1 && (
-                                <Badge variant="outline" className="text-xs">Staff</Badge>
-                              )}
-                              {response.isInternal === 1 && (
-                                <Badge variant="secondary" className="text-xs">Interno</Badge>
-                              )}
-                            </div>
-                            <p className="text-muted-foreground whitespace-pre-wrap">{response.content}</p>
-                            <p className="text-xs text-muted-foreground mt-2">
-                              {format(new Date(response.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-center text-muted-foreground text-sm py-4">
-                        Sin respuestas aún
-                      </p>
-                    )}
-                  </ScrollArea>
+                  {selectedTicketDetails?.responses && selectedTicketDetails.responses.length > 0 ? (
+                    <AdminResponsesList responses={selectedTicketDetails.responses} />
+                  ) : (
+                    <p className="text-center text-muted-foreground text-sm py-4">
+                      Sin respuestas aún
+                    </p>
+                  )}
 
                   <div className="space-y-3">
                     <Textarea

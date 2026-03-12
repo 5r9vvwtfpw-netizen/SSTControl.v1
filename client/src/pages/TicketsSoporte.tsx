@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useSearch } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -178,6 +178,41 @@ function getSlaInfo(priority: string, createdAt: string, status: string) {
     return { label: `${Math.floor(remainingHours * 60)}m`, expired: false, slaHours, show: true };
   }
   return { label: '', expired: false, slaHours, show: false };
+}
+
+function ResponsesList({ responses }: { responses: TicketResponse[] }) {
+  const bottomRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [responses.length]);
+  return (
+    <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1" data-testid="responses-list">
+      {responses.map((response) => (
+        <div
+          key={response.id}
+          className={`p-3 rounded-lg text-sm ${
+            response.isStaff === 1
+              ? 'bg-primary/10 ml-4'
+              : 'bg-muted mr-4'
+          }`}
+          data-testid={`response-${response.id}`}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <User className="h-3 w-3" />
+            <span className="font-medium">{response.userName}</span>
+            {response.isStaff === 1 && (
+              <Badge variant="secondary" className="text-xs">Soporte</Badge>
+            )}
+          </div>
+          <p className="whitespace-pre-wrap">{response.content}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {format(new Date(response.createdAt), "d MMM yyyy HH:mm", { locale: es })}
+          </p>
+        </div>
+      ))}
+      <div ref={bottomRef} />
+    </div>
+  );
 }
 
 export default function TicketsSoporte() {
@@ -864,33 +899,7 @@ export default function TicketsSoporte() {
                     Respuestas
                   </h4>
                   {selectedTicketDetails.responses && selectedTicketDetails.responses.filter(r => r.isInternal === 0).length > 0 ? (
-                    <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                      {selectedTicketDetails.responses
-                        .filter(r => r.isInternal === 0)
-                        .map((response) => (
-                        <div
-                          key={response.id}
-                          className={`p-3 rounded-lg text-sm ${
-                            response.isStaff === 1
-                              ? 'bg-primary/10 ml-4'
-                              : 'bg-muted mr-4'
-                          }`}
-                          data-testid={`response-${response.id}`}
-                        >
-                          <div className="flex items-center gap-2 mb-1">
-                            <User className="h-3 w-3" />
-                            <span className="font-medium">{response.userName}</span>
-                            {response.isStaff === 1 && (
-                              <Badge variant="secondary" className="text-xs">Soporte</Badge>
-                            )}
-                          </div>
-                          <p className="whitespace-pre-wrap">{response.content}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(response.createdAt), "d MMM yyyy HH:mm", { locale: es })}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
+                    <ResponsesList responses={selectedTicketDetails.responses.filter(r => r.isInternal === 0)} />
                   ) : (
                     <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-no-responses">
                       Sin respuestas aún
