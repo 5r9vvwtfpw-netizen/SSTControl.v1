@@ -40832,10 +40832,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // Notify support staff via internal messages
       try {
         const supportUsers = await storage.getUsersByRoleGlobal("soporte");
-        const superadmins = await storage.getUsersByRoleGlobal("superadmin");
-        const allSupportStaff = [...supportUsers, ...superadmins];
         
-        for (const supportUser of allSupportStaff) {
+        for (const supportUser of supportUsers) {
           // Create internal message for each support staff member
           const message = await storage.createInternalMessage({
             companyId: supportUser.companyId || user.companyId,
@@ -41290,10 +41288,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!isStaff) {
         try {
           const supportUsers = await storage.getUsersByRoleGlobal("soporte");
-          const superadmins = await storage.getUsersByRoleGlobal("superadmin");
-          const allSupportStaff = [...supportUsers, ...superadmins];
 
-          for (const staffUser of allSupportStaff) {
+          for (const staffUser of supportUsers) {
             if (staffUser.id === userId) continue;
             const msg = await storage.createInternalMessage({
               companyId: ticket.companyId || staffUser.companyId || '',
