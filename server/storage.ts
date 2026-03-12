@@ -368,7 +368,7 @@ import type {
   HelpVideo,
   InsertHelpVideo,
 } from "@shared/schema";
-import { eq, desc, asc, and, or, lt, lte, gte, sql, inArray, isNotNull, isNull, count } from "drizzle-orm";
+import { eq, ne, desc, asc, and, or, lt, lte, gte, sql, inArray, isNotNull, isNull, count } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import ws from "ws";
@@ -1711,14 +1711,14 @@ export interface IStorage {
   // ============================================================================
   // SISTEMA DE MENSAJERÍA INTERNA - Comunicación LSO ↔ Responsable SST
   // ============================================================================
-  getInternalMessages(userId: string, companyId?: string | null): Promise<InternalMessage[]>;
+  getInternalMessages(userId: string, companyId?: string | null, excludeRelatedEntity?: string): Promise<InternalMessage[]>;
   getAllInternalMessagesByCompany(companyId: string): Promise<InternalMessage[]>;
   getAllInternalMessages(): Promise<InternalMessage[]>;
   getInternalMessage(id: string): Promise<InternalMessage | undefined>;
   createInternalMessage(message: InsertInternalMessage): Promise<InternalMessage>;
   markMessageAsRead(id: string): Promise<InternalMessage | undefined>;
   archiveMessage(id: string): Promise<InternalMessage | undefined>;
-  getUnreadMessageCount(userId: string, companyId?: string | null): Promise<number>;
+  getUnreadMessageCount(userId: string, companyId?: string | null, excludeRelatedEntity?: string): Promise<number>;
   getMessageRecipients(companyId: string, senderRole: string): Promise<Array<{ id: string; fullName: string | null; role: string; companyName?: string | null }>>;
   
   // ============================================================================
@@ -14336,32 +14336,38 @@ export class DbStorage implements IStorage {
       .orderBy(desc(schema.internalMessages.createdAt));
   }
 
-  async getInternalMessages(userId: string, companyId?: string | null): Promise<InternalMessage[]> {
-    // Si hay companyId, filtrar por empresa Y usuario
-    // Si no hay companyId (ej: usuarios de soporte), buscar solo por userId
+  async getInternalMessages(userId: string, companyId?: string | null, excludeRelatedEntity?: string): Promise<InternalMessage[]> {
+    const conditions = [];
+
     if (companyId) {
-      return await db.select().from(schema.internalMessages)
-        .where(
-          and(
-            eq(schema.internalMessages.companyId, companyId),
-            or(
-              eq(schema.internalMessages.receiverId, userId),
-              eq(schema.internalMessages.senderId, userId)
-            )
-          )
-        )
-        .orderBy(desc(schema.internalMessages.createdAt));
+      conditions.push(eq(schema.internalMessages.companyId, companyId));
+      conditions.push(
+        or(
+          eq(schema.internalMessages.receiverId, userId),
+          eq(schema.internalMessages.senderId, userId)
+        )!
+      );
     } else {
-      // Usuarios sin empresa (soporte, superadmin) ven mensajes donde son destinatario o remitente
-      return await db.select().from(schema.internalMessages)
-        .where(
-          or(
-            eq(schema.internalMessages.receiverId, userId),
-            eq(schema.internalMessages.senderId, userId)
-          )
-        )
-        .orderBy(desc(schema.internalMessages.createdAt));
+      conditions.push(
+        or(
+          eq(schema.internalMessages.receiverId, userId),
+          eq(schema.internalMessages.senderId, userId)
+        )!
+      );
     }
+
+    if (excludeRelatedEntity) {
+      conditions.push(
+        or(
+          isNull(schema.internalMessages.relatedEntity),
+          ne(schema.internalMessages.relatedEntity, excludeRelatedEntity)
+        )!
+      );
+    }
+
+    return await db.select().from(schema.internalMessages)
+      .where(and(...conditions))
+      .orderBy(desc(schema.internalMessages.createdAt));
   }
 
   async getInternalMessage(id: string): Promise<InternalMessage | undefined> {
@@ -14393,31 +14399,29 @@ export class DbStorage implements IStorage {
     return updated;
   }
 
-  async getUnreadMessageCount(userId: string, companyId?: string | null): Promise<number> {
-    // Si hay companyId, filtrar por empresa
-    // Si no hay companyId (ej: usuarios de soporte), contar solo por userId
+  async getUnreadMessageCount(userId: string, companyId?: string | null, excludeRelatedEntity?: string): Promise<number> {
+    const conditions = [
+      eq(schema.internalMessages.receiverId, userId),
+      eq(schema.internalMessages.status, 'unread'),
+    ];
+
     if (companyId) {
-      const result = await db.select({ count: sql<number>`count(*)` })
-        .from(schema.internalMessages)
-        .where(
-          and(
-            eq(schema.internalMessages.companyId, companyId),
-            eq(schema.internalMessages.receiverId, userId),
-            eq(schema.internalMessages.status, 'unread')
-          )
-        );
-      return Number(result[0]?.count ?? 0);
-    } else {
-      const result = await db.select({ count: sql<number>`count(*)` })
-        .from(schema.internalMessages)
-        .where(
-          and(
-            eq(schema.internalMessages.receiverId, userId),
-            eq(schema.internalMessages.status, 'unread')
-          )
-        );
-      return Number(result[0]?.count ?? 0);
+      conditions.push(eq(schema.internalMessages.companyId, companyId));
     }
+
+    if (excludeRelatedEntity) {
+      conditions.push(
+        or(
+          isNull(schema.internalMessages.relatedEntity),
+          ne(schema.internalMessages.relatedEntity, excludeRelatedEntity)
+        )!
+      );
+    }
+
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(schema.internalMessages)
+      .where(and(...conditions));
+    return Number(result[0]?.count ?? 0);
   }
 
   async getMessageRecipients(companyId: string, senderRole: string): Promise<Array<{ id: string; fullName: string | null; role: string; companyName?: string | null }>> {

@@ -42183,7 +42183,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.json(messages);
       }
       
-      const messages = await storage.getInternalMessages(user.id, user.companyId || null);
+      const excludeRelatedEntity = user.role === 'lso' ? 'support_ticket' : undefined;
+      const messages = await storage.getInternalMessages(user.id, user.companyId || null, excludeRelatedEntity);
       res.json(messages);
     } catch (error: any) {
       console.error('Error fetching internal messages:', error);
@@ -42196,7 +42197,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     try {
       const user = req.user!;
       
-      const count = await storage.getUnreadMessageCount(user.id, user.companyId || null);
+      const excludeRelatedEntity = user.role === 'lso' ? 'support_ticket' : undefined;
+      const count = await storage.getUnreadMessageCount(user.id, user.companyId || null, excludeRelatedEntity);
       res.json({ count });
     } catch (error: any) {
       console.error('Error fetching unread count:', error);
@@ -42433,8 +42435,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     try {
       const user = req.user!;
       
-      // Get all unread messages for this user
-      const messages = await storage.getInternalMessages(user.id);
+      const excludeRelatedEntity = user.role === 'lso' ? 'support_ticket' : undefined;
+      const messages = await storage.getInternalMessages(user.id, user.companyId || null, excludeRelatedEntity);
       const unreadMessages = messages.filter(m => m.status === 'unread' && m.receiverId === user.id);
       
       // Mark each unread message as read
