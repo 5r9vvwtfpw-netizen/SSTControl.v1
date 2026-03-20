@@ -7326,6 +7326,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/admin/login-activity", requireRole(["superadmin"]), async (req, res) => {
+    try {
+      const allUsers = await db.select({
+        id: schema.users.id,
+        username: schema.users.username,
+        fullName: schema.users.fullName,
+        email: schema.users.email,
+        role: schema.users.role,
+        companyId: schema.users.companyId,
+        lastLoginAt: schema.users.lastLoginAt,
+        loginCount: schema.users.loginCount,
+        lastLoginIp: schema.users.lastLoginIp,
+        createdAt: schema.users.createdAt,
+      })
+      .from(schema.users)
+      .orderBy(desc(schema.users.lastLoginAt));
+
+      const usersWithCompany = await Promise.all(
+        allUsers.map(async (u) => {
+          let companyName = null;
+          if (u.companyId) {
+            const company = await storage.getCompany(u.companyId);
+            companyName = company?.name || null;
+          }
+          return { ...u, companyName };
+        })
+      );
+
+      res.json(usersWithCompany);
+    } catch (error: any) {
+      console.error('Error fetching login activity:', error);
+      res.status(500).send("Error al obtener actividad de login");
+    }
+  });
+
   // SST Standards routes
   app.get("/api/sst-standards", requireAuth, async (req, res) => {
     const standardType = req.query.standardType as "RES_0312" | "ISO_45001" | undefined;

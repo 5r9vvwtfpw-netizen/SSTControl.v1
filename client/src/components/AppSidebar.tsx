@@ -28,6 +28,7 @@ import {
   Target,
   Gift,
   CirclePlay,
+  Activity,
 } from "lucide-react";
 import {
   Sidebar,
@@ -76,6 +77,7 @@ const menuItems: Array<{
   { title: "Empresas", url: "/empresas", icon: Building2, requiredPermissions: ["companies:view"] },
   { title: "Promociones", url: "/admin-promociones", icon: Gift, superadminOnly: true },
   { title: "Admin Portales", url: "/admin-portales", icon: Users, superadminOnly: true },
+  { title: "Actividad Login", url: "/admin-login-activity", icon: Activity, superadminOnly: true },
   { title: "Gestión Videos", url: "/admin-videos-ayuda", icon: CirclePlay, superadminOnly: true },
   { title: "Videos de Ayuda", url: "/videos-ayuda", icon: CirclePlay },
   { title: "Usuarios", url: "/usuarios", icon: Users, requiredPermissions: ["users:view"] },

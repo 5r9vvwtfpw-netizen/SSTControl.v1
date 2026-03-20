@@ -27,6 +27,7 @@ import { syncUnassignedAtColumn } from './migrations/sync-unassigned-at-column';
 import { createNgoOnboardedCompanies } from './migrations/create-ngo-onboarded-companies';
 import { createSupportChatMessages } from './migrations/create-support-chat-messages';
 import { addPerformanceIndexes } from './migrations/add-performance-indexes';
+import { syncLoginTrackingColumns } from './migrations/sync-login-tracking-columns';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -65,6 +66,7 @@ export async function runMigrations() {
     await createSupportChatMessages();
     await addChatAttachmentsMentions();
     await addPerformanceIndexes();
+    await syncLoginTrackingColumns();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

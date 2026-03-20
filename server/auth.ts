@@ -9,8 +9,9 @@ import { User as SelectUser, UserRole } from "@shared/schema";
 import { hasPermission, Permission } from "@shared/permissions";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./email";
 import { db } from "./db";
+import * as schema from "@shared/schema";
 import { users } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { loginRateLimiter, passwordResetRateLimiter, registrationRateLimiter } from "./middleware/rate-limit";
 import logger from "./lib/logger";
@@ -370,10 +371,23 @@ export function setupAuth(app: Express) {
           return res.status(500).json({ error: "Error al crear la sesión segura" });
         }
         
-        req.logIn(user, (err) => {
+        req.logIn(user, async (err) => {
           if (err) {
             logger.error({ err }, "Session login error");
             return res.status(500).json({ error: "Error al crear la sesión" });
+          }
+          
+          try {
+            const clientIp = req.ip || req.headers['x-forwarded-for'] as string || req.connection?.remoteAddress || 'unknown';
+            await db.update(schema.users)
+              .set({
+                lastLoginAt: new Date(),
+                loginCount: sql`COALESCE(login_count, 0) + 1`,
+                lastLoginIp: clientIp,
+              })
+              .where(eq(schema.users.id, user.id));
+          } catch (trackErr) {
+            logger.error({ err: trackErr }, "Error tracking login");
           }
           
           logger.info({ role: user.role }, "Login successful");
@@ -413,10 +427,23 @@ export function setupAuth(app: Express) {
           return res.status(500).json({ error: "Error al crear la sesión segura" });
         }
         
-        req.logIn(user, (err) => {
+        req.logIn(user, async (err) => {
           if (err) {
             logger.error({ err }, "Support session login error");
             return res.status(500).json({ error: "Error al crear la sesión" });
+          }
+          
+          try {
+            const clientIp = req.ip || req.headers['x-forwarded-for'] as string || req.connection?.remoteAddress || 'unknown';
+            await db.update(schema.users)
+              .set({
+                lastLoginAt: new Date(),
+                loginCount: sql`COALESCE(login_count, 0) + 1`,
+                lastLoginIp: clientIp,
+              })
+              .where(eq(schema.users.id, user.id));
+          } catch (trackErr) {
+            logger.error({ err: trackErr }, "Error tracking support login");
           }
           
           logger.info({ role: user.role }, "Support login successful");

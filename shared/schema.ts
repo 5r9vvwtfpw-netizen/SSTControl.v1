@@ -132,6 +132,9 @@ export const users = pgTable("users", {
   sstCourse50HoursDate: date("sst_course_50_hours_date"), // Fecha del certificado del curso
   sstSignatureUrl: text("sst_signature_url"), // Firma digital del licenciado (imagen)
   sstPhone: text("sst_phone"), // Teléfono de contacto del licenciado
+  lastLoginAt: timestamp("last_login_at"),
+  loginCount: integer("login_count").default(0),
+  lastLoginIp: text("last_login_ip"),
 });
 
 // Tabla de asignación de Licenciados a Empresas (relación muchos a muchos)
