@@ -1,7 +1,18 @@
 User-agent: *
 Allow: /
+Allow: /auth
+Allow: /registro
+Allow: /portal-empleados
 Disallow: /api/
-Disallow: /admin/
 Disallow: /ws/
+Disallow: /admin/
 
-Sitemap: https://sst-colombia.com/sitemap.xml
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+Sitemap: https://sst.sagisas.co/sitemap.xml
