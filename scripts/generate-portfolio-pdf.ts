@@ -127,10 +127,10 @@ async function gen() {
   }
 
   function phvaBar(label: string, color: any) {
-    ck(20);
-    page.drawRectangle({ x: M + 8, y: y - 16, width: CW - 16, height: 16, color });
-    page.drawText(label, { x: M + 16, y: y - 12, size: 8.5, font: helveticaBold, color: WHITE });
-    y -= 22;
+    ck(16);
+    const textWidth = helveticaBold.widthOfTextAtSize(label, 9.5);
+    page.drawText(label, { x: M + 10, y: y - 12, size: 9.5, font: helveticaBold, color });
+    y -= 16;
   }
 
   // ═══════════════════════════════════════════
