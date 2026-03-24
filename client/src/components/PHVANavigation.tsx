@@ -75,6 +75,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
         { label: "Panel de Facturación", path: "/dashboard-facturacion" },
         { label: "Promociones", path: "/admin-promociones" },
         { label: "Admin Portales", path: "/admin-portales" },
+        { label: "Actividad Login", path: "/admin-login-activity" },
         { label: "Mi Cuenta", path: "/mi-cuenta" },
         { label: "Tickets de Soporte", path: "/tickets-soporte" },
         { label: "Gestión de Tickets (Admin)", path: "/admin-tickets" },
