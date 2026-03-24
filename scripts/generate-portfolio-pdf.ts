@@ -199,7 +199,7 @@ async function gen() {
   bar("Incluido sin costo adicional en la suscripcion");
   subLabel("Portal de Empleados - GRATIS e ilimitado");
   bul("Cada trabajador accede a su informacion: contrato, perfil, capacitaciones, EPP, reportes de seguridad", 20);
-  bul("Participacion en elecciones COPASST y Comite de Convivencia desde el portal", 20);
+  bul("Elecciones del COPASST y Comite de Convivencia 100% en linea desde el portal", 20);
   y -= 2;
   subLabel("Portal del Profesional SST Licenciado - GRATIS");
   bul("El profesional SST asignado accede al sistema con firma digital incluida", 20);
