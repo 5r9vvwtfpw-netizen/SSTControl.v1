@@ -13,374 +13,268 @@ const DARK = "#212529";
 const WHITE = "#ffffff";
 const LIGHT_BG = "#f8f9fa";
 
-function drawHeader(doc: PDFKit.PDFDocument) {
-  doc.rect(0, 0, doc.page.width, 120).fill(DARK_GREEN);
+const PAGE_W = 612;
+const PAGE_H = 792;
+const MARGIN = 40;
+const CONTENT_W = PAGE_W - MARGIN * 2;
+const FOOTER_Y = PAGE_H - 35;
+const MAX_Y = FOOTER_Y - 15;
 
-  if (fs.existsSync(logoPath)) {
-    doc.image(logoPath, 40, 15, { height: 90 });
-  }
+let currentPage = 1;
 
-  doc.fillColor(WHITE)
-    .font("Helvetica-Bold").fontSize(22)
-    .text("PORTAFOLIO DE SERVICIOS", 200, 30, { width: 370, align: "right" });
-
-  doc.font("Helvetica").fontSize(11)
-    .text("Sistema de Gestion de Seguridad y", 200, 58, { width: 370, align: "right" })
-    .text("Salud en el Trabajo - SG-SST", 200, 73, { width: 370, align: "right" });
-
-  doc.fontSize(9).fillColor("#a8d5a2")
-    .text("SADGI S.A.S. | NIT 902.036.337-4", 200, 95, { width: 370, align: "right" });
+function drawPageFooter(doc: PDFKit.PDFDocument) {
+  doc.save();
+  doc.rect(0, FOOTER_Y - 5, PAGE_W, 40).fill(DARK_GREEN);
+  doc.fillColor("#a8d5a2").font("Helvetica").fontSize(7)
+    .text("SADGI S.A.S. | NIT 902.036.337-4 | soporte@sst-colombia.com | sst.sagisas.co", MARGIN, FOOTER_Y + 3, { width: CONTENT_W - 40 })
+    .text(`${currentPage}`, MARGIN, FOOTER_Y + 3, { width: CONTENT_W, align: "right" });
+  doc.restore();
 }
 
-function drawFooter(doc: PDFKit.PDFDocument, pageNum: number) {
-  const y = doc.page.height - 40;
-  doc.rect(0, y - 5, doc.page.width, 45).fill(DARK_GREEN);
-  doc.fillColor("#a8d5a2").font("Helvetica").fontSize(8)
-    .text("SADGI S.A.S. | NIT 902.036.337-4 | soporte@sst-colombia.com | sst.sagisas.co", 40, y + 5, { width: 450 })
-    .text(`${pageNum}`, 40, y + 5, { width: doc.page.width - 80, align: "right" });
+function newPage(doc: PDFKit.PDFDocument): number {
+  drawPageFooter(doc);
+  currentPage++;
+  doc.addPage();
+  return MARGIN;
 }
 
-function sectionTitle(doc: PDFKit.PDFDocument, title: string, y: number): number {
-  doc.rect(40, y, doc.page.width - 80, 32).fill(GREEN);
-  doc.fillColor(WHITE).font("Helvetica-Bold").fontSize(13)
-    .text(title.toUpperCase(), 55, y + 9, { width: doc.page.width - 110 });
-  return y + 45;
-}
-
-function bulletItem(doc: PDFKit.PDFDocument, text: string, y: number, indent = 55): number {
-  doc.fillColor(GREEN).font("Helvetica-Bold").fontSize(10)
-    .text("\u2714", indent - 15, y);
-  doc.fillColor(DARK).font("Helvetica").fontSize(10)
-    .text(text, indent, y, { width: doc.page.width - indent - 55 });
-  const lines = Math.ceil(doc.widthOfString(text, { width: doc.page.width - indent - 55 }) / (doc.page.width - indent - 55));
-  return y + Math.max(16, lines * 14) + 2;
-}
-
-function checkPageBreak(doc: PDFKit.PDFDocument, y: number, needed: number, pageNum: { val: number }): number {
-  if (y + needed > doc.page.height - 60) {
-    drawFooter(doc, pageNum.val);
-    pageNum.val++;
-    doc.addPage();
-    drawHeader(doc);
-    return 140;
-  }
+function ensureSpace(doc: PDFKit.PDFDocument, y: number, needed: number): number {
+  if (y + needed > MAX_Y) return newPage(doc);
   return y;
 }
 
+function sectionBar(doc: PDFKit.PDFDocument, y: number, title: string, color = GREEN): number {
+  y = ensureSpace(doc, y, 28);
+  doc.save();
+  doc.rect(MARGIN, y, CONTENT_W, 22).fill(color);
+  doc.fillColor(WHITE).font("Helvetica-Bold").fontSize(11)
+    .text(title.toUpperCase(), MARGIN + 12, y + 5, { width: CONTENT_W - 24 });
+  doc.restore();
+  return y + 28;
+}
+
+function bullet(doc: PDFKit.PDFDocument, y: number, text: string, indent = 52): number {
+  y = ensureSpace(doc, y, 14);
+  const textW = PAGE_W - indent - MARGIN;
+  doc.save();
+  doc.fillColor(GREEN).font("Helvetica-Bold").fontSize(9).text("\u2714", indent - 12, y);
+  doc.fillColor(DARK).font("Helvetica").fontSize(9);
+  const h = doc.heightOfString(text, { width: textW });
+  doc.text(text, indent, y, { width: textW });
+  doc.restore();
+  return y + h + 3;
+}
+
+function labeledBullets(doc: PDFKit.PDFDocument, y: number, label: string, items: string[], labelColor = DARK_GREEN): number {
+  y = ensureSpace(doc, y, 16);
+  doc.fillColor(labelColor).font("Helvetica-Bold").fontSize(9.5).text(label, MARGIN + 12, y, { width: CONTENT_W - 24 });
+  y += 15;
+  for (const item of items) {
+    y = bullet(doc, y, item, 60);
+  }
+  return y + 4;
+}
+
 async function generatePortfolio() {
-  const doc = new PDFDocument({ size: "LETTER", margins: { top: 50, bottom: 50, left: 40, right: 40 } });
+  const doc = new PDFDocument({ size: "LETTER", margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN }, autoFirstPage: true });
   const stream = fs.createWriteStream(outputPath);
   doc.pipe(stream);
 
-  const pageNum = { val: 1 };
+  // ── PAGE 1: COVER ──
+  doc.rect(0, 0, PAGE_W, 100).fill(DARK_GREEN);
+  if (fs.existsSync(logoPath)) {
+    doc.image(logoPath, MARGIN, 8, { height: 82 });
+  }
+  doc.fillColor(WHITE).font("Helvetica-Bold").fontSize(20)
+    .text("PORTAFOLIO DE SERVICIOS", 220, 22, { width: 350, align: "right" });
+  doc.font("Helvetica").fontSize(10)
+    .text("Sistema de Gestion de Seguridad y Salud en el Trabajo", 220, 48, { width: 350, align: "right" });
+  doc.fontSize(8).fillColor("#a8d5a2")
+    .text("SADGI S.A.S. | NIT 902.036.337-4", 220, 72, { width: 350, align: "right" });
 
-  // PAGE 1: Cover
-  drawHeader(doc);
-  let y = 145;
+  let y = 115;
 
-  // Personalized for Alpina
-  doc.rect(40, y, doc.page.width - 80, 55).fill(LIGHT_GREEN);
-  doc.fillColor(DARK_GREEN).font("Helvetica-Bold").fontSize(14)
-    .text("Propuesta Comercial Personalizada", 55, y + 10);
-  doc.fillColor(DARK).font("Helvetica").fontSize(12)
-    .text("Preparada para: Alpina Colombia (alpina.com)", 55, y + 30);
-  y += 70;
+  // Client banner
+  doc.rect(MARGIN, y, CONTENT_W, 35).fill(LIGHT_GREEN);
+  doc.fillColor(DARK_GREEN).font("Helvetica-Bold").fontSize(12)
+    .text("Propuesta Comercial para: Alpina Colombia", MARGIN + 12, y + 10, { width: CONTENT_W - 24 });
+  y += 45;
 
   // Intro
-  doc.fillColor(DARK).font("Helvetica").fontSize(10.5)
-    .text("SST-Colombia es una plataforma tecnologica integral para la gestion de Seguridad y Salud en el Trabajo, disenada para cumplir con la normatividad colombiana vigente. Automatizamos el ciclo PHVA completo, permitiendo a las empresas alcanzar el cumplimiento normativo de manera eficiente, trazable y sin depender de procesos manuales.", 40, y, { width: doc.page.width - 80, align: "justify", lineGap: 3 });
-  y += 75;
+  doc.fillColor(DARK).font("Helvetica").fontSize(9.5)
+    .text("SST-Colombia es una plataforma tecnologica integral para la gestion de Seguridad y Salud en el Trabajo, disenada para cumplir con la normatividad colombiana vigente. Automatizamos el ciclo PHVA completo, permitiendo a las empresas alcanzar el cumplimiento normativo de manera eficiente, trazable y sin procesos manuales.", MARGIN, y, { width: CONTENT_W, align: "justify", lineGap: 2 });
+  y += 55;
 
-  // WHY SST-COLOMBIA
-  y = sectionTitle(doc, "Por que SST-Colombia para Alpina?", y);
-
+  // Why Alpina
+  y = sectionBar(doc, y, "Por que SST-Colombia para Alpina?");
   const whyItems = [
-    "Plataforma 100% en la nube, accesible desde cualquier sede o planta de Alpina a nivel nacional",
+    "Plataforma 100% en la nube, accesible desde cualquier sede o planta a nivel nacional",
     "Cumplimiento automatizado de la Resolucion 0312/2019 con los 61 estandares minimos",
-    "Gestion centralizada de multiples sedes con un solo sistema y vision consolidada",
-    "Modulo PESV completo para la flota vehicular de distribucion (Resolucion 40595/2022)",
-    "Portal de empleados para que cada trabajador acceda a su informacion SST",
-    "Portal de profesional SST licenciado con firma digital de documentos obligatorios",
-    "Asistente de Inteligencia Artificial especializado en normativa colombiana",
+    "Gestion centralizada de multiples sedes con vision consolidada",
+    "Modulo PESV completo para flota vehicular de distribucion (Res. 40595/2022)",
+    "Portal de empleados y portal de profesional SST con firma digital",
+    "Asistente de IA especializado en normativa colombiana SST",
     "Generacion automatica de informes para el Ministerio de Trabajo",
-    "Trazabilidad completa: cada documento, accion y evaluacion queda registrada",
+    "Cifrado AES-256-GCM | Infraestructura AWS | 99.9% disponibilidad",
   ];
+  for (const item of whyItems) y = bullet(doc, y, item);
 
-  for (const item of whyItems) {
-    y = checkPageBreak(doc, y, 20, pageNum);
-    y = bulletItem(doc, item, y);
-  }
+  // PHVA Modules
+  y += 6;
+  y = sectionBar(doc, y, "Modulos del Sistema - Ciclo PHVA Automatizado");
 
-  y += 10;
-
-  // MODULES
-  y = checkPageBreak(doc, y, 250, pageNum);
-  y = sectionTitle(doc, "Modulos del Sistema", y);
-
+  const phvaColors: Record<string, string> = { PLANEAR: "#2563eb", HACER: "#16a34a", VERIFICAR: "#7c3aed", ACTUAR: "#d97706" };
   const modules = [
     { name: "PLANEAR", items: [
-      "Evaluacion Inicial SG-SST (Resolucion 0312/2019)",
-      "Matriz de Identificacion de Peligros y Riesgos (IPERC - GTC-45)",
-      "Matriz Legal actualizada",
-      "Planes de Trabajo Anual con seguimiento automatico",
-      "Designacion de responsable SST y recursos",
-      "Politica y objetivos SST con indicadores vinculados",
+      "Evaluacion Inicial SG-SST (Res. 0312/2019) | Matriz IPERC GTC-45 | Matriz Legal",
+      "Planes de Trabajo Anual | Designacion de responsable SST | Politica y objetivos SST",
     ]},
     { name: "HACER", items: [
-      "Gestion de trabajadores, contratos y perfiles de cargo",
-      "Capacitaciones con 50+ temas predefinidos y seguimiento",
-      "Examenes medicos ocupacionales con alertas de vencimiento",
-      "Inspecciones de seguridad con listas de verificacion",
-      "Entrega y control de EPP (77 elementos catalogados)",
-      "Gestion de sustancias quimicas con fichas de seguridad",
-      "Plan de emergencias con brigadas y simulacros",
-      "Programa de conservacion auditiva (PCA)",
-      "Investigacion de accidentes e incidentes con analisis de causas",
+      "Trabajadores, contratos y perfiles de cargo | 50+ temas de capacitacion",
+      "Examenes medicos con alertas | Inspecciones de seguridad | Control de EPP (77 elementos)",
+      "Sustancias quimicas | Plan de emergencias | Conservacion auditiva | Investigacion de accidentes",
     ]},
     { name: "VERIFICAR", items: [
-      "Indicadores SST automaticos (estructura, proceso, resultado)",
-      "Auditorias internas con hallazgos clasificados por severidad",
-      "Revision por la alta direccion",
-      "Seguimiento de indicadores de accidentalidad",
+      "Indicadores SST automaticos (estructura, proceso, resultado) | Auditorias internas",
+      "Revision por alta direccion | Seguimiento de accidentalidad",
     ]},
     { name: "ACTUAR", items: [
-      "Acciones correctivas, preventivas y de mejora",
-      "Seguimiento de efectividad de acciones",
-      "Recomendaciones ARL con trazabilidad",
-      "Informe de gestion para el Ministerio de Trabajo",
+      "Acciones correctivas, preventivas y de mejora | Seguimiento de efectividad",
+      "Recomendaciones ARL | Informe de gestion para Ministerio de Trabajo",
     ]},
   ];
 
-  const phvaColors: Record<string, string> = {
-    PLANEAR: "#2563eb",
-    HACER: "#16a34a",
-    VERIFICAR: "#7c3aed",
-    ACTUAR: "#d97706",
-  };
-
   for (const mod of modules) {
-    y = checkPageBreak(doc, y, 30 + mod.items.length * 18, pageNum);
-
-    doc.rect(40, y, doc.page.width - 80, 24).fill(phvaColors[mod.name] || GREEN);
-    doc.fillColor(WHITE).font("Helvetica-Bold").fontSize(11)
-      .text(mod.name, 55, y + 6);
-    y += 32;
-
-    for (const item of mod.items) {
-      y = checkPageBreak(doc, y, 18, pageNum);
-      y = bulletItem(doc, item, y, 65);
-    }
-    y += 8;
+    y = ensureSpace(doc, y, 20);
+    doc.save();
+    doc.rect(MARGIN + 5, y, CONTENT_W - 10, 17).fill(phvaColors[mod.name]);
+    doc.fillColor(WHITE).font("Helvetica-Bold").fontSize(9).text(mod.name, MARGIN + 15, y + 4);
+    doc.restore();
+    y += 21;
+    for (const item of mod.items) y = bullet(doc, y, item, 60);
+    y += 2;
   }
 
-  // PESV MODULE
-  y = checkPageBreak(doc, y, 150, pageNum);
-  y = sectionTitle(doc, "Modulo PESV - Plan Estrategico de Seguridad Vial", y);
-
-  doc.fillColor(DARK).font("Helvetica").fontSize(10)
-    .text("Ideal para la flota de distribucion de Alpina. Cumple con la Resolucion 40595/2022 y el Decreto 1252/2021.", 55, y, { width: doc.page.width - 110, lineGap: 2 });
-  y += 30;
-
+  // PESV
+  y += 4;
+  y = sectionBar(doc, y, "Modulo PESV - Seguridad Vial (Res. 40595/2022)");
+  doc.fillColor(DARK).font("Helvetica").fontSize(9)
+    .text("Ideal para la flota de distribucion de Alpina. Cumple Resolucion 40595/2022 y Decreto 1252/2021.", MARGIN + 12, y, { width: CONTENT_W - 24 });
+  y += 16;
   const pesvItems = [
-    "24 pasos de implementacion segun metodologia vigente",
-    "Tres niveles de complejidad: Basico, Estandar y Avanzado",
-    "Gestion de flota vehicular: SOAT, revision tecnico-mecanica, seguros",
-    "Base de datos de conductores con verificacion de licencias",
-    "Inspecciones preoperacionales diarias",
-    "Mantenimiento preventivo y correctivo de vehiculos",
-    "Matriz de riesgos viales con metodologia ISO 31000:2018",
-    "12+ indicadores de desempeno de seguridad vial (SPI)",
-    "Generacion de informes PDF para auditorias y Ministerio de Transporte",
-    "Trazabilidad bidireccional con el SG-SST",
+    "24 pasos de implementacion | Niveles Basico, Estandar y Avanzado",
+    "Flota vehicular: SOAT, revision tecnico-mecanica, seguros, mantenimiento",
+    "Base de datos de conductores | Inspecciones preoperacionales diarias",
+    "Matriz de riesgos viales ISO 31000 | 12+ indicadores SPI",
+    "Informes PDF para auditorias y Ministerio de Transporte",
   ];
+  for (const item of pesvItems) y = bullet(doc, y, item);
 
-  for (const item of pesvItems) {
-    y = checkPageBreak(doc, y, 18, pageNum);
-    y = bulletItem(doc, item, y);
-  }
-
-  // PORTALS
-  y += 10;
-  y = checkPageBreak(doc, y, 120, pageNum);
-  y = sectionTitle(doc, "Portales Integrados", y);
-
-  doc.fillColor(DARK_GREEN).font("Helvetica-Bold").fontSize(10.5)
-    .text("Portal de Empleados", 55, y);
-  y += 16;
-  const portalEmpItems = [
-    "Acceso individual para cada trabajador de Alpina",
-    "Consulta de contrato, perfil de cargo y capacitaciones",
-    "Reportes de condiciones y actos inseguros",
-    "Participacion en elecciones COPASST y Convivencia",
-    "Historial de examenes medicos y EPP entregados",
-  ];
-  for (const item of portalEmpItems) {
-    y = checkPageBreak(doc, y, 18, pageNum);
-    y = bulletItem(doc, item, y, 65);
-  }
-
-  y += 8;
-  y = checkPageBreak(doc, y, 100, pageNum);
-  doc.fillColor(DARK_GREEN).font("Helvetica-Bold").fontSize(10.5)
-    .text("Portal de Profesional SST Licenciado", 55, y);
-  y += 16;
-  const portalLsoItems = [
-    "Gestion de multiples empresas desde un solo portal",
-    "Firma digital obligatoria en 5 tipos de documentos",
-    "Dashboard de cumplimiento por empresa asignada",
-    "Sistema de tickets de soporte tecnico",
-    "Boveda de documentos por empresa",
-  ];
-  for (const item of portalLsoItems) {
-    y = checkPageBreak(doc, y, 18, pageNum);
-    y = bulletItem(doc, item, y, 65);
-  }
+  // Portals
+  y += 4;
+  y = sectionBar(doc, y, "Portales Integrados");
+  y = labeledBullets(doc, y, "Portal de Empleados", [
+    "Acceso individual por trabajador: contrato, perfil, capacitaciones, EPP",
+    "Reportes de condiciones inseguras | Elecciones COPASST y Convivencia",
+  ]);
+  y = labeledBullets(doc, y, "Portal de Profesional SST Licenciado", [
+    "Gestion multi-empresa | Firma digital en 5 tipos de documentos obligatorios",
+    "Dashboard de cumplimiento | Boveda de documentos | Soporte tecnico",
+  ]);
 
   // AI
-  y += 10;
-  y = checkPageBreak(doc, y, 120, pageNum);
-  y = sectionTitle(doc, "Inteligencia Artificial Aplicada", y);
-
+  y += 2;
+  y = sectionBar(doc, y, "Inteligencia Artificial Aplicada");
   const aiItems = [
-    "Chatbot especializado en normativa SST colombiana (Decreto 1072/2015, Res. 0312/2019)",
-    "Asistente inteligente GTC-45 que auto-completa matrices de riesgo",
-    "Sugerencias automaticas de peligros segun actividad economica (codigo CIIU)",
-    "Motor de acciones correctivas: sugiere medidas basadas en causas identificadas",
-    "Auto-llenado inteligente de formularios basado en normativa vigente",
-    "Catalogo de 1.300+ medidas preventivas categorizadas por prioridad",
+    "Chatbot especializado en normativa SST colombiana (Decreto 1072, Res. 0312)",
+    "Asistente GTC-45 auto-completa matrices | Sugerencias por codigo CIIU",
+    "Motor de acciones correctivas automaticas | 1.300+ medidas preventivas catalogadas",
   ];
-  for (const item of aiItems) {
-    y = checkPageBreak(doc, y, 18, pageNum);
-    y = bulletItem(doc, item, y);
-  }
+  for (const item of aiItems) y = bullet(doc, y, item);
 
-  // PILOT STRATEGY
-  y += 10;
-  y = checkPageBreak(doc, y, 200, pageNum);
-  y = sectionTitle(doc, "Piloto Tecnico de Implementacion - 9 Semanas", y);
-
-  doc.rect(40, y, doc.page.width - 80, 45).fill(LIGHT_GREEN);
-  doc.fillColor(DARK_GREEN).font("Helvetica-Bold").fontSize(10.5)
-    .text("Sin costo inicial. El objetivo es que Alpina alcance entre un 60% y 75%", 55, y + 8, { width: doc.page.width - 110 })
-    .text("de cumplimiento normativo automatizado en un solo trimestre.", 55, y + 23, { width: doc.page.width - 110 });
-  y += 58;
-
-  doc.fillColor(DARK).font("Helvetica-Bold").fontSize(10).text("Semanas 1-3: Configuracion y Diagnostico", 55, y);
-  y += 16;
-  const s1Items = [
-    "Registro de la empresa, sedes y estructura organizacional",
-    "Carga masiva de trabajadores via Excel",
-    "Evaluacion inicial SG-SST automatizada",
-    "Identificacion del capitulo aplicable (I, II o III)",
-  ];
-  for (const item of s1Items) { y = checkPageBreak(doc, y, 18, pageNum); y = bulletItem(doc, item, y, 70); }
-
+  // ── PILOT STRATEGY ──
   y += 6;
-  y = checkPageBreak(doc, y, 80, pageNum);
-  doc.fillColor(DARK).font("Helvetica-Bold").fontSize(10).text("Semanas 4-6: Implementacion del HACER", 55, y);
+  y = sectionBar(doc, y, "Piloto Tecnico de Implementacion - 9 Semanas");
+
+  y = ensureSpace(doc, y, 35);
+  doc.rect(MARGIN, y, CONTENT_W, 28).fill(LIGHT_GREEN);
+  doc.fillColor(DARK_GREEN).font("Helvetica-Bold").fontSize(9.5)
+    .text("Sin costo inicial. El objetivo es que Alpina alcance entre 60% y 75% de cumplimiento normativo automatizado en un solo trimestre.", MARGIN + 12, y + 8, { width: CONTENT_W - 24 });
+  y += 38;
+
+  y = labeledBullets(doc, y, "Semanas 1-3: Configuracion y Diagnostico", [
+    "Registro de empresa y sedes | Carga masiva de trabajadores | Evaluacion inicial",
+  ]);
+  y = labeledBullets(doc, y, "Semanas 4-6: Implementacion del HACER", [
+    "Matriz IPERC con asistente IA | Capacitaciones y examenes | PESV flota | Portal empleados",
+  ]);
+  y = labeledBullets(doc, y, "Semanas 7-9: Verificacion y Entrega", [
+    "Indicadores y dashboards PHVA | Informe Ministerio | Evaluacion final | Propuesta de continuidad",
+  ]);
+
+  // Sustainability
+  y = ensureSpace(doc, y, 45);
+  doc.rect(MARGIN, y, CONTENT_W, 38).fill(LIGHT_BG);
+  doc.fillColor(DARK_GREEN).font("Helvetica-Bold").fontSize(9).text("Sostenibilidad:", MARGIN + 10, y + 5);
+  doc.fillColor(DARK).font("Helvetica").fontSize(8.5)
+    .text("Durante las 9 semanas, Alpina cumple con la ley sin inversion previa. Al verificar la eficiencia, la transicion a la suscripcion es el paso natural para mantener el cumplimiento permanente.", MARGIN + 10, y + 17, { width: CONTENT_W - 20, lineGap: 1 });
+  y += 48;
+
+  // ── PRICING ──
+  y = sectionBar(doc, y, "Planes de Suscripcion (Posterior al Piloto)");
+
+  const colW = [160, 130, 100, 140];
+  const colX = [MARGIN + 2, MARGIN + 162, MARGIN + 292, MARGIN + 392];
+
+  y = ensureSpace(doc, y, 18);
+  doc.rect(MARGIN, y, CONTENT_W, 16).fill(DARK_GREEN);
+  doc.fillColor(WHITE).font("Helvetica-Bold").fontSize(8);
+  doc.text("Plan", colX[0], y + 4, { width: colW[0] });
+  doc.text("Precio/mes (COP)", colX[1], y + 4, { width: colW[1] });
+  doc.text("Trabajadores", colX[2], y + 4, { width: colW[2] });
+  doc.text("Destacado", colX[3], y + 4, { width: colW[3] });
   y += 16;
-  const s2Items = [
-    "Construccion de la matriz IPERC (GTC-45) con asistente inteligente",
-    "Programacion de capacitaciones y examenes medicos",
-    "Configuracion del PESV para flota vehicular",
-    "Activacion del portal de empleados",
-  ];
-  for (const item of s2Items) { y = checkPageBreak(doc, y, 18, pageNum); y = bulletItem(doc, item, y, 70); }
-
-  y += 6;
-  y = checkPageBreak(doc, y, 80, pageNum);
-  doc.fillColor(DARK).font("Helvetica-Bold").fontSize(10).text("Semanas 7-9: Verificacion y Entrega", 55, y);
-  y += 16;
-  const s3Items = [
-    "Revision de indicadores y dashboards PHVA",
-    "Generacion del informe SG-SST para el Ministerio de Trabajo",
-    "Evaluacion de cumplimiento final con porcentaje alcanzado",
-    "Presentacion de resultados y propuesta de continuidad",
-  ];
-  for (const item of s3Items) { y = checkPageBreak(doc, y, 18, pageNum); y = bulletItem(doc, item, y, 70); }
-
-  // SUSTAINABILITY
-  y += 10;
-  y = checkPageBreak(doc, y, 80, pageNum);
-  doc.rect(40, y, doc.page.width - 80, 60).fill(LIGHT_BG);
-  doc.fillColor(DARK_GREEN).font("Helvetica-Bold").fontSize(10.5)
-    .text("Sostenibilidad del modelo:", 55, y + 8);
-  doc.fillColor(DARK).font("Helvetica").fontSize(10)
-    .text("Durante las 9 semanas, Alpina cumple con la ley sin inversion previa a la herramienta. Al verificar la eficiencia y la facilidad de \"HACER\" con nuestra tecnologia, la transicion a la suscripcion se convierte en el paso natural para mantener su estatus legal y su productividad de forma permanente.", 55, y + 24, { width: doc.page.width - 110, lineGap: 2 });
-  y += 75;
-
-  // PRICING REFERENCE
-  y = checkPageBreak(doc, y, 160, pageNum);
-  y = sectionTitle(doc, "Planes de Suscripcion (Posterior al Piloto)", y);
 
   const plans = [
-    { name: "Esencial", price: "$199.000", workers: "1-10", highlight: false },
-    { name: "Profesional", price: "$499.000", workers: "11-50", highlight: false },
-    { name: "Empresarial", price: "$999.000", workers: "51-200", highlight: true },
-    { name: "Corporativo", price: "$1.999.000", workers: "Ilimitado", highlight: false },
+    { n: "Esencial", p: "$199.000", w: "1-10", d: "Ideal para microempresas" },
+    { n: "Profesional", p: "$499.000", w: "11-50", d: "El mas popular" },
+    { n: "Empresarial", p: "$999.000", w: "51-200", d: "Recomendado para Alpina" },
+    { n: "Corporativo", p: "$1.999.000", w: "Ilimitado", d: "SLA 99.9% + dedicado" },
   ];
 
-  // Table header
-  doc.rect(40, y, doc.page.width - 80, 22).fill(DARK_GREEN);
-  doc.fillColor(WHITE).font("Helvetica-Bold").fontSize(9);
-  doc.text("Plan", 55, y + 6, { width: 140 });
-  doc.text("Precio Mensual (COP)", 200, y + 6, { width: 150 });
-  doc.text("Trabajadores", 370, y + 6, { width: 140 });
-  y += 22;
-
-  for (const plan of plans) {
-    const bg = plan.highlight ? LIGHT_GREEN : WHITE;
-    doc.rect(40, y, doc.page.width - 80, 22).fill(bg);
-    doc.fillColor(DARK).font(plan.highlight ? "Helvetica-Bold" : "Helvetica").fontSize(9);
-    doc.text(plan.name + (plan.highlight ? " (Recomendado)" : ""), 55, y + 6, { width: 140 });
-    doc.text(plan.price + "/mes", 200, y + 6, { width: 150 });
-    doc.text(plan.workers, 370, y + 6, { width: 140 });
-    y += 22;
+  for (let i = 0; i < plans.length; i++) {
+    const pl = plans[i];
+    const bg = i === 2 ? LIGHT_GREEN : (i % 2 === 0 ? WHITE : LIGHT_BG);
+    const fnt = i === 2 ? "Helvetica-Bold" : "Helvetica";
+    doc.rect(MARGIN, y, CONTENT_W, 15).fill(bg);
+    doc.fillColor(DARK).font(fnt).fontSize(8);
+    doc.text(pl.n, colX[0], y + 3, { width: colW[0] });
+    doc.text(pl.p, colX[1], y + 3, { width: colW[1] });
+    doc.text(pl.w, colX[2], y + 3, { width: colW[2] });
+    doc.text(pl.d, colX[3], y + 3, { width: colW[3] });
+    y += 15;
   }
 
-  y += 8;
-  doc.fillColor(GRAY).font("Helvetica").fontSize(8.5)
-    .text("Todos los planes incluyen actualizaciones normativas, soporte tecnico y almacenamiento en la nube.", 55, y, { width: doc.page.width - 110 })
-    .text("Descuento del 16.7% en plan anual (pague 10 meses, obtenga 12).", 55, y + 12, { width: doc.page.width - 110 });
+  y += 6;
+  doc.fillColor(GRAY).font("Helvetica").fontSize(7.5)
+    .text("Descuento 16.7% en plan anual (pague 10 meses). Incluye actualizaciones normativas y soporte.", MARGIN, y, { width: CONTENT_W });
+  y += 18;
 
-  // DIFFERENTIATORS
-  y += 35;
-  y = checkPageBreak(doc, y, 130, pageNum);
-  y = sectionTitle(doc, "Diferenciadores Clave", y);
+  // Contact
+  y = ensureSpace(doc, y, 50);
+  doc.rect(MARGIN, y, CONTENT_W, 45).fill(DARK_GREEN);
+  doc.fillColor(WHITE).font("Helvetica-Bold").fontSize(12)
+    .text("Contactenos", MARGIN + 15, y + 8);
+  doc.font("Helvetica").fontSize(9.5)
+    .text("sst.sagisas.co  |  soporte@sst-colombia.com", MARGIN + 15, y + 26);
 
-  const diffItems = [
-    "100% alineado con normativa colombiana: Decreto 1072/2015, Res. 0312/2019, Res. 40595/2022",
-    "Certificable bajo ISO 45001:2018 - reportes con estandar internacional",
-    "Multi-sede: gestion centralizada de todas las plantas de Alpina",
-    "Cifrado AES-256-GCM para proteccion de datos sensibles de trabajadores",
-    "Infraestructura AWS con 99.9% de disponibilidad",
-    "Soporte tecnico dedicado con tiempos de respuesta garantizados",
-    "Sin instalacion: acceso inmediato desde navegador web",
-  ];
-
-  for (const item of diffItems) {
-    y = checkPageBreak(doc, y, 18, pageNum);
-    y = bulletItem(doc, item, y);
-  }
-
-  // CONTACT
-  y += 15;
-  y = checkPageBreak(doc, y, 100, pageNum);
-  doc.rect(40, y, doc.page.width - 80, 70).fill(DARK_GREEN);
-  doc.fillColor(WHITE).font("Helvetica-Bold").fontSize(13)
-    .text("Contacto", 55, y + 12);
-  doc.font("Helvetica").fontSize(10)
-    .text("Plataforma: sst.sagisas.co", 55, y + 32)
-    .text("Correo: soporte@sst-colombia.com", 55, y + 47);
-
-  drawFooter(doc, pageNum.val);
+  drawPageFooter(doc);
   doc.end();
 
   return new Promise<void>((resolve) => {
     stream.on("finish", () => {
-      console.log(`PDF generado: ${outputPath}`);
       const stats = fs.statSync(outputPath);
-      console.log(`Tamano: ${(stats.size / 1024).toFixed(0)} KB`);
+      console.log(`PDF generado: ${outputPath} (${(stats.size / 1024).toFixed(0)} KB, ${currentPage} paginas)`);
       resolve();
     });
   });
