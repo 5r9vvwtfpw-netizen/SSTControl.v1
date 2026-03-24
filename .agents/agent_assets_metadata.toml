@@ -6,3 +6,9 @@ id = "zfo2unhJ0OjKHfLpC35u3"
 uri = "file://captcha-plugin-sst.txt"
 type = "text"
 title = "CAPTCHA SST - Plugin Completo (3 archivos)"
+
+[[outputs]]
+id = "ss03blIOiZyElIuOO68fw"
+uri = "file://Portafolio_SST_Colombia_Alpina.pdf"
+type = "pdf"
+title = "Portafolio Comercial SST-Colombia para Alpina"
