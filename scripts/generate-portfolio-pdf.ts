@@ -176,7 +176,7 @@ async function gen() {
   bul("Evaluacion Inicial automatizada | Matriz de riesgos IPERC GTC-45 | Matriz Legal | Plan de Trabajo Anual", 20);
 
   phvaBar("HACER", TEAL);
-  bul("Trabajadores y contratos | 50+ capacitaciones | Examenes medicos con alertas", 20);
+  bul("Trabajadores y contratos | Programa de capacitaciones (registro y seguimiento) | Examenes medicos", 20);
   bul("Inspecciones | Control de EPP | Sustancias quimicas | Plan emergencias | Inv. accidentes", 20);
 
   phvaBar("VERIFICAR", PURPLE);
@@ -226,7 +226,7 @@ async function gen() {
   bul("Registro de sedes | Carga masiva de trabajadores | Evaluacion inicial SG-SST", 20);
 
   subLabel("Semanas 4-6: Puesta en marcha");
-  bul("Matriz IPERC con asistente IA | Capacitaciones y examenes | PESV flota | Portal empleados", 20);
+  bul("Matriz IPERC con asistente IA | Registro de capacitaciones | PESV flota | Portal empleados", 20);
 
   subLabel("Semanas 7-9: Verificacion de resultados");
   bul("Dashboards PHVA | Informe Ministerio | Evaluacion de cumplimiento final", 20);
