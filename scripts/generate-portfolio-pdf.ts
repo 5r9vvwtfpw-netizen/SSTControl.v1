@@ -84,7 +84,7 @@ async function gen() {
     y += h + 2;
   }
 
-  // ═══ PAGE 1 ═══
+  // ═══ HEADER ═══
   doc.rect(0, 0, W, 85).fill(DK);
   if (fs.existsSync(logoPath)) doc.image(logoPath, M, 5, { height: 72 });
   doc.fillColor(WH).font("Helvetica-Bold").fontSize(18)
@@ -96,33 +96,35 @@ async function gen() {
 
   y = 95;
 
+  // ═══ PROPUESTA PERSONALIZADA ═══
   doc.save().rect(M, y, CW, 25).fill(LG);
   doc.fillColor(DK).font("Helvetica-Bold").fontSize(11)
-    .text("Propuesta Comercial para: Alpina Colombia", M + 10, y + 7, { width: CW - 20, lineBreak: false });
+    .text("Propuesta de Suscripcion para: Alpina Colombia", M + 10, y + 7, { width: CW - 20, lineBreak: false });
   doc.restore();
   y += 32;
 
-  txt("SST-Colombia es una plataforma tecnologica integral que automatiza el ciclo PHVA completo para la gestion de Seguridad y Salud en el Trabajo, cumpliendo con toda la normatividad colombiana vigente.", 9, "Helvetica", BK, { align: "justify", lineGap: 1 });
+  txt("Ponemos a disposicion de Alpina nuestra plataforma tecnologica para automatizar la gestion de Seguridad y Salud en el Trabajo en todas sus sedes y plantas, cumpliendo con la normatividad colombiana vigente de manera eficiente y trazable.", 9, "Helvetica", BK, { align: "justify", lineGap: 1 });
   y += 4;
 
-  bar("Por que SST-Colombia para Alpina?");
-  for (const t of [
-    "Plataforma 100% en la nube, accesible desde cualquier sede o planta a nivel nacional",
-    "Cumplimiento automatizado de la Resolucion 0312/2019 con los 61 estandares minimos",
-    "Gestion centralizada de multiples sedes con vision consolidada",
-    "Modulo PESV completo para flota vehicular (Resolucion 40595/2022)",
-    "Portal de empleados y portal de profesional SST con firma digital",
-    "Asistente de IA especializado en normativa SST colombiana",
-    "Informes automaticos para Ministerio de Trabajo | Cifrado AES-256 | AWS 99.9%",
-  ]) bul(t);
+  // ═══ PROBLEMA / SOLUCION ═══
+  bar("El reto de cumplir con SST en una operacion como Alpina");
+  bul("Multiples sedes y plantas con cientos de trabajadores requieren control centralizado");
+  bul("La normativa exige cumplir 61 estandares minimos (Resolucion 0312/2019) con evidencias");
+  bul("La flota vehicular de distribucion debe cumplir el PESV (Resolucion 40595/2022)");
+  bul("Los informes al Ministerio de Trabajo deben estar listos en fechas especificas");
+  bul("El seguimiento manual genera riesgos de incumplimiento, sanciones y reprocesos");
   y += 3;
 
-  bar("Ciclo PHVA Automatizado");
+  bar("Nuestra solucion: suscripcion SST-Colombia");
+  txt("Con una sola suscripcion, Alpina accede a un sistema completo que automatiza todo el ciclo PHVA de seguridad y salud en el trabajo:", 9, "Helvetica", BK, { lineGap: 1 });
+  y += 3;
+
+  // PHVA
   const phva: [string, string, string[]][] = [
-    ["PLANEAR", "#2563eb", ["Evaluacion Inicial (Res. 0312) | Matriz IPERC GTC-45 | Matriz Legal | Plan de Trabajo Anual"]],
-    ["HACER", "#16a34a", ["Trabajadores y contratos | 50+ capacitaciones | Examenes medicos | Inspecciones | EPP (77 items) | Sustancias quimicas | Plan emergencias | Investigacion accidentes"]],
-    ["VERIFICAR", "#7c3aed", ["Indicadores SST automaticos | Auditorias internas | Revision alta direccion | Accidentalidad"]],
-    ["ACTUAR", "#d97706", ["Acciones correctivas/preventivas | Efectividad | Recomendaciones ARL | Informe Ministerio"]],
+    ["PLANEAR", "#2563eb", ["Evaluacion Inicial automatizada | Matriz de riesgos IPERC GTC-45 | Matriz Legal | Plan de Trabajo Anual"]],
+    ["HACER", "#16a34a", ["Gestion de trabajadores y contratos | 50+ temas de capacitacion | Examenes medicos con alertas | Inspecciones | Control de EPP | Sustancias quimicas | Plan de emergencias | Investigacion de accidentes"]],
+    ["VERIFICAR", "#7c3aed", ["Indicadores SST automaticos | Auditorias internas | Revision por alta direccion | Indicadores de accidentalidad"]],
+    ["ACTUAR", "#d97706", ["Acciones correctivas y preventivas | Seguimiento de efectividad | Recomendaciones ARL | Informe listo para Ministerio de Trabajo"]],
   ];
   for (const [nm, cl, items] of phva) {
     ck(15);
@@ -134,100 +136,78 @@ async function gen() {
   }
   y += 3;
 
-  bar("PESV - Seguridad Vial (Res. 40595/2022)");
-  for (const t of [
-    "24 pasos | Niveles Basico, Estandar y Avanzado | Flota: SOAT, RTM, seguros, mantenimiento",
-    "Conductores con verificacion de licencias | Inspecciones preoperacionales | Riesgos viales ISO 31000",
-    "12+ indicadores SPI | Informes PDF para auditorias y Ministerio de Transporte",
-  ]) bul(t);
+  // PESV
+  bar("Modulo PESV para la flota de Alpina");
+  bul("Implementacion completa segun Resolucion 40595/2022 (24 pasos metodologicos)");
+  bul("Gestion de vehiculos: SOAT, revision tecnico-mecanica, seguros, mantenimiento preventivo");
+  bul("Control de conductores con verificacion de licencias e inspecciones preoperacionales");
+  bul("Matriz de riesgos viales ISO 31000 | 12+ indicadores de desempeno vial");
+  bul("Informes PDF listos para auditorias y reporte al Ministerio de Transporte");
   y += 3;
 
-  bar("Portales Integrados (Incluidos sin costo adicional)");
-  sub("Portal de Empleados - GRATIS");
-  bul("Acceso individual ilimitado para cada trabajador, sin costo adicional por usuario", 58);
-  bul("Contrato, perfil de cargo, capacitaciones, EPP, reportes de seguridad, elecciones COPASST", 58);
-  sub("Portal Profesional SST (LSO) - GRATIS");
-  bul("Acceso gratuito para el profesional licenciado en salud ocupacional asignado", 58);
-  bul("Multi-empresa | Firma digital 5 documentos | Dashboard cumplimiento | Boveda documentos", 58);
+  // PORTALS - FREE
+  bar("Incluido en la suscripcion sin costo adicional");
+  sub("Portal de Empleados - GRATIS e ilimitado");
+  bul("Cada trabajador de Alpina accede a su informacion: contrato, perfil, capacitaciones, EPP", 58);
+  bul("Pueden reportar condiciones inseguras y participar en elecciones COPASST/Convivencia", 58);
+  sub("Portal del Profesional SST Licenciado - GRATIS");
+  bul("El profesional SST asignado a Alpina accede al sistema con firma digital incluida", 58);
+  bul("Firma obligatoria en 5 tipos de documentos | Dashboard de cumplimiento | Boveda de documentos", 58);
   y += 3;
 
-  bar("Inteligencia Artificial");
-  bul("Chatbot normativo SST | Asistente GTC-45 | Sugerencias por CIIU | 1.300+ medidas preventivas");
+  // AI
+  bar("Inteligencia Artificial integrada");
+  bul("Chatbot especializado en normativa SST colombiana para resolver dudas en tiempo real");
+  bul("Asistente GTC-45 que auto-completa la matriz de riesgos segun actividad economica");
+  bul("Motor de acciones correctivas con 1.300+ medidas preventivas categorizadas");
   y += 5;
 
   // ═══ PILOT ═══
-  bar("Piloto Tecnico de Implementacion - 9 Semanas", DK);
+  bar("Piloto Tecnico de Implementacion - 9 Semanas sin costo", DK);
   ck(28);
   doc.save().rect(M, y, CW, 22).fill(LG);
   doc.fillColor(DK).font("Helvetica-Bold").fontSize(8.5)
-    .text("Sin costo inicial. Objetivo: 60%-75% de cumplimiento normativo automatizado en un trimestre.", M + 10, y + 6, { width: CW - 20 });
+    .text("Alpina puede iniciar sin inversion previa. Objetivo: alcanzar 60%-75% de cumplimiento en 9 semanas.", M + 10, y + 6, { width: CW - 20 });
   doc.restore();
   y += 28;
 
-  sub("Semanas 1-3: Configuracion");
-  bul("Registro empresa/sedes | Carga masiva trabajadores | Evaluacion inicial SG-SST", 58);
-  sub("Semanas 4-6: Implementacion");
-  bul("Matriz IPERC con IA | Capacitaciones | Examenes | PESV flota | Portal empleados", 58);
-  sub("Semanas 7-9: Verificacion");
-  bul("Dashboards PHVA | Informe Ministerio | Evaluacion final | Propuesta de continuidad", 58);
-  y += 3;
+  sub("Semanas 1-3: Diagnostico y configuracion");
+  bul("Registro de sedes y estructura organizacional | Carga masiva de trabajadores | Evaluacion inicial", 58);
+  sub("Semanas 4-6: Puesta en marcha");
+  bul("Matriz IPERC con asistente IA | Programacion de capacitaciones y examenes | Configuracion PESV | Activacion portal empleados", 58);
+  sub("Semanas 7-9: Verificacion de resultados");
+  bul("Revision de dashboards PHVA | Informe para Ministerio | Evaluacion de cumplimiento final", 58);
+  y += 5;
 
-  ck(32);
-  doc.save().rect(M, y, CW, 28).fill(BG);
-  doc.fillColor(DK).font("Helvetica").fontSize(8)
-    .text("Sostenibilidad: Durante las 9 semanas Alpina cumple sin inversion previa. La transicion a suscripcion es el paso natural para mantener el cumplimiento permanente.", M + 10, y + 5, { width: CW - 20, lineGap: 1 });
-  doc.restore();
-  y += 35;
-
-  // ═══ PRICING ═══
-  bar("Planes de Suscripcion");
-  ck(80);
-  const cx = [M, M + 130, M + 260, M + 360];
-  const cw = [128, 128, 98, CW - 360];
-
-  doc.save().rect(M, y, CW, 14).fill(DK);
-  doc.fillColor(WH).font("Helvetica-Bold").fontSize(7.5);
-  doc.text("Plan", cx[0] + 6, y + 3, { width: cw[0], lineBreak: false });
-  doc.text("Precio/mes", cx[1] + 6, y + 3, { width: cw[1], lineBreak: false });
-  doc.text("Trabajadores", cx[2] + 6, y + 3, { width: cw[2], lineBreak: false });
-  doc.text("Destaque", cx[3] + 6, y + 3, { width: cw[3], lineBreak: false });
-  doc.restore();
-  y += 14;
-
-  const plans = [
-    ["Esencial", "$199.000", "1-10", "Microempresas"],
-    ["Profesional", "$499.000", "11-50", "Mas popular"],
-    ["Empresarial", "$999.000", "51-200", "Recomendado Alpina"],
-    ["Corporativo", "$1.999.000", "Ilimitado", "SLA 99.9%"],
-  ];
-  for (let i = 0; i < plans.length; i++) {
-    const bg = i === 2 ? LG : (i % 2 === 0 ? WH : BG);
-    const fn = i === 2 ? "Helvetica-Bold" : "Helvetica";
-    doc.save().rect(M, y, CW, 13).fill(bg);
-    doc.fillColor(BK).font(fn).fontSize(7.5);
-    doc.text(plans[i][0], cx[0] + 6, y + 3, { width: cw[0], lineBreak: false });
-    doc.text(plans[i][1], cx[1] + 6, y + 3, { width: cw[1], lineBreak: false });
-    doc.text(plans[i][2], cx[2] + 6, y + 3, { width: cw[2], lineBreak: false });
-    doc.text(plans[i][3], cx[3] + 6, y + 3, { width: cw[3], lineBreak: false });
-    doc.restore();
-    y += 13;
-  }
-  y += 4;
-  doc.save().fillColor(GY).font("Helvetica").fontSize(7)
-    .text("Descuento 16.7% anual (pague 10 meses). Incluye actualizaciones normativas y soporte tecnico.", M, y, { width: CW, lineBreak: false });
-  doc.restore();
-  y += 14;
-
-  // Contact
   ck(40);
-  doc.save().rect(M, y, CW, 35).fill(DK);
-  doc.fillColor(WH).font("Helvetica-Bold").fontSize(11)
-    .text("Contactenos", M + 12, y + 6, { lineBreak: false });
+  doc.save().rect(M, y, CW, 35).fill(BG);
+  doc.fillColor(DK).font("Helvetica-Bold").fontSize(9).text("Despues del piloto:", M + 10, y + 5);
+  doc.fillColor(BK).font("Helvetica").fontSize(8.5)
+    .text("Al verificar la eficiencia del sistema, la transicion a la suscripcion es el paso natural para que Alpina mantenga su cumplimiento normativo y productividad de forma permanente. El precio se ajusta al numero de trabajadores y nivel de riesgo de la operacion.", M + 10, y + 17, { width: CW - 20, lineGap: 1 });
+  doc.restore();
+  y += 45;
+
+  // ═══ WHAT'S INCLUDED ═══
+  bar("Que incluye la suscripcion");
+  bul("Acceso completo a todos los modulos del sistema (PHVA + PESV)");
+  bul("Portal de empleados gratuito e ilimitado para todos los trabajadores");
+  bul("Portal del profesional SST licenciado incluido sin costo");
+  bul("Actualizaciones normativas automaticas cuando cambie la legislacion");
+  bul("Almacenamiento en la nube para documentos y evidencias");
+  bul("Soporte tecnico dedicado con tiempos de respuesta garantizados");
+  bul("Infraestructura AWS con cifrado AES-256 y 99.9% de disponibilidad");
+  y += 6;
+
+  // ═══ CONTACT ═══
+  ck(45);
+  doc.save().rect(M, y, CW, 40).fill(DK);
+  doc.fillColor(WH).font("Helvetica-Bold").fontSize(12)
+    .text("Siguiente paso", M + 12, y + 6, { lineBreak: false });
   doc.font("Helvetica").fontSize(9)
-    .text("sst.sagisas.co  |  admin@sst-colombia.com", M + 12, y + 22, { lineBreak: false });
+    .text("Solicite su piloto gratuito de 9 semanas: admin@sst-colombia.com | sst.sagisas.co", M + 12, y + 23, { lineBreak: false });
   doc.restore();
 
-  // Add footers to all pages
+  // Footers
   const pageCount = doc.bufferedPageRange().count;
   for (let i = 0; i < pageCount; i++) {
     doc.switchToPage(i);
