@@ -31,7 +31,7 @@ async function gen() {
     doc.save();
     doc.rect(0, H - 30, W, 30).fill(DK);
     doc.fillColor("#a8d5a2").font("Helvetica").fontSize(7)
-      .text("SADGI S.A.S. | NIT 902.036.337-4 | soporte@sst-colombia.com | sst.sagisas.co", M, H - 22, { width: CW - 30, lineBreak: false })
+      .text("SADGI S.A.S. | NIT 902.036.337-4 | admin@sst-colombia.com | sst.sagisas.co", M, H - 22, { width: CW - 30, lineBreak: false })
       .text(`${pg}`, M, H - 22, { width: CW, align: "right", lineBreak: false });
     doc.restore();
   }
@@ -142,10 +142,12 @@ async function gen() {
   ]) bul(t);
   y += 3;
 
-  bar("Portales Integrados");
-  sub("Portal de Empleados");
-  bul("Acceso individual: contrato, perfil, capacitaciones, EPP, reportes, elecciones COPASST", 58);
-  sub("Portal Profesional SST");
+  bar("Portales Integrados (Incluidos sin costo adicional)");
+  sub("Portal de Empleados - GRATIS");
+  bul("Acceso individual ilimitado para cada trabajador, sin costo adicional por usuario", 58);
+  bul("Contrato, perfil de cargo, capacitaciones, EPP, reportes de seguridad, elecciones COPASST", 58);
+  sub("Portal Profesional SST (LSO) - GRATIS");
+  bul("Acceso gratuito para el profesional licenciado en salud ocupacional asignado", 58);
   bul("Multi-empresa | Firma digital 5 documentos | Dashboard cumplimiento | Boveda documentos", 58);
   y += 3;
 
@@ -222,7 +224,7 @@ async function gen() {
   doc.fillColor(WH).font("Helvetica-Bold").fontSize(11)
     .text("Contactenos", M + 12, y + 6, { lineBreak: false });
   doc.font("Helvetica").fontSize(9)
-    .text("sst.sagisas.co  |  soporte@sst-colombia.com", M + 12, y + 22, { lineBreak: false });
+    .text("sst.sagisas.co  |  admin@sst-colombia.com", M + 12, y + 22, { lineBreak: false });
   doc.restore();
 
   // Add footers to all pages
