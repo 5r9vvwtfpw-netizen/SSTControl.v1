@@ -192,6 +192,7 @@ async function gen() {
   bul("Gestion vehicular: SOAT, revision tecnico-mecanica, seguros, mantenimiento preventivo");
   bul("Conductores con verificacion de licencias | Inspecciones preoperacionales diarias");
   bul("Rastreo GPS vehicular con alertas de velocidad, geocercas y rutas seguras");
+  bul("Integracion con proveedores GPS via webhook para recepcion automatica de datos vehiculares");
   bul("Matriz de riesgos viales ISO 31000 | 12+ indicadores de desempeno vial");
   bul("Informes PDF listos para auditorias y reporte al Ministerio de Transporte");
   y -= 6;
