@@ -207,6 +207,16 @@ async function gen() {
   bul("Firma obligatoria en 5 tipos de documentos | Dashboard de cumplimiento | Boveda de documentos", 20);
   y -= 6;
 
+  // Security
+  bar("Seguridad y proteccion de datos");
+  bul("Cifrado AES-256-GCM para datos sensibles de trabajadores y empresa");
+  bul("Contrasenas protegidas con hashing scrypt + salt aleatorio (nunca almacenadas en texto plano)");
+  bul("Sesiones seguras con cookies HttpOnly | Control de acceso por roles (RBAC 11 niveles)");
+  bul("Aislamiento multi-tenant: cada empresa solo accede a sus propios datos");
+  bul("Rate limiting en endpoints criticos | Respaldos automaticos semanales cifrados");
+  bul("Infraestructura en AWS (base de datos RDS PostgreSQL en region protegida)");
+  y -= 6;
+
   // AI
   bar("Inteligencia Artificial integrada");
   bul("Chatbot especializado en normativa SST colombiana para resolver dudas en tiempo real");
