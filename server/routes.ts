@@ -4028,7 +4028,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Define headers with descriptions for second row (guide row)
       const headers = [
-        'Cédula', 'Nombre Completo', 'Email', 'Cargo', 'Departamento', 
+        'Cédula', 'Nombre Completo', 'Email', 'Cargo', 'Departamento', 'Sede',
         'Tipo de Contrato', 'Fecha de Inicio', 'Fecha de Fin', 'Estado',
         'EPS', 'ARL', 'AFP', 'CCF', 'Género', 'Fecha de Nacimiento', 
         'Nivel Educativo', 'Estado Civil'
@@ -4045,6 +4045,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { wch: 30 },  // Email
         { wch: 22 },  // Cargo
         { wch: 18 },  // Departamento
+        { wch: 22 },  // Sede
         { wch: 18 },  // Tipo de Contrato
         { wch: 15 },  // Fecha de Inicio
         { wch: 15 },  // Fecha de Fin
@@ -4069,6 +4070,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { 'Campo': 'Email', 'Descripción': 'Correo electrónico', 'Requerido': 'No', 'Valores Válidos': 'email@dominio.com', 'Ejemplo': 'juan.perez@empresa.com' },
         { 'Campo': 'Cargo', 'Descripción': 'Cargo del trabajador', 'Requerido': 'Sí', 'Valores Válidos': 'Texto libre', 'Ejemplo': 'Operario de Producción' },
         { 'Campo': 'Departamento', 'Descripción': 'Área de trabajo', 'Requerido': 'Sí', 'Valores Válidos': 'Texto libre', 'Ejemplo': 'Producción' },
+        { 'Campo': 'Sede', 'Descripción': 'Sede o planta donde trabaja. Debe coincidir exactamente con el nombre de una sede registrada en el sistema.', 'Requerido': 'No', 'Valores Válidos': 'Nombre exacto de la sede', 'Ejemplo': 'Planta Principal' },
         { 'Campo': 'Tipo de Contrato', 'Descripción': 'Tipo de contrato laboral según CST Colombia. Acepta texto libre: el sistema reconoce automáticamente variaciones como "término indefinido", "a término fijo", "obra o labor", "OPS", "prestación de servicios", "pasante", etc.', 'Requerido': 'Sí', 'Valores Válidos': 'Texto libre (ej: indefinido, fijo, temporal, obra o labor, aprendizaje, prestación de servicios)', 'Ejemplo': 'indefinido' },
         { 'Campo': 'Fecha de Inicio', 'Descripción': 'Fecha de inicio del contrato', 'Requerido': 'Sí', 'Valores Válidos': 'AAAA-MM-DD o DD/MM/AAAA', 'Ejemplo': '2024-01-15' },
         { 'Campo': 'Fecha de Fin', 'Descripción': 'Fecha fin del contrato (vacío si indefinido)', 'Requerido': 'No', 'Valores Válidos': 'AAAA-MM-DD o vacío', 'Ejemplo': '2025-01-15' },
@@ -4294,9 +4296,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return 'indefinido';
       };
 
-      // Helper function to transform Zod validation errors to user-friendly Spanish messages (SST-2026-0017)
+      const companySedes = await db.select()
+        .from(schema.companySedes)
+        .where(eq(schema.companySedes.companyId, companyId));
+      const sedeNameMap: Record<string, string> = {};
+      companySedes.forEach(sede => {
+        sedeNameMap[sede.name.toLowerCase().trim()] = sede.id;
+      });
+
       const formatZodErrorForBulkImport = (error: any): string => {
-        // Map field names to Spanish labels
         const fieldLabels: Record<string, string> = {
           identificationNumber: 'Cédula/Identificación',
           name: 'Nombre Completo',
@@ -4426,10 +4434,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             gender: normalizeGender(row['Género']?.toString() || row['Genero']?.toString()),
             birthDate: excelDateToJSDate(rawBirthDate) || undefined,
             educationLevel: normalizeEducationLevel(row['Nivel Educativo']?.toString() || row['Educación']?.toString()),
-            civilStatus: normalizeCivilStatus(row['Estado Civil']?.toString())
+            civilStatus: normalizeCivilStatus(row['Estado Civil']?.toString()),
+            sedeId: (() => {
+              const sedeName = row['Sede']?.toString().trim();
+              if (!sedeName) return undefined;
+              const match = sedeNameMap[sedeName.toLowerCase()];
+              if (match) return match;
+              for (const [key, id] of Object.entries(sedeNameMap)) {
+                if (key.includes(sedeName.toLowerCase()) || sedeName.toLowerCase().includes(key)) return id;
+              }
+              return undefined;
+            })()
           };
 
-          // Validate required fields
           if (!workerData.identificationNumber) {
             throw new Error('La cédula/identificación es requerida');
           }
