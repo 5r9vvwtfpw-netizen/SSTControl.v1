@@ -139,6 +139,7 @@ import AdminUsuariosSoporte from "@/pages/AdminUsuariosSoporte";
 import AdminPromociones from "@/pages/AdminPromociones";
 import AdminPortales from "@/pages/AdminPortales";
 import AdminLoginActivity from "@/pages/AdminLoginActivity";
+import CompanySedes from "@/pages/CompanySedes";
 import Recomendar from "@/pages/Recomendar";
 import RecuperarContrasena from "@/pages/RecuperarContrasena";
 import RestablecerContrasena from "@/pages/RestablecerContrasena";
@@ -300,6 +301,7 @@ function Router() {
       <ProtectedRoute path="/admin-promociones" component={AdminPromociones} />
       <ProtectedRoute path="/admin-portales" component={AdminPortales} />
       <ProtectedRoute path="/admin-login-activity" component={AdminLoginActivity} />
+      <ProtectedRoute path="/sedes" component={CompanySedes} />
       <ProtectedRoute path="/admin-videos-ayuda" component={AdminVideosAyuda} />
       <ProtectedRoute path="/videos-ayuda" component={BibliotecaVideos} />
       <ProtectedRoute path="/mensajes-internos" component={MensajesInternos} />

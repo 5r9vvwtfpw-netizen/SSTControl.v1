@@ -52,6 +52,7 @@ const CHAPTER_1_MODULES = [
   "/empresas",
   "/crear-empresa",
   "/usuarios",
+  "/sedes",
   "/portal-empleados",
   "/dashboard-facturacion",
   "/mi-cuenta",

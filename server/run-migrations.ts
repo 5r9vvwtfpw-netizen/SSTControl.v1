@@ -28,6 +28,7 @@ import { createNgoOnboardedCompanies } from './migrations/create-ngo-onboarded-c
 import { createSupportChatMessages } from './migrations/create-support-chat-messages';
 import { addPerformanceIndexes } from './migrations/add-performance-indexes';
 import { syncLoginTrackingColumns } from './migrations/sync-login-tracking-columns';
+import { syncCompanySedes } from './migrations/sync-company-sedes';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -67,6 +68,7 @@ export async function runMigrations() {
     await addChatAttachmentsMentions();
     await addPerformanceIndexes();
     await syncLoginTrackingColumns();
+    await syncCompanySedes();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

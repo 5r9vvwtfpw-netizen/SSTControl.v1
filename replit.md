@@ -29,6 +29,8 @@ The Promotions Plugin (Sidecar module) handles promotional pricing, coupons, dig
 
 The Ministerio del Trabajo PDF report implements the "Hilo Dorado" traceability system, visualizing the improvement cycle.
 
+The Company Sedes module allows managing multiple branches/locations per company. Workers can be assigned to specific sedes. The module includes CRUD operations with proper RBAC (companies:view for read, companies:create for write, workers:edit for sede assignment). Table: `company_sedes`. Workers have a `sede_id` field. Route: `/sedes` in PLANEAR > Personal. Available for all chapter levels.
+
 The Excel worker import system uses a tolerant normalization pipeline to map free-text input to valid database enum values.
 
 When an external LSO (Occupational Health and Safety License Holder) is assigned, the system auto-provisions a user account or sends a notification if an account exists. LSO license status is auto-calculated based on expiry.

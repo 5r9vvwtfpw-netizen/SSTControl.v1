@@ -96,6 +96,25 @@ export const companies = pgTable("companies", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
+// Company branches/locations table
+export const companySedes = pgTable("company_sedes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  name: text("name").notNull(),
+  city: text("city"),
+  address: text("address"),
+  contactPhone: text("contact_phone"),
+  contactEmail: text("contact_email"),
+  isMain: integer("is_main").notNull().default(0),
+  status: text("status").notNull().default("activa"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const insertCompanySedeSchema = createInsertSchema(companySedes)
+  .omit({ id: true, createdAt: true });
+export type InsertCompanySede = z.infer<typeof insertCompanySedeSchema>;
+export type CompanySede = typeof companySedes.$inferSelect;
+
 // Users table for authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -353,6 +372,7 @@ export const workers = pgTable("workers", {
   afpNombre: text("afp_nombre"), // Administradora de Fondos de Pensiones
   ccfNombre: text("ccf_nombre"), // Caja de Compensación Familiar
   // Foto para carnet de trabajador
+  sedeId: varchar("sede_id").references(() => companySedes.id),
   photoUrl: text("photo_url"), // URL de la foto del trabajador en S3
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
