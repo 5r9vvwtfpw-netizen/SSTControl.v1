@@ -247,7 +247,7 @@ async function gen() {
   bul("Portal de empleados GRATIS e ilimitado para todos los trabajadores");
   bul("Portal del profesional SST licenciado incluido sin costo adicional");
   bul("Actualizaciones normativas automaticas | Almacenamiento en la nube");
-  bul("Soporte tecnico dedicado | Infraestructura AWS | Cifrado AES-256 | 99.9% disponibilidad");
+  bul("Soporte tecnico dedicado | Infraestructura AWS | Cifrado AES-256 | Alta disponibilidad");
   y -= 8;
 
   // Contact CTA
