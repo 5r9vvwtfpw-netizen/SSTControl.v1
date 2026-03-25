@@ -208,13 +208,12 @@ async function gen() {
   y -= 6;
 
   // Security
-  bar("Seguridad y proteccion de datos");
-  bul("Cifrado AES-256-GCM para datos sensibles de trabajadores y empresa");
-  bul("Contrasenas protegidas con hashing scrypt + salt aleatorio (nunca almacenadas en texto plano)");
-  bul("Sesiones seguras con cookies HttpOnly | Control de acceso por roles (RBAC 11 niveles)");
-  bul("Aislamiento multi-tenant: cada empresa solo accede a sus propios datos");
-  bul("Rate limiting en endpoints criticos | Respaldos automaticos semanales cifrados");
-  bul("Infraestructura en AWS (base de datos RDS PostgreSQL en region protegida)");
+  bar("Seguridad y proteccion de sus datos");
+  bul("Los datos de su empresa y trabajadores se cifran con AES-256-GCM (estandar bancario)");
+  bul("Contrasenas protegidas con hashing criptografico, nunca almacenadas en texto plano");
+  bul("Respaldos automaticos semanales cifrados para recuperacion ante desastres");
+  bul("Base de datos dedicada en Amazon Web Services (AWS) con acceso restringido");
+  bul("Control de acceso por roles: cada usuario solo ve la informacion que le corresponde");
   y -= 6;
 
   // AI
