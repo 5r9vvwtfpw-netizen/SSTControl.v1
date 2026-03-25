@@ -139,6 +139,7 @@ export default function Trabajadores() {
     birthDate?: string;
     educationLevel?: string;
     civilStatus?: string;
+    sedeId?: string;
   }>({
     companyId: "",
     identificationNumber: "",
@@ -155,6 +156,7 @@ export default function Trabajadores() {
     birthDate: "",
     educationLevel: "",
     civilStatus: "",
+    sedeId: "",
   });
 
   // Photo display state (workers upload via portal)
@@ -176,11 +178,21 @@ export default function Trabajadores() {
     queryKey: ["/api/job-profiles"],
   });
 
+  const { data: sedes = [] } = useQuery<{ id: string; name: string; city: string | null; status: string }[]>({
+    queryKey: ["/api/company-sedes"],
+  });
+
   const companyMap = useMemo(() => {
     const map: Record<string, string> = {};
     companies.forEach((c) => { map[c.id] = c.name; });
     return map;
   }, [companies]);
+
+  const sedeMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    sedes.forEach((s) => { map[s.id] = s.name + (s.city ? ` (${s.city})` : ""); });
+    return map;
+  }, [sedes]);
 
   const companyVaults = useMemo(() => {
     if (!hasGlobalCompanyAccess || workers.length === 0) return [];
@@ -691,11 +703,11 @@ export default function Trabajadores() {
       return;
     }
     
-    // Preparar los datos con la cédula limpia
     const cleanedFormData = {
       ...formData,
       identificationNumber: cleanedCedula,
       endDate: formData.endDate || undefined,
+      sedeId: formData.sedeId || null,
     };
     
     if (editingWorker) {
@@ -730,6 +742,7 @@ export default function Trabajadores() {
       birthDate: worker.birthDate || "",
       educationLevel: worker.educationLevel || "",
       civilStatus: worker.civilStatus || "",
+      sedeId: worker.sedeId || "",
     });
     setDialogOpen(true);
   };
@@ -778,6 +791,7 @@ export default function Trabajadores() {
       birthDate: "",
       educationLevel: "",
       civilStatus: "",
+      sedeId: "",
     });
     setDialogOpen(true);
   };
@@ -1549,6 +1563,27 @@ export default function Trabajadores() {
                             );
                           })()}
                         </div>
+                        {sedes.length > 0 && (
+                          <div className="space-y-2">
+                            <Label htmlFor="sedeId">Sede</Label>
+                            <Select
+                              value={formData.sedeId || "__none__"}
+                              onValueChange={(value) => setFormData({ ...formData, sedeId: value === "__none__" ? "" : value })}
+                            >
+                              <SelectTrigger id="sedeId" data-testid="select-sede">
+                                <SelectValue placeholder="Seleccione la sede" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__none__">Sin sede asignada</SelectItem>
+                                {sedes.filter(s => s.status === "activa").map((sede) => (
+                                  <SelectItem key={sede.id} value={sede.id}>
+                                    {sede.name}{sede.city ? ` (${sede.city})` : ""}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                         <div className="space-y-2">
                           <Label htmlFor="contractType">Tipo de Contrato</Label>
                           <Select
@@ -2248,6 +2283,27 @@ export default function Trabajadores() {
                       );
                     })()}
                   </div>
+                  {sedes.length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="sedeId-new">Sede</Label>
+                      <Select
+                        value={formData.sedeId || "__none__"}
+                        onValueChange={(value) => setFormData({ ...formData, sedeId: value === "__none__" ? "" : value })}
+                      >
+                        <SelectTrigger id="sedeId-new" data-testid="select-sede-new">
+                          <SelectValue placeholder="Seleccione la sede" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Sin sede asignada</SelectItem>
+                          {sedes.filter(s => s.status === "activa").map((sede) => (
+                            <SelectItem key={sede.id} value={sede.id}>
+                              {sede.name}{sede.city ? ` (${sede.city})` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="contractType">Tipo de Contrato</Label>
                     <Select
@@ -2762,6 +2818,7 @@ export default function Trabajadores() {
                     <TableHead>Nombre</TableHead>
                     <TableHead>Cargo</TableHead>
                     <TableHead>Departamento</TableHead>
+                    {sedes.length > 0 && <TableHead>Sede</TableHead>}
                     <TableHead>Tipo de Contrato</TableHead>
                     <TableHead>Fecha de Inicio</TableHead>
                     <TableHead>Estado</TableHead>
@@ -2784,6 +2841,11 @@ export default function Trabajadores() {
                       <TableCell data-testid={`cell-department-${worker.id}`}>
                         {worker.department}
                       </TableCell>
+                      {sedes.length > 0 && (
+                        <TableCell data-testid={`cell-sede-${worker.id}`}>
+                          {worker.sedeId ? sedeMap[worker.sedeId] || "—" : "—"}
+                        </TableCell>
+                      )}
                       <TableCell data-testid={`cell-contract-type-${worker.id}`}>
                         {worker.contractType}
                       </TableCell>
