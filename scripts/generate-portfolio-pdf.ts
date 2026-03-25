@@ -160,7 +160,7 @@ async function gen() {
 
   // Problem
   bar("El reto de cumplir con SST en una operacion como Alpina");
-  bul("Multiples sedes y plantas con cientos de trabajadores requieren control centralizado");
+  bul("Cientos de trabajadores en operacion requieren control centralizado y trazable");
   bul("La normativa exige cumplir 61 estandares minimos (Resolucion 0312/2019) con evidencias");
   bul("La flota vehicular de distribucion debe cumplir el PESV (Resolucion 40595/2022)");
   bul("Los informes al Ministerio de Trabajo deben estar listos en fechas especificas");
