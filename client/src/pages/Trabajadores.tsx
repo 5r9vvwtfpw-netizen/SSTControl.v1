@@ -2691,6 +2691,7 @@ export default function Trabajadores() {
                       photoUrl={worker.photoUrl}
                       hasUserAccount={!!worker.userId}
                       contractStatus={getContractStatus(worker.id)}
+                      sedeName={worker.sedeId ? sedeMap[worker.sedeId] : undefined}
                       onEdit={user?.role && hasCompanyAdminAccess(user.role) ? () => handleEdit(worker) : undefined}
                       onDelete={user?.role && hasCompanyAdminAccess(user.role) ? () => handleDelete(worker.id) : undefined}
                       onCreatePortalAccess={user?.role && hasCompanyAdminAccess(user.role) && worker.email && !worker.userId ? () => createPortalAccessMutation.mutate(worker.id) : undefined}

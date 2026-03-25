@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Briefcase, Calendar, Pencil, Trash2, UserPlus, Mail, FileText } from "lucide-react";
+import { Briefcase, Calendar, Pencil, Trash2, UserPlus, Mail, FileText, MapPin } from "lucide-react";
 
 interface WorkerCardProps {
   id: string;
@@ -17,12 +17,13 @@ interface WorkerCardProps {
   photoUrl?: string | null;
   hasUserAccount?: boolean;
   contractStatus?: "activo" | "vencido" | "sin_contrato";
+  sedeName?: string;
   onEdit?: () => void;
   onDelete?: () => void;
   onCreatePortalAccess?: () => void;
 }
 
-export function WorkerCard({ id, name, position, department, contract, startDate, status, email, photoUrl, hasUserAccount, contractStatus, onEdit, onDelete, onCreatePortalAccess }: WorkerCardProps) {
+export function WorkerCard({ id, name, position, department, contract, startDate, status, email, photoUrl, hasUserAccount, contractStatus, sedeName, onEdit, onDelete, onCreatePortalAccess }: WorkerCardProps) {
   const initials = name
     .split(" ")
     .map((n) => n[0])
@@ -109,6 +110,12 @@ export function WorkerCard({ id, name, position, department, contract, startDate
           <Briefcase className="h-4 w-4 flex-shrink-0" />
           <span>{department}</span>
         </div>
+        {sedeName && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground" data-testid={`text-sede-${id}`}>
+            <MapPin className="h-4 w-4 flex-shrink-0" />
+            <span>{sedeName}</span>
+          </div>
+        )}
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="h-4 w-4 flex-shrink-0" />
           <span>Ingreso: {startDate}</span>
