@@ -12,3 +12,9 @@ id = "ss03blIOiZyElIuOO68fw"
 uri = "file://Portafolio_SST_Colombia_Alpina.pdf"
 type = "pdf"
 title = "Portafolio SST-Colombia - Alpina (corregido sedes)"
+
+[[outputs]]
+id = "SFcD5-YMQudGpinD4oj-h"
+uri = "file://docs/captcha-para-cloudbooks.md"
+type = "text"
+title = "Guía CAPTCHA para Cloud Books - Para pasar al otro agente"
