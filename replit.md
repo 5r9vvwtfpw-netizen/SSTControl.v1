@@ -6,6 +6,15 @@ This project is an integral management system for Occupational Health and Safety
 ## User Preferences
 I prefer simple language and clear explanations. I want iterative development with regular updates. Please ask before making major architectural changes or introducing new dependencies. I prefer detailed explanations for complex features. Do not make changes to the `shared/` folder without explicit instruction.
 
+## Critical Development Rules
+**BEFORE making any change, the agent MUST:**
+1. Analyze the full impact of the change across all user roles (superadmin, admin, superusuario, lso, trabajador, soporte).
+2. Verify that removing, hiding, or modifying any menu item, route, or feature does NOT break access for other roles that depend on it.
+3. Check `shared/route-permissions.ts` and `PHVANavigation.tsx` to understand which roles use the affected feature.
+4. If a change is role-specific (e.g., "remove X for superadmin only"), ensure it is implemented with a role-based condition, NOT by deleting the item entirely.
+5. This system is in PRODUCTION with real paying clients. Any broken feature can violate client contracts. Treat every change as if it affects live users.
+6. When in doubt, ask the user before proceeding.
+
 ## System Architecture
 
 ### UI/UX Decisions
