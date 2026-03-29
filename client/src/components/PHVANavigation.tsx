@@ -94,6 +94,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
     {
       title: "Ayuda",
       items: [
+        { label: "Tickets de Soporte", path: "/tickets-soporte" },
         { label: "Videos de Ayuda", path: "/videos-ayuda" },
       ],
     },
