@@ -29,7 +29,7 @@ import { useCompanyContext } from "@/hooks/use-company-context";
 import { isModuleAllowedForChapter, type ChapterType } from "@shared/chapter-modules";
 import { NIVELES_PESV_LABELS, FASES_PESV_LABELS, FASES_PESV_COLORS, PASOS_PESV, PasoPesvData, ModuloSstUrl } from "@/data/pasos-pesv";
 
-type FasePHVA = "planear" | "hacer" | "verificar" | "actuar";
+type FasePHVA = "planear" | "hacer" | "verificar" | "actuar" | "resumen";
 
 // ADD-ONLY: Helper para mapear nombres de iconos a componentes Lucide
 const ICONO_MAP: Record<string, LucideIcon> = {
@@ -55,7 +55,7 @@ export default function DetalleEvaluacionPesv() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const fase = params.get('fase');
-      if (fase && ['planear', 'hacer', 'verificar', 'actuar'].includes(fase)) {
+      if (fase && ['planear', 'hacer', 'verificar', 'actuar', 'resumen'].includes(fase)) {
         return fase as FasePHVA;
       }
     }
@@ -99,6 +99,46 @@ export default function DetalleEvaluacionPesv() {
   const [criteriosDb, setCriteriosDb] = useState<PesvCriterioVerificacion[]>([]);
   const [evidenciasDb, setEvidenciasDb] = useState<PesvEvidenciaDocumento[]>([]);
   const [criteriosLoading, setCriteriosLoading] = useState(false);
+
+  interface VerificacionResumen {
+    evaluacionId: string;
+    pasos: Record<string, {
+      totalCriterios: number;
+      criteriosVerificados: number;
+      totalEvidencias: number;
+      evidenciasConArchivo: number;
+      porcentajeCriterios: number;
+      porcentajeEvidencias: number;
+      cumpleAutomatico: boolean;
+    }>;
+    totalGeneral: {
+      criterios: number;
+      criteriosVerificados: number;
+      evidencias: number;
+      evidenciasConArchivo: number;
+    };
+  }
+  const [resumenVerificacion, setResumenVerificacion] = useState<VerificacionResumen | null>(null);
+  const [resumenLoading, setResumenLoading] = useState(false);
+
+  const fetchResumenVerificacion = useCallback(async () => {
+    if (!id) return;
+    setResumenLoading(true);
+    try {
+      const res = await fetch(`/api/evaluaciones-pesv/${id}/verificacion-resumen`, { credentials: "include" });
+      if (res.ok) {
+        setResumenVerificacion(await res.json());
+      }
+    } catch { /* silently fail */ } finally {
+      setResumenLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (selectedFase === 'resumen') {
+      fetchResumenVerificacion();
+    }
+  }, [selectedFase, fetchResumenVerificacion]);
 
   const fetchCriteriosYEvidencias = useCallback(async (evaluacionId: string, pasoId: string) => {
     setCriteriosLoading(true);
@@ -680,14 +720,15 @@ export default function DetalleEvaluacionPesv() {
         url.searchParams.set('fase', newFase);
         window.history.replaceState({}, '', url.toString());
       }}>
-        <TabsList className="grid w-full grid-cols-4" data-testid="tabs-fases">
+        <TabsList className="grid w-full grid-cols-5" data-testid="tabs-fases">
           {([
             { key: 'planear' as FasePHVA, nombre: 'Planear', bgColor: '#2196F3', icon: 'P' },
             { key: 'hacer' as FasePHVA, nombre: 'Hacer', bgColor: '#4CAF50', icon: 'H' },
             { key: 'verificar' as FasePHVA, nombre: 'Verificar', bgColor: '#FFEB3B', textColor: '#333', icon: 'V' },
             { key: 'actuar' as FasePHVA, nombre: 'Actuar', bgColor: '#D32F2F', icon: 'A' },
+            { key: 'resumen' as FasePHVA, nombre: 'Resumen', bgColor: '#7B1FA2', icon: 'R' },
           ]).map((ciclo) => {
-            const progreso = calcularProgresoPorFase(ciclo.key);
+            const progreso = ciclo.key !== 'resumen' ? calcularProgresoPorFase(ciclo.key as Exclude<FasePHVA, 'resumen'>) : null;
             return (
               <TabsTrigger 
                 key={ciclo.key} 
@@ -702,9 +743,11 @@ export default function DetalleEvaluacionPesv() {
                   {ciclo.icon}
                 </div>
                 <span className="hidden sm:inline">{ciclo.nombre}</span>
-                <Badge variant="secondary" className="ml-1 hidden md:inline-flex">
-                  {progreso.porcentaje}%
-                </Badge>
+                {progreso && (
+                  <Badge variant="secondary" className="ml-1 hidden md:inline-flex">
+                    {progreso.porcentaje}%
+                  </Badge>
+                )}
               </TabsTrigger>
             );
           })}
@@ -779,6 +822,152 @@ export default function DetalleEvaluacionPesv() {
           </TabsContent>
           );
         })}
+
+        <TabsContent value="resumen" className="mt-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 flex-wrap">
+                <ClipboardList className="h-5 w-5 text-purple-600" />
+                Resumen General - 24 Pasos PESV
+              </CardTitle>
+              <CardDescription>
+                Vista consolidada del estado de todos los pasos de la evaluación
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {resumenLoading ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  {resumenVerificacion?.totalGeneral && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                      <Card>
+                        <CardContent className="p-3 text-center">
+                          <p className="text-2xl font-bold text-green-600">{resumenVerificacion.totalGeneral.criteriosVerificados}</p>
+                          <p className="text-xs text-muted-foreground">Criterios Verificados</p>
+                          <p className="text-xs text-muted-foreground">de {resumenVerificacion.totalGeneral.criterios}</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-3 text-center">
+                          <p className="text-2xl font-bold text-blue-600">{resumenVerificacion.totalGeneral.evidenciasConArchivo}</p>
+                          <p className="text-xs text-muted-foreground">Evidencias Adjuntas</p>
+                          <p className="text-xs text-muted-foreground">de {resumenVerificacion.totalGeneral.evidencias}</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-3 text-center">
+                          <p className="text-2xl font-bold">{pasosEvaluados}</p>
+                          <p className="text-xs text-muted-foreground">Pasos Evaluados</p>
+                          <p className="text-xs text-muted-foreground">de {totalPasos}</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-3 text-center">
+                          <p className="text-2xl font-bold" style={{ color: (evaluacion?.porcentajeCumplimiento || 0) >= 80 ? '#28a745' : (evaluacion?.porcentajeCumplimiento || 0) >= 60 ? '#FF9800' : '#D32F2F' }}>
+                            {evaluacion?.porcentajeCumplimiento || 0}%
+                          </p>
+                          <p className="text-xs text-muted-foreground">Cumplimiento</p>
+                          <p className="text-xs text-muted-foreground">{evaluacion?.puntajeTotal || 0}/{evaluacion?.puntajeMaximo || 0} pts</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+
+                  {(['planear', 'hacer', 'verificar', 'actuar'] as const).map(fase => {
+                    const faseConfig = {
+                      planear: { nombre: 'PLANEAR', color: '#2196F3', icon: 'P' },
+                      hacer: { nombre: 'HACER', color: '#4CAF50', icon: 'H' },
+                      verificar: { nombre: 'VERIFICAR', color: '#FFEB3B', textColor: '#333', icon: 'V' },
+                      actuar: { nombre: 'ACTUAR', color: '#D32F2F', icon: 'A' },
+                    }[fase];
+                    const pasosFase = pasos.filter(p => p.fase === fase);
+                    return (
+                      <div key={fase} className="mb-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div
+                            className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
+                            style={{ backgroundColor: faseConfig.color, color: faseConfig.textColor || 'white' }}
+                          >
+                            {faseConfig.icon}
+                          </div>
+                          <h3 className="font-semibold text-sm">{faseConfig.nombre} ({pasosFase.length} pasos)</h3>
+                        </div>
+                        <div className="border rounded-md overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="bg-muted/50">
+                                <th className="text-left p-2 font-medium w-16">Código</th>
+                                <th className="text-left p-2 font-medium">Paso</th>
+                                <th className="text-center p-2 font-medium w-20">Estado</th>
+                                <th className="text-center p-2 font-medium w-20">Puntaje</th>
+                                <th className="text-center p-2 font-medium w-24">Criterios</th>
+                                <th className="text-center p-2 font-medium w-24">Evidencias</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {pasosFase.map((paso, idx) => {
+                                const respuesta = respuestas.find(r => r.pasoId === paso.codigo);
+                                const resumenPaso = resumenVerificacion?.pasos?.[paso.codigo];
+                                const critVerif = resumenPaso?.criteriosVerificados || 0;
+                                const critTotal = resumenPaso?.totalCriterios || 0;
+                                const evidAdj = resumenPaso?.evidenciasConArchivo || 0;
+                                const evidTotal = resumenPaso?.totalEvidencias || 0;
+                                return (
+                                  <tr
+                                    key={paso.codigo}
+                                    className={`border-t cursor-pointer hover-elevate ${idx % 2 === 0 ? '' : 'bg-muted/20'}`}
+                                    onClick={() => {
+                                      handlePasoClick(paso);
+                                    }}
+                                    data-testid={`resumen-row-${paso.codigo}`}
+                                  >
+                                    <td className="p-2 font-mono text-xs font-medium">{paso.codigo}</td>
+                                    <td className="p-2 text-xs">{paso.nombre}</td>
+                                    <td className="p-2 text-center">{getEstadoBadge(paso)}</td>
+                                    <td className="p-2 text-center text-xs font-mono">
+                                      {respuesta?.cumple === 1 ? paso.puntajeMaximo : 0}/{paso.puntajeMaximo}
+                                    </td>
+                                    <td className="p-2 text-center">
+                                      {critTotal > 0 ? (
+                                        <div className="flex flex-col items-center gap-0.5">
+                                          <span className={`text-xs font-medium ${critVerif === critTotal ? 'text-green-600' : ''}`}>
+                                            {critVerif}/{critTotal}
+                                          </span>
+                                          <Progress value={critTotal > 0 ? (critVerif / critTotal) * 100 : 0} className="h-1 w-14" />
+                                        </div>
+                                      ) : (
+                                        <span className="text-xs text-muted-foreground">-</span>
+                                      )}
+                                    </td>
+                                    <td className="p-2 text-center">
+                                      {evidTotal > 0 ? (
+                                        <div className="flex flex-col items-center gap-0.5">
+                                          <span className={`text-xs font-medium ${evidAdj === evidTotal ? 'text-green-600' : ''}`}>
+                                            {evidAdj}/{evidTotal}
+                                          </span>
+                                          <Progress value={evidTotal > 0 ? (evidAdj / evidTotal) * 100 : 0} className="h-1 w-14" />
+                                        </div>
+                                      ) : (
+                                        <span className="text-xs text-muted-foreground">-</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       <Dialog open={respuestaDialogOpen} onOpenChange={setRespuestaDialogOpen}>
@@ -1293,7 +1482,58 @@ export default function DetalleEvaluacionPesv() {
                 </div>
               )}
 
-              {/* ADD-ONLY: Botón para ir al módulo PESV relacionado */}
+              {selectedPaso && (() => {
+                const historialItems: Array<{ tipo: string; texto: string; quien: string; fecha: Date }> = [];
+                criteriosDb.filter(c => c.verificado === 1 && c.fechaVerificacion).forEach(c => {
+                  historialItems.push({
+                    tipo: 'criterio',
+                    texto: c.criterioTexto,
+                    quien: c.verificadoNombre || 'Usuario',
+                    fecha: new Date(c.fechaVerificacion!),
+                  });
+                });
+                evidenciasDb.filter(e => e.archivoUrl && e.fechaSubida).forEach(e => {
+                  historialItems.push({
+                    tipo: 'evidencia',
+                    texto: e.evidenciaTexto,
+                    quien: e.subidoNombre || 'Usuario',
+                    fecha: new Date(e.fechaSubida!),
+                  });
+                });
+                historialItems.sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
+                if (historialItems.length === 0) return null;
+                return (
+                  <div className="border-t pt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                        <Activity className="h-4 w-4" />
+                        Historial de Cambios
+                      </p>
+                      <Badge variant="outline">{historialItems.length}</Badge>
+                    </div>
+                    <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                      {historialItems.map((item, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-xs p-2 rounded bg-muted/30" data-testid={`historial-item-${idx}`}>
+                          {item.tipo === 'criterio' ? (
+                            <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0 mt-0.5" />
+                          ) : (
+                            <Paperclip className="h-3.5 w-3.5 text-blue-600 shrink-0 mt-0.5" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-foreground truncate">
+                              {item.tipo === 'criterio' ? 'Criterio verificado' : 'Evidencia adjuntada'}: {item.texto}
+                            </p>
+                            <p className="text-muted-foreground">
+                              {item.quien} — {item.fecha.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {selectedPaso?.moduloPesvUrl && (
                 <div className="border-t pt-4">
                   <Link href={selectedPaso.moduloPesvUrl.includes(':evaluacionId') ? selectedPaso.moduloPesvUrl.replace(':evaluacionId', id!) : `/pesv/evaluacion/${id}${selectedPaso.moduloPesvUrl.replace('/pesv', '')}`}>
