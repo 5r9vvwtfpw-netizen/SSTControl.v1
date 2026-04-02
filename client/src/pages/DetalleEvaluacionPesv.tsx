@@ -7,16 +7,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Check, X, MinusCircle, RefreshCcw, FileText, Car, ClipboardList, Hammer, CheckSquare, AlertCircle, ClipboardCheck, AlertTriangle, GraduationCap, ExternalLink, Users, Stethoscope, Wrench, Settings, BarChart3, Activity, Siren, AlertOctagon, LucideIcon, Sparkles, BookOpen, Wand2, CheckCircle2, FileCheck, Lock } from "lucide-react";
+import { ArrowLeft, Save, Check, X, MinusCircle, RefreshCcw, FileText, Car, ClipboardList, Hammer, CheckSquare, AlertCircle, ClipboardCheck, AlertTriangle, GraduationCap, ExternalLink, Users, Stethoscope, Wrench, Settings, BarChart3, Activity, Siren, AlertOctagon, LucideIcon, Sparkles, BookOpen, Wand2, CheckCircle2, FileCheck, Lock, Upload, Trash2, Loader2, Paperclip, CheckCircle, Circle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "wouter";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { setPesvEvaluacionContext } from "@/components/BackToPesvEvaluationButton";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { EvaluacionPesv, PasoPesv, RespuestaPasoPesv, insertRespuestaPasoPesvSchema } from "@shared/schema";
+import { EvaluacionPesv, PasoPesv, RespuestaPasoPesv, PesvCriterioVerificacion, PesvEvidenciaDocumento, insertRespuestaPasoPesvSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -65,6 +66,8 @@ export default function DetalleEvaluacionPesv() {
   const [respuestaDialogOpen, setRespuestaDialogOpen] = useState(false);
   const [autoFilledFields, setAutoFilledFields] = useState<Record<string, boolean>>({});
   const [finalizarDialogOpen, setFinalizarDialogOpen] = useState(false);
+  const [criteriosLocales, setCriteriosLocales] = useState<Record<number, boolean>>({});
+  const [uploadingEvidencia, setUploadingEvidencia] = useState<number | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -92,6 +95,107 @@ export default function DetalleEvaluacionPesv() {
     },
     enabled: !!evaluacion?.nivel,
   });
+
+  const [criteriosDb, setCriteriosDb] = useState<PesvCriterioVerificacion[]>([]);
+  const [evidenciasDb, setEvidenciasDb] = useState<PesvEvidenciaDocumento[]>([]);
+  const [criteriosLoading, setCriteriosLoading] = useState(false);
+
+  const fetchCriteriosYEvidencias = useCallback(async (evaluacionId: string, pasoId: string) => {
+    setCriteriosLoading(true);
+    try {
+      const [criteriosRes, evidenciasRes] = await Promise.all([
+        fetch(`/api/evaluaciones-pesv/${evaluacionId}/criterios?pasoId=${pasoId}`, { credentials: "include" }),
+        fetch(`/api/evaluaciones-pesv/${evaluacionId}/evidencias-docs?pasoId=${pasoId}`, { credentials: "include" }),
+      ]);
+      const criterios = criteriosRes.ok ? await criteriosRes.json() : [];
+      const evidencias = evidenciasRes.ok ? await evidenciasRes.json() : [];
+      setCriteriosDb(criterios);
+      setEvidenciasDb(evidencias);
+      const estado: Record<number, boolean> = {};
+      criterios.forEach((c: PesvCriterioVerificacion) => { estado[c.criterioIndex] = c.verificado === 1; });
+      setCriteriosLocales(estado);
+    } catch {
+      setCriteriosDb([]);
+      setEvidenciasDb([]);
+    } finally {
+      setCriteriosLoading(false);
+    }
+  }, []);
+
+  const inicializarYCargar = useCallback(async (paso: PasoPesvData, evaluacionId: string) => {
+    try {
+      await apiRequest("POST", `/api/evaluaciones-pesv/${evaluacionId}/inicializar-criterios`, {
+        pasoId: paso.codigo,
+        criterios: paso.criteriosVerificacion,
+        evidencias: paso.evidenciasRequeridas,
+      });
+    } catch {}
+    await fetchCriteriosYEvidencias(evaluacionId, paso.codigo);
+  }, [fetchCriteriosYEvidencias]);
+
+  const handleToggleCriterio = async (idx: number, criterioTexto: string) => {
+    const nuevoEstado = !criteriosLocales[idx];
+    setCriteriosLocales(prev => ({ ...prev, [idx]: nuevoEstado }));
+    try {
+      await apiRequest("POST", `/api/evaluaciones-pesv/${id}/criterios`, {
+        pasoId: selectedPaso?.codigo,
+        criterioIndex: idx,
+        criterioTexto,
+        verificado: nuevoEstado,
+      });
+      if (id && selectedPaso) {
+        await fetchCriteriosYEvidencias(id, selectedPaso.codigo);
+      }
+    } catch {
+      setCriteriosLocales(prev => ({ ...prev, [idx]: !nuevoEstado }));
+    }
+  };
+
+  const handleFileUpload = async (evidenciaIndex: number, evidenciaTexto: string, file: File) => {
+    setUploadingEvidencia(evidenciaIndex);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData, credentials: "include" });
+      if (!uploadRes.ok) throw new Error("Error al subir archivo");
+      const { url } = await uploadRes.json();
+      await apiRequest("POST", `/api/evaluaciones-pesv/${id}/evidencias-docs`, {
+        pasoId: selectedPaso?.codigo,
+        evidenciaIndex,
+        evidenciaTexto,
+        archivoUrl: url,
+        archivoNombre: file.name,
+        archivoTipo: file.type,
+        archivoTamanio: file.size,
+      });
+      if (id && selectedPaso) {
+        await fetchCriteriosYEvidencias(id, selectedPaso.codigo);
+      }
+      setUploadingEvidencia(null);
+      toast({ title: "Archivo adjuntado", description: "La evidencia se ha adjuntado correctamente", className: "bg-green-50 border-green-200" });
+    } catch {
+      setUploadingEvidencia(null);
+      toast({ title: "Error", description: "No se pudo subir el archivo", variant: "destructive" });
+    }
+  };
+
+  const handleRemoveEvidencia = async (evidenciaId: string) => {
+    try {
+      await apiRequest("DELETE", `/api/evaluaciones-pesv/${id}/evidencias-docs/${evidenciaId}`);
+      if (id && selectedPaso) {
+        await fetchCriteriosYEvidencias(id, selectedPaso.codigo);
+      }
+      toast({ title: "Archivo eliminado", description: "El archivo de evidencia ha sido removido", className: "bg-green-50 border-green-200" });
+    } catch {
+      toast({ title: "Error", description: "No se pudo eliminar el archivo", variant: "destructive" });
+    }
+  };
+
+  const criteriosVerificados = Object.values(criteriosLocales).filter(Boolean).length;
+  const totalCriteriosPaso = selectedPaso?.criteriosVerificacion.length || 0;
+  const porcentajeCriterios = totalCriteriosPaso > 0 ? Math.round((criteriosVerificados / totalCriteriosPaso) * 100) : 0;
+  const evidenciasAdjuntas = evidenciasDb.filter(e => e.archivoUrl).length;
+  const totalEvidenciasPaso = selectedPaso?.evidenciasRequeridas.length || 0;
 
   const getPasosParaNivel = (): PasoPesvData[] => {
     if (!evaluacion?.nivel) return [];
@@ -240,6 +344,10 @@ export default function DetalleEvaluacionPesv() {
     }
     
     setSelectedPaso(paso);
+    setCriteriosLocales({});
+    setCriteriosDb([]);
+    setEvidenciasDb([]);
+    if (id) inicializarYCargar(paso, id);
     const existing = respuestas.find(r => r.pasoId === paso.codigo);
     
     if (existing) {
@@ -1037,29 +1145,151 @@ export default function DetalleEvaluacionPesv() {
 
               {selectedPaso && (
                 <div className="border-t pt-4">
-                  <p className="text-sm font-medium mb-2 text-muted-foreground">Criterios de Verificación</p>
-                  <ul className="text-sm space-y-1">
-                    {selectedPaso.criteriosVerificacion.map((criterio, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <Check className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        {criterio}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-muted-foreground">Criterios de Verificación</p>
+                    <Badge variant={porcentajeCriterios === 100 ? "default" : "outline"} className={porcentajeCriterios === 100 ? "bg-green-500/10 text-green-700 dark:text-green-400" : ""}>
+                      {criteriosVerificados}/{totalCriteriosPaso}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {selectedPaso.criteriosVerificacion.map((criterio, idx) => {
+                      const isVerified = criteriosLocales[idx] || false;
+                      const isLocked = evaluacion?.estado === "completada" || evaluacion?.estado === "enviada";
+                      const dbCriterio = criteriosDb.find(c => c.criterioIndex === idx);
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex items-start gap-3 p-2 rounded-md transition-colors cursor-pointer ${isVerified ? "bg-green-50 dark:bg-green-950/30" : "bg-muted/30"}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (!isLocked) handleToggleCriterio(idx, criterio);
+                          }}
+                          data-testid={`criterio-${selectedPaso.codigo}-${idx}`}
+                        >
+                          <Checkbox
+                            checked={isVerified}
+                            disabled={isLocked}
+                            className="mt-0.5 pointer-events-none"
+                            data-testid={`checkbox-criterio-${selectedPaso.codigo}-${idx}`}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm ${isVerified ? "text-green-700 dark:text-green-400" : ""}`}>{criterio}</p>
+                            {isVerified && dbCriterio?.verificadoNombre && (
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Verificado por {dbCriterio.verificadoNombre}
+                                {dbCriterio.fechaVerificacion && ` - ${new Date(dbCriterio.fechaVerificacion).toLocaleDateString('es-CO')}`}
+                              </p>
+                            )}
+                          </div>
+                          {isVerified ? (
+                            <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                          ) : (
+                            <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {totalCriteriosPaso > 0 && (
+                    <div className="mt-2">
+                      <Progress value={porcentajeCriterios} className="h-1.5" />
+                    </div>
+                  )}
+                  {porcentajeCriterios === 100 && (
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Todos los criterios verificados — sugiere valoración "Cumple"
+                    </p>
+                  )}
                 </div>
               )}
 
               {selectedPaso && (
                 <div className="border-t pt-4">
-                  <p className="text-sm font-medium mb-2 text-muted-foreground">Evidencias Requeridas</p>
-                  <ul className="text-sm space-y-1">
-                    {selectedPaso.evidenciasRequeridas.map((evidencia, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        {evidencia}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-muted-foreground">Evidencias Requeridas</p>
+                    <Badge variant={evidenciasAdjuntas === totalEvidenciasPaso && totalEvidenciasPaso > 0 ? "default" : "outline"} className={evidenciasAdjuntas === totalEvidenciasPaso && totalEvidenciasPaso > 0 ? "bg-green-500/10 text-green-700 dark:text-green-400" : ""}>
+                      {evidenciasAdjuntas}/{totalEvidenciasPaso}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {selectedPaso.evidenciasRequeridas.map((evidencia, idx) => {
+                      const dbEvidencia = evidenciasDb.find(e => e.evidenciaIndex === idx);
+                      const hasFile = !!dbEvidencia?.archivoUrl;
+                      const isLocked = evaluacion?.estado === "completada" || evaluacion?.estado === "enviada";
+                      const isUploading = uploadingEvidencia === idx;
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex items-start gap-3 p-2 rounded-md ${hasFile ? "bg-green-50 dark:bg-green-950/30" : "bg-muted/30"}`}
+                          data-testid={`evidencia-${selectedPaso.codigo}-${idx}`}
+                        >
+                          {hasFile ? (
+                            <Paperclip className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                          ) : (
+                            <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm ${hasFile ? "text-green-700 dark:text-green-400" : ""}`}>{evidencia}</p>
+                            {hasFile && dbEvidencia && (
+                              <div className="flex items-center gap-2 mt-1">
+                                <a
+                                  href={dbEvidencia.archivoUrl!}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[200px]"
+                                  data-testid={`link-evidencia-${selectedPaso.codigo}-${idx}`}
+                                >
+                                  {dbEvidencia.archivoNombre}
+                                </a>
+                                {!isLocked && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={(e) => { e.stopPropagation(); handleRemoveEvidencia(dbEvidencia.id); }}
+                                    data-testid={`button-remove-evidencia-${selectedPaso.codigo}-${idx}`}
+                                  >
+                                    <Trash2 className="h-3 w-3 text-red-500" />
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                            {hasFile && dbEvidencia?.subidoNombre && (
+                              <p className="text-xs text-muted-foreground">
+                                Por {dbEvidencia.subidoNombre}
+                                {dbEvidencia.fechaSubida && ` - ${new Date(dbEvidencia.fechaSubida).toLocaleDateString('es-CO')}`}
+                              </p>
+                            )}
+                          </div>
+                          {!hasFile && !isLocked && (
+                            <div className="flex-shrink-0">
+                              {isUploading ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                              ) : (
+                                <label className="cursor-pointer">
+                                  <input
+                                    type="file"
+                                    className="hidden"
+                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) handleFileUpload(idx, evidencia, file);
+                                      e.target.value = '';
+                                    }}
+                                    data-testid={`input-file-evidencia-${selectedPaso.codigo}-${idx}`}
+                                  />
+                                  <Upload className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                                </label>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 

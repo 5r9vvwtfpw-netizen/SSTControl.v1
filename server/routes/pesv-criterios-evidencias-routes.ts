@@ -29,12 +29,30 @@ function getUserDisplayName(user: any): string {
 export function registerPesvCriteriosEvidenciasRoutes(app: Express) {
   const requireAuth = authRequireAuth;
 
+  async function verifyEvaluacionAccess(req: Request, evaluacionId: string): Promise<{ allowed: boolean; evaluacion?: any; error?: string }> {
+    const evaluacion = await db.select().from(evaluacionesPesv).where(eq(evaluacionesPesv.id, evaluacionId)).then(r => r[0]);
+    if (!evaluacion) return { allowed: false, error: 'Evaluación no encontrada' };
+    const companyId = getEffectiveCompanyId(req);
+    const user = (req as any).user;
+    const globalRoles = ['superadmin', 'support_admin', 'support_viewer', 'lso'];
+    if (companyId && !globalRoles.includes(user?.role) && evaluacion.companyId !== companyId) {
+      return { allowed: false, error: 'No tiene acceso a esta evaluación' };
+    }
+    return { allowed: true, evaluacion };
+  }
+
+  function isEvaluacionLocked(evaluacion: any): boolean {
+    return evaluacion?.estado === 'completada' || evaluacion?.estado === 'enviada';
+  }
+
   app.get('/api/evaluaciones-pesv/:evaluacionId/criterios',
     requireAuth,
     requirePermission('sst_management:view'),
     async (req: Request, res: Response) => {
       try {
         const { evaluacionId } = req.params;
+        const access = await verifyEvaluacionAccess(req, evaluacionId);
+        if (!access.allowed) return res.status(403).json({ error: access.error });
         const pasoId = req.query.pasoId as string | undefined;
 
         let conditions = eq(pesvCriteriosVerificacion.evaluacionId, evaluacionId);
@@ -61,6 +79,9 @@ export function registerPesvCriteriosEvidenciasRoutes(app: Express) {
     async (req: Request, res: Response) => {
       try {
         const { evaluacionId } = req.params;
+        const access = await verifyEvaluacionAccess(req, evaluacionId);
+        if (!access.allowed) return res.status(403).json({ error: access.error });
+        if (isEvaluacionLocked(access.evaluacion)) return res.status(403).json({ error: 'La evaluación está completada o enviada y no permite modificaciones' });
         const user = (req as any).user;
         const { pasoId, criterioIndex, criterioTexto, verificado, observacion, respuestaPasoId } = req.body;
 
@@ -121,6 +142,9 @@ export function registerPesvCriteriosEvidenciasRoutes(app: Express) {
     async (req: Request, res: Response) => {
       try {
         const { evaluacionId } = req.params;
+        const access = await verifyEvaluacionAccess(req, evaluacionId);
+        if (!access.allowed) return res.status(403).json({ error: access.error });
+        if (isEvaluacionLocked(access.evaluacion)) return res.status(403).json({ error: 'La evaluación está completada o enviada y no permite modificaciones' });
         const user = (req as any).user;
         const { pasoId, criterios, respuestaPasoId } = req.body;
 
@@ -185,6 +209,8 @@ export function registerPesvCriteriosEvidenciasRoutes(app: Express) {
     async (req: Request, res: Response) => {
       try {
         const { evaluacionId } = req.params;
+        const access = await verifyEvaluacionAccess(req, evaluacionId);
+        if (!access.allowed) return res.status(403).json({ error: access.error });
         const pasoId = req.query.pasoId as string | undefined;
 
         let conditions = eq(pesvEvidenciasDocumentos.evaluacionId, evaluacionId);
@@ -211,6 +237,9 @@ export function registerPesvCriteriosEvidenciasRoutes(app: Express) {
     async (req: Request, res: Response) => {
       try {
         const { evaluacionId } = req.params;
+        const access = await verifyEvaluacionAccess(req, evaluacionId);
+        if (!access.allowed) return res.status(403).json({ error: access.error });
+        if (isEvaluacionLocked(access.evaluacion)) return res.status(403).json({ error: 'La evaluación está completada o enviada y no permite modificaciones' });
         const user = (req as any).user;
         const { pasoId, evidenciaIndex, evidenciaTexto, archivoUrl, archivoNombre, archivoTipo, archivoTamanio, observacion, respuestaPasoId } = req.body;
 
@@ -276,7 +305,10 @@ export function registerPesvCriteriosEvidenciasRoutes(app: Express) {
     requirePermission('sst_management:delete'),
     async (req: Request, res: Response) => {
       try {
-        const { evidenciaId } = req.params;
+        const { evaluacionId, evidenciaId } = req.params;
+        const access = await verifyEvaluacionAccess(req, evaluacionId);
+        if (!access.allowed) return res.status(403).json({ error: access.error });
+        if (isEvaluacionLocked(access.evaluacion)) return res.status(403).json({ error: 'La evaluación está completada o enviada y no permite modificaciones' });
 
         const [deleted] = await db.update(pesvEvidenciasDocumentos)
           .set({
@@ -310,6 +342,8 @@ export function registerPesvCriteriosEvidenciasRoutes(app: Express) {
     async (req: Request, res: Response) => {
       try {
         const { evaluacionId } = req.params;
+        const access = await verifyEvaluacionAccess(req, evaluacionId);
+        if (!access.allowed) return res.status(403).json({ error: access.error });
 
         const criterios = await db.select()
           .from(pesvCriteriosVerificacion)
@@ -399,6 +433,9 @@ export function registerPesvCriteriosEvidenciasRoutes(app: Express) {
     async (req: Request, res: Response) => {
       try {
         const { evaluacionId } = req.params;
+        const access = await verifyEvaluacionAccess(req, evaluacionId);
+        if (!access.allowed) return res.status(403).json({ error: access.error });
+        if (isEvaluacionLocked(access.evaluacion)) return res.status(403).json({ error: 'La evaluación está completada o enviada y no permite modificaciones' });
         const { pasoId, criterios, evidencias, respuestaPasoId } = req.body;
 
         if (!pasoId || !Array.isArray(criterios) || !Array.isArray(evidencias)) {
