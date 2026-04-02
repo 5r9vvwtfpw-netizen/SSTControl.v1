@@ -46181,6 +46181,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   const { registerPesvPdfRoutes } = await import("./routes/pesv-pdf-routes");
   registerPesvPdfRoutes(app);
 
+  const { registerPesvCriteriosEvidenciasRoutes } = await import("./routes/pesv-criterios-evidencias-routes");
+  registerPesvCriteriosEvidenciasRoutes(app);
+
   // ========== EVALUACIONES PESV ROUTES ==========
   // Rutas para evaluaciones del Plan Estratégico de Seguridad Vial (Resolución 40595/2022)
 

@@ -9693,6 +9693,57 @@ export type InsertAccionMejoraPesv = z.infer<typeof insertAccionMejoraPesvSchema
 export type AccionMejoraPesv = typeof accionesMejoraPesv.$inferSelect;
 
 // ============================================================================
+// CRITERIOS DE VERIFICACIÓN Y EVIDENCIAS PESV
+// Resolución 40595/2022 - Gestión individual de criterios y evidencias por paso
+// ADD-ONLY: Nuevas tablas - no modifica código existente
+// ============================================================================
+
+export const pesvCriteriosVerificacion = pgTable("pesv_criterios_verificacion", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  evaluacionId: varchar("evaluacion_id").notNull().references(() => evaluacionesPesv.id, { onDelete: "cascade" }),
+  respuestaPasoId: varchar("respuesta_paso_id").references(() => respuestasPasosPesv.id, { onDelete: "cascade" }),
+  pasoId: varchar("paso_id").notNull(),
+  criterioIndex: integer("criterio_index").notNull(),
+  criterioTexto: text("criterio_texto").notNull(),
+  verificado: integer("verificado").notNull().default(0),
+  verificadoPor: varchar("verificado_por"),
+  verificadoNombre: varchar("verificado_nombre"),
+  fechaVerificacion: timestamp("fecha_verificacion"),
+  observacion: text("observacion"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+export const pesvEvidenciasDocumentos = pgTable("pesv_evidencias_documentos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  evaluacionId: varchar("evaluacion_id").notNull().references(() => evaluacionesPesv.id, { onDelete: "cascade" }),
+  respuestaPasoId: varchar("respuesta_paso_id").references(() => respuestasPasosPesv.id, { onDelete: "cascade" }),
+  pasoId: varchar("paso_id").notNull(),
+  evidenciaIndex: integer("evidencia_index").notNull(),
+  evidenciaTexto: text("evidencia_texto").notNull(),
+  archivoUrl: text("archivo_url"),
+  archivoNombre: text("archivo_nombre"),
+  archivoTipo: varchar("archivo_tipo"),
+  archivoTamanio: integer("archivo_tamanio"),
+  subidoPor: varchar("subido_por"),
+  subidoNombre: varchar("subido_nombre"),
+  fechaSubida: timestamp("fecha_subida"),
+  observacion: text("observacion"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+export const insertPesvCriterioVerificacionSchema = createInsertSchema(pesvCriteriosVerificacion)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertPesvCriterioVerificacion = z.infer<typeof insertPesvCriterioVerificacionSchema>;
+export type PesvCriterioVerificacion = typeof pesvCriteriosVerificacion.$inferSelect;
+
+export const insertPesvEvidenciaDocumentoSchema = createInsertSchema(pesvEvidenciasDocumentos)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertPesvEvidenciaDocumento = z.infer<typeof insertPesvEvidenciaDocumentoSchema>;
+export type PesvEvidenciaDocumento = typeof pesvEvidenciasDocumentos.$inferSelect;
+
+// ============================================================================
 // REVISIÓN POR LA ALTA DIRECCIÓN PESV - Ciclo Actuar (A02)
 // Resolución 40595/2022 - ISO 39001:2012 Cláusula 9.3
 // ADD-ONLY: Nueva tabla - no modifica código existente
