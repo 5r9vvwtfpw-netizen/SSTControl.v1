@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useEffect, useRef } from "react";
+import { createContext, ReactNode, useContext, useEffect, useRef, useMemo } from "react";
 import {
   useQuery,
   useMutation,
@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { User as SelectUser, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 const AUTH_CHANNEL_NAME = "sst-auth-channel";
 
@@ -32,8 +32,8 @@ type RegisterData = {
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { toast } = useToast();
   const authChannelRef = useRef<BroadcastChannel | null>(null);
+  const licenseAlertShownRef = useRef(false);
   
   const {
     data: user,
@@ -61,28 +61,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Alerta de vencimiento de licencia SST (Resolución 0312/2019)
   useEffect(() => {
-    if (!user?.sstLicenseExpiresAt) return;
+    if (!user?.sstLicenseExpiresAt || licenseAlertShownRef.current) return;
     
     const expiryDate = new Date(user.sstLicenseExpiresAt);
     const today = new Date();
     const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
     if (daysUntilExpiry <= 0 && user.sstLicenseStatus === 'vigente') {
+      licenseAlertShownRef.current = true;
       toast({
         title: "Licencia SST Vencida",
         description: "Su licencia SST ha vencido. Por favor renuévela para continuar gestionando programas de vigilancia epidemiológica.",
         variant: "destructive",
       });
     } else if (daysUntilExpiry > 0 && daysUntilExpiry <= 30) {
+      licenseAlertShownRef.current = true;
       toast({
         title: "Licencia SST por Vencer",
         description: `Su licencia SST vence en ${daysUntilExpiry} día${daysUntilExpiry !== 1 ? 's' : ''}. Recuerde renovarla para mantener sus credenciales vigentes.`,
         variant: "default",
       });
     }
-  }, [user?.sstLicenseExpiresAt, user?.sstLicenseStatus, toast]);
+  }, [user?.sstLicenseExpiresAt, user?.sstLicenseStatus]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
@@ -199,17 +200,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const contextValue = useMemo(() => ({
+    user: user ?? null,
+    isLoading,
+    error,
+    loginMutation,
+    logoutMutation,
+    registerMutation,
+  }), [user, isLoading, error, loginMutation, logoutMutation, registerMutation]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        user: user ?? null,
-        isLoading,
-        error,
-        loginMutation,
-        logoutMutation,
-        registerMutation,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

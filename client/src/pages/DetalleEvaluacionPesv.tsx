@@ -12,10 +12,36 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "wouter";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, Component, type ErrorInfo, type ReactNode } from "react";
 import { setPesvEvaluacionContext } from "@/components/BackToPesvEvaluationButton";
+
+class PesvErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("[PESV-ERROR-BOUNDARY] Caught error:", error.message);
+    console.error("[PESV-ERROR-BOUNDARY] Component stack:", errorInfo.componentStack);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-8 text-center" data-testid="pesv-error-boundary">
+          <h2 className="text-lg font-semibold text-red-600">Error en evaluación PESV</h2>
+          <p className="text-sm text-muted-foreground mt-2">{this.state.error?.message}</p>
+          <button className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded" onClick={() => this.setState({ hasError: false, error: null })}>Reintentar</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EvaluacionPesv, PasoPesv, RespuestaPasoPesv, PesvCriterioVerificacion, PesvEvidenciaDocumento, insertRespuestaPasoPesvSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -45,7 +71,7 @@ const ICONO_MAP: Record<string, LucideIcon> = {
   AlertOctagon,
 };
 
-export default function DetalleEvaluacionPesv() {
+function DetalleEvaluacionPesvInner() {
   const { id } = useParams();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -95,7 +121,7 @@ export default function DetalleEvaluacionPesv() {
     enabled: !!evaluacion?.nivel,
   });
 
-  const [criteriosLocalesPaso, setCriteriosLocalesPaso] = useState<Record<number, boolean>>({});
+  const [criteriosOverrides, setCriteriosOverrides] = useState<Record<number, boolean>>({});
   const [activePasoId, setActivePasoId] = useState<string | null>(null);
 
   interface VerificacionResumen {
@@ -125,6 +151,8 @@ export default function DetalleEvaluacionPesv() {
       return res.json();
     },
     enabled: !!id && selectedFase === 'resumen',
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: criteriosDb = [], isLoading: criteriosLoadingQuery, refetch: refetchCriterios } = useQuery<PesvCriterioVerificacion[]>({
@@ -135,6 +163,8 @@ export default function DetalleEvaluacionPesv() {
       return res.json();
     },
     enabled: !!id && !!activePasoId,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: evidenciasDb = [], refetch: refetchEvidencias } = useQuery<PesvEvidenciaDocumento[]>({
@@ -145,19 +175,24 @@ export default function DetalleEvaluacionPesv() {
       return res.json();
     },
     enabled: !!id && !!activePasoId,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const criteriosLoading = criteriosLoadingQuery && !!activePasoId;
 
-  useEffect(() => {
-    if (criteriosDb.length > 0) {
-      const estado: Record<number, boolean> = {};
-      criteriosDb.forEach((c: PesvCriterioVerificacion) => { estado[c.criterioIndex] = c.verificado === 1; });
-      setCriteriosLocalesPaso(estado);
-    }
+  const criteriosFromDb = useMemo(() => {
+    const estado: Record<number, boolean> = {};
+    criteriosDb.forEach((c: PesvCriterioVerificacion) => { estado[c.criterioIndex] = c.verificado === 1; });
+    return estado;
   }, [criteriosDb]);
 
+  const criteriosLocales = useMemo(() => {
+    return { ...criteriosFromDb, ...criteriosOverrides };
+  }, [criteriosFromDb, criteriosOverrides]);
+
   const refetchCriteriosYEvidencias = useCallback(() => {
+    setCriteriosOverrides({});
     refetchCriterios();
     refetchEvidencias();
   }, [refetchCriterios, refetchEvidencias]);
@@ -173,12 +208,9 @@ export default function DetalleEvaluacionPesv() {
     setActivePasoId(paso.codigo);
   }, []);
 
-  const criteriosLocales = criteriosLocalesPaso;
-  const setCriteriosLocales = setCriteriosLocalesPaso;
-
   const handleToggleCriterio = async (idx: number, criterioTexto: string) => {
     const nuevoEstado = !criteriosLocales[idx];
-    setCriteriosLocales(prev => ({ ...prev, [idx]: nuevoEstado }));
+    setCriteriosOverrides(prev => ({ ...prev, [idx]: nuevoEstado }));
     try {
       await apiRequest("POST", `/api/evaluaciones-pesv/${id}/criterios`, {
         pasoId: selectedPaso?.codigo,
@@ -188,7 +220,7 @@ export default function DetalleEvaluacionPesv() {
       });
       refetchCriteriosYEvidencias();
     } catch {
-      setCriteriosLocales(prev => ({ ...prev, [idx]: !nuevoEstado }));
+      setCriteriosOverrides(prev => ({ ...prev, [idx]: !nuevoEstado }));
     }
   };
 
@@ -263,6 +295,9 @@ export default function DetalleEvaluacionPesv() {
       inspeccionSstId: "",
     },
   });
+
+  const formNoAplica = useWatch({ control: respuestaForm.control, name: "noAplica" });
+  const formCumple = useWatch({ control: respuestaForm.control, name: "cumple" });
 
   const saveRespuestaMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertRespuestaPasoPesvSchema>) => {
@@ -381,7 +416,7 @@ export default function DetalleEvaluacionPesv() {
     }
     
     setSelectedPaso(paso);
-    setCriteriosLocalesPaso({});
+    setCriteriosOverrides({});
     setActivePasoId(null);
     if (id) inicializarYCargar(paso, id);
     const existing = respuestas.find(r => r.pasoId === paso.codigo);
@@ -967,7 +1002,7 @@ export default function DetalleEvaluacionPesv() {
       </Tabs>
 
       <Dialog open={respuestaDialogOpen} onOpenChange={setRespuestaDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Badge variant="outline" className="font-mono">{selectedPaso?.codigo}</Badge>
@@ -1051,7 +1086,7 @@ export default function DetalleEvaluacionPesv() {
                     <FormLabel>Valoración</FormLabel>
                     <Select 
                       value={
-                        respuestaForm.watch("noAplica") === 1 
+                        formNoAplica === 1 
                           ? "no_aplica" 
                           : field.value === 1 
                             ? "cumple" 
@@ -1134,7 +1169,7 @@ export default function DetalleEvaluacionPesv() {
                 )}
               />
 
-              {respuestaForm.watch("noAplica") === 1 && (
+              {formNoAplica === 1 && (
                 <FormField
                   control={respuestaForm.control}
                   name="justificacionNa"
@@ -1297,7 +1332,7 @@ export default function DetalleEvaluacionPesv() {
                 )}
               />
 
-              {respuestaForm.watch("cumple") === 0 && respuestaForm.watch("noAplica") === 0 && (
+              {formCumple === 0 && formNoAplica === 0 && (
                 <FormField
                   control={respuestaForm.control}
                   name="hallazgo"
@@ -1642,5 +1677,13 @@ export default function DetalleEvaluacionPesv() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+export default function DetalleEvaluacionPesv() {
+  return (
+    <PesvErrorBoundary>
+      <DetalleEvaluacionPesvInner />
+    </PesvErrorBoundary>
   );
 }
