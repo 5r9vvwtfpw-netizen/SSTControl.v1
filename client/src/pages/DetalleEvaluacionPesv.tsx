@@ -66,7 +66,6 @@ export default function DetalleEvaluacionPesv() {
   const [respuestaDialogOpen, setRespuestaDialogOpen] = useState(false);
   const [autoFilledFields, setAutoFilledFields] = useState<Record<string, boolean>>({});
   const [finalizarDialogOpen, setFinalizarDialogOpen] = useState(false);
-  const [criteriosLocales, setCriteriosLocales] = useState<Record<number, boolean>>({});
   const [uploadingEvidencia, setUploadingEvidencia] = useState<number | null>(null);
 
   useEffect(() => {
@@ -96,9 +95,8 @@ export default function DetalleEvaluacionPesv() {
     enabled: !!evaluacion?.nivel,
   });
 
-  const [criteriosDb, setCriteriosDb] = useState<PesvCriterioVerificacion[]>([]);
-  const [evidenciasDb, setEvidenciasDb] = useState<PesvEvidenciaDocumento[]>([]);
-  const [criteriosLoading, setCriteriosLoading] = useState(false);
+  const [criteriosLocalesPaso, setCriteriosLocalesPaso] = useState<Record<number, boolean>>({});
+  const [activePasoId, setActivePasoId] = useState<string | null>(null);
 
   interface VerificacionResumen {
     evaluacionId: string;
@@ -118,49 +116,51 @@ export default function DetalleEvaluacionPesv() {
       evidenciasConArchivo: number;
     };
   }
-  const [resumenVerificacion, setResumenVerificacion] = useState<VerificacionResumen | null>(null);
-  const [resumenLoading, setResumenLoading] = useState(false);
 
-  const fetchResumenVerificacion = useCallback(async () => {
-    if (!id) return;
-    setResumenLoading(true);
-    try {
+  const { data: resumenVerificacion = null, isLoading: resumenLoading } = useQuery<VerificacionResumen>({
+    queryKey: ["/api/evaluaciones-pesv", id, "verificacion-resumen"],
+    queryFn: async () => {
       const res = await fetch(`/api/evaluaciones-pesv/${id}/verificacion-resumen`, { credentials: "include" });
-      if (res.ok) {
-        setResumenVerificacion(await res.json());
-      }
-    } catch { /* silently fail */ } finally {
-      setResumenLoading(false);
-    }
-  }, [id]);
+      if (!res.ok) throw new Error("Error");
+      return res.json();
+    },
+    enabled: !!id && selectedFase === 'resumen',
+  });
+
+  const { data: criteriosDb = [], isLoading: criteriosLoadingQuery, refetch: refetchCriterios } = useQuery<PesvCriterioVerificacion[]>({
+    queryKey: ["/api/evaluaciones-pesv", id, "criterios", activePasoId],
+    queryFn: async () => {
+      const res = await fetch(`/api/evaluaciones-pesv/${id}/criterios?pasoId=${activePasoId}`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!id && !!activePasoId,
+  });
+
+  const { data: evidenciasDb = [], refetch: refetchEvidencias } = useQuery<PesvEvidenciaDocumento[]>({
+    queryKey: ["/api/evaluaciones-pesv", id, "evidencias-docs", activePasoId],
+    queryFn: async () => {
+      const res = await fetch(`/api/evaluaciones-pesv/${id}/evidencias-docs?pasoId=${activePasoId}`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!id && !!activePasoId,
+  });
+
+  const criteriosLoading = criteriosLoadingQuery && !!activePasoId;
 
   useEffect(() => {
-    if (selectedFase === 'resumen') {
-      fetchResumenVerificacion();
-    }
-  }, [selectedFase, fetchResumenVerificacion]);
-
-  const fetchCriteriosYEvidencias = useCallback(async (evaluacionId: string, pasoId: string) => {
-    setCriteriosLoading(true);
-    try {
-      const [criteriosRes, evidenciasRes] = await Promise.all([
-        fetch(`/api/evaluaciones-pesv/${evaluacionId}/criterios?pasoId=${pasoId}`, { credentials: "include" }),
-        fetch(`/api/evaluaciones-pesv/${evaluacionId}/evidencias-docs?pasoId=${pasoId}`, { credentials: "include" }),
-      ]);
-      const criterios = criteriosRes.ok ? await criteriosRes.json() : [];
-      const evidencias = evidenciasRes.ok ? await evidenciasRes.json() : [];
-      setCriteriosDb(criterios);
-      setEvidenciasDb(evidencias);
+    if (criteriosDb.length > 0) {
       const estado: Record<number, boolean> = {};
-      criterios.forEach((c: PesvCriterioVerificacion) => { estado[c.criterioIndex] = c.verificado === 1; });
-      setCriteriosLocales(estado);
-    } catch {
-      setCriteriosDb([]);
-      setEvidenciasDb([]);
-    } finally {
-      setCriteriosLoading(false);
+      criteriosDb.forEach((c: PesvCriterioVerificacion) => { estado[c.criterioIndex] = c.verificado === 1; });
+      setCriteriosLocalesPaso(estado);
     }
-  }, []);
+  }, [criteriosDb]);
+
+  const refetchCriteriosYEvidencias = useCallback(() => {
+    refetchCriterios();
+    refetchEvidencias();
+  }, [refetchCriterios, refetchEvidencias]);
 
   const inicializarYCargar = useCallback(async (paso: PasoPesvData, evaluacionId: string) => {
     try {
@@ -170,8 +170,11 @@ export default function DetalleEvaluacionPesv() {
         evidencias: paso.evidenciasRequeridas,
       });
     } catch {}
-    await fetchCriteriosYEvidencias(evaluacionId, paso.codigo);
-  }, [fetchCriteriosYEvidencias]);
+    setActivePasoId(paso.codigo);
+  }, []);
+
+  const criteriosLocales = criteriosLocalesPaso;
+  const setCriteriosLocales = setCriteriosLocalesPaso;
 
   const handleToggleCriterio = async (idx: number, criterioTexto: string) => {
     const nuevoEstado = !criteriosLocales[idx];
@@ -183,9 +186,7 @@ export default function DetalleEvaluacionPesv() {
         criterioTexto,
         verificado: nuevoEstado,
       });
-      if (id && selectedPaso) {
-        await fetchCriteriosYEvidencias(id, selectedPaso.codigo);
-      }
+      refetchCriteriosYEvidencias();
     } catch {
       setCriteriosLocales(prev => ({ ...prev, [idx]: !nuevoEstado }));
     }
@@ -208,9 +209,7 @@ export default function DetalleEvaluacionPesv() {
         archivoTipo: file.type,
         archivoTamanio: file.size,
       });
-      if (id && selectedPaso) {
-        await fetchCriteriosYEvidencias(id, selectedPaso.codigo);
-      }
+      refetchCriteriosYEvidencias();
       setUploadingEvidencia(null);
       toast({ title: "Archivo adjuntado", description: "La evidencia se ha adjuntado correctamente", className: "bg-green-50 border-green-200" });
     } catch {
@@ -222,9 +221,7 @@ export default function DetalleEvaluacionPesv() {
   const handleRemoveEvidencia = async (evidenciaId: string) => {
     try {
       await apiRequest("DELETE", `/api/evaluaciones-pesv/${id}/evidencias-docs/${evidenciaId}`);
-      if (id && selectedPaso) {
-        await fetchCriteriosYEvidencias(id, selectedPaso.codigo);
-      }
+      refetchCriteriosYEvidencias();
       toast({ title: "Archivo eliminado", description: "El archivo de evidencia ha sido removido", className: "bg-green-50 border-green-200" });
     } catch {
       toast({ title: "Error", description: "No se pudo eliminar el archivo", variant: "destructive" });
@@ -384,9 +381,8 @@ export default function DetalleEvaluacionPesv() {
     }
     
     setSelectedPaso(paso);
-    setCriteriosLocales({});
-    setCriteriosDb([]);
-    setEvidenciasDb([]);
+    setCriteriosLocalesPaso({});
+    setActivePasoId(null);
     if (id) inicializarYCargar(paso, id);
     const existing = respuestas.find(r => r.pasoId === paso.codigo);
     
