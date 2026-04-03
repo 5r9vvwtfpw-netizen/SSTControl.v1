@@ -12,8 +12,915 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "wouter";
-import { useState, useEffect, useCallback, useMemo, Component, type ErrorInfo, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, Component, type ErrorInfo, type ReactNode } from "react";
+import { FormProvider } from "react-hook-form";
 import { setPesvEvaluacionContext } from "@/components/BackToPesvEvaluationButton";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { EvaluacionPesv, PasoPesv, RespuestaPasoPesv, PesvCriterioVerificacion, PesvEvidenciaDocumento, insertRespuestaPasoPesvSchema } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation, useParams } from "wouter";
+import { z } from "zod";
+import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useCompanyContext } from "@/hooks/use-company-context";
+import { PasoPesvData, ModuloSstUrl, NIVELES_PESV_LABELS, FASES_PESV_LABELS, FASES_PESV_COLORS, PASOS_PESV } from "@/data/pasos-pesv";
+import { isModuleAllowedForChapter, type ChapterType } from "@shared/chapter-modules";
+
+function IsolatedFormProvider({ form, children }: { form: any; children: React.ReactNode }) {
+  return <FormProvider {...form}>{children}</FormProvider>;
+}
+
+interface RespuestaDialogProps {
+  open: boolean;
+  onClose: () => void;
+  paso: PasoPesvData | null;
+  evaluacionId: string;
+  evaluacion: EvaluacionPesv | undefined;
+  respuestas: RespuestaPasoPesv[];
+  companyChapter: string;
+  onSaved: (fase: string) => void;
+  toast: (opts: any) => void;
+}
+
+function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respuestas, companyChapter, onSaved, toast }: RespuestaDialogProps) {
+  const [formNoAplica, setFormNoAplica] = useState(0);
+  const [formCumple, setFormCumple] = useState(0);
+  const [autoFilledFields, setAutoFilledFields] = useState<Record<string, boolean>>({});
+  const [uploadingEvidencia, setUploadingEvidencia] = useState<number | null>(null);
+  const [criteriosOverrides, setCriteriosOverrides] = useState<Record<number, boolean>>({});
+  const [activePasoId, setActivePasoId] = useState<string | null>(null);
+  const initializedPasoRef = useRef<string | null>(null);
+
+  const respuestaForm = useForm<z.infer<typeof insertRespuestaPasoPesvSchema>>({
+    resolver: zodResolver(insertRespuestaPasoPesvSchema),
+    defaultValues: {
+      evaluacionId: evaluacionId || "",
+      pasoId: "",
+      cumple: 0,
+      noAplica: 0,
+      observaciones: "",
+      evidencias: "",
+      modoVerificacion: "",
+      hallazgo: "",
+      accidenteSstId: "",
+      capacitacionSstId: "",
+      inspeccionSstId: "",
+    },
+  });
+
+  const { data: criteriosDb = [], refetch: refetchCriterios } = useQuery<PesvCriterioVerificacion[]>({
+    queryKey: ["/api/evaluaciones-pesv", evaluacionId, "criterios", activePasoId],
+    queryFn: async () => {
+      const res = await fetch(`/api/evaluaciones-pesv/${evaluacionId}/criterios?pasoId=${activePasoId}`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!evaluacionId && !!activePasoId,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: evidenciasDb = [], refetch: refetchEvidencias } = useQuery<PesvEvidenciaDocumento[]>({
+    queryKey: ["/api/evaluaciones-pesv", evaluacionId, "evidencias-docs", activePasoId],
+    queryFn: async () => {
+      const res = await fetch(`/api/evaluaciones-pesv/${evaluacionId}/evidencias-docs?pasoId=${activePasoId}`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!evaluacionId && !!activePasoId,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
+  });
+
+  const criteriosFromDb = useMemo(() => {
+    const estado: Record<number, boolean> = {};
+    criteriosDb.forEach((c: PesvCriterioVerificacion) => { estado[c.criterioIndex] = c.verificado === 1; });
+    return estado;
+  }, [criteriosDb]);
+
+  const criteriosLocales = useMemo(() => {
+    return { ...criteriosFromDb, ...criteriosOverrides };
+  }, [criteriosFromDb, criteriosOverrides]);
+
+  const criteriosVerificados = Object.values(criteriosLocales).filter(Boolean).length;
+  const totalCriteriosPaso = paso?.criteriosVerificacion.length || 0;
+  const porcentajeCriterios = totalCriteriosPaso > 0 ? Math.round((criteriosVerificados / totalCriteriosPaso) * 100) : 0;
+  const evidenciasAdjuntas = evidenciasDb.filter(e => e.archivoUrl).length;
+  const totalEvidenciasPaso = paso?.evidenciasRequeridas.length || 0;
+
+  const refetchCriteriosYEvidencias = useCallback(() => {
+    setCriteriosOverrides({});
+    refetchCriterios();
+    refetchEvidencias();
+  }, [refetchCriterios, refetchEvidencias]);
+
+  const inicializarYCargar = useCallback(async (p: PasoPesvData, evId: string) => {
+    try {
+      await apiRequest("POST", `/api/evaluaciones-pesv/${evId}/inicializar-criterios`, {
+        pasoId: p.codigo,
+        criterios: p.criteriosVerificacion,
+        evidencias: p.evidenciasRequeridas,
+      });
+    } catch {}
+    setActivePasoId(p.codigo);
+  }, []);
+
+  const handleToggleCriterio = async (idx: number, criterioTexto: string) => {
+    const nuevoEstado = !criteriosLocales[idx];
+    setCriteriosOverrides(prev => ({ ...prev, [idx]: nuevoEstado }));
+    try {
+      await apiRequest("POST", `/api/evaluaciones-pesv/${evaluacionId}/criterios`, {
+        pasoId: paso?.codigo,
+        criterioIndex: idx,
+        criterioTexto,
+        verificado: nuevoEstado,
+      });
+      refetchCriteriosYEvidencias();
+    } catch {
+      setCriteriosOverrides(prev => ({ ...prev, [idx]: !nuevoEstado }));
+    }
+  };
+
+  const handleFileUpload = async (evidenciaIndex: number, evidenciaTexto: string, file: File) => {
+    setUploadingEvidencia(evidenciaIndex);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData, credentials: "include" });
+      if (!uploadRes.ok) throw new Error("Error al subir archivo");
+      const { url } = await uploadRes.json();
+      await apiRequest("POST", `/api/evaluaciones-pesv/${evaluacionId}/evidencias-docs`, {
+        pasoId: paso?.codigo,
+        evidenciaIndex,
+        evidenciaTexto,
+        archivoUrl: url,
+        archivoNombre: file.name,
+        archivoTipo: file.type,
+        archivoTamanio: file.size,
+      });
+      refetchCriteriosYEvidencias();
+      setUploadingEvidencia(null);
+      toast({ title: "Archivo adjuntado", description: "La evidencia se ha adjuntado correctamente", className: "bg-green-50 border-green-200" });
+    } catch {
+      setUploadingEvidencia(null);
+      toast({ title: "Error", description: "No se pudo subir el archivo", variant: "destructive" });
+    }
+  };
+
+  const handleRemoveEvidencia = async (evidenciaId: string) => {
+    try {
+      await apiRequest("DELETE", `/api/evaluaciones-pesv/${evaluacionId}/evidencias-docs/${evidenciaId}`);
+      refetchCriteriosYEvidencias();
+      toast({ title: "Archivo eliminado", description: "El archivo de evidencia ha sido removido", className: "bg-green-50 border-green-200" });
+    } catch {
+      toast({ title: "Error", description: "No se pudo eliminar el archivo", variant: "destructive" });
+    }
+  };
+
+  const saveRespuestaMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof insertRespuestaPasoPesvSchema>) => {
+      const dataWithPasoId = { ...data, pasoId: paso?.codigo || data.pasoId };
+      const res = await apiRequest("POST", `/api/evaluaciones-pesv/${evaluacionId}/respuestas`, dataWithPasoId);
+      return res.json();
+    },
+    onSuccess: async () => {
+      if (paso?.fase) {
+        onSaved(paso.fase);
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", evaluacionId, "respuestas"] });
+      onClose();
+      toast({
+        title: "Respuesta guardada",
+        description: "La respuesta del paso PESV se ha guardado exitosamente",
+        className: "bg-green-50 border-green-200",
+      });
+      try {
+        await apiRequest("POST", `/api/evaluaciones-pesv/${evaluacionId}/recalcular`, {});
+        queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", evaluacionId] });
+      } catch (e) {
+        console.warn("Error recalculando puntajes PESV:", e);
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmitRespuesta = (values: z.infer<typeof insertRespuestaPasoPesvSchema>) => {
+    if (!paso) return;
+    saveRespuestaMutation.mutate(values);
+  };
+
+  useEffect(() => {
+    if (!paso || !open) {
+      initializedPasoRef.current = null;
+      setActivePasoId(null);
+      return;
+    }
+    if (initializedPasoRef.current === paso.codigo) return;
+    initializedPasoRef.current = paso.codigo;
+
+    setCriteriosOverrides({});
+    setActivePasoId(null);
+
+    const existing = respuestas.find(r => r.pasoId === paso.codigo);
+
+    if (existing) {
+      setFormCumple(existing.cumple);
+      setFormNoAplica(existing.noAplica);
+      respuestaForm.reset({
+        evaluacionId: evaluacionId || "",
+        pasoId: paso.codigo,
+        cumple: existing.cumple,
+        noAplica: existing.noAplica,
+        observaciones: existing.observaciones || "",
+        evidencias: existing.evidencias || "",
+        modoVerificacion: existing.modoVerificacion || "",
+        hallazgo: existing.hallazgo || "",
+        accidenteSstId: existing.accidenteSstId || "",
+        capacitacionSstId: existing.capacitacionSstId || "",
+        inspeccionSstId: existing.inspeccionSstId || "",
+      });
+      setAutoFilledFields({});
+    } else {
+      const newAutoFilled: Record<string, boolean> = {};
+      const autoModo = paso.modoVerificacionSugerido?.length
+        ? paso.modoVerificacionSugerido.join("; ")
+        : "";
+      const autoEvidencias = paso.evidenciasRequeridas?.length
+        ? paso.evidenciasRequeridas.join("; ")
+        : "";
+      const autoObservaciones = paso.observacionesNoCumple || "";
+      const autoHallazgo = paso.hallazgoSugeridoNoCumple || "";
+      if (autoModo) newAutoFilled.modoVerificacion = true;
+      if (autoEvidencias) newAutoFilled.evidencias = true;
+      if (autoObservaciones) newAutoFilled.observaciones = true;
+      if (autoHallazgo) newAutoFilled.hallazgo = true;
+      setFormCumple(0);
+      setFormNoAplica(0);
+      respuestaForm.reset({
+        evaluacionId: evaluacionId || "",
+        pasoId: paso.codigo,
+        cumple: 0,
+        noAplica: 0,
+        observaciones: autoObservaciones,
+        evidencias: autoEvidencias,
+        modoVerificacion: autoModo,
+        hallazgo: autoHallazgo,
+        accidenteSstId: "",
+        capacitacionSstId: "",
+        inspeccionSstId: "",
+      });
+      setAutoFilledFields(newAutoFilled);
+    }
+
+    if (evaluacionId) {
+      inicializarYCargar(paso, evaluacionId);
+    }
+  }, [paso?.codigo, open]);
+
+  if (!paso) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Badge variant="outline" className="font-mono">{paso.codigo}</Badge>
+            {paso.nombre}
+          </DialogTitle>
+          <DialogDescription>
+            {paso.descripcion}
+          </DialogDescription>
+        </DialogHeader>
+
+        {paso.fundamentoNormativo && (
+          <Alert className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30" data-testid="alert-fundamento-normativo">
+            <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertDescription className="text-sm text-blue-700 dark:text-blue-300">
+              {paso.fundamentoNormativo}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!respuestas.find(r => r.pasoId === paso.codigo) && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+            <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+            <span className="text-sm text-amber-700 dark:text-amber-300">Todos los campos han sido auto-completados. Revise y ajuste si es necesario, luego guarde.</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="ml-auto gap-1 text-amber-600 dark:text-amber-400 flex-shrink-0"
+              onClick={() => {
+                const currentCumple = respuestaForm.getValues("cumple");
+                const currentNoAplica = respuestaForm.getValues("noAplica");
+                const newAutoFilled: Record<string, boolean> = {};
+                if (paso.modoVerificacionSugerido?.length) {
+                  respuestaForm.setValue("modoVerificacion", paso.modoVerificacionSugerido.join("; "));
+                  newAutoFilled.modoVerificacion = true;
+                }
+                if (paso.evidenciasRequeridas?.length) {
+                  respuestaForm.setValue("evidencias", paso.evidenciasRequeridas.join("; "));
+                  newAutoFilled.evidencias = true;
+                }
+                if (currentNoAplica === 1) {
+                  if (paso.justificacionNaSugerida) {
+                    respuestaForm.setValue("justificacionNa", paso.justificacionNaSugerida);
+                    newAutoFilled.justificacionNa = true;
+                  }
+                } else if (currentCumple === 1) {
+                  if (paso.observacionesCumple) {
+                    respuestaForm.setValue("observaciones", paso.observacionesCumple);
+                    newAutoFilled.observaciones = true;
+                  }
+                } else {
+                  if (paso.observacionesNoCumple) {
+                    respuestaForm.setValue("observaciones", paso.observacionesNoCumple);
+                    newAutoFilled.observaciones = true;
+                  }
+                  if (paso.hallazgoSugeridoNoCumple) {
+                    respuestaForm.setValue("hallazgo", paso.hallazgoSugeridoNoCumple);
+                    newAutoFilled.hallazgo = true;
+                  }
+                }
+                setAutoFilledFields(newAutoFilled);
+              }}
+              data-testid="button-autocompletar-todo"
+            >
+              <RefreshCcw className="h-3 w-3" />
+              Re-llenar
+            </Button>
+          </div>
+        )}
+
+        <IsolatedFormProvider form={respuestaForm}>
+          <form onSubmit={respuestaForm.handleSubmit(onSubmitRespuesta)} className="space-y-4">
+            <FormField
+              control={respuestaForm.control}
+              name="cumple"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Valoración</FormLabel>
+                  <Select 
+                    value={
+                      formNoAplica === 1 
+                        ? "no_aplica" 
+                        : field.value === 1 
+                          ? "cumple" 
+                          : "no_cumple"
+                    }
+                    onValueChange={(value) => {
+                      const newAutoFilled: Record<string, boolean> = {};
+                      const canReplace = (fieldName: string) => {
+                        const currentVal = respuestaForm.getValues(fieldName as any);
+                        return !currentVal || autoFilledFields[fieldName];
+                      };
+                      if (value === "no_aplica") {
+                        setFormNoAplica(1);
+                        setFormCumple(0);
+                        respuestaForm.setValue("noAplica", 1);
+                        respuestaForm.setValue("cumple", 0);
+                        if (canReplace("justificacionNa") && paso.justificacionNaSugerida) {
+                          respuestaForm.setValue("justificacionNa", paso.justificacionNaSugerida);
+                          newAutoFilled.justificacionNa = true;
+                        }
+                        if (autoFilledFields.observaciones) respuestaForm.setValue("observaciones", "");
+                        if (autoFilledFields.hallazgo) respuestaForm.setValue("hallazgo", "");
+                      } else if (value === "cumple") {
+                        setFormNoAplica(0);
+                        setFormCumple(1);
+                        respuestaForm.setValue("noAplica", 0);
+                        respuestaForm.setValue("cumple", 1);
+                        if (canReplace("observaciones") && paso.observacionesCumple) {
+                          respuestaForm.setValue("observaciones", paso.observacionesCumple);
+                          newAutoFilled.observaciones = true;
+                        }
+                        if (canReplace("modoVerificacion") && paso.modoVerificacionSugerido?.length) {
+                          respuestaForm.setValue("modoVerificacion", paso.modoVerificacionSugerido.join("; "));
+                          newAutoFilled.modoVerificacion = true;
+                        }
+                        if (autoFilledFields.hallazgo) respuestaForm.setValue("hallazgo", "");
+                      } else {
+                        setFormNoAplica(0);
+                        setFormCumple(0);
+                        respuestaForm.setValue("noAplica", 0);
+                        respuestaForm.setValue("cumple", 0);
+                        if (canReplace("observaciones") && paso.observacionesNoCumple) {
+                          respuestaForm.setValue("observaciones", paso.observacionesNoCumple);
+                          newAutoFilled.observaciones = true;
+                        }
+                        if (canReplace("hallazgo") && paso.hallazgoSugeridoNoCumple) {
+                          respuestaForm.setValue("hallazgo", paso.hallazgoSugeridoNoCumple);
+                          newAutoFilled.hallazgo = true;
+                        }
+                        if (canReplace("modoVerificacion") && paso.modoVerificacionSugerido?.length) {
+                          respuestaForm.setValue("modoVerificacion", paso.modoVerificacionSugerido.join("; "));
+                          newAutoFilled.modoVerificacion = true;
+                        }
+                      }
+                      setAutoFilledFields(newAutoFilled);
+                    }}
+                  >
+                    <FormControl>
+                      <SelectTrigger data-testid="select-valoracion">
+                        <SelectValue placeholder="Seleccione valoración" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="cumple">
+                        <span className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-green-600" />
+                          Cumple (100%)
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="no_cumple">
+                        <span className="flex items-center gap-2">
+                          <X className="h-4 w-4 text-red-600" />
+                          No Cumple (0%)
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="no_aplica">
+                        <span className="flex items-center gap-2">
+                          <MinusCircle className="h-4 w-4 text-gray-500" />
+                          No Aplica (N/A)
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {formNoAplica === 1 && (
+              <FormField
+                control={respuestaForm.control}
+                name="justificacionNa"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      Justificación "No Aplica"
+                      {autoFilledFields.justificacionNa && (
+                        <Badge variant="secondary" className="text-xs font-normal gap-1">
+                          <Sparkles className="h-3 w-3 text-amber-500" />
+                          Auto-completado
+                        </Badge>
+                      )}
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Justifique por qué este paso no aplica..."
+                        className="min-h-[60px]"
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="textarea-justificacion-no-aplica"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <FormField
+              control={respuestaForm.control}
+              name="modoVerificacion"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    Modo de Verificación
+                    {autoFilledFields.modoVerificacion && (
+                      <Badge variant="secondary" className="text-xs font-normal gap-1">
+                        <Sparkles className="h-3 w-3 text-amber-500" />
+                        Auto-completado
+                      </Badge>
+                    )}
+                  </FormLabel>
+                  {paso.modoVerificacionSugerido && paso.modoVerificacionSugerido.length > 0 ? (
+                    <Select
+                      value={field.value || ""}
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        setAutoFilledFields(prev => ({ ...prev, modoVerificacion: false }));
+                      }}
+                    >
+                      <FormControl>
+                        <SelectTrigger data-testid="select-modo-verificacion">
+                          <SelectValue placeholder="Seleccione modo de verificación..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {field.value && !paso.modoVerificacionSugerido.includes(field.value) && field.value !== paso.modoVerificacionSugerido.join("; ") && (
+                          <SelectItem value={field.value}>
+                            {field.value}
+                          </SelectItem>
+                        )}
+                        {paso.modoVerificacionSugerido.map((modo, idx) => (
+                          <SelectItem key={idx} value={modo}>
+                            {modo}
+                          </SelectItem>
+                        ))}
+                        {paso.modoVerificacionSugerido.length > 1 && (
+                          <SelectItem value={paso.modoVerificacionSugerido.join("; ")}>
+                            Todos los modos de verificación
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <FormControl>
+                      <Input 
+                        placeholder="Ej: Revisión documental, Entrevista, Inspección visual..."
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-modo-verificacion"
+                      />
+                    </FormControl>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={respuestaForm.control}
+              name="evidencias"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    Evidencias
+                    {paso.evidenciasRequeridas && paso.evidenciasRequeridas.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 text-xs text-amber-600 dark:text-amber-400"
+                        onClick={() => {
+                          if (!field.value) {
+                            field.onChange(paso.evidenciasRequeridas.join("; "));
+                            setAutoFilledFields(prev => ({ ...prev, evidencias: true }));
+                          }
+                        }}
+                        data-testid="button-autocompletar-evidencias"
+                      >
+                        <Wand2 className="h-3 w-3" />
+                        Auto-completar
+                      </Button>
+                    )}
+                    {autoFilledFields.evidencias && (
+                      <Badge variant="secondary" className="text-xs font-normal gap-1">
+                        <Sparkles className="h-3 w-3 text-amber-500" />
+                        Auto-completado
+                      </Badge>
+                    )}
+                  </FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="URL o descripción de las evidencias..."
+                      {...field}
+                      value={field.value || ""}
+                      data-testid="input-evidencias"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={respuestaForm.control}
+              name="observaciones"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    Observaciones
+                    {autoFilledFields.observaciones && (
+                      <Badge variant="secondary" className="text-xs font-normal gap-1">
+                        <Sparkles className="h-3 w-3 text-amber-500" />
+                        Auto-completado
+                      </Badge>
+                    )}
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Ingrese observaciones adicionales..."
+                      className="min-h-[80px]"
+                      {...field}
+                      value={field.value || ""}
+                      data-testid="textarea-observaciones"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {formCumple === 0 && formNoAplica === 0 && (
+              <FormField
+                control={respuestaForm.control}
+                name="hallazgo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      Hallazgo / No Conformidad
+                      {autoFilledFields.hallazgo && (
+                        <Badge variant="secondary" className="text-xs font-normal gap-1">
+                          <Sparkles className="h-3 w-3 text-amber-500" />
+                          Auto-completado
+                        </Badge>
+                      )}
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describa el hallazgo o no conformidad..."
+                        className="min-h-[80px]"
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="textarea-hallazgo"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-muted-foreground">Criterios de Verificación</p>
+                <Badge variant={porcentajeCriterios === 100 ? "default" : "outline"} className={porcentajeCriterios === 100 ? "bg-green-500/10 text-green-700 dark:text-green-400" : ""}>
+                  {criteriosVerificados}/{totalCriteriosPaso}
+                </Badge>
+              </div>
+              <div className="space-y-2">
+                {paso.criteriosVerificacion.map((criterio, idx) => {
+                  const isVerified = criteriosLocales[idx] || false;
+                  const isLocked = evaluacion?.estado === "completada" || evaluacion?.estado === "enviada";
+                  const dbCriterio = criteriosDb.find(c => c.criterioIndex === idx);
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex items-start gap-3 p-2 rounded-md transition-colors cursor-pointer ${isVerified ? "bg-green-50 dark:bg-green-950/30" : "bg-muted/30"}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!isLocked) handleToggleCriterio(idx, criterio);
+                      }}
+                      data-testid={`criterio-${paso.codigo}-${idx}`}
+                    >
+                      <Checkbox
+                        checked={isVerified}
+                        disabled={isLocked}
+                        className="mt-0.5 pointer-events-none"
+                        data-testid={`checkbox-criterio-${paso.codigo}-${idx}`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm ${isVerified ? "text-green-700 dark:text-green-400" : ""}`}>{criterio}</p>
+                        {isVerified && dbCriterio?.verificadoNombre && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Verificado por {dbCriterio.verificadoNombre}
+                            {dbCriterio.fechaVerificacion && ` - ${new Date(dbCriterio.fechaVerificacion).toLocaleDateString('es-CO')}`}
+                          </p>
+                        )}
+                      </div>
+                      {isVerified ? (
+                        <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {totalCriteriosPaso > 0 && (
+                <div className="mt-2">
+                  <Progress value={porcentajeCriterios} className="h-1.5" />
+                </div>
+              )}
+              {porcentajeCriterios === 100 && (
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Todos los criterios verificados — sugiere valoración "Cumple"
+                </p>
+              )}
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-muted-foreground">Evidencias Requeridas</p>
+                <Badge variant={evidenciasAdjuntas === totalEvidenciasPaso && totalEvidenciasPaso > 0 ? "default" : "outline"} className={evidenciasAdjuntas === totalEvidenciasPaso && totalEvidenciasPaso > 0 ? "bg-green-500/10 text-green-700 dark:text-green-400" : ""}>
+                  {evidenciasAdjuntas}/{totalEvidenciasPaso}
+                </Badge>
+              </div>
+              <div className="space-y-2">
+                {paso.evidenciasRequeridas.map((evidencia, idx) => {
+                  const dbEvidencia = evidenciasDb.find(e => e.evidenciaIndex === idx);
+                  const hasFile = !!dbEvidencia?.archivoUrl;
+                  const isLocked = evaluacion?.estado === "completada" || evaluacion?.estado === "enviada";
+                  const isUploading = uploadingEvidencia === idx;
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex items-start gap-3 p-2 rounded-md ${hasFile ? "bg-green-50 dark:bg-green-950/30" : "bg-muted/30"}`}
+                      data-testid={`evidencia-${paso.codigo}-${idx}`}
+                    >
+                      {hasFile ? (
+                        <Paperclip className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm ${hasFile ? "text-green-700 dark:text-green-400" : ""}`}>{evidencia}</p>
+                        {hasFile && dbEvidencia && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <a
+                              href={dbEvidencia.archivoUrl!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[200px]"
+                              data-testid={`link-evidencia-${paso.codigo}-${idx}`}
+                            >
+                              {dbEvidencia.archivoNombre}
+                            </a>
+                            {!isLocked && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={(e) => { e.stopPropagation(); handleRemoveEvidencia(dbEvidencia.id); }}
+                                data-testid={`button-remove-evidencia-${paso.codigo}-${idx}`}
+                              >
+                                <Trash2 className="h-3 w-3 text-red-500" />
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                        {hasFile && dbEvidencia?.subidoNombre && (
+                          <p className="text-xs text-muted-foreground">
+                            Por {dbEvidencia.subidoNombre}
+                            {dbEvidencia.fechaSubida && ` - ${new Date(dbEvidencia.fechaSubida).toLocaleDateString('es-CO')}`}
+                          </p>
+                        )}
+                      </div>
+                      {!hasFile && !isLocked && (
+                        <div className="flex-shrink-0">
+                          {isUploading ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          ) : (
+                            <label className="cursor-pointer">
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleFileUpload(idx, evidencia, file);
+                                  e.target.value = '';
+                                }}
+                                data-testid={`input-file-evidencia-${paso.codigo}-${idx}`}
+                              />
+                              <Upload className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                            </label>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {(() => {
+              const historialItems: Array<{ tipo: string; texto: string; quien: string; fecha: Date }> = [];
+              criteriosDb.filter(c => c.verificado === 1 && c.fechaVerificacion).forEach(c => {
+                historialItems.push({
+                  tipo: 'criterio',
+                  texto: c.criterioTexto,
+                  quien: c.verificadoNombre || 'Usuario',
+                  fecha: new Date(c.fechaVerificacion!),
+                });
+              });
+              evidenciasDb.filter(e => e.archivoUrl && e.fechaSubida).forEach(e => {
+                historialItems.push({
+                  tipo: 'evidencia',
+                  texto: e.evidenciaTexto,
+                  quien: e.subidoNombre || 'Usuario',
+                  fecha: new Date(e.fechaSubida!),
+                });
+              });
+              historialItems.sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
+              if (historialItems.length === 0) return null;
+              return (
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                      <Activity className="h-4 w-4" />
+                      Historial de Cambios
+                    </p>
+                    <Badge variant="outline">{historialItems.length}</Badge>
+                  </div>
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                    {historialItems.map((item, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-xs p-2 rounded bg-muted/30" data-testid={`historial-item-${idx}`}>
+                        {item.tipo === 'criterio' ? (
+                          <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0 mt-0.5" />
+                        ) : (
+                          <Paperclip className="h-3.5 w-3.5 text-blue-600 shrink-0 mt-0.5" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-foreground truncate">
+                            {item.tipo === 'criterio' ? 'Criterio verificado' : 'Evidencia adjuntada'}: {item.texto}
+                          </p>
+                          <p className="text-muted-foreground">
+                            {item.quien} — {item.fecha.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {paso.moduloPesvUrl && (
+              <div className="border-t pt-4">
+                <Link href={paso.moduloPesvUrl.includes(':evaluacionId') ? paso.moduloPesvUrl.replace(':evaluacionId', evaluacionId!) : `/pesv/evaluacion/${evaluacionId}${paso.moduloPesvUrl.replace('/pesv', '')}`}>
+                  <Button 
+                    type="button" 
+                    className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md"
+                    data-testid={`button-ir-modulo-${paso.codigo.toLowerCase()}`}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Ir a {paso.moduloPesvNombre}
+                  </Button>
+                </Link>
+              </div>
+            )}
+
+            {paso.modulosSstUrls && paso.modulosSstUrls.length > 0 && (
+              <div className="border-t pt-4">
+                <p className="text-sm font-medium text-muted-foreground mb-3">
+                  Trazabilidad con SST (Decreto 1072/2015)
+                </p>
+                <div className="flex flex-col gap-2">
+                  {paso.modulosSstUrls.map((modulo: ModuloSstUrl) => {
+                    const IconComponent = modulo.icono ? ICONO_MAP[modulo.icono] : ExternalLink;
+                    const moduleAllowed = !companyChapter || isModuleAllowedForChapter(modulo.url, companyChapter as ChapterType);
+                    if (!moduleAllowed) {
+                      return null;
+                    }
+                    return (
+                      <Link key={modulo.url} href={modulo.url}>
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          className="w-full gap-2 border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-400 font-medium"
+                          data-testid={`button-ir-sst-${modulo.url.replace('/', '')}`}
+                        >
+                          {IconComponent && <IconComponent className="h-4 w-4" />}
+                          Ir a {modulo.nombre}
+                        </Button>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose}
+                data-testid="button-cancelar-respuesta"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={saveRespuestaMutation.isPending}
+                data-testid="button-guardar-respuesta"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {saveRespuestaMutation.isPending ? "Guardando..." : "Guardar Respuesta"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </IsolatedFormProvider>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 class PesvErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -40,20 +947,6 @@ class PesvErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
     return this.props.children;
   }
 }
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { EvaluacionPesv, PasoPesv, RespuestaPasoPesv, PesvCriterioVerificacion, PesvEvidenciaDocumento, insertRespuestaPasoPesvSchema } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { useLocation, useParams } from "wouter";
-import { z } from "zod";
-import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useCompanyContext } from "@/hooks/use-company-context";
-import { isModuleAllowedForChapter, type ChapterType } from "@shared/chapter-modules";
-import { NIVELES_PESV_LABELS, FASES_PESV_LABELS, FASES_PESV_COLORS, PASOS_PESV, PasoPesvData, ModuloSstUrl } from "@/data/pasos-pesv";
 
 type FasePHVA = "planear" | "hacer" | "verificar" | "actuar" | "resumen";
 
@@ -90,9 +983,7 @@ function DetalleEvaluacionPesvInner() {
   const [selectedFase, setSelectedFase] = useState<FasePHVA>(initialFase);
   const [selectedPaso, setSelectedPaso] = useState<PasoPesvData | null>(null);
   const [respuestaDialogOpen, setRespuestaDialogOpen] = useState(false);
-  const [autoFilledFields, setAutoFilledFields] = useState<Record<string, boolean>>({});
   const [finalizarDialogOpen, setFinalizarDialogOpen] = useState(false);
-  const [uploadingEvidencia, setUploadingEvidencia] = useState<number | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -120,9 +1011,6 @@ function DetalleEvaluacionPesvInner() {
     },
     enabled: !!evaluacion?.nivel,
   });
-
-  const [criteriosOverrides, setCriteriosOverrides] = useState<Record<number, boolean>>({});
-  const [activePasoId, setActivePasoId] = useState<string | null>(null);
 
   interface VerificacionResumen {
     evaluacionId: string;
@@ -155,116 +1043,6 @@ function DetalleEvaluacionPesvInner() {
     refetchOnWindowFocus: false,
   });
 
-  const { data: criteriosDb = [], isLoading: criteriosLoadingQuery, refetch: refetchCriterios } = useQuery<PesvCriterioVerificacion[]>({
-    queryKey: ["/api/evaluaciones-pesv", id, "criterios", activePasoId],
-    queryFn: async () => {
-      const res = await fetch(`/api/evaluaciones-pesv/${id}/criterios?pasoId=${activePasoId}`, { credentials: "include" });
-      if (!res.ok) return [];
-      return res.json();
-    },
-    enabled: !!id && !!activePasoId,
-    staleTime: 30000,
-    refetchOnWindowFocus: false,
-  });
-
-  const { data: evidenciasDb = [], refetch: refetchEvidencias } = useQuery<PesvEvidenciaDocumento[]>({
-    queryKey: ["/api/evaluaciones-pesv", id, "evidencias-docs", activePasoId],
-    queryFn: async () => {
-      const res = await fetch(`/api/evaluaciones-pesv/${id}/evidencias-docs?pasoId=${activePasoId}`, { credentials: "include" });
-      if (!res.ok) return [];
-      return res.json();
-    },
-    enabled: !!id && !!activePasoId,
-    staleTime: 30000,
-    refetchOnWindowFocus: false,
-  });
-
-  const criteriosLoading = criteriosLoadingQuery && !!activePasoId;
-
-  const criteriosFromDb = useMemo(() => {
-    const estado: Record<number, boolean> = {};
-    criteriosDb.forEach((c: PesvCriterioVerificacion) => { estado[c.criterioIndex] = c.verificado === 1; });
-    return estado;
-  }, [criteriosDb]);
-
-  const criteriosLocales = useMemo(() => {
-    return { ...criteriosFromDb, ...criteriosOverrides };
-  }, [criteriosFromDb, criteriosOverrides]);
-
-  const refetchCriteriosYEvidencias = useCallback(() => {
-    setCriteriosOverrides({});
-    refetchCriterios();
-    refetchEvidencias();
-  }, [refetchCriterios, refetchEvidencias]);
-
-  const inicializarYCargar = useCallback(async (paso: PasoPesvData, evaluacionId: string) => {
-    try {
-      await apiRequest("POST", `/api/evaluaciones-pesv/${evaluacionId}/inicializar-criterios`, {
-        pasoId: paso.codigo,
-        criterios: paso.criteriosVerificacion,
-        evidencias: paso.evidenciasRequeridas,
-      });
-    } catch {}
-    setActivePasoId(paso.codigo);
-  }, []);
-
-  const handleToggleCriterio = async (idx: number, criterioTexto: string) => {
-    const nuevoEstado = !criteriosLocales[idx];
-    setCriteriosOverrides(prev => ({ ...prev, [idx]: nuevoEstado }));
-    try {
-      await apiRequest("POST", `/api/evaluaciones-pesv/${id}/criterios`, {
-        pasoId: selectedPaso?.codigo,
-        criterioIndex: idx,
-        criterioTexto,
-        verificado: nuevoEstado,
-      });
-      refetchCriteriosYEvidencias();
-    } catch {
-      setCriteriosOverrides(prev => ({ ...prev, [idx]: !nuevoEstado }));
-    }
-  };
-
-  const handleFileUpload = async (evidenciaIndex: number, evidenciaTexto: string, file: File) => {
-    setUploadingEvidencia(evidenciaIndex);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData, credentials: "include" });
-      if (!uploadRes.ok) throw new Error("Error al subir archivo");
-      const { url } = await uploadRes.json();
-      await apiRequest("POST", `/api/evaluaciones-pesv/${id}/evidencias-docs`, {
-        pasoId: selectedPaso?.codigo,
-        evidenciaIndex,
-        evidenciaTexto,
-        archivoUrl: url,
-        archivoNombre: file.name,
-        archivoTipo: file.type,
-        archivoTamanio: file.size,
-      });
-      refetchCriteriosYEvidencias();
-      setUploadingEvidencia(null);
-      toast({ title: "Archivo adjuntado", description: "La evidencia se ha adjuntado correctamente", className: "bg-green-50 border-green-200" });
-    } catch {
-      setUploadingEvidencia(null);
-      toast({ title: "Error", description: "No se pudo subir el archivo", variant: "destructive" });
-    }
-  };
-
-  const handleRemoveEvidencia = async (evidenciaId: string) => {
-    try {
-      await apiRequest("DELETE", `/api/evaluaciones-pesv/${id}/evidencias-docs/${evidenciaId}`);
-      refetchCriteriosYEvidencias();
-      toast({ title: "Archivo eliminado", description: "El archivo de evidencia ha sido removido", className: "bg-green-50 border-green-200" });
-    } catch {
-      toast({ title: "Error", description: "No se pudo eliminar el archivo", variant: "destructive" });
-    }
-  };
-
-  const criteriosVerificados = Object.values(criteriosLocales).filter(Boolean).length;
-  const totalCriteriosPaso = selectedPaso?.criteriosVerificacion.length || 0;
-  const porcentajeCriterios = totalCriteriosPaso > 0 ? Math.round((criteriosVerificados / totalCriteriosPaso) * 100) : 0;
-  const evidenciasAdjuntas = evidenciasDb.filter(e => e.archivoUrl).length;
-  const totalEvidenciasPaso = selectedPaso?.evidenciasRequeridas.length || 0;
 
   const getPasosParaNivel = (): PasoPesvData[] => {
     if (!evaluacion?.nivel) return [];
@@ -278,59 +1056,6 @@ function DetalleEvaluacionPesvInner() {
 
   const pasos = getPasosParaNivel();
   const pasosFiltrados = pasos.filter(paso => paso.fase === selectedFase);
-
-  const respuestaForm = useForm<z.infer<typeof insertRespuestaPasoPesvSchema>>({
-    resolver: zodResolver(insertRespuestaPasoPesvSchema),
-    defaultValues: {
-      evaluacionId: id || "",
-      pasoId: "",
-      cumple: 0,
-      noAplica: 0,
-      observaciones: "",
-      evidencias: "",
-      modoVerificacion: "",
-      hallazgo: "",
-      accidenteSstId: "",
-      capacitacionSstId: "",
-      inspeccionSstId: "",
-    },
-  });
-
-  const formNoAplica = useWatch({ control: respuestaForm.control, name: "noAplica" });
-  const formCumple = useWatch({ control: respuestaForm.control, name: "cumple" });
-
-  const saveRespuestaMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof insertRespuestaPasoPesvSchema>) => {
-      const dataWithPasoId = { ...data, pasoId: selectedPaso?.codigo || data.pasoId };
-      const res = await apiRequest("POST", `/api/evaluaciones-pesv/${id}/respuestas`, dataWithPasoId);
-      return res.json();
-    },
-    onSuccess: async () => {
-      if (selectedPaso?.fase) {
-        setSelectedFase(selectedPaso.fase);
-      }
-      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", id, "respuestas"] });
-      setRespuestaDialogOpen(false);
-      toast({
-        title: "Respuesta guardada",
-        description: "La respuesta del paso PESV se ha guardado exitosamente",
-        className: "bg-green-50 border-green-200",
-      });
-      try {
-        await apiRequest("POST", `/api/evaluaciones-pesv/${id}/recalcular`, {});
-        queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", id] });
-      } catch (e) {
-        console.warn("Error recalculando puntajes PESV:", e);
-      }
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
   const recalcularMutation = useMutation({
     mutationFn: async () => {
@@ -414,65 +1139,8 @@ function DetalleEvaluacionPesvInner() {
       });
       return;
     }
-    
     setSelectedPaso(paso);
-    setCriteriosOverrides({});
-    setActivePasoId(null);
-    if (id) inicializarYCargar(paso, id);
-    const existing = respuestas.find(r => r.pasoId === paso.codigo);
-    
-    if (existing) {
-      respuestaForm.reset({
-        evaluacionId: id || "",
-        pasoId: paso.codigo,
-        cumple: existing.cumple,
-        noAplica: existing.noAplica,
-        observaciones: existing.observaciones || "",
-        evidencias: existing.evidencias || "",
-        modoVerificacion: existing.modoVerificacion || "",
-        hallazgo: existing.hallazgo || "",
-        accidenteSstId: existing.accidenteSstId || "",
-        capacitacionSstId: existing.capacitacionSstId || "",
-        inspeccionSstId: existing.inspeccionSstId || "",
-      });
-    } else {
-      const newAutoFilled: Record<string, boolean> = {};
-      const autoModo = paso.modoVerificacionSugerido?.length
-        ? paso.modoVerificacionSugerido.join("; ")
-        : "";
-      const autoEvidencias = paso.evidenciasRequeridas?.length
-        ? paso.evidenciasRequeridas.join("; ")
-        : "";
-      const autoObservaciones = paso.observacionesNoCumple || "";
-      const autoHallazgo = paso.hallazgoSugeridoNoCumple || "";
-      if (autoModo) newAutoFilled.modoVerificacion = true;
-      if (autoEvidencias) newAutoFilled.evidencias = true;
-      if (autoObservaciones) newAutoFilled.observaciones = true;
-      if (autoHallazgo) newAutoFilled.hallazgo = true;
-      respuestaForm.reset({
-        evaluacionId: id || "",
-        pasoId: paso.codigo,
-        cumple: 0,
-        noAplica: 0,
-        observaciones: autoObservaciones,
-        evidencias: autoEvidencias,
-        modoVerificacion: autoModo,
-        hallazgo: autoHallazgo,
-        accidenteSstId: "",
-        capacitacionSstId: "",
-        inspeccionSstId: "",
-      });
-      setAutoFilledFields(newAutoFilled);
-      setRespuestaDialogOpen(true);
-      return;
-    }
-    setAutoFilledFields({});
     setRespuestaDialogOpen(true);
-  };
-
-  const onSubmitRespuesta = (values: z.infer<typeof insertRespuestaPasoPesvSchema>) => {
-    if (!selectedPaso) return;
-    saveRespuestaMutation.mutate(values);
   };
 
   const getEstadoBadge = (paso: PasoPesvData) => {
@@ -1001,638 +1669,17 @@ function DetalleEvaluacionPesvInner() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={respuestaDialogOpen} onOpenChange={setRespuestaDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Badge variant="outline" className="font-mono">{selectedPaso?.codigo}</Badge>
-              {selectedPaso?.nombre}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedPaso?.descripcion}
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedPaso?.fundamentoNormativo && (
-            <Alert className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30" data-testid="alert-fundamento-normativo">
-              <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <AlertDescription className="text-sm text-blue-700 dark:text-blue-300">
-                {selectedPaso.fundamentoNormativo}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {selectedPaso && !respuestas.find(r => r.pasoId === selectedPaso.codigo) && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-              <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-              <span className="text-sm text-amber-700 dark:text-amber-300">Todos los campos han sido auto-completados. Revise y ajuste si es necesario, luego guarde.</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="ml-auto gap-1 text-amber-600 dark:text-amber-400 flex-shrink-0"
-                onClick={() => {
-                  if (!selectedPaso) return;
-                  const currentCumple = respuestaForm.getValues("cumple");
-                  const currentNoAplica = respuestaForm.getValues("noAplica");
-                  const newAutoFilled: Record<string, boolean> = {};
-
-                  if (selectedPaso.modoVerificacionSugerido?.length) {
-                    respuestaForm.setValue("modoVerificacion", selectedPaso.modoVerificacionSugerido.join("; "));
-                    newAutoFilled.modoVerificacion = true;
-                  }
-                  if (selectedPaso.evidenciasRequeridas?.length) {
-                    respuestaForm.setValue("evidencias", selectedPaso.evidenciasRequeridas.join("; "));
-                    newAutoFilled.evidencias = true;
-                  }
-
-                  if (currentNoAplica === 1) {
-                    if (selectedPaso.justificacionNaSugerida) {
-                      respuestaForm.setValue("justificacionNa", selectedPaso.justificacionNaSugerida);
-                      newAutoFilled.justificacionNa = true;
-                    }
-                  } else if (currentCumple === 1) {
-                    if (selectedPaso.observacionesCumple) {
-                      respuestaForm.setValue("observaciones", selectedPaso.observacionesCumple);
-                      newAutoFilled.observaciones = true;
-                    }
-                  } else {
-                    if (selectedPaso.observacionesNoCumple) {
-                      respuestaForm.setValue("observaciones", selectedPaso.observacionesNoCumple);
-                      newAutoFilled.observaciones = true;
-                    }
-                    if (selectedPaso.hallazgoSugeridoNoCumple) {
-                      respuestaForm.setValue("hallazgo", selectedPaso.hallazgoSugeridoNoCumple);
-                      newAutoFilled.hallazgo = true;
-                    }
-                  }
-                  setAutoFilledFields(newAutoFilled);
-                }}
-                data-testid="button-autocompletar-todo"
-              >
-                <RefreshCcw className="h-3 w-3" />
-                Re-llenar
-              </Button>
-            </div>
-          )}
-
-          <Form {...respuestaForm}>
-            <form onSubmit={respuestaForm.handleSubmit(onSubmitRespuesta)} className="space-y-4">
-              <FormField
-                control={respuestaForm.control}
-                name="cumple"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valoración</FormLabel>
-                    <Select 
-                      value={
-                        formNoAplica === 1 
-                          ? "no_aplica" 
-                          : field.value === 1 
-                            ? "cumple" 
-                            : "no_cumple"
-                      }
-                      onValueChange={(value) => {
-                        const newAutoFilled: Record<string, boolean> = {};
-                        const canReplace = (fieldName: string) => {
-                          const currentVal = respuestaForm.getValues(fieldName as any);
-                          return !currentVal || autoFilledFields[fieldName];
-                        };
-                        if (value === "no_aplica") {
-                          respuestaForm.setValue("noAplica", 1);
-                          respuestaForm.setValue("cumple", 0);
-                          if (canReplace("justificacionNa") && selectedPaso?.justificacionNaSugerida) {
-                            respuestaForm.setValue("justificacionNa", selectedPaso.justificacionNaSugerida);
-                            newAutoFilled.justificacionNa = true;
-                          }
-                          if (autoFilledFields.observaciones) respuestaForm.setValue("observaciones", "");
-                          if (autoFilledFields.hallazgo) respuestaForm.setValue("hallazgo", "");
-                        } else if (value === "cumple") {
-                          respuestaForm.setValue("noAplica", 0);
-                          respuestaForm.setValue("cumple", 1);
-                          if (canReplace("observaciones") && selectedPaso?.observacionesCumple) {
-                            respuestaForm.setValue("observaciones", selectedPaso.observacionesCumple);
-                            newAutoFilled.observaciones = true;
-                          }
-                          if (canReplace("modoVerificacion") && selectedPaso?.modoVerificacionSugerido?.length) {
-                            respuestaForm.setValue("modoVerificacion", selectedPaso.modoVerificacionSugerido.join("; "));
-                            newAutoFilled.modoVerificacion = true;
-                          }
-                          if (autoFilledFields.hallazgo) respuestaForm.setValue("hallazgo", "");
-                        } else {
-                          respuestaForm.setValue("noAplica", 0);
-                          respuestaForm.setValue("cumple", 0);
-                          if (canReplace("observaciones") && selectedPaso?.observacionesNoCumple) {
-                            respuestaForm.setValue("observaciones", selectedPaso.observacionesNoCumple);
-                            newAutoFilled.observaciones = true;
-                          }
-                          if (canReplace("hallazgo") && selectedPaso?.hallazgoSugeridoNoCumple) {
-                            respuestaForm.setValue("hallazgo", selectedPaso.hallazgoSugeridoNoCumple);
-                            newAutoFilled.hallazgo = true;
-                          }
-                          if (canReplace("modoVerificacion") && selectedPaso?.modoVerificacionSugerido?.length) {
-                            respuestaForm.setValue("modoVerificacion", selectedPaso.modoVerificacionSugerido.join("; "));
-                            newAutoFilled.modoVerificacion = true;
-                          }
-                        }
-                        setAutoFilledFields(newAutoFilled);
-                      }}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-valoracion">
-                          <SelectValue placeholder="Seleccione valoración" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="cumple">
-                          <span className="flex items-center gap-2">
-                            <Check className="h-4 w-4 text-green-600" />
-                            Cumple (100%)
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="no_cumple">
-                          <span className="flex items-center gap-2">
-                            <X className="h-4 w-4 text-red-600" />
-                            No Cumple (0%)
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="no_aplica">
-                          <span className="flex items-center gap-2">
-                            <MinusCircle className="h-4 w-4 text-gray-500" />
-                            No Aplica (N/A)
-                          </span>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {formNoAplica === 1 && (
-                <FormField
-                  control={respuestaForm.control}
-                  name="justificacionNa"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        Justificación "No Aplica"
-                        {autoFilledFields.justificacionNa && (
-                          <Badge variant="secondary" className="text-xs font-normal gap-1">
-                            <Sparkles className="h-3 w-3 text-amber-500" />
-                            Auto-completado
-                          </Badge>
-                        )}
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Justifique por qué este paso no aplica..."
-                          className="min-h-[60px]"
-                          {...field}
-                          value={field.value || ""}
-                          data-testid="textarea-justificacion-no-aplica"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              <FormField
-                control={respuestaForm.control}
-                name="modoVerificacion"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      Modo de Verificación
-                      {autoFilledFields.modoVerificacion && (
-                        <Badge variant="secondary" className="text-xs font-normal gap-1">
-                          <Sparkles className="h-3 w-3 text-amber-500" />
-                          Auto-completado
-                        </Badge>
-                      )}
-                    </FormLabel>
-                    {selectedPaso?.modoVerificacionSugerido && selectedPaso.modoVerificacionSugerido.length > 0 ? (
-                      <Select
-                        value={field.value || ""}
-                        onValueChange={(val) => {
-                          field.onChange(val);
-                          setAutoFilledFields(prev => ({ ...prev, modoVerificacion: false }));
-                        }}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-modo-verificacion">
-                            <SelectValue placeholder="Seleccione modo de verificación..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {field.value && !selectedPaso.modoVerificacionSugerido.includes(field.value) && field.value !== selectedPaso.modoVerificacionSugerido.join("; ") && (
-                            <SelectItem value={field.value}>
-                              {field.value}
-                            </SelectItem>
-                          )}
-                          {selectedPaso.modoVerificacionSugerido.map((modo, idx) => (
-                            <SelectItem key={idx} value={modo}>
-                              {modo}
-                            </SelectItem>
-                          ))}
-                          {selectedPaso.modoVerificacionSugerido.length > 1 && (
-                            <SelectItem value={selectedPaso.modoVerificacionSugerido.join("; ")}>
-                              Todos los modos de verificaci\u00f3n
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <FormControl>
-                        <Input 
-                          placeholder="Ej: Revisión documental, Entrevista, Inspección visual..."
-                          {...field}
-                          value={field.value || ""}
-                          data-testid="input-modo-verificacion"
-                        />
-                      </FormControl>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={respuestaForm.control}
-                name="evidencias"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      Evidencias
-                      {selectedPaso?.evidenciasRequeridas && selectedPaso.evidenciasRequeridas.length > 0 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1 text-xs text-amber-600 dark:text-amber-400"
-                          onClick={() => {
-                            if (!field.value) {
-                              field.onChange(selectedPaso.evidenciasRequeridas.join("; "));
-                              setAutoFilledFields(prev => ({ ...prev, evidencias: true }));
-                            }
-                          }}
-                          data-testid="button-autocompletar-evidencias"
-                        >
-                          <Wand2 className="h-3 w-3" />
-                          Auto-completar
-                        </Button>
-                      )}
-                      {autoFilledFields.evidencias && (
-                        <Badge variant="secondary" className="text-xs font-normal gap-1">
-                          <Sparkles className="h-3 w-3 text-amber-500" />
-                          Auto-completado
-                        </Badge>
-                      )}
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="URL o descripción de las evidencias..."
-                        {...field}
-                        value={field.value || ""}
-                        data-testid="input-evidencias"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={respuestaForm.control}
-                name="observaciones"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      Observaciones
-                      {autoFilledFields.observaciones && (
-                        <Badge variant="secondary" className="text-xs font-normal gap-1">
-                          <Sparkles className="h-3 w-3 text-amber-500" />
-                          Auto-completado
-                        </Badge>
-                      )}
-                    </FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Ingrese observaciones adicionales..."
-                        className="min-h-[80px]"
-                        {...field}
-                        value={field.value || ""}
-                        data-testid="textarea-observaciones"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {formCumple === 0 && formNoAplica === 0 && (
-                <FormField
-                  control={respuestaForm.control}
-                  name="hallazgo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        Hallazgo / No Conformidad
-                        {autoFilledFields.hallazgo && (
-                          <Badge variant="secondary" className="text-xs font-normal gap-1">
-                            <Sparkles className="h-3 w-3 text-amber-500" />
-                            Auto-completado
-                          </Badge>
-                        )}
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Describa el hallazgo o no conformidad..."
-                          className="min-h-[80px]"
-                          {...field}
-                          value={field.value || ""}
-                          data-testid="textarea-hallazgo"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-
-              {selectedPaso && (
-                <div className="border-t pt-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-muted-foreground">Criterios de Verificación</p>
-                    <Badge variant={porcentajeCriterios === 100 ? "default" : "outline"} className={porcentajeCriterios === 100 ? "bg-green-500/10 text-green-700 dark:text-green-400" : ""}>
-                      {criteriosVerificados}/{totalCriteriosPaso}
-                    </Badge>
-                  </div>
-                  <div className="space-y-2">
-                    {selectedPaso.criteriosVerificacion.map((criterio, idx) => {
-                      const isVerified = criteriosLocales[idx] || false;
-                      const isLocked = evaluacion?.estado === "completada" || evaluacion?.estado === "enviada";
-                      const dbCriterio = criteriosDb.find(c => c.criterioIndex === idx);
-                      return (
-                        <div
-                          key={idx}
-                          className={`flex items-start gap-3 p-2 rounded-md transition-colors cursor-pointer ${isVerified ? "bg-green-50 dark:bg-green-950/30" : "bg-muted/30"}`}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (!isLocked) handleToggleCriterio(idx, criterio);
-                          }}
-                          data-testid={`criterio-${selectedPaso.codigo}-${idx}`}
-                        >
-                          <Checkbox
-                            checked={isVerified}
-                            disabled={isLocked}
-                            className="mt-0.5 pointer-events-none"
-                            data-testid={`checkbox-criterio-${selectedPaso.codigo}-${idx}`}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm ${isVerified ? "text-green-700 dark:text-green-400" : ""}`}>{criterio}</p>
-                            {isVerified && dbCriterio?.verificadoNombre && (
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                Verificado por {dbCriterio.verificadoNombre}
-                                {dbCriterio.fechaVerificacion && ` - ${new Date(dbCriterio.fechaVerificacion).toLocaleDateString('es-CO')}`}
-                              </p>
-                            )}
-                          </div>
-                          {isVerified ? (
-                            <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                          ) : (
-                            <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {totalCriteriosPaso > 0 && (
-                    <div className="mt-2">
-                      <Progress value={porcentajeCriterios} className="h-1.5" />
-                    </div>
-                  )}
-                  {porcentajeCriterios === 100 && (
-                    <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Todos los criterios verificados — sugiere valoración "Cumple"
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {selectedPaso && (
-                <div className="border-t pt-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-muted-foreground">Evidencias Requeridas</p>
-                    <Badge variant={evidenciasAdjuntas === totalEvidenciasPaso && totalEvidenciasPaso > 0 ? "default" : "outline"} className={evidenciasAdjuntas === totalEvidenciasPaso && totalEvidenciasPaso > 0 ? "bg-green-500/10 text-green-700 dark:text-green-400" : ""}>
-                      {evidenciasAdjuntas}/{totalEvidenciasPaso}
-                    </Badge>
-                  </div>
-                  <div className="space-y-2">
-                    {selectedPaso.evidenciasRequeridas.map((evidencia, idx) => {
-                      const dbEvidencia = evidenciasDb.find(e => e.evidenciaIndex === idx);
-                      const hasFile = !!dbEvidencia?.archivoUrl;
-                      const isLocked = evaluacion?.estado === "completada" || evaluacion?.estado === "enviada";
-                      const isUploading = uploadingEvidencia === idx;
-                      return (
-                        <div
-                          key={idx}
-                          className={`flex items-start gap-3 p-2 rounded-md ${hasFile ? "bg-green-50 dark:bg-green-950/30" : "bg-muted/30"}`}
-                          data-testid={`evidencia-${selectedPaso.codigo}-${idx}`}
-                        >
-                          {hasFile ? (
-                            <Paperclip className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                          ) : (
-                            <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm ${hasFile ? "text-green-700 dark:text-green-400" : ""}`}>{evidencia}</p>
-                            {hasFile && dbEvidencia && (
-                              <div className="flex items-center gap-2 mt-1">
-                                <a
-                                  href={dbEvidencia.archivoUrl!}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[200px]"
-                                  data-testid={`link-evidencia-${selectedPaso.codigo}-${idx}`}
-                                >
-                                  {dbEvidencia.archivoNombre}
-                                </a>
-                                {!isLocked && (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6"
-                                    onClick={(e) => { e.stopPropagation(); handleRemoveEvidencia(dbEvidencia.id); }}
-                                    data-testid={`button-remove-evidencia-${selectedPaso.codigo}-${idx}`}
-                                  >
-                                    <Trash2 className="h-3 w-3 text-red-500" />
-                                  </Button>
-                                )}
-                              </div>
-                            )}
-                            {hasFile && dbEvidencia?.subidoNombre && (
-                              <p className="text-xs text-muted-foreground">
-                                Por {dbEvidencia.subidoNombre}
-                                {dbEvidencia.fechaSubida && ` - ${new Date(dbEvidencia.fechaSubida).toLocaleDateString('es-CO')}`}
-                              </p>
-                            )}
-                          </div>
-                          {!hasFile && !isLocked && (
-                            <div className="flex-shrink-0">
-                              {isUploading ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                              ) : (
-                                <label className="cursor-pointer">
-                                  <input
-                                    type="file"
-                                    className="hidden"
-                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0];
-                                      if (file) handleFileUpload(idx, evidencia, file);
-                                      e.target.value = '';
-                                    }}
-                                    data-testid={`input-file-evidencia-${selectedPaso.codigo}-${idx}`}
-                                  />
-                                  <Upload className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-                                </label>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {selectedPaso && (() => {
-                const historialItems: Array<{ tipo: string; texto: string; quien: string; fecha: Date }> = [];
-                criteriosDb.filter(c => c.verificado === 1 && c.fechaVerificacion).forEach(c => {
-                  historialItems.push({
-                    tipo: 'criterio',
-                    texto: c.criterioTexto,
-                    quien: c.verificadoNombre || 'Usuario',
-                    fecha: new Date(c.fechaVerificacion!),
-                  });
-                });
-                evidenciasDb.filter(e => e.archivoUrl && e.fechaSubida).forEach(e => {
-                  historialItems.push({
-                    tipo: 'evidencia',
-                    texto: e.evidenciaTexto,
-                    quien: e.subidoNombre || 'Usuario',
-                    fecha: new Date(e.fechaSubida!),
-                  });
-                });
-                historialItems.sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
-                if (historialItems.length === 0) return null;
-                return (
-                  <div className="border-t pt-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                        <Activity className="h-4 w-4" />
-                        Historial de Cambios
-                      </p>
-                      <Badge variant="outline">{historialItems.length}</Badge>
-                    </div>
-                    <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                      {historialItems.map((item, idx) => (
-                        <div key={idx} className="flex items-start gap-2 text-xs p-2 rounded bg-muted/30" data-testid={`historial-item-${idx}`}>
-                          {item.tipo === 'criterio' ? (
-                            <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0 mt-0.5" />
-                          ) : (
-                            <Paperclip className="h-3.5 w-3.5 text-blue-600 shrink-0 mt-0.5" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-foreground truncate">
-                              {item.tipo === 'criterio' ? 'Criterio verificado' : 'Evidencia adjuntada'}: {item.texto}
-                            </p>
-                            <p className="text-muted-foreground">
-                              {item.quien} — {item.fecha.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {selectedPaso?.moduloPesvUrl && (
-                <div className="border-t pt-4">
-                  <Link href={selectedPaso.moduloPesvUrl.includes(':evaluacionId') ? selectedPaso.moduloPesvUrl.replace(':evaluacionId', id!) : `/pesv/evaluacion/${id}${selectedPaso.moduloPesvUrl.replace('/pesv', '')}`}>
-                    <Button 
-                      type="button" 
-                      className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md"
-                      data-testid={`button-ir-modulo-${selectedPaso.codigo.toLowerCase()}`}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Ir a {selectedPaso.moduloPesvNombre}
-                    </Button>
-                  </Link>
-                </div>
-              )}
-
-              {/* ADD-ONLY: Botones para ir a módulos SST relacionados */}
-              {selectedPaso?.modulosSstUrls && selectedPaso.modulosSstUrls.length > 0 && (
-                <div className="border-t pt-4">
-                  <p className="text-sm font-medium text-muted-foreground mb-3">
-                    Trazabilidad con SST (Decreto 1072/2015)
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {selectedPaso.modulosSstUrls.map((modulo: ModuloSstUrl) => {
-                      const IconComponent = modulo.icono ? ICONO_MAP[modulo.icono] : ExternalLink;
-                      const moduleAllowed = !companyChapter || isModuleAllowedForChapter(modulo.url, companyChapter as ChapterType);
-                      if (!moduleAllowed) {
-                        return null;
-                      }
-                      return (
-                        <Link key={modulo.url} href={modulo.url}>
-                          <Button 
-                            type="button" 
-                            variant="outline"
-                            className="w-full gap-2 border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-400 font-medium"
-                            data-testid={`button-ir-sst-${modulo.url.replace('/', '')}`}
-                          >
-                            {IconComponent && <IconComponent className="h-4 w-4" />}
-                            Ir a {modulo.nombre}
-                          </Button>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setRespuestaDialogOpen(false)}
-                  data-testid="button-cancelar-respuesta"
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={saveRespuestaMutation.isPending}
-                  data-testid="button-guardar-respuesta"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {saveRespuestaMutation.isPending ? "Guardando..." : "Guardar Respuesta"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+      <RespuestaDialog
+        open={respuestaDialogOpen}
+        onClose={() => setRespuestaDialogOpen(false)}
+        paso={selectedPaso}
+        evaluacionId={id || ""}
+        evaluacion={evaluacion}
+        respuestas={respuestas}
+        companyChapter={companyChapter || ""}
+        onSaved={setSelectedFase}
+        toast={toast}
+      />
 
       <AlertDialog open={finalizarDialogOpen} onOpenChange={setFinalizarDialogOpen}>
         <AlertDialogContent data-testid="dialog-finalizar-evaluacion">
