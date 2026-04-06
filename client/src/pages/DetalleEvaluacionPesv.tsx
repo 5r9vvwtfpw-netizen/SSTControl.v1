@@ -55,6 +55,26 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
   const [activePasoId, setActivePasoId] = useState<string | null>(null);
   const initializedPasoRef = useRef<string | null>(null);
 
+  const [autoVerifP01, setAutoVerifP01] = useState<{
+    criterios: { nombre: string; cumple: boolean; detalle: string }[];
+    porcentaje: number;
+    cumplimientoTotal: number;
+    totalCriterios: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!open || paso?.codigo !== "P01") {
+      setAutoVerifP01(null);
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/pesv/comite/verificacion-p01", { credentials: "include" })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (!cancelled && data) setAutoVerifP01(data); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [open, paso?.codigo]);
+
   const respuestaForm = useForm<z.infer<typeof insertRespuestaPasoPesvSchema>>({
     resolver: zodResolver(insertRespuestaPasoPesvSchema),
     defaultValues: {
