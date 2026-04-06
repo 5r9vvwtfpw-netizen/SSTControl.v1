@@ -10335,6 +10335,7 @@ export const comiteIntegrantesPesv = pgTable("comite_integrantes_pesv", {
   nombre: text("nombre").notNull(),
   cargo: text("cargo").notNull(),
   rol: rolComiteEnum("rol").notNull(),
+  funcionesResponsabilidades: text("funciones_responsabilidades"),
   email: text("email"),
   telefono: text("telefono"),
   fechaIngreso: date("fecha_ingreso").notNull(),
@@ -10381,6 +10382,79 @@ export const insertActaComitePesvSchema = createInsertSchema(actasComitePesv)
   .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
 export type InsertActaComitePesv = z.infer<typeof insertActaComitePesvSchema>;
 export type ActaComitePesv = typeof actasComitePesv.$inferSelect;
+
+// Acto Administrativo de Conformación del Equipo PESV
+// Resolución 40595/2022, Art. 5 - Documento formal de conformación
+export const estadoActoAdministrativoEnum = pgEnum("estado_acto_administrativo", [
+  "vigente",
+  "modificado",
+  "anulado"
+]);
+
+export const actosAdministrativosPesv = pgTable("actos_administrativos_pesv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+
+  tipoDocumento: text("tipo_documento").notNull(),
+  numeroDocumento: text("numero_documento").notNull(),
+  fechaExpedicion: date("fecha_expedicion").notNull(),
+  fechaVigencia: date("fecha_vigencia"),
+  firmadoPor: text("firmado_por").notNull(),
+  cargoFirmante: text("cargo_firmante").notNull(),
+  objetoConformacion: text("objeto_conformacion").notNull(),
+  considerandos: text("considerandos"),
+  articulado: text("articulado"),
+  estado: estadoActoAdministrativoEnum("estado").notNull().default("vigente"),
+  observaciones: text("observaciones"),
+
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+export const insertActoAdministrativoPesvSchema = createInsertSchema(actosAdministrativosPesv)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
+export type InsertActoAdministrativoPesv = z.infer<typeof insertActoAdministrativoPesvSchema>;
+export type ActoAdministrativoPesv = typeof actosAdministrativosPesv.$inferSelect;
+
+// Cronograma de Reuniones del Comité PESV
+// Resolución 40595/2022 - Planificación de reuniones periódicas
+export const estadoReunionProgramadaEnum = pgEnum("estado_reunion_programada", [
+  "programada",
+  "realizada",
+  "cancelada",
+  "reprogramada"
+]);
+
+export const frecuenciaReunionEnum = pgEnum("frecuencia_reunion", [
+  "semanal",
+  "quincenal",
+  "mensual",
+  "bimestral",
+  "trimestral",
+  "semestral",
+  "anual"
+]);
+
+export const cronogramaReunionesPesv = pgTable("cronograma_reuniones_pesv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+
+  anio: integer("anio").notNull(),
+  frecuencia: frecuenciaReunionEnum("frecuencia").notNull().default("mensual"),
+  fechaProgramada: date("fecha_programada").notNull(),
+  temaPrincipal: text("tema_principal"),
+  estado: estadoReunionProgramadaEnum("estado").notNull().default("programada"),
+  actaId: varchar("acta_id").references(() => actasComitePesv.id),
+  observaciones: text("observaciones"),
+
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+export const insertCronogramaReunionPesvSchema = createInsertSchema(cronogramaReunionesPesv)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
+export type InsertCronogramaReunionPesv = z.infer<typeof insertCronogramaReunionPesvSchema>;
+export type CronogramaReunionPesv = typeof cronogramaReunionesPesv.$inferSelect;
 
 // ==================== Vinculación Bidireccional Riesgos SST-PESV ====================
 // Decreto 1072/2015 Art. 2.2.4.6.15 y Resolución 40595/2022 - Articulación PESV con SG-SST

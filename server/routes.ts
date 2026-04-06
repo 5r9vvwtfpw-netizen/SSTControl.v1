@@ -74,6 +74,8 @@ import {
   pesvComiteIntegrantes,
   pesvComiteActas,
   comiteIntegrantesPesv,
+  actosAdministrativosPesv,
+  cronogramaReunionesPesv,
   insertPesvComiteIntegranteSchema,
   insertPesvComiteActaSchema,
   insertJobProfileSchema,
@@ -48948,6 +48950,242 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+
+  // ========== PESV - Actos Administrativos de Conformación (Res. 40595/2022, Art. 5) ==========
+
+  app.get("/api/pesv/comite/actos-administrativos", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const result = await db.select().from(actosAdministrativosPesv)
+        .where(eq(actosAdministrativosPesv.companyId, companyId))
+        .orderBy(desc(actosAdministrativosPesv.fechaExpedicion));
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error fetching actos administrativos:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/pesv/comite/actos-administrativos", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const [result] = await db.insert(actosAdministrativosPesv)
+        .values({ ...req.body, companyId })
+        .returning();
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error creating acto administrativo:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/pesv/comite/actos-administrativos/:id", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const [result] = await db.update(actosAdministrativosPesv)
+        .set({ ...req.body, updatedAt: new Date() })
+        .where(and(eq(actosAdministrativosPesv.id, req.params.id), eq(actosAdministrativosPesv.companyId, companyId)))
+        .returning();
+      if (!result) return res.status(404).json({ error: "Acto administrativo no encontrado" });
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error updating acto administrativo:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/pesv/comite/actos-administrativos/:id", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      await db.delete(actosAdministrativosPesv)
+        .where(and(eq(actosAdministrativosPesv.id, req.params.id), eq(actosAdministrativosPesv.companyId, companyId)));
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting acto administrativo:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // ========== PESV - Cronograma de Reuniones (Res. 40595/2022) ==========
+
+  app.get("/api/pesv/comite/cronograma", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const anio = req.query.anio ? parseInt(req.query.anio as string) : new Date().getFullYear();
+      const result = await db.select().from(cronogramaReunionesPesv)
+        .where(and(eq(cronogramaReunionesPesv.companyId, companyId), eq(cronogramaReunionesPesv.anio, anio)))
+        .orderBy(cronogramaReunionesPesv.fechaProgramada);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error fetching cronograma:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/pesv/comite/cronograma", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const [result] = await db.insert(cronogramaReunionesPesv)
+        .values({ ...req.body, companyId })
+        .returning();
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error creating cronograma entry:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/pesv/comite/cronograma/generar", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const { anio, frecuencia, temaPrincipal } = req.body;
+      if (!anio || !frecuencia) return res.status(400).json({ error: "Se requieren anio y frecuencia" });
+
+      const frecuenciaMap: Record<string, number> = {
+        semanal: 52, quincenal: 26, mensual: 12, bimestral: 6, trimestral: 4, semestral: 2, anual: 1
+      };
+      const totalReuniones = frecuenciaMap[frecuencia] || 12;
+      const intervaloMs = (365 * 24 * 60 * 60 * 1000) / totalReuniones;
+
+      const reuniones = [];
+      const startDate = new Date(anio, 0, 15);
+      for (let i = 0; i < totalReuniones; i++) {
+        const fecha = new Date(startDate.getTime() + (intervaloMs * i));
+        if (fecha.getFullYear() !== anio) break;
+        reuniones.push({
+          companyId,
+          anio,
+          frecuencia,
+          fechaProgramada: fecha.toISOString().split('T')[0],
+          temaPrincipal: temaPrincipal || `Reunión ${i + 1} - Comité PESV`,
+          estado: "programada" as const,
+        });
+      }
+
+      const existing = await db.select().from(cronogramaReunionesPesv)
+        .where(and(eq(cronogramaReunionesPesv.companyId, companyId), eq(cronogramaReunionesPesv.anio, anio)));
+      if (existing.length > 0) {
+        return res.status(400).json({ error: `Ya existe un cronograma para el año ${anio}. Elimínelo primero para generar uno nuevo.` });
+      }
+
+      const results = [];
+      for (const reunion of reuniones) {
+        const [r] = await db.insert(cronogramaReunionesPesv).values(reunion).returning();
+        results.push(r);
+      }
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error generating cronograma:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/pesv/comite/cronograma/:id", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const [result] = await db.update(cronogramaReunionesPesv)
+        .set({ ...req.body, updatedAt: new Date() })
+        .where(and(eq(cronogramaReunionesPesv.id, req.params.id), eq(cronogramaReunionesPesv.companyId, companyId)))
+        .returning();
+      if (!result) return res.status(404).json({ error: "Reunión no encontrada" });
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error updating cronograma entry:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/pesv/comite/cronograma/:id", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      await db.delete(cronogramaReunionesPesv)
+        .where(and(eq(cronogramaReunionesPesv.id, req.params.id), eq(cronogramaReunionesPesv.companyId, companyId)));
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting cronograma entry:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/pesv/comite/cronograma/anio/:anio", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const anio = parseInt(req.params.anio);
+      await db.delete(cronogramaReunionesPesv)
+        .where(and(eq(cronogramaReunionesPesv.companyId, companyId), eq(cronogramaReunionesPesv.anio, anio)));
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting cronograma year:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // ========== PESV - Auto-verificación P01 ==========
+
+  app.get("/api/pesv/comite/verificacion-p01", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+
+      const integrantes = await db.select().from(comiteIntegrantesPesv)
+        .where(and(eq(comiteIntegrantesPesv.companyId, companyId), eq(comiteIntegrantesPesv.estado, "activo")));
+
+      const actos = await db.select().from(actosAdministrativosPesv)
+        .where(and(eq(actosAdministrativosPesv.companyId, companyId), eq(actosAdministrativosPesv.estado, "vigente")));
+
+      const currentYear = new Date().getFullYear();
+      const cronograma = await db.select().from(cronogramaReunionesPesv)
+        .where(and(eq(cronogramaReunionesPesv.companyId, companyId), eq(cronogramaReunionesPesv.anio, currentYear)));
+
+      const criterio1 = actos.length > 0;
+      const criterio2 = integrantes.length >= 2 && integrantes.every(i => !!i.funcionesResponsabilidades && i.funcionesResponsabilidades.trim().length > 0);
+      const criterio3 = cronograma.length > 0;
+
+      const cumplimiento = [criterio1, criterio2, criterio3].filter(Boolean).length;
+
+      res.json({
+        criterios: [
+          {
+            nombre: "Acto administrativo de conformación del equipo",
+            cumple: criterio1,
+            detalle: criterio1
+              ? `Acto vigente: ${actos[0].tipoDocumento} ${actos[0].numeroDocumento} del ${actos[0].fechaExpedicion}`
+              : "No se ha registrado un acto administrativo de conformación del equipo PESV"
+          },
+          {
+            nombre: "Funciones y responsabilidades definidas",
+            cumple: criterio2,
+            detalle: criterio2
+              ? `${integrantes.length} integrantes activos con funciones definidas`
+              : `${integrantes.filter(i => !i.funcionesResponsabilidades || i.funcionesResponsabilidades.trim().length === 0).length} integrante(s) sin funciones definidas de ${integrantes.length} activo(s)`
+          },
+          {
+            nombre: "Cronograma de reuniones",
+            cumple: criterio3,
+            detalle: criterio3
+              ? `${cronograma.length} reuniones programadas para ${currentYear} (${cronograma.filter(c => c.estado === "realizada").length} realizadas)`
+              : `No se ha generado cronograma de reuniones para ${currentYear}`
+          }
+        ],
+        cumplimientoTotal: cumplimiento,
+        totalCriterios: 3,
+        porcentaje: Math.round((cumplimiento / 3) * 100)
+      });
+    } catch (error: any) {
+      console.error("Error verificacion P01:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   // ========== PESV - Vehicle Maintenances Routes (Res. 40595/2022 - H06) ==========
 
