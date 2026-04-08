@@ -332,6 +332,9 @@ function Router() {
       <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/mantenimiento" component={PesvMantenimientoVehicular} feature="hasPESV" featureName="Módulo PESV - Mantenimiento" />
       <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/monitoreo-gps" component={PesvMonitoreoGps} feature="hasPESV" featureName="Módulo PESV - Monitoreo GPS" />
       <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/rutas-seguras" component={PesvRutasSeguras} feature="hasPESV" featureName="Módulo PESV - Rutas Seguras" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/fatiga-somnolencia" component={PesvFatigaSomnolencia} feature="hasPESV" featureName="Módulo PESV - Fatiga y Somnolencia" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/alcohol-sustancias" component={PesvAlcoholSustancias} feature="hasPESV" featureName="Módulo PESV - Alcohol y Sustancias" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/atencion-victimas" component={PesvAtencionVictimas} feature="hasPESV" featureName="Módulo PESV - Atención a Víctimas" />
       <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/indicadores" component={IndicadoresPesv} feature="hasPESV" featureName="Módulo PESV - Indicadores" />
       <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/liderazgo" component={PesvLiderazgo} feature="hasPESV" featureName="Módulo PESV - Liderazgo" />
       <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/contexto-organizacional" component={ContextoOrganizacionalPesv} feature="hasPESV" featureName="Módulo PESV - Contexto Organizacional" />
