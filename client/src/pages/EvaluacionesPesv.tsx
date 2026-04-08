@@ -415,7 +415,7 @@ export default function EvaluacionesPesv() {
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Estos valores provienen de los datos registrados en su suscripción (Res. 40595/2022). Para modificarlos, actualice su perfil de empresa.
+                    Determinado automáticamente según su flota activa (Res. 40595/2022).
                   </p>
                 </div>
 
