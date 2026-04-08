@@ -100,12 +100,25 @@ export const routePermissions: Record<string, Permission[]> = {
 
   // Hacer - PESV (base y sub-rutas)
   "/pesv": ["vehicles:view", "drivers:view"],
+  "/pesv/evaluaciones": ["vehicles:view", "drivers:view"],
+  "/pesv/evaluacion": ["vehicles:view", "drivers:view"],
   "/pesv/vehiculos": ["vehicles:view"],
   "/pesv/conductores": ["drivers:view"],
   "/pesv/inspecciones": ["vehicle_inspections:view"],
   "/pesv/siniestros": ["road_incidents:view"],
   "/pesv/capacitaciones": ["road_trainings:view", "road_safety_trainings:view"],
   "/pesv/auditorias": ["pesv_audits:view"],
+  "/pesv/comite": ["vehicles:view", "drivers:view"],
+  "/pesv/liderazgo": ["vehicles:view", "drivers:view"],
+  "/pesv/contexto-organizacional": ["vehicles:view", "drivers:view"],
+  "/pesv/matriz-riesgos": ["vehicles:view", "drivers:view"],
+  "/pesv/indicadores": ["vehicles:view", "drivers:view"],
+  "/pesv/factores-desempeno": ["vehicles:view", "drivers:view"],
+  "/pesv/mantenimiento": ["vehicles:view"],
+  "/pesv/monitoreo-gps": ["vehicles:view"],
+  "/pesv/rutas-seguras": ["vehicles:view", "drivers:view"],
+  "/pesv/mejora-continua": ["vehicles:view", "drivers:view"],
+  "/pesv/revision-direccion": ["vehicles:view", "drivers:view"],
 
   // Verificar
   "/accidentes": ["accidents:view", "accidents:view_self"],

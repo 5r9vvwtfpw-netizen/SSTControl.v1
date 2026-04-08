@@ -148,9 +148,29 @@ const phvaTabs: { key: PHVASection; label: string; icon?: typeof Settings }[] = 
   { key: "actuar", label: "Actuar", icon: RefreshCw },
 ];
 
-const pesvNavMenuItems: { label: string; path: string }[] = [
+const pesvNavMenuItems: { label: string; path: string; group?: string }[] = [
   { label: "Panel de Control", path: "/pesv" },
   { label: "Evaluaciones PESV", path: "/pesv/evaluaciones" },
+  // PLANEAR
+  { label: "Comité PESV", path: "/pesv/comite", group: "Planear" },
+  { label: "Liderazgo y Compromiso", path: "/pesv/liderazgo", group: "Planear" },
+  { label: "Contexto Organizacional", path: "/pesv/contexto-organizacional", group: "Planear" },
+  { label: "Matriz de Riesgos Viales", path: "/pesv/matriz-riesgos", group: "Planear" },
+  { label: "Indicadores PESV", path: "/pesv/indicadores", group: "Planear" },
+  { label: "Factores de Desempeño", path: "/pesv/factores-desempeno", group: "Planear" },
+  // HACER
+  { label: "Conductores", path: "/pesv/conductores", group: "Hacer" },
+  { label: "Vehículos", path: "/pesv/vehiculos", group: "Hacer" },
+  { label: "Capacitaciones Viales", path: "/pesv/capacitaciones", group: "Hacer" },
+  { label: "Mantenimiento Vehicular", path: "/pesv/mantenimiento", group: "Hacer" },
+  { label: "Inspecciones Preoperacionales", path: "/pesv/inspecciones", group: "Hacer" },
+  { label: "Rutas Seguras", path: "/pesv/rutas-seguras", group: "Hacer" },
+  { label: "Monitoreo GPS", path: "/pesv/monitoreo-gps", group: "Hacer" },
+  { label: "Siniestros Viales", path: "/pesv/siniestros", group: "Hacer" },
+  // VERIFICAR / ACTUAR
+  { label: "Auditorías PESV", path: "/pesv/auditorias", group: "Verificar/Actuar" },
+  { label: "Mejora Continua", path: "/pesv/mejora-continua", group: "Verificar/Actuar" },
+  { label: "Revisión por la Dirección", path: "/pesv/revision-direccion", group: "Verificar/Actuar" },
 ];
 
 export function PHVANavigation() {
@@ -636,23 +656,35 @@ export function PHVANavigation() {
                       <ChevronDown className="ml-2 h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="min-w-[240px]" data-testid="menu-pesv">
+                  <DropdownMenuContent className="min-w-[260px] max-h-[80vh] overflow-y-auto" data-testid="menu-pesv">
                     <DropdownMenuLabel className="text-base font-black text-foreground">Plan Estratégico de Seguridad Vial</DropdownMenuLabel>
-                    {filteredPesvNavItems.map((item) => (
-                      <DropdownMenuItem key={item.path} asChild>
-                        <Link
-                          href={item.path}
-                          data-testid={`link${item.path.replace(/\//g, "-")}`}
-                          className={`w-full cursor-pointer ${
-                            location === item.path || location.startsWith(item.path + "/")
-                              ? "font-semibold text-primary"
-                              : ""
-                          }`}
-                        >
-                          {item.label}
-                        </Link>
-                      </DropdownMenuItem>
-                    ))}
+                    {(() => {
+                      let lastGroup: string | undefined = undefined;
+                      return filteredPesvNavItems.flatMap((item) => {
+                        const elements = [];
+                        if (item.group && item.group !== lastGroup) {
+                          elements.push(<DropdownMenuSeparator key={`sep-${item.group}`} />);
+                          elements.push(<DropdownMenuLabel key={`label-${item.group}`} className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">{item.group}</DropdownMenuLabel>);
+                          lastGroup = item.group;
+                        }
+                        elements.push(
+                          <DropdownMenuItem key={item.path} asChild>
+                            <Link
+                              href={item.path}
+                              data-testid={`link${item.path.replace(/\//g, "-")}`}
+                              className={`w-full cursor-pointer ${
+                                location === item.path || location.startsWith(item.path + "/")
+                                  ? "font-semibold text-primary"
+                                  : ""
+                              }`}
+                            >
+                              {item.label}
+                            </Link>
+                          </DropdownMenuItem>
+                        );
+                        return elements;
+                      });
+                    })()}
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}

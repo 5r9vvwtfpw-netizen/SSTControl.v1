@@ -344,6 +344,8 @@ function Router() {
       <SubscriptionProtectedRoute path="/pesv/factores-desempeno" component={FactoresDesempenoPesv} feature="hasPESV" featureName="Módulo PESV - Factores" />
       <SubscriptionProtectedRoute path="/pesv/comite" component={PesvComite} feature="hasPESV" featureName="Módulo PESV - Comité" />
       <SubscriptionProtectedRoute path="/pesv/liderazgo" component={PesvLiderazgo} feature="hasPESV" featureName="Módulo PESV - Liderazgo" />
+      <SubscriptionProtectedRoute path="/pesv/mejora-continua" component={PesvMejoraContinua} feature="hasPESV" featureName="Módulo PESV - Mejora Continua" />
+      <SubscriptionProtectedRoute path="/pesv/revision-direccion" component={PesvRevisionDireccion} feature="hasPESV" featureName="Módulo PESV - Revisión por la Dirección" />
       <Route path="/pricing" component={Pricing} />
       <Route path="/pricing-plugin/calculator" component={PricingPluginCalculator} />
       <ProtectedRoute path="/pricing-plugin/admin/pricing" component={PricingPluginAdmin} />
