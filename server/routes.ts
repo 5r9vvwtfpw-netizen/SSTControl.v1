@@ -47198,7 +47198,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         currentY = doc.y + 10;
       }
 
-      // Footer con firmantes
+      // Footer con firmantes — sincronizar doc.y con currentY para evitar páginas en blanco
+      doc.y = currentY;
       await addSignatureFooter(doc, signers, true);
 
       doc.end();

@@ -388,11 +388,15 @@ export async function addSignatureFooter(
   const footerHeight = hasLsoSignatureImage ? 130 : (includeLSO ? 100 : 70);
   
   const availableSpace = pageHeight - margin - doc.y;
+  let footerY: number;
   if (availableSpace < footerHeight + 20) {
     doc.addPage();
+    // Colocar el footer al inicio de la nueva página, sin espacio en blanco
+    footerY = margin + 10;
+  } else {
+    // Anclar al final de la página cuando hay espacio suficiente
+    footerY = pageHeight - margin - footerHeight;
   }
-  
-  const footerY = pageHeight - margin - footerHeight;
   
   const numCols = includeLSO ? 4 : 3;
   const colWidth = (pageWidth - margin * 2) / numCols;
