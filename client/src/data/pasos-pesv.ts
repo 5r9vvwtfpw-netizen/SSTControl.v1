@@ -574,6 +574,8 @@ export const PASOS_PESV: PasoPesvData[] = [
     observacionesCumple: 'Se verifican controles de fatiga y somnolencia con política de jornadas, registro de horas de conducción y programa de prevención conforme a la Resolución 40595/2022.',
     observacionesNoCumple: 'Se requiere implementar controles de fatiga con política de jornadas y programa de prevención.',
     justificacionNaSugerida: 'No aplica para nivel básico según Resolución 40595/2022.',
+    moduloPesvUrl: '/pesv/fatiga-somnolencia',
+    moduloPesvNombre: 'Registros de Fatiga y Somnolencia',
     fundamentoNormativo: 'Resolución 40595/2022, Art. 21 - Prevención de la fatiga'
   },
   {
@@ -606,6 +608,8 @@ export const PASOS_PESV: PasoPesvData[] = [
     observacionesCumple: 'Se verifica programa de prevención con política de cero tolerancia, pruebas aleatorias y capacitaciones de prevención conforme a la Resolución 40595/2022.',
     observacionesNoCumple: 'Se requiere implementar programa de prevención de alcohol y sustancias con política de cero tolerancia.',
     justificacionNaSugerida: 'No aplica para organizaciones sin conductores ni personal expuesto a riesgo vial.',
+    moduloPesvUrl: '/pesv/alcohol-sustancias',
+    moduloPesvNombre: 'Registros de Alcohol y SAP',
     fundamentoNormativo: 'Resolución 40595/2022, Art. 22 - Sustancias psicoactivas'
   },
   {

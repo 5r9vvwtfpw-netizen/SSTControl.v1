@@ -28,6 +28,8 @@ Data integrity is maintained through Zod validations. Security includes hashed p
 
 The PESV module manages evaluations according to Resolución 40595/2022, supporting three complexity levels with bidirectional traceability to SST, incorporating ISO 31000:2018 and ISO 39001:2012. It's evaluation-centric, with annual data scoping and inheritance from previous years. The Actuar phase is fully implemented with CRUD and bidirectional traceability. PESV level changes are automatically detected and migrated.
 
+The PESV navigation covers 24 steps (P01-P08 Planear, H01-H11 Hacer, V01-V03 Verificar, A01-A02 Actuar). New modules H09 (Fatiga y Somnolencia, Art. 21) and H10 (Alcohol y Sustancias Psicoactivas, Art. 22) provide CRUD management of control records with tables `pesv_fatiga_registros` and `pesv_alcohol_registros`. The P01 auto-verification panel uses `memo` isolation outside `IsolatedFormProvider` to prevent re-render loops.
+
 A Sidecar module handles accounting integration, sending invoice data and saving DIAN CUFE.
 
 The billing system uses quote-based pricing. Pricing-affecting data updates trigger recalculation and update only after verification. The licensing model includes one free administrative user per company. A subscription blocking system, updated via Stripe webhooks, manages user access.

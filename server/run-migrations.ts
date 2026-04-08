@@ -30,6 +30,7 @@ import { addPerformanceIndexes } from './migrations/add-performance-indexes';
 import { syncLoginTrackingColumns } from './migrations/sync-login-tracking-columns';
 import { syncCompanySedes } from './migrations/sync-company-sedes';
 import { createPesvCriteriosEvidencias } from './migrations/create-pesv-criterios-evidencias';
+import { createPesvFatigaAlcoholTables } from './migrations/create-pesv-fatiga-alcohol-tables';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -71,6 +72,7 @@ export async function runMigrations() {
     await syncLoginTrackingColumns();
     await syncCompanySedes();
     await createPesvCriteriosEvidencias();
+    await createPesvFatigaAlcoholTables();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

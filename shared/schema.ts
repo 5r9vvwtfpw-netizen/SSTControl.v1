@@ -10791,3 +10791,50 @@ export const insertNgoOnboardedCompanySchema = createInsertSchema(ngoOnboardedCo
 });
 export type InsertNgoOnboardedCompany = z.infer<typeof insertNgoOnboardedCompanySchema>;
 export type NgoOnboardedCompany = typeof ngoOnboardedCompanies.$inferSelect;
+
+// ============================================================================
+// H09 - PESV Fatiga y Somnolencia (Art. 21, Resolución 40595/2022)
+// ============================================================================
+export const pesvFatigaRegistros = pgTable("pesv_fatiga_registros", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  evaluacionId: varchar("evaluacion_id").references(() => evaluacionesPesv.id, { onDelete: "set null" }),
+  conductorNombre: varchar("conductor_nombre").notNull(),
+  fechaRegistro: date("fecha_registro").notNull(),
+  tipoControl: varchar("tipo_control").notNull(), // sensibilizacion, verificacion_jornada, prueba_fisica, capacitacion
+  resultado: varchar("resultado").notNull(), // sin_novedad, fatiga_detectada, somnolencia_detectada
+  horasConduccion: integer("horas_conduccion"),
+  descansoCumplido: integer("descanso_cumplido").default(0), // 0=no, 1=si
+  medidasTomadas: text("medidas_tomadas"),
+  responsable: varchar("responsable"),
+  observaciones: text("observaciones"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+export const insertPesvFatigaRegistroSchema = createInsertSchema(pesvFatigaRegistros)
+  .omit({ id: true, createdAt: true, companyId: true });
+export type InsertPesvFatigaRegistro = z.infer<typeof insertPesvFatigaRegistroSchema>;
+export type PesvFatigaRegistro = typeof pesvFatigaRegistros.$inferSelect;
+
+// ============================================================================
+// H10 - PESV Alcohol y Sustancias Psicoactivas (Art. 22, Resolución 40595/2022)
+// ============================================================================
+export const pesvAlcoholRegistros = pgTable("pesv_alcohol_registros", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  evaluacionId: varchar("evaluacion_id").references(() => evaluacionesPesv.id, { onDelete: "set null" }),
+  conductorNombre: varchar("conductor_nombre").notNull(),
+  fechaRegistro: date("fecha_registro").notNull(),
+  tipoPrueba: varchar("tipo_prueba").notNull(), // preventiva, aleatoria, post_accidente, por_sospecha
+  sustanciaControlada: varchar("sustancia_controlada").notNull(), // alcohol, sustancias_psicoactivas, ambas
+  resultado: varchar("resultado").notNull(), // negativo, positivo, rehusa
+  medidasTomadas: text("medidas_tomadas"),
+  responsable: varchar("responsable"),
+  observaciones: text("observaciones"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+export const insertPesvAlcoholRegistroSchema = createInsertSchema(pesvAlcoholRegistros)
+  .omit({ id: true, createdAt: true, companyId: true });
+export type InsertPesvAlcoholRegistro = z.infer<typeof insertPesvAlcoholRegistroSchema>;
+export type PesvAlcoholRegistro = typeof pesvAlcoholRegistros.$inferSelect;

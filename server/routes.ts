@@ -49784,6 +49784,245 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
   // ============================================================================
+  // H09 - PESV Fatiga y Somnolencia (Art. 21, Resolución 40595/2022)
+  // ============================================================================
+
+  app.get("/api/pesv/fatiga-registros", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : userCompanyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const result = await db.execute(sql`
+        SELECT * FROM pesv_fatiga_registros
+        WHERE company_id = ${companyId}
+        ORDER BY fecha_registro DESC, created_at DESC
+      `);
+      res.json(result.rows);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/pesv/evaluacion/:evaluacionId/fatiga-registros", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : userCompanyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const result = await db.execute(sql`
+        SELECT * FROM pesv_fatiga_registros
+        WHERE company_id = ${companyId}
+          AND (evaluacion_id = ${req.params.evaluacionId} OR evaluacion_id IS NULL)
+        ORDER BY fecha_registro DESC, created_at DESC
+      `);
+      res.json(result.rows);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/pesv/fatiga-registros", requirePermission("vehicles:create"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const companyId = (isAdmin && req.body.companyId) ? req.body.companyId : userCompanyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const { conductorNombre, fechaRegistro, tipoControl, resultado, horasConduccion, descansoCumplido, medidasTomadas, responsable, observaciones, evaluacionId } = req.body;
+      if (!conductorNombre || !fechaRegistro || !tipoControl || !resultado) {
+        return res.status(400).json({ error: "Campos obligatorios faltantes" });
+      }
+      const result = await db.execute(sql`
+        INSERT INTO pesv_fatiga_registros 
+          (company_id, evaluacion_id, conductor_nombre, fecha_registro, tipo_control, resultado, horas_conduccion, descanso_cumplido, medidas_tomadas, responsable, observaciones)
+        VALUES 
+          (${companyId}, ${evaluacionId || null}, ${conductorNombre}, ${fechaRegistro}, ${tipoControl}, ${resultado}, ${horasConduccion || null}, ${descansoCumplido ?? 1}, ${medidasTomadas || null}, ${responsable || null}, ${observaciones || null})
+        RETURNING *
+      `);
+      res.status(201).json(result.rows[0]);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/pesv/evaluacion/:evaluacionId/fatiga-registros", requirePermission("vehicles:create"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const companyId = (isAdmin && req.body.companyId) ? req.body.companyId : userCompanyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const evaluacionId = req.params.evaluacionId;
+      const { conductorNombre, fechaRegistro, tipoControl, resultado, horasConduccion, descansoCumplido, medidasTomadas, responsable, observaciones } = req.body;
+      if (!conductorNombre || !fechaRegistro || !tipoControl || !resultado) {
+        return res.status(400).json({ error: "Campos obligatorios faltantes" });
+      }
+      const result = await db.execute(sql`
+        INSERT INTO pesv_fatiga_registros 
+          (company_id, evaluacion_id, conductor_nombre, fecha_registro, tipo_control, resultado, horas_conduccion, descanso_cumplido, medidas_tomadas, responsable, observaciones)
+        VALUES 
+          (${companyId}, ${evaluacionId}, ${conductorNombre}, ${fechaRegistro}, ${tipoControl}, ${resultado}, ${horasConduccion || null}, ${descansoCumplido ?? 1}, ${medidasTomadas || null}, ${responsable || null}, ${observaciones || null})
+        RETURNING *
+      `);
+      res.status(201).json(result.rows[0]);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/pesv/fatiga-registros/:id", requirePermission("vehicles:edit"), async (req, res) => {
+    try {
+      const { conductorNombre, fechaRegistro, tipoControl, resultado, horasConduccion, descansoCumplido, medidasTomadas, responsable, observaciones, evaluacionId } = req.body;
+      const result = await db.execute(sql`
+        UPDATE pesv_fatiga_registros SET
+          evaluacion_id = ${evaluacionId || null},
+          conductor_nombre = ${conductorNombre},
+          fecha_registro = ${fechaRegistro},
+          tipo_control = ${tipoControl},
+          resultado = ${resultado},
+          horas_conduccion = ${horasConduccion || null},
+          descanso_cumplido = ${descansoCumplido ?? 1},
+          medidas_tomadas = ${medidasTomadas || null},
+          responsable = ${responsable || null},
+          observaciones = ${observaciones || null}
+        WHERE id = ${req.params.id}
+        RETURNING *
+      `);
+      if (!result.rows[0]) return res.status(404).json({ error: "Registro no encontrado" });
+      res.json(result.rows[0]);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/pesv/fatiga-registros/:id", requirePermission("vehicles:delete"), async (req, res) => {
+    try {
+      await db.execute(sql`DELETE FROM pesv_fatiga_registros WHERE id = ${req.params.id}`);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============================================================================
+  // H10 - PESV Alcohol y Sustancias Psicoactivas (Art. 22, Resolución 40595/2022)
+  // ============================================================================
+
+  app.get("/api/pesv/alcohol-registros", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : userCompanyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const result = await db.execute(sql`
+        SELECT * FROM pesv_alcohol_registros
+        WHERE company_id = ${companyId}
+        ORDER BY fecha_registro DESC, created_at DESC
+      `);
+      res.json(result.rows);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/pesv/evaluacion/:evaluacionId/alcohol-registros", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : userCompanyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const result = await db.execute(sql`
+        SELECT * FROM pesv_alcohol_registros
+        WHERE company_id = ${companyId}
+          AND (evaluacion_id = ${req.params.evaluacionId} OR evaluacion_id IS NULL)
+        ORDER BY fecha_registro DESC, created_at DESC
+      `);
+      res.json(result.rows);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/pesv/alcohol-registros", requirePermission("vehicles:create"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const companyId = (isAdmin && req.body.companyId) ? req.body.companyId : userCompanyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const { conductorNombre, fechaRegistro, tipoPrueba, sustanciaControlada, resultado, medidasTomadas, responsable, observaciones, evaluacionId } = req.body;
+      if (!conductorNombre || !fechaRegistro || !tipoPrueba || !resultado) {
+        return res.status(400).json({ error: "Campos obligatorios faltantes" });
+      }
+      const result = await db.execute(sql`
+        INSERT INTO pesv_alcohol_registros 
+          (company_id, evaluacion_id, conductor_nombre, fecha_registro, tipo_prueba, sustancia_controlada, resultado, medidas_tomadas, responsable, observaciones)
+        VALUES 
+          (${companyId}, ${evaluacionId || null}, ${conductorNombre}, ${fechaRegistro}, ${tipoPrueba}, ${sustanciaControlada}, ${resultado}, ${medidasTomadas || null}, ${responsable || null}, ${observaciones || null})
+        RETURNING *
+      `);
+      res.status(201).json(result.rows[0]);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/pesv/evaluacion/:evaluacionId/alcohol-registros", requirePermission("vehicles:create"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const companyId = (isAdmin && req.body.companyId) ? req.body.companyId : userCompanyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const evaluacionId = req.params.evaluacionId;
+      const { conductorNombre, fechaRegistro, tipoPrueba, sustanciaControlada, resultado, medidasTomadas, responsable, observaciones } = req.body;
+      if (!conductorNombre || !fechaRegistro || !tipoPrueba || !resultado) {
+        return res.status(400).json({ error: "Campos obligatorios faltantes" });
+      }
+      const result = await db.execute(sql`
+        INSERT INTO pesv_alcohol_registros 
+          (company_id, evaluacion_id, conductor_nombre, fecha_registro, tipo_prueba, sustancia_controlada, resultado, medidas_tomadas, responsable, observaciones)
+        VALUES 
+          (${companyId}, ${evaluacionId}, ${conductorNombre}, ${fechaRegistro}, ${tipoPrueba}, ${sustanciaControlada}, ${resultado}, ${medidasTomadas || null}, ${responsable || null}, ${observaciones || null})
+        RETURNING *
+      `);
+      res.status(201).json(result.rows[0]);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/pesv/alcohol-registros/:id", requirePermission("vehicles:edit"), async (req, res) => {
+    try {
+      const { conductorNombre, fechaRegistro, tipoPrueba, sustanciaControlada, resultado, medidasTomadas, responsable, observaciones, evaluacionId } = req.body;
+      const result = await db.execute(sql`
+        UPDATE pesv_alcohol_registros SET
+          evaluacion_id = ${evaluacionId || null},
+          conductor_nombre = ${conductorNombre},
+          fecha_registro = ${fechaRegistro},
+          tipo_prueba = ${tipoPrueba},
+          sustancia_controlada = ${sustanciaControlada},
+          resultado = ${resultado},
+          medidas_tomadas = ${medidasTomadas || null},
+          responsable = ${responsable || null},
+          observaciones = ${observaciones || null}
+        WHERE id = ${req.params.id}
+        RETURNING *
+      `);
+      if (!result.rows[0]) return res.status(404).json({ error: "Registro no encontrado" });
+      res.json(result.rows[0]);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/pesv/alcohol-registros/:id", requirePermission("vehicles:delete"), async (req, res) => {
+    try {
+      await db.execute(sql`DELETE FROM pesv_alcohol_registros WHERE id = ${req.params.id}`);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============================================================================
   // PESV CICLO ACTUAR - A01 Mejora Continua + A02 Revisión por la Dirección
   // ADD-ONLY: Nuevos endpoints - no modifica endpoints existentes
   // ============================================================================

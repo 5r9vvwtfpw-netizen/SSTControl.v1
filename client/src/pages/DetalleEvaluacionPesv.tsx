@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "wouter";
-import { useState, useEffect, useCallback, useMemo, useRef, Component, type ErrorInfo, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, memo, Component, type ErrorInfo, type ReactNode } from "react";
 import { FormProvider } from "react-hook-form";
 import { setPesvEvaluacionContext } from "@/components/BackToPesvEvaluationButton";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -33,6 +33,54 @@ import { isModuleAllowedForChapter, type ChapterType } from "@shared/chapter-mod
 function IsolatedFormProvider({ form, children }: { form: any; children: React.ReactNode }) {
   return <FormProvider {...form}>{children}</FormProvider>;
 }
+
+// Componente aislado para mostrar la auto-verificación P01.
+// Debe estar FUERA del IsolatedFormProvider para evitar re-renders infinitos.
+const P01AutoVerifPanel = memo(({ data }: {
+  data: {
+    criterios: { nombre: string; cumple: boolean; detalle: string }[];
+    porcentaje: number;
+    cumplimientoTotal: number;
+    totalCriterios: number;
+  } | null;
+}) => {
+  if (!data) return null;
+  return (
+    <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-800 p-4 space-y-3 mb-2">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+          <span className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+            Verificación automática del Comité PESV
+          </span>
+        </div>
+        <Badge variant={data.porcentaje >= 100 ? "default" : "secondary"} className="shrink-0">
+          {data.cumplimientoTotal}/{data.totalCriterios} — {data.porcentaje}%
+        </Badge>
+      </div>
+      <div className="space-y-1.5">
+        {data.criterios.map((c, i) => (
+          <div key={i} className="flex items-start gap-2 text-xs">
+            {c.cumple ? (
+              <CheckCircle className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
+            ) : (
+              <Circle className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+            )}
+            <div className="flex-1 min-w-0">
+              <span className={c.cumple ? "text-emerald-700 dark:text-emerald-300 font-medium" : "text-muted-foreground"}>
+                {c.nombre}
+              </span>
+              {c.detalle && (
+                <p className="text-muted-foreground mt-0.5">{c.detalle}</p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+P01AutoVerifPanel.displayName = "P01AutoVerifPanel";
 
 interface RespuestaDialogProps {
   open: boolean;
@@ -380,6 +428,11 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
               Re-llenar
             </Button>
           </div>
+        )}
+
+        {/* Panel de verificación automática P01 - FUERA del FormProvider para evitar re-renders infinitos */}
+        {paso.codigo === "P01" && (
+          <P01AutoVerifPanel data={autoVerifP01} />
         )}
 
         <IsolatedFormProvider form={respuestaForm}>
