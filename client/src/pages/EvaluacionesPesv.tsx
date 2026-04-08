@@ -97,6 +97,7 @@ export default function EvaluacionesPesv() {
         const vehiculos = currentCompany.numberOfVehicles;
         const nivel = calcularNivelPesv(vehiculos);
         form.setValue("numeroVehiculos", vehiculos);
+        form.setValue("numeroConductores", vehiculos);
         form.setValue("nivel", nivel);
       }
     }
@@ -111,6 +112,7 @@ export default function EvaluacionesPesv() {
           const vehiculos = selectedCompany.numberOfVehicles;
           const nivel = calcularNivelPesv(vehiculos);
           form.setValue("numeroVehiculos", vehiculos);
+          form.setValue("numeroConductores", vehiculos);
           form.setValue("nivel", nivel);
         }
       }
@@ -408,9 +410,16 @@ export default function EvaluacionesPesv() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Car className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="text-sm text-muted-foreground">Vehículos registrados:</span>
+                      <span className="text-sm text-muted-foreground">Vehículos:</span>
                       <span className="text-sm font-semibold" data-testid="text-vehiculos-display">
                         {form.watch("numeroVehiculos") ?? 0}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm text-muted-foreground">Conductores:</span>
+                      <span className="text-sm font-semibold" data-testid="text-conductores-display">
+                        {form.watch("numeroConductores") ?? 0}
                       </span>
                     </div>
                   </div>
@@ -423,18 +432,10 @@ export default function EvaluacionesPesv() {
                   control={form.control}
                   name="numeroConductores"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Número de Conductores activos</FormLabel>
+                    <FormItem className="hidden">
                       <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                          data-testid="input-numero-conductores"
-                        />
+                        <Input type="hidden" {...field} />
                       </FormControl>
-                      <FormMessage />
                     </FormItem>
                   )}
                 />
