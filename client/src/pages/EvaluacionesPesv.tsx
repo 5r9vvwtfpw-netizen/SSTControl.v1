@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, FileText, CheckCircle2, FileCheck, Trash2, Car, Users, Copy } from "lucide-react";
+import { Plus, Search, FileText, CheckCircle2, FileCheck, Trash2, Car, Users, Copy, Info, ShieldCheck } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -360,74 +360,84 @@ export default function EvaluacionesPesv() {
                   />
                 )}
 
+                {/* Panel informativo: nivel y flota desde la suscripción */}
                 <FormField
                   control={form.control}
                   name="nivel"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nivel PESV (Auto-calculado)</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value} disabled>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-nivel-pesv">
-                            <SelectValue placeholder="Seleccione nivel" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Object.entries(NIVELES_PESV_LABELS).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Calculado automáticamente según vehículos registrados en la empresa (Res. 40595/2022)
-                      </FormDescription>
-                      <FormMessage />
+                    <FormItem className="hidden">
+                      <FormControl>
+                        <Input type="hidden" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="numeroVehiculos"
+                  render={({ field }) => (
+                    <FormItem className="hidden">
+                      <FormControl>
+                        <Input type="hidden" {...field} />
+                      </FormControl>
                     </FormItem>
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="numeroVehiculos"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Número de Vehículos</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min={0}
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            data-testid="input-numero-vehiculos"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="numeroConductores"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Número de Conductores</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min={0}
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            data-testid="input-numero-conductores"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <div className="rounded-md border bg-muted/40 p-4 space-y-3" data-testid="panel-nivel-suscripcion">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <Info className="h-4 w-4 shrink-0" />
+                    <span>Configuración determinada por su suscripción</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm text-muted-foreground">Nivel PESV:</span>
+                      <Badge
+                        data-testid="badge-nivel-pesv-display"
+                        className={
+                          form.watch("nivel") === "avanzado"
+                            ? "bg-purple-500/10 text-purple-700 dark:text-purple-400"
+                            : form.watch("nivel") === "estandar"
+                            ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
+                            : "bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                        }
+                      >
+                        {NIVELES_PESV_LABELS[form.watch("nivel") as keyof typeof NIVELES_PESV_LABELS] || "Básico"}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Car className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm text-muted-foreground">Vehículos registrados:</span>
+                      <span className="text-sm font-semibold" data-testid="text-vehiculos-display">
+                        {form.watch("numeroVehiculos") ?? 0}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Estos valores provienen de los datos registrados en su suscripción (Res. 40595/2022). Para modificarlos, actualice su perfil de empresa.
+                  </p>
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="numeroConductores"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número de Conductores activos</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          data-testid="input-numero-conductores"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}
