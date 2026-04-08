@@ -168,6 +168,7 @@ const pesvNavMenuItems: { label: string; path: string; group?: string }[] = [
   { label: "Monitoreo GPS", path: "/pesv/monitoreo-gps", group: "Hacer" },
   { label: "Fatiga y Somnolencia", path: "/pesv/fatiga-somnolencia", group: "Hacer" },
   { label: "Alcohol y Sustancias", path: "/pesv/alcohol-sustancias", group: "Hacer" },
+  { label: "Atención a Víctimas", path: "/pesv/atencion-victimas", group: "Hacer" },
   { label: "Siniestros Viales", path: "/pesv/siniestros", group: "Hacer" },
   // VERIFICAR / ACTUAR
   { label: "Auditorías PESV", path: "/pesv/auditorias", group: "Verificar/Actuar" },

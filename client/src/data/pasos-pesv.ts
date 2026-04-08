@@ -312,6 +312,8 @@ export const PASOS_PESV: PasoPesvData[] = [
       { nombre: 'Gestión de Trabajadores', url: '/trabajadores', icono: 'Users' },
       { nombre: 'Exámenes Médicos', url: '/examenes-medicos', icono: 'Stethoscope' }
     ],
+    moduloPesvUrl: '/pesv/conductores',
+    moduloPesvNombre: 'Conductores PESV',
     modoVerificacionSugerido: ['Revisión de procedimiento de selección de conductores', 'Verificación de certificados de aptitud psicofísica', 'Revisión de matriz de documentos'],
     hallazgoSugeridoNoCumple: 'No se evidencian acciones de fortalecimiento del comportamiento seguro de conductores y actores viales según Art. 13 de la Resolución 40595/2022.',
     observacionesCumple: 'Se verifican acciones implementadas para el fortalecimiento del factor humano incluyendo selección de conductores, evaluación psicofísica y control documental conforme a la Resolución 40595/2022.',
@@ -374,6 +376,8 @@ export const PASOS_PESV: PasoPesvData[] = [
     modulosSstUrls: [
       { nombre: 'Gestión de Trabajadores', url: '/trabajadores', icono: 'Users' }
     ],
+    moduloPesvUrl: '/pesv/conductores',
+    moduloPesvNombre: 'Conductores PESV',
     modoVerificacionSugerido: ['Revisión de base de datos de documentos', 'Verificación de alertas de vencimiento', 'Consulta SIMIT de comparendos'],
     hallazgoSugeridoNoCumple: 'No se evidencia control actualizado de documentación de conductores (licencias, comparendos, antecedentes) según Art. 15 de la Resolución 40595/2022.',
     observacionesCumple: 'Se verifica base de datos actualizada con control de documentos de conductores, alertas de vencimiento y consulta periódica SIMIT conforme a la Resolución 40595/2022.',
@@ -407,6 +411,8 @@ export const PASOS_PESV: PasoPesvData[] = [
       { nombre: 'Equipos y Herramientas', url: '/equipos', icono: 'Wrench' },
       { nombre: 'Inspecciones SST', url: '/inspecciones', icono: 'ClipboardCheck' }
     ],
+    moduloPesvUrl: '/pesv/vehiculos',
+    moduloPesvNombre: 'Vehículos PESV',
     modoVerificacionSugerido: ['Revisión de inventario de vehículos', 'Verificación de RTM y SOAT vigentes', 'Inspección de condiciones de seguridad'],
     hallazgoSugeridoNoCumple: 'No se evidencia que los vehículos cuenten con condiciones técnicas y de seguridad adecuadas (RTM, SOAT vigentes) según Art. 16 de la Resolución 40595/2022.',
     observacionesCumple: 'Se verifica inventario de vehículos actualizado con RTM y SOAT vigentes, tarjetas de propiedad y condiciones técnicas adecuadas conforme a la Resolución 40595/2022.',
@@ -637,6 +643,8 @@ export const PASOS_PESV: PasoPesvData[] = [
       { nombre: 'Plan de Emergencias', url: '/emergencias', icono: 'Siren' },
       { nombre: 'Accidentes de Trabajo', url: '/accidentes', icono: 'AlertOctagon' }
     ],
+    moduloPesvUrl: '/pesv/atencion-victimas',
+    moduloPesvNombre: 'Atención a Víctimas',
     modoVerificacionSugerido: ['Revisión de protocolo de atención', 'Verificación de directorio de emergencias', 'Revisión de convenios con IPS'],
     hallazgoSugeridoNoCumple: 'No se evidencia protocolo de atención a víctimas de siniestros viales con líneas de emergencia y programa de acompañamiento según Art. 23 de la Resolución 40595/2022.',
     observacionesCumple: 'Se verifica protocolo de atención a víctimas con directorio de emergencias, convenios con IPS y programa de acompañamiento conforme a la Resolución 40595/2022.',

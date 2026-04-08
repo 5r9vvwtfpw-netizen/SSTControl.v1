@@ -52,6 +52,7 @@ import PesvMonitoreoGps from "@/pages/PesvMonitoreoGps";
 import PesvRutasSeguras from "@/pages/PesvRutasSeguras";
 import PesvFatigaSomnolencia from "@/pages/PesvFatigaSomnolencia";
 import PesvAlcoholSustancias from "@/pages/PesvAlcoholSustancias";
+import PesvAtencionVictimas from "@/pages/PesvAtencionVictimas";
 import PesvSiniestros from "@/pages/PesvSiniestros";
 import PesvMejoraContinua from "@/pages/PesvMejoraContinua";
 import PesvRevisionDireccion from "@/pages/PesvRevisionDireccion";
@@ -342,6 +343,7 @@ function Router() {
       <SubscriptionProtectedRoute path="/pesv/rutas-seguras" component={PesvRutasSeguras} feature="hasPESV" featureName="Módulo PESV - Rutas Seguras" />
       <SubscriptionProtectedRoute path="/pesv/fatiga-somnolencia" component={PesvFatigaSomnolencia} feature="hasPESV" featureName="Módulo PESV - Fatiga y Somnolencia" />
       <SubscriptionProtectedRoute path="/pesv/alcohol-sustancias" component={PesvAlcoholSustancias} feature="hasPESV" featureName="Módulo PESV - Alcohol y Sustancias" />
+      <SubscriptionProtectedRoute path="/pesv/atencion-victimas" component={PesvAtencionVictimas} feature="hasPESV" featureName="Módulo PESV - Atención a Víctimas" />
       <SubscriptionProtectedRoute path="/pesv/matriz-riesgos" component={MatrizRiesgosViales} feature="hasPESV" featureName="Módulo PESV - Matriz de Riesgos" />
       <SubscriptionProtectedRoute path="/pesv/contexto-organizacional" component={ContextoOrganizacionalPesv} feature="hasPESV" featureName="Módulo PESV - Contexto" />
       <SubscriptionProtectedRoute path="/pesv/indicadores" component={IndicadoresPesv} feature="hasPESV" featureName="Módulo PESV - Indicadores" />

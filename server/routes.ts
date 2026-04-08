@@ -50023,6 +50023,108 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // ============================================================================
+  // H11 - PESV Atención a Víctimas de Siniestros Viales (Art. 23, Resolución 40595/2022)
+  // ============================================================================
+
+  app.get("/api/pesv/victimas-registros", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const isAdmin = hasGlobalAccess(user.role);
+      const companyId = isAdmin ? req.query.companyId as string : user.companyId;
+      if (!companyId) return res.status(400).json({ error: "companyId requerido" });
+      const rows = await db.execute(sql`SELECT * FROM pesv_victimas_registros WHERE company_id = ${companyId} ORDER BY fecha_siniestro DESC`);
+      res.json(rows.rows);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/pesv/evaluacion/:evaluacionId/victimas-registros", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const isAdmin = hasGlobalAccess(user.role);
+      const companyId = isAdmin ? req.query.companyId as string : user.companyId;
+      if (!companyId) return res.status(400).json({ error: "companyId requerido" });
+      const { evaluacionId } = req.params;
+      const rows = await db.execute(sql`SELECT * FROM pesv_victimas_registros WHERE company_id = ${companyId} AND evaluacion_id = ${evaluacionId} ORDER BY fecha_siniestro DESC`);
+      res.json(rows.rows);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/pesv/victimas-registros", requirePermission("vehicles:create"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const companyId = user.companyId;
+      if (!companyId) return res.status(400).json({ error: "companyId requerido" });
+      const { evaluacionId, fechaSiniestro, tipoVictima, nombreVictima, descripcionSiniestro, atencionInmediata, remisionIps, nombreIps, estadoSeguimiento, programaAcompanamiento, responsable, observaciones } = req.body;
+      if (!fechaSiniestro || !tipoVictima || !descripcionSiniestro) return res.status(400).json({ error: "Campos obligatorios faltantes" });
+      const result = await db.execute(sql`
+        INSERT INTO pesv_victimas_registros (company_id, evaluacion_id, fecha_siniestro, tipo_victima, nombre_victima, descripcion_siniestro, atencion_inmediata, remision_ips, nombre_ips, estado_seguimiento, programa_acompanamiento, responsable, observaciones)
+        VALUES (${companyId}, ${evaluacionId ?? null}, ${fechaSiniestro}, ${tipoVictima}, ${nombreVictima ?? null}, ${descripcionSiniestro}, ${atencionInmediata ?? null}, ${remisionIps ?? 0}, ${nombreIps ?? null}, ${estadoSeguimiento ?? 'activo'}, ${programaAcompanamiento ?? 0}, ${responsable ?? null}, ${observaciones ?? null})
+        RETURNING *`);
+      res.json(result.rows[0]);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/pesv/evaluacion/:evaluacionId/victimas-registros", requirePermission("vehicles:create"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const companyId = user.companyId;
+      if (!companyId) return res.status(400).json({ error: "companyId requerido" });
+      const { evaluacionId } = req.params;
+      const { fechaSiniestro, tipoVictima, nombreVictima, descripcionSiniestro, atencionInmediata, remisionIps, nombreIps, estadoSeguimiento, programaAcompanamiento, responsable, observaciones } = req.body;
+      if (!fechaSiniestro || !tipoVictima || !descripcionSiniestro) return res.status(400).json({ error: "Campos obligatorios faltantes" });
+      const result = await db.execute(sql`
+        INSERT INTO pesv_victimas_registros (company_id, evaluacion_id, fecha_siniestro, tipo_victima, nombre_victima, descripcion_siniestro, atencion_inmediata, remision_ips, nombre_ips, estado_seguimiento, programa_acompanamiento, responsable, observaciones)
+        VALUES (${companyId}, ${evaluacionId}, ${fechaSiniestro}, ${tipoVictima}, ${nombreVictima ?? null}, ${descripcionSiniestro}, ${atencionInmediata ?? null}, ${remisionIps ?? 0}, ${nombreIps ?? null}, ${estadoSeguimiento ?? 'activo'}, ${programaAcompanamiento ?? 0}, ${responsable ?? null}, ${observaciones ?? null})
+        RETURNING *`);
+      res.json(result.rows[0]);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/pesv/victimas-registros/:id", requirePermission("vehicles:edit"), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { fechaSiniestro, tipoVictima, nombreVictima, descripcionSiniestro, atencionInmediata, remisionIps, nombreIps, estadoSeguimiento, programaAcompanamiento, responsable, observaciones, evaluacionId } = req.body;
+      const result = await db.execute(sql`
+        UPDATE pesv_victimas_registros SET
+          fecha_siniestro = ${fechaSiniestro},
+          tipo_victima = ${tipoVictima},
+          nombre_victima = ${nombreVictima ?? null},
+          descripcion_siniestro = ${descripcionSiniestro},
+          atencion_inmediata = ${atencionInmediata ?? null},
+          remision_ips = ${remisionIps ?? 0},
+          nombre_ips = ${nombreIps ?? null},
+          estado_seguimiento = ${estadoSeguimiento ?? 'activo'},
+          programa_acompanamiento = ${programaAcompanamiento ?? 0},
+          responsable = ${responsable ?? null},
+          observaciones = ${observaciones ?? null},
+          evaluacion_id = ${evaluacionId ?? null}
+        WHERE id = ${id}
+        RETURNING *`);
+      if (!result.rows.length) return res.status(404).json({ error: "Registro no encontrado" });
+      res.json(result.rows[0]);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/pesv/victimas-registros/:id", requirePermission("vehicles:delete"), async (req, res) => {
+    try {
+      await db.execute(sql`DELETE FROM pesv_victimas_registros WHERE id = ${req.params.id}`);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============================================================================
   // PESV CICLO ACTUAR - A01 Mejora Continua + A02 Revisión por la Dirección
   // ADD-ONLY: Nuevos endpoints - no modifica endpoints existentes
   // ============================================================================

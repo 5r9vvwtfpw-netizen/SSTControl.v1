@@ -10838,3 +10838,29 @@ export const insertPesvAlcoholRegistroSchema = createInsertSchema(pesvAlcoholReg
   .omit({ id: true, createdAt: true, companyId: true });
 export type InsertPesvAlcoholRegistro = z.infer<typeof insertPesvAlcoholRegistroSchema>;
 export type PesvAlcoholRegistro = typeof pesvAlcoholRegistros.$inferSelect;
+
+// ============================================================================
+// H11 - PESV Atención a Víctimas de Siniestros Viales (Art. 23, Resolución 40595/2022)
+// ============================================================================
+export const pesvVictimasRegistros = pgTable("pesv_victimas_registros", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  evaluacionId: varchar("evaluacion_id").references(() => evaluacionesPesv.id, { onDelete: "set null" }),
+  fechaSiniestro: date("fecha_siniestro").notNull(),
+  tipoVictima: varchar("tipo_victima").notNull(), // conductor, peaton, ciclista, pasajero, otro
+  nombreVictima: varchar("nombre_victima"),
+  descripcionSiniestro: text("descripcion_siniestro").notNull(),
+  atencionInmediata: text("atencion_inmediata"),
+  remisionIps: integer("remision_ips").default(0), // 0=no, 1=si
+  nombreIps: varchar("nombre_ips"),
+  estadoSeguimiento: varchar("estado_seguimiento").notNull().default("activo"), // activo, en_proceso, cerrado
+  programaAcompanamiento: integer("programa_acompanamiento").default(0), // 0=no, 1=si
+  responsable: varchar("responsable"),
+  observaciones: text("observaciones"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+export const insertPesvVictimasRegistroSchema = createInsertSchema(pesvVictimasRegistros)
+  .omit({ id: true, createdAt: true, companyId: true });
+export type InsertPesvVictimasRegistro = z.infer<typeof insertPesvVictimasRegistroSchema>;
+export type PesvVictimasRegistro = typeof pesvVictimasRegistros.$inferSelect;
