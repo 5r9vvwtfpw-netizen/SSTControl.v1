@@ -46343,14 +46343,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
-  // DELETE /api/evaluaciones-pesv/:id - Elimina evaluación PESV (solo superadmin)
+  // DELETE /api/evaluaciones-pesv/:id - Elimina evaluación PESV (superadmin, admin, superusuario)
   app.delete('/api/evaluaciones-pesv/:id', requireAuth, async (req, res) => {
     try {
       const userRole = req.user!.role;
+      const rolesPermitidos = ['superadmin', 'admin', 'superusuario'];
 
-      // Solo superadmin puede eliminar evaluaciones PESV
-      if (userRole !== 'superadmin') {
-        return res.status(403).send("Solo el superadministrador puede eliminar evaluaciones PESV");
+      if (!rolesPermitidos.includes(userRole)) {
+        return res.status(403).send("No tienes permisos para eliminar evaluaciones PESV");
       }
       
       // Verificar que existe
@@ -46360,6 +46360,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       if (!existing) {
         return res.status(404).send("Evaluación PESV no encontrada");
+      }
+
+      // Admins solo pueden borrar evaluaciones de su propia empresa
+      if (userRole !== 'superadmin' && req.user!.companyId !== existing.companyId) {
+        return res.status(403).send("Solo puedes eliminar evaluaciones de tu propia empresa");
       }
       
       const evalId = req.params.id;

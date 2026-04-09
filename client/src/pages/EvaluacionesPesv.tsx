@@ -50,6 +50,8 @@ export default function EvaluacionesPesv() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [evaluacionToDelete, setEvaluacionToDelete] = useState<EvaluacionPesv | null>(null);
+  const [deleteConfirmPhrase, setDeleteConfirmPhrase] = useState("");
+  const [deleteConfirmAnio, setDeleteConfirmAnio] = useState("");
 
   const isSuperAdmin = user?.role === "superadmin";
   const isAdmin = isSuperAdmin;
@@ -161,6 +163,8 @@ export default function EvaluacionesPesv() {
       queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv"] });
       setDeleteDialogOpen(false);
       setEvaluacionToDelete(null);
+      setDeleteConfirmPhrase("");
+      setDeleteConfirmAnio("");
       toast({
         title: "Evaluación eliminada",
         description: "La evaluación PESV se ha eliminado exitosamente",
@@ -212,11 +216,17 @@ export default function EvaluacionesPesv() {
   const handleDeleteClick = (e: React.MouseEvent, evaluacion: EvaluacionPesv) => {
     e.stopPropagation();
     setEvaluacionToDelete(evaluacion);
+    setDeleteConfirmPhrase("");
+    setDeleteConfirmAnio("");
     setDeleteDialogOpen(true);
   };
 
+  const canConfirmDelete =
+    deleteConfirmPhrase === "ELIMINAR-EVALUACION-PESV" &&
+    deleteConfirmAnio === String(evaluacionToDelete?.anio ?? "");
+
   const confirmDelete = () => {
-    if (evaluacionToDelete) {
+    if (evaluacionToDelete && canConfirmDelete) {
       deleteMutation.mutate(evaluacionToDelete.id);
     }
   };
@@ -606,7 +616,7 @@ export default function EvaluacionesPesv() {
                     <Copy className="h-4 w-4 mr-2" />
                     Crear {evaluacion.anio + 1}
                   </Button>
-                  {user?.role === 'superadmin' && (
+                  {(user?.role === 'superadmin' || user?.role === 'admin' || user?.role === 'superusuario') && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -625,24 +635,67 @@ export default function EvaluacionesPesv() {
         </div>
       )}
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+        setDeleteDialogOpen(open);
+        if (!open) { setDeleteConfirmPhrase(""); setDeleteConfirmAnio(""); }
+      }}>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar evaluación PESV?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción eliminará permanentemente la evaluación PESV del año{" "}
-              <strong>{evaluacionToDelete?.anio}</strong> y todos sus datos asociados.
-              Esta acción no se puede deshacer.
+            <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 rounded-md p-3 mb-2">
+              <Trash2 className="h-5 w-5 text-destructive flex-shrink-0" />
+              <AlertDialogTitle className="text-destructive text-base">
+                ¡ADVERTENCIA! Acción irreversible
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-3">
+                  <p className="text-amber-800 dark:text-amber-300 font-medium">
+                    ¡ATENCIÓN! Esta acción NO se puede deshacer. Todos los datos de la evaluación PESV {evaluacionToDelete?.anio} se perderán permanentemente.
+                  </p>
+                </div>
+                <p className="text-muted-foreground">
+                  Para confirmar, escriba exactamente los siguientes campos:
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold text-destructive mb-1">
+                      Escriba exactamente: <span className="font-mono">ELIMINAR-EVALUACION-PESV</span>
+                    </p>
+                    <Input
+                      value={deleteConfirmPhrase}
+                      onChange={(e) => setDeleteConfirmPhrase(e.target.value)}
+                      placeholder="ELIMINAR-EVALUACION-PESV"
+                      className={deleteConfirmPhrase === "ELIMINAR-EVALUACION-PESV" ? "border-green-500" : ""}
+                      data-testid="input-delete-confirm-phrase"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-destructive mb-1">
+                      Escriba el año de la evaluación: <span className="font-mono">{evaluacionToDelete?.anio}</span>
+                    </p>
+                    <Input
+                      value={deleteConfirmAnio}
+                      onChange={(e) => setDeleteConfirmAnio(e.target.value)}
+                      placeholder={String(evaluacionToDelete?.anio ?? "")}
+                      className={deleteConfirmAnio === String(evaluacionToDelete?.anio ?? "") ? "border-green-500" : ""}
+                      data-testid="input-delete-confirm-anio"
+                    />
+                  </div>
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={!canConfirmDelete || deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground"
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+              <Trash2 className="h-4 w-4 mr-2" />
+              {deleteMutation.isPending ? "Eliminando..." : `Eliminar evaluación ${evaluacionToDelete?.anio}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
