@@ -46343,23 +46343,23 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
-  // DELETE /api/evaluaciones-pesv/:id - Elimina evaluación PESV
-  app.delete('/api/evaluaciones-pesv/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
+  // DELETE /api/evaluaciones-pesv/:id - Elimina evaluación PESV (solo superadmin)
+  app.delete('/api/evaluaciones-pesv/:id', requireAuth, async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+
+      // Solo superadmin puede eliminar evaluaciones PESV
+      if (userRole !== 'superadmin') {
+        return res.status(403).send("Solo el superadministrador puede eliminar evaluaciones PESV");
+      }
       
-      // Verificar que existe y pertenece a la empresa
+      // Verificar que existe
       const [existing] = await db.select()
         .from(evaluacionesPesv)
         .where(eq(evaluacionesPesv.id, req.params.id));
       
       if (!existing) {
         return res.status(404).send("Evaluación PESV no encontrada");
-      }
-      
-      if (!isAdmin && req.user!.companyId !== existing.companyId) {
-        return res.status(403).send("No tienes acceso a esta evaluación");
       }
       
       const evalId = req.params.id;

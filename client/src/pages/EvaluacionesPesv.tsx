@@ -606,16 +606,18 @@ export default function EvaluacionesPesv() {
                     <Copy className="h-4 w-4 mr-2" />
                     Crear {evaluacion.anio + 1}
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive"
-                    onClick={(e) => handleDeleteClick(e, evaluacion)}
-                    data-testid={`button-delete-${evaluacion.id}`}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Eliminar
-                  </Button>
+                  {user?.role === 'superadmin' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive"
+                      onClick={(e) => handleDeleteClick(e, evaluacion)}
+                      data-testid={`button-delete-${evaluacion.id}`}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Eliminar
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
