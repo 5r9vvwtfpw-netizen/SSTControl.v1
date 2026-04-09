@@ -459,8 +459,9 @@ export function registerPesvCriteriosEvidenciasRoutes(app: Express) {
         let criteriosCreated = 0;
         let evidenciasCreated = 0;
 
-        if (existingCriterios.length === 0) {
-          for (let i = 0; i < criterios.length; i++) {
+        const existingCriterioIndices = new Set(existingCriterios.map(c => c.criterioIndex));
+        for (let i = 0; i < criterios.length; i++) {
+          if (!existingCriterioIndices.has(i)) {
             await db.insert(pesvCriteriosVerificacion).values({
               evaluacionId,
               respuestaPasoId: respuestaPasoId || null,
@@ -473,8 +474,9 @@ export function registerPesvCriteriosEvidenciasRoutes(app: Express) {
           }
         }
 
-        if (existingEvidencias.length === 0) {
-          for (let i = 0; i < evidencias.length; i++) {
+        const existingEvidenciaIndices = new Set(existingEvidencias.map(e => e.evidenciaIndex));
+        for (let i = 0; i < evidencias.length; i++) {
+          if (!existingEvidenciaIndices.has(i)) {
             await db.insert(pesvEvidenciasDocumentos).values({
               evaluacionId,
               respuestaPasoId: respuestaPasoId || null,
