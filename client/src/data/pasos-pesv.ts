@@ -118,12 +118,14 @@ export const PASOS_PESV: PasoPesvData[] = [
     criteriosVerificacion: [
       'Caracterización de la empresa (misión, actividad económica)',
       'Inventario de vehículos actualizado',
-      'Base de datos de conductores'
+      'Base de datos de conductores',
+      'Diagnóstico de infraestructura vial (rutas, puntos críticos)'
     ],
     evidenciasRequeridas: [
       'Documento de caracterización',
       'Matriz de vehículos',
-      'Base de datos de conductores'
+      'Base de datos de conductores',
+      'Diagnóstico de rutas y puntos críticos de la vía'
     ],
     modulosSstRelacionados: ['trabajadores', 'perfiles-cargo'],
     moduloPesvUrl: '/pesv/contexto-organizacional',
@@ -147,11 +149,11 @@ export const PASOS_PESV: PasoPesvData[] = [
     puntajeMaximo: 5,
     criteriosVerificacion: [
       'Matriz de identificación de peligros viales',
-      'Evaluación de riesgos por línea de acción',
-      'Priorización de riesgos'
+      'Evaluación de riesgos en las 5 líneas de acción (factor humano, vehículos, infraestructura, factores organizacionales, atención a víctimas)',
+      'Priorización de riesgos con controles definidos'
     ],
     evidenciasRequeridas: [
-      'Matriz IPERC vial',
+      'Matriz IPERC vial por línea de acción',
       'Documento de evaluación de riesgos',
       'Plan de intervención priorizado'
     ],
@@ -300,12 +302,14 @@ export const PASOS_PESV: PasoPesvData[] = [
     criteriosVerificacion: [
       'Proceso de selección de conductores',
       'Evaluación de aptitud psicofísica',
-      'Control de documentación de conductores'
+      'Control de documentación de conductores',
+      'Programa de reconocimiento de conductas seguras'
     ],
     evidenciasRequeridas: [
       'Procedimiento de selección de conductores',
       'Certificados de aptitud',
-      'Matriz de documentos de conductores'
+      'Matriz de documentos de conductores',
+      'Registros de reconocimiento de conductas seguras'
     ],
     modulosSstRelacionados: ['trabajadores', 'examenes-medicos'],
     modulosSstUrls: [
@@ -556,7 +560,7 @@ export const PASOS_PESV: PasoPesvData[] = [
     nombre: 'Gestión de fatiga y somnolencia',
     descripcion: 'Implementar controles para prevenir la fatiga y somnolencia en conductores.',
     fase: 'hacer',
-    aplicaBasico: false,
+    aplicaBasico: true,
     aplicaEstandar: true,
     aplicaAvanzado: true,
     puntajeMaximo: 4,
@@ -579,7 +583,7 @@ export const PASOS_PESV: PasoPesvData[] = [
     hallazgoSugeridoNoCumple: 'No se evidencian controles para prevenir la fatiga y somnolencia en conductores (jornadas, descansos, horas de conducción) según Art. 21 de la Resolución 40595/2022.',
     observacionesCumple: 'Se verifican controles de fatiga y somnolencia con política de jornadas, registro de horas de conducción y programa de prevención conforme a la Resolución 40595/2022.',
     observacionesNoCumple: 'Se requiere implementar controles de fatiga con política de jornadas y programa de prevención.',
-    justificacionNaSugerida: 'No aplica para nivel básico según Resolución 40595/2022.',
+    justificacionNaSugerida: 'No aplica para organizaciones sin conductores ni personal con exposición a riesgo de fatiga vial.',
     moduloPesvUrl: '/pesv/fatiga-somnolencia',
     moduloPesvNombre: 'Registros de Fatiga y Somnolencia',
     fundamentoNormativo: 'Resolución 40595/2022, Art. 21 - Prevención de la fatiga'
