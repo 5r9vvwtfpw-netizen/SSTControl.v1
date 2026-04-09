@@ -46362,8 +46362,25 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).send("No tienes acceso a esta evaluación");
       }
       
+      const evalId = req.params.id;
+
+      // Primero nullificar FK en tablas sin ON DELETE CASCADE
+      const tablasConFK = [
+        'revisiones_direccion_pesv',
+        'contexto_organizacional_pesv',
+        'riesgos_viales',
+        'factores_desempeno_sv',
+        'indicadores_sv',
+        'objetivos_sv',
+        'auditorias_pesv',
+      ];
+      for (const tabla of tablasConFK) {
+        await db.execute(sql.raw(`UPDATE ${tabla} SET evaluacion_pesv_id = NULL WHERE evaluacion_pesv_id = '${evalId.replace(/'/g, "''")}'`));
+      }
+
+      // Luego eliminar la evaluación (las tablas con ON DELETE CASCADE se limpian automáticamente)
       await db.delete(evaluacionesPesv)
-        .where(eq(evaluacionesPesv.id, req.params.id));
+        .where(eq(evaluacionesPesv.id, evalId));
       
       res.status(204).send();
     } catch (error: any) {
