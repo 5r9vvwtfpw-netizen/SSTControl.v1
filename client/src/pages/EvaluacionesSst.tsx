@@ -87,6 +87,8 @@ export default function EvaluacionesSst() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [evaluacionToDelete, setEvaluacionToDelete] = useState<EvaluacionSst | null>(null);
+  const [deleteConfirmPhrase, setDeleteConfirmPhrase] = useState("");
+  const [deleteConfirmAnio, setDeleteConfirmAnio] = useState("");
   const [importarAnterior, setImportarAnterior] = useState(false);
   const [selectedVaultCompanyId, setSelectedVaultCompanyId] = useState<string | null>(null);
   const [yearFilter, setYearFilter] = useState<string>("todos");
@@ -248,6 +250,8 @@ export default function EvaluacionesSst() {
       queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-sst"] });
       setDeleteDialogOpen(false);
       setEvaluacionToDelete(null);
+      setDeleteConfirmPhrase("");
+      setDeleteConfirmAnio("");
       toast({
         title: "Evaluación eliminada",
         description: "La evaluación se ha eliminado exitosamente",
@@ -266,14 +270,22 @@ export default function EvaluacionesSst() {
   const handleDeleteClick = (e: React.MouseEvent, evaluacion: EvaluacionSst) => {
     e.stopPropagation();
     setEvaluacionToDelete(evaluacion);
+    setDeleteConfirmPhrase("");
+    setDeleteConfirmAnio("");
     setDeleteDialogOpen(true);
   };
 
+  const canConfirmDelete =
+    deleteConfirmPhrase === "ELIMINAR-EVALUACION-SST" &&
+    deleteConfirmAnio === String(evaluacionToDelete?.anio ?? "");
+
   const confirmDelete = () => {
-    if (evaluacionToDelete) {
+    if (evaluacionToDelete && canConfirmDelete) {
       deleteMutation.mutate(evaluacionToDelete.id);
     }
   };
+
+  const canDelete = isSuperAdmin || user?.role === 'admin' || user?.role === 'superusuario';
 
   const companyMap = useMemo(() => {
     const map: Record<string, { id: string; name: string }> = {};
@@ -926,16 +938,18 @@ export default function EvaluacionesSst() {
                           Descargar Reporte PDF
                         </Button>
                       )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-                        onClick={(e) => handleDeleteClick(e, evaluacion)}
-                        data-testid={`button-delete-evaluation-${evaluacion.id}`}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Eliminar
-                      </Button>
+                      {canDelete && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive"
+                          onClick={(e) => handleDeleteClick(e, evaluacion)}
+                          data-testid={`button-delete-evaluation-${evaluacion.id}`}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Eliminar
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -1021,11 +1035,11 @@ export default function EvaluacionesSst() {
                       Descargar Reporte PDF
                     </Button>
                   )}
-                  {isSuperAdmin && (
+                  {canDelete && (
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                      className="text-destructive"
                       onClick={(e) => handleDeleteClick(e, evaluacion)}
                       data-testid={`button-delete-evaluation-${evaluacion.id}`}
                     >
@@ -1195,29 +1209,66 @@ export default function EvaluacionesSst() {
       {/* Diálogo de confirmación de eliminación */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
         setDeleteDialogOpen(open);
-        if (!open) setEvaluacionToDelete(null);
+        if (!open) { setEvaluacionToDelete(null); setDeleteConfirmPhrase(""); setDeleteConfirmAnio(""); }
       }}>
-        <AlertDialogContent data-testid="dialog-confirm-delete">
+        <AlertDialogContent className="max-w-md" data-testid="dialog-confirm-delete">
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar evaluación?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción eliminará permanentemente la evaluación{" "}
-              <strong>
-                {evaluacionToDelete?.anio} - {evaluacionToDelete ? new Date(2024, evaluacionToDelete.mes - 1).toLocaleDateString('es-CO', { month: 'long' }) : ""}
-              </strong>
-              , incluyendo todas sus respuestas y acciones de mejora asociadas. 
-              Esta acción no se puede deshacer.
+            <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 rounded-md p-3 mb-2">
+              <Trash2 className="h-5 w-5 text-destructive flex-shrink-0" />
+              <AlertDialogTitle className="text-destructive text-base">
+                ¡ADVERTENCIA! Acción irreversible
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-3">
+                  <p className="text-amber-800 dark:text-amber-300 font-medium">
+                    ¡ATENCIÓN! Esta acción NO se puede deshacer. La evaluación SST{" "}
+                    {evaluacionToDelete?.anio} y todos sus datos se perderán permanentemente.
+                  </p>
+                </div>
+                <p className="text-muted-foreground">
+                  Para confirmar, escriba exactamente los siguientes campos:
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold text-destructive mb-1">
+                      Escriba exactamente: <span className="font-mono">ELIMINAR-EVALUACION-SST</span>
+                    </p>
+                    <Input
+                      value={deleteConfirmPhrase}
+                      onChange={(e) => setDeleteConfirmPhrase(e.target.value)}
+                      placeholder="ELIMINAR-EVALUACION-SST"
+                      className={deleteConfirmPhrase === "ELIMINAR-EVALUACION-SST" ? "border-green-500" : ""}
+                      data-testid="input-delete-confirm-phrase"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-destructive mb-1">
+                      Escriba el año de la evaluación: <span className="font-mono">{evaluacionToDelete?.anio}</span>
+                    </p>
+                    <Input
+                      value={deleteConfirmAnio}
+                      onChange={(e) => setDeleteConfirmAnio(e.target.value)}
+                      placeholder={String(evaluacionToDelete?.anio ?? "")}
+                      className={deleteConfirmAnio === String(evaluacionToDelete?.anio ?? "") ? "border-green-500" : ""}
+                      data-testid="input-delete-confirm-anio"
+                    />
+                  </div>
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={deleteMutation.isPending}
+              disabled={!canConfirmDelete || deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground"
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+              <Trash2 className="h-4 w-4 mr-2" />
+              {deleteMutation.isPending ? "Eliminando..." : `Eliminar evaluación ${evaluacionToDelete?.anio}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
