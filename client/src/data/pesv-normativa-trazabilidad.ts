@@ -641,28 +641,30 @@ export const TRAZABILIDAD_PASOS_PESV: TrazabilidadPasoPesv[] = [
     frecuenciaRevision: 'Anual'
   },
   {
-    paso: 22,
+    paso: 21,
     codigo: 'V02',
-    nombre: 'Revisión por la dirección',
+    nombre: 'Registro y análisis de siniestros viales',
     ciclo: 'verificar',
-    descripcion: 'Revisión periódica del PESV por la alta dirección',
+    descripcion: 'Registrar, investigar y analizar todos los siniestros viales de la organización.',
     normativaAplicable: {
-      resolucion40595: 'Artículo 5 - Paso 22',
-      decreto1072: 'Artículo 2.2.4.6.31 - Revisión por la alta dirección',
-      iso39001: 'Cláusula 9.3 - Revisión por la dirección'
+      resolucion40595: 'Artículo 5 - Paso 21 / Art. 25 - Investigación de siniestros viales',
+      decreto1072: 'Artículo 2.2.4.6.32 - Investigación de incidentes y accidentes',
+      iso39001: 'Cláusula 10.2 - Investigación de accidentes de tráfico'
     },
     requisitosEspecificos: [
-      'Agenda de revisión definida',
-      'Análisis de indicadores',
-      'Evaluación de cumplimiento de objetivos',
-      'Decisiones y compromisos documentados'
+      'Procedimiento de investigación de siniestros',
+      'Formato de reporte estandarizado',
+      'Análisis de causas raíz',
+      'Planes de acción correctiva',
+      'Registro histórico de siniestros'
     ],
     evidenciasRequeridas: [
-      'Actas de revisión por la dirección',
-      'Informe de desempeño del PESV',
-      'Plan de mejora aprobado'
+      'Base de datos de siniestros viales',
+      'Informes de investigación',
+      'Análisis de causalidad',
+      'Lecciones aprendidas'
     ],
-    frecuenciaRevision: 'Semestral'
+    frecuenciaRevision: 'Inmediata al ocurrir el siniestro'
   },
 
   // =====================================================
