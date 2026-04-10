@@ -156,7 +156,6 @@ const pesvNavMenuItems: { label: string; path: string; group?: string }[] = [
   { label: "Liderazgo y Compromiso", path: "/pesv/liderazgo", group: "Planear" },
   { label: "Contexto Organizacional", path: "/pesv/contexto-organizacional", group: "Planear" },
   { label: "Matriz de Riesgos Viales", path: "/pesv/matriz-riesgos", group: "Planear" },
-  { label: "Indicadores PESV", path: "/pesv/indicadores", group: "Planear" },
   { label: "Factores de Desempeño", path: "/pesv/factores-desempeno", group: "Planear" },
   // HACER
   { label: "Conductores", path: "/pesv/conductores", group: "Hacer" },
@@ -170,6 +169,7 @@ const pesvNavMenuItems: { label: string; path: string; group?: string }[] = [
   { label: "Alcohol y Sustancias", path: "/pesv/alcohol-sustancias", group: "Hacer" },
   { label: "Atención a Víctimas", path: "/pesv/atencion-victimas", group: "Hacer" },
   // VERIFICAR / ACTUAR
+  { label: "Indicadores PESV", path: "/pesv/indicadores", group: "Verificar/Actuar" },
   { label: "Siniestros Viales", path: "/pesv/siniestros", group: "Verificar/Actuar" },
   { label: "Auditorías PESV", path: "/pesv/auditorias", group: "Verificar/Actuar" },
   { label: "Mejora Continua", path: "/pesv/mejora-continua", group: "Verificar/Actuar" },

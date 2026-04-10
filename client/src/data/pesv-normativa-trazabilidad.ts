@@ -224,29 +224,29 @@ export const TRAZABILIDAD_PASOS_PESV: TrazabilidadPasoPesv[] = [
   {
     paso: 5,
     codigo: 'P05',
-    nombre: 'Diagnóstico',
+    nombre: 'Objetivos y metas del PESV',
     ciclo: 'planear',
-    descripcion: 'Análisis de la situación actual de la organización respecto a la seguridad vial',
+    descripcion: 'Definición de objetivos medibles y metas de seguridad vial para el período de vigencia del plan.',
     normativaAplicable: {
-      resolucion40595: 'Artículo 5 - Paso 5',
-      decreto1072: 'Artículo 2.2.4.6.15 - Identificación de peligros',
-      iso39001: 'Cláusula 4.1 - Comprensión de la organización y su contexto',
-      iso31000: 'Cláusula 5.4 - Evaluación del riesgo'
+      resolucion40595: 'Artículo 5 - Paso 5 - Objetivos y metas',
+      decreto1072: 'Artículo 2.2.4.6.16 - Objetivos del SG-SST',
+      iso39001: 'Cláusula 6.2 - Objetivos de seguridad vial y planificación',
+      iso31000: 'Cláusula 6.5 - Tratamiento del riesgo'
     },
     requisitosEspecificos: [
-      'Inventario de vehículos',
-      'Caracterización de conductores',
-      'Análisis de rutas y desplazamientos',
-      'Histórico de siniestros viales',
-      'Análisis de factores de riesgo'
+      'Objetivos de seguridad vial definidos y medibles',
+      'Metas cuantificables con indicadores',
+      'Responsables asignados para cada objetivo',
+      'Cronograma de seguimiento',
+      'Alineación con la política de seguridad vial'
     ],
     evidenciasRequeridas: [
-      'Informe de diagnóstico',
-      'Base de datos de vehículos',
-      'Base de datos de conductores',
-      'Estadísticas de siniestralidad'
+      'Documento de objetivos y metas del PESV',
+      'Tablero de indicadores vinculados',
+      'Actas de revisión de cumplimiento',
+      'Reportes de avance periódicos'
     ],
-    frecuenciaRevision: 'Anual'
+    frecuenciaRevision: 'Trimestral'
   },
   {
     paso: 6,
