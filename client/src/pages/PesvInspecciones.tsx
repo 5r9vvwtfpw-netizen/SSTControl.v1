@@ -216,15 +216,18 @@ export default function PesvInspecciones() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Inspecciones Preoperacionales</h1>
           <p className="text-muted-foreground">Revisiones diarias de vehículos antes de operar</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleDownloadPdf('/api/pesv/inspecciones/pdf', 'inspecciones-preoperacionales.pdf')}
-          data-testid="button-download-inspecciones-pdf"
-        >
-          <FileDown className="h-4 w-4 mr-2" />
-          Descargar PDF
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <HelpVideoButton customRoute="/pesv/inspecciones" testId="button-help-video-pesv-inspecciones" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDownloadPdf('/api/pesv/inspecciones/pdf', 'inspecciones-preoperacionales.pdf')}
+            data-testid="button-download-inspecciones-pdf"
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Descargar PDF
+          </Button>
+        </div>
       </div>
       
       <TrazabilidadPesvBanner codigoPaso="H08" compacto />

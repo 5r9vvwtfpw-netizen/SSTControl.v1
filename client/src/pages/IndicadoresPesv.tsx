@@ -658,6 +658,7 @@ export default function IndicadoresPesv() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <HelpVideoButton customRoute="/pesv/indicadores" testId="button-help-video-pesv-indicadores" />
           <Link href="/pesv">
             <Button variant="outline" size="sm" data-testid="button-back-pesv-panel">
               <ArrowLeft className="h-4 w-4 mr-2" />

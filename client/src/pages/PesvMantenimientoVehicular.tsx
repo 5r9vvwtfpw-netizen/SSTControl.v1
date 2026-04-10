@@ -267,15 +267,18 @@ export default function PesvMantenimientoVehicular() {
           </h1>
           <p className="text-muted-foreground">Gestión de mantenimientos preventivos, correctivos y predictivos</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleDownloadPdf('/api/pesv/mantenimientos/pdf', 'mantenimientos-pesv.pdf')}
-          data-testid="button-download-mantenimientos-pdf"
-        >
-          <FileDown className="h-4 w-4 mr-2" />
-          Descargar PDF
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <HelpVideoButton customRoute="/pesv/mantenimiento" testId="button-help-video-pesv-mantenimiento" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDownloadPdf('/api/pesv/mantenimientos/pdf', 'mantenimientos-pesv.pdf')}
+            data-testid="button-download-mantenimientos-pdf"
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Descargar PDF
+          </Button>
+        </div>
       </div>
       
       <TrazabilidadPesvBanner codigoPaso="H09" compacto />

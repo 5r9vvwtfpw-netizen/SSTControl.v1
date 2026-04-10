@@ -213,10 +213,13 @@ export default function PesvFatigaSomnolencia() {
             <p className="text-sm text-muted-foreground">Art. 21 — Resolución 40595/2022 · Controles de jornada, descanso y vigilancia del conductor</p>
           </div>
         </div>
-        <Button onClick={openNew} data-testid="button-nuevo-registro-fatiga" className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nuevo Registro
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <HelpVideoButton customRoute="/pesv/fatiga-somnolencia" testId="button-help-video-pesv-fatiga" />
+          <Button onClick={openNew} data-testid="button-nuevo-registro-fatiga" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nuevo Registro
+          </Button>
+        </div>
       </div>
 
       {/* Contexto normativo */}

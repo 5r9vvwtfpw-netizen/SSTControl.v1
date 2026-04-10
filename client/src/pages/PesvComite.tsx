@@ -124,6 +124,7 @@ export default function PesvComite() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Conformación del Equipo de Trabajo PESV</h1>
           <p className="text-muted-foreground">Paso 1 (P01) — Planear · Resolución 40595/2022, Art. 5 · Aplica: Básico, Estándar, Avanzado</p>
         </div>
+        <HelpVideoButton customRoute="/pesv/comite" testId="button-help-video-pesv-comite" />
       </div>
 
       <TrazabilidadPesvBanner codigoPaso="P02" compacto />

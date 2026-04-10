@@ -214,10 +214,13 @@ export default function PesvAlcoholSustancias() {
             <p className="text-sm text-muted-foreground">Art. 22 — Resolución 40595/2022 · Programa de cero tolerancia y control de SAP</p>
           </div>
         </div>
-        <Button onClick={openNew} data-testid="button-nuevo-registro-alcohol" className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nuevo Registro
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <HelpVideoButton customRoute="/pesv/alcohol-sustancias" testId="button-help-video-pesv-alcohol" />
+          <Button onClick={openNew} data-testid="button-nuevo-registro-alcohol" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nuevo Registro
+          </Button>
+        </div>
       </div>
 
       {/* Marco normativo */}

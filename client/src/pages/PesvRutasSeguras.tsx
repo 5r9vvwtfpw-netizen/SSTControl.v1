@@ -1127,6 +1127,7 @@ export default function PesvRutasSeguras() {
             Resolución 40595/2022 - Definición y gestión de rutas seguras para desplazamientos
           </p>
         </div>
+        <HelpVideoButton customRoute="/pesv/rutas-seguras" testId="button-help-video-pesv-rutas" />
       </div>
       
       <TrazabilidadPesvBanner codigoPaso="H06" compacto />

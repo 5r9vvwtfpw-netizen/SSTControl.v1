@@ -247,15 +247,18 @@ export default function PesvSiniestros() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Siniestros Viales</h1>
           <p className="text-muted-foreground">Registro e investigación de accidentes de tránsito</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleDownloadPdf('/api/pesv/siniestros/pdf', 'siniestros-viales.pdf')}
-          data-testid="button-download-siniestros-pdf"
-        >
-          <FileDown className="h-4 w-4 mr-2" />
-          Descargar PDF
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <HelpVideoButton customRoute="/pesv/siniestros" testId="button-help-video-pesv-siniestros" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDownloadPdf('/api/pesv/siniestros/pdf', 'siniestros-viales.pdf')}
+            data-testid="button-download-siniestros-pdf"
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Descargar PDF
+          </Button>
+        </div>
       </div>
       
       <TrazabilidadPesvBanner codigoPaso="V02" compacto />

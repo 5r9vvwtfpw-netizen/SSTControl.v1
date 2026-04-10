@@ -262,15 +262,18 @@ export default function PesvVehiculos() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Vehículos PESV</h1>
           <p className="text-muted-foreground">Gestión de flota vehicular</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleDownloadPdf('/api/pesv/vehiculos/pdf', 'vehiculos-pesv.pdf')}
-          data-testid="button-download-vehiculos-pdf"
-        >
-          <FileDown className="h-4 w-4 mr-2" />
-          Descargar PDF
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <HelpVideoButton customRoute="/pesv/vehiculos" testId="button-help-video-pesv-vehiculos" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDownloadPdf('/api/pesv/vehiculos/pdf', 'vehiculos-pesv.pdf')}
+            data-testid="button-download-vehiculos-pdf"
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Descargar PDF
+          </Button>
+        </div>
       </div>
       
       <TrazabilidadPesvBanner codigoPaso="H08" compacto />

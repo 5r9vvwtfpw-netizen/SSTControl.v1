@@ -68,6 +68,7 @@ export default function PesvLiderazgo() {
           </Button>
         </Link>
         <BackToPesvEvaluationButton />
+        <HelpVideoButton customRoute="/pesv/liderazgo" testId="button-help-video-pesv-liderazgo" />
       </div>
       <div>
         <h1 className="text-2xl font-bold" data-testid="text-page-title">

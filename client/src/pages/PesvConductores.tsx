@@ -270,15 +270,18 @@ export default function PesvConductores() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Conductores PESV</h1>
           <p className="text-muted-foreground">Gestión de conductores y licencias</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleDownloadPdf('/api/pesv/conductores/pdf', 'conductores-pesv.pdf')}
-          data-testid="button-download-conductores-pdf"
-        >
-          <FileDown className="h-4 w-4 mr-2" />
-          Descargar PDF
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <HelpVideoButton customRoute="/pesv/conductores" testId="button-help-video-pesv-conductores" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDownloadPdf('/api/pesv/conductores/pdf', 'conductores-pesv.pdf')}
+            data-testid="button-download-conductores-pdf"
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Descargar PDF
+          </Button>
+        </div>
       </div>
       
       <TrazabilidadPesvBanner codigoPaso="H07" compacto />

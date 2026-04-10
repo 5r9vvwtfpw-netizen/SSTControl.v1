@@ -654,6 +654,7 @@ export default function PesvMonitoreoGps() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Monitoreo GPS / Velocidad</h1>
           <p className="text-muted-foreground">Seguimiento en tiempo real de ubicación y velocidad de vehículos (Resolución 40595/2022)</p>
         </div>
+        <HelpVideoButton customRoute="/pesv/monitoreo-gps" testId="button-help-video-pesv-gps" />
       </div>
 
       <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">

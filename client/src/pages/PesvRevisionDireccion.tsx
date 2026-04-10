@@ -216,6 +216,7 @@ export default function PesvRevisionDireccion() {
       />
 
       <div className="flex items-center gap-2 flex-wrap mb-4">
+        <HelpVideoButton customRoute="/pesv/revision-direccion" testId="button-help-video-pesv-revision" />
         <Button
           variant="ghost"
           size="icon"

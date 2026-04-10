@@ -365,6 +365,7 @@ export default function PesvAuditorias() {
             Auditorías anuales obligatorias según Resolución 40595/2022 - Evaluación 24 pasos PHVA
           </p>
         </div>
+        <HelpVideoButton customRoute="/pesv/auditorias" testId="button-help-video-pesv-auditorias" />
       </div>
       
       <TrazabilidadPesvBanner codigoPaso="V03" compacto />

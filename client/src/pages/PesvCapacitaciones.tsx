@@ -269,15 +269,18 @@ export default function PesvCapacitaciones() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Capacitaciones de Seguridad Vial</h1>
           <p className="text-muted-foreground">Formación en seguridad vial y conducción defensiva</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleDownloadPdf('/api/pesv/capacitaciones/pdf', 'capacitaciones-seguridad-vial.pdf')}
-          data-testid="button-download-capacitaciones-pdf"
-        >
-          <FileDown className="h-4 w-4 mr-2" />
-          Descargar PDF
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <HelpVideoButton customRoute="/pesv/capacitaciones" testId="button-help-video-pesv-capacitaciones" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDownloadPdf('/api/pesv/capacitaciones/pdf', 'capacitaciones-seguridad-vial.pdf')}
+            data-testid="button-download-capacitaciones-pdf"
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Descargar PDF
+          </Button>
+        </div>
       </div>
       
       <TrazabilidadPesvBanner codigoPaso="H02" compacto />

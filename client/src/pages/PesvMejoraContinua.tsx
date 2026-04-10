@@ -377,6 +377,7 @@ export default function PesvMejoraContinua() {
       />
 
       <div className="flex items-center gap-2 flex-wrap mb-4">
+        <HelpVideoButton customRoute="/pesv/mejora-continua" testId="button-help-video-pesv-mejora" />
         <Button
           variant="outline"
           size="sm"

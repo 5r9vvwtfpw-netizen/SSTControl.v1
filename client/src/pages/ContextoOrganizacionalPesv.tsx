@@ -372,6 +372,7 @@ export default function ContextoOrganizacionalPesv() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <HelpVideoButton customRoute="/pesv/contexto-organizacional" testId="button-help-video-pesv-contexto" />
           <Link href="/pesv">
             <Button variant="outline" size="sm" data-testid="button-back-pesv-panel">
               <ArrowLeft className="h-4 w-4 mr-2" />

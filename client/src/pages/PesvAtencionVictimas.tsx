@@ -218,10 +218,13 @@ export default function PesvAtencionVictimas() {
             <p className="text-sm text-muted-foreground">Art. 23 — Resolución 40595/2022 · Protocolo de atención y acompañamiento</p>
           </div>
         </div>
-        <Button onClick={openNew} data-testid="button-nuevo-registro-victima" className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nuevo Registro
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <HelpVideoButton customRoute="/pesv/atencion-victimas" testId="button-help-video-pesv-victimas" />
+          <Button onClick={openNew} data-testid="button-nuevo-registro-victima" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nuevo Registro
+          </Button>
+        </div>
       </div>
 
       {/* Marco normativo */}
