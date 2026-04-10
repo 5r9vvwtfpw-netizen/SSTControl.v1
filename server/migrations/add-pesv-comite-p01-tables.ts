@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { sql } from "drizzle-orm";
 
-export async function runMigration() {
+export async function addPesvComiteP01Tables() {
   console.log("[MIGRATION] Adding PESV P01 tables: actos_administrativos_pesv, cronograma_reuniones_pesv, and funciones_responsabilidades column...");
 
   await db.execute(sql.raw(`
@@ -65,5 +65,3 @@ export async function runMigration() {
 
   console.log("[MIGRATION] PESV P01 tables created successfully.");
 }
-
-runMigration().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); });
