@@ -382,11 +382,29 @@ export default function ContextoOrganizacionalPesv() {
           </Button>
           <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild>
-              <Button className="bg-green-600 hover:bg-green-700" data-testid="button-agregar-factor">
+              <Button
+                className="bg-green-600 hover:bg-green-700"
+                data-testid="button-agregar-factor"
+                onClick={() => {
+                  setEditingFactor(null);
+                  form.reset({
+                    tipoFactor: "interno",
+                    nombre: "",
+                    descripcion: "",
+                    categoria: "",
+                    impactoSeguridad: "",
+                    nivelImpacto: undefined,
+                    fechaIdentificacion: undefined,
+                    fechaRevision: undefined,
+                    evaluacionPesvId: undefined,
+                    activo: 1,
+                  });
+                }}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Agregar Factor
-            </Button>
-          </DialogTrigger>
+              </Button>
+            </DialogTrigger>
           <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] overflow-y-auto mx-auto">
             <DialogHeader>
               <DialogTitle>
