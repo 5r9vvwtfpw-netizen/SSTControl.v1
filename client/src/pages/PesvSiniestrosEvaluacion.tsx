@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Eye, AlertTriangle, Calendar, MapPin, Car, User, Navigation, Sparkles } from "lucide-react";
+import { Plus, Eye, AlertTriangle, Calendar, MapPin, Car, User, Navigation, Sparkles, Database, ExternalLink } from "lucide-react";
+import { useLocation } from "wouter";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -20,6 +21,7 @@ import { EvaluacionPesv, RoadIncident, Vehicle, Driver, VehicleGpsTracking } fro
 
 export default function PesvSiniestrosEvaluacion() {
   const { evaluacionId } = useParams<{ evaluacionId: string }>();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -56,6 +58,10 @@ export default function PesvSiniestrosEvaluacion() {
       return res.json();
     },
     enabled: !!evaluacionId,
+  });
+
+  const { data: globalIncidents = [], isLoading: globalIncidentsLoading } = useQuery<RoadIncident[]>({
+    queryKey: ["/api/road-incidents"],
   });
 
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
@@ -205,11 +211,82 @@ export default function PesvSiniestrosEvaluacion() {
         <BackToPesvEvaluationButton />
       </div>
 
+      {/* SECCIÓN 1: Siniestros del módulo general */}
+      <Card className="mb-4">
+        <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Database className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-base">Siniestros del Módulo General</CardTitle>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLocation("/pesv/siniestros")}
+            data-testid="button-go-global-siniestros"
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Ir al módulo
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {globalIncidentsLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : globalIncidents.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              <Database className="h-8 w-8 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">No hay siniestros registrados en el módulo general</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Severidad</TableHead>
+                  <TableHead>Vehículo</TableHead>
+                  <TableHead>Ubicación</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {globalIncidents.map((incident) => (
+                  <TableRow key={incident.id} data-testid={`row-global-incident-${incident.id}`}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        {incident.incidentDate}
+                      </div>
+                    </TableCell>
+                    <TableCell>{getTypeLabel(incident.type)}</TableCell>
+                    <TableCell>{getSeverityBadge(incident.severity)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Car className="h-4 w-4 text-muted-foreground" />
+                        {getVehiclePlate(incident.vehicleId)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        {incident.location || "N/A"}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* SECCIÓN 2: Siniestros propios de esta evaluación */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
-            <CardTitle>Siniestros Viales</CardTitle>
+            <CardTitle>Siniestros de esta Evaluación</CardTitle>
           </div>
           {!dialogOpen && (
             <Button data-testid="button-create-incident" onClick={() => handleDialogOpen(true)}>
