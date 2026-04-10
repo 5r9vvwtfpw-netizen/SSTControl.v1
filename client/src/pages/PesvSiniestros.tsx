@@ -257,7 +257,7 @@ export default function PesvSiniestros() {
         </Button>
       </div>
       
-      <TrazabilidadPesvBanner codigoPaso="H05" compacto />
+      <TrazabilidadPesvBanner codigoPaso="V02" compacto />
       
       <div className="flex flex-wrap items-center justify-between gap-4">
         {user?.role && hasCompanyAdminAccess(user.role) && (
