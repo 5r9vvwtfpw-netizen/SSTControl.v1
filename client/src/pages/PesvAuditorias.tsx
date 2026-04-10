@@ -366,7 +366,7 @@ export default function PesvAuditorias() {
         </div>
       </div>
       
-      <TrazabilidadPesvBanner codigoPaso="V01" compacto />
+      <TrazabilidadPesvBanner codigoPaso="V03" compacto />
       
       <div className="flex flex-wrap items-center justify-between gap-4">
         {user?.role && hasCompanyAdminAccess(user.role) && (

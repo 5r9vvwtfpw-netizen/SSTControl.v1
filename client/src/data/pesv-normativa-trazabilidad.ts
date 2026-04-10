@@ -276,27 +276,28 @@ export const TRAZABILIDAD_PASOS_PESV: TrazabilidadPasoPesv[] = [
   {
     paso: 7,
     codigo: 'P07',
-    nombre: 'Objetivos y metas del PESV',
+    nombre: 'Roles y responsabilidades del PESV',
     ciclo: 'planear',
-    descripcion: 'Definición de objetivos medibles y metas de seguridad vial',
+    descripcion: 'Definición y asignación de roles, responsabilidades y autoridades para la implementación del PESV.',
     normativaAplicable: {
-      resolucion40595: 'Artículo 5 - Paso 7',
-      decreto1072: 'Artículo 2.2.4.6.17 - Objetivos del SG-SST',
-      iso39001: 'Cláusula 6.2 - Objetivos de seguridad vial y planificación'
+      resolucion40595: 'Artículo 5 - Paso 7 - Roles y responsabilidades',
+      decreto1072: 'Artículo 2.2.4.6.8 - Obligaciones de los empleadores',
+      iso39001: 'Cláusula 5.3 - Roles, responsabilidades y autoridades en la organización'
     },
     requisitosEspecificos: [
-      'Objetivos SMART',
-      'Alineación con política de seguridad vial',
-      'Indicadores de cumplimiento',
-      'Responsables asignados',
-      'Plazos definidos'
+      'Matriz de roles y responsabilidades definida',
+      'Responsable del PESV designado formalmente',
+      'Funciones del Comité de Seguridad Vial documentadas',
+      'Comunicación de responsabilidades a toda la organización',
+      'Perfiles de competencia para cada rol'
     ],
     evidenciasRequeridas: [
-      'Documento de objetivos y metas',
-      'Indicadores de seguimiento',
-      'Plan de acción'
+      'Matriz RACI del PESV',
+      'Acto administrativo de designación del responsable',
+      'Acta de conformación del Comité de Seguridad Vial',
+      'Comunicación interna de roles'
     ],
-    frecuenciaRevision: 'Trimestral'
+    frecuenciaRevision: 'Anual o ante cambios organizacionales'
   },
   {
     paso: 8,
@@ -617,28 +618,30 @@ export const TRAZABILIDAD_PASOS_PESV: TrazabilidadPasoPesv[] = [
   // CICLO VERIFICAR (2 PASOS)
   // =====================================================
   {
-    paso: 21,
+    paso: 20,
     codigo: 'V01',
-    nombre: 'Auditoría del PESV',
+    nombre: 'Indicadores de gestión del PESV',
     ciclo: 'verificar',
-    descripcion: 'Auditoría interna y externa del Plan Estratégico de Seguridad Vial',
+    descripcion: 'Definición y monitoreo de indicadores de desempeño del Plan Estratégico de Seguridad Vial.',
     normativaAplicable: {
-      resolucion40595: 'Artículo 5 - Paso 21',
-      decreto1072: 'Artículo 2.2.4.6.29 - Auditoría de cumplimiento del SG-SST',
-      iso39001: 'Cláusula 9.2 - Auditoría interna'
+      resolucion40595: 'Artículo 5 - Paso 20 / Art. 24 - Seguimiento y medición',
+      decreto1072: 'Artículo 2.2.4.6.20 - Indicadores del SG-SST',
+      iso39001: 'Cláusula 9.1 - Seguimiento, medición, análisis y evaluación'
     },
     requisitosEspecificos: [
-      'Programa de auditorías',
-      'Auditores competentes',
-      'Criterios de auditoría definidos',
-      'Informe de hallazgos'
+      'Tablero de indicadores de desempeño definido',
+      'Frecuencia de medición establecida',
+      'Línea base e histórico de resultados',
+      'Análisis de tendencias periódico',
+      'Metas cuantificables por indicador'
     ],
     evidenciasRequeridas: [
-      'Programa de auditorías',
-      'Informes de auditoría',
-      'Planes de acción correctiva'
+      'Tablero de indicadores PESV',
+      'Reportes de seguimiento periódicos',
+      'Gráficos de tendencias',
+      'Actas de revisión de resultados'
     ],
-    frecuenciaRevision: 'Anual'
+    frecuenciaRevision: 'Mensual'
   },
   {
     paso: 21,
@@ -665,6 +668,32 @@ export const TRAZABILIDAD_PASOS_PESV: TrazabilidadPasoPesv[] = [
       'Lecciones aprendidas'
     ],
     frecuenciaRevision: 'Inmediata al ocurrir el siniestro'
+  },
+  {
+    paso: 22,
+    codigo: 'V03',
+    nombre: 'Auditoría del PESV',
+    ciclo: 'verificar',
+    descripcion: 'Auditoría interna y externa del Plan Estratégico de Seguridad Vial para verificar su cumplimiento y eficacia.',
+    normativaAplicable: {
+      resolucion40595: 'Artículo 5 - Paso 22 - Auditoría interna',
+      decreto1072: 'Artículo 2.2.4.6.29 - Auditoría de cumplimiento del SG-SST',
+      iso39001: 'Cláusula 9.2 - Auditoría interna'
+    },
+    requisitosEspecificos: [
+      'Programa anual de auditorías',
+      'Auditores competentes e independientes',
+      'Criterios y alcance de auditoría definidos',
+      'Informe de hallazgos y no conformidades',
+      'Planes de acción sobre hallazgos'
+    ],
+    evidenciasRequeridas: [
+      'Programa de auditorías',
+      'Informes de auditoría interna',
+      'Planes de acción correctiva',
+      'Registros de cierre de hallazgos'
+    ],
+    frecuenciaRevision: 'Anual'
   },
 
   // =====================================================
@@ -697,26 +726,28 @@ export const TRAZABILIDAD_PASOS_PESV: TrazabilidadPasoPesv[] = [
   {
     paso: 24,
     codigo: 'A02',
-    nombre: 'Acciones correctivas y preventivas',
+    nombre: 'Revisión por la alta dirección',
     ciclo: 'actuar',
-    descripcion: 'Gestión de acciones correctivas y preventivas derivadas del PESV',
+    descripcion: 'Revisión periódica del PESV por la alta dirección para evaluar su conveniencia, adecuación y eficacia.',
     normativaAplicable: {
-      resolucion40595: 'Artículo 5 - Paso 24',
-      decreto1072: 'Artículo 2.2.4.6.33 - Acciones preventivas y correctivas',
-      iso39001: 'Cláusula 10.1 - No conformidad y acción correctiva'
+      resolucion40595: 'Artículo 5 - Paso 24 - Revisión por la dirección',
+      decreto1072: 'Artículo 2.2.4.6.31 - Revisión por la alta dirección',
+      iso39001: 'Cláusula 9.3 - Revisión por la dirección'
     },
     requisitosEspecificos: [
-      'Procedimiento de acciones correctivas',
-      'Análisis de causas raíz',
-      'Plan de acción con responsables',
-      'Verificación de cierre efectivo'
+      'Agenda de revisión con temas mínimos definidos',
+      'Análisis del desempeño del PESV (indicadores)',
+      'Evaluación de cumplimiento de objetivos y metas',
+      'Decisiones y compromisos de mejora documentados',
+      'Asignación de recursos para el siguiente período'
     ],
     evidenciasRequeridas: [
-      'Procedimiento documentado',
-      'Registro de acciones',
-      'Evidencias de cierre'
+      'Acta de revisión por la alta dirección',
+      'Informe de desempeño del PESV',
+      'Plan de mejora aprobado por la dirección',
+      'Compromisos firmados de la dirección'
     ],
-    frecuenciaRevision: 'Por evento'
+    frecuenciaRevision: 'Semestral'
   }
 ];
 
