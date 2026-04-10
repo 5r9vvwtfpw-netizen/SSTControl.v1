@@ -46904,8 +46904,19 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const logo = await loadCompanyLogo(company?.logoUrl);
       const signers = await getSignersForCompany(companyId, true);
 
+      const esReporteSupertransporte = req.query.tipo === 'supertransporte';
+      const pdfMetaTitle = esReporteSupertransporte
+        ? 'Informe de Autoevaluación PESV — Supertransporte'
+        : 'Acta de Evaluación PESV';
+      const pdfVisualTitle = esReporteSupertransporte
+        ? 'INFORME DE AUTOEVALUACIÓN PESV — SUPERTRANSPORTE'
+        : 'ACTA DE EVALUACIÓN PESV';
+      const pdfFilename = esReporteSupertransporte
+        ? `reporte-supertransporte-pesv-${evaluacion.anio}.pdf`
+        : `evaluacion-pesv-${evaluacion.anio}.pdf`;
+
       // Create PDF
-      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER', info: { Title: pdfMetaTitle, Author: 'SST Colombia - SADGI S.A.S.', Subject: 'Plan Estratégico de Seguridad Vial' } });
 
       // Add trial watermark if subscription is in trial period
       const pesvPdfSubscription = await storage.getSubscriptionByCompany(companyId);
@@ -46914,14 +46925,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       const margin = 35;
       const pageWidth = doc.page.width;
-      
-      const esReporteSupertransporte = req.query.tipo === 'supertransporte';
-      const pdfTitle = esReporteSupertransporte
-        ? 'INFORME DE AUTOEVALUACIÓN PESV — SUPERTRANSPORTE'
-        : 'ACTA DE EVALUACIÓN PESV';
-      const pdfFilename = esReporteSupertransporte
-        ? `reporte-supertransporte-pesv-${evaluacion.anio}.pdf`
-        : `evaluacion-pesv-${evaluacion.anio}.pdf`;
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${pdfFilename}"`);
@@ -46933,7 +46936,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       let currentY = await addStandardHeader({
         doc,
         company: { id: companyId, name: company.name, nit: company.nit || '', logoUrl: company.logoUrl },
-        documentTitle: pdfTitle,
+        documentTitle: pdfVisualTitle,
         documentCode: `PESV-EVA-${evaluacion.anio}`,
         version: '1.0',
         date: new Date(evaluacion.anio, (evaluacion.mes || 12) - 1, 1),
