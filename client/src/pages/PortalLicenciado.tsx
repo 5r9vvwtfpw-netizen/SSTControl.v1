@@ -609,20 +609,30 @@ export default function PortalLicenciado() {
   }, []);
 
   if (user?.role !== 'lso') {
+    const isSuperadminOrAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.role === 'soporte';
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Card className="max-w-md">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
+            <CardTitle className="flex items-center gap-2 text-muted-foreground">
               <Shield className="h-5 w-5" />
-              Acceso Restringido
+              {isSuperadminOrAdmin ? "Portal exclusivo para profesionales LSO" : "Acceso Restringido"}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Este portal es exclusivo para profesionales licenciados en SST (rol LSO).
-              Si cree que debería tener acceso, contacte al administrador del sistema.
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground text-sm">
+              {isSuperadminOrAdmin
+                ? "Este portal está diseñado para ser usado por profesionales licenciados en SST (rol LSO). Tu sesión de empresa y tus permisos de administración permanecen activos — puedes regresar al sistema en cualquier momento."
+                : "Este portal es exclusivo para profesionales licenciados en SST (rol LSO). Si cree que debería tener acceso, contacte al administrador del sistema."}
             </p>
+            {isSuperadminOrAdmin && (
+              <Link href="/">
+                <Button variant="outline" className="w-full gap-2" data-testid="button-back-from-lso-portal">
+                  <ArrowLeft className="h-4 w-4" />
+                  Volver al sistema
+                </Button>
+              </Link>
+            )}
           </CardContent>
         </Card>
       </div>

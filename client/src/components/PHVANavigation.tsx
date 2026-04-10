@@ -704,6 +704,40 @@ export function PHVANavigation() {
         </div>
       </div>
 
+      {/* Barra de contexto de empresa activa — solo para superadmin con sesión de empresa */}
+      {canSelectCompany && currentAccessSession && selectedCompany && (
+        <div className="bg-amber-50 border-b border-amber-200 dark:bg-amber-950/30 dark:border-amber-800" data-testid="company-session-bar">
+          <div className="container mx-auto px-6 py-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Building2 className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                <span className="text-xs text-amber-800 dark:text-amber-300 font-medium truncate" data-testid="text-active-company-name">
+                  Sesión activa:
+                </span>
+                <span className="text-xs text-amber-900 dark:text-amber-200 font-semibold truncate" data-testid="text-company-session-name">
+                  {selectedCompany.name}
+                </span>
+                {selectedCompany.nit && (
+                  <span className="text-xs text-amber-600 dark:text-amber-400 hidden sm:inline shrink-0">
+                    • NIT {selectedCompany.nit}
+                  </span>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => endAccessSession()}
+                className="text-amber-700 dark:text-amber-400 text-xs shrink-0"
+                data-testid="button-end-company-session"
+              >
+                <XCircle className="h-3.5 w-3.5 mr-1" />
+                Terminar sesión
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Diálogo de acceso del proveedor */}
       <ProviderAccessDialog
         open={!!pendingCompanySelection}
