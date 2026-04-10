@@ -49741,6 +49741,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
   // ============================================================================
+  // H09-H11 helper: convert snake_case DB rows → camelCase for frontend types
+  // ============================================================================
+  function rowToCamel(obj: Record<string, any>): Record<string, any> {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [k.replace(/_([a-z])/g, (_: string, c: string) => c.toUpperCase()), v])
+    );
+  }
+
+  // ============================================================================
   // H09 - PESV Fatiga y Somnolencia (Art. 21, Resolución 40595/2022)
   // ============================================================================
 
@@ -49755,7 +49764,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         WHERE company_id = ${companyId}
         ORDER BY fecha_registro DESC, created_at DESC
       `);
-      res.json(result.rows);
+      res.json(result.rows.map(rowToCamel));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -49773,7 +49782,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           AND (evaluacion_id = ${req.params.evaluacionId} OR evaluacion_id IS NULL)
         ORDER BY fecha_registro DESC, created_at DESC
       `);
-      res.json(result.rows);
+      res.json(result.rows.map(rowToCamel));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -49796,7 +49805,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           (${companyId}, ${evaluacionId || null}, ${conductorNombre}, ${fechaRegistro}, ${tipoControl}, ${resultado}, ${horasConduccion || null}, ${descansoCumplido ?? 1}, ${medidasTomadas || null}, ${responsable || null}, ${observaciones || null})
         RETURNING *
       `);
-      res.status(201).json(result.rows[0]);
+      res.status(201).json(rowToCamel(result.rows[0]));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -49820,7 +49829,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           (${companyId}, ${evaluacionId}, ${conductorNombre}, ${fechaRegistro}, ${tipoControl}, ${resultado}, ${horasConduccion || null}, ${descansoCumplido ?? 1}, ${medidasTomadas || null}, ${responsable || null}, ${observaciones || null})
         RETURNING *
       `);
-      res.status(201).json(result.rows[0]);
+      res.status(201).json(rowToCamel(result.rows[0]));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -49845,7 +49854,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         RETURNING *
       `);
       if (!result.rows[0]) return res.status(404).json({ error: "Registro no encontrado" });
-      res.json(result.rows[0]);
+      res.json(rowToCamel(result.rows[0]));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -49875,7 +49884,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         WHERE company_id = ${companyId}
         ORDER BY fecha_registro DESC, created_at DESC
       `);
-      res.json(result.rows);
+      res.json(result.rows.map(rowToCamel));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -49893,7 +49902,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           AND (evaluacion_id = ${req.params.evaluacionId} OR evaluacion_id IS NULL)
         ORDER BY fecha_registro DESC, created_at DESC
       `);
-      res.json(result.rows);
+      res.json(result.rows.map(rowToCamel));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -49916,7 +49925,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           (${companyId}, ${evaluacionId || null}, ${conductorNombre}, ${fechaRegistro}, ${tipoPrueba}, ${sustanciaControlada}, ${resultado}, ${medidasTomadas || null}, ${responsable || null}, ${observaciones || null})
         RETURNING *
       `);
-      res.status(201).json(result.rows[0]);
+      res.status(201).json(rowToCamel(result.rows[0]));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -49940,7 +49949,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           (${companyId}, ${evaluacionId}, ${conductorNombre}, ${fechaRegistro}, ${tipoPrueba}, ${sustanciaControlada}, ${resultado}, ${medidasTomadas || null}, ${responsable || null}, ${observaciones || null})
         RETURNING *
       `);
-      res.status(201).json(result.rows[0]);
+      res.status(201).json(rowToCamel(result.rows[0]));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -49964,7 +49973,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         RETURNING *
       `);
       if (!result.rows[0]) return res.status(404).json({ error: "Registro no encontrado" });
-      res.json(result.rows[0]);
+      res.json(rowToCamel(result.rows[0]));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -49987,10 +49996,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     try {
       const user = req.user!;
       const isAdmin = hasGlobalAccess(user.role);
-      const companyId = isAdmin ? req.query.companyId as string : user.companyId;
+      const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : user.companyId;
       if (!companyId) return res.status(400).json({ error: "companyId requerido" });
       const rows = await db.execute(sql`SELECT * FROM pesv_victimas_registros WHERE company_id = ${companyId} ORDER BY fecha_siniestro DESC`);
-      res.json(rows.rows);
+      res.json(rows.rows.map(rowToCamel));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -50000,11 +50009,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     try {
       const user = req.user!;
       const isAdmin = hasGlobalAccess(user.role);
-      const companyId = isAdmin ? req.query.companyId as string : user.companyId;
+      const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : user.companyId;
       if (!companyId) return res.status(400).json({ error: "companyId requerido" });
       const { evaluacionId } = req.params;
-      const rows = await db.execute(sql`SELECT * FROM pesv_victimas_registros WHERE company_id = ${companyId} AND evaluacion_id = ${evaluacionId} ORDER BY fecha_siniestro DESC`);
-      res.json(rows.rows);
+      const rows = await db.execute(sql`SELECT * FROM pesv_victimas_registros WHERE company_id = ${companyId} AND (evaluacion_id = ${evaluacionId} OR evaluacion_id IS NULL) ORDER BY fecha_siniestro DESC`);
+      res.json(rows.rows.map(rowToCamel));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -50021,7 +50030,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         INSERT INTO pesv_victimas_registros (company_id, evaluacion_id, fecha_siniestro, tipo_victima, nombre_victima, descripcion_siniestro, atencion_inmediata, remision_ips, nombre_ips, estado_seguimiento, programa_acompanamiento, responsable, observaciones)
         VALUES (${companyId}, ${evaluacionId ?? null}, ${fechaSiniestro}, ${tipoVictima}, ${nombreVictima ?? null}, ${descripcionSiniestro}, ${atencionInmediata ?? null}, ${remisionIps ?? 0}, ${nombreIps ?? null}, ${estadoSeguimiento ?? 'activo'}, ${programaAcompanamiento ?? 0}, ${responsable ?? null}, ${observaciones ?? null})
         RETURNING *`);
-      res.json(result.rows[0]);
+      res.json(rowToCamel(result.rows[0]));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -50039,7 +50048,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         INSERT INTO pesv_victimas_registros (company_id, evaluacion_id, fecha_siniestro, tipo_victima, nombre_victima, descripcion_siniestro, atencion_inmediata, remision_ips, nombre_ips, estado_seguimiento, programa_acompanamiento, responsable, observaciones)
         VALUES (${companyId}, ${evaluacionId}, ${fechaSiniestro}, ${tipoVictima}, ${nombreVictima ?? null}, ${descripcionSiniestro}, ${atencionInmediata ?? null}, ${remisionIps ?? 0}, ${nombreIps ?? null}, ${estadoSeguimiento ?? 'activo'}, ${programaAcompanamiento ?? 0}, ${responsable ?? null}, ${observaciones ?? null})
         RETURNING *`);
-      res.json(result.rows[0]);
+      res.json(rowToCamel(result.rows[0]));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -50066,7 +50075,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         WHERE id = ${id}
         RETURNING *`);
       if (!result.rows.length) return res.status(404).json({ error: "Registro no encontrado" });
-      res.json(result.rows[0]);
+      res.json(rowToCamel(result.rows[0]));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

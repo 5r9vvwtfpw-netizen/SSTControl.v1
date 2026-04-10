@@ -1,4 +1,4 @@
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, HeartHandshake, Shield } from "lucide-react";
+import { Plus, Pencil, Trash2, HeartHandshake, Shield, ArrowLeft } from "lucide-react";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
@@ -190,11 +190,15 @@ export default function PesvAtencionVictimas() {
 
   return (
     <div className="space-y-6 p-6">
-      {evaluacionId && (
-        <div className="flex items-center gap-3 mb-2">
-          <BackToPesvEvaluationButton evaluacionId={evaluacionId} />
-        </div>
-      )}
+      <div className="flex items-center gap-3 mb-2 flex-wrap">
+        <Link href="/pesv">
+          <Button variant="outline" size="sm" data-testid="button-back-pesv-panel">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver al Panel PESV
+          </Button>
+        </Link>
+        {evaluacionId && <BackToPesvEvaluationButton evaluacionId={evaluacionId} />}
+      </div>
 
       {evaluacionId && (
         <EvaluacionPesvContextHeader evaluacionId={evaluacionId} />

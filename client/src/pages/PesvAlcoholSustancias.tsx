@@ -1,4 +1,4 @@
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,13 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, Plus, CheckCircle2, XCircle, Pencil, Trash2, Shield, Beaker } from "lucide-react";
+import { AlertTriangle, Plus, CheckCircle2, XCircle, Pencil, Trash2, Shield, Beaker, ArrowLeft } from "lucide-react";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { PesvAlcoholRegistro } from "@shared/schema";
+import { PesvAlcoholRegistro, Driver } from "@shared/schema";
 import { PASOS_PESV } from "@/data/pasos-pesv";
 
 const TIPO_PRUEBA_OPTIONS = [
@@ -105,6 +105,10 @@ export default function PesvAlcoholSustancias() {
     enabled: !!evaluacionId,
   });
 
+  const { data: drivers = [] } = useQuery<Driver[]>({
+    queryKey: ["/api/drivers"],
+  });
+
   const saveMutation = useMutation({
     mutationFn: async (data: any) => {
       if (editItem) {
@@ -186,11 +190,15 @@ export default function PesvAlcoholSustancias() {
 
   return (
     <div className="space-y-6 p-6">
-      {evaluacionId && (
-        <div className="flex items-center gap-3 mb-2">
-          <BackToPesvEvaluationButton evaluacionId={evaluacionId} />
-        </div>
-      )}
+      <div className="flex items-center gap-3 mb-2 flex-wrap">
+        <Link href="/pesv">
+          <Button variant="outline" size="sm" data-testid="button-back-pesv-panel">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver al Panel PESV
+          </Button>
+        </Link>
+        {evaluacionId && <BackToPesvEvaluationButton evaluacionId={evaluacionId} />}
+      </div>
 
       {evaluacionId && (
         <EvaluacionPesvContextHeader evaluacionId={evaluacionId} />
@@ -344,14 +352,29 @@ export default function PesvAlcoholSustancias() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="conductorNombre">Conductor <span className="text-destructive">*</span></Label>
-                <Input
-                  id="conductorNombre"
-                  value={form.conductorNombre}
-                  onChange={e => setForm(f => ({ ...f, conductorNombre: e.target.value }))}
-                  placeholder="Nombre del conductor"
-                  data-testid="input-conductor-nombre"
-                />
+                <Label>Conductor <span className="text-destructive">*</span></Label>
+                {drivers.length > 0 ? (
+                  <Select
+                    value={form.conductorNombre}
+                    onValueChange={v => setForm(f => ({ ...f, conductorNombre: v }))}
+                  >
+                    <SelectTrigger data-testid="select-conductor-nombre">
+                      <SelectValue placeholder="Seleccione un conductor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {drivers.map(d => (
+                        <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    value={form.conductorNombre}
+                    onChange={e => setForm(f => ({ ...f, conductorNombre: e.target.value }))}
+                    placeholder="Nombre del conductor"
+                    data-testid="input-conductor-nombre"
+                  />
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="fechaRegistro">Fecha <span className="text-destructive">*</span></Label>
