@@ -277,7 +277,7 @@ export default function PesvMantenimientoVehicular() {
         </Button>
       </div>
       
-      <TrazabilidadPesvBanner codigoPaso="H05" compacto />
+      <TrazabilidadPesvBanner codigoPaso="H09" compacto />
       
       <div className="flex flex-wrap items-center justify-between gap-4">
         {user?.role && hasCompanyAdminAccess(user.role) && (

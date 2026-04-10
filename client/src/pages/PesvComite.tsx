@@ -125,7 +125,7 @@ export default function PesvComite() {
         </div>
       </div>
 
-      <TrazabilidadPesvBanner codigoPaso="P01" compacto />
+      <TrazabilidadPesvBanner codigoPaso="P02" compacto />
       <VerificacionP01Banner />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

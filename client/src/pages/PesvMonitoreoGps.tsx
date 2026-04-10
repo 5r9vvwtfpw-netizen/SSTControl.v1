@@ -770,7 +770,7 @@ export default function PesvMonitoreoGps() {
         </Button>
       )}
       
-      <TrazabilidadPesvBanner codigoPaso="H07" compacto />
+      <TrazabilidadPesvBanner codigoPaso="H12" compacto />
       
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="relative w-full max-w-sm">

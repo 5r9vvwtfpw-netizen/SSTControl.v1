@@ -1128,7 +1128,7 @@ export default function PesvRutasSeguras() {
         </div>
       </div>
       
-      <TrazabilidadPesvBanner codigoPaso="H08" compacto />
+      <TrazabilidadPesvBanner codigoPaso="H06" compacto />
       
       <div className="flex flex-wrap items-center gap-4">
         {user?.role && hasCompanyAdminAccess(user.role) && (
