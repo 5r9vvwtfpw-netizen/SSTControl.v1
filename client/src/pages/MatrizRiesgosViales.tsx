@@ -479,6 +479,34 @@ export default function MatrizRiesgosViales() {
     }
   };
 
+  const getNextCodigo = () => {
+    const nums = riesgos
+      .map(r => { const m = r.codigo.match(/^RV-(\d+)$/); return m ? parseInt(m[1], 10) : 0; })
+      .filter(n => n > 0);
+    const next = nums.length > 0 ? Math.max(...nums) + 1 : 1;
+    return `RV-${String(next).padStart(3, "0")}`;
+  };
+
+  const handleOpenNew = () => {
+    setEditingRiesgo(null);
+    form.reset({
+      codigo: getNextCodigo(),
+      nombre: "",
+      descripcion: "",
+      categoria: "conductor",
+      fuenteRiesgo: "",
+      causasRaiz: "",
+      consecuencias: "",
+      probabilidad: "media",
+      impacto: "moderado",
+      controlesExistentes: "",
+      responsableId: undefined,
+      pasoPesvRelacionado: "",
+      estado: "identificado",
+      observaciones: "",
+    });
+  };
+
   const handleDialogClose = (open: boolean) => {
     if (!open) {
       setEditingRiesgo(null);
@@ -564,7 +592,11 @@ export default function MatrizRiesgosViales() {
           </Button>
           <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild>
-              <Button className="bg-green-600 hover:bg-green-700" data-testid="button-agregar-riesgo">
+              <Button
+                className="bg-green-600 hover:bg-green-700"
+                data-testid="button-agregar-riesgo"
+                onClick={handleOpenNew}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Agregar Riesgo
               </Button>
@@ -1050,7 +1082,7 @@ export default function MatrizRiesgosViales() {
             {!searchTerm && (
               <Button 
                 className="mt-4 bg-green-600 hover:bg-green-700"
-                onClick={() => setDialogOpen(true)}
+                onClick={() => { handleOpenNew(); setDialogOpen(true); }}
                 data-testid="button-crear-primer-riesgo"
               >
                 <Plus className="h-4 w-4 mr-2" />
