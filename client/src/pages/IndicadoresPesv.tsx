@@ -8,8 +8,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Search, Trash2, Edit, TrendingUp, Target, BarChart3, Activity, Calendar, ChevronDown, ChevronUp, FileDown, Zap, CheckCircle2 } from "lucide-react";
+import { Plus, Search, Trash2, Edit, TrendingUp, Target, BarChart3, Activity, Calendar, ChevronDown, ChevronUp, FileDown, Zap, CheckCircle2, ArrowLeft } from "lucide-react";
 import { useState, useMemo } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -655,6 +656,12 @@ export default function IndicadoresPesv() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link href="/pesv">
+            <Button variant="outline" size="sm" data-testid="button-back-pesv-panel">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver al Panel PESV
+            </Button>
+          </Link>
           <BackToPesvEvaluationButton />
           <Button
             variant="outline"
