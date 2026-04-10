@@ -931,9 +931,6 @@ function ActasTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
       <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
         <div className="text-sm text-muted-foreground">{actas.length} acta(s) de reunión</div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => handleDownloadPdf('/api/pesv/comite/integrantes/pdf')} data-testid="button-download-pdf">
-            <FileDown className="h-4 w-4 mr-2" /> PDF
-          </Button>
           {isAdmin && (
             <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
               <DialogTrigger asChild>
@@ -948,7 +945,7 @@ function ActasTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Número de Acta *</Label>
-                      <Input type="number" value={form.numeroActa} onChange={e => setForm({ ...form, numeroActa: parseInt(e.target.value) || 1 })} required data-testid="input-numero-acta" />
+                      <Input type="number" min="1" value={form.numeroActa || ''} onChange={e => { const n = parseInt(e.target.value); setForm({ ...form, numeroActa: isNaN(n) ? 0 : n }); }} required data-testid="input-numero-acta" />
                     </div>
                     <div className="space-y-2">
                       <Label>Fecha de Reunión *</Label>
@@ -1057,12 +1054,17 @@ function ActasTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    {isAdmin && (
-                      <div className="flex justify-end gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => handleEdit(a)} data-testid={`button-edit-acta-${a.id}`}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => { if (confirm("¿Eliminar acta?")) deleteMutation.mutate(a.id); }} data-testid={`button-delete-acta-${a.id}`}><Trash2 className="h-4 w-4" /></Button>
-                      </div>
-                    )}
+                    <div className="flex justify-end gap-1">
+                      <Button size="icon" variant="ghost" onClick={() => handleDownloadPdf(`/api/pesv/comite/actas/${a.id}/pdf`)} data-testid={`button-pdf-acta-${a.id}`} title="Descargar PDF del acta">
+                        <FileDown className="h-4 w-4" />
+                      </Button>
+                      {isAdmin && (
+                        <>
+                          <Button size="icon" variant="ghost" onClick={() => handleEdit(a)} data-testid={`button-edit-acta-${a.id}`}><Pencil className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="ghost" onClick={() => { if (confirm("¿Eliminar acta?")) deleteMutation.mutate(a.id); }} data-testid={`button-delete-acta-${a.id}`}><Trash2 className="h-4 w-4" /></Button>
+                        </>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
