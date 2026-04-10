@@ -620,10 +620,16 @@ function CronogramaTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   const [editingReunion, setEditingReunion] = useState<CronogramaReunionPesv | null>(null);
   const [editForm, setEditForm] = useState({ fechaProgramada: "", temaPrincipal: "", estado: "programada", observaciones: "" });
 
-  const { data: cronograma = [], isLoading } = useQuery<CronogramaReunionPesv[]>({
+  const { data: cronogramaData, isLoading } = useQuery<CronogramaReunionPesv[]>({
     queryKey: ["/api/pesv/comite/cronograma", anio],
-    queryFn: async () => { const res = await fetch(`/api/pesv/comite/cronograma?anio=${anio}`, { credentials: 'include' }); return res.json(); }
+    queryFn: async () => {
+      const res = await fetch(`/api/pesv/comite/cronograma?anio=${anio}`, { credentials: 'include' });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
   });
+  const cronograma = Array.isArray(cronogramaData) ? cronogramaData : [];
 
   const { data: actas = [] } = useQuery<ActaComitePesv[]>({
     queryKey: ["/api/pesv/comite/actas"],
