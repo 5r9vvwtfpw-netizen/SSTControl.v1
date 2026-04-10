@@ -169,8 +169,8 @@ const pesvNavMenuItems: { label: string; path: string; group?: string }[] = [
   { label: "Fatiga y Somnolencia", path: "/pesv/fatiga-somnolencia", group: "Hacer" },
   { label: "Alcohol y Sustancias", path: "/pesv/alcohol-sustancias", group: "Hacer" },
   { label: "Atención a Víctimas", path: "/pesv/atencion-victimas", group: "Hacer" },
-  { label: "Siniestros Viales", path: "/pesv/siniestros", group: "Hacer" },
   // VERIFICAR / ACTUAR
+  { label: "Siniestros Viales", path: "/pesv/siniestros", group: "Verificar/Actuar" },
   { label: "Auditorías PESV", path: "/pesv/auditorias", group: "Verificar/Actuar" },
   { label: "Mejora Continua", path: "/pesv/mejora-continua", group: "Verificar/Actuar" },
   { label: "Revisión por la Dirección", path: "/pesv/revision-direccion", group: "Verificar/Actuar" },
