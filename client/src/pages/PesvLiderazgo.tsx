@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import HelpVideoButton from "@/components/HelpVideoButton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Users, FileText, Wallet, Shield, ExternalLink, CheckCircle2, AlertCircle, Building2 } from "lucide-react";

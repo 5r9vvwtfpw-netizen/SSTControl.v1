@@ -2,6 +2,7 @@ import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import HelpVideoButton from "@/components/HelpVideoButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
