@@ -46915,8 +46915,16 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const margin = 35;
       const pageWidth = doc.page.width;
       
+      const esReporteSupertransporte = req.query.tipo === 'supertransporte';
+      const pdfTitle = esReporteSupertransporte
+        ? 'INFORME DE AUTOEVALUACIÓN PESV — SUPERTRANSPORTE'
+        : 'ACTA DE EVALUACIÓN PESV';
+      const pdfFilename = esReporteSupertransporte
+        ? `reporte-supertransporte-pesv-${evaluacion.anio}.pdf`
+        : `evaluacion-pesv-${evaluacion.anio}.pdf`;
+
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="evaluacion-pesv-${evaluacion.anio}.pdf"`);
+      res.setHeader('Content-Disposition', `inline; filename="${pdfFilename}"`);
       doc.pipe(res);
 
       const contentWidth = pageWidth - 2 * margin;
@@ -46925,7 +46933,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       let currentY = await addStandardHeader({
         doc,
         company: { id: companyId, name: company.name, nit: company.nit || '', logoUrl: company.logoUrl },
-        documentTitle: 'ACTA DE EVALUACIÓN PESV',
+        documentTitle: pdfTitle,
         documentCode: `PESV-EVA-${evaluacion.anio}`,
         version: '1.0',
         date: new Date(evaluacion.anio, (evaluacion.mes || 12) - 1, 1),

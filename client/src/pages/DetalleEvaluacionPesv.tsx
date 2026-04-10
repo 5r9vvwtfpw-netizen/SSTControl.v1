@@ -1162,7 +1162,7 @@ function DetalleEvaluacionPesvInner() {
           <Button 
             variant="default" 
             onClick={() => {
-              window.open(`/api/evaluaciones-pesv/${id}/pdf`, '_blank');
+              window.open(`/api/evaluaciones-pesv/${id}/pdf?tipo=supertransporte`, '_blank');
             }}
             data-testid="button-export-supertransporte"
             className="bg-green-600"
