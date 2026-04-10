@@ -7,8 +7,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Search, Trash2, Edit, TrendingUp, TrendingDown, Minus, Target, Activity, Shield, AlertTriangle, FileDown, Sparkles, Loader2, Wand2 } from "lucide-react";
+import { Plus, Search, Trash2, Edit, TrendingUp, TrendingDown, Minus, Target, Activity, Shield, AlertTriangle, FileDown, Sparkles, Loader2, Wand2, ArrowLeft } from "lucide-react";
 import { useState, useCallback } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -561,6 +562,12 @@ export default function FactoresDesempenoPesv() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link href="/pesv">
+            <Button variant="outline" size="sm" data-testid="button-back-pesv-panel">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver al Panel PESV
+            </Button>
+          </Link>
           <BackToPesvEvaluationButton />
           <Button
             variant="outline"
