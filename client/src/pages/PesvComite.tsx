@@ -201,7 +201,7 @@ function IntegrantesTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
 
   const handleRolChange = (rol: RolComite) => {
     const funciones = FUNCIONES_POR_ROL[rol] || "";
-    setForm({ ...form, rol, funcionesResponsabilidades: form.funcionesResponsabilidades || funciones });
+    setForm(prev => ({ ...prev, rol, funcionesResponsabilidades: funciones }));
   };
 
   const createMutation = useMutation({
