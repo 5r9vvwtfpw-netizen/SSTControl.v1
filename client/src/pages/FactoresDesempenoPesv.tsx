@@ -263,13 +263,24 @@ export default function FactoresDesempenoPesv() {
     queryKey: ["/api/factores-desempeno-sv"],
   });
 
+  const filteredFactoresEarly = factores.filter((factor) => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      factor.codigo.toLowerCase().includes(searchLower) ||
+      factor.nombre.toLowerCase().includes(searchLower) ||
+      (factor.descripcion?.toLowerCase().includes(searchLower) ?? false) ||
+      (factor.elementoRelacionado?.toLowerCase().includes(searchLower) ?? false)
+    );
+  });
+
   const estadisticas: SPFStatistics = {
-    total: factores.length,
-    porCategoria: factores.reduce((acc, f) => {
+    total: filteredFactoresEarly.length,
+    porCategoria: filteredFactoresEarly.reduce((acc, f) => {
       acc[f.categoria] = (acc[f.categoria] || 0) + 1;
       return acc;
     }, {} as Record<string, number>),
-    porTendencia: factores.reduce((acc, f) => {
+    porTendencia: filteredFactoresEarly.reduce((acc, f) => {
       if (f.tendencia) {
         acc[f.tendencia] = (acc[f.tendencia] || 0) + 1;
       }
@@ -503,15 +514,7 @@ export default function FactoresDesempenoPesv() {
     setDialogOpen(true);
   };
 
-  const filteredFactores = factores.filter((factor) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      factor.codigo.toLowerCase().includes(searchLower) ||
-      factor.nombre.toLowerCase().includes(searchLower) ||
-      (factor.descripcion?.toLowerCase().includes(searchLower) ?? false) ||
-      (factor.elementoRelacionado?.toLowerCase().includes(searchLower) ?? false)
-    );
-  });
+  const filteredFactores = filteredFactoresEarly;
 
   const getCategoriaBadge = (categoria: string) => {
     const config = CATEGORIA_CONFIG[categoria as keyof typeof CATEGORIA_CONFIG];
@@ -894,12 +897,20 @@ export default function FactoresDesempenoPesv() {
             data-testid="input-search"
           />
         </div>
+        {searchTerm && (
+          <p className="text-sm text-muted-foreground" data-testid="text-search-results">
+            Mostrando <span className="font-semibold text-foreground">{filteredFactores.length}</span> de{" "}
+            <span className="font-semibold text-foreground">{factores.length}</span> factores
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Factores</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {searchTerm ? "Encontrados" : "Total Factores"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold" data-testid="text-total-factores">{estadisticas.total}</p>
