@@ -46900,27 +46900,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // Crear mapa de respuestas por pasoId
       const respuestasMap = new Map(respuestas.map(r => [r.pasoId, r]));
 
-      const allCriterios = await db.select()
-        .from(pesvCriteriosVerificacion)
-        .where(eq(pesvCriteriosVerificacion.evaluacionId, req.params.id))
-        .orderBy(pesvCriteriosVerificacion.pasoId, pesvCriteriosVerificacion.criterioIndex);
-
-      const allEvidencias = await db.select()
-        .from(pesvEvidenciasDocumentos)
-        .where(eq(pesvEvidenciasDocumentos.evaluacionId, req.params.id))
-        .orderBy(pesvEvidenciasDocumentos.pasoId, pesvEvidenciasDocumentos.evidenciaIndex);
-
-      const criteriosMap = new Map<string, typeof allCriterios>();
-      for (const c of allCriterios) {
-        if (!criteriosMap.has(c.pasoId)) criteriosMap.set(c.pasoId, []);
-        criteriosMap.get(c.pasoId)!.push(c);
-      }
-      const evidenciasMap = new Map<string, typeof allEvidencias>();
-      for (const e of allEvidencias) {
-        if (!evidenciasMap.has(e.pasoId)) evidenciasMap.set(e.pasoId, []);
-        evidenciasMap.get(e.pasoId)!.push(e);
-      }
-
       // Load company logo and get signers
       const logo = await loadCompanyLogo(company?.logoUrl);
       const signers = await getSignersForCompany(companyId, true);
@@ -47111,62 +47090,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
           currentY += rowHeight;
 
-          const pasoCriterios = criteriosMap.get(paso.codigo) || [];
-          const pasoEvidencias = evidenciasMap.get(paso.codigo) || [];
-
-          if (pasoCriterios.length > 0 || pasoEvidencias.length > 0) {
-            const detailIndent = margin + 15;
-            const detailWidth = contentWidth - 20;
-
-            if (pasoCriterios.length > 0) {
-              if (currentY > doc.page.height - 60) { doc.addPage(); currentY = 50; }
-              doc.rect(detailIndent - 5, currentY, detailWidth, 12).fill('#e8f5e9');
-              doc.fontSize(6.5).font('Helvetica-Bold').fillColor('#1e7e34')
-                .text(`Criterios de Verificación (${pasoCriterios.filter(c => c.verificado === 1).length}/${pasoCriterios.length})`, detailIndent, currentY + 3, { width: detailWidth });
-              currentY += 14;
-
-              for (const criterio of pasoCriterios) {
-                if (currentY > doc.page.height - 40) { doc.addPage(); currentY = 50; }
-                const checkSymbol = criterio.verificado === 1 ? '☑' : '☐';
-                const checkColor = criterio.verificado === 1 ? '#28a745' : '#999999';
-                doc.fontSize(6.5).font('Helvetica').fillColor(checkColor)
-                  .text(checkSymbol, detailIndent, currentY + 1);
-                doc.fillColor('#333333')
-                  .text(criterio.criterioTexto, detailIndent + 12, currentY + 1, { width: detailWidth - 12 });
-                if (criterio.verificado === 1 && criterio.verificadoNombre) {
-                  const verInfo = `Verificado por: ${criterio.verificadoNombre}`;
-                  doc.fontSize(5.5).fillColor('#888888').text(verInfo, detailIndent + 12, doc.y + 1, { width: detailWidth - 12 });
-                }
-                currentY = doc.y + 3;
-              }
-            }
-
-            if (pasoEvidencias.length > 0) {
-              if (currentY > doc.page.height - 60) { doc.addPage(); currentY = 50; }
-              doc.rect(detailIndent - 5, currentY, detailWidth, 12).fill('#e3f2fd');
-              doc.fontSize(6.5).font('Helvetica-Bold').fillColor('#1565c0')
-                .text(`Evidencias Documentales (${pasoEvidencias.filter(e => e.archivoUrl).length}/${pasoEvidencias.length})`, detailIndent, currentY + 3, { width: detailWidth });
-              currentY += 14;
-
-              for (const evidencia of pasoEvidencias) {
-                if (currentY > doc.page.height - 40) { doc.addPage(); currentY = 50; }
-                const docSymbol = evidencia.archivoUrl ? '📎' : '○';
-                const docColor = evidencia.archivoUrl ? '#1565c0' : '#999999';
-                doc.fontSize(6.5).font('Helvetica').fillColor(docColor)
-                  .text(docSymbol, detailIndent, currentY + 1);
-                doc.fillColor('#333333')
-                  .text(evidencia.evidenciaTexto, detailIndent + 12, currentY + 1, { width: detailWidth - 12 });
-                if (evidencia.archivoUrl && evidencia.archivoNombre) {
-                  doc.fontSize(5.5).fillColor('#1565c0').text(`Archivo: ${evidencia.archivoNombre}`, detailIndent + 12, doc.y + 1, { width: detailWidth - 12 });
-                  if (evidencia.subidoNombre) {
-                    doc.fillColor('#888888').text(`Subido por: ${evidencia.subidoNombre}`, detailIndent + 12, doc.y + 1, { width: detailWidth - 12 });
-                  }
-                }
-                currentY = doc.y + 3;
-              }
-            }
-            currentY += 4;
-          }
         }
 
         currentY += 8;
