@@ -628,10 +628,26 @@ export default function MatrizRiesgosViales() {
                     name="codigo"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Código *</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Código *
+                          {!editingRiesgo && (
+                            <span className="text-xs font-normal text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded">
+                              Auto-generado
+                            </span>
+                          )}
+                        </FormLabel>
                         <FormControl>
-                          <Input placeholder="RV-001" {...field} data-testid="input-codigo" />
+                          <Input
+                            placeholder="RV-001"
+                            {...field}
+                            data-testid="input-codigo"
+                            readOnly={!editingRiesgo}
+                            className={!editingRiesgo ? "bg-muted cursor-default select-none" : ""}
+                          />
                         </FormControl>
+                        {!editingRiesgo && (
+                          <p className="text-xs text-muted-foreground">El código se asigna automáticamente en orden consecutivo.</p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
