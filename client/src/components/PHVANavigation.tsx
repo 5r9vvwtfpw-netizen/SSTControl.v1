@@ -151,29 +151,6 @@ const phvaTabs: { key: PHVASection; label: string; icon?: typeof Settings }[] = 
 const pesvNavMenuItems: { label: string; path: string; group?: string }[] = [
   { label: "Panel de Control", path: "/pesv" },
   { label: "Evaluaciones PESV", path: "/pesv/evaluaciones" },
-  // PLANEAR
-  { label: "Comité PESV", path: "/pesv/comite", group: "Planear" },
-  { label: "Liderazgo y Compromiso", path: "/pesv/liderazgo", group: "Planear" },
-  { label: "Contexto Organizacional", path: "/pesv/contexto-organizacional", group: "Planear" },
-  { label: "Matriz de Riesgos Viales", path: "/pesv/matriz-riesgos", group: "Planear" },
-  { label: "Factores de Desempeño", path: "/pesv/factores-desempeno", group: "Planear" },
-  // HACER
-  { label: "Conductores", path: "/pesv/conductores", group: "Hacer" },
-  { label: "Vehículos", path: "/pesv/vehiculos", group: "Hacer" },
-  { label: "Capacitaciones Viales", path: "/pesv/capacitaciones", group: "Hacer" },
-  { label: "Mantenimiento Vehicular", path: "/pesv/mantenimiento", group: "Hacer" },
-  { label: "Inspecciones Preoperacionales", path: "/pesv/inspecciones", group: "Hacer" },
-  { label: "Rutas Seguras", path: "/pesv/rutas-seguras", group: "Hacer" },
-  { label: "Monitoreo GPS", path: "/pesv/monitoreo-gps", group: "Hacer" },
-  { label: "Fatiga y Somnolencia", path: "/pesv/fatiga-somnolencia", group: "Hacer" },
-  { label: "Alcohol y Sustancias", path: "/pesv/alcohol-sustancias", group: "Hacer" },
-  { label: "Atención a Víctimas", path: "/pesv/atencion-victimas", group: "Hacer" },
-  // VERIFICAR / ACTUAR
-  { label: "Indicadores PESV", path: "/pesv/indicadores", group: "Verificar/Actuar" },
-  { label: "Siniestros Viales", path: "/pesv/siniestros", group: "Verificar/Actuar" },
-  { label: "Auditorías PESV", path: "/pesv/auditorias", group: "Verificar/Actuar" },
-  { label: "Mejora Continua", path: "/pesv/mejora-continua", group: "Verificar/Actuar" },
-  { label: "Revisión por la Dirección", path: "/pesv/revision-direccion", group: "Verificar/Actuar" },
 ];
 
 export function PHVANavigation() {
