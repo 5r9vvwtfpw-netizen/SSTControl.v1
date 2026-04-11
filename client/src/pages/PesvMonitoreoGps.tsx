@@ -22,13 +22,20 @@ import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
 import { hasCompanyAdminAccess } from "@shared/permissions";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
-import { Link } from "wouter";
+import { useParams, Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 
 export default function PesvMonitoreoGps() {
   const { user } = useAuth();
+  const { evaluacionId } = useParams<{ evaluacionId?: string }>();
   const { selectedCompany: currentCompany } = useCompanyContext();
-  const effectiveCompanyId = currentCompany?.id ?? user?.companyId ?? null;
+
+  const { data: evaluacion } = useQuery<{ id: string; companyId: string }>({
+    queryKey: [`/api/pesv/evaluaciones/${evaluacionId}`],
+    enabled: !!evaluacionId,
+  });
+
+  const effectiveCompanyId = currentCompany?.id ?? user?.companyId ?? evaluacion?.companyId ?? null;
   const { toast } = useToast();
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
   const [searchTerm, setSearchTerm] = useState("");
