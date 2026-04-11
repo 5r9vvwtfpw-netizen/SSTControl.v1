@@ -137,10 +137,13 @@ export default function PesvMonitoreoGps() {
         return tB.localeCompare(tA);
       });
 
+    const vehicleProfile = vehicles.find((v) => v.id === vehicleId);
+    const vehicleDefaultMax = vehicleProfile?.defaultMaxSpeed ?? "";
+
     const latest = vehicleRecords[0];
     if (latest) {
       const speed = latest.speed ?? "";
-      const maxSpeed = latest.maxSpeedAllowed ?? "";
+      const maxSpeed = latest.maxSpeedAllowed ?? vehicleDefaultMax;
       const isExceeded = speed !== "" && maxSpeed !== "" && Number(speed) > Number(maxSpeed);
 
       setFormData((prev) => ({
@@ -167,7 +170,7 @@ export default function PesvMonitoreoGps() {
         latitude: "",
         longitude: "",
         speed: "",
-        maxSpeedAllowed: "",
+        maxSpeedAllowed: vehicleDefaultMax,
         speedExceeded: 0,
         engineStatus: "",
         geofenceAlert: 0,

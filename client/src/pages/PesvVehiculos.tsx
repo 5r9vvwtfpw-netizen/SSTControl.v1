@@ -46,6 +46,7 @@ export default function PesvVehiculos() {
     soatExpiry: "",
     technicalReviewExpiry: "",
     status: "activo" as const,
+    defaultMaxSpeed: "" as number | string,
     observations: "",
   });
 
@@ -131,10 +132,12 @@ export default function PesvVehiculos() {
     
     const capacityValue = formData.capacity === '' ? undefined : Number(formData.capacity);
     const mileageValue = formData.mileage === '' ? undefined : Number(formData.mileage);
+    const defaultMaxSpeedValue = formData.defaultMaxSpeed === '' ? undefined : Number(formData.defaultMaxSpeed);
     const data = {
       ...formData,
       capacity: capacityValue,
       mileage: mileageValue,
+      defaultMaxSpeed: defaultMaxSpeedValue,
       color: formData.color || undefined,
       vin: formData.vin || undefined,
       insurancePolicy: formData.insurancePolicy || undefined,
@@ -170,6 +173,7 @@ export default function PesvVehiculos() {
       soatExpiry: vehicle.soatExpiry || "",
       technicalReviewExpiry: vehicle.technicalReviewExpiry || "",
       status: vehicle.status,
+      defaultMaxSpeed: vehicle.defaultMaxSpeed ?? "",
       observations: vehicle.observations || "",
     });
     setDialogOpen(true);
@@ -200,6 +204,7 @@ export default function PesvVehiculos() {
       soatExpiry: "",
       technicalReviewExpiry: "",
       status: "activo",
+      defaultMaxSpeed: "",
       observations: "",
     });
   };
@@ -401,6 +406,19 @@ export default function PesvVehiculos() {
                       onChange={(e) => setFormData({ ...formData, mileage: e.target.value === '' ? '' : e.target.value })}
                       placeholder="50000"
                       data-testid="input-mileage"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="defaultMaxSpeed">Velocidad Máxima Permitida (km/h)</Label>
+                    <Input
+                      id="defaultMaxSpeed"
+                      type="number"
+                      min="0"
+                      max="200"
+                      value={formData.defaultMaxSpeed}
+                      onChange={(e) => setFormData({ ...formData, defaultMaxSpeed: e.target.value === '' ? '' : e.target.value })}
+                      placeholder="Ej: 80"
+                      data-testid="input-default-max-speed"
                     />
                   </div>
                   <div className="space-y-2">

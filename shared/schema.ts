@@ -922,6 +922,7 @@ export const vehicles = pgTable("vehicles", {
   soatExpiry: date("soat_expiry"),
   technicalReviewExpiry: date("technical_review_expiry"),
   status: vehicleStatusEnum("status").notNull().default("activo"),
+  defaultMaxSpeed: integer("default_max_speed"),
   observations: text("observations"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
