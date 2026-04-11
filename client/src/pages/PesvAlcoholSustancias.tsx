@@ -353,30 +353,20 @@ export default function PesvAlcoholSustancias() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Conductor <span className="text-destructive">*</span></Label>
-                {driversLoading ? (
-                  <Input value="" disabled placeholder="Cargando conductores..." data-testid="input-conductor-loading" />
-                ) : drivers.length > 0 ? (
-                  <Select
-                    value={form.conductorNombre}
-                    onValueChange={v => setForm(f => ({ ...f, conductorNombre: v }))}
-                  >
-                    <SelectTrigger data-testid="select-conductor-nombre">
-                      <SelectValue placeholder="Seleccione un conductor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {drivers.map(d => (
-                        <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input
-                    value={form.conductorNombre}
-                    onChange={e => setForm(f => ({ ...f, conductorNombre: e.target.value }))}
-                    placeholder="Nombre del conductor"
-                    data-testid="input-conductor-nombre"
-                  />
-                )}
+                <Select
+                  value={form.conductorNombre}
+                  onValueChange={v => setForm(f => ({ ...f, conductorNombre: v }))}
+                  disabled={driversLoading}
+                >
+                  <SelectTrigger data-testid="select-conductor-nombre">
+                    <SelectValue placeholder={driversLoading ? "Cargando conductores..." : "Seleccione un conductor"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {drivers.map(d => (
+                      <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="fechaRegistro">Fecha <span className="text-destructive">*</span></Label>
