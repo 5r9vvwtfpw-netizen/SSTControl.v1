@@ -8227,22 +8227,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/drivers/:id", requirePermission("drivers:delete"), async (req, res) => {
-    const userCompanyId = req.user!.companyId;
-    const isAdmin = hasGlobalAccess(req.user!.role);
-    
-    if (isAdmin) {
-      const existingDriver = await storage.getDriverById(req.params.id);
-      if (!existingDriver) {
-        return res.status(404).send("Conductor no encontrado");
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const driverId = req.params.id;
+
+      // Resolve companyId for multi-tenant safety
+      let targetCompanyId: string;
+      if (isAdmin) {
+        const existingDriver = await storage.getDriverById(driverId);
+        if (!existingDriver) {
+          return res.status(404).send("Conductor no encontrado");
+        }
+        targetCompanyId = existingDriver.companyId;
+      } else {
+        if (!userCompanyId) {
+          return res.status(403).send("Usuario no asociado a una empresa");
+        }
+        targetCompanyId = userCompanyId;
       }
-      await storage.deleteDriver(req.params.id, existingDriver.companyId);
+
+      // Delete related records first (FK constraints with notNull and no cascade)
+      await db.delete(schema.vehicleInspections)
+        .where(and(
+          eq(schema.vehicleInspections.driverId, driverId),
+          eq(schema.vehicleInspections.companyId, targetCompanyId)
+        ));
+      await db.delete(schema.roadIncidents)
+        .where(and(
+          eq(schema.roadIncidents.driverId, driverId),
+          eq(schema.roadIncidents.companyId, targetCompanyId)
+        ));
+
+      await storage.deleteDriver(driverId, targetCompanyId);
       res.sendStatus(204);
-    } else {
-      if (!userCompanyId) {
-        return res.status(403).send("Usuario no asociado a una empresa");
-      }
-      await storage.deleteDriver(req.params.id, userCompanyId);
-      res.sendStatus(204);
+    } catch (error: any) {
+      console.error("Error deleting driver:", error);
+      res.status(500).json({ error: error.message || "Error al eliminar el conductor" });
     }
   });
 
