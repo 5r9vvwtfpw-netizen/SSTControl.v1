@@ -160,24 +160,30 @@ Corresponde a la fase de Mejora del ciclo PHVA.
 Solo disponible si la empresa tiene vehículos (numberOfVehicles > 0). Requiere suscripción.
 Accesible desde la pestaña "PESV" en la barra de navegación.
 
-- **Evaluaciones PESV** → /pesv: Evaluaciones según Resolución 40595/2022 con tres niveles de complejidad (básico, estándar, avanzado).
-- **Vehículos** → /pesv/vehiculos: Inventario de vehículos de la empresa.
-- **Conductores** → /pesv/conductores: Registro de conductores con licencias y documentación.
-- **Siniestros** → /pesv/siniestros: Registro y seguimiento de siniestros viales.
-- **Capacitaciones PESV** → /pesv/capacitaciones: Capacitaciones específicas de seguridad vial.
-- **Inspecciones PESV** → /pesv/inspecciones: Inspecciones preoperacionales de vehículos.
-- **Mantenimiento Vehicular** → /pesv/mantenimiento: Control de mantenimiento preventivo y correctivo.
-- **Monitoreo GPS** → /pesv/monitoreo-gps: Seguimiento GPS de vehículos.
-- **Rutas Seguras** → /pesv/rutas-seguras: Definición y evaluación de rutas seguras.
-- **Matriz de Riesgos Viales** → /pesv/matriz-riesgos: Identificación y evaluación de riesgos viales.
-- **Indicadores PESV** → /pesv/indicadores: Indicadores de desempeño en seguridad vial.
-- **Comité PESV** → /pesv/comite: Gestión del comité de seguridad vial.
-- **Liderazgo** → /pesv/liderazgo: Compromiso de la alta dirección con seguridad vial.
-- **Contexto Organizacional** → /pesv/contexto-organizacional: Análisis del contexto organizacional para PESV.
-- **Factores de Desempeño** → /pesv/factores-desempeno: Evaluación de factores de desempeño vial.
-- **Mejora Continua PESV** → Acciones de mejora del PESV.
-- **Revisión por la Dirección PESV** → Revisión gerencial del PESV.
-- **Auditorías PESV** → Auditorías del sistema de gestión vial.
+El PESV tiene 24 pasos organizados en el ciclo PHVA: Planear (P01-P08), Hacer (H01-H11), Verificar (V01-V03), Actuar (A01-A02).
+
+### PESV - Módulos globales (accesibles desde menú lateral PESV)
+- **Evaluaciones PESV** → /pesv: Archivo maestro del PESV. Desde aquí se gestionan TODOS los pasos.
+- **Vehículos** → /pesv/vehiculos: Inventario de vehículos. Corresponde al paso **H04 - Gestión de Vehículos Seguros** (ciclo HACER).
+- **Conductores** → /pesv/conductores: Registro de conductores. Corresponde al paso **H01 - Factor Humano / H03 - Control de Documentación** (ciclo HACER).
+- **Siniestros** → /pesv/siniestros: Registro de siniestros viales. Corresponde al paso **V02 - Registro y Análisis de Siniestros** (ciclo VERIFICAR).
+- **Capacitaciones PESV** → /pesv/capacitaciones: Capacitaciones en seguridad vial. Corresponde al paso **H02 - Capacitación en Seguridad Vial** (ciclo HACER).
+- **Inspecciones PESV** → /pesv/inspecciones: Inspecciones preoperacionales. Corresponde al paso **H06 - Inspecciones Preoperacionales** (ciclo HACER).
+- **Mantenimiento Vehicular** → /pesv/mantenimiento: Mantenimiento preventivo/correctivo. Corresponde al paso **H05 - Plan de Mantenimiento de Vehículos** (ciclo HACER).
+- **Monitoreo GPS** → /pesv/monitoreo-gps: Seguimiento GPS y control de velocidad. Corresponde al paso **H07 - Gestión de la Velocidad** (ciclo HACER).
+- **Rutas Seguras** → /pesv/rutas-seguras: Análisis y gestión de rutas. Corresponde al paso **H08 - Gestión de Rutas Seguras** (ciclo HACER).
+- **Fatiga y Somnolencia** → Dentro de Evaluación PESV, paso **H09 - Gestión de Fatiga y Somnolencia** (ciclo HACER, Art. 21 Res. 40595/2022).
+- **Alcohol y Sustancias Psicoactivas** → Dentro de Evaluación PESV, paso **H10 - Gestión de Alcohol y Sustancias Psicoactivas** (ciclo HACER, Art. 22 Res. 40595/2022).
+- **Atención a Víctimas** → Dentro de Evaluación PESV, paso **H11 - Atención a Víctimas de Siniestros Viales** (ciclo HACER, Art. 23 Res. 40595/2022).
+- **Matriz de Riesgos Viales** → /pesv/matriz-riesgos: Evaluación de riesgos viales. Corresponde al paso **P04 - Caracterización y Evaluación del Riesgo Vial** (ciclo PLANEAR).
+- **Indicadores PESV** → /pesv/indicadores: Indicadores de desempeño vial. Corresponde al paso **V01 - Indicadores de Gestión del PESV** (ciclo VERIFICAR).
+- **Comité PESV** → /pesv/comite: Comité de seguridad vial. Corresponde al paso **P01 - Conformación del Equipo de Trabajo** (ciclo PLANEAR).
+- **Liderazgo** → /pesv/liderazgo: Compromiso directivo. Corresponde al paso **P02 - Política de Seguridad Vial** (ciclo PLANEAR).
+- **Contexto Organizacional** → /pesv/contexto-organizacional: Diagnóstico organizacional. Corresponde al paso **P03 - Diagnóstico de la Organización** (ciclo PLANEAR).
+- **Factores de Desempeño** → /pesv/factores-desempeno: Evaluación de factores. Corresponde al paso **P06 - Programas y Planes de Acción** (ciclo PLANEAR).
+- **Mejora Continua PESV** → Dentro de Evaluación PESV, paso **A01 - Acciones de Mejora Continua** (ciclo ACTUAR).
+- **Revisión por la Dirección PESV** → Dentro de Evaluación PESV, paso **A02 - Revisión por la Alta Dirección** (ciclo ACTUAR).
+- **Auditorías PESV** → Dentro de Evaluación PESV, paso **V03 - Auditoría del PESV** (ciclo VERIFICAR).
 
 ## FLUJO PRINCIPAL DEL SISTEMA - TODO PARTE DE LA EVALUACIÓN INICIAL
 
@@ -578,6 +584,11 @@ Reglas importantes:
 11. IMPORTANTE: Solo indica al usuario cómo llegar a funciones que SU ROL puede ver. No lo envíes a módulos que no tiene acceso.
 12. Recuerda: La Evaluación Inicial es el CENTRO del sistema. Todo fluye desde allí. El Plan Anual de Trabajo se genera desde la evaluación y organiza las actividades en cronograma mensual.
 13. IMPORTANTE: La empresa del usuario YA ESTÁ CONFIGURADA. La configuración de empresa (NIT, CIIU, razón social) se realizó durante el proceso de suscripción/registro. NUNCA digas al usuario que debe "Crear Empresa" ni "Configurar la Empresa" — eso ya está hecho. Cuando pregunten cómo empezar, el primer paso real es agregar trabajadores desde Planear → Trabajadores.
+14. REGLA DE UBICACIÓN PRECISA (OBLIGATORIA): Cuando respondas preguntas sobre dónde está algo en la plataforma, SIEMPRE debes indicar la ubicación exacta usando este formato:
+    - Para módulos del SG-SST: indica la pestaña del ciclo PHVA y el submenú exacto. Ejemplo: "Se encuentra en la pestaña **HACER** del ciclo PHVA, en el submenú **Capacitaciones**."
+    - Para módulos del PESV: indica el código de paso EXACTO y la fase del ciclo. Ejemplo: "Se encuentra en el módulo PESV, **paso H07 - Gestión de la Velocidad** (ciclo **HACER**)." o "El Monitoreo GPS está en PESV → pestaña HACER → **paso H07** (Gestión de la Velocidad)."
+    - NUNCA respondas solo con "en la sección de X" sin indicar el ciclo PHVA y el código del paso (para PESV) o la pestaña exacta (para SG-SST).
+    - Para PESV los 24 pasos son: P01-P08 (PLANEAR), H01-H11 (HACER), V01-V03 (VERIFICAR), A01-A02 (ACTUAR). Cada módulo del menú PESV tiene un código de paso asignado según la base de conocimiento.
 ${userContext}
 
 ${APP_KNOWLEDGE_BASE}`;
