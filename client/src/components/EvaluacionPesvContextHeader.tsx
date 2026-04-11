@@ -63,7 +63,7 @@ export function EvaluacionPesvContextHeader({
             <Link href={`/pesv/evaluacion/${evaluacion.id}`}>
               <Button variant="ghost" size="sm" className="gap-1" data-testid="button-back-to-evaluation">
                 <ArrowLeft className="h-4 w-4" />
-                Volver a Evaluación PESV
+                Volver a Evaluación SST
               </Button>
             </Link>
             
