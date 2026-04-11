@@ -538,10 +538,25 @@ export default function MatrizRiesgosViales() {
     const causas = peligro.subclasificacion
       ? `${peligro.clasificacion}: ${peligro.subclasificacion}`
       : peligro.clasificacion;
-    // Controles: usar existentes; si no hay, usar los propuestos del IPERC
+    // Controles: cascada → existentes → propuestos → construir desde tipo de control
+    const tipoControlLabels: Record<string, string> = {
+      eliminacion: "Eliminación del peligro",
+      sustitucion: "Sustitución por agente menos peligroso",
+      ingenieria: "Controles de ingeniería",
+      administrativo: "Controles administrativos (procedimientos, capacitación, señalización)",
+      epp: "Equipos de Protección Personal (EPP)",
+    };
+    const buildControlesDesideTipo = () => {
+      const partes: string[] = [];
+      if (peligro.tipoControlPrincipal) partes.push(tipoControlLabels[peligro.tipoControlPrincipal] ?? peligro.tipoControlPrincipal);
+      if (peligro.tipoControlSecundario) partes.push(tipoControlLabels[peligro.tipoControlSecundario] ?? peligro.tipoControlSecundario);
+      return partes.length > 0 ? partes.join(". ") : "";
+    };
     const controles = peligro.controlesExistentes?.trim()
       ? peligro.controlesExistentes
-      : (peligro.controlesPropuestos || "");
+      : peligro.controlesPropuestos?.trim()
+        ? peligro.controlesPropuestos
+        : buildControlesDesideTipo();
     form.setValue("nombre", peligro.descripcionPeligro, { shouldValidate: true });
     form.setValue("descripcion", `${peligro.actividadProceso}: ${peligro.efectosPosibles}`, { shouldValidate: true });
     form.setValue("fuenteRiesgo", peligro.fuenteGeneradora, { shouldValidate: true });
