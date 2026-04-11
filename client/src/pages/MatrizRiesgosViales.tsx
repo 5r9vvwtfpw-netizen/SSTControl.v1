@@ -9,13 +9,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Search, Trash2, Edit, User, Car, Building, Cloud, AlertTriangle, ShieldPlus, Link2, FileDown, CheckCircle2, Clock, CalendarDays, X, ArrowLeft } from "lucide-react";
+import { Plus, Search, Trash2, Edit, User, Car, Building, Cloud, AlertTriangle, ShieldPlus, Link2, FileDown, CheckCircle2, Clock, CalendarDays, X, ArrowLeft, Database, ExternalLink } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { RiesgoVial, Worker, insertRiesgoVialSchema, TratamientoRiesgoVial } from "@shared/schema";
+import { RiesgoVial, Worker, insertRiesgoVialSchema, TratamientoRiesgoVial, PeligroIperc } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -140,6 +140,9 @@ export default function MatrizRiesgosViales() {
   const [selectedRiesgoForTratamiento, setSelectedRiesgoForTratamiento] = useState<RiesgoVial | null>(null);
   const [editingTratamiento, setEditingTratamiento] = useState<TratamientoRiesgoVial | null>(null);
   const [tratamientoFormOpen, setTratamientoFormOpen] = useState(false);
+  const [showIpercPanel, setShowIpercPanel] = useState(false);
+  const [ipercSearch, setIpercSearch] = useState("");
+  const [importedFromIperc, setImportedFromIperc] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -172,6 +175,21 @@ export default function MatrizRiesgosViales() {
   const { data: workers = [] } = useQuery<Worker[]>({
     queryKey: ["/api/workers"],
   });
+
+  const { data: ipercPeligros = [], isLoading: ipercLoading } = useQuery<PeligroIperc[]>({
+    queryKey: ["/api/peligros-iperc"],
+  });
+
+  const filteredIpercPeligros = useMemo(() => {
+    if (!ipercSearch.trim()) return ipercPeligros;
+    const s = ipercSearch.toLowerCase();
+    return ipercPeligros.filter(p =>
+      (p.descripcionPeligro?.toLowerCase().includes(s)) ||
+      (p.fuenteGeneradora?.toLowerCase().includes(s)) ||
+      (p.clasificacion?.toLowerCase().includes(s)) ||
+      (p.actividadProceso?.toLowerCase().includes(s))
+    );
+  }, [ipercPeligros, ipercSearch]);
 
   const matrixData = useMemo(() => {
     const matrix: Record<string, Record<string, RiesgoVial[]>> = {};
@@ -489,8 +507,15 @@ export default function MatrizRiesgosViales() {
     return `RV-${String(next).padStart(3, "0")}`;
   };
 
+  const resetIpercPanel = () => {
+    setShowIpercPanel(false);
+    setIpercSearch("");
+    setImportedFromIperc(false);
+  };
+
   const handleOpenNew = () => {
     setEditingRiesgo(null);
+    resetIpercPanel();
     form.reset({
       codigo: getNextCodigo(),
       nombre: "",
@@ -509,10 +534,26 @@ export default function MatrizRiesgosViales() {
     });
   };
 
+  const handleImportFromIperc = (peligro: PeligroIperc) => {
+    const causas = peligro.subclasificacion
+      ? `${peligro.clasificacion}: ${peligro.subclasificacion}`
+      : peligro.clasificacion;
+    form.setValue("nombre", peligro.descripcionPeligro, { shouldValidate: true });
+    form.setValue("descripcion", `${peligro.actividadProceso}: ${peligro.efectosPosibles}`, { shouldValidate: true });
+    form.setValue("fuenteRiesgo", peligro.fuenteGeneradora, { shouldValidate: true });
+    form.setValue("causasRaiz", causas, { shouldValidate: true });
+    form.setValue("consecuencias", peligro.efectosPosibles, { shouldValidate: true });
+    form.setValue("controlesExistentes", peligro.controlesExistentes || "", { shouldValidate: true });
+    setShowIpercPanel(false);
+    setIpercSearch("");
+    setImportedFromIperc(true);
+  };
+
   const handleDialogClose = (open: boolean) => {
     if (!open) {
       setEditingRiesgo(null);
       form.reset();
+      resetIpercPanel();
     }
     setDialogOpen(open);
   };
@@ -622,6 +663,101 @@ export default function MatrizRiesgosViales() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+
+                {/* Importar desde IPERC — sólo visible al crear un nuevo riesgo */}
+                {!editingRiesgo && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        data-testid="button-importar-iperc"
+                        onClick={() => {
+                          setShowIpercPanel(v => !v);
+                          setImportedFromIperc(false);
+                        }}
+                      >
+                        <Database className="h-4 w-4 mr-2" />
+                        {showIpercPanel ? "Cerrar panel IPERC" : "Importar desde IPERC"}
+                      </Button>
+                    </div>
+
+                    {importedFromIperc && !showIpercPanel && (
+                      <div className="flex items-center gap-2 p-2 rounded-md border bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 text-sm text-green-700 dark:text-green-300">
+                        <CheckCircle2 className="h-4 w-4 shrink-0" />
+                        <span>Datos importados desde la Matriz IPERC. Revisa y ajusta los campos según sea necesario.</span>
+                        <button
+                          type="button"
+                          className="ml-auto shrink-0"
+                          onClick={() => setImportedFromIperc(false)}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
+
+                    {showIpercPanel && (
+                      <div className="rounded-md border bg-muted/30 p-4 space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 text-sm font-medium">
+                            <Database className="h-4 w-4 text-muted-foreground" />
+                            Seleccionar peligro de la Matriz IPERC
+                          </div>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setShowIpercPanel(false)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        <Input
+                          placeholder="Buscar por peligro, fuente, proceso..."
+                          value={ipercSearch}
+                          onChange={e => setIpercSearch(e.target.value)}
+                          data-testid="input-iperc-search"
+                        />
+
+                        {ipercLoading ? (
+                          <p className="text-sm text-muted-foreground py-2">Cargando peligros IPERC...</p>
+                        ) : ipercPeligros.length === 0 ? (
+                          <div className="text-center py-6 space-y-3">
+                            <p className="text-sm text-muted-foreground">No hay peligros registrados en la Matriz IPERC.</p>
+                            <Link href="/iperc">
+                              <Button type="button" variant="outline" size="sm">
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                Ir a Matriz IPERC
+                              </Button>
+                            </Link>
+                          </div>
+                        ) : filteredIpercPeligros.length === 0 ? (
+                          <p className="text-sm text-muted-foreground py-2">No se encontraron peligros con ese término de búsqueda.</p>
+                        ) : (
+                          <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
+                            {filteredIpercPeligros.map(p => (
+                              <button
+                                key={p.id}
+                                type="button"
+                                data-testid={`button-iperc-peligro-${p.id}`}
+                                className="w-full text-left p-3 rounded-md border bg-background hover-elevate active-elevate-2 space-y-0.5"
+                                onClick={() => handleImportFromIperc(p)}
+                              >
+                                <div className="text-sm font-medium leading-snug">{p.descripcionPeligro}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {p.fuenteGeneradora} · {p.clasificacion}{p.subclasificacion ? `: ${p.subclasificacion}` : ""}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}

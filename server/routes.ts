@@ -36083,6 +36083,27 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // GET /api/peligros-iperc - Obtener todos los peligros IPERC de la empresa (para importar en otros módulos)
+  app.get('/api/peligros-iperc', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdminUser = hasGlobalAccess(req.user!.role);
+      const companyId = isAdminUser
+        ? (req.query.companyId as string) || userCompanyId
+        : userCompanyId;
+      if (!companyId) return res.status(400).send("Company ID requerido");
+      const peligros = await db
+        .select()
+        .from(schema.peligrosIperc)
+        .where(eq(schema.peligrosIperc.companyId, companyId))
+        .orderBy(desc(schema.peligrosIperc.valorRiesgo), desc(schema.peligrosIperc.createdAt));
+      res.json(peligros);
+    } catch (error: any) {
+      console.error('Error fetching all peligros IPERC:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // GET /api/matrices-iperc/:id/peligros - Obtener peligros de una matriz
   app.get('/api/matrices-iperc/:id/peligros', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
