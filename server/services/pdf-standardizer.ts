@@ -731,14 +731,17 @@ export function addSimpleTable(
     maxCellHeight = Math.max(minRowHeight, ...cellHeights);
 
     currentY = checkPageBreak(doc, maxCellHeight, currentY);
-    
-    doc.rect(margin, currentY, tableWidth, maxCellHeight).stroke(PDF_COLORS.GRAY_BORDER);
-    
+
+    const cellY = currentY + cellPadding;
     xPos = margin;
     row.forEach((cell, i) => {
-      doc.fontSize(7).text(cell || '', xPos + cellPadding, currentY + cellPadding, { 
-        width: colWidths[i] - cellPadding * 2, 
+      doc.rect(xPos, currentY, colWidths[i], maxCellHeight).stroke(PDF_COLORS.GRAY_BORDER);
+      doc.fontSize(7).fillColor(PDF_COLORS.BLACK);
+      doc.y = cellY;
+      doc.text(cell || '', xPos + cellPadding, cellY, {
+        width: colWidths[i] - cellPadding * 2,
         align: 'left',
+        lineBreak: true,
       });
       xPos += colWidths[i];
     });
