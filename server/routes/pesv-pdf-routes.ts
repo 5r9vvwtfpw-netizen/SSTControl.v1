@@ -564,11 +564,16 @@ export function registerPesvPdfRoutes(app: Express) {
       });
 
       const rows = conductores.map(c => [
-        c.name, c.identificationNumber, c.licenseType, formatDate(c.licenseExpiry), c.status
+        c.name,
+        c.identificationNumber,
+        c.licenseNumber,
+        c.licenseType,
+        formatDate(c.licenseExpiry),
+        c.status
       ]);
-      y = addSimpleTable(doc, ['Nombre', 'Documento', 'Categoría Licencia', 'Vencimiento', 'Estado'], rows, {
+      y = addSimpleTable(doc, ['Nombre', 'Cédula', 'No. Licencia', 'Categoría', 'Vencimiento', 'Estado'], rows, {
         y,
-        columnWidths: [170, 110, 120, 90, 52]
+        columnWidths: [140, 80, 100, 65, 85, 72]
       });
 
       await addSignatureFooter(doc, signers, true);
