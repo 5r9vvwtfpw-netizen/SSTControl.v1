@@ -538,12 +538,18 @@ export default function MatrizRiesgosViales() {
     const causas = peligro.subclasificacion
       ? `${peligro.clasificacion}: ${peligro.subclasificacion}`
       : peligro.clasificacion;
+    // Controles: usar existentes; si no hay, usar los propuestos del IPERC
+    const controles = peligro.controlesExistentes?.trim()
+      ? peligro.controlesExistentes
+      : (peligro.controlesPropuestos || "");
     form.setValue("nombre", peligro.descripcionPeligro, { shouldValidate: true });
     form.setValue("descripcion", `${peligro.actividadProceso}: ${peligro.efectosPosibles}`, { shouldValidate: true });
     form.setValue("fuenteRiesgo", peligro.fuenteGeneradora, { shouldValidate: true });
     form.setValue("causasRaiz", causas, { shouldValidate: true });
     form.setValue("consecuencias", peligro.efectosPosibles, { shouldValidate: true });
-    form.setValue("controlesExistentes", peligro.controlesExistentes || "", { shouldValidate: true });
+    form.setValue("controlesExistentes", controles, { shouldValidate: true });
+    // Paso PESV relacionado: P04 es el paso de Evaluación de Riesgos Viales
+    form.setValue("pasoPesvRelacionado", "P04", { shouldValidate: true });
     setShowIpercPanel(false);
     setIpercSearch("");
     setImportedFromIperc(true);
