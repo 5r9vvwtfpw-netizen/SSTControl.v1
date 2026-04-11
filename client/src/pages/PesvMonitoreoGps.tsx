@@ -28,6 +28,7 @@ import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner
 export default function PesvMonitoreoGps() {
   const { user } = useAuth();
   const { selectedCompany: currentCompany } = useCompanyContext();
+  const effectiveCompanyId = currentCompany?.id ?? user?.companyId ?? null;
   const { toast } = useToast();
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
   const [searchTerm, setSearchTerm] = useState("");
@@ -198,7 +199,7 @@ export default function PesvMonitoreoGps() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentCompany) {
+    if (!effectiveCompanyId) {
       toast({
         title: "Error",
         description: "No hay empresa seleccionada",
@@ -208,7 +209,7 @@ export default function PesvMonitoreoGps() {
     }
     
     const data: InsertVehicleGpsTracking = {
-      companyId: currentCompany.id,
+      companyId: effectiveCompanyId,
       vehicleId: formData.vehicleId,
       driverId: formData.driverId && formData.driverId !== "none" ? formData.driverId : undefined,
       trackingDate: formData.trackingDate,
