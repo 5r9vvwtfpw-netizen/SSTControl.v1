@@ -688,7 +688,7 @@ export default function MatrizRiesgosViales() {
                 {/* Importar desde IPERC — sólo visible al crear un nuevo riesgo */}
                 {!editingRiesgo && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <Button
                         type="button"
                         variant="outline"
@@ -702,12 +702,24 @@ export default function MatrizRiesgosViales() {
                         <Database className="h-4 w-4 mr-2" />
                         {showIpercPanel ? "Cerrar panel IPERC" : "Importar desde IPERC"}
                       </Button>
+                      <Link href="/iperc">
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                          <ExternalLink className="h-3 w-3" />
+                          Matriz IPERC · SG-SST
+                        </span>
+                      </Link>
                     </div>
 
                     {importedFromIperc && !showIpercPanel && (
                       <div className="flex items-center gap-2 p-2 rounded-md border bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 text-sm text-green-700 dark:text-green-300">
                         <CheckCircle2 className="h-4 w-4 shrink-0" />
-                        <span>Datos importados desde la Matriz IPERC. Revisa y ajusta los campos según sea necesario.</span>
+                        <span>
+                          Datos importados desde la{" "}
+                          <Link href="/iperc" className="underline font-medium hover:opacity-80">
+                            Matriz IPERC del SG-SST
+                          </Link>
+                          . Revisa y ajusta los campos según sea necesario.
+                        </span>
                         <button
                           type="button"
                           className="ml-auto shrink-0"
