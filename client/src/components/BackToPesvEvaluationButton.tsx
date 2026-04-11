@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ExternalLink } from "lucide-react";
-import { Link, useLocation, useParams } from "wouter";
+import { ArrowLeft } from "lucide-react";
+import { useLocation, useParams } from "wouter";
 
 const PESV_EVAL_STORAGE_KEY = "active_pesv_evaluacion_id";
 const PESV_FASE_STORAGE_KEY = "active_pesv_fase";
@@ -54,30 +54,18 @@ export function BackToPesvEvaluationButton({ className = "" }: BackToPesvEvaluat
   const evaluacionId = params.evaluacionId || extractEvaluacionIdFromPath(location) || storedEvalId;
   const storedFase = getPesvFaseContext();
   
-  if (evaluacionId) {
-    const faseParam = storedFase ? `?fase=${storedFase}` : '';
-    return (
-      <Button
-        className={`bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md ${className}`}
-        onClick={() => setLocation(`/pesv/evaluacion/${evaluacionId}${faseParam}`)}
-        data-testid="button-back-to-pesv-evaluation"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Volver a Evaluación PESV
-      </Button>
-    );
-  }
+  if (!evaluacionId) return null;
 
+  const faseParam = storedFase ? `?fase=${storedFase}` : '';
   return (
-    <Link href="/pesv/evaluaciones">
-      <Button
-        className={`bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md ${className}`}
-        data-testid="button-ir-evaluacion-pesv"
-      >
-        <ExternalLink className="h-4 w-4 mr-2" />
-        Ir a Evaluación PESV
-      </Button>
-    </Link>
+    <Button
+      className={`bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md ${className}`}
+      onClick={() => setLocation(`/pesv/evaluacion/${evaluacionId}${faseParam}`)}
+      data-testid="button-back-to-pesv-evaluation"
+    >
+      <ArrowLeft className="h-4 w-4 mr-2" />
+      Volver a Evaluación PESV
+    </Button>
   );
 }
 

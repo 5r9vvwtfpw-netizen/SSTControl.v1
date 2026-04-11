@@ -260,7 +260,7 @@ export default function PesvConductores() {
         <Link href="/pesv">
           <Button variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver al Plan Estratégico de Seguridad Vial
+            Volver al Panel PESV
           </Button>
         </Link>
         <BackToPesvEvaluationButton />

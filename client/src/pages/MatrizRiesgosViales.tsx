@@ -818,6 +818,23 @@ export default function MatrizRiesgosViales() {
                   />
                 </div>
 
+                {(() => {
+                  const prob = form.watch("probabilidad");
+                  const imp = form.watch("impacto");
+                  if (!prob || !imp) return null;
+                  const valorRiesgo = PROBABILIDAD_VALUES[prob as keyof typeof PROBABILIDAD_VALUES].value * IMPACTO_VALUES[imp as keyof typeof IMPACTO_VALUES].value;
+                  const nivel = getRiskLevel(valorRiesgo);
+                  const config = NIVEL_RIESGO_CONFIG[nivel as keyof typeof NIVEL_RIESGO_CONFIG] || NIVEL_RIESGO_CONFIG.bajo;
+                  return (
+                    <div className="flex items-center gap-3 p-3 rounded-md border bg-muted/40">
+                      <span className="text-sm text-muted-foreground font-medium">Nivel de riesgo calculado:</span>
+                      <Badge className={config.className} data-testid="badge-nivel-riesgo-calculado">
+                        {config.label} — Valor: {valorRiesgo}
+                      </Badge>
+                    </div>
+                  );
+                })()}
+
                 <FormField
                   control={form.control}
                   name="controlesExistentes"

@@ -254,7 +254,7 @@ export default function PesvMantenimientoVehicular() {
         <Link href="/pesv">
           <Button variant="outline" size="sm" data-testid="button-back-pesv">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver al Plan Estratégico de Seguridad Vial
+            Volver al Panel PESV
           </Button>
         </Link>
         <BackToPesvEvaluationButton />
