@@ -464,8 +464,8 @@ Cuando un usuario pregunte por un estándar específico, usa esta referencia:
 - **2.6.1** Rendición de cuentas: Informe anual. El PDF del Ministerio incluye esta información.
 - **2.7.1** Matriz legal: Actualizada y con seguimiento. Módulo Matriz Legal.
 - **2.8.1** Mecanismos de comunicación: Módulo de Comunicación SST.
-- **2.9.1** Adquisición de bienes y servicios: Procedimiento con especificaciones SST.
-- **2.10.1** Evaluación de proveedores y contratistas: Criterios SST en selección.
+- **2.9.1** Adquisición de bienes y servicios: Se debe contar con un procedimiento documentado que incluya criterios de SST al momento de comprar equipos, materiales o contratar servicios (ej: verificar fichas técnicas de seguridad, solicitar certificados de calidad, revisar que el proveedor cumpla normas de SST). En la plataforma: abra su Evaluación Inicial → busque el estándar 2.9.1 → adjunte el procedimiento de adquisiciones con los criterios SST definidos. Módulo de apoyo: Adquisiciones SST (pestaña HACER).
+- **2.10.1** Evaluación de proveedores y contratistas: Se exige verificar que los contratistas y proveedores que ingresen a las instalaciones cumplan con requisitos mínimos de SST: afiliación a seguridad social, capacitaciones en riesgo, EPP, y exámenes médicos de sus trabajadores. El empleador es solidariamente responsable. En la plataforma: abra su Evaluación Inicial → estándar 2.10.1 → desde el modo de verificación encontrará el módulo Evaluación de Proveedores (pestaña HACER) donde puede registrar cada contratista y su nivel de cumplimiento SST. Requiere suscripción activa.
 - **2.11.1** Gestión del cambio: Evaluar impacto SST de cambios. Módulo Gestión del Cambio.
 
 ### Componente: Gestión de la Salud
@@ -473,11 +473,11 @@ Cuando un usuario pregunte por un estándar específico, usa esta referencia:
 - **3.1.2** Actividades de medicina del trabajo: Capacitaciones y Exámenes Médicos.
 - **3.1.3** Perfiles de cargos: Requisitos de aptitud física y mental.
 - **3.1.4** Evaluaciones médicas ocupacionales: Ingreso, periódicas y egreso. Módulo Exámenes Médicos.
-- **3.1.5** Custodia de Historias Clínicas: Confidencialidad.
+- **3.1.5** Custodia de Historias Clínicas: Las historias clínicas ocupacionales son documentos reservados; solo el médico tratante y el propio trabajador pueden acceder a ellas (Res. 1995/1999). Deben custodiarse mínimo 20 años después de la terminación del contrato. El empleador NO puede tener acceso directo al contenido clínico, solo al concepto de aptitud. En la plataforma: abra su Evaluación Inicial → estándar 3.1.5 → adjunte el contrato o acuerdo de custodia con la IPS o médico ocupacional responsable, y el procedimiento interno de confidencialidad. La información de aptitud (apto, apto con restricciones, no apto) sí se registra en el módulo de Exámenes Médicos (pestaña HACER).
 - **3.1.6** Restricciones y recomendaciones médicas: Seguimiento en Exámenes Médicos.
 - **3.1.7** Estilos de vida saludables: Prevención de tabaquismo, alcoholismo, farmacodependencia.
-- **3.1.8** Servicios de higiene y agua potable.
-- **3.1.9** Manejo de residuos.
+- **3.1.8** Servicios de higiene y agua potable: La empresa debe garantizar instalaciones sanitarias adecuadas, agua potable para consumo y servicios de higiene suficientes según el número de trabajadores (Decreto 1072/2015, Art. 2.2.4.6.15). Para empresas con más de 50 trabajadores se requieren casilleros, duchas y zonas de descanso. En la plataforma: abra su Evaluación Inicial → estándar 3.1.8 → adjunte el registro de inspección de instalaciones sanitarias, certificado de potabilidad del agua (si aplica) y el cronograma de limpieza y desinfección. No tiene módulo propio; la evidencia se sube como documento adjunto en la evaluación.
+- **3.1.9** Manejo de residuos: Se debe contar con un programa de gestión de residuos sólidos y peligrosos (RESPEL) según el Decreto 1076/2015 y la Resolución 1362/2007 para residuos peligrosos. Incluye clasificación (ordinarios, reciclables, peligrosos), almacenamiento temporal, gestión con empresa autorizada y registro de manifiestos de transporte. En la plataforma: abra su Evaluación Inicial → estándar 3.1.9 → adjunte el programa de gestión de residuos, los contratos con gestores autorizados (RAEE, RESPEL) y los registros de disposición final. No tiene módulo propio; la evidencia se gestiona como documento adjunto.
 - **3.2.1** Reporte de accidentes y enfermedad laboral: A ARL, EPS y Ministerio. Módulo de Accidentes.
 - **3.2.2** Investigación de accidentes: Causas raíz y acciones correctivas. Accidentes > Investigación.
 - **3.2.3** Registro y análisis estadístico: Generado automáticamente.
@@ -496,8 +496,8 @@ Cuando un usuario pregunte por un estándar específico, usa esta referencia:
 
 ### Componente: Control de Riesgos
 - **4.2.1** Medidas de prevención y control: Jerarquía (eliminación, sustitución, ingeniería, administrativos, EPP).
-- **4.2.2** Aplicación de medidas por trabajadores: Inspecciones y capacitaciones como evidencia.
-- **4.2.3** Procedimientos e instructivos de SST.
+- **4.2.2** Aplicación de medidas por trabajadores: Se debe demostrar que los trabajadores conocen y aplican las medidas de prevención y control identificadas en la Matriz IPERC. La evidencia es: registros de capacitación en los peligros de su puesto de trabajo, inspecciones donde se verifique el uso correcto de EPP y controles, y actas de divulgación de procedimientos seguros. En la plataforma: abra su Evaluación Inicial → estándar 4.2.2 → la evidencia se construye cruzando datos del módulo de Capacitaciones (pestaña HACER), el módulo de Inspecciones (pestaña HACER) y la Matriz IPERC. Adjunte en la evaluación los registros de divulgación de medidas a los trabajadores.
+- **4.2.3** Procedimientos e instructivos de SST: La empresa debe documentar procedimientos escritos para las actividades críticas o de alto riesgo (trabajo en alturas, espacios confinados, manejo de químicos, bloqueo y etiquetado, entre otros). Cada procedimiento debe incluir: objetivo, alcance, responsables, pasos seguros, riesgos asociados y medidas de control (Decreto 1072/2015, Art. 2.2.4.6.21). En la plataforma: abra su Evaluación Inicial → estándar 4.2.3 → adjunte los procedimientos e instructivos de trabajo seguro en formato PDF. No tiene módulo propio; los documentos se gestionan directamente como adjuntos en la evaluación. Se recomienda al menos un procedimiento por cada peligro crítico identificado en la Matriz IPERC.
 - **4.2.4** Inspecciones a instalaciones y equipos: Módulo de Inspecciones.
 - **4.2.5** Mantenimiento de instalaciones y equipos.
 - **4.2.6** Entrega de EPP: Con capacitación en uso. Módulo Entrega de EPP.
