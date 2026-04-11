@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import HelpVideoButton from "@/components/HelpVideoButton";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, Eye, Trash2, AlertTriangle, Users, Skull, DollarSign, ArrowLeft, FileDown } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { RoadIncident, Vehicle, Driver, insertRoadIncidentSchema } from "@shared/schema";
+import { RoadIncident, Vehicle, Driver, Company, insertRoadIncidentSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
@@ -32,6 +33,7 @@ export default function PesvSiniestros() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState<RoadIncident | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     companyId: "",
     vehicleId: "",
@@ -67,6 +69,19 @@ export default function PesvSiniestros() {
   const { data: drivers = [] } = useQuery<Driver[]>({
     queryKey: ["/api/drivers"],
   });
+
+  const { data: companies = [] } = useQuery<Company[]>({
+    queryKey: ["/api/companies"],
+    enabled: isSuperadmin,
+  });
+
+  const filteredVehicles = isSuperadmin && formData.companyId
+    ? vehicles.filter(v => v.companyId === formData.companyId)
+    : vehicles;
+
+  const filteredDrivers = isSuperadmin && formData.companyId
+    ? drivers.filter(d => d.companyId === formData.companyId)
+    : drivers;
 
   const createIncidentMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertRoadIncidentSchema>) => {
@@ -140,9 +155,7 @@ export default function PesvSiniestros() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("¿Está seguro de eliminar este siniestro?")) {
-      deleteIncidentMutation.mutate(id);
-    }
+    setDeleteConfirmId(id);
   };
 
   const handleViewDetail = (incident: RoadIncident) => {
@@ -282,7 +295,26 @@ export default function PesvSiniestros() {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  {currentCompany && (
+                  {isSuperadmin ? (
+                    <div className="space-y-2 col-span-2">
+                      <Label htmlFor="companyId">Empresa *</Label>
+                      <Select
+                        value={formData.companyId}
+                        onValueChange={(value) => setFormData({ ...formData, companyId: value, vehicleId: "", driverId: "" })}
+                      >
+                        <SelectTrigger id="companyId" data-testid="select-company">
+                          <SelectValue placeholder="Seleccionar empresa" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {companies.map((company) => (
+                            <SelectItem key={company.id} value={company.id}>
+                              {company.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : currentCompany && (
                     <div className="space-y-2 col-span-2">
                       <Label>Empresa</Label>
                       <div className="flex items-center h-10 px-3 rounded-md border bg-muted text-muted-foreground">
@@ -295,12 +327,13 @@ export default function PesvSiniestros() {
                     <Select
                       value={formData.vehicleId}
                       onValueChange={(value) => setFormData({ ...formData, vehicleId: value })}
+                      disabled={isSuperadmin && !formData.companyId}
                     >
                       <SelectTrigger id="vehicleId" data-testid="select-vehicle">
-                        <SelectValue placeholder="Seleccionar vehículo" />
+                        <SelectValue placeholder={isSuperadmin && !formData.companyId ? "Primero seleccione empresa" : "Seleccionar vehículo"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {vehicles.map((vehicle) => (
+                        {filteredVehicles.map((vehicle) => (
                           <SelectItem key={vehicle.id} value={vehicle.id}>
                             {vehicle.plate} - {vehicle.brand} {vehicle.model}
                           </SelectItem>
@@ -313,12 +346,13 @@ export default function PesvSiniestros() {
                     <Select
                       value={formData.driverId}
                       onValueChange={(value) => setFormData({ ...formData, driverId: value })}
+                      disabled={isSuperadmin && !formData.companyId}
                     >
                       <SelectTrigger id="driverId" data-testid="select-driver">
-                        <SelectValue placeholder="Seleccionar conductor" />
+                        <SelectValue placeholder={isSuperadmin && !formData.companyId ? "Primero seleccione empresa" : "Seleccionar conductor"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {drivers.map((driver) => (
+                        {filteredDrivers.map((driver) => (
                           <SelectItem key={driver.id} value={driver.id}>
                             {driver.name}
                           </SelectItem>
@@ -789,6 +823,26 @@ export default function PesvSiniestros() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar siniestro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El registro del siniestro será eliminado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { if (deleteConfirmId) deleteIncidentMutation.mutate(deleteConfirmId); setDeleteConfirmId(null); }}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

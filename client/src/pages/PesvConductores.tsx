@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import HelpVideoButton from "@/components/HelpVideoButton";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +27,7 @@ export default function PesvConductores() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [formData, setFormData] = useState<{
     workerId: string;
     name: string;
@@ -202,9 +204,7 @@ export default function PesvConductores() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("¿Está seguro de eliminar este conductor?")) {
-      deleteDriverMutation.mutate(id);
-    }
+    setDeleteConfirmId(id);
   };
 
   const resetForm = () => {
@@ -580,6 +580,26 @@ export default function PesvConductores() {
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar conductor?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El registro del conductor será eliminado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { if (deleteConfirmId) deleteDriverMutation.mutate(deleteConfirmId); setDeleteConfirmId(null); }}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
