@@ -61,12 +61,6 @@ export default function PesvLiderazgo() {
   return (
     <div className="container mx-auto py-6 space-y-6" data-testid="page-pesv-liderazgo">
       <div className="flex items-center gap-2 flex-wrap mb-4">
-        <Link href="/pesv">
-          <Button variant="outline" size="sm" data-testid="button-back-pesv">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver al Panel PESV
-          </Button>
-        </Link>
         <BackToPesvEvaluationButton />
         <HelpVideoButton customRoute="/pesv/liderazgo" testId="button-help-video-pesv-liderazgo" />
       </div>

@@ -191,12 +191,6 @@ export default function PesvAlcoholSustancias() {
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center gap-3 mb-2 flex-wrap">
-        <Link href="/pesv">
-          <Button variant="outline" size="sm" data-testid="button-back-pesv-panel">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver al Panel PESV
-          </Button>
-        </Link>
         {evaluacionId && <BackToPesvEvaluationButton evaluacionId={evaluacionId} />}
       </div>
 

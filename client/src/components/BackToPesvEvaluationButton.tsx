@@ -43,7 +43,7 @@ interface BackToPesvEvaluationButtonProps {
   showPanelFallback?: boolean;
 }
 
-export function BackToPesvEvaluationButton({ className = "", showPanelFallback = true }: BackToPesvEvaluationButtonProps) {
+export function BackToPesvEvaluationButton({ className = "", showPanelFallback = false }: BackToPesvEvaluationButtonProps) {
   const [location, setLocation] = useLocation();
   const params = useParams<{ evaluacionId?: string }>();
   const [storedEvalId, setStoredEvalId] = useState<string | null>(null);

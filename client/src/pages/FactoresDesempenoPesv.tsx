@@ -564,12 +564,6 @@ export default function FactoresDesempenoPesv() {
         </div>
         <div className="flex flex-wrap gap-2">
           <HelpVideoButton customRoute="/pesv/factores-desempeno" testId="button-help-video-pesv-factores" />
-          <Link href="/pesv">
-            <Button variant="outline" size="sm" data-testid="button-back-pesv-panel">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver al Panel PESV
-            </Button>
-          </Link>
           <BackToPesvEvaluationButton />
           <Button
             variant="outline"
