@@ -251,12 +251,6 @@ export default function PesvMantenimientoVehicular() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 flex-wrap mb-4">
-        <Link href="/pesv">
-          <Button variant="outline" size="sm" data-testid="button-back-pesv">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver al Panel PESV
-          </Button>
-        </Link>
         <BackToPesvEvaluationButton />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">

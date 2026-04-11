@@ -28,6 +28,7 @@ export default function PesvConductores() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deletingDriverId, setDeletingDriverId] = useState<string | null>(null);
   const [formData, setFormData] = useState<{
     workerId: string;
     name: string;
@@ -148,6 +149,7 @@ export default function PesvConductores() {
       await apiRequest("DELETE", `/api/drivers/${id}`);
     },
     onSuccess: () => {
+      setDeletingDriverId(null);
       queryClient.invalidateQueries({ queryKey: ["/api/drivers"] });
       toast({
         title: "Conductor eliminado",
@@ -156,8 +158,9 @@ export default function PesvConductores() {
       });
     },
     onError: (error: Error) => {
+      setDeletingDriverId(null);
       toast({
-        title: "Error",
+        title: "Error al eliminar",
         description: error.message,
         variant: "destructive",
       });
@@ -257,12 +260,6 @@ export default function PesvConductores() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 flex-wrap mb-4">
-        <Link href="/pesv">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver al Panel PESV
-          </Button>
-        </Link>
         <BackToPesvEvaluationButton />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -566,7 +563,7 @@ export default function PesvConductores() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDelete(driver.id)}
-                          disabled={deleteDriverMutation.isPending}
+                          disabled={deletingDriverId === driver.id}
                           data-testid={`button-delete-${driver.id}`}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -593,7 +590,7 @@ export default function PesvConductores() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => { if (deleteConfirmId) deleteDriverMutation.mutate(deleteConfirmId); setDeleteConfirmId(null); }}
+              onClick={() => { if (deleteConfirmId) { setDeletingDriverId(deleteConfirmId); deleteDriverMutation.mutate(deleteConfirmId); } setDeleteConfirmId(null); }}
             >
               Eliminar
             </AlertDialogAction>

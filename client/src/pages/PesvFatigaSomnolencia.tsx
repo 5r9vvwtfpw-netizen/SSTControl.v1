@@ -103,7 +103,7 @@ export default function PesvFatigaSomnolencia() {
     enabled: !!evaluacionId,
   });
 
-  const { data: drivers = [] } = useQuery<Driver[]>({
+  const { data: drivers = [], isLoading: driversLoading } = useQuery<Driver[]>({
     queryKey: ["/api/drivers"],
   });
 
@@ -367,7 +367,9 @@ export default function PesvFatigaSomnolencia() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Conductor <span className="text-destructive">*</span></Label>
-                {drivers.length > 0 ? (
+                {driversLoading ? (
+                  <Input value="" disabled placeholder="Cargando conductores..." data-testid="input-conductor-loading" />
+                ) : drivers.length > 0 ? (
                   <Select
                     value={form.conductorNombre}
                     onValueChange={v => setForm(f => ({ ...f, conductorNombre: v }))}

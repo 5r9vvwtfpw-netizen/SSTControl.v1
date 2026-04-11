@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useLocation, useParams } from "wouter";
+import { Link, useLocation, useParams } from "wouter";
 
 const PESV_EVAL_STORAGE_KEY = "active_pesv_evaluacion_id";
 const PESV_FASE_STORAGE_KEY = "active_pesv_fase";
@@ -40,9 +40,10 @@ function getPesvFaseContext(): string | null {
 
 interface BackToPesvEvaluationButtonProps {
   className?: string;
+  showPanelFallback?: boolean;
 }
 
-export function BackToPesvEvaluationButton({ className = "" }: BackToPesvEvaluationButtonProps) {
+export function BackToPesvEvaluationButton({ className = "", showPanelFallback = true }: BackToPesvEvaluationButtonProps) {
   const [location, setLocation] = useLocation();
   const params = useParams<{ evaluacionId?: string }>();
   const [storedEvalId, setStoredEvalId] = useState<string | null>(null);
@@ -53,8 +54,18 @@ export function BackToPesvEvaluationButton({ className = "" }: BackToPesvEvaluat
 
   const evaluacionId = params.evaluacionId || extractEvaluacionIdFromPath(location) || storedEvalId;
   const storedFase = getPesvFaseContext();
-  
-  if (!evaluacionId) return null;
+
+  if (!evaluacionId) {
+    if (!showPanelFallback) return null;
+    return (
+      <Link href="/pesv">
+        <Button variant="outline" size="sm" data-testid="button-back-to-pesv-panel">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Volver al Panel PESV
+        </Button>
+      </Link>
+    );
+  }
 
   const faseParam = storedFase ? `?fase=${storedFase}` : '';
   return (
