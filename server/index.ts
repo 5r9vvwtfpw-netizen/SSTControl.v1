@@ -774,6 +774,18 @@ app.use('/docs', express.static('docs'));
 // Serve public JSON files (CIIU classification for external pricing pages)
 app.use(express.static('public'));
 
+// No-cache headers for all frontend routes — prevents browsers from serving
+// stale JavaScript to end users after updates are deployed
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api/') && !req.path.startsWith('/uploads/') && !req.path.startsWith('/docs/')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+  }
+  next();
+});
+
 // Request logging middleware with Pino (Bloque 2: Infrastructure)
 app.use(requestLoggerMiddleware);
 
