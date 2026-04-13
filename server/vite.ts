@@ -88,11 +88,16 @@ export function serveStatic(app: Express) {
     },
   }));
 
-  // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
+  // fall through to index.html if the file doesn't exist (SPA catch-all)
+  const indexHtml = path.resolve(distPath, "index.html");
+  app.get("*", (_req, res) => {
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
-    res.sendFile(path.resolve(distPath, "index.html"));
+    res.sendFile(indexHtml, (err) => {
+      if (err) {
+        res.status(500).send("Error loading application");
+      }
+    });
   });
 }
