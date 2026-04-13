@@ -78,8 +78,8 @@ const menuItems: Array<{
   { title: "Promociones", url: "/admin-promociones", icon: Gift, superadminOnly: true },
   { title: "Admin Portales", url: "/admin-portales", icon: Users, superadminOnly: true },
   { title: "Actividad Login", url: "/admin-login-activity", icon: Activity, superadminOnly: true },
-  { title: "Gestión Videos", url: "/admin-videos-ayuda", icon: CirclePlay, superadminOnly: true },
-  { title: "Videos de Ayuda", url: "/videos-ayuda", icon: CirclePlay },
+  // { title: "Gestión Videos", url: "/admin-videos-ayuda", icon: CirclePlay, superadminOnly: true }, // Temporalmente oculto
+  // { title: "Videos de Ayuda", url: "/videos-ayuda", icon: CirclePlay }, // Temporalmente oculto
   { title: "Usuarios", url: "/usuarios", icon: Users, requiredPermissions: ["users:view"] },
   { title: "Perfiles de Cargo", url: "/perfiles-cargo", icon: Briefcase, requiredPermissions: ["job_profiles:view"] },
   { title: "Exámenes Médicos", url: "/examenes-medicos", icon: Stethoscope, requiredPermissions: ["medical_exams:view"] },

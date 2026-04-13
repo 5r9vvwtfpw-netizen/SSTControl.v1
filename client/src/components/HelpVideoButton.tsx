@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { CirclePlay, X, Clock } from "lucide-react";
 import type { HelpVideo } from "@shared/schema";
 
+// Interruptor global: cambiar a true para reactivar el botón en toda la plataforma
+const HELP_VIDEOS_ENABLED = false;
+
 const EXCLUDED_ROUTES = [
   "/auth",
   "/login",
@@ -134,6 +137,7 @@ export default function HelpVideoButton({ customRoute, label, testId }: HelpVide
 
   const video = data?.video;
 
+  if (!HELP_VIDEOS_ENABLED) return null;
   if (!user || isExcluded) return null;
 
   const hasVideo = !!video;
