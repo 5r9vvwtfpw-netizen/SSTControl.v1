@@ -82,6 +82,46 @@ The production environment uses AWS RDS PostgreSQL, deployed on Replit Autoscale
 -   **Amazon S3**: Cloud object storage.
 -   **AWS SDK v3**: For S3 operations.
 
+## Control de Versiones
+
+### Esquema de Versionado
+El sistema usa **versionado semántico (MAJOR.MINOR.PATCH)**. La versión se muestra en el footer de todos los portales (`client/src/components/Footer.tsx`).
+
+| Componente | Cuándo subirlo |
+|---|---|
+| **PATCH** (x.x.**1**) | Correcciones de errores, ajustes menores, cambios de texto/UI |
+| **MINOR** (x.**1**.0) | Funcionalidad nueva compatible: nuevo módulo, nuevo estándar, mejora significativa |
+| **MAJOR** (**4**.0.0) | Rediseño completo, cambio arquitectural mayor, ruptura de compatibilidad |
+
+### Historial de versiones
+
+#### v3.5.0 — 13 de Abril 2026 (versión inicial documentada)
+**Lógica del número:** Se escogió v3.5.0 como punto de partida coherente con la madurez del sistema:
+- **v1.x** — SG-SST básico: trabajadores, evaluación inicial, estándares Res. 0312/2019
+- **v2.x** — Multi-tenant, suscripciones Stripe, portal de soporte, facturación
+- **v3.x** — PESV completo (24 pasos, Res. 40595/2022), portal LSO con firma digital, chatbot inteligente, H09/H10/H11 con módulos dedicados
+
+**Contenía al momento del tag:**
+- SG-SST con 61 estándares (Resolución 0312/2019) + ISO 45001:2018
+- PESV completo: P01-P08, H01-H11, V01-V03, A01-A02 (Resolución 40595/2022)
+- Portal LSO con firma digital, bóveda de empresas, tickets de soporte
+- Portal empleados (trabajador), portal soporte con chat interno en tiempo real
+- Sistema de facturación con Stripe, cotizaciones, promociones y referidos
+- Directorio de profesionales licenciados (LSO)
+- Chatbot de soporte con ubicaciones exactas por ciclo+código (P01-A02)
+- Videos de Ayuda temporalmente desactivados (ver sección siguiente)
+
+### Cómo actualizar la versión
+Editar **una sola línea** en `client/src/components/Footer.tsx`:
+```typescript
+// Hay DOS líneas (Footer y FooterMinimal), actualizar ambas:
+<span>© 2026 SST Colombia | Registro DNDA 13-197-177 | v3.5.0</span>
+<span>© 2026 SST Colombia | DNDA 13-197-177 | v3.5.0</span>
+```
+Cambiar `v3.5.0` por la nueva versión en ambas líneas.
+
+---
+
 ## Funcionalidades Temporalmente Desactivadas
 
 ### Videos de Ayuda — Desactivado el 13 de Abril 2026
