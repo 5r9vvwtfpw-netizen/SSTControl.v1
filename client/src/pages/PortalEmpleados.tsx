@@ -33,7 +33,7 @@ import {
   MessageSquare, AlertCircle, Send, CheckCircle, CheckCircle2, FileText, User, Briefcase, FileCheck,
   GraduationCap, Calendar, Clock, MapPin, UserCheck, Users, Mail, KeyRound, Eye, EyeOff, Vote,
   Building2, BarChart3, Shield, UserCog, BookOpen, Award, Play, Trophy, Star, FolderOpen, Inbox, Download, Bell, ChevronDown,
-  History, Monitor, Smartphone, Tablet, Video, Heart, ClipboardList, Camera, Upload, Trash2, Loader2, Headphones, Car, Search, X
+  History, Monitor, Smartphone, Tablet, Video, Heart, ClipboardList, Camera, Upload, Trash2, Loader2, Headphones, Car, Search, X, LogOut
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
@@ -45,7 +45,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, useEmpAuth } from "@/hooks/use-auth";
 import type { UserRole } from "@shared/schema";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 
@@ -60,13 +60,135 @@ function isAdminRole(role: UserRole | undefined): boolean {
   return ADMIN_ROLES.includes(role);
 }
 
+// ─── Formulario de acceso para empleados (sesión sst_emp) ────────────────
+function EmpLoginForm() {
+  const { loginMutation } = useEmpAuth();
+  const [loginData, setLoginData] = useState({ username: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    loginMutation.mutate(loginData);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-6">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-md bg-primary text-primary-foreground mb-3">
+            <Shield className="h-8 w-8" />
+          </div>
+          <h1 className="text-xl font-semibold">Portal de Empleados</h1>
+          <p className="text-sm text-muted-foreground mt-1">Ingresa con tus credenciales de empleado</p>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {loginMutation.isError && (
+                <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md p-3">
+                  {(loginMutation.error as Error)?.message}
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="emp-username">Usuario</Label>
+                <Input
+                  id="emp-username"
+                  data-testid="input-emp-username"
+                  value={loginData.username}
+                  onChange={e => setLoginData(p => ({ ...p, username: e.target.value }))}
+                  placeholder="Nombre de usuario"
+                  required
+                  autoComplete="username"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="emp-password">Contraseña</Label>
+                <div className="relative">
+                  <Input
+                    id="emp-password"
+                    data-testid="input-emp-password"
+                    type={showPassword ? "text" : "password"}
+                    value={loginData.password}
+                    onChange={e => setLoginData(p => ({ ...p, password: e.target.value }))}
+                    placeholder="Contraseña"
+                    required
+                    autoComplete="current-password"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(p => !p)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <Button
+                type="submit"
+                className="w-full"
+                data-testid="button-emp-login"
+                disabled={loginMutation.isPending}
+              >
+                {loginMutation.isPending ? "Ingresando..." : "Ingresar al Portal"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+        <p className="text-center text-xs text-muted-foreground mt-4">
+          Este portal es exclusivo para empleados. Si eres administrador, usa el{" "}
+          <a href="/login" className="underline">acceso principal</a>.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Header + WorkerPortal para trabajadores autenticados solo en sst_emp (sin sesión sst_app)
+function EmpPortalShell() {
+  const { user, logoutMutation } = useEmpAuth();
+  return (
+    <div className="flex flex-col h-screen w-full">
+      <header className="bg-gradient-to-r from-primary via-primary/95 to-primary/90 text-primary-foreground shadow-md">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold">Portal de Empleados SST</h1>
+            <p className="text-sm opacity-90">
+              {user?.firstName} {user?.lastName}
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            className="text-primary-foreground"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+            data-testid="button-emp-logout"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Cerrar Sesión
+          </Button>
+        </div>
+      </header>
+      <main className="flex-1 overflow-auto bg-background">
+        <div className="container mx-auto px-6 py-6">
+          <WorkerPortal />
+        </div>
+      </main>
+    </div>
+  );
+}
+
 export default function PortalEmpleados() {
-  const { user } = useAuth();
-  const isAdmin = isAdminRole(user?.role);
+  // sst_app session → roles administrativos
+  const { user: mainUser } = useAuth();
+  // sst_emp session → trabajadores / supervisores
+  const { user: empUser, isLoading: empLoading } = useEmpAuth();
+
+  const isAdmin = isAdminRole(mainUser?.role);
 
   // Log portal access once per session (SST-2025-0082) — only for worker roles
   useEffect(() => {
-    if (isAdmin) return;
+    if (!empUser) return;
     const sessionKey = "portal_access_logged";
     if (!sessionStorage.getItem(sessionKey)) {
       apiRequest("POST", "/api/portal/log-access", {})
@@ -77,15 +199,34 @@ export default function PortalEmpleados() {
           console.error("Failed to log portal access:", error);
         });
     }
-  }, [isAdmin]);
+  }, [empUser]);
 
-  // Si es rol administrativo, mostrar dashboard de gestión
+  // Admin (sst_app) → dashboard de gestión
   if (isAdmin) {
     return <AdminDashboard />;
   }
 
-  // Si es trabajador/supervisor, mostrar portal personal
-  return <WorkerPortal />;
+  // Empleado autenticado en sst_emp → portal personal
+  if (empUser) {
+    // Si NO hay sesión sst_app (trabajador accede directamente al portal),
+    // mostramos un header propio con botón de cerrar sesión
+    if (!mainUser) {
+      return <EmpPortalShell />;
+    }
+    return <WorkerPortal />;
+  }
+
+  // Cargando sesión emp...
+  if (empLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Nadie autenticado como empleado → mostrar formulario de acceso
+  return <EmpLoginForm />;
 }
 
 // ==================== DASHBOARD PARA ADMINISTRADORES ====================

@@ -64,10 +64,12 @@ import {
   LifeBuoy,
   Plus,
   CircleDot,
-  FileBarChart
+  FileBarChart,
+  EyeOff,
+  LogOut
 } from "lucide-react";
 import { Link } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useLsoAuth } from "@/hooks/use-auth";
 import HelpVideoButton from "@/components/HelpVideoButton";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -263,7 +265,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 function SoporteTab() {
-  const { user } = useAuth();
+  const { user } = useLsoAuth();
   const { toast } = useToast();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
@@ -587,8 +589,91 @@ function SoporteTab() {
   );
 }
 
+// ─── Formulario de acceso exclusivo LSO (sesión sst_lso) ─────────────────
+function LsoLoginForm() {
+  const { loginMutation } = useLsoAuth();
+  const [loginData, setLoginData] = useState({ username: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    loginMutation.mutate(loginData);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-6">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-md bg-primary text-primary-foreground mb-3">
+            <Award className="h-8 w-8" />
+          </div>
+          <h1 className="text-xl font-semibold">Portal Profesional SST</h1>
+          <p className="text-sm text-muted-foreground mt-1">Acceso exclusivo para Licenciados en SST</p>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {loginMutation.isError && (
+                <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md p-3">
+                  {(loginMutation.error as Error)?.message}
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="lso-username">Usuario</Label>
+                <Input
+                  id="lso-username"
+                  data-testid="input-lso-username"
+                  value={loginData.username}
+                  onChange={e => setLoginData(p => ({ ...p, username: e.target.value }))}
+                  placeholder="Nombre de usuario"
+                  required
+                  autoComplete="username"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lso-password">Contraseña</Label>
+                <div className="relative">
+                  <Input
+                    id="lso-password"
+                    data-testid="input-lso-password"
+                    type={showPassword ? "text" : "password"}
+                    value={loginData.password}
+                    onChange={e => setLoginData(p => ({ ...p, password: e.target.value }))}
+                    placeholder="Contraseña"
+                    required
+                    autoComplete="current-password"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(p => !p)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <Button
+                type="submit"
+                className="w-full"
+                data-testid="button-lso-login"
+                disabled={loginMutation.isPending}
+              >
+                {loginMutation.isPending ? "Ingresando..." : "Acceder al Portal"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+        <p className="text-center text-xs text-muted-foreground mt-4">
+          Su sesión principal de empresa permanece activa en otra pestaña.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function PortalLicenciado() {
-  const { user } = useAuth();
+  const { user, isLoading, logoutMutation } = useLsoAuth();
   const validTabs = ["dashboard", "empresas", "documentos", "pesv", "licencia", "soporte"];
   const getInitialTab = () => {
     const params = new URLSearchParams(window.location.search);
@@ -608,31 +693,34 @@ export default function PortalLicenciado() {
     return () => window.removeEventListener("lso-tab-change", handler);
   }, []);
 
-  if (user?.role !== 'lso') {
-    const isSuperadminOrAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.role === 'soporte';
+  // Cargando sesión LSO...
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // No autenticado en sst_lso → formulario de acceso exclusivo LSO
+  if (!user) {
+    return <LsoLoginForm />;
+  }
+
+  if (user.role !== 'lso') {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Card className="max-w-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-muted-foreground">
               <Shield className="h-5 w-5" />
-              {isSuperadminOrAdmin ? "Portal exclusivo para profesionales LSO" : "Acceso Restringido"}
+              Acceso Restringido
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground text-sm">
-              {isSuperadminOrAdmin
-                ? "Este portal está diseñado para ser usado por profesionales licenciados en SST (rol LSO). Tu sesión de empresa y tus permisos de administración permanecen activos — puedes regresar al sistema en cualquier momento."
-                : "Este portal es exclusivo para profesionales licenciados en SST (rol LSO). Si cree que debería tener acceso, contacte al administrador del sistema."}
+              Este portal es exclusivo para profesionales licenciados en SST (rol LSO).
             </p>
-            {isSuperadminOrAdmin && (
-              <Link href="/">
-                <Button variant="outline" className="w-full gap-2" data-testid="button-back-from-lso-portal">
-                  <ArrowLeft className="h-4 w-4" />
-                  Volver al sistema
-                </Button>
-              </Link>
-            )}
           </CardContent>
         </Card>
       </div>
@@ -650,7 +738,19 @@ export default function PortalLicenciado() {
             Gestione sus empresas asignadas y documentos que requieren su firma profesional
           </p>
         </div>
-        <HelpVideoButton customRoute="/portal-licenciado" testId="button-help-video-lso" />
+        <div className="flex items-center gap-2">
+          <HelpVideoButton customRoute="/portal-licenciado" testId="button-help-video-lso" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+            data-testid="button-lso-logout"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Cerrar Sesión
+          </Button>
+        </div>
       </div>
 
       <div data-testid="portal-lso-content">
@@ -666,7 +766,7 @@ export default function PortalLicenciado() {
 }
 
 function DashboardTab() {
-  const { user } = useAuth();
+  const { user } = useLsoAuth();
   
   const { data: stats, isLoading, isError, error } = useQuery<DashboardStats>({
     queryKey: ["/api/portal-licenciado/dashboard"],
@@ -2034,7 +2134,7 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
 function DocumentosTab() {
   const { toast } = useToast();
   const { data: currentUser } = useQuery<{ sstSignatureUrl?: string | null }>({
-    queryKey: ["/api/user"],
+    queryKey: ["/api/lso/user"],
   });
   const { data: sigStatus } = useQuery<{ hasSignature: boolean; isAccessible: boolean }>({
     queryKey: ['/api/portal-licenciado/firma/estado'],
@@ -2731,7 +2831,7 @@ function PesvAuditoriaTab() {
 }
 
 function LicenciaTab() {
-  const { user } = useAuth();
+  const { user } = useLsoAuth();
 
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return '-';
@@ -2892,7 +2992,7 @@ function SlaStatusBadge({ status }: { status: string }) {
 }
 
 function LicenseEditDialog() {
-  const { user } = useAuth();
+  const { user } = useLsoAuth();
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   
@@ -2919,7 +3019,7 @@ function LicenseEditDialog() {
         description: "Su información de licencia ha sido actualizada exitosamente.",
       });
       setIsOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/lso/user'] });
     },
     onError: (error: any) => {
       toast({
@@ -3143,7 +3243,7 @@ function SignatureUploadSection({ currentSignatureUrl }: { currentSignatureUrl: 
       setIsOpen(false);
       setSelectedFile(null);
       setPreviewUrl(null);
-      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/lso/user'] });
       queryClient.invalidateQueries({ queryKey: ['/api/portal-licenciado/firma/estado'] });
     },
     onError: (error: any) => {
