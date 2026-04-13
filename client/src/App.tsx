@@ -489,10 +489,10 @@ function AuthenticatedLayout() {
   
   useWebSocketNotifications();
 
-  // El portal LSO siempre se renderiza de forma independiente, sin el layout de admin.
-  // Esto evita que el botón de logout del admin aparezca en el portal LSO y cierre
-  // todas las sesiones de otros portales por accidente.
-  if (location === "/portal-licenciado" || location.startsWith("/portal-licenciado/")) {
+  // Los portales LSO y empleados son siempre independientes del layout de admin,
+  // sin importar qué sesión principal esté activa. Cada uno gestiona su propia auth.
+  if (location === "/portal-licenciado" || location.startsWith("/portal-licenciado/") ||
+      location === "/portal-empleados"  || location.startsWith("/portal-empleados/")) {
     return <Router />;
   }
 
@@ -511,15 +511,21 @@ function AuthenticatedLayout() {
     return <Router />;
   }
 
-  if (user.role === "soporte") {
-    return (
-      <SoporteLayout>
-        <SupportRouter />
-      </SoporteLayout>
-    );
+  // Portal de soporte: soporte y superadmin usan su propio layout especial.
+  // Cualquier otro rol que acceda a /soporte lo ve sin layout de admin (standalone).
+  if (location === "/soporte" || location.startsWith("/soporte/")) {
+    if (user.role === "soporte" || user.role === "superadmin") {
+      return (
+        <SoporteLayout>
+          <SupportRouter />
+        </SoporteLayout>
+      );
+    }
+    return <Router />;
   }
 
-  if (user.role === "superadmin" && location.startsWith("/soporte")) {
+  // Usuario soporte visitando rutas fuera de /soporte → redirigir a su portal
+  if (user.role === "soporte") {
     return (
       <SoporteLayout>
         <SupportRouter />
