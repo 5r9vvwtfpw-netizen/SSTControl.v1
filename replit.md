@@ -26,14 +26,6 @@ The system employs a client-server architecture with a React 18 frontend and an 
 ### System Design Choices
 Data integrity is maintained through Zod validations. Security includes hashed passwords, secure session management, restricted privilege escalation, and AES-256-GCM data encryption. Companies are automatically classified by ARL risk level based on their CIIU code.
 
-**Multi-Session Architecture (4 independent cookie sessions):** Each portal uses its own session cookie so multiple users can be simultaneously logged in on the same browser without conflicts:
-- `sst_app` → App principal (admin, responsable_sst, superusuario, etc.) — Login en `/login`
-- `sst_emp` → Portal de Empleados (trabajador, supervisor, conductor) — Login integrado en `/portal-empleados`
-- `sst_lso` → Portal Licenciado (rol lso) — Login integrado en `/portal-licenciado`
-- `sst_sop` → Portal de Soporte (reservado para endpoints `/api/sop/*`)
-
-Route-based session selector in `server/auth.ts` (`sessionSelector` function) maps each API route prefix to the correct session. Shared routes (internal-messages, support-tickets) called from PortalLicenciado use the Referer header to auto-select `sst_lso`. Frontend hooks: `useEmpAuth()` and `useLsoAuth()` in `use-auth.tsx` — these are portal-specific drop-in replacements for `useAuth()`. **NOTE:** Deploying this for the first time invalidates all existing sessions (one-time logout, ~1 min downtime). Old `connect.sid` cookies become invalid.
-
 The PESV module manages evaluations according to Resolución 40595/2022, supporting three complexity levels with bidirectional traceability to SST, incorporating ISO 31000:2018 and ISO 39001:2012. It's evaluation-centric, with annual data scoping and inheritance from previous years. The Actuar phase is fully implemented with CRUD and bidirectional traceability. PESV level changes are automatically detected and migrated.
 
 The PESV navigation covers 24 steps (P01-P08 Planear, H01-H11 Hacer, V01-V03 Verificar, A01-A02 Actuar). New modules H09 (Fatiga y Somnolencia, Art. 21) and H10 (Alcohol y Sustancias Psicoactivas, Art. 22) provide CRUD management of control records with tables `pesv_fatiga_registros` and `pesv_alcohol_registros`. H11 (Atención a Víctimas, Art. 23) manages `pesv_victimas_registros`. The P01 auto-verification panel uses `memo` isolation outside `IsolatedFormProvider` to prevent re-render loops.

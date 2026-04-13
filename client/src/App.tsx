@@ -223,8 +223,8 @@ function Router() {
       <ProtectedRoute path="/empresas" component={CompanyManagement} />
       <ProtectedRoute path="/usuarios" component={GestionUsuarios} />
       <ProtectedRoute path="/profesionales-licenciados" component={ProfesionalesLicenciados} />
-      <Route path="/portal-licenciado/investigacion/:id" component={DetalleInvestigacionLSO} />
-      <Route path="/portal-licenciado" component={PortalLicenciado} />
+      <ProtectedRoute path="/portal-licenciado/investigacion/:id" component={DetalleInvestigacionLSO} />
+      <ProtectedRoute path="/portal-licenciado" component={PortalLicenciado} />
       <ProtectedRoute path="/trabajadores" component={Trabajadores} />
       <ProtectedRoute path="/perfiles-cargo" component={PerfilesCargo} />
       <ProtectedRoute path="/asignacion-recursos" component={ResourceAllocation} />
@@ -294,7 +294,7 @@ function Router() {
       <ProtectedRoute path="/partes-interesadas" component={PartesInteresadas} />
       <ProtectedRoute path="/analisis-contexto" component={AnalisisContexto} />
       <ProtectedRoute path="/plan-mejoramiento-contexto" component={PlanMejoramientoContexto} />
-      <Route path="/portal-empleados" component={PortalEmpleados} />
+      <ProtectedRoute path="/portal-empleados" component={PortalEmpleados} />
       <ProtectedRoute path="/informes" component={Informes} />
       <ProtectedRoute path="/solicitudes-arco" component={SolicitudesArco} />
       <ProtectedRoute path="/mi-cuenta" component={MiCuenta} />

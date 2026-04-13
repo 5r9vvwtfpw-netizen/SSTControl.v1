@@ -60,69 +60,25 @@ export function getSessionMiddleware() {
   return sessionMiddleware;
 }
 
-// Helper: creates a named session middleware with a specific cookie name
-function createSessionMiddleware(cookieName: string): ReturnType<typeof session> {
-  return session({
+export function setupAuth(app: Express) {
+  const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
-    name: cookieName,
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 1000 * 60 * 60 * 12,
-    },
-  });
-}
-
-export function setupAuth(app: Express) {
-  // Four independent session cookies — one per portal
-  const mainSession = createSessionMiddleware('sst_app');   // app principal
-  const empSession  = createSessionMiddleware('sst_emp');   // portal de empleados
-  const lsoSession  = createSessionMiddleware('sst_lso');   // portal licenciado
-  const sopSession  = createSessionMiddleware('sst_sop');   // portal de soporte
-
-  // Export the main session for WebSocket authentication
-  sessionMiddleware = mainSession;
-
-  // Route-based session selector: each portal uses its own cookie.
-  // For shared routes (internal-messages, support-tickets, etc.), the Referer
-  // header tells us which portal is making the request so we pick the right session.
-  function sessionSelector(req: Request, res: Response, next: NextFunction) {
-    const p = req.path;
-    const referer = (req.headers.referer || req.headers.referrer || '') as string;
-
-    // Portal de Empleados → sst_emp
-    if (p.startsWith('/api/emp') || p.startsWith('/api/portal/') || p === '/api/portal') {
-      return empSession(req, res, next);
+      maxAge: 1000 * 60 * 60 * 12
     }
-    // Portal Licenciado → sst_lso
-    // IMPORTANTE: /api/lso/login, /api/lso/user, /api/lso/logout son los nuevos endpoints
-    // del portal licenciado. Las rutas del directorio LSO (/api/lso/search, /api/lso/contacts, etc.)
-    // NO están en esta lista y seguirán usando sst_app.
-    if (
-      p === '/api/lso/login' || p === '/api/lso/user' || p === '/api/lso/logout' ||
-      p.startsWith('/api/portal-licenciado')
-    ) {
-      return lsoSession(req, res, next);
-    }
-    // Portal de Soporte → sst_sop (solo para /api/sop/* explícitos;
-    // /api/support-login se mantiene en sst_app para no romper las rutas del sistema que usan soporte)
-    if (p.startsWith('/api/sop')) {
-      return sopSession(req, res, next);
-    }
-    // Rutas compartidas: usar Referer para determinar contexto de portal
-    if (referer.includes('/portal-licenciado')) {
-      return lsoSession(req, res, next);
-    }
-    // Default: sesión principal (sst_app)
-    return mainSession(req, res, next);
-  }
+  };
+
+  // Create and store session middleware for WebSocket use
+  sessionMiddleware = session(sessionSettings);
 
   app.set("trust proxy", 1);
-  app.use(sessionSelector);
+  app.use(sessionMiddleware);
   app.use(passport.initialize());
   app.use(passport.session());
 
@@ -497,104 +453,6 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  // ─── Portal de Empleados: sst_emp session ────────────────────────────────
-  // Roles permitidos en el portal de empleados
-  const EMP_PORTAL_ROLES = ['trabajador', 'supervisor', 'conductor', 'jefe_personal', 'auditor_interno'];
-
-  app.post("/api/emp/login", loginRateLimiter, (req, res, next) => {
-    passport.authenticate("local", (err: any, user: SelectUser | false) => {
-      if (err) return res.status(500).json({ error: "Error del servidor" });
-      if (!user) return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
-
-      if (!EMP_PORTAL_ROLES.includes(user.role as string)) {
-        return res.status(403).json({ error: "Este portal es exclusivo para empleados" });
-      }
-
-      req.session.regenerate((err) => {
-        if (err) return res.status(500).json({ error: "Error al crear la sesión" });
-        req.logIn(user, async (err) => {
-          if (err) return res.status(500).json({ error: "Error al iniciar sesión" });
-          try {
-            const clientIp = req.ip || req.headers['x-forwarded-for'] as string || 'unknown';
-            await db.update(schema.users)
-              .set({ lastLoginAt: new Date(), loginCount: sql`COALESCE(login_count, 0) + 1`, lastLoginIp: clientIp })
-              .where(eq(schema.users.id, user.id));
-          } catch {}
-          logger.info({ role: user.role }, "Employee portal login successful");
-          return res.status(200).json(stripPassword(user));
-        });
-      });
-    })(req, res, next);
-  });
-
-  app.get("/api/emp/user", (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    return res.json(stripPassword(req.user as SelectUser));
-  });
-
-  app.post("/api/emp/logout", (req, res, next) => {
-    req.logout((err) => {
-      if (err) return next(err);
-      res.sendStatus(200);
-    });
-  });
-
-  // ─── Portal Licenciado (LSO): sst_lso session ────────────────────────────
-
-  app.post("/api/lso/login", loginRateLimiter, (req, res, next) => {
-    passport.authenticate("local", (err: any, user: SelectUser | false) => {
-      if (err) return res.status(500).json({ error: "Error del servidor" });
-      if (!user) return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
-
-      if (user.role !== 'lso') {
-        return res.status(403).json({ error: "Este portal es exclusivo para Licenciados en SST" });
-      }
-
-      req.session.regenerate((err) => {
-        if (err) return res.status(500).json({ error: "Error al crear la sesión" });
-        req.logIn(user, async (err) => {
-          if (err) return res.status(500).json({ error: "Error al iniciar sesión" });
-          try {
-            const clientIp = req.ip || req.headers['x-forwarded-for'] as string || 'unknown';
-            await db.update(schema.users)
-              .set({ lastLoginAt: new Date(), loginCount: sql`COALESCE(login_count, 0) + 1`, lastLoginIp: clientIp })
-              .where(eq(schema.users.id, user.id));
-          } catch {}
-          logger.info({ role: user.role }, "LSO portal login successful");
-          return res.status(200).json(stripPassword(user));
-        });
-      });
-    })(req, res, next);
-  });
-
-  app.get("/api/lso/user", (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    return res.json(stripPassword(req.user as SelectUser));
-  });
-
-  app.post("/api/lso/logout", (req, res, next) => {
-    req.logout((err) => {
-      if (err) return next(err);
-      res.sendStatus(200);
-    });
-  });
-
-  // ─── Portal de Soporte: sst_sop session ──────────────────────────────────
-  // /api/support-login ya existe arriba y queda mapeado a sst_sop via sessionSelector
-
-  app.get("/api/sop/user", (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    return res.json(stripPassword(req.user as SelectUser));
-  });
-
-  app.post("/api/sop/logout", (req, res, next) => {
-    req.logout((err) => {
-      if (err) return next(err);
-      res.sendStatus(200);
-    });
-  });
-
-  // ─── Main app logout (sst_app) ───────────────────────────────────────────
   app.post("/api/logout", (req, res, next) => {
     req.logout((err) => {
       if (err) return next(err);
