@@ -51,7 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       authChannelRef.current.onmessage = (event) => {
         if (event.data?.type === "LOGOUT") {
           queryClient.setQueryData(["/api/user"], null);
-          window.location.href = "/login";
+          // No redirigir si estamos en un portal independiente (LSO, empleados).
+          // Esos portales tienen su propia sesión y no deben verse afectados
+          // por el logout de la sesión principal.
+          const path = window.location.pathname;
+          const isStandalonePortal = path.startsWith("/portal-licenciado") || path.startsWith("/portal-empleados");
+          if (!isStandalonePortal) {
+            window.location.href = "/login";
+          }
         }
       };
     }

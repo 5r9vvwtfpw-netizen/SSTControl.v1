@@ -489,6 +489,13 @@ function AuthenticatedLayout() {
   
   useWebSocketNotifications();
 
+  // El portal LSO siempre se renderiza de forma independiente, sin el layout de admin.
+  // Esto evita que el botón de logout del admin aparezca en el portal LSO y cierre
+  // todas las sesiones de otros portales por accidente.
+  if (location === "/portal-licenciado" || location.startsWith("/portal-licenciado/")) {
+    return <Router />;
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
