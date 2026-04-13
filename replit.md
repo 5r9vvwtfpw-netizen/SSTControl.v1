@@ -81,3 +81,40 @@ The production environment uses AWS RDS PostgreSQL, deployed on Replit Autoscale
 -   **Shadcn UI**: UI component library.
 -   **Amazon S3**: Cloud object storage.
 -   **AWS SDK v3**: For S3 operations.
+
+## Funcionalidades Temporalmente Desactivadas
+
+### Videos de Ayuda — Desactivado el 13 de Abril 2026
+**Motivo:** Se decidió dirigir a los clientes exclusivamente al chatbot como canal de soporte. Los videos se ocultaron temporalmente hasta nuevo aviso.
+
+**Qué se ocultó:**
+- El botón "Video de Ayuda" (naranja) que aparecía en cada módulo y en todos los portales (LSO, empleados, PESV, SG-SST).
+- El ítem de menú "Videos de Ayuda" en Administración Global → Ayuda (visible para clientes).
+- El ítem de menú "Videos de Ayuda" / "Gestión Videos" en Administración Global → Administración Proveedor (visible para admin/superadmin).
+
+**Qué NO se tocó:**
+- Las rutas `/videos-ayuda` y `/admin-videos-ayuda` siguen existiendo y son accesibles directamente por URL.
+- Todos los videos configurados siguen guardados en la base de datos sin cambios.
+- La lógica completa del sistema de videos está intacta.
+
+**Para reactivar completamente, hacer estos 3 cambios:**
+
+**1. `client/src/components/HelpVideoButton.tsx` — línea ~9:**
+```typescript
+// Cambiar false → true
+const HELP_VIDEOS_ENABLED = true;
+```
+
+**2. `client/src/components/PHVANavigation.tsx` — descomentar 2 líneas:**
+```typescript
+// Buscar y descomentar:
+{ label: "Videos de Ayuda", path: "/admin-videos-ayuda" },
+{ label: "Videos de Ayuda", path: "/videos-ayuda" },
+```
+
+**3. `client/src/components/AppSidebar.tsx` — descomentar 2 líneas:**
+```typescript
+// Buscar y descomentar:
+{ title: "Gestión Videos", url: "/admin-videos-ayuda", icon: CirclePlay, superadminOnly: true },
+{ title: "Videos de Ayuda", url: "/videos-ayuda", icon: CirclePlay },
+```
