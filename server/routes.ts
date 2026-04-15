@@ -47569,16 +47569,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       const margin = 50;
       const pageWidth = doc.page.width - margin * 2;
-      const orange = '#c2410c';
-      const orangeLight = '#ea580c';
-      const orangePale = '#fff7ed';
+      const navy = '#1e3a5f';
+      const navyLight = '#2563a8';
+      const navyPale = '#f0f4fa';
+      const navyAccent = '#dbeafe';
       const gray = '#6b7280';
       const green = '#16a34a';
       const red = '#dc2626';
       const amber = '#d97706';
 
       // ─── PORTADA ────────────────────────────────────────────────────────────
-      doc.rect(0, 0, doc.page.width, 180).fill(orange);
+      doc.rect(0, 0, doc.page.width, 180).fill(navy);
 
       // Logo empresa si tiene
       if (company.logoUrl) {
@@ -47593,18 +47594,18 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       doc.fontSize(20).font('Helvetica-Bold').fillColor('#ffffff')
         .text('REPORTE DE CUMPLIMIENTO', margin, 28, { width: pageWidth, align: 'right' });
-      doc.fontSize(16).font('Helvetica-Bold').fillColor('#fed7aa')
+      doc.fontSize(16).font('Helvetica-Bold').fillColor('#bfdbfe')
         .text('ISO 39001:2012', margin, 54, { width: pageWidth, align: 'right' });
-      doc.fontSize(9).font('Helvetica').fillColor('#fed7aa')
+      doc.fontSize(9).font('Helvetica').fillColor('#bfdbfe')
         .text('Road Traffic Safety (RTS) Management Systems', margin, 76, { width: pageWidth, align: 'right' });
-      doc.fontSize(8).font('Helvetica').fillColor('#fdba74')
+      doc.fontSize(8).font('Helvetica').fillColor('#93c5fd')
         .text('Plan Estratégico de Seguridad Vial — Resolución 40595/2022 alineada con ISO 39001:2012', margin, 98, { width: pageWidth, align: 'right' });
 
-      doc.rect(0, 180, doc.page.width, 3).fill(orangeLight);
+      doc.rect(0, 180, doc.page.width, 3).fill(navyLight);
 
       let y = 205;
 
-      doc.fontSize(14).font('Helvetica-Bold').fillColor('#7c2d12')
+      doc.fontSize(14).font('Helvetica-Bold').fillColor(navy)
         .text(company.name || 'Empresa', margin, y);
       y = doc.y + 4;
       doc.fontSize(9).font('Helvetica').fillColor(gray)
@@ -47615,22 +47616,22 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const globalColor = progresoPct >= 86 ? green : progresoPct >= 61 ? amber : red;
       const globalLabel = progresoPct >= 86 ? 'ACEPTABLE' : progresoPct >= 61 ? 'MODERADAMENTE ACEPTABLE' : 'CRÍTICO';
 
-      doc.rect(margin, y, pageWidth, 60).fill(orangePale).stroke('#fed7aa');
+      doc.rect(margin, y, pageWidth, 60).fill(navyAccent).stroke('#bfdbfe');
       doc.fontSize(26).font('Helvetica-Bold').fillColor(globalColor)
         .text(`${Math.round(progresoPct)}%`, margin + 15, y + 10);
-      doc.fontSize(11).font('Helvetica-Bold').fillColor('#7c2d12')
+      doc.fontSize(11).font('Helvetica-Bold').fillColor(navy)
         .text(`${globalLabel}`, margin + 90, y + 12);
       doc.fontSize(9).font('Helvetica').fillColor(gray)
         .text(`Cumplimiento global del PESV | Nivel ${evaluacion.nivelPesv || 'N/A'} | ${evaluacion.anio}`, margin + 90, y + 30);
       y += 80;
 
       // ─── TABLA RESUMEN POR CAPÍTULO ISO 39001 ─────────────────────────────
-      doc.fontSize(12).font('Helvetica-Bold').fillColor(orange)
+      doc.fontSize(12).font('Helvetica-Bold').fillColor(navy)
         .text('CUMPLIMIENTO POR CAPÍTULO ISO 39001:2012', margin, y);
       y += 18;
 
       // Encabezado tabla
-      doc.rect(margin, y, pageWidth, 20).fill(orange);
+      doc.rect(margin, y, pageWidth, 20).fill(navy);
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
       doc.text('Capítulo', margin + 5, y + 6, { width: 55 });
       doc.text('Título', margin + 65, y + 6, { width: 225 });
@@ -47656,10 +47657,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         const chapterTotal = chapterPasos.length;
         const chapterPct = chapterTotal > 0 ? Math.round((chapterCumple / chapterTotal) * 100) : 0;
         const chapterColor = chapterPct >= 86 ? green : chapterPct >= 61 ? amber : red;
-        const rowBg = ISO39001_REPORT_STRUCTURE.indexOf(chapter) % 2 === 0 ? '#fff7ed' : '#ffffff';
+        const rowBg = ISO39001_REPORT_STRUCTURE.indexOf(chapter) % 2 === 0 ? navyPale : '#ffffff';
 
         doc.rect(margin, y, pageWidth, 18).fill(rowBg);
-        doc.fontSize(8).font('Helvetica-Bold').fillColor(orange)
+        doc.fontSize(8).font('Helvetica-Bold').fillColor(navyLight)
           .text(`Cap. ${chapter.chapter}`, margin + 5, y + 5, { width: 55 });
         doc.fontSize(8).font('Helvetica').fillColor('#1e293b')
           .text(chapter.title, margin + 65, y + 5, { width: 225 });
@@ -47682,10 +47683,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       for (const chapter of ISO39001_REPORT_STRUCTURE) {
         if (y > doc.page.height - 160) { doc.addPage(); y = margin; }
 
-        doc.rect(margin, y, pageWidth, 28).fill(orange);
+        doc.rect(margin, y, pageWidth, 28).fill(navy);
         doc.fontSize(11).font('Helvetica-Bold').fillColor('#ffffff')
           .text(`CAPÍTULO ${chapter.chapter} — ${chapter.title.toUpperCase()}`, margin + 10, y + 8, { width: pageWidth - 20 });
-        doc.fontSize(8).font('Helvetica').fillColor('#fed7aa')
+        doc.fontSize(8).font('Helvetica').fillColor('#93c5fd')
           .text(chapter.titleEn, margin + 10, y + 20, { width: pageWidth - 20 });
         y += 38;
 
@@ -47699,8 +47700,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           if (y > doc.page.height - 100) { doc.addPage(); y = margin; }
 
           // Sub-encabezado cláusula
-          doc.rect(margin, y, pageWidth, 20).fill(orangePale);
-          doc.fontSize(9).font('Helvetica-Bold').fillColor(orange)
+          doc.rect(margin, y, pageWidth, 20).fill(navyAccent);
+          doc.fontSize(9).font('Helvetica-Bold').fillColor(navyLight)
             .text(`§ ${clauseCode}  —  ${clauseInfo.titleEs}`, margin + 8, y + 6, { width: pageWidth - 16 });
           y += 20;
 
@@ -47753,7 +47754,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.rect(margin, y, pageWidth, 1).fill('#e2e8f0');
       y += 15;
 
-      doc.fontSize(8).font('Helvetica-Bold').fillColor(orange)
+      doc.fontSize(8).font('Helvetica-Bold').fillColor(navy)
         .text('DECLARACIÓN DE ALINEACIÓN NORMATIVA', margin, y);
       y += 14;
       doc.fontSize(8).font('Helvetica').fillColor(gray)
