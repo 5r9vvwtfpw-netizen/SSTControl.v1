@@ -111,14 +111,22 @@ El sistema usa **versionado semántico (MAJOR.MINOR.PATCH)**. La versión se mue
 - Chatbot de soporte con ubicaciones exactas por ciclo+código (P01-A02)
 - Videos de Ayuda temporalmente desactivados (ver sección siguiente)
 
+#### v3.6.0 — 15 de Abril 2026
+**Nuevas funcionalidades:**
+- **ISO 45001:2018 — Módulo de alineación internacional completo:**
+  - `shared/iso45001-mapping.ts`: Mapeo completo Res. 0312/2019 ↔ ISO 45001:2018 (61 estándares → cláusulas 4.x a 10.x)
+  - Badge "ISO 45001 §X.X" en cada estándar de la evaluación SST (visible en `DetalleEvaluacionSst.tsx`)
+  - Botón "PDF ISO 45001:2018" en evaluaciones SST → genera reporte profesional organizado por capítulos ISO
+  - Endpoint `GET /api/evaluaciones-sst/:id/pdf-iso45001` con portada corporativa, tabla resumen por capítulo, detalle por cláusula, indicadores de cumplimiento y declaración de alineación normativa
+
 ### Cómo actualizar la versión
 Editar **una sola línea** en `client/src/components/Footer.tsx`:
 ```typescript
 // Hay DOS líneas (Footer y FooterMinimal), actualizar ambas:
-<span>© 2026 SST Colombia | Registro DNDA 13-197-177 | v3.5.0</span>
-<span>© 2026 SST Colombia | DNDA 13-197-177 | v3.5.0</span>
+<span>© 2026 SST Colombia | Registro DNDA 13-197-177 | v3.6.0</span>
+<span>© 2026 SST Colombia | DNDA 13-197-177 | v3.6.0</span>
 ```
-Cambiar `v3.5.0` por la nueva versión en ambas líneas.
+Cambiar `v3.6.0` por la nueva versión en ambas líneas.
 
 ---
 

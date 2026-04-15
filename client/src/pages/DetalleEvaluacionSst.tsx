@@ -25,6 +25,7 @@ import { MinisterioFechasCard, ComplianceAlertPopup } from "@/components/Ministe
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { Estandar423VerificacionProcedimientos } from "@/components/Estandar423VerificacionProcedimientos";
+import { getPrimaryIsoClause, ISO45001_CLAUSES } from "@shared/iso45001-mapping";
 import { Estandar424VerificacionInspecciones } from "@/components/Estandar424VerificacionInspecciones";
 import { Estandar425VerificacionMantenimiento } from "@/components/Estandar425VerificacionMantenimiento";
 import { Estandar426VerificacionEPP } from "@/components/Estandar426VerificacionEPP";
@@ -567,6 +568,42 @@ export default function DetalleEvaluacionSst() {
     setLicenciadoDialogOpen(true);
   };
 
+  const handleDownloadIso45001Report = async () => {
+    try {
+      const response = await fetch(`/api/evaluaciones-sst/${id}/pdf-iso45001`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        const contentType = response.headers.get('content-type');
+        if (contentType?.includes('application/json')) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al generar reporte ISO 45001');
+        }
+        throw new Error('Error al generar reporte ISO 45001');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Reporte-ISO45001-SST-${evaluacion?.anio}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast({
+        title: "Reporte ISO 45001 generado",
+        description: "El reporte de cumplimiento ISO 45001:2018 está listo. Puede compartirlo con socios y auditores internacionales.",
+        className: "bg-green-50 border-green-200",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const confirmDownloadMinisterioReport = async () => {
     try {
       const response = await fetch(`/api/evaluaciones-sst/${id}/pdf-ministerio`, {
@@ -691,6 +728,15 @@ export default function DetalleEvaluacionSst() {
             label="Tutorial Evaluación" 
             testId="button-help-video-evaluacion"
           />
+          <Button
+            variant="outline"
+            onClick={handleDownloadIso45001Report}
+            data-testid="button-export-iso45001"
+            className="border-blue-300 text-blue-700 dark:border-blue-600 dark:text-blue-400"
+          >
+            <Shield className="h-4 w-4 mr-2" />
+            PDF ISO 45001:2018
+          </Button>
           <Button 
             variant="default" 
             onClick={handleDownloadMinisterioReport} 
@@ -1132,6 +1178,20 @@ export default function DetalleEvaluacionSst() {
                               <p className="font-medium">
                                 Estándar {estandar.numeroEstandar}
                               </p>
+                              {(() => {
+                                const isoClause = getPrimaryIsoClause(estandar.numeroEstandar);
+                                if (!isoClause) return null;
+                                return (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] px-1.5 py-0 border-blue-300 text-blue-700 dark:border-blue-600 dark:text-blue-400 font-normal"
+                                    title={ISO45001_CLAUSES[isoClause]?.titleEs}
+                                    data-testid={`badge-iso-${estandar.numeroEstandar}`}
+                                  >
+                                    ISO 45001 §{isoClause}
+                                  </Badge>
+                                );
+                              })()}
                               {respuesta?.isInherited === 1 && (
                                 <Badge 
                                   variant={respuesta.requiresRefresh === 1 ? "outline" : "secondary"}

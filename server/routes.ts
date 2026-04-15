@@ -239,6 +239,7 @@ import * as schema from "@shared/schema";
 import type { UserRole, User, RevisionDireccionPesv, InsertRevisionDireccionPesv } from "@shared/schema";
 import { calculateChapter, getEmpresaTipoFromChapterAndRisk, getTrialStatus, getChapterDescription } from "@shared/utils";
 import { isStandardPersistent, getPersistentStandardCodes } from "../shared/sst-inheritance";
+import { STANDARD_TO_ISO45001, ISO45001_CLAUSES, ISO45001_REPORT_STRUCTURE, ISO45001_TO_STANDARDS } from "@shared/iso45001-mapping";
 import { PASOS_PESV } from "@shared/pasos-pesv";
 import { prepareCompanyWithCiiuAutomation, processCiiuAutomation } from "@shared/ciiu-company-automation";
 import { setupTrialWatermarkOnAllPages, addTrialFooter, setupLsoWatermarkOnAllPages } from "./services/pdf-watermark";
@@ -26596,6 +26597,296 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/evaluaciones-sst/:id/pdf-iso45001 - Reporte de cumplimiento ISO 45001:2018
+  app.get('/api/evaluaciones-sst/:id/pdf-iso45001', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+
+      let companyId: string;
+      let evaluacion: any;
+
+      if (isAdmin) {
+        evaluacion = await storage.getEvaluacionSstById(req.params.id);
+        if (!evaluacion) return res.status(404).send("Evaluación no encontrada");
+        companyId = evaluacion.companyId;
+      } else {
+        if (!req.user!.companyId) return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+        companyId = req.user!.companyId;
+        evaluacion = await storage.getEvaluacionSst(req.params.id, companyId);
+      }
+      if (!evaluacion) return res.status(404).send('Evaluación no encontrada');
+
+      const company = await storage.getCompany(companyId);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+
+      // Cargar todos los estándares y respuestas
+      const allEstandares = await storage.getEstandaresSst(evaluacion.tipoEmpresa);
+      const allRespuestas = await storage.getRespuestasEstandar(evaluacion.id);
+      const respuestaMap = new Map(allRespuestas.map((r: any) => [r.estandarId, r]));
+
+      // Calcular cumplimiento global
+      let puntajeTotal = 0;
+      let puntajeMaximoTotal = 0;
+      allRespuestas.forEach((r: any) => {
+        puntajeTotal += r.puntajeObtenido || 0;
+        puntajeMaximoTotal += r.puntajeMaximo || 0;
+      });
+      const porcentajeGlobal = puntajeMaximoTotal > 0 ? Math.round((puntajeTotal / puntajeMaximoTotal) * 100) : 0;
+
+      // Iniciar PDF
+      const PDFDocument = require('pdfkit');
+      const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Reporte-ISO45001-${evaluacion.anio}.pdf"`);
+      res.setHeader('Cache-Control', 'no-cache');
+      doc.pipe(res);
+
+      if (trialStatus.isTrialing) {
+        await setupTrialWatermarkOnAllPages(doc);
+      }
+
+      const margin = 50;
+      const pageWidth = doc.page.width - margin * 2;
+      const blue = '#1e40af';
+      const blueLight = '#3b82f6';
+      const bluePale = '#eff6ff';
+      const gray = '#6b7280';
+      const green = '#16a34a';
+      const red = '#dc2626';
+      const orange = '#d97706';
+
+      // ─── PORTADA ─────────────────────────────────────────────────────────
+      doc.rect(0, 0, doc.page.width, 180).fill(blue);
+
+      // Logo empresa si tiene
+      if (company.logoUrl) {
+        try {
+          const logoResponse = await fetch(company.logoUrl);
+          if (logoResponse.ok) {
+            const logoBuffer = Buffer.from(await logoResponse.arrayBuffer());
+            doc.image(logoBuffer, margin, 20, { width: 60, height: 60, fit: [60, 60] });
+          }
+        } catch {}
+      }
+
+      doc.fontSize(22).font('Helvetica-Bold').fillColor('#ffffff')
+        .text('REPORTE DE CUMPLIMIENTO', margin, 30, { width: pageWidth, align: 'right' });
+      doc.fontSize(16).font('Helvetica-Bold').fillColor('#bfdbfe')
+        .text('ISO 45001:2018', margin, 58, { width: pageWidth, align: 'right' });
+      doc.fontSize(10).font('Helvetica').fillColor('#bfdbfe')
+        .text('Occupational Health and Safety Management Systems', margin, 80, { width: pageWidth, align: 'right' });
+
+      doc.fontSize(9).font('Helvetica').fillColor('#93c5fd')
+        .text(`Resolución 0312/2019 alineada con ISO 45001:2018`, margin, 108, { width: pageWidth, align: 'right' });
+
+      doc.rect(0, 180, doc.page.width, 3).fill(blueLight);
+
+      let y = 205;
+
+      // Datos empresa
+      doc.fontSize(14).font('Helvetica-Bold').fillColor('#1e3a8a')
+        .text(company.name || 'Empresa', margin, y);
+      y = doc.y + 4;
+      doc.fontSize(9).font('Helvetica').fillColor(gray)
+        .text(`NIT: ${company.nit || 'N/A'}  |  Período: ${evaluacion.anio}  |  Generado: ${new Date().toLocaleDateString('es-CO')}`, margin, y);
+      y = doc.y + 20;
+
+      // Indicador global
+      const globalColor = porcentajeGlobal >= 86 ? green : porcentajeGlobal >= 61 ? orange : red;
+      const globalLabel = porcentajeGlobal >= 86 ? 'ACEPTABLE' : porcentajeGlobal >= 61 ? 'MODERADAMENTE ACEPTABLE' : 'CRÍTICO';
+
+      doc.rect(margin, y, pageWidth, 60).fill(bluePale).stroke('#bfdbfe');
+      doc.fontSize(28).font('Helvetica-Bold').fillColor(globalColor)
+        .text(`${porcentajeGlobal}%`, margin + 15, y + 10);
+      doc.fontSize(11).font('Helvetica-Bold').fillColor('#1e3a8a')
+        .text(`${globalLabel}`, margin + 90, y + 12);
+      doc.fontSize(9).font('Helvetica').fillColor(gray)
+        .text(`Cumplimiento global del SG-SST  |  ${puntajeTotal.toFixed(1)} / ${puntajeMaximoTotal.toFixed(1)} puntos`, margin + 90, y + 30);
+      y += 80;
+
+      // ─── TABLA RESUMEN POR CAPÍTULO ISO ─────────────────────────────────
+      doc.fontSize(12).font('Helvetica-Bold').fillColor(blue)
+        .text('CUMPLIMIENTO POR CAPÍTULO ISO 45001:2018', margin, y);
+      y += 18;
+
+      // Encabezado tabla
+      doc.rect(margin, y, pageWidth, 20).fill(blue);
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
+      doc.text('Capítulo', margin + 5, y + 6, { width: 60 });
+      doc.text('Título', margin + 70, y + 6, { width: 220 });
+      doc.text('Estándares', margin + 295, y + 6, { width: 65, align: 'center' });
+      doc.text('Cumple', margin + 360, y + 6, { width: 50, align: 'center' });
+      doc.text('%', margin + 415, y + 6, { width: 50, align: 'center' });
+      y += 20;
+
+      for (const chapter of ISO45001_REPORT_STRUCTURE) {
+        // Recolectar todos los estándares del capítulo
+        const chapterStandardCodes: string[] = [];
+        chapter.clauses.forEach(clause => {
+          (ISO45001_TO_STANDARDS[clause] || []).forEach(code => {
+            if (!chapterStandardCodes.includes(code)) chapterStandardCodes.push(code);
+          });
+        });
+
+        // Calcular cumplimiento del capítulo
+        let chapterPuntaje = 0;
+        let chapterMaximo = 0;
+        let chapterCumple = 0;
+        let chapterTotal = 0;
+
+        const estandaresDelCapitulo = allEstandares.filter((e: any) =>
+          chapterStandardCodes.includes(e.numeroEstandar)
+        );
+
+        estandaresDelCapitulo.forEach((e: any) => {
+          const resp = respuestaMap.get(e.id);
+          chapterTotal++;
+          if (resp) {
+            chapterPuntaje += resp.puntajeObtenido || 0;
+            chapterMaximo += resp.puntajeMaximo || 0;
+            if ((resp.puntajeObtenido || 0) > 0) chapterCumple++;
+          } else {
+            chapterMaximo += e.puntajeTipo3 || e.puntajeTipo2 || e.puntajeTipo1 || 0;
+          }
+        });
+
+        if (chapterTotal === 0) continue;
+
+        const chapterPct = chapterMaximo > 0 ? Math.round((chapterPuntaje / chapterMaximo) * 100) : 0;
+        const chapterColor = chapterPct >= 86 ? green : chapterPct >= 61 ? orange : red;
+        const rowBg = ISO45001_REPORT_STRUCTURE.indexOf(chapter) % 2 === 0 ? '#f8fafc' : '#ffffff';
+
+        doc.rect(margin, y, pageWidth, 18).fill(rowBg);
+        doc.fontSize(8).font('Helvetica-Bold').fillColor(blue)
+          .text(`Cap. ${chapter.chapter}`, margin + 5, y + 5, { width: 60 });
+        doc.fontSize(8).font('Helvetica').fillColor('#1e293b')
+          .text(chapter.title, margin + 70, y + 5, { width: 220 });
+        doc.fontSize(8).font('Helvetica').fillColor(gray)
+          .text(`${chapterCumple}/${chapterTotal}`, margin + 295, y + 5, { width: 65, align: 'center' });
+        doc.fontSize(8).font('Helvetica').fillColor(gray)
+          .text(`${chapterCumple}`, margin + 360, y + 5, { width: 50, align: 'center' });
+        doc.fontSize(8).font('Helvetica-Bold').fillColor(chapterColor)
+          .text(`${chapterPct}%`, margin + 415, y + 5, { width: 50, align: 'center' });
+        y += 18;
+
+        if (y > doc.page.height - 120) {
+          doc.addPage();
+          y = margin;
+        }
+      }
+
+      y += 20;
+
+      // ─── DETALLE POR CAPÍTULO ────────────────────────────────────────────
+      for (const chapter of ISO45001_REPORT_STRUCTURE) {
+        if (y > doc.page.height - 160) {
+          doc.addPage();
+          y = margin;
+        }
+
+        // Encabezado capítulo
+        doc.rect(margin, y, pageWidth, 28).fill(blue);
+        doc.fontSize(11).font('Helvetica-Bold').fillColor('#ffffff')
+          .text(`CAPÍTULO ${chapter.chapter} — ${chapter.title.toUpperCase()}`, margin + 10, y + 8, { width: pageWidth - 20 });
+        doc.fontSize(8).font('Helvetica').fillColor('#bfdbfe')
+          .text(chapter.titleEn, margin + 10, y + 20, { width: pageWidth - 20 });
+        y += 38;
+
+        for (const clauseCode of chapter.clauses) {
+          const clauseInfo = ISO45001_CLAUSES[clauseCode];
+          if (!clauseInfo) continue;
+
+          const clauseStandardCodes = ISO45001_TO_STANDARDS[clauseCode] || [];
+          const estandaresClausula = allEstandares.filter((e: any) =>
+            clauseStandardCodes.includes(e.numeroEstandar)
+          );
+          if (estandaresClausula.length === 0) continue;
+
+          if (y > doc.page.height - 100) {
+            doc.addPage();
+            y = margin;
+          }
+
+          // Sub-encabezado cláusula
+          doc.rect(margin, y, pageWidth, 20).fill(bluePale);
+          doc.fontSize(9).font('Helvetica-Bold').fillColor(blue)
+            .text(`§ ${clauseCode}  —  ${clauseInfo.titleEs}`, margin + 8, y + 6, { width: pageWidth - 16 });
+          y += 20;
+
+          // Estándares de esta cláusula
+          for (const estandar of estandaresClausula) {
+            if (y > doc.page.height - 60) {
+              doc.addPage();
+              y = margin;
+            }
+
+            const resp = respuestaMap.get(estandar.id);
+            const cumple = resp && (resp.puntajeObtenido || 0) > 0;
+            const noAplica = resp && resp.noAplica === 1;
+            const sinRespuesta = !resp;
+
+            const statusColor = noAplica ? gray : cumple ? green : sinRespuesta ? '#94a3b8' : red;
+            const statusText = noAplica ? 'N/A' : cumple ? 'CUMPLE' : sinRespuesta ? 'PENDIENTE' : 'NO CUMPLE';
+            const rowBg2 = estandaresClausula.indexOf(estandar) % 2 === 0 ? '#f8fafc' : '#ffffff';
+
+            doc.rect(margin, y, pageWidth, 22).fill(rowBg2);
+
+            // Código estándar (Res. 0312)
+            doc.fontSize(8).font('Helvetica-Bold').fillColor('#475569')
+              .text(`${estandar.numeroEstandar}`, margin + 6, y + 7, { width: 40 });
+
+            // Nombre
+            doc.fontSize(8).font('Helvetica').fillColor('#1e293b')
+              .text(estandar.nombre, margin + 50, y + 7, { width: pageWidth - 160, lineBreak: false });
+
+            // Puntaje
+            const puntajeTexto = resp
+              ? `${resp.puntajeObtenido || 0}/${resp.puntajeMaximo || 0}`
+              : `0/${estandar.puntajeTipo3 || estandar.puntajeTipo2 || estandar.puntajeTipo1 || 0}`;
+            doc.fontSize(7).font('Helvetica').fillColor(gray)
+              .text(puntajeTexto, margin + pageWidth - 108, y + 8, { width: 50, align: 'right' });
+
+            // Estado badge
+            doc.rect(margin + pageWidth - 55, y + 4, 50, 14).fill(statusColor);
+            doc.fontSize(7).font('Helvetica-Bold').fillColor('#ffffff')
+              .text(statusText, margin + pageWidth - 55, y + 8, { width: 50, align: 'center' });
+
+            y += 22;
+          }
+          y += 8;
+        }
+        y += 10;
+      }
+
+      // ─── PIE DE PÁGINA FINAL ─────────────────────────────────────────────
+      if (y > doc.page.height - 120) {
+        doc.addPage();
+        y = margin;
+      }
+
+      doc.rect(margin, y, pageWidth, 1).fill('#e2e8f0');
+      y += 15;
+
+      doc.fontSize(8).font('Helvetica-Bold').fillColor(blue)
+        .text('DECLARACIÓN DE ALINEACIÓN NORMATIVA', margin, y);
+      y += 14;
+      doc.fontSize(8).font('Helvetica').fillColor(gray)
+        .text(`El Sistema de Gestión de Seguridad y Salud en el Trabajo de ${company.name} ha sido implementado y evaluado conforme a la Resolución 0312 de 2019 del Ministerio del Trabajo de Colombia, la cual se encuentra estructuralmente alineada con la norma internacional ISO 45001:2018 "Sistemas de gestión de la seguridad y salud en el trabajo". Los estándares documentados en este reporte cubren los requisitos de los Capítulos 4 a 10 de la norma ISO 45001:2018.`, margin, y, { width: pageWidth, align: 'justify' });
+      y = doc.y + 12;
+
+      doc.fontSize(7).font('Helvetica').fillColor('#94a3b8')
+        .text(`Generado por SST Colombia (SADGI S.A.S.) | NIT 902.036.337-4 | ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })} | ISO 45001:2018 Compliance Report`, margin, y, { width: pageWidth, align: 'center' });
+
+      doc.end();
+    } catch (error: any) {
+      handlePdfError(error, res, 'evaluaciones-sst-iso45001-pdf');
+    }
+  });
 
   // GET /api/evaluaciones-sst/:id/informe-verificacion-sistema - Generar PDF de verificación inteligente del SG-SST
   app.get('/api/evaluaciones-sst/:id/informe-verificacion-sistema', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
