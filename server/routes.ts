@@ -47719,12 +47719,12 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
             const statusColor = noAplica ? gray : cumple ? green : sinRespuesta ? '#94a3b8' : red;
             const statusText = noAplica ? 'N/A' : cumple ? 'CUMPLE' : sinRespuesta ? 'PENDIENTE' : 'NO CUMPLE';
-            const rowBg2 = clausePasos.indexOf(codigoPaso) % 2 === 0 ? '#fff7ed' : '#ffffff';
+            const rowBg2 = clausePasos.indexOf(codigoPaso) % 2 === 0 ? navyPale : '#ffffff';
 
             doc.rect(margin, y, pageWidth, 22).fill(rowBg2);
 
             // Código PESV
-            doc.fontSize(8).font('Helvetica-Bold').fillColor(orange)
+            doc.fontSize(8).font('Helvetica-Bold').fillColor(navyLight)
               .text(codigoPaso, margin + 6, y + 7, { width: 30 });
 
             // Nombre del paso
