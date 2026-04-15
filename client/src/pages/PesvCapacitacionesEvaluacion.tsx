@@ -12,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Eye, GraduationCap, Calendar, Clock, MapPin, Users, Sparkles, RefreshCw } from "lucide-react";
-import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -246,10 +245,6 @@ export default function PesvCapacitacionesEvaluacion() {
         currentPhase="hacer"
         isLoading={evaluacionLoading}
       />
-
- <div className="flex items-center gap-2 flex-wrap mb-4">
-        <BackToPesvEvaluationButton />
-      </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">

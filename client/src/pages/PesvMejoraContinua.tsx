@@ -13,7 +13,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle2, AlertTriangle, Shield, Plus, Eye, Calendar, ClipboardCheck, ExternalLink, Search, FileDown, Zap, Lightbulb } from "lucide-react";
-import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -387,7 +386,6 @@ export default function PesvMejoraContinua() {
           <FileDown className="h-4 w-4 mr-2" />
           Descargar PDF
         </Button>
-        <BackToPesvEvaluationButton />
       </div>
 
       <TrazabilidadPesvBanner codigoPaso="A01" compacto />

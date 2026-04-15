@@ -14,7 +14,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Users, Calendar, CheckCircle2, FileText, Plus, Eye, ArrowLeft, ClipboardCheck, ExternalLink, Building2, Shield, FileDown } from "lucide-react";
 import { Link } from "wouter";
-import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -225,7 +224,6 @@ export default function PesvRevisionDireccion() {
         >
           <FileDown className="h-4 w-4" />
         </Button>
-        <BackToPesvEvaluationButton />
       </div>
 
       <TrazabilidadPesvBanner codigoPaso="A02" />

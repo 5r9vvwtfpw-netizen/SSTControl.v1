@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Eye, AlertTriangle, Calendar, MapPin, Car, User, Navigation, Sparkles, Database, ExternalLink } from "lucide-react";
 import { useLocation } from "wouter";
-import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -206,10 +205,6 @@ export default function PesvSiniestrosEvaluacion() {
         currentPhase="verificar"
         isLoading={evaluacionLoading}
       />
-
- <div className="flex items-center gap-2 flex-wrap mb-4">
-        <BackToPesvEvaluationButton />
-      </div>
 
       {/* SECCIÓN 1: Siniestros del módulo general */}
       <Card className="mb-4">
