@@ -26881,6 +26881,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.fontSize(7).font('Helvetica').fillColor('#94a3b8')
         .text(`Generado por SST Colombia (SADGI S.A.S.) | NIT 902.036.337-4 | ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })} | ISO 45001:2018 Compliance Report`, margin, y, { width: pageWidth, align: 'center' });
 
+      // Bloque de firmas (LSO + Elaboró + Autorizó) — ISO 45001 §7.5.2 requiere autorización
+      const signers = await getSignersForCompany(companyId, true);
+      await addSignatureFooter(doc, signers, true);
+
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'evaluaciones-sst-iso45001-pdf');
