@@ -21,7 +21,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
 import { hasCompanyAdminAccess } from "@shared/permissions";
-import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
+import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { useParams, Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 
@@ -30,8 +30,13 @@ export default function PesvMonitoreoGps() {
   const { evaluacionId } = useParams<{ evaluacionId?: string }>();
   const { selectedCompany: currentCompany } = useCompanyContext();
 
-  const { data: evaluacion } = useQuery<{ id: string; companyId: string }>({
-    queryKey: [`/api/pesv/evaluaciones/${evaluacionId}`],
+  const { data: evaluacion, isLoading: evaluacionLoading } = useQuery<any>({
+    queryKey: ["/api/evaluaciones-pesv", evaluacionId],
+    queryFn: async () => {
+      const res = await fetch(`/api/evaluaciones-pesv/${evaluacionId}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error cargando evaluación");
+      return res.json();
+    },
     enabled: !!evaluacionId,
   });
 
@@ -650,9 +655,12 @@ export default function PesvMonitoreoGps() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 flex-wrap mb-4">
-        <BackToPesvEvaluationButton />
-      </div>
+      <EvaluacionPesvContextHeader
+        evaluacion={evaluacion}
+        currentModule="Monitoreo GPS / Velocidad"
+        currentPhase="hacer"
+        isLoading={evaluacionLoading}
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>

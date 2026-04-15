@@ -13,7 +13,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, Plus, CheckCircle2, XCircle, Pencil, Trash2, Shield, Beaker, ArrowLeft } from "lucide-react";
-import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -100,8 +99,13 @@ export default function PesvAlcoholSustancias() {
     queryKey: [apiBase],
   });
 
-  const { data: evaluacion } = useQuery<any>({
-    queryKey: [`/api/pesv/evaluaciones/${evaluacionId}`],
+  const { data: evaluacion, isLoading: evaluacionLoading } = useQuery<any>({
+    queryKey: ["/api/evaluaciones-pesv", evaluacionId],
+    queryFn: async () => {
+      const res = await fetch(`/api/evaluaciones-pesv/${evaluacionId}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error cargando evaluación");
+      return res.json();
+    },
     enabled: !!evaluacionId,
   });
 
@@ -190,13 +194,12 @@ export default function PesvAlcoholSustancias() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center gap-3 mb-2 flex-wrap">
-        {evaluacionId && <BackToPesvEvaluationButton evaluacionId={evaluacionId} />}
-      </div>
-
-      {evaluacionId && (
-        <EvaluacionPesvContextHeader evaluacionId={evaluacionId} />
-      )}
+      <EvaluacionPesvContextHeader
+        evaluacion={evaluacion}
+        currentModule="Alcohol y Sustancias Psicoactivas"
+        currentPhase="hacer"
+        isLoading={evaluacionLoading}
+      />
 
       {evaluacionId && PASO_H10 && (
         <TrazabilidadPesvBanner
