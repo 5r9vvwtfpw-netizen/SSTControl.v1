@@ -26624,8 +26624,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
 
       // Cargar todos los estándares y respuestas
-      const allEstandares = await storage.getEstandaresSst(evaluacion.tipoEmpresa);
-      const allRespuestas = await storage.getRespuestasEstandar(evaluacion.id);
+      const allEstandares = await storage.getEstandaresByTipoEmpresa(evaluacion.tipoEmpresa);
+      const allRespuestas = await storage.getRespuestasEstandaresByEvaluacionId(evaluacion.id);
       const respuestaMap = new Map(allRespuestas.map((r: any) => [r.estandarId, r]));
 
       // Calcular cumplimiento global
@@ -26638,7 +26638,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const porcentajeGlobal = puntajeMaximoTotal > 0 ? Math.round((puntajeTotal / puntajeMaximoTotal) * 100) : 0;
 
       // Iniciar PDF
-      const PDFDocument = require('pdfkit');
       const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
 
       res.setHeader('Content-Type', 'application/pdf');
