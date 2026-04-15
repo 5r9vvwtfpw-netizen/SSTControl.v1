@@ -729,10 +729,9 @@ export default function DetalleEvaluacionSst() {
             testId="button-help-video-evaluacion"
           />
           <Button
-            variant="outline"
             onClick={handleDownloadIso45001Report}
             data-testid="button-export-iso45001"
-            className="border-blue-300 text-blue-700 dark:border-blue-600 dark:text-blue-400"
+            className="bg-indigo-700 hover:bg-indigo-800 text-white border-0"
           >
             <Shield className="h-4 w-4 mr-2" />
             PDF ISO 45001:2018

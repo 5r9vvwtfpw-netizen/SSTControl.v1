@@ -1196,10 +1196,9 @@ function DetalleEvaluacionPesvInner() {
             Recalcular Puntajes
           </Button>
           <Button
-            variant="outline"
             onClick={handleDownloadIso39001Report}
             data-testid="button-export-iso39001"
-            className="border-orange-300 text-orange-700 dark:border-orange-600 dark:text-orange-400"
+            className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white border-0"
           >
             <Shield className="h-4 w-4 mr-2" />
             PDF ISO 39001:2012
