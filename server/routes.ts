@@ -240,6 +240,7 @@ import type { UserRole, User, RevisionDireccionPesv, InsertRevisionDireccionPesv
 import { calculateChapter, getEmpresaTipoFromChapterAndRisk, getTrialStatus, getChapterDescription } from "@shared/utils";
 import { isStandardPersistent, getPersistentStandardCodes } from "../shared/sst-inheritance";
 import { STANDARD_TO_ISO45001, ISO45001_CLAUSES, ISO45001_REPORT_STRUCTURE, ISO45001_TO_STANDARDS } from "@shared/iso45001-mapping";
+import { PASO_TO_ISO39001, ISO39001_CLAUSES, ISO39001_REPORT_STRUCTURE, ISO39001_TO_PASOS } from "@shared/iso39001-mapping";
 import { PASOS_PESV } from "@shared/pasos-pesv";
 import { prepareCompanyWithCiiuAutomation, processCiiuAutomation } from "@shared/ciiu-company-automation";
 import { setupTrialWatermarkOnAllPages, addTrialFooter, setupLsoWatermarkOnAllPages } from "./services/pdf-watermark";
@@ -47497,6 +47498,278 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'evaluaciones-pesv-pdf');
+    }
+  });
+
+  // GET /api/evaluaciones-pesv/:id/pdf-iso39001 - Reporte de cumplimiento ISO 39001:2012 (Road Traffic Safety)
+  app.get('/api/evaluaciones-pesv/:id/pdf-iso39001', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+
+      let companyId: string;
+      let evaluacion: any;
+
+      if (isAdmin) {
+        const [ev] = await db.select().from(schema.evaluacionesPesv).where(eq(schema.evaluacionesPesv.id, req.params.id)).limit(1);
+        if (!ev) return res.status(404).json({ message: 'Evaluación PESV no encontrada' });
+        evaluacion = ev;
+        companyId = ev.companyId;
+      } else {
+        if (!req.user!.companyId) return res.status(403).json({ message: 'Esta operación requiere pertenecer a una empresa' });
+        companyId = req.user!.companyId;
+        const [ev] = await db.select().from(schema.evaluacionesPesv)
+          .where(and(eq(schema.evaluacionesPesv.id, req.params.id), eq(schema.evaluacionesPesv.companyId, companyId))).limit(1);
+        if (!ev) return res.status(404).json({ message: 'Evaluación PESV no encontrada' });
+        evaluacion = ev;
+      }
+
+      const company = await storage.getCompany(companyId);
+      if (!company) return res.status(404).json({ message: 'Empresa no encontrada' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+
+      // Cargar respuestas PESV de la evaluación (tabla: respuestas_pasos_pesv, campo clave: pasoId)
+      const respuestasPesv = await db.select()
+        .from(schema.respuestasPasosPesv)
+        .where(eq(schema.respuestasPasosPesv.evaluacionId, evaluacion.id));
+
+      // Construir mapa: pasoId (código como P01, H05) → respuesta
+      const respuestaMap = new Map<string, any>();
+      respuestasPesv.forEach((r: any) => {
+        if (r.pasoId) respuestaMap.set(r.pasoId, r);
+      });
+
+      // Calcular cumplimiento global usando campo 'cumple' (1 = cumple, 0 = no cumple)
+      const pasosCodes = Object.keys(PASO_TO_ISO39001);
+      let cumpleCount = 0;
+      let totalCount = 0;
+      pasosCodes.forEach(codigo => {
+        const resp = respuestaMap.get(codigo);
+        totalCount++;
+        if (resp && resp.noAplica !== 1 && resp.cumple === 1) cumpleCount++;
+      });
+      const porcentajeGlobal = totalCount > 0 ? Math.round((cumpleCount / totalCount) * 100) : 0;
+
+      // Usar datos de progreso de la evaluación si están disponibles
+      const progresoPct = evaluacion.porcentajeCumplimiento ?? porcentajeGlobal;
+
+      // Iniciar PDF
+      const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Reporte-ISO39001-PESV-${evaluacion.anio}.pdf"`);
+      res.setHeader('Cache-Control', 'no-cache');
+      doc.pipe(res);
+
+      if (trialStatus.isTrialing) {
+        await setupTrialWatermarkOnAllPages(doc);
+      }
+
+      const margin = 50;
+      const pageWidth = doc.page.width - margin * 2;
+      const orange = '#c2410c';
+      const orangeLight = '#ea580c';
+      const orangePale = '#fff7ed';
+      const gray = '#6b7280';
+      const green = '#16a34a';
+      const red = '#dc2626';
+      const amber = '#d97706';
+
+      // ─── PORTADA ────────────────────────────────────────────────────────────
+      doc.rect(0, 0, doc.page.width, 180).fill(orange);
+
+      // Logo empresa si tiene
+      if (company.logoUrl) {
+        try {
+          const logoResponse = await fetch(company.logoUrl);
+          if (logoResponse.ok) {
+            const logoBuffer = Buffer.from(await logoResponse.arrayBuffer());
+            doc.image(logoBuffer, margin, 20, { width: 60, height: 60, fit: [60, 60] });
+          }
+        } catch {}
+      }
+
+      doc.fontSize(20).font('Helvetica-Bold').fillColor('#ffffff')
+        .text('REPORTE DE CUMPLIMIENTO', margin, 28, { width: pageWidth, align: 'right' });
+      doc.fontSize(16).font('Helvetica-Bold').fillColor('#fed7aa')
+        .text('ISO 39001:2012', margin, 54, { width: pageWidth, align: 'right' });
+      doc.fontSize(9).font('Helvetica').fillColor('#fed7aa')
+        .text('Road Traffic Safety (RTS) Management Systems', margin, 76, { width: pageWidth, align: 'right' });
+      doc.fontSize(8).font('Helvetica').fillColor('#fdba74')
+        .text('Plan Estratégico de Seguridad Vial — Resolución 40595/2022 alineada con ISO 39001:2012', margin, 98, { width: pageWidth, align: 'right' });
+
+      doc.rect(0, 180, doc.page.width, 3).fill(orangeLight);
+
+      let y = 205;
+
+      doc.fontSize(14).font('Helvetica-Bold').fillColor('#7c2d12')
+        .text(company.name || 'Empresa', margin, y);
+      y = doc.y + 4;
+      doc.fontSize(9).font('Helvetica').fillColor(gray)
+        .text(`NIT: ${company.nit || 'N/A'}  |  Período: ${evaluacion.anio}  |  Generado: ${new Date().toLocaleDateString('es-CO')}`, margin, y);
+      y = doc.y + 20;
+
+      // Indicador global
+      const globalColor = progresoPct >= 86 ? green : progresoPct >= 61 ? amber : red;
+      const globalLabel = progresoPct >= 86 ? 'ACEPTABLE' : progresoPct >= 61 ? 'MODERADAMENTE ACEPTABLE' : 'CRÍTICO';
+
+      doc.rect(margin, y, pageWidth, 60).fill(orangePale).stroke('#fed7aa');
+      doc.fontSize(26).font('Helvetica-Bold').fillColor(globalColor)
+        .text(`${Math.round(progresoPct)}%`, margin + 15, y + 10);
+      doc.fontSize(11).font('Helvetica-Bold').fillColor('#7c2d12')
+        .text(`${globalLabel}`, margin + 90, y + 12);
+      doc.fontSize(9).font('Helvetica').fillColor(gray)
+        .text(`Cumplimiento global del PESV | Nivel ${evaluacion.nivelPesv || 'N/A'} | ${evaluacion.anio}`, margin + 90, y + 30);
+      y += 80;
+
+      // ─── TABLA RESUMEN POR CAPÍTULO ISO 39001 ─────────────────────────────
+      doc.fontSize(12).font('Helvetica-Bold').fillColor(orange)
+        .text('CUMPLIMIENTO POR CAPÍTULO ISO 39001:2012', margin, y);
+      y += 18;
+
+      // Encabezado tabla
+      doc.rect(margin, y, pageWidth, 20).fill(orange);
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
+      doc.text('Capítulo', margin + 5, y + 6, { width: 55 });
+      doc.text('Título', margin + 65, y + 6, { width: 225 });
+      doc.text('PHVA', margin + 295, y + 6, { width: 50, align: 'center' });
+      doc.text('Pasos', margin + 350, y + 6, { width: 50, align: 'center' });
+      doc.text('Cumple', margin + 405, y + 6, { width: 45, align: 'center' });
+      doc.text('%', margin + 452, y + 6, { width: 40, align: 'center' });
+      y += 20;
+
+      for (const chapter of ISO39001_REPORT_STRUCTURE) {
+        const chapterPasos: string[] = [];
+        chapter.clauses.forEach(clause => {
+          (ISO39001_TO_PASOS[clause] || []).forEach(paso => {
+            if (!chapterPasos.includes(paso)) chapterPasos.push(paso);
+          });
+        });
+
+        let chapterCumple = 0;
+        chapterPasos.forEach(paso => {
+          const resp = respuestaMap.get(paso);
+          if (resp && resp.noAplica !== 1 && resp.cumple === 1) chapterCumple++;
+        });
+        const chapterTotal = chapterPasos.length;
+        const chapterPct = chapterTotal > 0 ? Math.round((chapterCumple / chapterTotal) * 100) : 0;
+        const chapterColor = chapterPct >= 86 ? green : chapterPct >= 61 ? amber : red;
+        const rowBg = ISO39001_REPORT_STRUCTURE.indexOf(chapter) % 2 === 0 ? '#fff7ed' : '#ffffff';
+
+        doc.rect(margin, y, pageWidth, 18).fill(rowBg);
+        doc.fontSize(8).font('Helvetica-Bold').fillColor(orange)
+          .text(`Cap. ${chapter.chapter}`, margin + 5, y + 5, { width: 55 });
+        doc.fontSize(8).font('Helvetica').fillColor('#1e293b')
+          .text(chapter.title, margin + 65, y + 5, { width: 225 });
+        doc.fontSize(7).font('Helvetica').fillColor(gray)
+          .text(chapter.phvaLabel, margin + 295, y + 5, { width: 50, align: 'center' });
+        doc.fontSize(8).font('Helvetica').fillColor(gray)
+          .text(`${chapterTotal}`, margin + 350, y + 5, { width: 50, align: 'center' });
+        doc.fontSize(8).font('Helvetica').fillColor(gray)
+          .text(`${chapterCumple}`, margin + 405, y + 5, { width: 45, align: 'center' });
+        doc.fontSize(8).font('Helvetica-Bold').fillColor(chapterColor)
+          .text(`${chapterPct}%`, margin + 452, y + 5, { width: 40, align: 'center' });
+        y += 18;
+
+        if (y > doc.page.height - 120) { doc.addPage(); y = margin; }
+      }
+
+      y += 20;
+
+      // ─── DETALLE POR CAPÍTULO ─────────────────────────────────────────────
+      for (const chapter of ISO39001_REPORT_STRUCTURE) {
+        if (y > doc.page.height - 160) { doc.addPage(); y = margin; }
+
+        doc.rect(margin, y, pageWidth, 28).fill(orange);
+        doc.fontSize(11).font('Helvetica-Bold').fillColor('#ffffff')
+          .text(`CAPÍTULO ${chapter.chapter} — ${chapter.title.toUpperCase()}`, margin + 10, y + 8, { width: pageWidth - 20 });
+        doc.fontSize(8).font('Helvetica').fillColor('#fed7aa')
+          .text(chapter.titleEn, margin + 10, y + 20, { width: pageWidth - 20 });
+        y += 38;
+
+        for (const clauseCode of chapter.clauses) {
+          const clauseInfo = ISO39001_CLAUSES[clauseCode];
+          if (!clauseInfo) continue;
+
+          const clausePasos = ISO39001_TO_PASOS[clauseCode] || [];
+          if (clausePasos.length === 0) continue;
+
+          if (y > doc.page.height - 100) { doc.addPage(); y = margin; }
+
+          // Sub-encabezado cláusula
+          doc.rect(margin, y, pageWidth, 20).fill(orangePale);
+          doc.fontSize(9).font('Helvetica-Bold').fillColor(orange)
+            .text(`§ ${clauseCode}  —  ${clauseInfo.titleEs}`, margin + 8, y + 6, { width: pageWidth - 16 });
+          y += 20;
+
+          // Pasos PESV de esta cláusula
+          for (const codigoPaso of clausePasos) {
+            if (y > doc.page.height - 60) { doc.addPage(); y = margin; }
+
+            const pasoInfo = PASOS_PESV.find(p => p.codigo === codigoPaso);
+            if (!pasoInfo) continue;
+
+            const resp = respuestaMap.get(codigoPaso);
+            const noAplica = resp && resp.noAplica === 1;
+            const cumple = resp && !noAplica && resp.cumple === 1;
+            const sinRespuesta = !resp;
+
+            const statusColor = noAplica ? gray : cumple ? green : sinRespuesta ? '#94a3b8' : red;
+            const statusText = noAplica ? 'N/A' : cumple ? 'CUMPLE' : sinRespuesta ? 'PENDIENTE' : 'NO CUMPLE';
+            const rowBg2 = clausePasos.indexOf(codigoPaso) % 2 === 0 ? '#fff7ed' : '#ffffff';
+
+            doc.rect(margin, y, pageWidth, 22).fill(rowBg2);
+
+            // Código PESV
+            doc.fontSize(8).font('Helvetica-Bold').fillColor(orange)
+              .text(codigoPaso, margin + 6, y + 7, { width: 30 });
+
+            // Nombre del paso
+            doc.fontSize(8).font('Helvetica').fillColor('#1e293b')
+              .text(pasoInfo.nombre, margin + 40, y + 7, { width: pageWidth - 145, lineBreak: false });
+
+            // Fase PHVA
+            const faseColor = pasoInfo.fase === 'planear' ? '#1e40af' : pasoInfo.fase === 'hacer' ? '#b45309' : pasoInfo.fase === 'verificar' ? '#15803d' : '#7c3aed';
+            doc.fontSize(7).font('Helvetica').fillColor(faseColor)
+              .text(pasoInfo.fase?.toUpperCase() || '', margin + pageWidth - 105, y + 8, { width: 45, align: 'right' });
+
+            // Estado badge
+            doc.rect(margin + pageWidth - 55, y + 4, 50, 14).fill(statusColor);
+            doc.fontSize(7).font('Helvetica-Bold').fillColor('#ffffff')
+              .text(statusText, margin + pageWidth - 55, y + 8, { width: 50, align: 'center' });
+
+            y += 22;
+          }
+          y += 8;
+        }
+        y += 10;
+      }
+
+      // ─── DECLARACIÓN FINAL ───────────────────────────────────────────────
+      if (y > doc.page.height - 140) { doc.addPage(); y = margin; }
+
+      doc.rect(margin, y, pageWidth, 1).fill('#e2e8f0');
+      y += 15;
+
+      doc.fontSize(8).font('Helvetica-Bold').fillColor(orange)
+        .text('DECLARACIÓN DE ALINEACIÓN NORMATIVA', margin, y);
+      y += 14;
+      doc.fontSize(8).font('Helvetica').fillColor(gray)
+        .text(`El Plan Estratégico de Seguridad Vial (PESV) de ${company.name} ha sido implementado y evaluado conforme a la Resolución 40595/2022 del Ministerio de Transporte de Colombia (modificada por las Resoluciones 20223040040305, 20233040026445 y 20233040041945), cuya estructura está alineada con la norma internacional ISO 39001:2012 "Road Traffic Safety (RTS) Management Systems — Requirements with guidance for use", e ISO 31000:2018 "Gestión del Riesgo". Los pasos documentados en este reporte cubren los requisitos de los Capítulos 4 a 10 de la norma ISO 39001:2012.`, margin, y, { width: pageWidth, align: 'justify' });
+      y = doc.y + 12;
+
+      doc.fontSize(7).font('Helvetica').fillColor('#94a3b8')
+        .text(`Generado por SST Colombia (SADGI S.A.S.) | NIT 902.036.337-4 | ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })} | ISO 39001:2012 RTS Compliance Report`, margin, y, { width: pageWidth, align: 'center' });
+
+      // Bloque de firmas — ISO 39001:2012 §5.3 requiere autorización de alta dirección
+      const pesvIso39001Signers = await getSignersForCompany(companyId, true);
+      await addSignatureFooter(doc, pesvIso39001Signers, true);
+
+      doc.end();
+    } catch (error: any) {
+      handlePdfError(error, res, 'evaluaciones-pesv-iso39001-pdf');
     }
   });
 

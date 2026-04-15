@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Check, X, MinusCircle, RefreshCcw, FileText, Car, ClipboardList, Hammer, CheckSquare, AlertCircle, ClipboardCheck, AlertTriangle, GraduationCap, ExternalLink, Users, Stethoscope, Wrench, Settings, BarChart3, Activity, Siren, AlertOctagon, LucideIcon, Sparkles, BookOpen, Wand2, CheckCircle2, FileCheck, Lock, Upload, Trash2, Loader2, Paperclip, CheckCircle, Circle } from "lucide-react";
+import { ArrowLeft, Save, Check, X, MinusCircle, RefreshCcw, FileText, Car, ClipboardList, Hammer, CheckSquare, AlertCircle, ClipboardCheck, AlertTriangle, GraduationCap, ExternalLink, Users, Stethoscope, Wrench, Settings, BarChart3, Activity, Siren, AlertOctagon, LucideIcon, Sparkles, BookOpen, Wand2, CheckCircle2, FileCheck, Lock, Upload, Trash2, Loader2, Paperclip, CheckCircle, Circle, Shield } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -933,6 +933,42 @@ function DetalleEvaluacionPesvInner() {
   const pasos = getPasosParaNivel();
   const pasosFiltrados = pasos.filter(paso => paso.fase === selectedFase);
 
+  const handleDownloadIso39001Report = async () => {
+    try {
+      const response = await fetch(`/api/evaluaciones-pesv/${id}/pdf-iso39001`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        const contentType = response.headers.get('content-type');
+        if (contentType?.includes('application/json')) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al generar reporte ISO 39001');
+        }
+        throw new Error('Error al generar reporte ISO 39001');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Reporte-ISO39001-PESV-${evaluacion?.anio || new Date().getFullYear()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast({
+        title: "Reporte ISO 39001:2012 generado",
+        description: "El reporte de cumplimiento Road Traffic Safety está listo para compartir con clientes internacionales.",
+        className: "bg-green-50 border-green-200",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const recalcularMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", `/api/evaluaciones-pesv/${id}/recalcular`, {});
@@ -1158,6 +1194,15 @@ function DetalleEvaluacionPesvInner() {
           >
             <RefreshCcw className={`h-4 w-4 mr-2 ${recalcularMutation.isPending ? 'animate-spin' : ''}`} />
             Recalcular Puntajes
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleDownloadIso39001Report}
+            data-testid="button-export-iso39001"
+            className="border-orange-300 text-orange-700 dark:border-orange-600 dark:text-orange-400"
+          >
+            <Shield className="h-4 w-4 mr-2" />
+            PDF ISO 39001:2012
           </Button>
           <Button 
             variant="default" 

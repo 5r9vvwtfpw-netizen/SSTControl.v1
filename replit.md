@@ -119,14 +119,22 @@ El sistema usa **versionado semántico (MAJOR.MINOR.PATCH)**. La versión se mue
   - Botón "PDF ISO 45001:2018" en evaluaciones SST → genera reporte profesional organizado por capítulos ISO
   - Endpoint `GET /api/evaluaciones-sst/:id/pdf-iso45001` con portada corporativa, tabla resumen por capítulo, detalle por cláusula, indicadores de cumplimiento y declaración de alineación normativa
 
+#### v3.7.0 — 15 de Abril 2026
+**Nuevas funcionalidades:**
+- **ISO 39001:2012 — Módulo de alineación vial internacional completo:**
+  - `shared/iso39001-mapping.ts`: Mapeo completo 24 pasos PESV (P01-A02) ↔ cláusulas ISO 39001:2012 (§4.x a §10.x)
+  - Botón "PDF ISO 39001:2012" (naranja) en evaluaciones PESV → genera reporte profesional de Road Traffic Safety
+  - Endpoint `GET /api/evaluaciones-pesv/:id/pdf-iso39001` con portada corporativa naranja, tabla resumen por capítulo, detalle por cláusula con estado CUMPLE/NO CUMPLE/N/A/PENDIENTE, declaración de alineación normativa y bloque de firmas LSO (§5.3 ISO 39001 requiere autorización de alta dirección)
+  - Usa tabla `respuestas_pasos_pesv` (campo `pasoId` + `cumple` + `noAplica`) para datos reales de evaluación
+
 ### Cómo actualizar la versión
 Editar **una sola línea** en `client/src/components/Footer.tsx`:
 ```typescript
 // Hay DOS líneas (Footer y FooterMinimal), actualizar ambas:
-<span>© 2026 SST Colombia | Registro DNDA 13-197-177 | v3.6.0</span>
-<span>© 2026 SST Colombia | DNDA 13-197-177 | v3.6.0</span>
+<span>© 2026 SST Colombia | Registro DNDA 13-197-177 | v3.7.0</span>
+<span>© 2026 SST Colombia | DNDA 13-197-177 | v3.7.0</span>
 ```
-Cambiar `v3.6.0` por la nueva versión en ambas líneas.
+Cambiar `v3.7.0` por la nueva versión en ambas líneas.
 
 ---
 
