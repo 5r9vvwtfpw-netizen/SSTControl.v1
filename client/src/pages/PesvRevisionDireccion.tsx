@@ -217,12 +217,12 @@ export default function PesvRevisionDireccion() {
       <div className="flex items-center gap-2 flex-wrap mb-4">
         <HelpVideoButton customRoute="/pesv/revision-direccion" testId="button-help-video-pesv-revision" />
         <Button
-          variant="ghost"
-          size="icon"
+          variant="outline"
           onClick={() => handleDownloadPdf(`/api/evaluaciones-pesv/${evaluacionId}/pdf`, `evaluacion-pesv-${evaluacionId}.pdf`)}
           data-testid="button-download-evaluation-pdf"
         >
-          <FileDown className="h-4 w-4" />
+          <FileDown className="h-4 w-4 mr-2" />
+          Descargar PDF Evaluación PESV
         </Button>
       </div>
 
