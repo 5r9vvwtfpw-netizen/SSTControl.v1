@@ -173,12 +173,12 @@ export default function PesvSiniestrosEvaluacion() {
     const variants: Record<string, "default" | "secondary" | "destructive"> = {
       "solo-danos": "secondary",
       "con-heridos": "default",
-      "con-fallecidos": "destructive",
+      "mortal": "destructive",
     };
     const labels: Record<string, string> = {
       "solo-danos": "Solo Daños",
       "con-heridos": "Con Heridos",
-      "con-fallecidos": "Con Fallecidos",
+      "mortal": "Con Fallecidos",
     };
     return <Badge variant={variants[severity] || "secondary"}>{labels[severity] || severity}</Badge>;
   };
@@ -429,7 +429,7 @@ export default function PesvSiniestrosEvaluacion() {
                       <SelectContent>
                         <SelectItem value="solo-danos">Solo Daños</SelectItem>
                         <SelectItem value="con-heridos">Con Heridos</SelectItem>
-                        <SelectItem value="con-fallecidos">Con Fallecidos</SelectItem>
+                        <SelectItem value="mortal">Con Fallecidos</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
