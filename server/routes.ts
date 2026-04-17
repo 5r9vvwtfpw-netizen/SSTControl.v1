@@ -49051,7 +49051,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const results = await db.select()
         .from(schema.auditoriasPesv)
         .where(eq(schema.auditoriasPesv.companyId, effectiveCompanyId))
-        .orderBy(desc(schema.auditoriasPesv.fechaAuditoria));
+        .orderBy(desc(schema.auditoriasPesv.fechaProgramada));
       
       res.json(results);
     } catch (error: any) {
@@ -49238,6 +49238,261 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // ============================================================================
+
+  // GET /api/auditorias-pesv/:id/pdf - Generate PDF report for PESV audit
+  app.get("/api/auditorias-pesv/:id/pdf", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
+      // Get audit data
+      const [audit] = await db.select()
+        .from(schema.auditoriasPesv)
+        .where(and(
+          eq(schema.auditoriasPesv.id, req.params.id),
+          eq(schema.auditoriasPesv.companyId, effectiveCompanyId)
+        ));
+
+      if (!audit) {
+        return res.status(404).json({ error: "Auditoría no encontrada" });
+      }
+
+      // Get hallazgos
+      const hallazgos = await db.select()
+        .from(schema.hallazgosAuditoriaPesv)
+        .where(eq(schema.hallazgosAuditoriaPesv.auditoriaId, req.params.id))
+        .orderBy(schema.hallazgosAuditoriaPesv.codigo);
+
+      // Get company data
+      const [company] = await db.select().from(schema.companies).where(eq(companies.id, effectiveCompanyId));
+      const logoBuffer = await loadCompanyLogo(effectiveCompanyId);
+      const signers = await getSignersForCompany(effectiveCompanyId, true);
+
+      // Create PDF
+      const doc = new PDFDocument({ size: 'LETTER', margin: 40 });
+
+      // Trial watermark
+      const pdf_sub = await storage.getSubscriptionByCompany(effectiveCompanyId);
+      const pdf_trial = getTrialStatus(pdf_sub?.status || 'trial', pdf_sub?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf_trial.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="auditoria-pesv-${audit.codigo || audit.id}.pdf"`);
+      doc.pipe(res);
+
+      // Standard header
+      const margin = 40;
+      const pageWidth = doc.page.width;
+      let currentY = await addStandardHeader({
+        doc,
+        company: { id: effectiveCompanyId, name: company?.name || 'N/A', nit: company?.nit || 'N/A' },
+        documentTitle: 'AUDITORÍA PESV — INFORME DE RESULTADOS',
+        documentCode: audit.codigo || `AUD-PESV-${new Date().getFullYear()}`,
+        version: '1.0',
+        date: audit.fechaEjecucion ? new Date(audit.fechaEjecucion) : new Date(),
+        logoBuffer,
+      });
+
+      doc.y = currentY + 8;
+      doc.moveTo(margin, doc.y).lineTo(pageWidth - margin, doc.y).stroke('#cccccc');
+      doc.moveDown(0.5);
+
+      // ── Datos generales de la auditoría ──
+      const navyBlue = '#1e3a5f';
+      doc.fillColor(navyBlue).fontSize(11).font('Helvetica-Bold')
+        .text('1. DATOS GENERALES', margin, doc.y);
+      doc.moveDown(0.4);
+
+      const tipoMap: Record<string, string> = { interna: 'Interna', externa: 'Externa' };
+      const estadoMap: Record<string, string> = {
+        programada: 'Programada', en_ejecucion: 'En Ejecución',
+        completada: 'Completada', cancelada: 'Cancelada',
+      };
+
+      const fmt = (d: string | null | undefined) =>
+        d ? new Date(d).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A';
+
+      const infoRows = [
+        ['Código', audit.codigo || 'N/A'],
+        ['Título', audit.titulo || 'N/A'],
+        ['Tipo', tipoMap[audit.tipo] || audit.tipo || 'N/A'],
+        ['Estado', estadoMap[audit.estado] || audit.estado || 'N/A'],
+        ['Fecha Programada', fmt(audit.fechaProgramada)],
+        ['Fecha Ejecución', fmt(audit.fechaEjecucion)],
+        ['Equipo Auditor', audit.equipoAuditor || 'N/A'],
+      ];
+
+      doc.fillColor('#000000').font('Helvetica').fontSize(9);
+      for (const [label, value] of infoRows) {
+        const rowY = doc.y;
+        doc.font('Helvetica-Bold').fillColor('#333333').text(`${label}: `, margin, rowY, { continued: true });
+        doc.font('Helvetica').fillColor('#000000').text(value);
+        doc.moveDown(0.3);
+      }
+
+      // Alcance y criterios
+      if (audit.alcance) {
+        doc.moveDown(0.3);
+        doc.font('Helvetica-Bold').fillColor('#333333').text('Alcance: ', margin, doc.y, { continued: true });
+        doc.font('Helvetica').fillColor('#000000').text(audit.alcance, { width: pageWidth - margin * 2 - 60 });
+        doc.moveDown(0.3);
+      }
+      if (audit.criterios) {
+        doc.font('Helvetica-Bold').fillColor('#333333').text('Criterios de Auditoría: ', margin, doc.y, { continued: true });
+        doc.font('Helvetica').fillColor('#000000').text(audit.criterios, { width: pageWidth - margin * 2 - 80 });
+        doc.moveDown(0.3);
+      }
+
+      doc.moveDown(0.5);
+      doc.moveTo(margin, doc.y).lineTo(pageWidth - margin, doc.y).stroke('#cccccc');
+      doc.moveDown(0.5);
+
+      // ── Resumen de hallazgos ──
+      doc.fillColor(navyBlue).fontSize(11).font('Helvetica-Bold')
+        .text('2. RESUMEN DE HALLAZGOS', margin, doc.y);
+      doc.moveDown(0.5);
+
+      const totalHallazgos = (audit.hallazgosConformidades || 0) +
+        (audit.hallazgosNoConformidadesMenores || 0) +
+        (audit.hallazgosNoConformidadesMayores || 0) +
+        (audit.hallazgosObservaciones || 0) +
+        (audit.hallazgosOportunidadesMejora || 0);
+
+      const summaryItems = [
+        ['Conformidades', audit.hallazgosConformidades || 0, '#16a34a'],
+        ['No Conformidades Menores', audit.hallazgosNoConformidadesMenores || 0, '#d97706'],
+        ['No Conformidades Mayores', audit.hallazgosNoConformidadesMayores || 0, '#dc2626'],
+        ['Observaciones', audit.hallazgosObservaciones || 0, '#2563eb'],
+        ['Oportunidades de Mejora', audit.hallazgosOportunidadesMejora || 0, '#7c3aed'],
+      ];
+
+      doc.fillColor('#000000').font('Helvetica').fontSize(9);
+      const colLabel = margin;
+      const colCount = margin + 250;
+      const colCumpl = margin + 310;
+
+      // Header row
+      doc.fillColor('#ffffff').rect(colLabel, doc.y, pageWidth - margin * 2, 16).fill(navyBlue);
+      const headerY = doc.y + 4;
+      doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(8)
+        .text('Tipo de Hallazgo', colLabel + 4, headerY)
+        .text('Cantidad', colCount, headerY)
+        .text('% del Total', colCumpl, headerY);
+      doc.moveDown(1.2);
+
+      let rowBg = false;
+      for (const [label, count, color] of summaryItems) {
+        const rowY2 = doc.y;
+        if (rowBg) {
+          doc.fillColor('#f8f9fa').rect(colLabel, rowY2 - 2, pageWidth - margin * 2, 14).fill('#f8f9fa');
+        }
+        rowBg = !rowBg;
+        const pct = totalHallazgos > 0 ? ((count as number / totalHallazgos) * 100).toFixed(1) : '0.0';
+        doc.fillColor(color as string).font('Helvetica-Bold').fontSize(8)
+          .text('●', colLabel + 4, rowY2, { continued: true });
+        doc.fillColor('#000000').font('Helvetica').text(` ${label}`, { continued: false });
+        doc.text(String(count), colCount, rowY2);
+        doc.text(`${pct}%`, colCumpl, rowY2);
+        doc.moveDown(0.5);
+      }
+
+      // Total row
+      doc.fillColor('#000000').font('Helvetica-Bold').fontSize(9)
+        .text('TOTAL HALLAZGOS', colLabel, doc.y)
+        .text(String(totalHallazgos), colCount, doc.y - 12);
+      doc.moveDown(0.8);
+
+      // ── Detalle de hallazgos ──
+      if (hallazgos.length > 0) {
+        doc.moveTo(margin, doc.y).lineTo(pageWidth - margin, doc.y).stroke('#cccccc');
+        doc.moveDown(0.5);
+
+        doc.fillColor(navyBlue).fontSize(11).font('Helvetica-Bold')
+          .text('3. DETALLE DE HALLAZGOS', margin, doc.y);
+        doc.moveDown(0.5);
+
+        const tipoHallazgoMap: Record<string, string> = {
+          conformidad: 'Conformidad',
+          nc_menor: 'NC Menor',
+          nc_mayor: 'NC Mayor',
+          observacion: 'Observación',
+          oportunidad_mejora: 'Oportunidad de Mejora',
+        };
+
+        doc.fillColor('#000000').font('Helvetica').fontSize(9);
+
+        for (const h of hallazgos) {
+          checkPageSpace(doc, 80);
+
+          const hY = doc.y;
+          doc.fillColor('#f1f5f9').rect(margin, hY - 2, pageWidth - margin * 2, 14).fill('#f1f5f9');
+          doc.fillColor(navyBlue).font('Helvetica-Bold').fontSize(9)
+            .text(`${h.codigo} — ${tipoHallazgoMap[h.tipo] || h.tipo}`, margin + 4, hY);
+          if (h.clausulaReferencia) {
+            doc.fillColor('#555555').font('Helvetica').fontSize(8)
+              .text(`Cláusula: ${h.clausulaReferencia}`, pageWidth - margin - 120, hY);
+          }
+          doc.moveDown(0.3);
+
+          doc.fillColor('#000000').font('Helvetica').fontSize(8)
+            .text(h.descripcion || 'Sin descripción', margin + 4, doc.y, { width: pageWidth - margin * 2 - 8 });
+          doc.moveDown(0.3);
+
+          if (h.evidencia) {
+            doc.fillColor('#666666').font('Helvetica-Oblique').fontSize(7.5)
+              .text(`Evidencia: ${h.evidencia}`, margin + 4, doc.y, { width: pageWidth - margin * 2 - 8 });
+            doc.moveDown(0.2);
+          }
+
+          if (h.requiereAccion && h.accionPropuesta) {
+            doc.fillColor('#b45309').font('Helvetica-Bold').fontSize(7.5)
+              .text(`Acción propuesta: `, margin + 4, doc.y, { continued: true });
+            doc.font('Helvetica').text(h.accionPropuesta, { width: pageWidth - margin * 2 - 80 });
+            doc.moveDown(0.2);
+          }
+
+          doc.moveDown(0.5);
+          doc.moveTo(margin + 4, doc.y).lineTo(pageWidth - margin - 4, doc.y).stroke('#e2e8f0');
+          doc.moveDown(0.4);
+        }
+      }
+
+      // ── Conclusiones y recomendaciones ──
+      if (audit.conclusiones || audit.recomendaciones) {
+        checkPageSpace(doc, 80);
+        doc.moveTo(margin, doc.y).lineTo(pageWidth - margin, doc.y).stroke('#cccccc');
+        doc.moveDown(0.5);
+
+        const sectionNum = hallazgos.length > 0 ? '4' : '3';
+        doc.fillColor(navyBlue).fontSize(11).font('Helvetica-Bold')
+          .text(`${sectionNum}. CONCLUSIONES Y RECOMENDACIONES`, margin, doc.y);
+        doc.moveDown(0.5);
+
+        if (audit.conclusiones) {
+          doc.fillColor('#000000').font('Helvetica-Bold').fontSize(9).text('Conclusiones:', margin, doc.y);
+          doc.moveDown(0.2);
+          doc.font('Helvetica').fontSize(9).text(audit.conclusiones, margin, doc.y, { width: pageWidth - margin * 2 });
+          doc.moveDown(0.5);
+        }
+        if (audit.recomendaciones) {
+          doc.font('Helvetica-Bold').fontSize(9).text('Recomendaciones:', margin, doc.y);
+          doc.moveDown(0.2);
+          doc.font('Helvetica').fontSize(9).text(audit.recomendaciones, margin, doc.y, { width: pageWidth - margin * 2 });
+          doc.moveDown(0.5);
+        }
+      }
+
+      // Footer with signers
+      await addSignatureFooter(doc, signers, true);
+
+      doc.end();
+    } catch (error: any) {
+      handlePdfError(error, res, 'auditoria-pesv-pdf');
+    }
+  });
+
   // TRAZABILIDAD OBJETIVOS-ESTÁNDARES SST
   // Vinculación entre Objetivos SST (Decreto 1072/2015) y Estándares (Resolución 0312/2019)
   // Principio Add-Only: Solo nuevas rutas, sin modificar existentes
