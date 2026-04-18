@@ -46,6 +46,7 @@ import { handlePromotionsWebhook } from "../plugins/promotions/webhook-handler";
 import { landingPageRouter } from "../plugins/landing-page-integration";
 import { demoEngineRouter, initializeDemoRooms, startDemoHousekeepingCron, isDemoEnabled } from "../plugins/demo-engine";
 import { accountingService } from "./services/accounting-integration";
+import { emailService } from "./services/email";
 
 
 const app = express();
@@ -204,6 +205,20 @@ app.post(
                     stripeCustomerId: session.customer,
                     attempt 
                   }, 'Subscription activated after successful payment');
+
+                  // Notificar al administrador sobre pago confirmado
+                  try {
+                    const company = await storage.getCompany(companyId);
+                    emailService.sendAdminPaymentNotification({
+                      companyName: company?.name || companyId,
+                      planName: plan?.name,
+                      amount: amountPaid,
+                      currency: 'COP',
+                      companyId,
+                    }).catch((err: any) => logger.error({ err }, '[ADMIN-NOTIFY] Error sending payment notification'));
+                  } catch (notifyErr) {
+                    logger.error({ err: notifyErr }, '[ADMIN-NOTIFY] Error fetching company for payment notification');
+                  }
                   
                   // Notificar a landing page sobre cupón redimido (SST-COLOMBIA-AGENT-INSTRUCTIONS2 Sección 3)
                   const couponCode = session.metadata?.couponCode || session.metadata?.coupon_code;

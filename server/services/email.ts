@@ -825,6 +825,166 @@ export class EmailService {
       return { success: false, error: String(error) };
     }
   }
+
+  /**
+   * Send admin notification when a new company registers
+   */
+  async sendAdminNewCompanyNotification(params: {
+    companyName: string;
+    nit?: string;
+    city?: string;
+    planName?: string;
+    createdAt?: Date;
+  }): Promise<void> {
+    const ADMIN_EMAIL = 'admin@sst-colombia.com';
+    const { companyName, nit, city, planName, createdAt } = params;
+    const fecha = (createdAt || new Date()).toLocaleString('es-CO', {
+      timeZone: 'America/Bogota',
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #1e7e34; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+    .content { background: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px; }
+    .info-box { background: white; padding: 20px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #1e7e34; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .detail-label { font-weight: bold; color: #666; }
+    .button { display: inline-block; background: #1e7e34; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+    .footer { text-align: center; margin-top: 20px; color: #999; font-size: 0.85em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Nueva Empresa Registrada</h1>
+    </div>
+    <div class="content">
+      <p>Se ha registrado una nueva empresa en SST Colombia:</p>
+      <div class="info-box">
+        <div class="detail-row">
+          <span class="detail-label">Empresa:</span>
+          <span>${companyName}</span>
+        </div>
+        ${nit ? `<div class="detail-row"><span class="detail-label">NIT:</span><span>${nit}</span></div>` : ''}
+        ${city ? `<div class="detail-row"><span class="detail-label">Ciudad:</span><span>${city}</span></div>` : ''}
+        ${planName ? `<div class="detail-row"><span class="detail-label">Plan:</span><span>${planName}</span></div>` : ''}
+        <div class="detail-row">
+          <span class="detail-label">Fecha:</span>
+          <span>${fecha}</span>
+        </div>
+      </div>
+      <center>
+        <a href="${APP_URL}/admin-portales" class="button">Ver en Panel Admin</a>
+      </center>
+      <div class="footer">Notificación automática — SST Colombia</div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    try {
+      await resend.emails.send({
+        from: FROM_EMAIL,
+        to: ADMIN_EMAIL,
+        subject: `Nueva empresa registrada: ${companyName}`,
+        html: emailHtml
+      });
+      console.log(`[ADMIN-NOTIFY] New company notification sent for: ${companyName}`);
+    } catch (error) {
+      console.error('[ADMIN-NOTIFY] Error sending new company notification:', error);
+    }
+  }
+
+  /**
+   * Send admin notification when a subscription payment is confirmed
+   */
+  async sendAdminPaymentNotification(params: {
+    companyName: string;
+    planName?: string;
+    amount?: number;
+    currency?: string;
+    companyId?: string;
+  }): Promise<void> {
+    const ADMIN_EMAIL = 'admin@sst-colombia.com';
+    const { companyName, planName, amount, currency, companyId } = params;
+    const fecha = new Date().toLocaleString('es-CO', {
+      timeZone: 'America/Bogota',
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+    const amountStr = amount && currency
+      ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: currency === 'COP' ? 'COP' : 'USD', minimumFractionDigits: 0 }).format(amount)
+      : 'N/A';
+
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #155724; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+    .content { background: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px; }
+    .info-box { background: white; padding: 20px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #28a745; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .detail-label { font-weight: bold; color: #666; }
+    .amount { font-size: 1.3em; font-weight: bold; color: #155724; }
+    .button { display: inline-block; background: #155724; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+    .footer { text-align: center; margin-top: 20px; color: #999; font-size: 0.85em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Pago de Suscripcion Confirmado</h1>
+    </div>
+    <div class="content">
+      <p>Se ha confirmado un pago de suscripcion en SST Colombia:</p>
+      <div class="info-box">
+        <div class="detail-row">
+          <span class="detail-label">Empresa:</span>
+          <span><strong>${companyName}</strong></span>
+        </div>
+        ${planName ? `<div class="detail-row"><span class="detail-label">Plan:</span><span>${planName}</span></div>` : ''}
+        <div class="detail-row">
+          <span class="detail-label">Monto:</span>
+          <span class="amount">${amountStr}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Fecha:</span>
+          <span>${fecha}</span>
+        </div>
+      </div>
+      <center>
+        <a href="${APP_URL}/dashboard-facturacion" class="button">Ver en Facturacion</a>
+      </center>
+      <div class="footer">Notificacion automatica — SST Colombia</div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    try {
+      await resend.emails.send({
+        from: FROM_EMAIL,
+        to: ADMIN_EMAIL,
+        subject: `Pago confirmado: ${companyName}${planName ? ` — Plan ${planName}` : ''}`,
+        html: emailHtml
+      });
+      console.log(`[ADMIN-NOTIFY] Payment notification sent for company: ${companyName}`);
+    } catch (error) {
+      console.error('[ADMIN-NOTIFY] Error sending payment notification:', error);
+    }
+  }
 }
 
 export const emailService = new EmailService();

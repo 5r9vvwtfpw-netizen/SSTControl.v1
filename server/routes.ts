@@ -2356,6 +2356,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create the company
       const company = await storage.createCompany(companyData);
       console.log(`✅ Empresa creada por superusuario: ${company.name} (${company.id})`);
+
+      // Notificar al administrador sobre nueva empresa registrada
+      emailService.sendAdminNewCompanyNotification({
+        companyName: company.name,
+        nit: (company as any).nit || undefined,
+        city: (company as any).city || undefined,
+        planName: req.body.planId || undefined,
+        createdAt: new Date(),
+      }).catch((err: any) => console.error('[ADMIN-NOTIFY] Error notifying admin of new company:', err));
       
       // Associate company to user (keep role as superusuario)
       await storage.updateUser(user.id, {
@@ -2655,6 +2664,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           (req.user as any).companyId = company.id;
         }
       }
+
+      // Notificar al administrador sobre nueva empresa registrada
+      emailService.sendAdminNewCompanyNotification({
+        companyName: company.name,
+        nit: (company as any).nit || undefined,
+        city: (company as any).city || undefined,
+        createdAt: new Date(),
+      }).catch((err: any) => console.error('[ADMIN-NOTIFY] Error notifying admin of new company:', err));
       
       res.status(201).json(company);
     } catch (error: any) {
