@@ -42,7 +42,7 @@ Acceso desde el ícono de engranaje en la barra superior.
 ### Gestión General
 - **Empresas** → /empresas: Lista todas las empresas registradas. Desde aquí puedes ver detalles, editar datos, ver trabajadores de cada empresa. El botón "Crear Empresa" inicia un asistente de 2 pasos.
 - **Usuarios** → /usuarios: Gestión de todos los usuarios del sistema. Crear, editar, desactivar usuarios. Asignar roles y empresas.
-- **Portal de Empleados** → /portal-empleados: Vista del portal que ven los trabajadores. Incluye información personal, capacitaciones asignadas, entrega de EPP, documentos.
+- **Portal de Empleados** → /portal-empleados: Panel administrativo de gestión del portal de trabajadores. Tiene 3 pestañas: (1) **Vista General**: estadísticas de acceso y últimos reportes enviados por empleados; (2) **Gestión de Accesos**: crear o revocar acceso al portal para trabajadores que tengan email registrado (uno por uno o todos en bloque); (3) **Historial de Accesos**: log de cuándo cada trabajador ingresó al portal. El portal del trabajador tiene 6 secciones: Mi Cuenta, Formación, Comunicación, Participación, Salud y PESV.
 
 ### Administración Proveedor
 - **Panel de Facturación** → /dashboard-facturacion: Dashboard con métricas de facturación, ingresos, suscripciones activas.
@@ -91,20 +91,20 @@ Corresponde a la fase de Implementación del ciclo PHVA.
 - **Panel HACER - Controles** → /dashboard-hacer: Dashboard con métricas de ejecución: capacitaciones realizadas, inspecciones completadas, EPP entregados, etc.
 
 ### Módulos principales de Hacer
-- **Capacitaciones** → /capacitaciones: Programar, registrar y hacer seguimiento de capacitaciones SST. Corresponde al **Estándar 2.6.1** (Inducción y Reinducción en SST) y **Estándar 2.6.2** (Capacitación, Entrenamiento y Formación). Para diligenciar: desde la Evaluación Inicial buscar el estándar 2.6.1 o 2.6.2 → clic en el módulo → clic "Nueva Capacitación" → completar: tema, tipo (inducción / reinducción / capacitación / entrenamiento), fecha, responsable, trabajadores asistentes, duración, evaluación de efectividad → Guardar. Los certificados se generan automáticamente.
+- **Capacitaciones** → /capacitaciones: Programar, registrar y hacer seguimiento de capacitaciones SST. Corresponde al **Estándar 2.6.1** (Inducción y Reinducción en SST) y **Estándar 2.6.2** (Capacitación, Entrenamiento y Formación). Para diligenciar: desde la Evaluación Inicial buscar el estándar 2.6.1 o 2.6.2 → clic en el módulo → clic "Nueva Capacitación" → completar: tema, tipo (inducción / reinducción / capacitación / entrenamiento), fecha, responsable, trabajadores asistentes, duración, evaluación de efectividad → Guardar. Los certificados se generan automáticamente. **Conexión Portal de Empleados**: Los trabajadores ven sus capacitaciones asignadas en Portal → Formación → "Capacitaciones". Ven las capacitaciones pendientes y el historial de las que ya recibieron.
 - **Programa de Capacitación Anual** → /programa-capacitacion-anual: Cronograma anual de capacitaciones planificadas. Corresponde al **Estándar 2.6.3** (Programa de Capacitación anual).
 - **Curso 50 Horas** → /curso-50-horas: Registro del curso virtual de 50 horas del SG-SST. Corresponde al **Estándar 1.2.3** (Responsables del SG-SST con curso virtual de 50 horas). Para diligenciar: buscar el estándar 1.2.3 → registrar nombre del responsable, institución que lo impartió, fecha de realización y número de certificado.
-- **Registros de Inducción** → /registros-induccion: Control de inducciones y reinducciones de trabajadores. Corresponde al **Estándar 2.6.1**. Para diligenciar: clic "Nuevo Registro" → seleccionar trabajador → tipo (inducción / reinducción) → temas cubiertos → fecha → firma del trabajador.
+- **Registros de Inducción** → /registros-induccion: Control de inducciones y reinducciones de trabajadores. Corresponde al **Estándar 2.6.1**. Para diligenciar: clic "Nuevo Registro" → seleccionar trabajador → tipo (inducción / reinducción) → temas cubiertos → fecha → firma del trabajador. **Conexión Portal de Empleados**: Los trabajadores pueden ver el historial completo de sus propias inducciones en Portal → Formación → "Mis Inducciones" (vista de solo lectura). Además, el módulo "Inducciones Virtuales" del portal permite a los trabajadores completar contenido de inducción en línea con cuestionarios y materiales interactivos directamente desde su portal.
 - **Configuración de Inducción** → /configuracion-induccion: Personalizar el contenido de la inducción virtual.
 - **Inspecciones** → /inspecciones: Registrar inspecciones de seguridad (locativas, equipos, EPP, etc.). Corresponde al **Estándar 2.10.1** (Inspecciones sistemáticas a las instalaciones, maquinaria o equipos con participación del COPASST). Para diligenciar: desde el estándar 2.10.1 → clic en el módulo → clic "Nueva Inspección" → seleccionar tipo (locativa / equipos / EPP / eléctrica / etc.) → área inspeccionada → hallazgos encontrados → clasificación del hallazgo (inmediato / a corto plazo / a largo plazo) → acciones correctivas con responsable y fecha → Guardar.
 - **Entrega de EPP** → /entrega-epp: Registro de entrega de Elementos de Protección Personal a trabajadores. Corresponde al **Estándar 2.7.1** (Selección y dotación de EPP). Para diligenciar: desde el estándar 2.7.1 → clic en el módulo → clic "Nueva Entrega" → seleccionar trabajador → EPP entregados (tipo, referencia, cantidad) → fecha de entrega → firma de recibido del trabajador → Guardar.
 - **Accidentes** → /accidentes: Reporte de accidentes e incidentes laborales. Corresponde a los **Estándares 3.2.1** (Reporte de AT e Incidente de Trabajo) y **3.2.3** (Registro y análisis estadístico de AT). Para diligenciar: desde la Evaluación Inicial buscar el estándar 3.2.1 → clic en el botón del módulo → clic "Nuevo Accidente" → completar: tipo de evento (Accidente de Trabajo / Incidente), trabajador afectado, fecha y hora, lugar, descripción detallada del accidente, parte del cuerpo afectada, tipo de lesión, días de incapacidad, severidad (Solo daños / Con heridos / Mortal) y medidas inmediatas tomadas → Guardar. El sistema actualiza automáticamente el indicador de accidentalidad.
 - **Investigación de Accidentes** → /investigacion-accidentes: Investigación detallada de accidentes con árbol de causas. Corresponde al **Estándar 3.2.2** (Investigación de AT e Incidente de Trabajo). Para diligenciar: desde la Evaluación Inicial buscar el estándar 3.2.2 → clic en el módulo → seleccionar el accidente a investigar → completar: descripción del evento, causas inmediatas (actos y condiciones inseguras), causas básicas (factores personales y de trabajo), causa raíz, medidas correctivas y preventivas con responsable y fecha → Guardar. Plazo legal: AT graves o mortales dentro de los 15 días hábiles siguientes.
 - **Árbol de Causas** → /arbol-causas: Metodología de análisis causal de accidentes. Vinculado al estándar 3.2.2.
-- **Exámenes Médicos** → /examenes-medicos: Gestión de exámenes médicos ocupacionales (ingreso, periódicos, egreso). Requiere suscripción.
+- **Exámenes Médicos** → /examenes-medicos: Gestión de exámenes médicos ocupacionales (ingreso, periódicos, egreso). Requiere suscripción. **Conexión Portal de Empleados**: Los trabajadores pueden ver sus propios exámenes médicos en Portal → Salud → "Mis Exámenes Médicos". Ven los exámenes programados (pendientes de realizar) y el historial de exámenes completados con su concepto de aptitud. El trabajador puede confirmar que leyó el resultado con un clic.
 - **Trabajadores Alto Riesgo** → /trabajadores-alto-riesgo: Identificación y seguimiento de trabajadores en actividades de alto riesgo.
 - **Mediciones Ambientales** → /mediciones-ambientales: Registro de mediciones de ruido, iluminación, temperatura, etc. Requiere suscripción.
-- **Conservación Auditiva** → /conservacion-auditiva: Programa de conservación auditiva.
+- **Conservación Auditiva** → /conservacion-auditiva: Programa de conservación auditiva. Incluye el registro de audiometrías por trabajador. **Conexión Portal de Empleados**: Los trabajadores pueden ver sus propios resultados de audiometría en Portal → Salud → "Mis Audiometrías". Ven las audiometrías programadas (pendientes) y el historial de las realizadas con su clasificación auditiva.
 - **Sustancias Químicas** → /sustancias-quimicas: Inventario y manejo seguro de sustancias químicas. Requiere suscripción.
 - **Vigilancia Epidemiológica** → /vigilancia-epidemiologica: Sistemas de vigilancia epidemiológica.
 - **Actividades de Promoción y Prevención** → /actividades-promocion-prevencion: Registro de actividades de bienestar y prevención.
@@ -115,7 +115,7 @@ Corresponde a la fase de Implementación del ciclo PHVA.
 - **Evaluación de Proveedores** → /evaluacion-proveedores: Evaluación de contratistas y proveedores en SST. Requiere suscripción.
 - **Gestión de Cambios** → /gestion-cambios: Gestión del cambio organizacional y su impacto en SST. Requiere suscripción.
 - **Adquisiciones SST** → /adquisiciones-sst: Procedimiento de adquisiciones con criterios SST. Requiere suscripción.
-- **Comunicación SST** → /comunicacion-sst: Plan de comunicaciones del SG-SST. Requiere suscripción.
+- **Comunicación SST** → /comunicacion-sst: Plan de comunicaciones del SG-SST y canal bidireccional con empleados. Requiere suscripción. Tiene dos flujos: (A) **Admin → Trabajadores**: El admin crea comunicaciones (memorandos, circulares, políticas, alertas de seguridad) con destinatarios y canal (Portal de Empleados, cartelera, reunión, email). Los trabajadores las ven en el Portal → Comunicación → "Comunicaciones SST" y confirman su lectura con un clic. El sistema registra la fecha de lectura de cada trabajador. (B) **Trabajadores → Admin** (canal de retorno): Los trabajadores envían reportes de peligros, sugerencias, quejas o consultas desde el Portal → Comunicación → "Reportar Inquietud, Peligro o Sugerencia". El admin los ve en /portal-empleados → pestaña "Reportes de Empleados" y puede responder y marcar como resuelto.
 - **Planes de Trabajo Anual** → /planes-trabajo-anual: Plan de trabajo anual del SG-SST con actividades y cronograma.
 
 ### COPASST / Vigía
@@ -289,14 +289,37 @@ Acceso de solo consulta: Ve trabajadores, accidentes, capacitaciones, inspeccion
 Ve: Todo en modo consulta (similar a jefe_personal), más la capacidad de crear y editar evaluaciones SST y auditorías PESV. Enfocado en verificación de cumplimiento.
 
 ### Trabajador
-Solo ve el **Portal de Empleados** → /portal-empleados. Desde allí puede:
-- Ver su información personal
-- Ver sus capacitaciones asignadas
-- Ver historial de entrega de EPP
-- Ver su contrato y exámenes médicos propios
-- Crear reportes/solicitudes
-- Acceder a la inducción virtual
-NO ve las pestañas PHVA ni ningún módulo de gestión.
+Solo ve el **Portal de Empleados** → /portal-empleados. El portal tiene 6 secciones con los siguientes módulos:
+
+**Mi Cuenta:**
+- **Mi Contrato**: Ver su contrato laboral activo vigente
+- **Mi Perfil**: Ver y actualizar su información personal
+- **Mi Foto de Carnet**: Subir o actualizar su foto de carnet
+- **Cambiar Contraseña**: Cambiar la contraseña de acceso al portal
+
+**Formación:**
+- **Capacitaciones**: Ver capacitaciones SST asignadas (pendientes e historial)
+- **Mis Inducciones**: Ver el historial de inducciones y reinducciones recibidas
+- **Inducciones Virtuales**: Completar módulos de inducción virtual con cuestionarios y materiales en línea
+
+**Comunicación:**
+- **Comunicaciones SST**: Ver comunicados, circulares y alertas emitidas por el área SST. Confirmar lectura con un clic (el sistema registra fecha de confirmación)
+- **Reportar Inquietud, Peligro o Sugerencia**: Enviar reportes al área SST con categoría (peligro / sugerencia / queja / consulta), prioridad, asunto, descripción y ubicación. Puede marcar el reporte como anónimo
+- **Mis Reportes**: Ver el historial de todos los reportes enviados y las respuestas del equipo SST
+
+**Participación:**
+- **Elecciones COPASST**: Durante el proceso electoral activo (fases: convocatoria → inscripción → votación → escrutinio), el trabajador puede postularse como candidato e inscribirse, y posteriormente votar por sus candidatos preferidos para elegir los representantes de los trabajadores al COPASST
+- **Elecciones Convivencia**: Igual que COPASST pero para el Comité de Convivencia Laboral. Postularse en fase de inscripción y votar en fase de votación
+
+**Salud:**
+- **Mis Exámenes Médicos**: Ver exámenes médicos programados (pendientes de realizar) e historial de realizados con su concepto de aptitud. Puede confirmar lectura del resultado
+- **Mis Audiometrías**: Ver audiometrías programadas e historial de realizadas con clasificación auditiva
+
+**PESV:**
+- **Comité de Seguridad Vial**: Ver información sobre el Comité de Seguridad Vial de la empresa y sus actividades
+- **Capacitaciones PESV**: Ver capacitaciones de seguridad vial pendientes e historial
+
+NO ve las pestañas PHVA ni ningún módulo de gestión administrativo.
 
 ### Soporte
 Acceso limitado: Solo Dashboard básico para resolver incidencias de usuarios.
