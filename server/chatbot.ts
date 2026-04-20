@@ -158,32 +158,64 @@ Corresponde a la fase de Mejora del ciclo PHVA.
 
 ## MÓDULO PESV (Plan Estratégico de Seguridad Vial)
 Solo disponible si la empresa tiene vehículos (numberOfVehicles > 0). Requiere suscripción.
-Accesible desde la pestaña "PESV" en la barra de navegación.
+Accesible desde la pestaña **"PESV"** en la barra de navegación superior.
 
-El PESV tiene 24 pasos organizados en el ciclo PHVA: Planear (P01-P08), Hacer (H01-H11), Verificar (V01-V03), Actuar (A01-A02).
+El PESV tiene **24 pasos** organizados en el ciclo PHVA: Planear (P01-P08), Hacer (H01-H11), Verificar (V01-V03), Actuar (A01-A02). Se rige por la **Resolución 40595/2022** del Ministerio de Transporte.
 
-### PESV - Módulos globales (accesibles desde menú lateral PESV)
-- **Evaluaciones PESV** → /pesv: Archivo maestro del PESV. Desde aquí se gestionan TODOS los pasos.
-- **Vehículos** → /pesv/vehiculos: Inventario de vehículos. Corresponde al paso **H04 - Gestión de Vehículos Seguros** (ciclo HACER).
-- **Conductores** → /pesv/conductores: Registro de conductores. Corresponde al paso **H01 - Factor Humano / H03 - Control de Documentación** (ciclo HACER).
-- **Siniestros** → /pesv/siniestros: Registro de siniestros viales. Corresponde al paso **V02 - Registro y Análisis de Siniestros** (ciclo VERIFICAR).
-- **Capacitaciones PESV** → /pesv/capacitaciones: Capacitaciones en seguridad vial. Corresponde al paso **H02 - Capacitación en Seguridad Vial** (ciclo HACER).
-- **Inspecciones PESV** → /pesv/inspecciones: Inspecciones preoperacionales. Corresponde al paso **H06 - Inspecciones Preoperacionales** (ciclo HACER).
-- **Mantenimiento Vehicular** → /pesv/mantenimiento: Mantenimiento preventivo/correctivo. Corresponde al paso **H05 - Plan de Mantenimiento de Vehículos** (ciclo HACER).
-- **Monitoreo GPS** → /pesv/monitoreo-gps: Seguimiento GPS y control de velocidad. Corresponde al paso **H07 - Gestión de la Velocidad** (ciclo HACER).
-- **Rutas Seguras** → /pesv/rutas-seguras: Análisis y gestión de rutas. Corresponde al paso **H08 - Gestión de Rutas Seguras** (ciclo HACER).
-- **Fatiga y Somnolencia** → Dentro de Evaluación PESV, paso **H09 - Gestión de Fatiga y Somnolencia** (ciclo HACER, Art. 21 Res. 40595/2022).
-- **Alcohol y Sustancias Psicoactivas** → Dentro de Evaluación PESV, paso **H10 - Gestión de Alcohol y Sustancias Psicoactivas** (ciclo HACER, Art. 22 Res. 40595/2022).
-- **Atención a Víctimas** → Dentro de Evaluación PESV, paso **H11 - Atención a Víctimas de Siniestros Viales** (ciclo HACER, Art. 23 Res. 40595/2022).
-- **Matriz de Riesgos Viales** → /pesv/matriz-riesgos: Evaluación de riesgos viales. Corresponde al paso **P04 - Caracterización y Evaluación del Riesgo Vial** (ciclo PLANEAR).
-- **Indicadores PESV** → /pesv/indicadores: Indicadores de desempeño vial. Corresponde al paso **V01 - Indicadores de Gestión del PESV** (ciclo VERIFICAR).
-- **Comité PESV** → /pesv/comite: Comité de seguridad vial. Corresponde al paso **P01 - Conformación del Equipo de Trabajo** (ciclo PLANEAR).
-- **Liderazgo** → /pesv/liderazgo: Compromiso directivo. Corresponde al paso **P02 - Política de Seguridad Vial** (ciclo PLANEAR).
-- **Contexto Organizacional** → /pesv/contexto-organizacional: Diagnóstico organizacional. Corresponde al paso **P03 - Diagnóstico de la Organización** (ciclo PLANEAR).
-- **Factores de Desempeño** → /pesv/factores-desempeno: Evaluación de factores. Corresponde al paso **P06 - Programas y Planes de Acción** (ciclo PLANEAR).
-- **Mejora Continua PESV** → Dentro de Evaluación PESV, paso **A01 - Acciones de Mejora Continua** (ciclo ACTUAR).
-- **Revisión por la Dirección PESV** → Dentro de Evaluación PESV, paso **A02 - Revisión por la Alta Dirección** (ciclo ACTUAR).
-- **Auditorías PESV** → Dentro de Evaluación PESV, paso **V03 - Auditoría del PESV** (ciclo VERIFICAR).
+### CÓMO INICIAR EL PESV - Flujo obligatorio
+
+**IMPORTANTE**: Al igual que el SG-SST parte de la Evaluación Inicial, el PESV parte de la **Evaluación PESV**. Todos los 24 pasos se gestionan DENTRO de una evaluación activa. No se navega directamente a los módulos desde el menú lateral.
+
+**Paso 1**: Ir a la pestaña **PESV** en la barra superior → seleccionar **"Evaluaciones PESV"** → abre '/pesv/evaluaciones'
+**Paso 2**: Si no hay evaluación, clic **"Nueva Evaluación"** → el sistema crea la evaluación del año en curso y determina el **nivel de complejidad** (Básico / Intermedio / Avanzado) según el número de vehículos y tipo de actividad
+**Paso 3**: Clic en la evaluación → abre el detalle con 4 pestañas: **Planear | Hacer | Verificar | Actuar**
+**Paso 4**: Hacer clic en cada paso (P01, H01, V01, etc.) → se abre un panel lateral con: descripción del paso, estado de cumplimiento, preguntas de verificación, y un botón **"Ir al módulo"** que lleva directamente al módulo correspondiente dentro del contexto de la evaluación
+
+### PESV - Módulos por paso (todos accesibles desde dentro de la Evaluación PESV)
+
+**Fase PLANEAR (P01-P08):**
+- **P01 - Comité de Seguridad Vial** → botón "Ir al módulo" abre '/pesv/evaluacion/:id/comite' — Registro de integrantes del comité, actas de reunión, funciones y responsabilidades
+- **P02 - Política de Seguridad Vial / Liderazgo** → botón abre '/pesv/evaluacion/:id/liderazgo' — Redactar y aprobar la política de seguridad vial, compromisos de la alta dirección
+- **P03 - Diagnóstico / Contexto Organizacional** → botón abre '/pesv/evaluacion/:id/contexto-organizacional' — Diagnóstico de la organización, número de vehículos, rutas, conductores y factores de riesgo iniciales
+- **P04 - Matriz de Riesgos Viales** → botón abre '/pesv/evaluacion/:id/matriz-riesgos' — Identificación y valoración de peligros viales por factor humano, vehículo, infraestructura y condiciones ambientales según metodología GTC 45
+- **P05 - Objetivos e Indicadores** → gestionado desde dentro del panel del paso P05 en la evaluación — Definir metas de reducción de siniestralidad y los indicadores para medirlas
+- **P06 - Programas y Planes / Factores de Desempeño** → botón abre '/pesv/evaluacion/:id/factores-desempeno' — Planes de acción por cada factor de riesgo identificado
+- **P07 - Roles y Responsabilidades** → gestionado desde el panel del paso P07 — Documentar quién hace qué dentro del PESV
+- **P08 - Recursos** → gestionado desde el panel del paso P08 — Presupuesto, equipos y personal asignado al PESV
+
+**Fase HACER (H01-H11):**
+- **H01 - Factor Humano / Conductores** → botón abre '/pesv/evaluacion/:id/conductores' — Registro de conductores: datos personales, categoría de licencia, fecha de vencimiento, exámenes médicos de aptitud para conducción, historial de infracciones
+- **H02 - Capacitación en Seguridad Vial** → botón abre '/pesv/evaluacion/:id/capacitaciones' — Capacitaciones de manejo defensivo, normativa de tránsito, primeros auxilios viales, señalización. Registrar: tema, fecha, asistentes (conductores), horas, evaluación de efectividad
+- **H03 - Documentación de Conductores** → gestionado desde el módulo de Conductores (complementa H01) — Seguimiento de vencimientos de licencias, certificaciones y exámenes. El sistema genera alertas automáticas cuando están próximos a vencer
+- **H04 - Vehículos Seguros** → botón abre '/pesv/evaluacion/:id/vehiculos' — Inventario de vehículos: placa, marca, modelo, año, tipo, SOAT (vencimiento), revisión tecnomecánica (vencimiento), tarjeta de operación. El sistema alerta vencimientos
+- **H05 - Mantenimiento Vehicular** → botón abre '/pesv/evaluacion/:id/mantenimiento' — Planes de mantenimiento preventivo (por kilometraje o tiempo) y registro de mantenimientos correctivos. Registrar: vehículo, tipo, descripción, fecha, kilometraje, taller, costo
+- **H06 - Inspecciones Preoperacionales** → botón abre '/pesv/evaluacion/:id/inspecciones' — Lista de chequeo diaria antes de salir a ruta: frenos, luces, llantas, niveles, documentos, carrocería. El conductor o supervisor completa la lista y firma
+- **H07 - Gestión de la Velocidad / Monitoreo GPS** → botón abre '/pesv/evaluacion/:id/monitoreo-gps' — Registro de eventos de velocidad, seguimiento de rutas, alertas de exceso de velocidad, análisis de comportamiento vial por conductor
+- **H08 - Rutas Seguras** → botón abre '/pesv/evaluacion/:id/rutas-seguras' — Análisis de rutas: origen, destino, distancia, puntos críticos (curvas peligrosas, cruces, zonas escolares), medidas de control por punto crítico, tiempos estimados
+- **H09 - Fatiga y Somnolencia** → botón abre '/pesv/evaluacion/:id/fatiga-somnolencia' — Registros de control de fatiga: jornadas de conducción, pausas activas, tiempos de descanso, programas de vigilancia de somnolencia (Art. 21 Res. 40595/2022). El módulo tiene tabla CRUD de registros de control
+- **H10 - Alcohol y Sustancias Psicoactivas** → botón abre '/pesv/evaluacion/:id/alcohol-sustancias' — Registros de pruebas de alcoholimetría y sustancias psicoactivas realizadas, política de cero tolerancia, programas de prevención (Art. 22 Res. 40595/2022). El módulo tiene tabla CRUD de registros de pruebas
+- **H11 - Atención a Víctimas** → botón abre '/pesv/evaluacion/:id/atencion-victimas' — Protocolo de atención a víctimas de siniestros: directorio de emergencias (números, hospitales, aseguradoras), procedimientos de primeros auxilios, registro de casos atendidos (Art. 23 Res. 40595/2022)
+
+**Fase VERIFICAR (V01-V03):**
+- **V01 - Indicadores de Gestión** → botón abre '/pesv/evaluacion/:id/indicadores' — Indicadores de desempeño vial: tasa de siniestralidad, frecuencia de accidentes, cobertura de capacitaciones, cumplimiento de mantenimiento. Se calculan automáticamente con los datos registrados
+- **V02 - Registro y Análisis de Siniestros** → botón abre '/pesv/evaluacion/:id/siniestros' — Registro de siniestros viales: fecha, ubicación, vehículo involucrado, conductor, tipo de siniestro (colisión / atropello / volcamiento), daños, heridos, causa probable, análisis de causas y acciones correctivas
+- **V03 - Auditorías PESV** → botón abre '/pesv/evaluacion/:id/auditorias' — Auditoría interna del PESV: evaluación del cumplimiento de cada uno de los 24 pasos, hallazgos y no conformidades, plan de acción con responsable y fecha
+
+**Fase ACTUAR (A01-A02):**
+- **A01 - Mejora Continua** → gestionado desde el panel del paso A01 en la evaluación — Acciones preventivas, correctivas y de mejora derivadas de siniestros, auditorías o indicadores. Registrar: descripción, causa raíz, responsable, fecha límite y seguimiento
+- **A02 - Revisión por la Alta Dirección** → gestionado desde el panel del paso A02 — Reunión formal de revisión: análisis de resultados del año, conclusiones de cumplimiento, compromisos de la dirección para el siguiente período
+
+### Cómo funciona el panel de verificación de cada paso
+Al hacer clic en cualquier paso (P01, H04, V02, etc.) dentro de la evaluación:
+1. Se abre un panel lateral con el **nombre y descripción del paso**
+2. Muestra el **estado actual**: No iniciado / En progreso / Cumple / No Cumple / No Aplica
+3. Contiene **preguntas de verificación** específicas (evidencias que debe tener)
+4. Tiene un botón **"Ir al módulo"** → navega al módulo correspondiente donde se registran los datos
+5. Permite **adjuntar evidencias** en PDF o imagen directamente al paso
+6. Al guardar evidencias y marcar el estado, el porcentaje de cumplimiento PESV se actualiza automáticamente
+
+### Porcentaje de cumplimiento PESV
+El sistema calcula automáticamente el cumplimiento general del PESV basado en cuántos de los 24 pasos están en estado "Cumple". Se puede ver en el encabezado de la evaluación. También se puede generar el **PDF ISO 39001:2012** (botón naranja en la evaluación) que muestra el alineamiento de los 24 pasos con las cláusulas ISO 39001.
 
 ## FLUJO PRINCIPAL DEL SISTEMA - TODO PARTE DE LA EVALUACIÓN INICIAL
 
@@ -429,41 +461,6 @@ Los trabajadores se registran desde el menú Planear > Trabajadores. Es el prime
 - **Cómo cambiar de plan**: Vaya a Configuración > Mi Suscripción. Al cambiar datos como número de trabajadores o vehículos, el precio se recalcula automáticamente.
 - **Cómo ver facturas**: En Configuración > Mi Suscripción encontrará el historial de facturas y método de pago.
 - **Cómo agregar usuarios**: Vaya a Configuración > Usuarios > 'Nuevo Usuario'. Cada rol administrativo incluye un usuario sin costo adicional.
-
-## GUÍA DE PASOS PESV (Plan Estratégico de Seguridad Vial)
-Todos los pasos se gestionan desde la Evaluación PESV (archivo maestro). Abra PESV > Evaluaciones PESV y busque su evaluación activa.
-
-### Fase PLANEAR
-- **P01 - Equipo de Trabajo**: Pestaña 'Planear', paso P01. El sistema muestra módulos relacionados (Comité PESV) donde registrar evidencia.
-- **P02 - Liderazgo y Compromiso**: Pestaña 'Planear', paso P02. Evidencia: política de seguridad vial, compromisos de la dirección.
-- **P03 - Diagnóstico / Contexto**: Pestaña 'Planear', paso P03. El sistema pre-llena datos según nivel de complejidad.
-- **P04 - Evaluación de Riesgos Viales**: Pestaña 'Planear', paso P04. Identificación de peligros por factor humano, vehículo, infraestructura y condiciones ambientales.
-- **P05 - Objetivos e Indicadores**: Pestaña 'Planear', paso P05. Metas medibles de reducción de siniestralidad.
-- **P06 - Programas y Planes**: Pestaña 'Planear', paso P06. Módulos de factores de desempeño.
-- **P07 - Roles y Responsabilidades**: Pestaña 'Planear', paso P07.
-- **P08 - Recursos**: Pestaña 'Planear', paso P08. Presupuesto, equipos y personal.
-
-### Fase HACER
-- **H01 - Factor Humano - Conductores**: Pestaña 'Hacer', paso H01. Módulo de Conductores (datos, licencia, exámenes médicos).
-- **H02 - Capacitación Vial**: Pestaña 'Hacer', paso H02. Módulo de Capacitaciones PESV (manejo defensivo, normativa, primeros auxilios viales).
-- **H03 - Documentación de Conductores**: Pestaña 'Hacer', paso H03. Seguimiento de licencias, certificaciones, exámenes y sanciones.
-- **H04 - Vehículos Seguros**: Pestaña 'Hacer', paso H04. Módulo de Vehículos (placa, marca, modelo, SOAT, revisión tecnomecánica).
-- **H05 - Mantenimiento Preventivo**: Pestaña 'Hacer', paso H05. Módulo de Mantenimiento (preventivo y correctivo).
-- **H06 - Inspecciones Preoperacionales**: Pestaña 'Hacer', paso H06. Lista de verificación diaria (frenos, luces, llantas, documentos).
-- **H07 - Gestión de Velocidad**: Pestaña 'Hacer', paso H07. Monitoreo GPS para seguimiento de velocidad y alertas.
-- **H08 - Rutas Seguras**: Pestaña 'Hacer', paso H08. Rutas con origen, destino, distancia, puntos críticos y medidas de control.
-- **H09 - Fatiga y Somnolencia**: Pestaña 'Hacer', paso H09. Control de jornadas, pausas activas, programas de descanso.
-- **H10 - Sustancias Psicoactivas**: Pestaña 'Hacer', paso H10. Política de alcohol y drogas, pruebas, programas de prevención.
-- **H11 - Atención a Víctimas**: Pestaña 'Hacer', paso H11. Protocolo de primeros auxilios, directorio de emergencias viales.
-
-### Fase VERIFICAR
-- **V01 - Indicadores de Gestión**: Pestaña 'Verificar', paso V01. Módulo de Indicadores PESV (tasa de siniestralidad, cobertura de capacitaciones).
-- **V02 - Registro y Análisis de Siniestros**: Pestaña 'Verificar', paso V02. Módulo de Siniestros (fecha, ubicación, vehículo, conductor, daños, causa).
-- **V03 - Auditorías PESV**: Pestaña 'Verificar', paso V03. Evaluación de cada paso, hallazgos y no conformidades.
-
-### Fase ACTUAR
-- **A01 - Mejora Continua PESV**: Pestaña 'Actuar', paso A01. Acciones preventivas, correctivas y de mejora.
-- **A02 - Revisión por la Dirección PESV**: Pestaña 'Actuar', paso A02. Análisis de resultados, conclusiones y compromisos.
 
 ## RESPUESTAS POR ESTÁNDAR (Resolución 0312/2019)
 Cuando un usuario pregunte por un estándar específico, usa esta referencia. NUNCA expliques cómo llegar a la Evaluación Inicial; asume que el usuario ya está ahí. Ve directo al estándar y cómo diligenciarlo.
