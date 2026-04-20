@@ -123,7 +123,7 @@ Corresponde a la fase de Implementación del ciclo PHVA.
 - **Capacitación COPASST** → /capacitacion-copasst: Registro de capacitaciones a miembros del COPASST.
 - **COPASST CMS** → /copasst-cms: Contenido y documentos del COPASST.
 - **Evaluaciones COPASST** → /copasst-evaluaciones: Evaluación del funcionamiento del COPASST.
-- **Comité de Convivencia** → /comite-convivencia-actas: Actas y gestión del Comité de Convivencia Laboral.
+- **Comité de Convivencia** → /comite-convivencia-actas: Gestión del Comité de Convivencia Laboral. Corresponde al **Estándar 1.1.8**. El módulo tiene 4 pestañas: (1) **Período Vigente**: crear el período de 2 años con "Nuevo Período"; (2) **Proceso Electoral**: 5 fases secuenciales — Convocatoria → Inscripción → Votación (los trabajadores votan desde el Portal de Empleados) → Escrutinio → Completada; el empleador designa directamente sus 2 representantes; (3) **Miembros**: los 4 integrantes elegidos (2 del empleador + 2 trabajadores); (4) **Actas**: registro de reuniones bimestrales obligatorias con firma del presidente y secretario. Obligatorio para empresas con 10 o más trabajadores (Res. 652/2012 y 1356/2012).
 
 ## PESTAÑA VERIFICAR (V)
 Corresponde a la fase de Verificación del ciclo PHVA.
@@ -465,7 +465,11 @@ Cuando un usuario pregunte por un estándar específico, usa esta referencia. NU
 
 - **1.1.7** Capacitación COPASST / Vigía (2 puntos): Para diligenciar, buscar el **Estándar 1.1.7** en la Evaluación Inicial → clic en el botón del módulo → en /capacitaciones registrar capacitaciones impartidas a los miembros del COPASST o Vigía (funciones, legislación SST, investigación de accidentes, inspecciones) → seleccionar como asistentes a los miembros del COPASST → Guardar. Al menos una capacitación por período vigente.
 
-- **1.1.8** Conformación Comité de Convivencia Laboral (2 puntos): Para diligenciar, buscar el **Estándar 1.1.8** en la Evaluación Inicial → en el modo de verificación, adjuntar el acta de conformación del Comité de Convivencia Laboral con: 2 representantes del empleador y 2 representantes de los trabajadores elegidos por votación, período de 2 años → marcar como Cumple → Guardar. Obligatorio para empresas con 10 o más trabajadores (Resolución 652/2012).
+- **1.1.8** Conformación Comité de Convivencia Laboral (2 puntos): Para diligenciar, buscar el **Estándar 1.1.8** en la Evaluación Inicial → clic en el botón del módulo → va a /comite-convivencia-actas. El módulo tiene 4 pestañas y el proceso es el siguiente:
+  **Paso 1 — Período Vigente**: Clic en "Nuevo Período" → definir fecha de inicio y fecha de fin (el período es de 2 años) → Guardar. El período queda activo.
+  **Paso 2 — Proceso Electoral**: En la pestaña "Proceso Electoral", el proceso avanza por 5 fases secuenciales: (1) **Convocatoria**: se anuncia el proceso electoral; (2) **Inscripción**: los trabajadores interesados se postulan como candidatos, pueden hacerlo desde el **Portal de Empleados**; (3) **Votación**: los trabajadores eligen a sus representantes votando desde el Portal de Empleados; (4) **Escrutinio**: se cuentan los votos y se determinan los ganadores; (5) **Completada**: el proceso electoral termina. El empleador designa directamente sus 2 representantes sin proceso electoral.
+  **Paso 3 — Miembros**: Una vez completado el proceso electoral, en la pestaña "Miembros" quedan registrados los 4 integrantes: 2 representantes del empleador + 2 representantes de los trabajadores elegidos. Obligatorio para empresas con 10 o más trabajadores (Resolución 652/2012 y 1356/2012).
+  **Paso 4 — Actas**: En la pestaña "Actas", registrar las actas de cada reunión bimestral del Comité (mínimo una reunión cada dos meses). Completar: fecha, asistentes, temas tratados (casos de acoso laboral, compromisos, seguimiento) y firma del presidente y secretario del comité. El sistema lleva el historial de actas y permite adjuntar el documento firmado en PDF.
 
 - **1.2.1** Programa de capacitación anual (2 puntos): Para diligenciar, buscar el **Estándar 1.2.1** en la Evaluación Inicial → clic en el botón del módulo → en /programa-capacitacion-anual crear el cronograma con: tema, mes programado, responsable, duración estimada y población objetivo → Guardar. El programa debe cubrir los peligros de la Matriz IPERC. Se actualiza automáticamente conforme se ejecutan las capacitaciones.
 
