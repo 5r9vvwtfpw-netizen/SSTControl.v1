@@ -101,21 +101,23 @@ const MODULOS_SST = [
   },
   {
     modulo: "Capacitaciones",
-    ruta: "Estándares 1.2.1, 1.2.2, 1.2.3",
-    descripcion: "Se gestiona desde la Evaluación Inicial. Abra el estándar correspondiente, haga clic, y en el modo de verificación encontrará el módulo de Capacitaciones.",
+    ruta: "Estándares 1.2.1, 1.2.2, 1.2.3 (SG-SST) — módulo /capacitaciones",
+    descripcion: "Se gestiona desde la Evaluación Inicial. Abra el estándar correspondiente, haga clic, y en el modo de verificación encontrará el módulo de Capacitaciones. Conexión Portal de Empleados: los trabajadores ven sus capacitaciones en Portal → Formación → 'Capacitaciones'. NOTA: Las capacitaciones de SEGURIDAD VIAL son un módulo diferente (PESV → Evaluación PESV → paso H02), no este módulo.",
     preguntasFrecuentes: [
-      { pregunta: "Cómo registrar una capacitación", respuesta: "Hola. Abra su Evaluación Inicial y busque el estándar 1.2.1. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Capacitaciones donde puede crear registros con tema, fecha, duración, instructor y asistentes." },
+      { pregunta: "Cómo registrar una capacitación", respuesta: "Hola. Abra su Evaluación Inicial y busque el estándar 1.2.1. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Capacitaciones donde puede crear registros con tema, fecha, duración, instructor y asistentes. Los trabajadores podrán ver esta capacitación en su Portal de Empleados (Portal → Formación → 'Capacitaciones')." },
       { pregunta: "Cómo registrar asistencia", respuesta: "Hola. Abra su Evaluación Inicial, busque el estándar 1.2.1, haga clic para abrir el modo de verificación y entre al módulo de Capacitaciones. Abra la capacitación y en la sección de Asistentes marque cada trabajador que asistió." },
       { pregunta: "Qué capacitaciones son obligatorias", respuesta: "Hola. Abra su Evaluación Inicial y revise los estándares 1.2.1 (programa anual), 1.2.2 (inducción/reinducción) y 1.2.3 (curso 50 horas). Haga clic en cada uno para ver en el modo de verificación exactamente qué se necesita." },
+      { pregunta: "El trabajador no ve sus capacitaciones en el portal", respuesta: "Hola. Las capacitaciones aparecen en Portal de Empleados → Formación → 'Capacitaciones' cuando el administrador las registra en el módulo SST. Verifique que la capacitación existe en la Evaluación Inicial (estándar 1.2.1) y que el trabajador esté en la lista de asistentes. Si el portal muestra el módulo vacío, probablemente aún no hay capacitaciones registradas o el trabajador no fue incluido." },
     ],
   },
   {
     modulo: "Inspecciones de Seguridad",
-    ruta: "Estándar 4.2.5",
-    descripcion: "Se gestiona desde la Evaluación Inicial. Abra el estándar 4.2.5, haga clic, y en el modo de verificación encontrará el módulo de Inspecciones.",
+    ruta: "Estándar 4.2.4",
+    descripcion: "Se gestiona desde la Evaluación Inicial. Abra el estándar 4.2.4, haga clic, y en el modo de verificación encontrará el módulo de Inspecciones. (Nota: el estándar 4.2.5 es Mantenimiento de instalaciones y equipos — son módulos diferentes.)",
     preguntasFrecuentes: [
-      { pregunta: "Cómo crear una inspección", respuesta: "Hola. Abra su Evaluación Inicial y busque el estándar 4.2.5 (Inspecciones). Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Inspecciones donde puede crear registros con tipo, fecha, área y hallazgos." },
-      { pregunta: "Qué tipos de inspección hay", respuesta: "Hola. El sistema soporta: inspección general, de EPP, orden y aseo, extintores y botiquines. Acceda al módulo desde su Evaluación Inicial, estándar 4.2.5, haciendo clic para abrir el modo de verificación." },
+      { pregunta: "Cómo crear una inspección", respuesta: "Hola. Abra su Evaluación Inicial y busque el estándar 4.2.4 (Inspecciones sistemáticas a instalaciones, maquinaria y equipos). Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Inspecciones donde puede crear registros con tipo (locativa / maquinaria / EPP / eléctrica), fecha, área inspeccionada, hallazgos, clasificación (inmediato / corto plazo / largo plazo) y acciones correctivas con responsable. El COPASST debe participar." },
+      { pregunta: "Qué tipos de inspección hay", respuesta: "Hola. El sistema soporta: locativa, maquinaria y equipos, EPP, eléctrica y orden y aseo. Acceda al módulo desde su Evaluación Inicial, estándar 4.2.4, haciendo clic para abrir el modo de verificación. El sistema lleva seguimiento del cierre de cada hallazgo." },
+      { pregunta: "Diferencia entre Inspecciones (4.2.4) y Mantenimiento (4.2.5)", respuesta: "Hola. Son estándares diferentes: el 4.2.4 registra las INSPECCIONES periódicas con hallazgos y acciones correctivas. El 4.2.5 documenta el MANTENIMIENTO preventivo y correctivo de instalaciones y equipos (hojas de vida de equipos, cronograma de mantenimiento). Ambos se gestionan desde la Evaluación Inicial haciendo clic en el estándar correspondiente." },
     ],
   },
   {
@@ -129,11 +131,22 @@ const MODULOS_SST = [
   },
   {
     modulo: "Exámenes Médicos",
-    ruta: "Estándares 3.1.1, 3.1.2, 3.1.3",
-    descripcion: "Se gestiona desde la Evaluación Inicial. Abra el estándar correspondiente, haga clic, y en el modo de verificación encontrará el módulo de Exámenes Médicos.",
+    ruta: "Estándar 3.1.4 — módulo /examenes-medicos",
+    descripcion: "Se gestiona desde la Evaluación Inicial. Abra el estándar 3.1.4, haga clic, y en el modo de verificación encontrará el módulo de Exámenes Médicos. Conexión Portal de Empleados: los trabajadores ven sus exámenes y deben confirmar lectura en Portal → Salud → 'Mis Exámenes Médicos'.",
     preguntasFrecuentes: [
-      { pregunta: "Cómo registrar un examen médico", respuesta: "Hola. Abra su Evaluación Inicial y busque el estándar 3.1.4 (Evaluaciones médicas ocupacionales). Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Exámenes Médicos donde puede registrar trabajador, tipo de examen, fecha y concepto." },
+      { pregunta: "Cómo registrar un examen médico", respuesta: "Hola. Abra su Evaluación Inicial y busque el estándar 3.1.4 (Evaluaciones médicas ocupacionales). Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Exámenes Médicos donde puede registrar trabajador, tipo de examen (ingreso / periódico / egreso), fecha y concepto médico." },
       { pregunta: "Cómo ver exámenes próximos a vencer", respuesta: "Hola. Abra su Evaluación Inicial, busque el estándar 3.1.4 y haga clic para abrir el modo de verificación. Entre al módulo de Exámenes Médicos y ordene por fecha de vencimiento. El sistema envía alertas automáticas cuando los exámenes están próximos a vencer." },
+      { pregunta: "El trabajador no ve sus exámenes en el portal", respuesta: "Hola. Los exámenes médicos aparecen en el Portal de Empleados (Portal → Salud → 'Mis Exámenes Médicos') cuando el administrador los registra. Verifique que exista el registro en el módulo de Exámenes Médicos con el trabajador correcto. El trabajador debe confirmar su lectura en el portal." },
+    ],
+  },
+  {
+    modulo: "Audiometrías (Conservación Auditiva)",
+    ruta: "Módulo /conservacion-auditiva — Capítulo II (empresa mediana/grande o alto riesgo)",
+    descripcion: "Programa de conservación auditiva con registro de audiometrías por trabajador. Aplica para empresas Capítulo II y III. Conexión Portal de Empleados: los trabajadores pueden ver sus propios resultados en Portal → Salud → 'Mis Audiometrías'.",
+    preguntasFrecuentes: [
+      { pregunta: "Cómo registrar una audiometría", respuesta: "Hola. Este módulo se gestiona desde la evaluación SST en empresas de Capítulo II o III. Desde el modo de verificación del estándar correspondiente, acceda a Conservación Auditiva y cree un registro con trabajador, fecha, tipo (inicial / periódica / de egreso), resultado y clasificación auditiva (normal, pérdida leve, moderada, severa o profunda)." },
+      { pregunta: "El trabajador no ve sus audiometrías en el portal", respuesta: "Hola. Las audiometrías aparecen en Portal de Empleados → Salud → 'Mis Audiometrías' cuando el administrador las registra. Verifique que el registro existe en el módulo de Conservación Auditiva con el trabajador correcto." },
+      { pregunta: "La empresa no ve el módulo de audiometrías", respuesta: "Hola. El módulo de Conservación Auditiva está disponible para empresas de Capítulo II (mediana o grande, o con riesgos IV-V). Si la empresa es micro o pequeña (Capítulo I), este módulo no aplica. Verifique el capítulo de la empresa en Configuración > Datos de la Empresa." },
     ],
   },
   {
@@ -219,10 +232,23 @@ const MODULOS_SST = [
   },
   {
     modulo: "COPASST / Vigía",
-    ruta: "Estándares 1.1.6, 1.1.7",
-    descripcion: "Se gestiona desde la Evaluación Inicial. Abra el estándar 1.1.6, haga clic, y en el modo de verificación encontrará el módulo de COPASST/Vigía.",
+    ruta: "Estándares 1.1.6, 1.1.7 — módulo COPASST",
+    descripcion: "Se gestiona desde la Evaluación Inicial. Abra el estándar 1.1.6, haga clic, y en el modo de verificación encontrará el módulo de COPASST/Vigía. El módulo tiene 4 pestañas: Período Vigente, Proceso Electoral, Miembros y Actas Mensuales. Conexión Portal de Empleados: los trabajadores pueden votar en elecciones COPASST desde Portal → Participación → 'Elecciones COPASST'.",
     preguntasFrecuentes: [
       { pregunta: "Diferencia entre COPASST y Vigía", respuesta: "Hola. Abra su Evaluación Inicial y busque el estándar 1.1.6 (Conformación COPASST/Vigía). Haga clic en él y se abrirá el modo de verificación. El sistema se adapta automáticamente según el tamaño de su empresa: menos de 10 trabajadores = Vigía, 10 o más = COPASST." },
+      { pregunta: "Cómo registrar las actas del COPASST", respuesta: "Hola. Abra su Evaluación Inicial y busque el estándar 1.1.6. Haga clic para abrir el modo de verificación y entre al módulo COPASST. Use la pestaña 'Actas Mensuales' para registrar cada reunión del COPASST con fecha, participantes, temas tratados y compromisos. El sistema genera el acta en PDF." },
+      { pregunta: "Cómo gestionar el proceso electoral del COPASST", respuesta: "Hola. Acceda al módulo COPASST desde su Evaluación Inicial → estándar 1.1.6. Use la pestaña 'Proceso Electoral' para crear una convocatoria. Los trabajadores podrán votar desde su Portal de Empleados (Portal → Participación → 'Elecciones COPASST'). El sistema registra los votos y calcula los resultados automáticamente." },
+      { pregunta: "Los trabajadores no ven las elecciones en su portal", respuesta: "Hola. Las elecciones COPASST aparecen en Portal de Empleados → Participación → 'Elecciones COPASST' cuando el administrador crea un proceso electoral activo desde el módulo COPASST. Verifique que la convocatoria esté en estado activo y que el período de votación esté vigente." },
+    ],
+  },
+  {
+    modulo: "Comité de Convivencia Laboral",
+    ruta: "Módulo Comité de Convivencia — Estándar 1.1.8",
+    descripcion: "Gestión del Comité de Convivencia Laboral (Resolución 652/2012 y 1356/2012). Permite registrar períodos vigentes, proceso electoral y actas de reuniones. Conexión Portal de Empleados: los trabajadores pueden participar en elecciones del Comité desde Portal → Participación → 'Comité de Convivencia'.",
+    preguntasFrecuentes: [
+      { pregunta: "Cuándo se requiere Comité de Convivencia", respuesta: "Hola. Toda empresa con 10 o más trabajadores debe conformar un Comité de Convivencia Laboral (Resolución 652/2012). El sistema lo gestiona desde el estándar 1.1.8 en la Evaluación Inicial. Haga clic en él para acceder al módulo." },
+      { pregunta: "Cómo registrar actas del Comité de Convivencia", respuesta: "Hola. Acceda al módulo de Comité de Convivencia desde su Evaluación Inicial → estándar 1.1.8. Use la pestaña 'Actas' para registrar las reuniones del comité (mínimo una por trimestre) con fecha, participantes y casos tratados. El módulo es similar al COPASST pero independiente." },
+      { pregunta: "Los trabajadores no ven el Comité de Convivencia en su portal", respuesta: "Hola. El Comité de Convivencia aparece en Portal de Empleados → Participación → 'Comité de Convivencia' cuando el administrador tiene un período activo. Verifique que el comité esté configurado en la Evaluación Inicial → estándar 1.1.8." },
     ],
   },
   {
@@ -235,10 +261,13 @@ const MODULOS_SST = [
   },
   {
     modulo: "Comunicación SST",
-    ruta: "Estándar 2.8.1",
-    descripcion: "Se gestiona desde la Evaluación Inicial. Abra el estándar 2.8.1, haga clic, y en el modo de verificación encontrará el módulo de Comunicación SST.",
+    ruta: "Estándar 2.8.1 — módulo /comunicacion-sst (bidireccional con Portal de Empleados)",
+    descripcion: "Canal bidireccional de comunicación SST. (A) Admin → Trabajadores: el admin crea comunicados (circulares, alertas, políticas) y los trabajadores los ven y confirman su lectura en Portal → Comunicación → 'Comunicaciones SST'. (B) Trabajadores → Admin: los trabajadores envían reportes de peligros o sugerencias desde Portal → Comunicación → 'Reportar Inquietud'. El admin los gestiona en la pestaña 'Reportes de Empleados'.",
     preguntasFrecuentes: [
-      { pregunta: "Qué comunicaciones debo registrar", respuesta: "Hola. Abra su Evaluación Inicial y busque el estándar 2.8.1 (Mecanismos de comunicación). Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo donde puede registrar comunicaciones sobre políticas, cambios, alertas y convocatorias de SST." },
+      { pregunta: "Qué comunicaciones debo registrar", respuesta: "Hola. Abra su Evaluación Inicial y busque el estándar 2.8.1 (Mecanismos de comunicación). Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Comunicación SST donde puede registrar comunicaciones (políticas, cambios, alertas, convocatorias). Los trabajadores las ven en su portal y deben confirmar lectura." },
+      { pregunta: "Cómo enviar una comunicación a los trabajadores", respuesta: "Hola. En el módulo de Comunicación SST, haga clic en 'Nueva Comunicación'. Complete: tipo (memorando / circular / política / alerta de seguridad), destinatarios (todos o selección), canal (Portal de Empleados, cartelera, email, reunión) y contenido. Al guardar, los trabajadores verán el comunicado en su portal y el sistema registra quién lo leyó." },
+      { pregunta: "Cómo ver los reportes enviados por trabajadores", respuesta: "Hola. Los trabajadores pueden reportar peligros o sugerencias desde su Portal de Empleados (Portal → Comunicación → 'Reportar Inquietud, Peligro o Sugerencia'). El administrador los ve en /portal-empleados → pestaña 'Reportes de Empleados'. Puede responder al trabajador y marcar el reporte como resuelto." },
+      { pregunta: "El trabajador dice que no ve el comunicado", respuesta: "Hola. Los comunicados aparecen en Portal → Comunicación → 'Comunicaciones SST'. Verifique: 1) Que el trabajador esté incluido en los destinatarios del comunicado. 2) Que el comunicado esté en estado activo (no borrador). 3) Que el trabajador esté accediendo al Portal de Empleados con sus credenciales correctas." },
     ],
   },
   {
@@ -509,22 +538,52 @@ const PORTAL_EMPLEADOS_PROBLEMAS = [
   {
     problema: "El trabajador no puede acceder al portal de empleados",
     diagnostico: "Credenciales no generadas o portal no activado por la empresa.",
-    respuesta: "Hola. El acceso al Portal de Empleados debe ser activado por el administrador de su empresa. Comuníquese con el responsable de SST de su empresa para que le genere las credenciales de acceso desde el sistema. Si ya tiene credenciales y no puede ingresar, verifique que esté usando el usuario y contraseña correctos. Si olvidó su contraseña, solicite al administrador que la restablezca.",
+    respuesta: "Hola. El acceso al Portal de Empleados debe ser activado por el administrador de la empresa. El administrador genera las credenciales desde Planear > Trabajadores → seleccionar el trabajador → botón 'Crear Acceso Portal'. Las credenciales se envían al correo del trabajador. Si ya tiene credenciales y no puede ingresar, verifique usuario y contraseña. Si olvidó la contraseña, el administrador puede restablecerla desde el mismo módulo de Trabajadores.",
+  },
+  {
+    problema: "El trabajador no ve sus capacitaciones en el portal",
+    diagnostico: "La empresa no ha registrado capacitaciones o el trabajador no fue incluido como asistente.",
+    respuesta: "Hola. Las capacitaciones aparecen en Portal → Formación → 'Capacitaciones' cuando: 1) El administrador las registra en el módulo SST (Evaluación Inicial → Estándar 1.2.1). 2) El trabajador fue marcado como asistente en esa capacitación. Si el portal muestra el módulo vacío, verifique que la capacitación existe y que el trabajador está en la lista de asistentes.",
+  },
+  {
+    problema: "El trabajador no ve sus inducciones o no puede completar la inducción virtual",
+    diagnostico: "Inducciones no registradas o módulo virtual no configurado.",
+    respuesta: "Hola. El portal tiene dos secciones en Formación: 'Mis Inducciones' (historial de inducciones registradas por el admin en /registros-induccion) e 'Inducciones Virtuales' (módulo interactivo con materiales y cuestionarios). Si no ve sus inducciones: 1) El admin debe registrar la inducción en Evaluación Inicial → Estándar 1.2.2 → módulo Registros de Inducción → asignar al trabajador. Si no ve inducciones virtuales, la empresa debe activar ese contenido en el sistema.",
   },
   {
     problema: "El trabajador no ve sus exámenes médicos en el portal",
     diagnostico: "La empresa no ha registrado los exámenes o no los ha notificado.",
-    respuesta: "Hola. Los exámenes médicos aparecen en su portal cuando el administrador de la empresa los registra y le envía la notificación. Si no ve sus exámenes: 1) Es posible que la empresa aún no los haya registrado en el sistema. 2) Contacte al responsable de SST de su empresa para verificar. Los exámenes que aparezcan requerirán su confirmación de lectura.",
+    respuesta: "Hola. Los exámenes médicos aparecen en Portal → Salud → 'Mis Exámenes Médicos' cuando el administrador los registra en el módulo de Exámenes Médicos (Evaluación Inicial → Estándar 3.1.4). El trabajador debe confirmar su lectura en el portal. Si no ve sus exámenes, es posible que la empresa no los haya registrado aún.",
+  },
+  {
+    problema: "El trabajador no ve sus audiometrías en el portal",
+    diagnostico: "La empresa no ha registrado audiometrías o el módulo no aplica para esa empresa.",
+    respuesta: "Hola. Las audiometrías aparecen en Portal → Salud → 'Mis Audiometrías' cuando el administrador las registra en el módulo de Conservación Auditiva. Este módulo aplica para empresas de Capítulo II (mediana/grande o riesgo IV-V). Si la empresa es Capítulo I (micro/pequeña), este módulo no está disponible.",
   },
   {
     problema: "El trabajador quiere reportar una condición insegura o sugerencia",
-    diagnostico: "Existe un buzón de sugerencias en el portal.",
-    respuesta: "Hola. Puede reportar condiciones inseguras o hacer sugerencias desde su portal de empleado: 1) Busque la sección 'Buzón de Sugerencias' o 'Reportar Condición'. 2) Complete el formulario describiendo la situación. 3) El reporte llegará al responsable de SST de su empresa para su gestión. Su identidad se mantiene confidencial según la política de la empresa.",
+    diagnostico: "Existe un canal de retorno en Comunicación SST del portal.",
+    respuesta: "Hola. Los trabajadores pueden reportar desde Portal → Comunicación → 'Reportar Inquietud, Peligro o Sugerencia'. El reporte llega al administrador en la pestaña 'Reportes de Empleados' del módulo Comunicación SST. El administrador puede responder y marcar como resuelto. Si el trabajador no ve esta sección, puede ser que la empresa tenga el módulo de Comunicación SST desactivado (requiere suscripción).",
   },
   {
-    problema: "El trabajador no puede ver documentos o capacitaciones",
-    diagnostico: "La empresa debe compartir los documentos a través del portal.",
-    respuesta: "Hola. Los documentos y capacitaciones aparecen en su portal cuando la empresa los comparte con usted. Si no ve información: 1) La empresa puede no haber activado la opción de compartir esos documentos. 2) Contacte al responsable de SST para que verifique qué información está disponible en el portal. El portal muestra únicamente la información que la empresa decide compartir con sus trabajadores.",
+    problema: "El trabajador no ve los comunicados de la empresa en su portal",
+    diagnostico: "No hay comunicados creados o el trabajador no fue incluido como destinatario.",
+    respuesta: "Hola. Los comunicados aparecen en Portal → Comunicación → 'Comunicaciones SST'. Verifique: 1) Que el administrador haya creado comunicados en el módulo Comunicación SST. 2) Que el trabajador esté en la lista de destinatarios. 3) Que el comunicado esté activo (no borrador). El sistema registra la fecha de lectura de cada trabajador al confirmar.",
+  },
+  {
+    problema: "El trabajador no puede votar en las elecciones COPASST o Comité de Convivencia",
+    diagnostico: "No hay proceso electoral activo o el trabajador no está habilitado para votar.",
+    respuesta: "Hola. Las elecciones aparecen en Portal → Participación → 'Elecciones COPASST' o 'Comité de Convivencia'. Para que aparezcan: 1) El administrador debe haber creado un proceso electoral activo desde el módulo COPASST/Comité de Convivencia (Evaluación Inicial → Estándar 1.1.6 / 1.1.8). 2) El período de votación debe estar vigente. Si el trabajador ya votó, el portal le mostrará la confirmación de su voto.",
+  },
+  {
+    problema: "El trabajador no ve el Comité PESV en su portal",
+    diagnostico: "La empresa no tiene PESV activo o el Comité no está configurado.",
+    respuesta: "Hola. El Portal de Empleados muestra el Comité PESV en Portal → PESV → 'Comité PESV' cuando la empresa tiene el módulo PESV activo (requiere vehículos registrados) y tiene un período de Comité PESV configurado. Verifique que la empresa tiene vehículos en Configuración > Datos de la Empresa y que el Comité PESV está activo en la Evaluación PESV → paso P01.",
+  },
+  {
+    problema: "El trabajador no ve las capacitaciones de seguridad vial en su portal",
+    diagnostico: "Diferente a las capacitaciones SST — las de PESV se registran por separado.",
+    respuesta: "Hola. Las capacitaciones de seguridad vial (PESV) son un módulo DIFERENTE a las capacitaciones SST. Aparecen en Portal → PESV → 'Capacitaciones PESV' cuando el administrador las registra en la Evaluación PESV → paso H02 → módulo Capacitaciones PESV. NO son las mismas que las que aparecen en Portal → Formación → 'Capacitaciones'. Si el trabajador no las ve, verifique que la empresa tiene PESV activo y que hay registros en el paso H02.",
   },
 ];
 
