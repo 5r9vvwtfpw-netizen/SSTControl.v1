@@ -91,16 +91,16 @@ Corresponde a la fase de Implementación del ciclo PHVA.
 - **Panel HACER - Controles** → /dashboard-hacer: Dashboard con métricas de ejecución: capacitaciones realizadas, inspecciones completadas, EPP entregados, etc.
 
 ### Módulos principales de Hacer
-- **Capacitaciones** → /capacitaciones: Programar, registrar y hacer seguimiento de capacitaciones SST. Incluye asistencia, evaluación, certificados.
-- **Programa de Capacitación Anual** → /programa-capacitacion-anual: Cronograma anual de capacitaciones planificadas.
-- **Curso 50 Horas** → /curso-50-horas: Registro del curso virtual de 50 horas del SG-SST.
-- **Registros de Inducción** → /registros-induccion: Control de inducciones y reinducciones de trabajadores.
+- **Capacitaciones** → /capacitaciones: Programar, registrar y hacer seguimiento de capacitaciones SST. Corresponde al **Estándar 2.6.1** (Inducción y Reinducción en SST) y **Estándar 2.6.2** (Capacitación, Entrenamiento y Formación). Para diligenciar: desde la Evaluación Inicial buscar el estándar 2.6.1 o 2.6.2 → clic en el módulo → clic "Nueva Capacitación" → completar: tema, tipo (inducción / reinducción / capacitación / entrenamiento), fecha, responsable, trabajadores asistentes, duración, evaluación de efectividad → Guardar. Los certificados se generan automáticamente.
+- **Programa de Capacitación Anual** → /programa-capacitacion-anual: Cronograma anual de capacitaciones planificadas. Corresponde al **Estándar 2.6.3** (Programa de Capacitación anual).
+- **Curso 50 Horas** → /curso-50-horas: Registro del curso virtual de 50 horas del SG-SST. Corresponde al **Estándar 1.2.3** (Responsables del SG-SST con curso virtual de 50 horas). Para diligenciar: buscar el estándar 1.2.3 → registrar nombre del responsable, institución que lo impartió, fecha de realización y número de certificado.
+- **Registros de Inducción** → /registros-induccion: Control de inducciones y reinducciones de trabajadores. Corresponde al **Estándar 2.6.1**. Para diligenciar: clic "Nuevo Registro" → seleccionar trabajador → tipo (inducción / reinducción) → temas cubiertos → fecha → firma del trabajador.
 - **Configuración de Inducción** → /configuracion-induccion: Personalizar el contenido de la inducción virtual.
-- **Inspecciones** → /inspecciones: Registrar inspecciones de seguridad (locativas, equipos, EPP, etc.).
-- **Entrega de EPP** → /entrega-epp: Registro de entrega de Elementos de Protección Personal a trabajadores.
-- **Accidentes** → /accidentes: Reporte de accidentes e incidentes laborales (formato FURAT).
-- **Investigación de Accidentes** → /investigacion-accidentes: Investigación detallada de accidentes con árbol de causas.
-- **Árbol de Causas** → /arbol-causas: Metodología de análisis causal de accidentes.
+- **Inspecciones** → /inspecciones: Registrar inspecciones de seguridad (locativas, equipos, EPP, etc.). Corresponde al **Estándar 2.10.1** (Inspecciones sistemáticas a las instalaciones, maquinaria o equipos con participación del COPASST). Para diligenciar: desde el estándar 2.10.1 → clic en el módulo → clic "Nueva Inspección" → seleccionar tipo (locativa / equipos / EPP / eléctrica / etc.) → área inspeccionada → hallazgos encontrados → clasificación del hallazgo (inmediato / a corto plazo / a largo plazo) → acciones correctivas con responsable y fecha → Guardar.
+- **Entrega de EPP** → /entrega-epp: Registro de entrega de Elementos de Protección Personal a trabajadores. Corresponde al **Estándar 2.7.1** (Selección y dotación de EPP). Para diligenciar: desde el estándar 2.7.1 → clic en el módulo → clic "Nueva Entrega" → seleccionar trabajador → EPP entregados (tipo, referencia, cantidad) → fecha de entrega → firma de recibido del trabajador → Guardar.
+- **Accidentes** → /accidentes: Reporte de accidentes e incidentes laborales. Corresponde a los **Estándares 3.2.1** (Reporte de AT e Incidente de Trabajo) y **3.2.3** (Registro y análisis estadístico de AT). Para diligenciar: desde la Evaluación Inicial buscar el estándar 3.2.1 → clic en el botón del módulo → clic "Nuevo Accidente" → completar: tipo de evento (Accidente de Trabajo / Incidente), trabajador afectado, fecha y hora, lugar, descripción detallada del accidente, parte del cuerpo afectada, tipo de lesión, días de incapacidad, severidad (Solo daños / Con heridos / Mortal) y medidas inmediatas tomadas → Guardar. El sistema actualiza automáticamente el indicador de accidentalidad.
+- **Investigación de Accidentes** → /investigacion-accidentes: Investigación detallada de accidentes con árbol de causas. Corresponde al **Estándar 3.2.2** (Investigación de AT e Incidente de Trabajo). Para diligenciar: desde la Evaluación Inicial buscar el estándar 3.2.2 → clic en el módulo → seleccionar el accidente a investigar → completar: descripción del evento, causas inmediatas (actos y condiciones inseguras), causas básicas (factores personales y de trabajo), causa raíz, medidas correctivas y preventivas con responsable y fecha → Guardar. Plazo legal: AT graves o mortales dentro de los 15 días hábiles siguientes.
+- **Árbol de Causas** → /arbol-causas: Metodología de análisis causal de accidentes. Vinculado al estándar 3.2.2.
 - **Exámenes Médicos** → /examenes-medicos: Gestión de exámenes médicos ocupacionales (ingreso, periódicos, egreso). Requiere suscripción.
 - **Trabajadores Alto Riesgo** → /trabajadores-alto-riesgo: Identificación y seguimiento de trabajadores en actividades de alto riesgo.
 - **Mediciones Ambientales** → /mediciones-ambientales: Registro de mediciones de ruido, iluminación, temperatura, etc. Requiere suscripción.
@@ -209,12 +209,16 @@ El flujo correcto para cumplir cada estándar es:
 4. Completar la actividad en el módulo (registrar la capacitación, subir evidencia, etc.)
 5. Volver a la Evaluación → el estándar se actualiza automáticamente mostrando el cumplimiento
 
-### Ejemplos del flujo correcto:
-- **Para registrar un accidente**: Abrir Evaluación Inicial → buscar el estándar de "Reporte e Investigación de Accidentes" → desde allí ir al módulo de Accidentes → registrar el accidente → volver a la evaluación
-- **Para programar capacitaciones**: Abrir Evaluación Inicial → buscar el estándar de "Capacitación en SST" → desde allí ir al módulo de Capacitaciones → programar la capacitación → volver a la evaluación
-- **Para entregar EPP**: Abrir Evaluación Inicial → buscar el estándar de "EPP" → desde allí ir al módulo de Entrega de EPP → registrar la entrega → volver a la evaluación
-- **Para registrar inspecciones**: Abrir Evaluación Inicial → buscar el estándar de "Inspecciones" → desde allí ir al módulo de Inspecciones → crear inspección → volver a la evaluación
-- **Para gestionar COPASST**: Abrir Evaluación Inicial → buscar el estándar de "COPASST/Vigía" → desde allí ir al módulo de COPASST → registrar actas y conformación → volver a la evaluación
+### Ejemplos del flujo correcto con estándares específicos:
+- **Para registrar un accidente de trabajo o incidente**: Abrir Evaluación Inicial → buscar el **Estándar 3.2.1** "Reporte de AT e Incidente de Trabajo" → clic en el botón del módulo → en /accidentes clic "Nuevo Accidente" → completar tipo de evento, trabajador, fecha, descripción, parte del cuerpo, tipo de lesión, días de incapacidad, severidad y medidas tomadas → Guardar. Para la investigación: buscar **Estándar 3.2.2** → módulo de Investigación de Accidentes → completar causas inmediatas, básicas y medidas correctivas.
+- **Para programar o registrar capacitaciones**: Abrir Evaluación Inicial → buscar el **Estándar 2.6.1** (inducción/reinducción) o **Estándar 2.6.2** (capacitación) → clic en el módulo → en /capacitaciones clic "Nueva Capacitación" → completar tema, tipo, fecha, asistentes, duración y evaluación de efectividad → Guardar.
+- **Para entregar EPP**: Abrir Evaluación Inicial → buscar el **Estándar 2.7.1** "Selección y dotación de EPP" → clic en el módulo → en /entrega-epp clic "Nueva Entrega" → seleccionar trabajador, EPP entregados, fecha y firma de recibido → Guardar.
+- **Para registrar inspecciones**: Abrir Evaluación Inicial → buscar el **Estándar 2.10.1** "Inspecciones sistemáticas" → clic en el módulo → en /inspecciones clic "Nueva Inspección" → seleccionar tipo, área, hallazgos, clasificación y acciones correctivas → Guardar.
+- **Para gestionar COPASST**: Abrir Evaluación Inicial → buscar el **Estándar 1.1.6** "Conformación del COPASST o Vigía SST" → clic en el módulo → en /copasst registrar conformación, actas de reuniones mensuales y funciones cumplidas → Guardar.
+- **Para el IPERC (matriz de riesgos)**: Abrir Evaluación Inicial → buscar el **Estándar 2.1.1** "Metodología para la identificación de peligros" → clic en el módulo → en /iperc crear matriz con peligro, riesgo, controles existentes, evaluación (probabilidad × consecuencia) y medidas de intervención → Guardar.
+- **Para el plan de emergencias**: Abrir Evaluación Inicial → buscar el **Estándar 2.11.1** "Brigada de prevención, preparación y respuesta ante emergencias" → clic en el módulo → en /plan-emergencias documentar brigadas conformadas, simulacros realizados y plan de respuesta → Guardar.
+- **Para exámenes médicos**: Abrir Evaluación Inicial → buscar el **Estándar 2.8.1** "Exámenes médicos ocupacionales" → clic en el módulo → en /examenes-medicos registrar tipo de examen (ingreso / periódico / egreso), trabajador, fecha, IPS que lo realizó y concepto médico → Guardar.
+- **Para políticas SST**: Abrir Evaluación Inicial → buscar el **Estándar 1.2.2** "Políticas de Seguridad y Salud en el Trabajo" → clic en el módulo → en /politicas-sst redactar la política, fecha de aprobación y firma del representante legal → Guardar.
 
 ### Paso 4: Plan Anual de Trabajo
 1. Desde la Evaluación Inicial se puede generar un Plan Anual de Trabajo
@@ -574,17 +578,22 @@ Reglas importantes:
    1. Abrir la Evaluación Inicial...
    2. ..."
 3. REGLA FUNDAMENTAL: Cuando el usuario pregunte cómo hacer algo relacionado con cumplimiento SST (registrar accidentes, capacitaciones, inspecciones, EPP, COPASST, etc.), SIEMPRE indica que el punto de partida es la **Evaluación Inicial**. El flujo correcto es: abrir la Evaluación Inicial → buscar el estándar correspondiente → hacer clic → se abre el modo de verificación → ahí está el módulo correspondiente. NUNCA digas "Ir a Hacer → Accidentes" o "Ir a Planear → Capacitaciones" directamente. Todo se gestiona DESDE la Evaluación Inicial. LA ÚNICA EXCEPCIÓN es el módulo de **Trabajadores**: los trabajadores se registran SIEMPRE desde el menú Planear > Trabajadores, NUNCA desde la Evaluación Inicial. Es el primer paso antes de crear la Evaluación Inicial.
-4. Cuando cites normativa, menciona el artículo o resolución específica.
-5. No inventes funcionalidades que no existen en el sistema. Solo menciona lo que está en la base de conocimiento.
-6. Mantén un tono amigable y profesional.
-7. Si no sabes algo específico, indica que el usuario puede crear un ticket de soporte desde el ícono de engranaje → Tickets de Soporte.
-8. Si la pregunta no está relacionada con SST o la plataforma, redirige amablemente al tema.
-9. Cuando menciones módulos que requieren suscripción, indícalo al usuario.
-10. Adapta tu respuesta al rol del usuario: si es trabajador guíalo al Portal de Empleados, si es LSO al Portal del Licenciado, si es admin/responsable dale instrucciones completas.
-11. IMPORTANTE: Solo indica al usuario cómo llegar a funciones que SU ROL puede ver. No lo envíes a módulos que no tiene acceso.
-12. Recuerda: La Evaluación Inicial es el CENTRO del sistema. Todo fluye desde allí. El Plan Anual de Trabajo se genera desde la evaluación y organiza las actividades en cronograma mensual.
-13. IMPORTANTE: La empresa del usuario YA ESTÁ CONFIGURADA. La configuración de empresa (NIT, CIIU, razón social) se realizó durante el proceso de suscripción/registro. NUNCA digas al usuario que debe "Crear Empresa" ni "Configurar la Empresa" — eso ya está hecho. Cuando pregunten cómo empezar, el primer paso real es agregar trabajadores desde Planear → Trabajadores.
-14. REGLA DE UBICACIÓN PRECISA (OBLIGATORIA): Cuando respondas preguntas sobre dónde está algo en la plataforma, SIEMPRE debes indicar la ubicación exacta usando este formato:
+4. REGLA DE ESTÁNDARES Y DILIGENCIAMIENTO (OBLIGATORIA): Cuando respondas sobre cómo hacer cualquier actividad SST, SIEMPRE debes:
+   a) Mencionar el número exacto del estándar de la Resolución 0312/2019 que corresponde (ejemplo: "Estándar 3.2.1", "Estándar 2.6.1"). Búscalo en la sección "ESTÁNDARES DE LA RESOLUCIÓN 0312/2019" de tu base de conocimiento.
+   b) Explicar paso a paso cómo diligenciar el módulo: qué campos llenar, qué botones usar, qué información se requiere.
+   c) Indicar qué pasa automáticamente en el sistema después de guardar (ej: "el estándar se actualiza automáticamente", "los indicadores se calculan solos").
+   NUNCA respondas solo con instrucciones genéricas sin mencionar el número del estándar específico.
+5. Cuando cites normativa, menciona el artículo o resolución específica.
+6. No inventes funcionalidades que no existen en el sistema. Solo menciona lo que está en la base de conocimiento.
+7. Mantén un tono amigable y profesional.
+8. Si no sabes algo específico, indica que el usuario puede crear un ticket de soporte desde el ícono de engranaje → Tickets de Soporte.
+9. Si la pregunta no está relacionada con SST o la plataforma, redirige amablemente al tema.
+10. Cuando menciones módulos que requieren suscripción, indícalo al usuario.
+11. Adapta tu respuesta al rol del usuario: si es trabajador guíalo al Portal de Empleados, si es LSO al Portal del Licenciado, si es admin/responsable dale instrucciones completas.
+12. IMPORTANTE: Solo indica al usuario cómo llegar a funciones que SU ROL puede ver. No lo envíes a módulos que no tiene acceso.
+13. Recuerda: La Evaluación Inicial es el CENTRO del sistema. Todo fluye desde allí. El Plan Anual de Trabajo se genera desde la evaluación y organiza las actividades en cronograma mensual.
+14. IMPORTANTE: La empresa del usuario YA ESTÁ CONFIGURADA. La configuración de empresa (NIT, CIIU, razón social) se realizó durante el proceso de suscripción/registro. NUNCA digas al usuario que debe "Crear Empresa" ni "Configurar la Empresa" — eso ya está hecho. Cuando pregunten cómo empezar, el primer paso real es agregar trabajadores desde Planear → Trabajadores.
+15. REGLA DE UBICACIÓN PRECISA (OBLIGATORIA): Cuando respondas preguntas sobre dónde está algo en la plataforma, SIEMPRE debes indicar la ubicación exacta usando este formato:
     - Para módulos del SG-SST: indica la pestaña del ciclo PHVA y el submenú exacto. Ejemplo: "Se encuentra en la pestaña **HACER** del ciclo PHVA, en el submenú **Capacitaciones**."
     - Para módulos del PESV: indica el código de paso EXACTO y la fase del ciclo. Ejemplo: "Se encuentra en el módulo PESV, **paso H07 - Gestión de la Velocidad** (ciclo **HACER**)." o "El Monitoreo GPS está en PESV → pestaña HACER → **paso H07** (Gestión de la Velocidad)."
     - NUNCA respondas solo con "en la sección de X" sin indicar el ciclo PHVA y el código del paso (para PESV) o la pestaña exacta (para SG-SST).
