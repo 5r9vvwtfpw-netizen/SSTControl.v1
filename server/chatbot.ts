@@ -202,23 +202,22 @@ IMPORTANTE: En SST Colombia, el punto de partida para llegar al 100% de cumplimi
 5. **Desde cada estándar** hay botones y enlaces que llevan directamente al módulo correspondiente para completar la evidencia
 
 ### Paso 3: Completar Estándares DESDE la Evaluación
-El flujo correcto para cumplir cada estándar es:
-1. Abrir la Evaluación Inicial
-2. Revisar el estándar que se quiere cumplir (ej: "Capacitación en SST")
-3. Hacer clic en el enlace o botón que aparece en ese estándar → el sistema te lleva al módulo correspondiente (ej: Capacitaciones)
-4. Completar la actividad en el módulo (registrar la capacitación, subir evidencia, etc.)
-5. Volver a la Evaluación → el estándar se actualiza automáticamente mostrando el cumplimiento
+El flujo correcto para cumplir cada estándar es (asume que el usuario ya tiene la Evaluación Inicial abierta):
+1. Buscar el estándar que se quiere cumplir (ej: "Estándar 2.6.1 - Capacitación en SST")
+2. Hacer clic en el enlace o botón que aparece en ese estándar → el sistema lleva al módulo correspondiente (ej: Capacitaciones)
+3. Completar la actividad en el módulo (registrar la capacitación, subir evidencia, etc.)
+4. Al guardar, el estándar se actualiza automáticamente mostrando el cumplimiento
 
 ### Ejemplos del flujo correcto con estándares específicos:
-- **Para registrar un accidente de trabajo o incidente**: Abrir Evaluación Inicial → buscar el **Estándar 3.2.1** "Reporte de AT e Incidente de Trabajo" → clic en el botón del módulo → en /accidentes clic "Nuevo Accidente" → completar tipo de evento, trabajador, fecha, descripción, parte del cuerpo, tipo de lesión, días de incapacidad, severidad y medidas tomadas → Guardar. Para la investigación: buscar **Estándar 3.2.2** → módulo de Investigación de Accidentes → completar causas inmediatas, básicas y medidas correctivas.
-- **Para programar o registrar capacitaciones**: Abrir Evaluación Inicial → buscar el **Estándar 2.6.1** (inducción/reinducción) o **Estándar 2.6.2** (capacitación) → clic en el módulo → en /capacitaciones clic "Nueva Capacitación" → completar tema, tipo, fecha, asistentes, duración y evaluación de efectividad → Guardar.
-- **Para entregar EPP**: Abrir Evaluación Inicial → buscar el **Estándar 2.7.1** "Selección y dotación de EPP" → clic en el módulo → en /entrega-epp clic "Nueva Entrega" → seleccionar trabajador, EPP entregados, fecha y firma de recibido → Guardar.
-- **Para registrar inspecciones**: Abrir Evaluación Inicial → buscar el **Estándar 2.10.1** "Inspecciones sistemáticas" → clic en el módulo → en /inspecciones clic "Nueva Inspección" → seleccionar tipo, área, hallazgos, clasificación y acciones correctivas → Guardar.
-- **Para gestionar COPASST**: Abrir Evaluación Inicial → buscar el **Estándar 1.1.6** "Conformación del COPASST o Vigía SST" → clic en el módulo → en /copasst registrar conformación, actas de reuniones mensuales y funciones cumplidas → Guardar.
-- **Para el IPERC (matriz de riesgos)**: Abrir Evaluación Inicial → buscar el **Estándar 2.1.1** "Metodología para la identificación de peligros" → clic en el módulo → en /iperc crear matriz con peligro, riesgo, controles existentes, evaluación (probabilidad × consecuencia) y medidas de intervención → Guardar.
-- **Para el plan de emergencias**: Abrir Evaluación Inicial → buscar el **Estándar 2.11.1** "Brigada de prevención, preparación y respuesta ante emergencias" → clic en el módulo → en /plan-emergencias documentar brigadas conformadas, simulacros realizados y plan de respuesta → Guardar.
-- **Para exámenes médicos**: Abrir Evaluación Inicial → buscar el **Estándar 2.8.1** "Exámenes médicos ocupacionales" → clic en el módulo → en /examenes-medicos registrar tipo de examen (ingreso / periódico / egreso), trabajador, fecha, IPS que lo realizó y concepto médico → Guardar.
-- **Para políticas SST**: Abrir Evaluación Inicial → buscar el **Estándar 1.2.2** "Políticas de Seguridad y Salud en el Trabajo" → clic en el módulo → en /politicas-sst redactar la política, fecha de aprobación y firma del representante legal → Guardar.
+- **Para registrar un accidente de trabajo o incidente**: En la Evaluación Inicial, buscar el **Estándar 3.2.1** "Reporte de AT e Incidente de Trabajo" → clic en el botón del módulo → en /accidentes clic "Nuevo Accidente" → completar tipo de evento, trabajador, fecha, descripción, parte del cuerpo, tipo de lesión, días de incapacidad, severidad y medidas tomadas → Guardar. Para la investigación: buscar **Estándar 3.2.2** → módulo de Investigación de Accidentes → completar causas inmediatas, básicas y medidas correctivas.
+- **Para programar o registrar capacitaciones**: En la Evaluación Inicial, buscar el **Estándar 2.6.1** (inducción/reinducción) o **Estándar 2.6.2** (capacitación) → clic en el módulo → en /capacitaciones clic "Nueva Capacitación" → completar tema, tipo, fecha, asistentes, duración y evaluación de efectividad → Guardar.
+- **Para entregar EPP**: En la Evaluación Inicial, buscar el **Estándar 2.7.1** "Selección y dotación de EPP" → clic en el módulo → en /entrega-epp clic "Nueva Entrega" → seleccionar trabajador, EPP entregados, fecha y firma de recibido → Guardar.
+- **Para registrar inspecciones**: En la Evaluación Inicial, buscar el **Estándar 2.10.1** "Inspecciones sistemáticas" → clic en el módulo → en /inspecciones clic "Nueva Inspección" → seleccionar tipo, área, hallazgos, clasificación y acciones correctivas → Guardar.
+- **Para gestionar COPASST**: En la Evaluación Inicial, buscar el **Estándar 1.1.6** "Conformación del COPASST o Vigía SST" → clic en el módulo → en /copasst registrar conformación, actas de reuniones mensuales y funciones cumplidas → Guardar.
+- **Para el IPERC (matriz de riesgos)**: En la Evaluación Inicial, buscar el **Estándar 2.1.1** "Metodología para la identificación de peligros" → clic en el módulo → en /iperc crear matriz con peligro, riesgo, controles existentes, evaluación (probabilidad × consecuencia) y medidas de intervención → Guardar.
+- **Para el plan de emergencias**: En la Evaluación Inicial, buscar el **Estándar 2.11.1** "Brigada de prevención, preparación y respuesta ante emergencias" → clic en el módulo → en /plan-emergencias documentar brigadas conformadas, simulacros realizados y plan de respuesta → Guardar.
+- **Para exámenes médicos**: En la Evaluación Inicial, buscar el **Estándar 2.8.1** "Exámenes médicos ocupacionales" → clic en el módulo → en /examenes-medicos registrar tipo de examen (ingreso / periódico / egreso), trabajador, fecha, IPS que lo realizó y concepto médico → Guardar.
+- **Para políticas SST**: En la Evaluación Inicial, buscar el **Estándar 1.2.2** "Políticas de Seguridad y Salud en el Trabajo" → clic en el módulo → en /politicas-sst redactar la política, fecha de aprobación y firma del representante legal → Guardar.
 
 ### Paso 4: Plan Anual de Trabajo
 1. Desde la Evaluación Inicial se puede generar un Plan Anual de Trabajo
@@ -570,14 +569,15 @@ Reglas importantes:
    - PRIMERA PARTE (antes de "Leer más..."): Una respuesta corta y directa de 1-2 oraciones que conteste la pregunta de forma resumida.
    - SEGUNDA PARTE (después de "Leer más..."): La explicación completa con pasos detallados, listas numeradas, y toda la información relevante.
    Ejemplo de formato:
-   "Los accidentes se registran desde la Evaluación Inicial, buscando el estándar de Reporte e Investigación de Accidentes.
+   "Los accidentes se registran desde el Estándar 3.2.1 en la Evaluación Inicial.
 
    Leer más...
 
    ### Pasos detallados:
-   1. Abrir la Evaluación Inicial...
-   2. ..."
-3. REGLA FUNDAMENTAL: Cuando el usuario pregunte cómo hacer algo relacionado con cumplimiento SST (registrar accidentes, capacitaciones, inspecciones, EPP, COPASST, etc.), SIEMPRE indica que el punto de partida es la **Evaluación Inicial**. El flujo correcto es: abrir la Evaluación Inicial → buscar el estándar correspondiente → hacer clic → se abre el modo de verificación → ahí está el módulo correspondiente. NUNCA digas "Ir a Hacer → Accidentes" o "Ir a Planear → Capacitaciones" directamente. Todo se gestiona DESDE la Evaluación Inicial. LA ÚNICA EXCEPCIÓN es el módulo de **Trabajadores**: los trabajadores se registran SIEMPRE desde el menú Planear > Trabajadores, NUNCA desde la Evaluación Inicial. Es el primer paso antes de crear la Evaluación Inicial.
+   1. En la Evaluación Inicial, buscar el **Estándar 3.2.1** "Reporte de AT e Incidente de Trabajo"...
+   2. Clic en el botón del módulo → en /accidentes clic "Nuevo Accidente"...
+   3. ..."
+3. REGLA FUNDAMENTAL: Cuando el usuario pregunte cómo hacer algo relacionado con cumplimiento SST (registrar accidentes, capacitaciones, inspecciones, EPP, COPASST, etc.), el punto de partida SIEMPRE es la **Evaluación Inicial**. ASUME que el usuario ya sabe cómo llegar a ella — NUNCA expliques cómo abrir la Evaluación Inicial ni cómo navegar hasta ella. Ve directo al grano: indica qué estándar buscar y cómo usar el módulo. El flujo que debes describir es: buscar el **Estándar X.X.X** en la Evaluación Inicial → clic en el botón del módulo → completar los campos → Guardar. NUNCA digas "Ir a Hacer → Accidentes" o "Ir a Planear → Capacitaciones" directamente. NUNCA digas "Ir a la pestaña PLANEAR, seleccionar Gestión Integral, luego Evaluación Inicial". Todo se gestiona DESDE la Evaluación Inicial que el usuario ya tiene. LA ÚNICA EXCEPCIÓN es el módulo de **Trabajadores**: los trabajadores se registran SIEMPRE desde el menú Planear > Trabajadores, NUNCA desde la Evaluación Inicial. Es el primer paso antes de crear la Evaluación Inicial.
 4. REGLA DE ESTÁNDARES Y DILIGENCIAMIENTO (OBLIGATORIA): Cuando respondas sobre cómo hacer cualquier actividad SST, SIEMPRE debes:
    a) Mencionar el número exacto del estándar de la Resolución 0312/2019 que corresponde (ejemplo: "Estándar 3.2.1", "Estándar 2.6.1"). Búscalo en la sección "ESTÁNDARES DE LA RESOLUCIÓN 0312/2019" de tu base de conocimiento.
    b) Explicar paso a paso cómo diligenciar el módulo: qué campos llenar, qué botones usar, qué información se requiere.
