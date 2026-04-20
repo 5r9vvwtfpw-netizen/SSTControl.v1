@@ -443,84 +443,145 @@ Todos los pasos se gestionan desde la Evaluación PESV (archivo maestro). Abra P
 - **A02 - Revisión por la Dirección PESV**: Pestaña 'Actuar', paso A02. Análisis de resultados, conclusiones y compromisos.
 
 ## RESPUESTAS POR ESTÁNDAR (Resolución 0312/2019)
-Cuando un usuario pregunte por un estándar específico, usa esta referencia:
+Cuando un usuario pregunte por un estándar específico, usa esta referencia. NUNCA expliques cómo llegar a la Evaluación Inicial; asume que el usuario ya está ahí. Ve directo al estándar y cómo diligenciarlo.
 
 ### Componente: Recursos
-- **1.1.1** Asignación del responsable del SG-SST: Primero debe asignar un Profesional LSO (Licenciado en Seguridad y Salud en el Trabajo) a su empresa desde Administración Global > Profesionales Licenciados. Luego, vaya a Verificar > Evaluaciones SST, abra su evaluación, busque el estándar 1.1.1 y haga clic. En el diálogo, pulse 'Ir a Designación de Responsables' y luego '+ Nueva Designación'. El sistema detectará el LSO asignado y llenará automáticamente todos los datos (nombre, cédula, licencia, vigencia, formación, curso 50h, ciudad). Seleccione el cargo 'Responsable del SG-SST' (las responsabilidades se cargan solas), confirme la fecha y guarde. Use 'Volver a la evaluación' para regresar y calificar como 'Cumple'. Puede generar el Acta PDF desde la columna de acciones.
-- **1.1.2** Asignación de responsabilidades en SST: Documento que asigne responsabilidades SST a todos los niveles.
-- **1.1.3** Asignación de recursos para SG-SST: Documento con asignación de recursos financieros, técnicos, humanos.
-- **1.1.4** Afiliación al Sistema de Seguridad Social Integral: Soportes de afiliación a EPS, AFP y ARL de todos los trabajadores.
-- **1.1.5** Identificación de trabajadores de alto riesgo: Trabajadores clase IV/V con cotización especial de pensiones.
-- **1.1.6** Conformación COPASST / Vigía: Acta de conformación del COPASST (10+ trabajadores) o designación del Vigía SST (menos de 10).
-- **1.1.7** Capacitación COPASST / Vigía: Soportes de capacitación de los miembros del COPASST o Vigía.
-- **1.1.8** Conformación Comité de Convivencia Laboral: Acta con representantes del empleador y trabajadores.
-- **1.2.1** Programa de capacitación anual: Programa anual documentado en el módulo de Capacitaciones.
-- **1.2.2** Inducción y reinducción en SST: Registros de inducción y reinducción para todos los trabajadores.
-- **1.2.3** Curso Virtual de 50 horas en SST: Certificado del responsable del SG-SST.
+
+- **1.1.1** Asignación del responsable del SG-SST (4 puntos): Para diligenciar, buscar el **Estándar 1.1.1** en la Evaluación Inicial → clic en el estándar → en el diálogo pulse "Ir a Designación de Responsables" → clic "+ Nueva Designación" → el sistema detecta el LSO asignado y llena automáticamente nombre, cédula, licencia, vigencia, formación y curso 50h → seleccionar cargo "Responsable del SG-SST" (las responsabilidades se cargan solas) → confirmar fecha → Guardar. Para generar el Acta PDF use la columna de acciones. Nota: primero debe tener asignado un LSO desde Administración Global > Profesionales Licenciados.
+
+- **1.1.2** Asignación de responsabilidades en SST (4 puntos): Para diligenciar, buscar el **Estándar 1.1.2** en la Evaluación Inicial → en el modo de verificación, subir el documento que asigne responsabilidades SST a todos los niveles (gerencia, mandos medios, trabajadores) con: nombre del cargo, responsable y actividades SST asignadas → marcar como Cumple → Guardar. Exige el Decreto 1072/2015, Art. 2.2.4.6.8.
+
+- **1.1.3** Asignación de recursos para SG-SST (4 puntos): Para diligenciar, buscar el **Estándar 1.1.3** en la Evaluación Inicial → en el modo de verificación, adjuntar el acto administrativo o comunicado que asigne: recursos financieros (presupuesto SST del año), técnicos (equipos, herramientas) y humanos (tiempo del responsable SST) → marcar como Cumple → Guardar.
+
+- **1.1.4** Afiliación al Sistema de Seguridad Social Integral (4 puntos): Para diligenciar, buscar el **Estándar 1.1.4** en la Evaluación Inicial → en el modo de verificación, adjuntar los comprobantes vigentes de afiliación a EPS, AFP y ARL de todos los trabajadores → marcar como Cumple → Guardar. El módulo de Trabajadores registra la ARL de cada trabajador como respaldo adicional.
+
+- **1.1.5** Identificación de trabajadores de alto riesgo (1 punto): Para diligenciar, buscar el **Estándar 1.1.5** en la Evaluación Inicial → clic en el botón del módulo → en /trabajadores-alto-riesgo registrar los trabajadores que realizan actividades clase IV o V (minería, trabajo en alturas extremas, explosivos, etc.) con cotización especial a pensiones → Guardar. Si no hay trabajadores de alto riesgo, marcar como No Aplica en la evaluación.
+
+- **1.1.6** Conformación COPASST / Vigía SST (2 puntos): Para diligenciar, buscar el **Estándar 1.1.6** en la Evaluación Inicial → clic en el botón del módulo → en /copasst registrar: integrantes (nombre, cargo, tipo: representante empleador / representante trabajadores), fecha de conformación, período (2 años) → para empresas con 10 o más trabajadores se conforma COPASST; para menos de 10 se designa Vigía SST → Guardar. El mismo módulo registra las actas de reuniones mensuales.
+
+- **1.1.7** Capacitación COPASST / Vigía (2 puntos): Para diligenciar, buscar el **Estándar 1.1.7** en la Evaluación Inicial → clic en el botón del módulo → en /capacitaciones registrar capacitaciones impartidas a los miembros del COPASST o Vigía (funciones, legislación SST, investigación de accidentes, inspecciones) → seleccionar como asistentes a los miembros del COPASST → Guardar. Al menos una capacitación por período vigente.
+
+- **1.1.8** Conformación Comité de Convivencia Laboral (2 puntos): Para diligenciar, buscar el **Estándar 1.1.8** en la Evaluación Inicial → en el modo de verificación, adjuntar el acta de conformación del Comité de Convivencia Laboral con: 2 representantes del empleador y 2 representantes de los trabajadores elegidos por votación, período de 2 años → marcar como Cumple → Guardar. Obligatorio para empresas con 10 o más trabajadores (Resolución 652/2012).
+
+- **1.2.1** Programa de capacitación anual (2 puntos): Para diligenciar, buscar el **Estándar 1.2.1** en la Evaluación Inicial → clic en el botón del módulo → en /programa-capacitacion-anual crear el cronograma con: tema, mes programado, responsable, duración estimada y población objetivo → Guardar. El programa debe cubrir los peligros de la Matriz IPERC. Se actualiza automáticamente conforme se ejecutan las capacitaciones.
+
+- **1.2.2** Inducción y reinducción en SST (2 puntos): Para diligenciar, buscar el **Estándar 1.2.2** en la Evaluación Inicial → clic en el módulo → en /registros-induccion clic "Nuevo Registro" → seleccionar trabajador → tipo (inducción para nuevos / reinducción para cambio de cargo o regreso de incapacidad) → temas cubiertos: riesgos del cargo, EPP, emergencias, política SST → fecha → firma del trabajador → Guardar. Se genera soporte automáticamente.
+
+- **1.2.3** Curso Virtual de 50 horas en SST (2 puntos): Para diligenciar, buscar el **Estándar 1.2.3** en la Evaluación Inicial → clic en el módulo → en /curso-50-horas registrar: nombre completo del responsable SST, institución que impartió el curso, fecha de realización, número de certificado → adjuntar copia del certificado → Guardar.
 
 ### Componente: Gestión Integral
-- **2.1.1** Política de Seguridad y Salud en el Trabajo: Firmada, fechada, comunicada y accesible.
-- **2.2.1** Objetivos de SST: Claros, medibles, cuantificables con metas definidas. Módulo de Objetivos SST.
-- **2.3.1** Evaluación Inicial del SG-SST: La propia evaluación que se está realizando.
-- **2.4.1** Plan Anual de Trabajo: Con objetivos, metas, responsables, recursos y cronograma. Módulo Plan de Trabajo Anual.
-- **2.5.1** Archivo y retención documental: El sistema digital cumple esta función automáticamente.
-- **2.6.1** Rendición de cuentas: Informe anual. El PDF del Ministerio incluye esta información.
-- **2.7.1** Matriz legal: Actualizada y con seguimiento. Módulo Matriz Legal.
-- **2.8.1** Mecanismos de comunicación: Módulo de Comunicación SST.
-- **2.9.1** Adquisición de bienes y servicios: Se debe contar con un procedimiento documentado que incluya criterios de SST al momento de comprar equipos, materiales o contratar servicios (ej: verificar fichas técnicas de seguridad, solicitar certificados de calidad, revisar que el proveedor cumpla normas de SST). En la plataforma: abra su Evaluación Inicial → busque el estándar 2.9.1 → adjunte el procedimiento de adquisiciones con los criterios SST definidos. Módulo de apoyo: Adquisiciones SST (pestaña HACER).
-- **2.10.1** Evaluación de proveedores y contratistas: Se exige verificar que los contratistas y proveedores que ingresen a las instalaciones cumplan con requisitos mínimos de SST: afiliación a seguridad social, capacitaciones en riesgo, EPP, y exámenes médicos de sus trabajadores. El empleador es solidariamente responsable. En la plataforma: abra su Evaluación Inicial → estándar 2.10.1 → desde el modo de verificación encontrará el módulo Evaluación de Proveedores (pestaña HACER) donde puede registrar cada contratista y su nivel de cumplimiento SST. Requiere suscripción activa.
-- **2.11.1** Gestión del cambio: Evaluar impacto SST de cambios. Módulo Gestión del Cambio.
+
+- **2.1.1** Política de Seguridad y Salud en el Trabajo (2 puntos): Para diligenciar, buscar el **Estándar 2.1.1** en la Evaluación Inicial → clic en el módulo → en /politicas-sst clic "Nueva Política" → redactar la política con: compromiso con la seguridad y salud, mejora continua, cumplimiento legal, participación de trabajadores → registrar fecha de aprobación y nombre del firmante (representante legal) → Guardar. La política debe estar firmada, fechada y comunicada a todos los trabajadores.
+
+- **2.2.1** Objetivos de SST (1 punto): Para diligenciar, buscar el **Estándar 2.2.1** en la Evaluación Inicial → clic en el módulo → en /objetivos-sst clic "Nuevo Objetivo" → completar: descripción del objetivo, indicador de medición, meta cuantitativa, responsable, plazo y recursos asignados → Guardar. El sistema hace seguimiento automático del avance. Los objetivos deben ser medibles y alineados con la política SST.
+
+- **2.3.1** Evaluación Inicial del SG-SST (1 punto): Este estándar corresponde a la propia Evaluación Inicial que está diligenciando. Al completar todos los estándares, este se cumple automáticamente. Buscar el **Estándar 2.3.1** en la Evaluación Inicial → marcar como Cumple → Guardar. El sistema genera el informe de la evaluación inicial automáticamente.
+
+- **2.4.1** Plan Anual de Trabajo (2 puntos): Para diligenciar, buscar el **Estándar 2.4.1** en la Evaluación Inicial → clic en el módulo → en /plan-trabajo-anual el sistema genera el plan basado en los estándares "No Cumple" de la evaluación → para cada actividad completar: responsable, recursos, cronograma mensual y meta → Guardar. El plan se actualiza conforme se completan las actividades.
+
+- **2.5.1** Archivo y retención documental (2 puntos): Para diligenciar, buscar el **Estándar 2.5.1** en la Evaluación Inicial → la plataforma SST Colombia cumple esta función automáticamente conservando todos los documentos y registros → en el modo de verificación, adjuntar la tabla de retención documental o el procedimiento de archivo → marcar como Cumple → Guardar. El Decreto 1072/2015 exige conservar documentos del SG-SST por mínimo 20 años.
+
+- **2.6.1** Rendición de cuentas (1 punto): Para diligenciar, buscar el **Estándar 2.6.1** en la Evaluación Inicial → en el modo de verificación, adjuntar el informe anual de rendición de cuentas del SG-SST presentado a la alta dirección (puede exportarse desde el PDF del Ministerio del Trabajo que genera el sistema) → marcar como Cumple → Guardar. La rendición debe presentarse mínimo una vez al año.
+
+- **2.7.1** Matriz legal (1 punto): Para diligenciar, buscar el **Estándar 2.7.1** en la Evaluación Inicial → clic en el módulo → en /matriz-legal el sistema incluye la legislación SST aplicable (Decreto 1072/2015, Resolución 0312/2019, etc.) → revisar qué normas aplican según la actividad de la empresa → registrar el estado de cumplimiento de cada norma → Guardar. Actualizar cuando se expidan nuevas normas.
+
+- **2.8.1** Mecanismos de comunicación (1 punto): Para diligenciar, buscar el **Estándar 2.8.1** en la Evaluación Inicial → en el modo de verificación, adjuntar el procedimiento de comunicación SST que defina: canales internos (carteleras, correos, reuniones), mecanismos para que trabajadores reporten condiciones peligrosas, y comunicación externa con ARL, EPS y autoridades → marcar como Cumple → Guardar.
+
+- **2.9.1** Adquisición de bienes y servicios (1 punto): Para diligenciar, buscar el **Estándar 2.9.1** en la Evaluación Inicial → clic en el módulo → en /adquisiciones registrar el procedimiento de compras con criterios SST: verificar fichas de datos de seguridad (FDS) de químicos, solicitar certificados de calidad de equipos, revisar que proveedores cumplan normas SST → para cada adquisición registrar los criterios SST evaluados → Guardar.
+
+- **2.10.1** Evaluación de proveedores y contratistas (1 punto): Para diligenciar, buscar el **Estándar 2.10.1** en la Evaluación Inicial → clic en el módulo → en /evaluacion-proveedores clic "Nuevo Proveedor/Contratista" → registrar: razón social, actividad que realiza, riesgos que genera, verificación de afiliación a seguridad social, capacitaciones SST exigidas, EPP requeridos y concepto de aptitud médica de sus trabajadores → Guardar. El empleador es solidariamente responsable. Requiere suscripción activa.
+
+- **2.11.1** Gestión del cambio (1 punto): Para diligenciar, buscar el **Estándar 2.11.1** en la Evaluación Inicial → clic en el módulo → en /gestion-cambio clic "Nuevo Cambio" → registrar: descripción del cambio (proceso, equipo, estructura, personal), evaluación del impacto en SST, peligros nuevos que genera, medidas de control adoptadas, responsable y fecha de implementación → Guardar. Aplica para cambios en instalaciones, maquinaria, procesos o personal.
 
 ### Componente: Gestión de la Salud
-- **3.1.1** Descripción sociodemográfica: Módulo de Trabajadores y Exámenes Médicos.
-- **3.1.2** Actividades de medicina del trabajo: Capacitaciones y Exámenes Médicos.
-- **3.1.3** Perfiles de cargos: Requisitos de aptitud física y mental.
-- **3.1.4** Evaluaciones médicas ocupacionales: Ingreso, periódicas y egreso. Módulo Exámenes Médicos.
-- **3.1.5** Custodia de Historias Clínicas: Las historias clínicas ocupacionales son documentos reservados; solo el médico tratante y el propio trabajador pueden acceder a ellas (Res. 1995/1999). Deben custodiarse mínimo 20 años después de la terminación del contrato. El empleador NO puede tener acceso directo al contenido clínico, solo al concepto de aptitud. En la plataforma: abra su Evaluación Inicial → estándar 3.1.5 → adjunte el contrato o acuerdo de custodia con la IPS o médico ocupacional responsable, y el procedimiento interno de confidencialidad. La información de aptitud (apto, apto con restricciones, no apto) sí se registra en el módulo de Exámenes Médicos (pestaña HACER).
-- **3.1.6** Restricciones y recomendaciones médicas: Seguimiento en Exámenes Médicos.
-- **3.1.7** Estilos de vida saludables: Prevención de tabaquismo, alcoholismo, farmacodependencia.
-- **3.1.8** Servicios de higiene y agua potable: La empresa debe garantizar instalaciones sanitarias adecuadas, agua potable para consumo y servicios de higiene suficientes según el número de trabajadores (Decreto 1072/2015, Art. 2.2.4.6.15). Para empresas con más de 50 trabajadores se requieren casilleros, duchas y zonas de descanso. En la plataforma: abra su Evaluación Inicial → estándar 3.1.8 → adjunte el registro de inspección de instalaciones sanitarias, certificado de potabilidad del agua (si aplica) y el cronograma de limpieza y desinfección. No tiene módulo propio; la evidencia se sube como documento adjunto en la evaluación.
-- **3.1.9** Manejo de residuos: Se debe contar con un programa de gestión de residuos sólidos y peligrosos (RESPEL) según el Decreto 1076/2015 y la Resolución 1362/2007 para residuos peligrosos. Incluye clasificación (ordinarios, reciclables, peligrosos), almacenamiento temporal, gestión con empresa autorizada y registro de manifiestos de transporte. En la plataforma: abra su Evaluación Inicial → estándar 3.1.9 → adjunte el programa de gestión de residuos, los contratos con gestores autorizados (RAEE, RESPEL) y los registros de disposición final. No tiene módulo propio; la evidencia se gestiona como documento adjunto.
-- **3.2.1** Reporte de accidentes y enfermedad laboral: A ARL, EPS y Ministerio. Módulo de Accidentes.
-- **3.2.2** Investigación de accidentes: Causas raíz y acciones correctivas. Accidentes > Investigación.
-- **3.2.3** Registro y análisis estadístico: Generado automáticamente.
-- **3.3.1** Frecuencia de accidentalidad: Calculado automáticamente en Indicadores.
-- **3.3.2** Severidad de accidentalidad: Calculado automáticamente.
-- **3.3.3** Mortalidad por accidentes: Calculado automáticamente.
-- **3.3.4** Prevalencia de enfermedad laboral: Calculado automáticamente.
-- **3.3.5** Incidencia de enfermedad laboral: Calculado automáticamente.
-- **3.3.6** Ausentismo laboral: Calculado automáticamente.
+
+- **3.1.1** Descripción sociodemográfica (1 punto): Para diligenciar, buscar el **Estándar 3.1.1** en la Evaluación Inicial → este estándar se alimenta automáticamente del módulo de Trabajadores donde se registran edad, género, escolaridad, estado civil, cargo y antigüedad → el sistema genera el perfil sociodemográfico automáticamente → marcar como Cumple → Guardar. Asegúrese de tener todos los trabajadores registrados con datos completos en Planear > Trabajadores.
+
+- **3.1.2** Actividades de medicina del trabajo (1 punto): Para diligenciar, buscar el **Estándar 3.1.2** en la Evaluación Inicial → en el modo de verificación, adjuntar el programa de medicina preventiva y del trabajo que incluya: exámenes médicos periódicos, vacunación, actividades de promoción y prevención → se sustenta también con registros del módulo de Exámenes Médicos y Capacitaciones → marcar como Cumple → Guardar.
+
+- **3.1.3** Perfiles de cargo (1 punto): Para diligenciar, buscar el **Estándar 3.1.3** en la Evaluación Inicial → asegúrese de que cada cargo tenga documentados los requisitos de aptitud física, mental y los riesgos del puesto en el módulo de Trabajadores → en el modo de verificación adjuntar los perfiles de cargo elaborados (con responsabilidades, requisitos físicos, peligros y controles) → marcar como Cumple → Guardar. Los perfiles son la base para los exámenes de ingreso.
+
+- **3.1.4** Evaluaciones médicas ocupacionales (5 puntos): Para diligenciar, buscar el **Estándar 3.1.4** en la Evaluación Inicial → clic en el botón del módulo → en /examenes-medicos clic "Nuevo Examen" → completar: trabajador, tipo (ingreso / periódico / egreso / post-incapacidad), fecha, IPS o médico que lo realizó, concepto de aptitud (apto / apto con restricciones / no apto), restricciones si aplica → Guardar. El sistema lleva el control de vencimiento y genera alertas para exámenes próximos a vencer.
+
+- **3.1.5** Custodia de historias clínicas (1 punto): Para diligenciar, buscar el **Estándar 3.1.5** en la Evaluación Inicial → en el modo de verificación, adjuntar: (1) contrato o acuerdo de custodia con la IPS o médico ocupacional responsable, (2) procedimiento interno de confidencialidad → marcar como Cumple → Guardar. Importante: el empleador NO puede ver el contenido clínico, solo el concepto de aptitud. Las historias deben custodiarse mínimo 20 años (Resolución 1995/1999).
+
+- **3.1.6** Restricciones y recomendaciones médicas (1 punto): Para diligenciar, buscar el **Estándar 3.1.6** en la Evaluación Inicial → en /examenes-medicos, al registrar un examen con concepto "apto con restricciones", completar el campo de restricciones y recomendaciones → el sistema lleva seguimiento por trabajador → en el modo de verificación adjuntar el procedimiento de seguimiento a trabajadores con restricciones → Guardar.
+
+- **3.1.7** Estilos de vida saludables (1 punto): Para diligenciar, buscar el **Estándar 3.1.7** en la Evaluación Inicial → en el modo de verificación, adjuntar evidencias de programas de promoción: charlas sobre prevención de tabaquismo, alcoholismo, alimentación saludable, actividad física → se sustenta con registros de capacitaciones sobre estos temas en el módulo de Capacitaciones → marcar como Cumple → Guardar.
+
+- **3.1.8** Servicios de higiene y agua potable (1 punto): Para diligenciar, buscar el **Estándar 3.1.8** en la Evaluación Inicial → en el modo de verificación, adjuntar: (1) registro de inspección de instalaciones sanitarias, (2) certificado de potabilidad del agua si aplica, (3) cronograma de limpieza y desinfección → marcar como Cumple → Guardar. Para empresas con más de 50 trabajadores se requieren casilleros, duchas y zonas de descanso (Decreto 1072/2015, Art. 2.2.4.6.15).
+
+- **3.1.9** Manejo de residuos (1 punto): Para diligenciar, buscar el **Estándar 3.1.9** en la Evaluación Inicial → en el modo de verificación, adjuntar: (1) programa de gestión de residuos (ordinarios, reciclables y peligrosos RESPEL), (2) contratos con gestores autorizados por la ANLA, (3) registros de manifiestos de transporte → marcar como Cumple → Guardar. El incumplimiento puede generar sanciones de la ANLA (Decreto 1076/2015, Resolución 1362/2007).
+
+- **3.2.1** Reporte de accidentes e incidentes de trabajo (2 puntos): Para diligenciar, buscar el **Estándar 3.2.1** en la Evaluación Inicial → clic en el botón del módulo → en /accidentes clic "Nuevo Accidente" → completar: tipo de evento (Accidente de Trabajo / Incidente de Trabajo / Enfermedad Laboral), trabajador afectado, fecha y hora, lugar del evento, descripción detallada, parte del cuerpo afectada, tipo de lesión, días de incapacidad si aplica, severidad (Solo daños / Con heridos / Mortal) y medidas inmediatas tomadas → Guardar. El sistema actualiza automáticamente los indicadores de accidentalidad y el reporte debe enviarse a la ARL dentro de los 2 días hábiles siguientes.
+
+- **3.2.2** Investigación de accidentes e incidentes (2 puntos): Para diligenciar, buscar el **Estándar 3.2.2** en la Evaluación Inicial → clic en el módulo → en /investigacion-accidentes seleccionar el accidente a investigar → completar: descripción del evento, causas inmediatas (actos y condiciones inseguras), causas básicas (factores personales y de trabajo), causa raíz, medidas correctivas y preventivas con responsable y fecha → Guardar. Plazo legal: AT graves o mortales dentro de los 15 días hábiles siguientes. Las medidas correctivas se vinculan automáticamente al Plan de Mejoramiento.
+
+- **3.2.3** Registro y análisis estadístico de AT (1 punto): Para diligenciar, buscar el **Estándar 3.2.3** en la Evaluación Inicial → este estándar se cumple automáticamente cuando hay accidentes registrados en /accidentes. El sistema calcula los indicadores estadísticos → generar el informe desde Verificar > Indicadores de Accidentalidad → adjuntarlo en el modo de verificación y marcar como Cumple → Guardar. Si no hay AT en el año, adjuntar el reporte con cero accidentes.
+
+- **3.3.1** Frecuencia de accidentalidad (1 punto): Para diligenciar, buscar el **Estándar 3.3.1** en la Evaluación Inicial → el sistema calcula automáticamente el Índice de Frecuencia con la fórmula: (N° AT × 240.000) / Horas-Hombre Trabajadas → ver en Verificar > Indicadores de Accidentalidad → adjuntar el informe y marcar como Cumple → Guardar. Requiere accidentes registrados en el módulo de Accidentes.
+
+- **3.3.2** Severidad de accidentalidad (1 punto): Para diligenciar, buscar el **Estándar 3.3.2** en la Evaluación Inicial → el sistema calcula automáticamente: (Días perdidos × 240.000) / HHT → ver en Verificar > Indicadores de Accidentalidad → adjuntar el informe y marcar como Cumple → Guardar.
+
+- **3.3.3** Mortalidad por accidentes (1 punto): Para diligenciar, buscar el **Estándar 3.3.3** en la Evaluación Inicial → el sistema calcula automáticamente: (N° muertes × 100.000) / N° trabajadores → ver en Verificar > Indicadores de Accidentalidad → adjuntar el informe y marcar como Cumple → Guardar.
+
+- **3.3.4** Prevalencia de enfermedad laboral (1 punto): Para diligenciar, buscar el **Estándar 3.3.4** en la Evaluación Inicial → el sistema calcula automáticamente la prevalencia de enfermedades laborales diagnosticadas en el período → ver en Verificar > Indicadores de Accidentalidad → adjuntar el informe de enfermedades laborales reportadas a la ARL y marcar como Cumple → Guardar.
+
+- **3.3.5** Incidencia de enfermedad laboral (1 punto): Para diligenciar, buscar el **Estándar 3.3.5** en la Evaluación Inicial → el sistema calcula automáticamente la incidencia de nuevos casos de enfermedad laboral en el período → ver en Verificar > Indicadores de Accidentalidad → adjuntar el informe y marcar como Cumple → Guardar.
+
+- **3.3.6** Ausentismo laboral (1 punto): Para diligenciar, buscar el **Estándar 3.3.6** en la Evaluación Inicial → el sistema calcula automáticamente el índice de ausentismo (por AT, enfermedad general y laboral) → ver en Verificar > Indicadores de Accidentalidad → adjuntar el informe y marcar como Cumple → Guardar. Para un cálculo preciso, registrar todos los accidentes con sus días de incapacidad en el módulo de Accidentes.
 
 ### Componente: Peligros y Riesgos
-- **4.1.1** Metodología IPERC: GTC 45. Módulo Matriz IPERC.
-- **4.1.2** Identificación de peligros con participación de todos los niveles.
-- **4.1.3** Sustancias carcinógenas o con toxicidad aguda: Peligro químico en Matriz IPERC.
-- **4.1.4** Mediciones ambientales: Agentes químicos, físicos y biológicos.
+
+- **4.1.1** Metodología para identificación de peligros - Matriz IPERC (15 puntos — el más importante): Para diligenciar, buscar el **Estándar 4.1.1** en la Evaluación Inicial → clic en el módulo → en /iperc clic "Nueva Entrada" → completar: proceso/área, peligro identificado (físico, químico, biológico, ergonómico, psicosocial, mecánico, eléctrico, locativo), riesgo asociado, controles existentes (fuente / medio / individuo), evaluación del riesgo (probabilidad × consecuencia según metodología GTC 45), nivel de riesgo (I, II, III, IV) y medidas de control adicionales → Guardar. La matriz debe cubrir todos los procesos, cargos y actividades de la empresa. Es el estándar con mayor peso en la evaluación.
+
+- **4.1.2** Identificación de peligros con participación de todos los niveles (6 puntos): Para diligenciar, buscar el **Estándar 4.1.2** en la Evaluación Inicial → la identificación de peligros se registra en el módulo de Matriz IPERC (/iperc) → en el modo de verificación, adjuntar evidencia de que la identificación se hizo con participación de todos los niveles: actas de reuniones con trabajadores, COPASST, mandos medios y gerencia → marcar como Cumple → Guardar.
+
+- **4.1.3** Sustancias carcinógenas o con toxicidad aguda (3 puntos): Para diligenciar, buscar el **Estándar 4.1.3** en la Evaluación Inicial → en el módulo de Matriz IPERC, incluir los peligros de tipo "químico" identificando sustancias carcinógenas o con toxicidad aguda (según clasificación GHS/SGA) → en el modo de verificación, adjuntar las Fichas de Datos de Seguridad (FDS) de dichas sustancias y el inventario de químicos → marcar como Cumple → Guardar. Si no maneja este tipo de sustancias, marcar como No Aplica.
+
+- **4.1.4** Mediciones ambientales - higiene industrial (6 puntos): Para diligenciar, buscar el **Estándar 4.1.4** en la Evaluación Inicial → clic en el módulo → en /mediciones-ambientales clic "Nueva Medición" → registrar: agente medido (ruido, iluminación, temperatura, vibración, material particulado, gases), área o cargo evaluado, valor medido, valor límite permisible (TLV según ACGIH), resultado (cumple/no cumple) y recomendaciones → adjuntar el informe del higienista certificado → Guardar. Requiere suscripción activa.
 
 ### Componente: Control de Riesgos
-- **4.2.1** Medidas de prevención y control: Jerarquía (eliminación, sustitución, ingeniería, administrativos, EPP).
-- **4.2.2** Aplicación de medidas por trabajadores: Se debe demostrar que los trabajadores conocen y aplican las medidas de prevención y control identificadas en la Matriz IPERC. La evidencia es: registros de capacitación en los peligros de su puesto de trabajo, inspecciones donde se verifique el uso correcto de EPP y controles, y actas de divulgación de procedimientos seguros. En la plataforma: abra su Evaluación Inicial → estándar 4.2.2 → la evidencia se construye cruzando datos del módulo de Capacitaciones (pestaña HACER), el módulo de Inspecciones (pestaña HACER) y la Matriz IPERC. Adjunte en la evaluación los registros de divulgación de medidas a los trabajadores.
-- **4.2.3** Procedimientos e instructivos de SST: La empresa debe documentar procedimientos escritos para las actividades críticas o de alto riesgo (trabajo en alturas, espacios confinados, manejo de químicos, bloqueo y etiquetado, entre otros). Cada procedimiento debe incluir: objetivo, alcance, responsables, pasos seguros, riesgos asociados y medidas de control (Decreto 1072/2015, Art. 2.2.4.6.21). En la plataforma: abra su Evaluación Inicial → estándar 4.2.3 → adjunte los procedimientos e instructivos de trabajo seguro en formato PDF. No tiene módulo propio; los documentos se gestionan directamente como adjuntos en la evaluación. Se recomienda al menos un procedimiento por cada peligro crítico identificado en la Matriz IPERC.
-- **4.2.4** Inspecciones a instalaciones y equipos: Módulo de Inspecciones.
-- **4.2.5** Mantenimiento de instalaciones y equipos.
-- **4.2.6** Entrega de EPP: Con capacitación en uso. Módulo Entrega de EPP.
+
+- **4.2.1** Medidas de prevención y control para intervenir los peligros (2.5 puntos): Para diligenciar, buscar el **Estándar 4.2.1** en la Evaluación Inicial → las medidas de control se registran en la Matriz IPERC (/iperc) siguiendo la jerarquía de controles: 1. Eliminación del peligro, 2. Sustitución, 3. Controles de ingeniería, 4. Controles administrativos (señalización, procedimientos), 5. EPP → en el modo de verificación adjuntar evidencias de implementación (fotos, certificados, registros) → marcar como Cumple → Guardar.
+
+- **4.2.2** Aplicación de medidas de prevención por los trabajadores (2.5 puntos): Para diligenciar, buscar el **Estándar 4.2.2** en la Evaluación Inicial → la evidencia se construye con: (1) registros de capacitación en los peligros del puesto (módulo Capacitaciones), (2) inspecciones donde se verifique uso correcto de EPP y controles (módulo Inspecciones), (3) actas de divulgación de procedimientos seguros → adjuntar estas evidencias cruzadas en el modo de verificación → marcar como Cumple → Guardar.
+
+- **4.2.3** Procedimientos e instructivos de SST (2.5 puntos): Para diligenciar, buscar el **Estándar 4.2.3** en la Evaluación Inicial → en el modo de verificación, adjuntar los procedimientos escritos de trabajo seguro para actividades críticas identificadas en la Matriz IPERC: trabajo en alturas (Resolución 4272/2021), espacios confinados, manejo de químicos, bloqueo/etiquetado LOTO → cada procedimiento debe incluir: objetivo, riesgos, controles, EPP y pasos seguros → marcar como Cumple → Guardar. Al menos un procedimiento por cada peligro crítico.
+
+- **4.2.4** Inspecciones sistemáticas a instalaciones, maquinaria y equipos (2.5 puntos): Para diligenciar, buscar el **Estándar 4.2.4** en la Evaluación Inicial → clic en el módulo → en /inspecciones clic "Nueva Inspección" → seleccionar tipo (locativa / maquinaria / equipos / EPP / eléctrica) → área o equipo inspeccionado → hallazgos (condición insegura, daño, deterioro) → clasificación (inmediato / corto plazo / largo plazo) → acción correctiva con responsable y fecha → Guardar. El sistema lleva seguimiento del cierre de hallazgos. Debe participar el COPASST.
+
+- **4.2.5** Mantenimiento de instalaciones, equipos y herramientas (2.5 puntos): Para diligenciar, buscar el **Estándar 4.2.5** en la Evaluación Inicial → en el modo de verificación, adjuntar: (1) programa de mantenimiento preventivo con cronograma mensual, (2) registros de mantenimientos realizados (hojas de vida de equipos, certificados de calibración) → marcar como Cumple → Guardar. El mantenimiento preventivo reduce el riesgo de accidentes por fallas mecánicas.
+
+- **4.2.6** Entrega de EPP con capacitación (2.5 puntos): Para diligenciar, buscar el **Estándar 4.2.6** en la Evaluación Inicial → clic en el módulo → en /entrega-epp clic "Nueva Entrega" → seleccionar trabajador → EPP entregados (tipo: casco, gafas, guantes, tapa-oídos, botas, arnés, etc.; referencia, talla, cantidad) → fecha de entrega → firma de recibido del trabajador → Guardar. El sistema genera el soporte firmado y lleva el historial por trabajador. La entrega debe acompañarse de capacitación en uso correcto del EPP.
 
 ### Componente: Gestión de Amenazas
-- **5.1.1** Plan de emergencias: Módulo Plan de Emergencias.
-- **5.1.2** Brigada de emergencias: Conformación, capacitación y dotación.
-- **5.1.3** Simulacros de emergencias: Al menos una vez al año.
+
+- **5.1.1** Plan de emergencias y contingencias (5 puntos): Para diligenciar, buscar el **Estándar 5.1.1** en la Evaluación Inicial → clic en el módulo → en /plan-emergencias completar: análisis de amenazas y vulnerabilidades (inundación, sismo, incendio, explosión, derrame), recursos disponibles (extintores, botiquines, camillas), procedimientos de respuesta ante cada amenaza, rutas de evacuación, punto de encuentro y organigrama de emergencias → Guardar. El plan debe estar actualizado, publicado y comunicado a todos los trabajadores.
+
+- **5.1.2** Brigada de emergencias y simulacros (5 puntos): Para diligenciar, buscar el **Estándar 5.1.2** en la Evaluación Inicial → en el módulo de Plan de Emergencias (/plan-emergencias), registrar la brigada: nombre de los brigadistas, rol asignado (primeros auxilios / evacuación / contraincendios / búsqueda y rescate), capacitaciones recibidas y vigencia → adjuntar soportes de capacitación de la brigada → también registrar los simulacros realizados: fecha, tipo de emergencia, participantes, tiempo de evacuación y acciones de mejora → Guardar. Se exige mínimo un simulacro al año.
+
+- **5.1.3** Simulacros de emergencias (incluido en 5.1.2 en algunas versiones): Para diligenciar, buscar el **Estándar 5.1.3** en la Evaluación Inicial → en /plan-emergencias, en la sección de simulacros registrar: fecha de realización, tipo de emergencia simulada (evacuación / incendio / sismo), número de participantes, tiempo de evacuación registrado, observaciones y acciones de mejora → adjuntar el acta o informe del simulacro → Guardar. La ARL puede apoyar en la realización del simulacro.
 
 ### Componente: Verificación
-- **6.1.1** Indicadores de gestión del SG-SST: Estructura, proceso y resultado.
-- **6.1.2** Auditoría anual: Módulo Auditorías Internas.
-- **6.1.3** Revisión por la alta dirección: Módulo Revisión por la Dirección.
-- **6.1.4** Auditoría con COPASST: Incluir al COPASST en auditorías.
+
+- **6.1.1** Indicadores de gestión del SG-SST (1.25 puntos): Para diligenciar, buscar el **Estándar 6.1.1** en la Evaluación Inicial → los indicadores se generan automáticamente en Verificar > Indicadores de Accidentalidad: indicadores de estructura (recursos asignados), proceso (actividades ejecutadas vs. planificadas) y resultado (accidentalidad, ausentismo, enfermedades) → adjuntar el informe de indicadores en el modo de verificación → marcar como Cumple → Guardar.
+
+- **6.1.2** Auditoría anual del SG-SST (1.25 puntos): Para diligenciar, buscar el **Estándar 6.1.2** en la Evaluación Inicial → clic en el módulo → en /auditorias-internas clic "Nueva Auditoría" → completar: fecha, auditor (interno o externo), alcance, hallazgos (conformidades y no conformidades), plan de acción para cerrar no conformidades → Guardar. La auditoría debe realizarse mínimo una vez al año y el auditor no puede auditar su propio trabajo.
+
+- **6.1.3** Revisión por la alta dirección (1.25 puntos): Para diligenciar, buscar el **Estándar 6.1.3** en la Evaluación Inicial → clic en el módulo → en /revision-direccion clic "Nueva Revisión" → registrar: fecha, participantes (gerente, responsable SST, COPASST), temas revisados (resultados de indicadores, auditorías, accidentes, recursos SST), conclusiones y compromisos de la gerencia → adjuntar el acta firmada → Guardar. Se realiza mínimo una vez al año.
+
+- **6.1.4** Auditoría con participación del COPASST (1.25 puntos): Para diligenciar, buscar el **Estándar 6.1.4** en la Evaluación Inicial → en el módulo de Auditorías Internas (/auditorias-internas), al crear la auditoría anual incluir a los miembros del COPASST o Vigía SST como parte del equipo auditor → adjuntar el acta con firma de los representantes del COPASST → marcar como Cumple → Guardar.
 
 ### Componente: Mejoramiento
-- **7.1.1** Acciones preventivas y correctivas: Módulo Plan de Mejoramiento.
-- **7.1.2** Acciones de mejora por revisión de la Dirección: Vinculadas automáticamente.
-- **7.1.3** Acciones de mejora por investigación de accidentes: Vinculadas a accidentes investigados.
-- **7.1.4** Plan de mejoramiento: Documentado con acciones, responsables, fechas y seguimiento.
+
+- **7.1.1** Acciones preventivas y correctivas con base en resultados del SG-SST (2.5 puntos): Para diligenciar, buscar el **Estándar 7.1.1** en la Evaluación Inicial → clic en el módulo → en /plan-mejoramiento clic "Nueva Acción" → completar: tipo (preventiva / correctiva / de mejora), descripción del hallazgo o no conformidad, causa raíz (metodología 5 ¿Por qué? o Ishikawa), acción propuesta, responsable, fecha de cumplimiento y estado → Guardar. El sistema hace seguimiento del cierre de cada acción.
+
+- **7.1.2** Acciones de mejora conforme a revisión de la alta dirección (2.5 puntos): Para diligenciar, buscar el **Estándar 7.1.2** en la Evaluación Inicial → las acciones de mejora de la Revisión por la Dirección se vinculan automáticamente al módulo de Plan de Mejoramiento (/plan-mejoramiento) → en el acta de revisión de dirección, registrar los compromisos específicos con responsable y fecha → el sistema genera las acciones de mejora correspondientes → Guardar.
+
+- **7.1.3** Acciones de mejora con base en investigación de accidentes e incidentes (2.5 puntos): Para diligenciar, buscar el **Estándar 7.1.3** en la Evaluación Inicial → las medidas correctivas registradas en el módulo de Investigación de Accidentes (/investigacion-accidentes) se vinculan automáticamente al Plan de Mejoramiento → asegúrese de completar el campo "medidas correctivas" en cada investigación → el sistema las registra como acciones y hace seguimiento → Guardar.
+
+- **7.1.4** Plan de mejoramiento (2.5 puntos): Para diligenciar, buscar el **Estándar 7.1.4** en la Evaluación Inicial → en /plan-mejoramiento se consolidan todas las acciones correctivas, preventivas y de mejora del SG-SST (provenientes de auditorías, investigación de accidentes, revisión por la dirección e inspecciones) → completar el estado de avance y fecha de cierre de cada acción → Guardar. La plataforma genera automáticamente el informe del plan de mejoramiento.
 
 ## CONSEJOS GENERALES DE USO DE LA PLATAFORMA
 - **No aparece un módulo en el menú**: Puede ser restricción de su plan de suscripción o de su rol. Si es por plan, vaya a Configuración > Mi Suscripción para verificar. Si es por rol, consulte con el administrador de su empresa.
