@@ -111,8 +111,9 @@ const CHAPTER_1_MODULES = [
   "/copasst-evaluaciones",
   "/comite-convivencia-actas",  // Estándar 1.1.8 - Obligatorio para todas las empresas (Ley 1010/2006)
   
-  // Evaluación básica
+  // Evaluación básica y estructura organizativa (obligatorio para todos)
   "/evaluaciones-sst",
+  "/organigrama-sst",
   
   // Accidentes (obligatorio para todos)
   "/accidentes",
