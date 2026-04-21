@@ -32,11 +32,13 @@ export interface FuratData {
     eps: string | null;
     arl: string | null;
     tiempoLaborado: string | null;
+    salarioBase: string | null;
   };
   accidente: {
     fecha: string;
     hora: string;
     jornada: string | null;
+    tipoAccidente: string | null;
     lugarAccidente: string;
     municipio: string | null;
     descripcion: string;
@@ -44,10 +46,11 @@ export interface FuratData {
     naturalezaLesion: string | null;
     agenteLesion: string | null;
     mecanismoLesion: string | null;
-    clasificacion: string;
+    severidad: string;
     requirioUrgencias: boolean;
     ipsAtencion: string | null;
     diagnosticoMedico: string | null;
+    codigoCIE10: string | null;
     testigos: string | null;
     accionesTomadas: string | null;
   };
@@ -299,19 +302,20 @@ export function generateFuratExcel(data: FuratData): Buffer {
   r = addRow(ws, r, "Sexo", normalizeSexo(data.trabajador.sexo), "Cargo / Oficio", data.trabajador.cargo);
   r = addRow(ws, r, "Tipo de vinculación", normalizeVinculacion(data.trabajador.tipoVinculacion), "Tiempo laborado en empresa", data.trabajador.tiempoLaborado || "No calculado");
   r = addRow(ws, r, "EPS del trabajador", data.trabajador.eps || "No registrada", "ARL del trabajador", data.trabajador.arl || data.empresa.arl || "No registrada");
+  r = addRow(ws, r, "Salario base de cotización", data.trabajador.salarioBase || "No registrado", "", "");
   r++;
 
   // ── SECCIÓN 3: DATOS DEL ACCIDENTE ─────────────────────────────────────
   r = addSection(ws, r, "SECCIÓN 3 — DATOS DEL ACCIDENTE DE TRABAJO");
   r = addRow(ws, r, "Fecha del accidente", data.accidente.fecha, "Hora del accidente", data.accidente.hora);
-  r = addRow(ws, r, "Jornada", normalizeJornada(data.accidente.jornada), "Clasificación del evento", normalizeClasificacion(null));
+  r = addRow(ws, r, "Jornada de trabajo", normalizeJornada(data.accidente.jornada), "Tipo / Clasificación del evento", normalizeClasificacion(data.accidente.tipoAccidente));
+  r = addRow(ws, r, "Severidad del accidente", normalizeSeveridad(data.accidente.severidad), "¿Requirió atención de urgencias?", data.accidente.requirioUrgencias ? "SÍ" : "NO");
   r = addFullRow(ws, r, "Lugar del accidente", data.accidente.lugarAccidente);
-  r = addRow(ws, r, "Municipio / Ciudad", data.accidente.municipio || data.empresa.ciudad || "No especificado", "Severidad", normalizeSeveridad(data.accidente.clasificacion));
+  r = addRow(ws, r, "Municipio / Ciudad del accidente", data.accidente.municipio || data.empresa.ciudad || "No especificado", "IPS que atendió", data.accidente.ipsAtencion || "No registrada");
   r = addFullRow(ws, r, "Descripción detallada del accidente", data.accidente.descripcion, true);
   r = addRow(ws, r, "Parte del cuerpo afectada", data.accidente.parteAfectada || "No especificada", "Naturaleza de la lesión", data.accidente.naturalezaLesion || "No especificada");
   r = addRow(ws, r, "Agente de la lesión", data.accidente.agenteLesion || "No especificado", "Mecanismo de la lesión", data.accidente.mecanismoLesion || "No especificado");
-  r = addRow(ws, r, "¿Requirió atención de urgencias?", data.accidente.requirioUrgencias ? "SÍ" : "NO", "IPS que atendió", data.accidente.ipsAtencion || "No registrada");
-  r = addFullRow(ws, r, "Diagnóstico médico", data.accidente.diagnosticoMedico || "No registrado");
+  r = addRow(ws, r, "Diagnóstico médico", data.accidente.diagnosticoMedico || "No registrado", "Código CIE-10", data.accidente.codigoCIE10 || "No registrado");
   r = addFullRow(ws, r, "Testigos", data.accidente.testigos || "No registrados");
   r = addFullRow(ws, r, "Acciones tomadas inmediatamente", data.accidente.accionesTomadas || "No registradas");
   r++;
