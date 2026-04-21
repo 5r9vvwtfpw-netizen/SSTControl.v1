@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 import {
   Building2,
   User,
@@ -13,7 +15,8 @@ import {
   Shield,
   FlameKindling,
   Info,
-  Printer,
+  Download,
+  Loader2,
   ExternalLink,
   ClipboardList,
   UserCheck,
@@ -21,24 +24,25 @@ import {
 
 interface CopasstPeriodo {
   id: string;
-  anio: number;
+  fechaInicio: string;
+  fechaFin: string;
+  tipoComite: string;
   estado: string;
 }
 
 interface CopasstMiembro {
   id: string;
-  nombre: string;
-  cargo: string;
-  rol: string;
-  tipo: string;
+  workerId: string;
+  cargo: string | null;
+  rolMiembro: string;
+  tipoRepresentante: string;
 }
 
 interface BrigadaEmergencia {
   id: string;
   nombre: string;
   tipo: string;
-  lider?: string;
-  numeromiembros?: number;
+  descripcion?: string | null;
 }
 
 interface CompanyInfo {
@@ -160,9 +164,9 @@ function MemberList({ members }: { members: CopasstMiembro[] }) {
       {members.slice(0, 6).map((m) => (
         <li key={m.id} className="flex items-center gap-2 text-xs">
           <User className="h-3 w-3 text-muted-foreground shrink-0" />
-          <span className="truncate">{m.nombre}</span>
+          <span className="truncate text-muted-foreground">{m.cargo ?? m.rolMiembro}</span>
           <Badge variant="outline" className="text-xs shrink-0 capitalize">
-            {m.rol}
+            {m.rolMiembro}
           </Badge>
         </li>
       ))}
@@ -176,7 +180,32 @@ function MemberList({ members }: { members: CopasstMiembro[] }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function OrganigramaSst() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const companyId = user?.companyId;
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  async function handleDownloadPdf() {
+    setDownloadingPdf(true);
+    try {
+      const res = await fetch("/api/organigrama-sst/pdf", { credentials: "include" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Error desconocido" }));
+        throw new Error(err.error || "No se pudo generar el PDF");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "organigrama-sst.pdf";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "PDF generado", description: "El Organigrama SG-SST fue descargado." });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }
 
   const { data: company, isLoading: loadingCompany } = useQuery<CompanyInfo>({
     queryKey: ["/api/company/current"],
@@ -200,12 +229,18 @@ export default function OrganigramaSst() {
 
   const isLoading = loadingCompany || loadingPeriodo || loadingMiembros || loadingBrigadas;
 
-  const miembrosEmpleador = miembros.filter((m) => m.tipo === "empleador");
-  const miembrosTrabajadores = miembros.filter((m) => m.tipo === "trabajadores");
+  const miembrosEmpleador = miembros.filter((m) => m.tipoRepresentante === "empleador");
+  const miembrosTrabajadores = miembros.filter((m) => m.tipoRepresentante === "trabajador");
 
-  // Vigía SST aplica para empresas < 10 trabajadores
+  // Vigía SST aplica para empresas < 10 trabajadores o si el período dice 'vigia'
   const numWorkers = company?.numTrabajadores ?? 0;
-  const tieneVigia = numWorkers > 0 && numWorkers < 10;
+  const tieneVigia =
+    periodoActivo?.tipoComite === "vigia" || (numWorkers > 0 && numWorkers < 10);
+
+  // Año del período activo derivado de fechaInicio
+  const periodoAnio = periodoActivo?.fechaInicio
+    ? new Date(periodoActivo.fechaInicio).getFullYear()
+    : null;
 
   return (
     <div className="space-y-6 p-6 print:p-4 max-w-5xl mx-auto">
@@ -221,12 +256,16 @@ export default function OrganigramaSst() {
         </div>
         <Button
           variant="outline"
-          onClick={() => window.print()}
-          className="print:hidden"
-          data-testid="button-print-organigrama"
+          onClick={handleDownloadPdf}
+          disabled={downloadingPdf}
+          data-testid="button-download-pdf-organigrama"
         >
-          <Printer className="h-4 w-4 mr-2" />
-          Imprimir
+          {downloadingPdf ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4 mr-2" />
+          )}
+          {downloadingPdf ? "Generando..." : "Descargar PDF"}
         </Button>
       </div>
 
@@ -308,7 +347,7 @@ export default function OrganigramaSst() {
                   title="COPASST"
                   subtitle={
                     periodoActivo
-                      ? `Período ${periodoActivo.anio} — ${periodoActivo.estado}`
+                      ? `Período ${periodoAnio ?? ""} — ${periodoActivo.estado}`
                       : "Sin período activo — crear en el módulo COPASST"
                   }
                   badge={
@@ -368,16 +407,8 @@ export default function OrganigramaSst() {
                     key={brigada.id}
                     icon={FlameKindling}
                     title={brigada.nombre}
-                    subtitle={
-                      brigada.lider
-                        ? `Líder: ${brigada.lider}`
-                        : `Tipo: ${brigada.tipo}`
-                    }
-                    badge={
-                      brigada.numeromiembros != null
-                        ? `${brigada.numeromiembros} integrantes`
-                        : "Brigada"
-                    }
+                    subtitle={brigada.descripcion ?? `Tipo: ${brigada.tipo}`}
+                    badge="Brigada"
                     color="red"
                     navTo="/plan-emergencias"
                     navLabel="Ver plan"

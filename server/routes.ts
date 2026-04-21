@@ -51400,6 +51400,26 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // ── PDF Organigrama SG-SST ─────────────────────────────────────────────────
+  app.get("/api/organigrama-sst/pdf", requireAuth, requirePermission("sst_management:view"), async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
+      const { generateOrganigramaPdf } = await import('./services/pdf-organigrama');
+      const pdfBuffer = await generateOrganigramaPdf({ companyId });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="organigrama-sst.pdf"');
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error('[PDF Organigrama] Error:', error.message);
+      res.status(500).json({ error: "Error al generar el PDF del organigrama" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Initialize WebSocket for real-time notifications
   initializeWebSocket(httpServer);
