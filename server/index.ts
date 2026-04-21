@@ -30,6 +30,7 @@ import { startMonthlyBillingJob } from "./jobs/monthly-billing";
 import { startMedicalExamRemindersCron } from "./jobs/medical-exam-reminders";
 import { startIndicadoresSchedulerCron } from "./jobs/indicadores-scheduler";
 import { startNotificationsCron } from "./jobs/notifications";
+import { startComplianceAlertsCron } from "./jobs/compliance-alerts";
 import { scheduleWeeklyBackup } from "./jobs/weekly-backup";
 import { startSubscriptionIntegrityCheck } from "./cron/subscription-integrity";
 import { getUncachableStripeClient, getStripeSecretKey } from "./stripeClient";
@@ -916,6 +917,12 @@ app.use(requestLoggerMiddleware);
       startNotificationsCron();
     } catch (error) {
       logger.error({ err: error }, "⚠️ Notifications cron job initialization failed");
+    }
+
+    try {
+      startComplianceAlertsCron();
+    } catch (error) {
+      logger.error({ err: error }, "⚠️ Compliance alerts cron job initialization failed");
     }
 
     try {

@@ -9095,6 +9095,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ── Admin: Disparar alertas de cumplimiento manualmente ──────────────────
+  app.post("/api/admin/trigger-compliance-alerts", requireRole(["superadmin"]), async (req, res) => {
+    try {
+      const { tipos } = req.body as { tipos?: string[] };
+      const { runComplianceAlerts } = await import("./jobs/compliance-alerts");
+      const resultados = await runComplianceAlerts(tipos);
+      res.json({ success: true, resultados });
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error triggering compliance alerts");
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   // JOB PROFILES ROUTES - Perfiles de Cargo
   
   app.get("/api/job-profiles", requireAnyPermission(["job_profiles:view", "job_profiles:view_self"]), async (req, res) => {
