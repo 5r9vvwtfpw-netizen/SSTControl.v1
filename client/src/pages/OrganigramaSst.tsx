@@ -45,6 +45,16 @@ interface BrigadaEmergencia {
   descripcion?: string | null;
 }
 
+interface ResponsibleDesignation {
+  id: string;
+  workerId: string | null;
+  position: string;
+  status: string;
+  isExternalLso: boolean | null;
+  externalLsoName: string | null;
+  designationDate: string;
+}
+
 interface CompanyInfo {
   id: string;
   name: string;
@@ -227,10 +237,24 @@ export default function OrganigramaSst() {
     enabled: !!companyId,
   });
 
-  const isLoading = loadingCompany || loadingPeriodo || loadingMiembros || loadingBrigadas;
+  const { data: designaciones = [], isLoading: loadingDesignaciones } = useQuery<ResponsibleDesignation[]>({
+    queryKey: ["/api/responsible-designations"],
+    enabled: !!companyId,
+  });
+
+  const isLoading = loadingCompany || loadingPeriodo || loadingMiembros || loadingBrigadas || loadingDesignaciones;
 
   const miembrosEmpleador = miembros.filter((m) => m.tipoRepresentante === "empleador");
   const miembrosTrabajadores = miembros.filter((m) => m.tipoRepresentante === "trabajador");
+
+  // Responsable principal SST: primera designación activa
+  const designacionesActivas = designaciones.filter((d) => d.status === "activo");
+  const responsablePrincipal = designacionesActivas[0] ?? null;
+  const responsableNombre = responsablePrincipal?.isExternalLso
+    ? (responsablePrincipal.externalLsoName ?? "LSO Externo")
+    : responsablePrincipal
+    ? responsablePrincipal.position
+    : null;
 
   // Vigía SST aplica para empresas < 10 trabajadores o si el período dice 'vigia'
   const numWorkers = company?.numTrabajadores ?? 0;
@@ -309,12 +333,18 @@ export default function OrganigramaSst() {
             icon={UserCheck}
             title="Responsable / Coordinador SST"
             subtitle={
-              company?.responsableSst
-                ? company.responsableSst
+              responsablePrincipal
+                ? responsablePrincipal.isExternalLso
+                  ? `${responsablePrincipal.externalLsoName ?? "LSO Externo"} — ${responsablePrincipal.position}`
+                  : responsablePrincipal.position
                 : "Sin asignar — definir en Designación de Responsable"
             }
-            badge={company?.responsableSst ? "Asignado" : "Pendiente"}
-            badgeVariant={company?.responsableSst ? "secondary" : "destructive"}
+            badge={
+              designacionesActivas.length > 0
+                ? `${designacionesActivas.length} designación${designacionesActivas.length > 1 ? "es" : ""}`
+                : "Pendiente"
+            }
+            badgeVariant={designacionesActivas.length > 0 ? "secondary" : "destructive"}
             color="blue"
             navTo="/designacion-responsable"
             navLabel="Ver designación"
