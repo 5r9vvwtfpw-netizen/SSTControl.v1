@@ -92,6 +92,7 @@ export const routePermissions: Record<string, Permission[]> = {
   "/sustancias-quimicas": ["sst_management:view"],
   "/vigilancia-epidemiologica": ["diseases:view"],
   "/perfil-sociodemografico": ["sst_management:view"],
+  "/organigrama-sst": ["sst_management:view"],
   "/actividades-promocion-prevencion": ["sst_management:view"],
   "/estilos-vida-saludable": ["sst_management:view"],
 

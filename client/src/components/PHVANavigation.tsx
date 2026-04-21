@@ -111,6 +111,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
       title: "Gestión Integral",
       items: [
         { label: "Evaluación Inicial", path: "/evaluaciones-sst" },
+        { label: "Organigrama SST", path: "/organigrama-sst" },
       ],
     },
   ],
@@ -293,6 +294,7 @@ export function PHVANavigation() {
       "/politica-sst": "planear",
       "/asignacion-recursos": "planear",
       "/designacion-responsable": "planear",
+      "/organigrama-sst": "planear",
       "/asignar-lso-externo": "planear",
       "/programa-capacitacion-anual": "planear",
       "/planes-trabajo-anual": "planear",

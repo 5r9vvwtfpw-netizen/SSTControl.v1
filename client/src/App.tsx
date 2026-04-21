@@ -76,6 +76,7 @@ import ProfesionalesLicenciados from "@/pages/ProfesionalesLicenciados";
 import PortalLicenciado from "@/pages/PortalLicenciado";
 import DetalleInvestigacionLSO from "@/pages/DetalleInvestigacionLSO";
 import PerfilesCargo from "@/pages/PerfilesCargo";
+import OrganigramaSst from "@/pages/OrganigramaSst";
 import ExamenesMedicos from "@/pages/ExamenesMedicos";
 import ResponsibleDesignation from "@/pages/ResponsibleDesignation";
 import AsignarLsoExterno from "@/pages/AsignarLsoExterno";
@@ -249,6 +250,7 @@ function Router() {
       <SubscriptionProtectedRoute path="/sustancias-quimicas" component={SustanciasQuimicas} feature="hasSustanciasQuimicas" featureName="Sustancias Químicas" />
       <ProtectedRoute path="/vigilancia-epidemiologica" component={VigilanciaEpidemiologica} />
       <ProtectedRoute path="/perfil-sociodemografico" component={PerfilSociodemografico} />
+      <ProtectedRoute path="/organigrama-sst" component={OrganigramaSst} />
       <ProtectedRoute path="/actividades-promocion-prevencion" component={ActividadesPromocionPrevencion} />
       <ProtectedRoute path="/estilos-vida-saludable" component={EstilosVidaSaludable} />
       <ProtectedRoute path="/politicas-sst" component={PoliticasSst} />

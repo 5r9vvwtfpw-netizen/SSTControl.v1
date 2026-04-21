@@ -22,6 +22,12 @@ The Company Sedes module allows managing multiple branches/locations per company
 
 The Support Portal includes a real-time internal chat system for agent coordination using WebSockets, supporting @mentions, unread indicators, and file/image uploads. Support tickets have an archive system and auto-assignment. Admin and superadmin pages utilize a "Company Vault System" or "Professional Vault System" for data filtering. The NGO Portal Integration receives `company.onboarded` webhooks from an external NGO sidecar.
 
+A Compliance Alerts System (v3.9.0) runs automated cron jobs generating 4 types of alerts: incomplete 0312 standards (Mondays), pending annual evaluation (monthly), overdue improvement plan actions (daily), and companies without evaluation started (Mondays). Each alert creates a COPASST notification + sends email to admin, with deduplication windows. Manual trigger available at `POST /api/admin/trigger-compliance-alerts` (superadmin only).
+
+The Organigrama SST module (`/organigrama-sst`) provides a visual hierarchical display of the SST organizational structure, pulling data from existing modules: company info (legal rep), COPASST periods/members, brigadas de emergencia. Includes print support and normative references (Decreto 1072/2015 Art. 2.2.4.6.8).
+
+The Matriz Legal includes 3 new entries added via migration (`syncMatrizLegalNormas`): Resolución 2346/2007 Art. 4-5 (Profesiograma), Decreto 1072/2015 Art. 2.2.4.6.8 (Organigrama SST), Resolución 2646/2008 Art. 8 (Perfil Sociodemográfico). These are idempotently applied to all existing companies on startup.
+
 ### Database & Infrastructure
 The production environment uses AWS RDS PostgreSQL, deployed on Replit Autoscale. Development uses Replit-provisioned Neon PostgreSQL. The system employs database indexes, a connection pool, PDF concurrency limiting, pagination, and N+1 query fixes for performance optimization.
 
