@@ -4907,6 +4907,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/accidents/:id/furat-excel - Generate FURAT Excel (Resolución 1570/2005)
+  app.get("/api/accidents/:id/furat-excel", requireAnyPermission(["accidents:view", "accidents:view_self"]), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+
+      const accident = await storage.getAccidentById(req.params.id);
+      if (!accident) return res.status(404).json({ error: "Accidente no encontrado" });
+
+      if (!isAdmin && accident.companyId !== userCompanyId) {
+        return res.status(403).json({ error: "No autorizado" });
+      }
+
+      const worker = await storage.getWorker(accident.workerId, accident.companyId);
+      const company = await storage.getCompany(accident.companyId);
+      if (!worker || !company) return res.status(404).json({ error: "Datos relacionados no encontrados" });
+
+      // Calcular tiempo laborado
+      let tiempoLaborado: string | null = null;
+      if (worker.startDate) {
+        const start = new Date(worker.startDate);
+        const end = accident.date ? new Date(accident.date) : new Date();
+        const diffMs = end.getTime() - start.getTime();
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const years = Math.floor(diffDays / 365);
+        const months = Math.floor((diffDays % 365) / 30);
+        if (years > 0) tiempoLaborado = `${years} año(s) y ${months} mes(es)`;
+        else if (months > 0) tiempoLaborado = `${months} mes(es)`;
+        else tiempoLaborado = `${diffDays} día(s)`;
+      }
+
+      const furatModule = await import("./reports/furat-excel");
+      const generateFuratExcel = furatModule.generateFuratExcel;
+
+      const furatData = {
+        empresa: {
+          razonSocial: company.name,
+          nit: company.nit,
+          ciiuCode: company.ciiuCode || null,
+          ciudad: (company as any).city || null,
+          direccion: company.address || null,
+          telefono: company.contactPhone || null,
+          arl: (company as any).arlNombreEmpresa || null,
+          nivelRiesgo: company.riskLevel || "I",
+          representanteLegal: company.legalRepName || null,
+          representanteLegalCedula: company.legalRepId || null,
+        },
+        trabajador: {
+          nombre: worker.name,
+          tipoDocumento: "CC",
+          numeroDocumento: worker.identificationNumber,
+          fechaNacimiento: worker.birthDate ? new Date(worker.birthDate).toLocaleDateString("es-CO") : null,
+          sexo: worker.gender || null,
+          cargo: worker.position,
+          tipoVinculacion: worker.contractType,
+          eps: (worker as any).epsNombre || null,
+          arl: (worker as any).arlNombre || null,
+          tiempoLaborado,
+        },
+        accidente: {
+          fecha: accident.date ? new Date(accident.date).toLocaleDateString("es-CO") : "No registrada",
+          hora: accident.time || "No registrada",
+          jornada: accident.journeyType || null,
+          lugarAccidente: accident.location,
+          municipio: (company as any).city || null,
+          descripcion: accident.description,
+          parteAfectada: accident.bodyPartAffected || null,
+          naturalezaLesion: accident.injuryNature || null,
+          agenteLesion: accident.causativeAgent || null,
+          mecanismoLesion: accident.accidentMechanism || null,
+          clasificacion: accident.severity,
+          requirioUrgencias: !!(accident as any).erReferral,
+          ipsAtencion: accident.ipsName || null,
+          diagnosticoMedico: accident.medicalDiagnosis || null,
+          testigos: accident.witnesses || null,
+          accionesTomadas: accident.actionsTaken || null,
+        },
+        reporte: {
+          fechaReporteEmpleador: new Date().toLocaleDateString("es-CO"),
+          elaboradoPor: req.user?.username || null,
+        },
+      };
+
+      const excelBuffer = generateFuratExcel(furatData);
+
+      const workerNameSlug = worker.name.replace(/\s+/g, "_").substring(0, 20);
+      const dateSlug = accident.date ? accident.date.toString().substring(0, 10) : "sin_fecha";
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", `attachment; filename="FURAT_${workerNameSlug}_${dateSlug}.xlsx"`);
+      res.send(excelBuffer);
+    } catch (error: any) {
+      console.error("[FURAT-Excel] Error:", error);
+      res.status(500).json({ error: "Error generando FURAT Excel", details: error.message });
+    }
+  });
+
 
   // =====================================================
   // ACCIDENT INVESTIGATIONS ROUTES (Standard 3.2.1)
