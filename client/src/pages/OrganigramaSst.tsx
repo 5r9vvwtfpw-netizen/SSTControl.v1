@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,17 +15,14 @@ import {
   Info,
   Printer,
   ExternalLink,
-  ChevronDown,
   ClipboardList,
   UserCheck,
 } from "lucide-react";
-import { Link } from "wouter";
 
 interface CopasstPeriodo {
   id: string;
   anio: number;
   estado: string;
-  fechaConstitucion?: string;
 }
 
 interface CopasstMiembro {
@@ -32,8 +30,7 @@ interface CopasstMiembro {
   nombre: string;
   cargo: string;
   rol: string;
-  tipo: string; // 'empleador' | 'trabajadores'
-  workerId?: string;
+  tipo: string;
 }
 
 interface BrigadaEmergencia {
@@ -41,7 +38,7 @@ interface BrigadaEmergencia {
   nombre: string;
   tipo: string;
   lider?: string;
-  miembros?: number;
+  numeromiembros?: number;
 }
 
 interface CompanyInfo {
@@ -51,11 +48,34 @@ interface CompanyInfo {
   representanteLegal?: string;
   responsableSst?: string;
   numTrabajadores?: number;
-  nivelRiesgoArl?: string;
-  tieneCopasst?: boolean;
-  tieneVigiaSst?: boolean;
 }
 
+// ─── Nav link button ──────────────────────────────────────────────────────────
+function NavLink({
+  to,
+  label = "Gestionar",
+}: {
+  to: string;
+  label?: string;
+}) {
+  const [, setLocation] = useLocation();
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        setLocation(to);
+      }}
+      className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1 cursor-pointer bg-transparent border-0 p-0"
+      data-testid={`link-nav-${to.replace(/\//g, "-")}`}
+    >
+      {label}
+      <ExternalLink className="h-3 w-3" />
+    </button>
+  );
+}
+
+// ─── Single org chart node ────────────────────────────────────────────────────
 function OrgNode({
   icon: Icon,
   title,
@@ -63,10 +83,10 @@ function OrgNode({
   badge,
   badgeVariant = "secondary",
   children,
-  linkTo,
-  linkLabel,
+  navTo,
+  navLabel,
   color = "default",
-  "data-testid": testId,
+  testId,
 }: {
   icon: React.ElementType;
   title: string;
@@ -74,10 +94,10 @@ function OrgNode({
   badge?: string;
   badgeVariant?: "default" | "secondary" | "outline" | "destructive";
   children?: React.ReactNode;
-  linkTo?: string;
-  linkLabel?: string;
+  navTo?: string;
+  navLabel?: string;
   color?: "default" | "primary" | "blue" | "green" | "orange" | "red";
-  "data-testid"?: string;
+  testId?: string;
 }) {
   const colorMap: Record<string, string> = {
     default: "bg-card border-border",
@@ -115,14 +135,7 @@ function OrgNode({
             {subtitle && (
               <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{subtitle}</p>
             )}
-            {linkTo && (
-              <Link href={linkTo}>
-                <span className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1 cursor-pointer">
-                  {linkLabel ?? "Gestionar"}
-                  <ExternalLink className="h-3 w-3" />
-                </span>
-              </Link>
-            )}
+            {navTo && <NavLink to={navTo} label={navLabel} />}
           </div>
         </div>
         {children && <div className="mt-3 pt-3 border-t border-border/50">{children}</div>}
@@ -135,17 +148,6 @@ function ConnectorLine() {
   return (
     <div className="flex justify-center my-1">
       <div className="w-px h-6 bg-border" />
-    </div>
-  );
-}
-
-function HorizontalGroup({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col items-center w-full">
-      <div className="flex justify-center my-1">
-        <div className="w-px h-6 bg-border" />
-      </div>
-      <div className="flex flex-wrap gap-4 justify-center w-full">{children}</div>
     </div>
   );
 }
@@ -171,6 +173,7 @@ function MemberList({ members }: { members: CopasstMiembro[] }) {
   );
 }
 
+// ─── Main page ────────────────────────────────────────────────────────────────
 export default function OrganigramaSst() {
   const { user } = useAuth();
   const companyId = user?.companyId;
@@ -197,16 +200,16 @@ export default function OrganigramaSst() {
 
   const isLoading = loadingCompany || loadingPeriodo || loadingMiembros || loadingBrigadas;
 
-  const handlePrint = () => window.print();
-
   const miembrosEmpleador = miembros.filter((m) => m.tipo === "empleador");
   const miembrosTrabajadores = miembros.filter((m) => m.tipo === "trabajadores");
-  const tieneVigia = company?.tieneVigiaSst || (company?.numTrabajadores ?? 0) < 10;
-  const tieneCopasst = !tieneVigia;
+
+  // Vigía SST aplica para empresas < 10 trabajadores
+  const numWorkers = company?.numTrabajadores ?? 0;
+  const tieneVigia = numWorkers > 0 && numWorkers < 10;
 
   return (
     <div className="space-y-6 p-6 print:p-4 max-w-5xl mx-auto">
-      {/* Header */}
+      {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold" data-testid="text-page-title">
@@ -218,7 +221,7 @@ export default function OrganigramaSst() {
         </div>
         <Button
           variant="outline"
-          onClick={handlePrint}
+          onClick={() => window.print()}
           className="print:hidden"
           data-testid="button-print-organigrama"
         >
@@ -227,21 +230,22 @@ export default function OrganigramaSst() {
         </Button>
       </div>
 
-      {/* Legal basis alert */}
+      {/* ── Legal basis ───────────────────────────────────────────────────── */}
       <Alert className="print:hidden">
         <Info className="h-4 w-4" />
         <AlertDescription className="text-sm">
           <strong>Base legal:</strong> Decreto 1072/2015 Art. 2.2.4.6.8 — El empleador debe definir
-          y comunicar la estructura organizativa del SG-SST, incluyendo roles, responsabilidades y
+          y comunicar la estructura organizativa del SG-SST con roles, responsabilidades y
           autoridades en materia de SST.
         </AlertDescription>
       </Alert>
 
+      {/* ── Org chart ─────────────────────────────────────────────────────── */}
       {isLoading ? (
         <div className="space-y-4">
-          <Skeleton className="h-24 w-full max-w-xs mx-auto" />
-          <Skeleton className="h-24 w-full max-w-xs mx-auto" />
-          <Skeleton className="h-24 w-full max-w-xs mx-auto" />
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-24 w-full max-w-xs mx-auto" />
+          ))}
         </div>
       ) : (
         <div className="flex flex-col items-center py-4">
@@ -256,9 +260,7 @@ export default function OrganigramaSst() {
             }
             badge="Alta Dirección"
             color="primary"
-            linkTo="/ajustes-empresa"
-            linkLabel="Actualizar datos"
-            data-testid="org-node-representante-legal"
+            testId="org-node-representante-legal"
           />
 
           <ConnectorLine />
@@ -272,88 +274,86 @@ export default function OrganigramaSst() {
                 ? company.responsableSst
                 : "Sin asignar — definir en Designación de Responsable"
             }
-            badge="Obligatorio"
+            badge={company?.responsableSst ? "Asignado" : "Pendiente"}
             badgeVariant={company?.responsableSst ? "secondary" : "destructive"}
             color="blue"
-            linkTo="/designacion-responsable"
-            linkLabel="Ver designación"
-            data-testid="org-node-responsable-sst"
+            navTo="/designacion-responsable"
+            navLabel="Ver designación"
+            testId="org-node-responsable-sst"
           />
 
           <ConnectorLine />
 
           {/* Nivel 3 — COPASST o Vigía + Comité de Convivencia */}
           <div className="flex flex-col items-center w-full">
-            {/* Horizontal branch line */}
             <div className="flex justify-center">
               <div className="w-px h-4 bg-border" />
             </div>
             <div className="flex flex-wrap gap-6 justify-center w-full">
               {/* COPASST o Vigía SST */}
-              {tieneCopasst ? (
-                <div className="flex flex-col items-center" data-testid="org-node-copasst">
-                  <OrgNode
-                    icon={Shield}
-                    title="COPASST"
-                    subtitle={
-                      periodoActivo
-                        ? `Período ${periodoActivo.anio} — ${periodoActivo.estado}`
-                        : "Sin período activo"
-                    }
-                    badge={miembros.length > 0 ? `${miembros.length} miembros` : "Sin miembros"}
-                    badgeVariant={miembros.length > 0 ? "secondary" : "destructive"}
-                    color="green"
-                    linkTo="/copasst"
-                    linkLabel="Gestionar COPASST"
-                  >
-                    {miembros.length > 0 && (
-                      <div className="space-y-2">
-                        {miembrosEmpleador.length > 0 && (
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground mb-1">
-                              Representantes empleador
-                            </p>
-                            <MemberList members={miembrosEmpleador} />
-                          </div>
-                        )}
-                        {miembrosTrabajadores.length > 0 && (
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground mb-1">
-                              Representantes trabajadores
-                            </p>
-                            <MemberList members={miembrosTrabajadores} />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </OrgNode>
-                </div>
+              {tieneVigia ? (
+                <OrgNode
+                  icon={Shield}
+                  title="Vigía SST"
+                  subtitle="Empresas con menos de 10 trabajadores — Decreto 1295/1994"
+                  badge="Vigía"
+                  color="green"
+                  navTo="/copasst"
+                  navLabel="Gestionar Vigía"
+                  testId="org-node-vigia-sst"
+                />
               ) : (
-                <div className="flex flex-col items-center" data-testid="org-node-vigia-sst">
-                  <OrgNode
-                    icon={Shield}
-                    title="Vigía SST"
-                    subtitle="Empresas con menos de 10 trabajadores"
-                    badge="Vigía"
-                    color="green"
-                    linkTo="/copasst"
-                    linkLabel="Gestionar Vigía"
-                  />
-                </div>
+                <OrgNode
+                  icon={Shield}
+                  title="COPASST"
+                  subtitle={
+                    periodoActivo
+                      ? `Período ${periodoActivo.anio} — ${periodoActivo.estado}`
+                      : "Sin período activo — crear en el módulo COPASST"
+                  }
+                  badge={
+                    miembros.length > 0 ? `${miembros.length} miembros` : "Sin miembros"
+                  }
+                  badgeVariant={miembros.length > 0 ? "secondary" : "destructive"}
+                  color="green"
+                  navTo="/copasst"
+                  navLabel="Gestionar COPASST"
+                  testId="org-node-copasst"
+                >
+                  {miembros.length > 0 && (
+                    <div className="space-y-2">
+                      {miembrosEmpleador.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">
+                            Representantes empleador
+                          </p>
+                          <MemberList members={miembrosEmpleador} />
+                        </div>
+                      )}
+                      {miembrosTrabajadores.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">
+                            Representantes trabajadores
+                          </p>
+                          <MemberList members={miembrosTrabajadores} />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </OrgNode>
               )}
 
               {/* Comité de Convivencia */}
-              <div className="flex flex-col items-center" data-testid="org-node-comite-convivencia">
-                <OrgNode
-                  icon={Users}
-                  title="Comité de Convivencia Laboral"
-                  subtitle="Resolución 2646/2008 — Manejo de riesgo psicosocial"
-                  badge="Obligatorio"
-                  color="orange"
-                  linkTo="/comite-convivencia-actas"
-                  linkLabel="Ver actas"
-                />
-              </div>
+              <OrgNode
+                icon={Users}
+                title="Comité de Convivencia Laboral"
+                subtitle="Res. 2646/2008 — Gestión de riesgo psicosocial"
+                badge="Obligatorio"
+                color="orange"
+                navTo="/comite-convivencia-actas"
+                navLabel="Ver actas"
+                testId="org-node-comite-convivencia"
+              />
             </div>
           </div>
 
@@ -361,10 +361,11 @@ export default function OrganigramaSst() {
 
           {/* Nivel 4 — Brigadas de Emergencia */}
           {brigadas.length > 0 ? (
-            <HorizontalGroup>
-              {brigadas.map((brigada) => (
-                <div key={brigada.id} data-testid={`org-node-brigada-${brigada.id}`}>
+            <div className="flex flex-col items-center w-full">
+              <div className="flex flex-wrap gap-4 justify-center w-full">
+                {brigadas.map((brigada) => (
                   <OrgNode
+                    key={brigada.id}
                     icon={FlameKindling}
                     title={brigada.nombre}
                     subtitle={
@@ -372,14 +373,19 @@ export default function OrganigramaSst() {
                         ? `Líder: ${brigada.lider}`
                         : `Tipo: ${brigada.tipo}`
                     }
-                    badge={brigada.miembros ? `${brigada.miembros} integrantes` : "Brigada"}
+                    badge={
+                      brigada.numeromiembros != null
+                        ? `${brigada.numeromiembros} integrantes`
+                        : "Brigada"
+                    }
                     color="red"
-                    linkTo="/plan-emergencias"
-                    linkLabel="Ver plan"
+                    navTo="/plan-emergencias"
+                    navLabel="Ver plan"
+                    testId={`org-node-brigada-${brigada.id}`}
                   />
-                </div>
-              ))}
-            </HorizontalGroup>
+                ))}
+              </div>
+            </div>
           ) : (
             <OrgNode
               icon={FlameKindling}
@@ -388,9 +394,9 @@ export default function OrganigramaSst() {
               badge="Pendiente"
               badgeVariant="destructive"
               color="red"
-              linkTo="/plan-emergencias"
-              linkLabel="Configurar brigadas"
-              data-testid="org-node-brigadas"
+              navTo="/plan-emergencias"
+              navLabel="Configurar brigadas"
+              testId="org-node-brigadas"
             />
           )}
 
@@ -401,20 +407,20 @@ export default function OrganigramaSst() {
             icon={Users}
             title="Trabajadores"
             subtitle={
-              company?.numTrabajadores != null
-                ? `${company.numTrabajadores} trabajador(es) registrado(s)`
+              numWorkers > 0
+                ? `${numWorkers} trabajador(es) registrado(s)`
                 : "Todos los colaboradores de la empresa"
             }
             badge="Todos"
             color="default"
-            linkTo="/trabajadores"
-            linkLabel="Ver trabajadores"
-            data-testid="org-node-trabajadores"
+            navTo="/trabajadores"
+            navLabel="Ver trabajadores"
+            testId="org-node-trabajadores"
           />
         </div>
       )}
 
-      {/* Footer — información complementaria */}
+      {/* ── Info footer ───────────────────────────────────────────────────── */}
       <div className="grid gap-4 md:grid-cols-2 print:hidden">
         <Card>
           <CardHeader className="pb-2">
@@ -425,22 +431,27 @@ export default function OrganigramaSst() {
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-1">
             <p>
-              • <strong>Representante Legal / Empresa:</strong> en Configuración de Empresa
+              <strong>Representante Legal / Empresa:</strong> se toma del registro de empresa
             </p>
             <p>
-              • <strong>Responsable SST:</strong> en Designación de Responsable
+              <strong>Responsable SST:</strong> en{" "}
+              <NavLink to="/designacion-responsable" label="Designación de Responsable" />
             </p>
             <p>
-              • <strong>COPASST / Vigía:</strong> en el módulo COPASST
+              <strong>COPASST / Vigía:</strong> en{" "}
+              <NavLink to="/copasst" label="el módulo COPASST" />
             </p>
             <p>
-              • <strong>Comité de Convivencia:</strong> en Actas de Convivencia
+              <strong>Comité de Convivencia:</strong> en{" "}
+              <NavLink to="/comite-convivencia-actas" label="Actas de Convivencia" />
             </p>
             <p>
-              • <strong>Brigadas:</strong> en el Plan de Emergencias
+              <strong>Brigadas:</strong> en{" "}
+              <NavLink to="/plan-emergencias" label="el Plan de Emergencias" />
             </p>
             <p>
-              • <strong>Trabajadores:</strong> en el módulo Trabajadores
+              <strong>Trabajadores:</strong> en{" "}
+              <NavLink to="/trabajadores" label="el módulo Trabajadores" />
             </p>
           </CardContent>
         </Card>

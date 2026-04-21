@@ -166,6 +166,8 @@ const CHAPTER_1_MODULES = [
   "/inspecciones",
   // Dashboard Hacer (necesario para acceder a los módulos anteriores)
   "/dashboard-hacer",
+  // Plan de emergencias (obligatorio para todas las empresas - Decreto 1072/2015 Art. 2.2.4.6.21)
+  "/plan-emergencias",
 ];
 
 // Módulos adicionales para Capítulo 2 (21 estándares)
