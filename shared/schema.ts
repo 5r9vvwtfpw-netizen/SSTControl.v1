@@ -93,6 +93,8 @@ export const companies = pgTable("companies", {
   quoteDiscountDurationMonths: integer("quote_discount_duration_months"),
   quoteCouponCode: text("quote_coupon_code"),
   quoteReferrerId: text("quote_referrer_id"),
+  onboardingCompleted: integer("onboarding_completed").notNull().default(0), // 0 = pendiente inducción, 1 = inducción completada
+  onboardingCompletedAt: timestamp("onboarding_completed_at"), // Fecha en que se liberó el acceso
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 

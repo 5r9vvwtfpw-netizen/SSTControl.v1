@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search } from "lucide-react";
+import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search, Unlock } from "lucide-react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation, useRouter } from "wouter";
@@ -388,6 +388,22 @@ export default function CompanyManagement() {
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
     },
     onError: () => {},
+  });
+
+  const completeOnboardingMutation = useMutation({
+    mutationFn: async (companyId: string) => {
+      const res = await apiRequest("PATCH", `/api/companies/${companyId}/complete-onboarding`);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    },
+    onSuccess: (_, companyId) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/company/current"] });
+      toast({ title: "Empresa liberada", description: "El cliente ahora tiene acceso completo al sistema." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
   });
 
   const detectPricingChanges = (): string[] => {
@@ -1273,6 +1289,28 @@ export default function CompanyManagement() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        {user?.role === 'superadmin' && !company.onboardingCompleted && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => completeOnboardingMutation.mutate(company.id)}
+                                disabled={completeOnboardingMutation.isPending}
+                                data-testid={`button-complete-onboarding-${company.id}`}
+                              >
+                                {completeOnboardingMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Unlock className="h-4 w-4 text-amber-600" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Liberar empresa — marcar inducción completada</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                         {user?.role === 'superadmin' && (
                           <Button
                             variant="ghost"

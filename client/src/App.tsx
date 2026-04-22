@@ -129,6 +129,7 @@ import Pricing from "@/pages/Pricing";
 import PricingPluginCalculator from "@/pages/PricingPluginCalculator";
 import PricingPluginAdmin from "@/pages/PricingPluginAdmin";
 import Welcome from "@/pages/Welcome";
+import { WelcomeGate } from "@/components/WelcomeGate";
 import PoliticaPrivacidadProveedor from "@/pages/PoliticaPrivacidadProveedor";
 import AvisoPrivacidad from "@/pages/AvisoPrivacidad";
 import PoliticaCookies from "@/pages/PoliticaCookies";
@@ -524,16 +525,20 @@ function AuthenticatedLayout() {
 
   if (user.role === "trabajador") {
     return (
-      <SubscriptionGate>
-        <WorkerLayout />
-      </SubscriptionGate>
+      <WelcomeGate>
+        <SubscriptionGate>
+          <WorkerLayout />
+        </SubscriptionGate>
+      </WelcomeGate>
     );
   }
 
   return (
-    <SubscriptionGate>
-      <AdminLayout />
-    </SubscriptionGate>
+    <WelcomeGate>
+      <SubscriptionGate>
+        <AdminLayout />
+      </SubscriptionGate>
+    </WelcomeGate>
   );
 }
 

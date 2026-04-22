@@ -2797,6 +2797,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Marcar inducción completada — solo superadmin puede liberar el acceso de una empresa
+  app.patch("/api/companies/:id/complete-onboarding", requireRole(['superadmin']), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const company = await storage.getCompany(id);
+      if (!company) return res.status(404).send("Empresa no encontrada");
+
+      await db.update(companies)
+        .set({ onboardingCompleted: 1, onboardingCompletedAt: new Date() })
+        .where(eq(companies.id, id));
+
+      const updated = await storage.getCompany(id);
+      console.log(`[ONBOARDING] Empresa ${company.name} (${id}) marcada como inducción completada por superadmin ${req.user!.username}`);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+
 
   // Recalcular cotización enviando datos a la landing page
   app.post("/api/companies/:id/preview-quote", requirePermission("companies:edit"), async (req, res) => {

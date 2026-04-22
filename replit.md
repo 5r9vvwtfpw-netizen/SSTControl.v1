@@ -28,6 +28,8 @@ The Organigrama SST module (`/organigrama-sst`) provides a visual hierarchical d
 
 The Matriz Legal includes 3 new entries added via migration (`syncMatrizLegalNormas`): Resolución 2346/2007 Art. 4-5 (Profesiograma), Decreto 1072/2015 Art. 2.2.4.6.8 (Organigrama SST), Resolución 2646/2008 Art. 8 (Perfil Sociodemográfico). These are idempotently applied to all existing companies on startup.
 
+An Onboarding Gate system (`WelcomeGate` component) blocks company-level users until superadmin marks induction as complete. New companies start with `onboarding_completed = 0` and see a full-screen welcome page with scheduling CTAs. Superadmin unlocks via Companies Management (`PATCH /api/companies/:id/complete-onboarding`). Roles superadmin, soporte, lso, lso_externo bypass the gate. All pre-existing companies were migrated to `onboarding_completed = 1` on feature deploy.
+
 ### Database & Infrastructure
 The production environment uses AWS RDS PostgreSQL, deployed on Replit Autoscale. Development uses Replit-provisioned Neon PostgreSQL. The system employs database indexes, a connection pool, PDF concurrency limiting, pagination, and N+1 query fixes for performance optimization.
 
