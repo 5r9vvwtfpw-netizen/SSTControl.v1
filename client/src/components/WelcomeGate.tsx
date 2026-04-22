@@ -13,7 +13,12 @@ type CompanyBasic = {
 };
 
 const WHATSAPP_NUMBER = "573001234567"; // Número de WhatsApp de SADGI — actualizar
-const CALENDLY_URL = "https://calendly.com/sadgi-sst"; // URL de Calendly — actualizar
+const GOOGLE_CALENDAR_URL =
+  "https://calendar.google.com/calendar/r/eventedit" +
+  "?text=Inducción+SG-SST+Colombia" +
+  "&details=Sesión+de+inducción+y+configuración+del+sistema+de+gestión+SG-SST." +
+  "&add=soporte@sst-colombia.com.co" +
+  "&crm=AVAILABLE_EMAIL_AND_PHONE";
 
 const INCLUDED_FEATURES = [
   "Evaluación inicial Resolución 0312/2019",
@@ -129,11 +134,11 @@ export function WelcomeGate({ children }: WelcomeGateProps) {
             <Button
               size="default"
               className="flex-1"
-              onClick={() => window.open(CALENDLY_URL, "_blank")}
+              onClick={() => window.open(GOOGLE_CALENDAR_URL, "_blank")}
               data-testid="button-schedule-onboarding"
             >
               <Calendar className="h-4 w-4 mr-2" />
-              Agendar videollamada de inducción
+              Agendar en Google Calendar
             </Button>
             <Button
               variant="outline"
