@@ -35,6 +35,7 @@ import { createPesvFatigaAlcoholTables } from './migrations/create-pesv-fatiga-a
 import { migratePesvVictimasTable } from './migrations/create-pesv-victimas-table';
 import { addPesvComiteP01Tables } from './migrations/add-pesv-comite-p01-tables';
 import { syncMatrizLegalNormas } from './migrations/sync-matriz-legal-normas';
+import { syncOnboardingColumns } from './migrations/sync-onboarding-columns';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -81,6 +82,7 @@ export async function runMigrations() {
     await createPesvCriteriosEvidencias();
     await createPesvFatigaAlcoholTables();
     await migratePesvVictimasTable();
+    await syncOnboardingColumns();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);
