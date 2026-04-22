@@ -507,7 +507,7 @@ export function FloatingTeamChat() {
   return (
     <div
       className="fixed bottom-6 right-6 z-50 flex flex-col bg-background border rounded-xl shadow-2xl overflow-hidden"
-      style={{ width: showChannels ? "480px" : "360px", height: "520px" }}
+      style={{ width: showChannels ? "500px" : "360px", height: "520px" }}
       data-testid="floating-team-chat"
     >
       <div className="flex items-center justify-between gap-1 px-3 py-2 bg-blue-600 text-white flex-shrink-0">
@@ -553,12 +553,16 @@ export function FloatingTeamChat() {
 
       <div className="flex flex-1 overflow-hidden">
         {showChannels && (
-          <div className="w-[140px] border-r flex flex-col flex-shrink-0 bg-muted/30">
+          <div className="w-[160px] border-r flex flex-col flex-shrink-0 bg-slate-800 dark:bg-slate-900">
+            <div className="px-3 py-2 border-b border-slate-700">
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Canales</span>
+            </div>
             <ScrollArea className="flex-1">
               <div className="p-1.5 space-y-0.5">
                 {CHANNELS.map((ch) => {
                   const isActive = activeChannel === ch.id;
                   const channelUnread = unreadCounts[ch.id] || 0;
+                  const Icon = ch.icon;
                   return (
                     <button
                       key={ch.id}
@@ -566,14 +570,14 @@ export function FloatingTeamChat() {
                         setActiveChannel(ch.id);
                         setShouldAutoScroll(true);
                       }}
-                      className={`w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs text-left transition-colors ${
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-left transition-colors ${
                         isActive
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "hover-elevate"
+                          ? "bg-blue-600 text-white font-semibold"
+                          : "text-slate-300 hover:bg-slate-700 hover:text-white"
                       }`}
                       data-testid={`button-channel-${ch.id}`}
                     >
-                      <Hash className="h-3 w-3 flex-shrink-0 opacity-60" />
+                      <Hash className={`h-3.5 w-3.5 flex-shrink-0 ${isActive ? "text-white" : "text-slate-500"}`} />
                       <span className="truncate flex-1">{ch.label}</span>
                       {channelUnread > 0 && !isActive && (
                         <span
@@ -588,21 +592,20 @@ export function FloatingTeamChat() {
                 })}
               </div>
             </ScrollArea>
-            <Separator />
-            <div className="p-2">
+            <div className="border-t border-slate-700 p-2">
               <div className="flex items-center gap-1.5 mb-1">
-                <Users className="h-3 w-3 opacity-60" />
-                <span className="text-[10px] font-medium">En línea ({onlineAgents.length})</span>
+                <Users className="h-3 w-3 text-slate-400" />
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">En línea ({onlineAgents.length})</span>
               </div>
               <div className="space-y-0.5 max-h-20 overflow-y-auto">
                 {onlineAgents.map((agent) => (
                   <div key={agent.id} className="flex items-center gap-1.5 text-[10px]">
-                    <Circle className="h-1.5 w-1.5 fill-green-500 text-green-500" />
-                    <span className="truncate">{agent.name}</span>
+                    <Circle className="h-1.5 w-1.5 fill-green-400 text-green-400" />
+                    <span className="truncate text-slate-300">{agent.name}</span>
                   </div>
                 ))}
                 {onlineAgents.length === 0 && (
-                  <p className="text-[10px] text-muted-foreground">Nadie conectado</p>
+                  <p className="text-[10px] text-slate-500">Nadie conectado</p>
                 )}
               </div>
             </div>
@@ -610,9 +613,9 @@ export function FloatingTeamChat() {
         )}
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex items-center gap-2 px-3 py-1.5 border-b bg-muted/20 flex-shrink-0">
-            <Hash className="h-3.5 w-3.5 opacity-60" />
-            <span className="text-xs font-semibold">{activeChannelInfo.label}</span>
+          <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/20 flex-shrink-0">
+            <Hash className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm font-semibold">{activeChannelInfo.label}</span>
           </div>
 
           <ScrollArea className="flex-1 px-3 py-2">
