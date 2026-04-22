@@ -706,7 +706,7 @@ export default function PesvAuditorias() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDownloadPdf(`/api/auditorias-pesv/${audit.id}/pdf`, `auditoria-pesv-${audit.codigo || audit.id}.pdf`)}
+                        onClick={() => handleDownloadPdf(`/api/pesv-audits/${audit.id}/pdf`, `auditoria-pesv-${audit.id}.pdf`)}
                         data-testid={`button-download-auditoria-pdf-${audit.id}`}
                       >
                         <FileDown className="h-4 w-4" />

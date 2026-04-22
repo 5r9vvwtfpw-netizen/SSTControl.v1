@@ -247,7 +247,8 @@ import { setupTrialWatermarkOnAllPages, addTrialFooter, setupLsoWatermarkOnAllPa
 import { 
   addStandardHeader, 
   addSignatureFooter, 
-  addSectionBar, 
+  addSectionBar,
+  addSimpleTable,
   getSignersForCompany, 
   getDocumentCode,
   checkPageBreak,
@@ -256,7 +257,8 @@ import {
   loadCompanyLogo,
   formatDate,
   requiresLSOSignature,
-  handlePdfError
+  handlePdfError,
+  addProviderContactFooter,
 } from "./services/pdf-standardizer";
 import { withPdfSemaphore } from "./services/pdf-semaphore";
 import { validatePdfContext } from "./lib/pdf-context-validator";
@@ -9010,6 +9012,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     await storage.deletePesvAudit(req.params.id, companyId);
     res.sendStatus(204);
+  });
+
+  // GET /api/pesv-audits/:id/pdf - Generate PDF report for PESV audit
+  app.get("/api/pesv-audits/:id/pdf", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
+      const audit = await storage.getPesvAudit(req.params.id, companyId);
+      if (!audit) {
+        return res.status(404).json({ error: "Auditoría PESV no encontrada" });
+      }
+
+      const [company] = await db.select().from(companies).where(eq(companies.id, companyId));
+      const logoBuffer = await loadCompanyLogo(companyId);
+      const signers = await getSignersForCompany(companyId, true);
+
+      const doc = new PDFDocument({ size: 'LETTER', margin: 40 });
+      const pdf_sub = await storage.getSubscriptionByCompany(companyId);
+      const pdf_trial = getTrialStatus(pdf_sub?.status || 'trial', pdf_sub?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf_trial.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="auditoria-pesv-${audit.id}.pdf"`);
+      doc.pipe(res);
+
+      const margin = 40;
+      const pageWidth = doc.page.width;
+      const contentWidth = pageWidth - margin * 2;
+
+      let y = await addStandardHeader({
+        doc,
+        company: { id: companyId, name: company?.name || 'N/A', nit: company?.nit || 'N/A' },
+        documentTitle: 'AUDITORÍA ANUAL PESV — INFORME DE RESULTADOS',
+        documentCode: `AUD-PESV-${new Date(audit.auditDate).getFullYear()}`,
+        version: '1.0',
+        date: new Date(audit.auditDate),
+        logoBuffer,
+      });
+
+      doc.y = y + 8;
+      doc.moveTo(margin, doc.y).lineTo(pageWidth - margin, doc.y).stroke('#cccccc');
+      doc.y += 12;
+
+      // ── Datos generales ──
+      y = addSectionBar(doc, '1. DATOS GENERALES DE LA AUDITORÍA', doc.y);
+      doc.y = y + 6;
+
+      const formatDate = (d: string | null) => d ? new Date(d).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A';
+      const resultLabel: Record<string, string> = { 'cumple': 'Cumple', 'cumple-parcialmente': 'Cumple Parcialmente', 'no-cumple': 'No Cumple' };
+      const statusLabel: Record<string, string> = { 'programada': 'Programada', 'en-curso': 'En Curso', 'completada': 'Completada' };
+
+      addSimpleTable(doc, ['Campo', 'Valor'], [
+        ['Fecha de ejecución', formatDate(audit.auditDate)],
+        ['Auditor', audit.auditor],
+        ['Entidad auditora', audit.auditorEntity || 'N/A'],
+        ['Alcance', audit.scope],
+        ['Estado', statusLabel[audit.status] || audit.status],
+        ['Resultado global', resultLabel[audit.result] || audit.result],
+        ['Cumplimiento total', `${audit.compliancePercentage}%`],
+      ], { y: doc.y + 2, columnWidths: [contentWidth * 0.35, contentWidth * 0.65] });
+
+      doc.y += 16;
+
+      // ── Puntajes por fase PHVA ──
+      y = addSectionBar(doc, '2. PUNTAJES POR FASE PHVA', doc.y);
+      doc.y = y + 6;
+
+      addSimpleTable(doc, ['Fase PHVA', 'Cumplimiento (%)'], [
+        ['PLANEAR (Pasos 1–8)', `${audit.policyCompliance}%`],
+        ['HACER (Pasos 9–19)', `${audit.implementationCompliance}%`],
+        ['VERIFICAR (Pasos 20–22)', `${audit.verificationCompliance}%`],
+        ['ACTUAR (Pasos 23–24)', `${audit.improvementCompliance}%`],
+        ['TOTAL GENERAL', `${audit.compliancePercentage}%`],
+      ], { y: doc.y + 2, columnWidths: [contentWidth * 0.60, contentWidth * 0.40] });
+
+      doc.y += 16;
+
+      // ── Puntajes por paso ──
+      y = addSectionBar(doc, '3. PUNTAJES DETALLADOS POR PASO', doc.y);
+      doc.y = y + 6;
+
+      const stepLabels: [string, number][] = [
+        ['P01 — Líder del PESV', audit.step1Leader],
+        ['P02 — Comité de Seguridad Vial', audit.step2Committee],
+        ['P03 — Política de Seguridad Vial', audit.step3Policy],
+        ['P04 — Liderazgo y compromiso', audit.step4Leadership],
+        ['P05 — Diagnóstico', audit.step5Diagnosis],
+        ['P06 — Caracterización de riesgos', audit.step6RiskAssessment],
+        ['P07 — Objetivos y metas', audit.step7Objectives],
+        ['P08 — Programa de riesgos críticos', audit.step8CriticalRisks],
+        ['H01 — Plan anual de trabajo', audit.step9AnnualPlan],
+        ['H02 — Competencia y formación', audit.step10Training],
+        ['H03 — Fatiga y somnolencia', audit.step11Fatigue],
+        ['H04 — Preparación emergencias', audit.step12Emergency],
+        ['H05 — Investigación siniestros', audit.step13Investigation],
+        ['H06 — Vías seguras', audit.step14SafeRoads],
+        ['H07 — Selección conductores', audit.step15DriverSelection],
+        ['H08 — Inspección vehículos', audit.step16VehicleInspection],
+        ['H09 — Mantenimiento', audit.step17Maintenance],
+        ['H10 — Gestión del cambio', audit.step18ChangeManagement],
+        ['H11 — Adquisición bienes y servicios', audit.step19Procurement],
+        ['V01 — Indicadores mínimos', audit.step20Indicators],
+        ['V02 — Supervisión del PESV', audit.step21Supervision],
+        ['V03 — Auditoría anual', audit.step22Audit],
+        ['A01 — Mejora continua', audit.step23Improvement],
+        ['A02 — Comunicación y participación', audit.step24Communication],
+      ];
+
+      addSimpleTable(doc, ['Paso', 'Puntaje (0–100)'], stepLabels.map(([label, score]) => [label, `${score}`]), {
+        y: doc.y + 2,
+        columnWidths: [contentWidth * 0.70, contentWidth * 0.30],
+      });
+
+      doc.y += 16;
+
+      // ── Hallazgos y recomendaciones ──
+      if (audit.findings || audit.recommendations || audit.actionPlan) {
+        y = addSectionBar(doc, '4. HALLAZGOS, RECOMENDACIONES Y PLAN DE ACCIÓN', doc.y);
+        doc.y = y + 8;
+
+        if (audit.findings) {
+          doc.font('Helvetica-Bold').fontSize(9).fillColor('#1e3a5f').text('No conformidades y hallazgos:', margin, doc.y);
+          doc.font('Helvetica').fontSize(9).fillColor('#333333').text(audit.findings, margin, doc.y + 12, { width: contentWidth, lineGap: 2 });
+          doc.y += 16;
+        }
+        if (audit.recommendations) {
+          doc.font('Helvetica-Bold').fontSize(9).fillColor('#1e3a5f').text('Recomendaciones:', margin, doc.y);
+          doc.font('Helvetica').fontSize(9).fillColor('#333333').text(audit.recommendations, margin, doc.y + 12, { width: contentWidth, lineGap: 2 });
+          doc.y += 16;
+        }
+        if (audit.actionPlan) {
+          doc.font('Helvetica-Bold').fontSize(9).fillColor('#1e3a5f').text('Plan de acción:', margin, doc.y);
+          doc.font('Helvetica').fontSize(9).fillColor('#333333').text(audit.actionPlan, margin, doc.y + 12, { width: contentWidth, lineGap: 2 });
+          doc.y += 16;
+        }
+        doc.y += 8;
+      }
+
+      // ── Firma ──
+      addSignatureFooter(doc, signers);
+      addProviderContactFooter(doc);
+
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-audit-pdf');
+    }
   });
 
   // Admin endpoint to populate ISO 45001 standards (one-time setup)
