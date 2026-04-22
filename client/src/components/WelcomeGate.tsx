@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { Calendar, Phone, Mail, Shield, CheckCircle, Clock } from "lucide-react";
+import { Calendar, Mail, Shield, CheckCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -12,7 +12,6 @@ type CompanyBasic = {
   legalRepName?: string;
 };
 
-const WHATSAPP_NUMBER = "573001234567"; // Número de WhatsApp de SADGI — actualizar
 const GOOGLE_CALENDAR_URL =
   "https://calendar.google.com/calendar/r/eventedit" +
   "?text=Inducción+SG-SST+Colombia" +
@@ -140,28 +139,12 @@ export function WelcomeGate({ children }: WelcomeGateProps) {
               <Calendar className="h-4 w-4 mr-2" />
               Agendar en Google Calendar
             </Button>
-            <Button
-              variant="outline"
-              size="default"
-              onClick={() => window.open(`https://wa.me/${WHATSAPP_NUMBER}`, "_blank")}
-              data-testid="button-whatsapp-onboarding"
-            >
-              <Phone className="h-4 w-4 mr-2" />
-              Contactar por WhatsApp
-            </Button>
           </div>
 
           {/* Contacto directo */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              <span>admin@sst-colombia.com</span>
-            </div>
-            <div className="hidden sm:block text-muted-foreground/40">•</div>
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4" />
-              <span>+57 300 123 4567</span>
-            </div>
+          <div className="flex items-center justify-center gap-2 pt-2 text-sm text-muted-foreground">
+            <Mail className="h-4 w-4" />
+            <span>admin@sst-colombia.com</span>
           </div>
 
           <p className="text-center text-xs text-muted-foreground">
