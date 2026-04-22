@@ -81,6 +81,8 @@ type CompanyData = {
   numberOfVehicles?: number;
   vehicleCount: number;
   driverCount: number;
+  legalRepName?: string;
+  legalRepPosition?: string;
   quoteBaseMonthlyPrice?: number;
   quoteCurrentPeriodPrice?: number;
   quoteCouponCode?: string;
@@ -377,6 +379,21 @@ export default function MiCuenta() {
                       </span>
                     </div>
                   </div>
+
+                  {(companyData.legalRepName) && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-muted-foreground">Representante Legal</label>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span data-testid="text-company-legal-rep">
+                          {companyData.legalRepName}
+                          {companyData.legalRepPosition && (
+                            <span className="text-muted-foreground ml-1">— {companyData.legalRepPosition}</span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                   {companyData.ciiuCode && (
                     <div className="space-y-2">
