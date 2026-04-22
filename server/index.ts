@@ -213,7 +213,7 @@ app.post(
                     emailService.sendAdminPaymentNotification({
                       companyName: company?.name || companyId,
                       planName: plan?.name,
-                      amount: amountPaid,
+                      amount: Math.round(amountPaid / 100), // Stripe usa centavos (x100), convertir a pesos
                       currency: 'COP',
                       companyId,
                     }).catch((err: any) => logger.error({ err }, '[ADMIN-NOTIFY] Error sending payment notification'));
@@ -696,6 +696,35 @@ app.post(
               logger.info({ subscriptionId: paidInvoice.subscription }, 'Subscription reactivated after payment recovery');
             } catch (reactivateError) {
               logger.error({ err: reactivateError }, 'Error reactivating subscription after payment');
+            }
+
+            // Notificar al admin sobre renovación de pago mensual
+            // Solo para facturas de renovación (billing_reason = 'subscription_cycle'), no el pago inicial
+            if ((paidInvoice as any).billing_reason === 'subscription_cycle' && paidInvoice.amount_paid > 0) {
+              try {
+                const { pricingPluginSubscriptions: pricingSubsNotify } = await import('../pricing_plugin/schema');
+                const { eq: eqNotify } = await import('drizzle-orm');
+                const [pricingSub] = await db
+                  .select()
+                  .from(pricingSubsNotify)
+                  .where(eqNotify(pricingSubsNotify.stripeSubscriptionId, paidInvoice.subscription as string))
+                  .limit(1);
+
+                if (pricingSub?.customerId) {
+                  const company = await storage.getCompany(pricingSub.customerId);
+                  const subscription = await storage.getSubscriptionByCompany(pricingSub.customerId);
+                  const plan = subscription ? await storage.getSubscriptionPlan(subscription.planId) : null;
+                  emailService.sendAdminPaymentNotification({
+                    companyName: company?.name || pricingSub.customerId,
+                    planName: plan?.name,
+                    amount: Math.round(paidInvoice.amount_paid / 100), // Stripe usa centavos
+                    currency: 'COP',
+                    companyId: pricingSub.customerId,
+                  }).catch((err: any) => logger.error({ err }, '[ADMIN-NOTIFY] Error sending renewal payment notification'));
+                }
+              } catch (notifyRenewalErr) {
+                logger.error({ err: notifyRenewalErr }, '[ADMIN-NOTIFY] Error sending renewal payment notification (non-critical)');
+              }
             }
           }
           break;
