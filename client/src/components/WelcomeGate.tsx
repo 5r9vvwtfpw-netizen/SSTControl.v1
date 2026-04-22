@@ -17,7 +17,7 @@ const GOOGLE_CALENDAR_URL =
   "https://calendar.google.com/calendar/r/eventedit" +
   "?text=Inducción+SG-SST+Colombia" +
   "&details=Sesión+de+inducción+y+configuración+del+sistema+de+gestión+SG-SST." +
-  "&add=soporte@sst-colombia.com.co" +
+  "&add=admin@sst-colombia.com" +
   "&crm=AVAILABLE_EMAIL_AND_PHONE";
 
 const INCLUDED_FEATURES = [
@@ -155,7 +155,7 @@ export function WelcomeGate({ children }: WelcomeGateProps) {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4" />
-              <span>soporte@sst-colombia.com.co</span>
+              <span>admin@sst-colombia.com</span>
             </div>
             <div className="hidden sm:block text-muted-foreground/40">•</div>
             <div className="flex items-center gap-2">
