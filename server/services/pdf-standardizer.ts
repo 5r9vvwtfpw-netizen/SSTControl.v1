@@ -199,15 +199,9 @@ export async function getSignersForCompany(companyId: string, requiresLSO: boole
           role: 'Responsable del SG-SST',
         };
       }
-      if (lsoData) {
-        return {
-          name: 'SST Colombia',
-          role: `Sistema Inteligente · Aval: Lic. ${lsoData.name}`,
-        };
-      }
       return {
         name: 'SST Colombia',
-        role: 'Plataforma Inteligente de Gestión SST',
+        role: 'Software Auditado de Gestión SST',
       };
     })(),
     autorizo: {
