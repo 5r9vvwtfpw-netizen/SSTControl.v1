@@ -193,8 +193,8 @@ export async function getSignersForCompany(companyId: string, requiresLSO: boole
 
   return {
     elaboro: {
-      name: responsableSst?.fullName || responsableSst?.username || '',
-      role: 'Responsable del SG-SST',
+      name: responsableSst?.fullName || responsableSst?.username || 'SADGI S.A.S.',
+      role: responsableSst ? 'Responsable del SG-SST' : 'Sistema Automatizado de Gestión SST',
     },
     autorizo: {
       name: company?.legalRepName || 'Representante de la Dirección',
