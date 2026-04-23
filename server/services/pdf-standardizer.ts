@@ -62,14 +62,17 @@ export interface PdfSigners {
   elaboro: {
     name: string;
     role: string;
+    signatureUrl?: string;
   };
   autorizo: {
     name: string;
     role: string;
+    signatureUrl?: string;
   };
   aprobo: {
     name: string;
     role: string;
+    signatureUrl?: string;
   };
   lso?: {
     name: string;
@@ -196,10 +199,12 @@ export async function getSignersForCompany(companyId: string, requiresLSO: boole
     autorizo: {
       name: company?.legalRepName || 'Representante de la Dirección',
       role: 'Representante de la Dirección',
+      signatureUrl: company?.legalRepSignatureUrl || undefined,
     },
     aprobo: {
       name: company?.legalRepName || 'Alta Dirección',
       role: 'Alta Dirección / Gerencia',
+      signatureUrl: company?.legalRepSignatureUrl || undefined,
     },
     lso: lsoData,
   };
@@ -384,26 +389,60 @@ export async function addSignatureFooter(
   const pageWidth = doc.page.width;
   const pageHeight = doc.page.height;
   
-  const hasLsoSignatureImage = includeLSO && signers.lso?.signatureUrl;
-  const footerHeight = hasLsoSignatureImage ? 130 : (includeLSO ? 100 : 70);
-  
+  const hasLsoSignatureImage = includeLSO && !!signers.lso?.signatureUrl;
+  const hasRepSignatureImage = !!(signers.autorizo.signatureUrl || signers.aprobo.signatureUrl);
+  const hasAnySignatureImage = hasLsoSignatureImage || hasRepSignatureImage;
+  const footerHeight = hasAnySignatureImage ? 130 : (includeLSO ? 100 : 70);
+
   const availableSpace = pageHeight - margin - doc.y;
   let footerY: number;
   if (availableSpace < footerHeight + 20) {
     doc.addPage();
-    // Colocar el footer al inicio de la nueva página, sin espacio en blanco
     footerY = margin + 10;
   } else {
-    // Anclar al final de la página cuando hay espacio suficiente
     footerY = pageHeight - margin - footerHeight;
   }
-  
+
   const numCols = includeLSO ? 4 : 3;
   const colWidth = (pageWidth - margin * 2) / numCols;
   const headerRowHeight = 18;
-  const signatureImageHeight = hasLsoSignatureImage ? 35 : 0;
+  const signatureImageHeight = hasAnySignatureImage ? 35 : 0;
   const nameRowHeight = 35 + signatureImageHeight;
   const totalHeight = headerRowHeight + nameRowHeight;
+
+  // Helper para cargar buffer de firma desde cualquier fuente
+  const loadSigBuffer = async (sigUrl: string): Promise<Buffer | null> => {
+    try {
+      if (sigUrl.startsWith('/uploads/') || sigUrl.startsWith('/objects/uploads/')) {
+        const localPath = path.join(process.cwd(), 'public', sigUrl);
+        if (fs.existsSync(localPath)) return fs.readFileSync(localPath);
+      } else if (sigUrl.startsWith('http')) {
+        const response = await fetch(sigUrl);
+        if (response.ok) return Buffer.from(await response.arrayBuffer());
+      } else {
+        // /objects/logos/... o /objects/signatures/... — S3 vía objectStorageService
+        return await objectStorageService.getObjectBuffer(sigUrl);
+      }
+    } catch (e: any) {
+      console.error('[PdfStandardizer] Error loading signature buffer:', e.message);
+    }
+    return null;
+  };
+
+  // Pre-cargar buffers de firma del representante legal
+  let autorizoSigBuffer: Buffer | null = null;
+  let aproboSigBuffer: Buffer | null = null;
+  if (signers.autorizo.signatureUrl) {
+    autorizoSigBuffer = await loadSigBuffer(signers.autorizo.signatureUrl);
+  }
+  if (signers.aprobo.signatureUrl) {
+    // Si AUTORIZÓ y APROBÓ usan la misma URL reutilizamos el buffer
+    if (signers.aprobo.signatureUrl === signers.autorizo.signatureUrl && autorizoSigBuffer) {
+      aproboSigBuffer = autorizoSigBuffer;
+    } else {
+      aproboSigBuffer = await loadSigBuffer(signers.aprobo.signatureUrl);
+    }
+  }
 
   // Dibujar tabla de firmas
   doc.rect(margin, footerY, pageWidth - margin * 2, totalHeight).stroke(PDF_COLORS.GREEN_PRIMARY);
@@ -427,7 +466,7 @@ export async function addSignatureFooter(
   doc.text('ELABORÓ', margin + 5, footerY + 4, { width: colWidth - 10, align: 'center' });
   doc.text('AUTORIZÓ', margin + colWidth + 5, footerY + 4, { width: colWidth - 10, align: 'center' });
   doc.text('APROBÓ', margin + colWidth * 2 + 5, footerY + 4, { width: colWidth - 10, align: 'center' });
-  
+
   if (includeLSO) {
     doc.text('LICENCIADO SST', margin + colWidth * 3 + 5, footerY + 4, { width: colWidth - 10, align: 'center' });
   }
@@ -435,18 +474,38 @@ export async function addSignatureFooter(
   // Nombres y roles
   doc.fontSize(7).font('Helvetica');
   const nameY = footerY + headerRowHeight + 4;
-  
-  // ELABORÓ
-  doc.text(signers.elaboro.name, margin + 4, nameY, { width: colWidth - 8, align: 'center' });
-  doc.fontSize(6).text(signers.elaboro.role, margin + 4, nameY + 12, { width: colWidth - 8, align: 'center' });
-  
-  // AUTORIZÓ
-  doc.fontSize(7).text(signers.autorizo.name, margin + colWidth + 4, nameY, { width: colWidth - 8, align: 'center' });
-  doc.fontSize(6).text(signers.autorizo.role, margin + colWidth + 4, nameY + 12, { width: colWidth - 8, align: 'center' });
-  
-  // APROBÓ
-  doc.fontSize(7).text(signers.aprobo.name, margin + colWidth * 2 + 4, nameY, { width: colWidth - 8, align: 'center' });
-  doc.fontSize(6).text(signers.aprobo.role, margin + colWidth * 2 + 4, nameY + 12, { width: colWidth - 8, align: 'center' });
+  const imgW = Math.min(colWidth - 16, 80);
+  const imgH = signatureImageHeight - 2;
+
+  // ELABORÓ (sin imagen de firma)
+  doc.text(signers.elaboro.name, margin + 4, nameY + (hasAnySignatureImage ? signatureImageHeight : 0), { width: colWidth - 8, align: 'center' });
+  doc.fontSize(6).text(signers.elaboro.role, margin + 4, nameY + (hasAnySignatureImage ? signatureImageHeight : 0) + 12, { width: colWidth - 8, align: 'center' });
+
+  // AUTORIZÓ — con imagen de firma si existe
+  const autorizoColX = margin + colWidth + 4;
+  if (autorizoSigBuffer) {
+    try {
+      const imgX = autorizoColX + (colWidth - 8 - imgW) / 2;
+      doc.image(autorizoSigBuffer, imgX, nameY, { fit: [imgW, imgH], align: 'center', valign: 'center' });
+    } catch (e: any) {
+      console.error('[PdfStandardizer] Error drawing AUTORIZÓ signature:', e.message);
+    }
+  }
+  doc.fontSize(7).text(signers.autorizo.name, autorizoColX, nameY + (hasAnySignatureImage ? signatureImageHeight : 0), { width: colWidth - 8, align: 'center' });
+  doc.fontSize(6).text(signers.autorizo.role, autorizoColX, nameY + (hasAnySignatureImage ? signatureImageHeight : 0) + 12, { width: colWidth - 8, align: 'center' });
+
+  // APROBÓ — con imagen de firma si existe
+  const aproboColX = margin + colWidth * 2 + 4;
+  if (aproboSigBuffer) {
+    try {
+      const imgX = aproboColX + (colWidth - 8 - imgW) / 2;
+      doc.image(aproboSigBuffer, imgX, nameY, { fit: [imgW, imgH], align: 'center', valign: 'center' });
+    } catch (e: any) {
+      console.error('[PdfStandardizer] Error drawing APROBÓ signature:', e.message);
+    }
+  }
+  doc.fontSize(7).text(signers.aprobo.name, aproboColX, nameY + (hasAnySignatureImage ? signatureImageHeight : 0), { width: colWidth - 8, align: 'center' });
+  doc.fontSize(6).text(signers.aprobo.role, aproboColX, nameY + (hasAnySignatureImage ? signatureImageHeight : 0) + 12, { width: colWidth - 8, align: 'center' });
   
   if (includeLSO) {
     if (signers.lso) {
