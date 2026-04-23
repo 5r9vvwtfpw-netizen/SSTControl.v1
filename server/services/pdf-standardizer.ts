@@ -716,7 +716,7 @@ export function checkPageBreak(
   const y = currentY ?? doc.y;
   const pageHeight = doc.page.height;
   const margin = PDF_CONFIG.MARGIN;
-  const footerMargin = 80; // Espacio reservado para el footer
+  const footerMargin = 150; // Espacio reservado para el footer (130px tabla firmas + 20px buffer)
   const availableSpace = pageHeight - margin - footerMargin;
 
   if (y + neededHeight > availableSpace) {
@@ -738,7 +738,7 @@ export function hasRemainingSpace(
   const y = doc.y;
   const pageHeight = doc.page.height;
   const margin = PDF_CONFIG.MARGIN;
-  const footerMargin = 80;
+  const footerMargin = 150;
   const availableSpace = pageHeight - margin - footerMargin;
 
   return y + neededHeight <= availableSpace;
