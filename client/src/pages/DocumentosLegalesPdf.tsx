@@ -336,16 +336,39 @@ export default function DocumentosLegalesPdf() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Info del auditor */}
+            {/* Info del auditor + descarga del informe */}
             <div className="p-4 bg-muted/50 rounded-lg">
-              <div className="flex items-start gap-3">
-                <UserCheck className="h-6 w-6 text-green-600 mt-0.5 shrink-0" />
-                <div>
-                  <p className="font-semibold" data-testid="text-auditor-label">Auditor Externo</p>
-                  <p className="text-sm font-medium" data-testid="text-auditor-nombre">Hernán Valencia Gil</p>
-                  <p className="text-sm text-muted-foreground" data-testid="text-auditor-titulo">Consultor Profesional en Prevención de Riesgos Laborales</p>
-                  <p className="text-sm text-muted-foreground" data-testid="text-auditor-licencia">Licencia Profesional N° S2019060049528 - DSSA</p>
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="flex items-start gap-3">
+                  <UserCheck className="h-6 w-6 text-green-600 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-semibold" data-testid="text-auditor-label">Auditor Externo</p>
+                    <p className="text-sm font-medium" data-testid="text-auditor-nombre">Hernán Valencia Gil</p>
+                    <p className="text-sm text-muted-foreground" data-testid="text-auditor-titulo">Consultor Profesional en Prevención de Riesgos Laborales</p>
+                    <p className="text-sm text-muted-foreground" data-testid="text-auditor-licencia">Licencia Profesional N° S2019060049528 - DSSA</p>
+                    <p className="text-xs text-muted-foreground mt-1">Fecha de auditoría: 13 de Febrero 2026 · Vigencia 2026</p>
+                  </div>
                 </div>
+                <Button
+                  size="sm"
+                  onClick={() => handleDownload({
+                    id: "informe-auditoria",
+                    title: "Informe de Auditoría SG-SST",
+                    description: "",
+                    endpoint: "/api/legal-docs/informe-auditoria/pdf",
+                    icon: null,
+                    filename: "Informe-Auditoria-SG-SST-Colombia-2026.pdf",
+                  })}
+                  disabled={downloading === "informe-auditoria"}
+                  data-testid="button-download-informe-auditoria"
+                >
+                  {downloading === "informe-auditoria" ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4 mr-2" />
+                  )}
+                  Descargar Informe
+                </Button>
               </div>
             </div>
 

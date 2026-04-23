@@ -45937,6 +45937,25 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       handlePdfError(error, res, 'legal-docs-rut-pdf');
     }
   });
+
+  // GET /api/legal-docs/informe-auditoria/pdf - Informe de Auditoría SG-SST SST Colombia 2026
+  app.get("/api/legal-docs/informe-auditoria/pdf", requireAuth, async (req, res) => {
+    try {
+      const filePath = path.join(process.cwd(), "server", "assets", "informe-auditoria-sst-colombia-2026.pdf");
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).send("Informe de auditoría no encontrado");
+      }
+      const pdfBuffer = fs.readFileSync(filePath);
+      res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", "attachment; filename=Informe-Auditoria-SG-SST-Colombia-2026.pdf");
+      res.setHeader("Content-Length", pdfBuffer.length.toString());
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      handlePdfError(error, res, "legal-docs-informe-auditoria-pdf");
+    }
+  });
   // =============================================================================
   // CERTIFICACIONES PROFESIONALES
   // =============================================================================
