@@ -299,15 +299,44 @@ export default function DocumentosLegalesPdf() {
 
         <Card className="mt-8" data-testid="card-certificaciones">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <Award className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Certificaciones y Avales Profesionales</CardTitle>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Award className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Certificaciones y Avales Profesionales</CardTitle>
+              </div>
+              {isAdmin && (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                    data-testid="input-upload-certificacion"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadMutation.isPending}
+                    data-testid="button-upload-certificacion"
+                  >
+                    {uploadMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4 mr-2" />
+                    )}
+                    Subir informe
+                  </Button>
+                </>
+              )}
             </div>
             <CardDescription>
               Documentos de auditoría y aval emitidos por profesionales externos
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {/* Info del auditor */}
             <div className="p-4 bg-muted/50 rounded-lg">
               <div className="flex items-start gap-3">
                 <UserCheck className="h-6 w-6 text-green-600 mt-0.5 shrink-0" />
@@ -319,6 +348,65 @@ export default function DocumentosLegalesPdf() {
                 </div>
               </div>
             </div>
+
+            {/* Informes subidos */}
+            {loadingCerts ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Cargando documentos...
+              </div>
+            ) : certificaciones.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic" data-testid="text-no-certificaciones">
+                El informe de auditoría estará disponible para descarga próximamente.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {certificaciones.map((cert) => (
+                  <div
+                    key={cert.id}
+                    className="flex items-center justify-between gap-3 p-3 border rounded-lg"
+                    data-testid={`card-cert-${cert.id}`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <BadgeCheck className="h-5 w-5 text-green-600 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate" data-testid={`text-cert-titulo-${cert.id}`}>{cert.titulo}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {cert.profesionalNombre} · Lic. {cert.profesionalLicencia}
+                        </p>
+                        {cert.fechaEmision && (
+                          <p className="text-xs text-muted-foreground">
+                            Emitido: {new Date(cert.fechaEmision).toLocaleDateString('es-CO')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCertDownload(cert)}
+                        data-testid={`button-download-cert-${cert.id}`}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Descargar
+                      </Button>
+                      {isAdmin && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => deleteMutation.mutate(cert.id)}
+                          disabled={deleteMutation.isPending}
+                          data-testid={`button-delete-cert-${cert.id}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
