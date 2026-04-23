@@ -192,10 +192,24 @@ export async function getSignersForCompany(companyId: string, requiresLSO: boole
   }
 
   return {
-    elaboro: {
-      name: responsableSst?.fullName || responsableSst?.username || 'SADGI S.A.S.',
-      role: responsableSst ? 'Responsable del SG-SST' : 'Sistema Automatizado de Gestión SST',
-    },
+    elaboro: (() => {
+      if (responsableSst) {
+        return {
+          name: responsableSst.fullName || responsableSst.username,
+          role: 'Responsable del SG-SST',
+        };
+      }
+      if (lsoData) {
+        return {
+          name: 'SST Colombia',
+          role: `Sistema Inteligente · Aval: Lic. ${lsoData.name}`,
+        };
+      }
+      return {
+        name: 'SST Colombia',
+        role: 'Plataforma Inteligente de Gestión SST',
+      };
+    })(),
     autorizo: {
       name: company?.legalRepName || 'Representante de la Dirección',
       role: 'Representante de la Dirección',
