@@ -3037,23 +3037,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const companyId = req.params.id;
       const userCompanyId = req.user!.companyId;
       
-      // Ensure tenant isolation: users can only upload logos for their own company
-      // unless they are admin (who may not have a companyId but can edit any company)
       if (userCompanyId && userCompanyId !== companyId) {
         return res.status(403).send("No tiene permiso para modificar esta empresa");
       }
 
-      // Upload to Object Storage for persistence
-      const objectStorageService = new ObjectStorageService();
+      const storageService = new ObjectStorageService();
       const fileBuffer = fs.readFileSync(req.file.path);
       const ext = path.extname(req.file.originalname);
       const uniqueId = crypto.randomUUID();
-      const objectPath = `uploads/logos/${uniqueId}${ext}`;
+      // Correct path without duplicate "uploads/" prefix
+      const objectPath = `logos/${uniqueId}${ext}`;
       
-      await objectStorageService.uploadObject(objectPath, fileBuffer, req.file.mimetype);
+      console.log(`[S3-LOGO] Uploading to S3. Bucket: ${process.env.AWS_S3_BUCKET_NAME}, Region: ${process.env.AWS_REGION}, Key: uploads/${objectPath}`);
+      
+      await storageService.uploadObject(objectPath, fileBuffer, req.file.mimetype);
       
       // Clean up local file
-      fs.unlinkSync(req.file.path);
+      try { fs.unlinkSync(req.file.path); } catch {}
       
       const logoUrl = `/objects/${objectPath}`;
 
@@ -3062,10 +3062,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send("Empresa no encontrada");
       }
 
+      console.log(`[S3-LOGO] ✅ Logo uploaded successfully for company ${companyId}: ${logoUrl}`);
       res.json({ logoUrl: company.logoUrl });
     } catch (error: any) {
-      console.error('Error uploading logo to Object Storage:', error);
-      res.status(400).send(error.message);
+      console.error('[S3-LOGO] ❌ Error uploading logo:', {
+        message: error.message,
+        name: error.name,
+        code: error.Code || error.code,
+        statusCode: error.$metadata?.httpStatusCode,
+        bucket: process.env.AWS_S3_BUCKET_NAME,
+        region: process.env.AWS_REGION,
+        hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+        hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
+      });
+      res.status(400).send(`Error S3: ${error.message} (code: ${error.Code || error.code || error.name})`);
     }
   });
 
@@ -3079,22 +3089,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const companyId = req.params.id;
       const userCompanyId = req.user!.companyId;
       
-      // Ensure tenant isolation
       if (userCompanyId && userCompanyId !== companyId) {
         return res.status(403).send("No tiene permiso para modificar esta empresa");
       }
 
-      // Upload to Object Storage for persistence
-      const objectStorageService = new ObjectStorageService();
+      const storageService = new ObjectStorageService();
       const fileBuffer = fs.readFileSync(req.file.path);
       const ext = path.extname(req.file.originalname);
       const uniqueId = crypto.randomUUID();
-      const objectPath = `uploads/signatures/${companyId}/${uniqueId}${ext}`;
+      // Correct path without duplicate "uploads/" prefix
+      const objectPath = `signatures/${companyId}/${uniqueId}${ext}`;
       
-      await objectStorageService.uploadObject(objectPath, fileBuffer, req.file.mimetype);
+      console.log(`[S3-SIGNATURE] Uploading to S3. Bucket: ${process.env.AWS_S3_BUCKET_NAME}, Region: ${process.env.AWS_REGION}, Key: uploads/${objectPath}`);
+      
+      await storageService.uploadObject(objectPath, fileBuffer, req.file.mimetype);
       
       // Clean up local file
-      fs.unlinkSync(req.file.path);
+      try { fs.unlinkSync(req.file.path); } catch {}
       
       const legalRepSignatureUrl = `/objects/${objectPath}`;
 
@@ -3103,10 +3114,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send("Empresa no encontrada");
       }
 
+      console.log(`[S3-SIGNATURE] ✅ Signature uploaded successfully for company ${companyId}: ${legalRepSignatureUrl}`);
       res.json({ legalRepSignatureUrl: company.legalRepSignatureUrl });
     } catch (error: any) {
-      console.error('Error uploading signature to Object Storage:', error);
-      res.status(400).send(error.message);
+      console.error('[S3-SIGNATURE] ❌ Error uploading signature:', {
+        message: error.message,
+        name: error.name,
+        code: error.Code || error.code,
+        statusCode: error.$metadata?.httpStatusCode,
+        bucket: process.env.AWS_S3_BUCKET_NAME,
+        region: process.env.AWS_REGION,
+        hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+        hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
+      });
+      res.status(400).send(`Error S3: ${error.message} (code: ${error.Code || error.code || error.name})`);
     }
   });
 
@@ -9276,6 +9297,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       logger.error({ error: error.message }, "Error triggering compliance alerts");
       res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // S3 connectivity diagnostic (superadmin only)
+  app.get("/api/admin/test-s3", requireRole(["superadmin"]), async (req, res) => {
+    const config = {
+      bucket: process.env.AWS_S3_BUCKET_NAME || "(no configurado)",
+      region: process.env.AWS_REGION || "(no configurado)",
+      hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+      hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
+    };
+    try {
+      const testService = new ObjectStorageService();
+      const testBuffer = Buffer.from("s3-test-sst-colombia");
+      const testPath = `test/connectivity-check-${Date.now()}.txt`;
+      await testService.uploadObject(testPath, testBuffer, "text/plain");
+      res.json({ success: true, message: "✅ S3 conectado correctamente", config, testPath: `/objects/${testPath}` });
+    } catch (error: any) {
+      console.error("[S3-TEST] Error:", error);
+      res.status(500).json({
+        success: false,
+        message: "❌ S3 no disponible",
+        error: error.message,
+        code: error.Code || error.code || error.name,
+        statusCode: error.$metadata?.httpStatusCode,
+        config,
+      });
     }
   });
 
