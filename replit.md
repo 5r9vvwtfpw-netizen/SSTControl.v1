@@ -1,4 +1,5 @@
 # SST Colombia - Sistema de Salud y Seguridad en el Trabajo
+**Versión actual: v4.0.0**
 
 ## Overview
 This project is an integral management system for Occupational Health and Safety (SST) in Colombia, designed for compliance with national regulations (Resolución 0312/2019) and ISO 45001:2018 standards. It offers a comprehensive digital solution for managing workers, tracking incidents, scheduling training, and generating real-time statistical reports. The system aims to be a leading tool for SST compliance and management, enhancing worker safety and operational efficiency through features like multi-tenant architecture, automatic company classification, and a complete Strategic Road Safety Plan (PESV) module.
@@ -29,6 +30,8 @@ The Organigrama SST module (`/organigrama-sst`) provides a visual hierarchical d
 The Matriz Legal includes 3 new entries added via migration (`syncMatrizLegalNormas`): Resolución 2346/2007 Art. 4-5 (Profesiograma), Decreto 1072/2015 Art. 2.2.4.6.8 (Organigrama SST), Resolución 2646/2008 Art. 8 (Perfil Sociodemográfico). These are idempotently applied to all existing companies on startup.
 
 An Onboarding Gate system (`WelcomeGate` component) blocks company-level users until superadmin marks induction as complete. New companies start with `onboarding_completed = 0` and see a full-screen welcome page with scheduling CTAs. Superadmin unlocks via Companies Management (`PATCH /api/companies/:id/complete-onboarding`). Roles superadmin, soporte, lso, lso_externo bypass the gate. All pre-existing companies were migrated to `onboarding_completed = 1` on feature deploy.
+
+The PESV Evaluaciones page (`/pesv/evaluaciones`) implements the "Company Vault" pattern for superadmin: a company cards grid grouped by company with latest compliance score and PESV level; clicking a company drills into that company's evaluations with year filter. Non-superadmin users see their own evaluations directly. Mirrors the same pattern as EvaluacionesSst.tsx. Stripe payment notifications: corrected amount from cents (÷100), added renewal notifications on `invoice.paid` for `subscription_cycle` events. Internal team chat redesigned with dark Slack-style theme (slate-800 background, active channel in blue).
 
 ### Database & Infrastructure
 The production environment uses AWS RDS PostgreSQL, deployed on Replit Autoscale. Development uses Replit-provisioned Neon PostgreSQL. The system employs database indexes, a connection pool, PDF concurrency limiting, pagination, and N+1 query fixes for performance optimization.
