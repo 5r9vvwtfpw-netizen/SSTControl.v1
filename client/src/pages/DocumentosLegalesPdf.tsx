@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +20,6 @@ import {
   CheckCircle,
   Loader2,
   Award,
-  Upload,
   Trash2,
   UserCheck,
   BadgeCheck,
@@ -41,34 +40,11 @@ export default function DocumentosLegalesPdf() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [downloading, setDownloading] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
 
   const { data: certificaciones = [], isLoading: loadingCerts } = useQuery<CertificacionProfesional[]>({
     queryKey: ["/api/certificaciones-profesionales"],
     enabled: !!user,
-  });
-
-  const uploadMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/certificaciones-profesionales", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Error al subir certificación");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/certificaciones-profesionales"] });
-      toast({ title: "Certificación subida", description: "El documento se ha subido correctamente." });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    },
   });
 
   const deleteMutation = useMutation({
@@ -83,19 +59,6 @@ export default function DocumentosLegalesPdf() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.append("archivo", file);
-    formData.append("titulo", file.name.replace(/\.pdf$/i, ""));
-    formData.append("profesionalNombre", "Hernán Valencia Gil");
-    formData.append("profesionalCredenciales", "Consultor Profesional en Prevención de Riesgos Laborales");
-    formData.append("profesionalLicencia", "S2019060049528");
-    uploadMutation.mutate(formData);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
 
   const handleCertDownload = async (cert: CertificacionProfesional) => {
     try {
@@ -299,58 +262,31 @@ export default function DocumentosLegalesPdf() {
 
         <Card className="mt-8" data-testid="card-certificaciones">
           <CardHeader>
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <Award className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Certificaciones y Avales Profesionales</CardTitle>
-              </div>
-              {isAdmin && (
-                <>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                    data-testid="input-upload-certificacion"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadMutation.isPending}
-                    data-testid="button-upload-certificacion"
-                  >
-                    {uploadMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Upload className="h-4 w-4 mr-2" />
-                    )}
-                    Subir informe
-                  </Button>
-                </>
-              )}
+            <div className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Certificaciones y Avales Profesionales</CardTitle>
             </div>
             <CardDescription>
               Documentos de auditoría y aval emitidos por profesionales externos
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Info del auditor + descarga del informe */}
-            <div className="p-4 bg-muted/50 rounded-lg">
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div className="flex items-start gap-3">
-                  <UserCheck className="h-6 w-6 text-green-600 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-semibold" data-testid="text-auditor-label">Auditor Externo</p>
-                    <p className="text-sm font-medium" data-testid="text-auditor-nombre">Hernán Valencia Gil</p>
-                    <p className="text-sm text-muted-foreground" data-testid="text-auditor-titulo">Consultor Profesional en Prevención de Riesgos Laborales</p>
-                    <p className="text-sm text-muted-foreground" data-testid="text-auditor-licencia">Licencia Profesional N° S2019060049528 - DSSA</p>
-                    <p className="text-xs text-muted-foreground mt-1">Fecha de auditoría: 13 de Febrero 2026 · Vigencia 2026</p>
-                  </div>
-                </div>
+            {/* Informe de Auditoría — mismo patrón que los demás documentos */}
+            <div className="flex flex-col sm:flex-row items-start gap-4">
+              <div className="p-3 bg-primary/10 rounded-lg shrink-0">
+                <UserCheck className="h-8 w-8" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-1" data-testid="text-auditor-label">
+                  Informe de Auditoría SG-SST
+                </h3>
+                <p className="text-muted-foreground text-sm" data-testid="text-auditor-nombre">
+                  Hernán Valencia Gil — Consultor Profesional en Prevención de Riesgos Laborales
+                </p>
+                <p className="text-xs text-muted-foreground mb-4" data-testid="text-auditor-licencia">
+                  Lic. N° S2019060049528 - DSSA · Fecha de auditoría: 13 de Febrero 2026 · Vigencia 2026
+                </p>
                 <Button
-                  size="sm"
                   onClick={() => handleDownload({
                     id: "informe-auditoria",
                     title: "Informe de Auditoría SG-SST",
@@ -359,15 +295,20 @@ export default function DocumentosLegalesPdf() {
                     icon: null,
                     filename: "Informe-Auditoria-SG-SST-Colombia-2026.pdf",
                   })}
-                  disabled={downloading === "informe-auditoria"}
+                  disabled={downloading !== null}
                   data-testid="button-download-informe-auditoria"
                 >
                   {downloading === "informe-auditoria" ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generando PDF...
+                    </>
                   ) : (
-                    <Download className="h-4 w-4 mr-2" />
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      Descargar Informe
+                    </>
                   )}
-                  Descargar Informe
                 </Button>
               </div>
             </div>
@@ -378,11 +319,7 @@ export default function DocumentosLegalesPdf() {
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Cargando documentos...
               </div>
-            ) : certificaciones.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic" data-testid="text-no-certificaciones">
-                El informe de auditoría estará disponible para descarga próximamente.
-              </p>
-            ) : (
+            ) : certificaciones.length > 0 ? (
               <div className="space-y-2">
                 {certificaciones.map((cert) => (
                   <div
@@ -429,7 +366,7 @@ export default function DocumentosLegalesPdf() {
                   </div>
                 ))}
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
 
