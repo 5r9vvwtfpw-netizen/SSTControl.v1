@@ -519,7 +519,8 @@ export async function addSignatureFooter(
     if (signers.lso) {
       const lsoColX = margin + colWidth * 3 + 4;
       const lsoColW = colWidth - 8;
-      let lsoTextY = nameY;
+      // Alinear verticalmente con las demás columnas cuando hay imágenes de firma
+      let lsoTextY = hasAnySignatureImage ? nameY + signatureImageHeight : nameY;
 
       if (signers.lso.signatureUrl) {
         try {
