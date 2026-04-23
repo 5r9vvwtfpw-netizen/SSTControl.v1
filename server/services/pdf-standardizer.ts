@@ -193,7 +193,7 @@ export async function getSignersForCompany(companyId: string, requiresLSO: boole
 
   return {
     elaboro: {
-      name: responsableSst?.fullName || responsableSst?.username || 'Responsable SG-SST',
+      name: responsableSst?.fullName || responsableSst?.username || '',
       role: 'Responsable del SG-SST',
     },
     autorizo: {
