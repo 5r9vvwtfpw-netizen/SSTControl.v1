@@ -402,13 +402,13 @@ export async function addSignatureFooter(
   const hasAnySignatureImage = hasLsoSignatureImage || hasRepSignatureImage;
   const footerHeight = hasAnySignatureImage ? 130 : (includeLSO ? 100 : 70);
 
-  const availableSpace = pageHeight - margin - doc.y;
+  const potentialFooterY = pageHeight - margin - footerHeight;
   let footerY: number;
-  if (availableSpace < footerHeight + 20) {
+  if (doc.y > potentialFooterY) {
     doc.addPage();
-    footerY = margin + 10;
-  } else {
     footerY = pageHeight - margin - footerHeight;
+  } else {
+    footerY = potentialFooterY;
   }
 
   const numCols = includeLSO ? 4 : 3;
