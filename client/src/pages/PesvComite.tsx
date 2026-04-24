@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Pencil, Trash2, ArrowLeft, Users, FileText, FileDown, Stamp, CalendarDays, CheckCircle2, XCircle, AlertCircle, Calendar } from "lucide-react";
 import { useState } from "react";
+import { getTodayDateString } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { ComiteIntegrantePesv, ActaComitePesv, Worker, ActoAdministrativoPesv, CronogramaReunionPesv } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -169,7 +170,7 @@ function IntegrantesTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   const [editing, setEditing] = useState<ComiteIntegrantePesv | null>(null);
   const [form, setForm] = useState({
     nombre: "", cargo: "", rol: "otro" as RolComite, funcionesResponsabilidades: "",
-    email: "", telefono: "", fechaIngreso: new Date().toISOString().split("T")[0],
+    email: "", telefono: "", fechaIngreso: getTodayDateString(),
     workerId: "", observaciones: ""
   });
 
@@ -183,7 +184,7 @@ function IntegrantesTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
 
   const resetForm = () => {
     setEditing(null);
-    setForm({ nombre: "", cargo: "", rol: "otro", funcionesResponsabilidades: "", email: "", telefono: "", fechaIngreso: new Date().toISOString().split("T")[0], workerId: "", observaciones: "" });
+    setForm({ nombre: "", cargo: "", rol: "otro", funcionesResponsabilidades: "", email: "", telefono: "", fechaIngreso: getTodayDateString(), workerId: "", observaciones: "" });
   };
 
   const handleWorkerSelect = (workerId: string) => {
@@ -395,7 +396,7 @@ function ActoAdministrativoTab({ isAdmin, toast }: { isAdmin: boolean; toast: an
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ActoAdministrativoPesv | null>(null);
   const [form, setForm] = useState({
-    tipoDocumento: "Resolución", numeroDocumento: "", fechaExpedicion: new Date().toISOString().split("T")[0],
+    tipoDocumento: "Resolución", numeroDocumento: "", fechaExpedicion: getTodayDateString(),
     fechaVigencia: "", firmadoPor: "", cargoFirmante: "Representante Legal",
     objetoConformacion: "Conformar el equipo de trabajo para el diseño, implementación y seguimiento del Plan Estratégico de Seguridad Vial (PESV) de la organización, en cumplimiento de la Resolución 40595 de 2022 del Ministerio de Transporte.",
     considerandos: "Que la Ley 1503 de 2011 establece la obligación de adoptar políticas de seguridad vial.\nQue la Resolución 40595 de 2022 del Ministerio de Transporte establece la metodología para el diseño e implementación del PESV.\nQue el Artículo 5 de dicha resolución establece la obligación de conformar un equipo de trabajo para el PESV.",
@@ -413,7 +414,7 @@ function ActoAdministrativoTab({ isAdmin, toast }: { isAdmin: boolean; toast: an
   const resetForm = () => {
     setEditing(null);
     setForm({
-      tipoDocumento: "Resolución", numeroDocumento: "", fechaExpedicion: new Date().toISOString().split("T")[0],
+      tipoDocumento: "Resolución", numeroDocumento: "", fechaExpedicion: getTodayDateString(),
       fechaVigencia: "", firmadoPor: "", cargoFirmante: "Representante Legal",
       objetoConformacion: "Conformar el equipo de trabajo para el diseño, implementación y seguimiento del Plan Estratégico de Seguridad Vial (PESV) de la organización, en cumplimiento de la Resolución 40595 de 2022 del Ministerio de Transporte.",
       considerandos: "Que la Ley 1503 de 2011 establece la obligación de adoptar políticas de seguridad vial.\nQue la Resolución 40595 de 2022 del Ministerio de Transporte establece la metodología para el diseño e implementación del PESV.\nQue el Artículo 5 de dicha resolución establece la obligación de conformar un equipo de trabajo para el PESV.",
@@ -852,7 +853,7 @@ function ActasTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ActaComitePesv | null>(null);
   const [form, setForm] = useState({
-    numeroActa: 1, fechaReunion: new Date().toISOString().split("T")[0],
+    numeroActa: 1, fechaReunion: getTodayDateString(),
     horaInicio: "08:00", horaFin: "10:00", lugar: "", modalidad: "presencial" as ModalidadReunion,
     temasOrdenDia: "", desarrolloReunion: "", compromisos: "",
     asistentesIds: [] as string[], invitados: "", proximaReunion: "",
@@ -870,7 +871,7 @@ function ActasTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   const resetForm = () => {
     setEditing(null);
     const next = actas.length > 0 ? Math.max(...actas.map(a => a.numeroActa)) + 1 : 1;
-    setForm({ numeroActa: next, fechaReunion: new Date().toISOString().split("T")[0], horaInicio: "08:00", horaFin: "10:00", lugar: "", modalidad: "presencial", temasOrdenDia: "", desarrolloReunion: "", compromisos: "", asistentesIds: [], invitados: "", proximaReunion: "", estado: "borrador", observaciones: "" });
+    setForm({ numeroActa: next, fechaReunion: getTodayDateString(), horaInicio: "08:00", horaFin: "10:00", lugar: "", modalidad: "presencial", temasOrdenDia: "", desarrolloReunion: "", compromisos: "", asistentesIds: [], invitados: "", proximaReunion: "", estado: "borrador", observaciones: "" });
   };
 
   const createMutation = useMutation({

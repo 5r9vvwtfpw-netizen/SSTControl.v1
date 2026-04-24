@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Plus, Search, Trash2, Edit, TrendingUp, Target, BarChart3, Activity, Calendar, ChevronDown, ChevronUp, FileDown, Zap, CheckCircle2, ArrowLeft } from "lucide-react";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { useState, useMemo } from "react";
+import { getTodayDateString } from "@/lib/utils/formatters";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -203,7 +204,7 @@ export default function IndicadoresPesv() {
   const medicionForm = useForm<MedicionFormValues>({
     resolver: zodResolver(medicionFormSchema),
     defaultValues: {
-      fechaMedicion: new Date().toISOString().split("T")[0],
+      fechaMedicion: getTodayDateString(),
       valor: "",
       observaciones: "",
     },
@@ -349,7 +350,7 @@ export default function IndicadoresPesv() {
       setMedicionDialogOpen(false);
       setIndicadorForMedicion(null);
       medicionForm.reset({
-        fechaMedicion: new Date().toISOString().split("T")[0],
+        fechaMedicion: getTodayDateString(),
         valor: "",
         observaciones: "",
       });
@@ -545,7 +546,7 @@ export default function IndicadoresPesv() {
   const handleAddMedicion = (indicador: IndicadorSV) => {
     setIndicadorForMedicion(indicador);
     medicionForm.reset({
-      fechaMedicion: new Date().toISOString().split("T")[0],
+      fechaMedicion: getTodayDateString(),
       valor: "",
       observaciones: "",
     });

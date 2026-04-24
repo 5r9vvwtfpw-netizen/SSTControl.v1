@@ -43,7 +43,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
-import { getTodayDateString } from "@/lib/utils/formatters";
+import { getTodayDateString, toDateInputValue } from "@/lib/utils/formatters";
 
 const formSchema = insertRecomendacionArlAutoridadSchema.extend({
   fechaDocumento: z.string().min(1, "Fecha requerida"),
@@ -255,13 +255,13 @@ export default function RecomendacionesArl() {
       origen: record.origen,
       nombreEntidad: record.nombreEntidad,
       numeroDocumento: record.numeroDocumento || "",
-      fechaDocumento: record.fechaDocumento ? record.fechaDocumento.toString().split('T')[0] : "",
-      fechaRecepcion: record.fechaRecepcion ? record.fechaRecepcion.toString().split('T')[0] : "",
+      fechaDocumento: record.fechaDocumento ? toDateInputValue(record.fechaDocumento.toString()) : "",
+      fechaRecepcion: record.fechaRecepcion ? toDateInputValue(record.fechaRecepcion.toString()) : "",
       tipoRecomendacion: record.tipoRecomendacion,
       descripcion: record.descripcion,
       fundamentoLegal: record.fundamentoLegal || "",
       areaAfectada: record.areaAfectada || "",
-      fechaLimite: record.fechaLimite ? record.fechaLimite.toString().split('T')[0] : "",
+      fechaLimite: record.fechaLimite ? toDateInputValue(record.fechaLimite.toString()) : "",
       diasPlazo: record.diasPlazo,
       planAccion: record.planAccion || "",
       responsable: record.responsable,
@@ -269,9 +269,9 @@ export default function RecomendacionesArl() {
       presupuesto: record.presupuesto,
       estado: record.estado,
       porcentajeAvance: record.porcentajeAvance,
-      fechaImplementacion: record.fechaImplementacion ? record.fechaImplementacion.toString().split('T')[0] : "",
+      fechaImplementacion: record.fechaImplementacion ? toDateInputValue(record.fechaImplementacion.toString()) : "",
       verificadoPor: record.verificadoPor || "",
-      fechaVerificacion: record.fechaVerificacion ? record.fechaVerificacion.toString().split('T')[0] : "",
+      fechaVerificacion: record.fechaVerificacion ? toDateInputValue(record.fechaVerificacion.toString()) : "",
       evidenciaCumplimiento: record.evidenciaCumplimiento || "",
       documentoRespuesta: record.documentoRespuesta || "",
       observaciones: record.observaciones || "",

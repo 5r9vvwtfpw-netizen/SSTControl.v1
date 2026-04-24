@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { getTodayDateString } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -146,7 +147,7 @@ export default function EntregaEpp() {
       eppCatalogId: "",
       eppName: "",
       eppCategory: "proteccion_cabeza",
-      deliveryDate: new Date().toISOString().split('T')[0],
+      deliveryDate: getTodayDateString(),
       quantity: 1,
       size: "",
       deliveryReason: "dotacion_inicial",
@@ -274,7 +275,7 @@ export default function EntregaEpp() {
       eppCatalogId: "",
       eppName: "",
       eppCategory: "proteccion_cabeza",
-      deliveryDate: new Date().toISOString().split('T')[0],
+      deliveryDate: getTodayDateString(),
       quantity: 1,
       size: "",
       deliveryReason: "dotacion_inicial",

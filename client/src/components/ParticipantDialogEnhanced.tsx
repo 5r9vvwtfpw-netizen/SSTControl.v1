@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getTodayDateString, toDateInputValue } from "@/lib/utils/formatters";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -82,8 +83,7 @@ export function ParticipantDialogEnhanced({
   const [participationDateOpen, setParticipationDateOpen] = useState(false);
 
   const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().split("T")[0];
+    return getTodayDateString();
   };
 
   const participantForm = useForm<ParticipantFormData>({
@@ -463,7 +463,7 @@ export function ParticipantDialogEnhanced({
                         selected={field.value ? new Date(field.value + "T00:00:00") : undefined}
                         onSelect={(date) => {
                           if (date) {
-                            field.onChange(date.toISOString().split("T")[0]);
+                            field.onChange(toDateInputValue(date));
                             setParticipationDateOpen(false);
                           }
                         }}

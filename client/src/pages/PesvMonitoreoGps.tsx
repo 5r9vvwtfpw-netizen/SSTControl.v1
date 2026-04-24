@@ -12,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, Trash2, ArrowLeft, MapPin, Gauge, AlertTriangle, Info, Navigation, Radio, Lock, CalendarDays, TrendingUp, CheckCircle2, XCircle, Wifi, Cable, Copy, Check } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
+import { getTodayDateString } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -46,7 +47,7 @@ export default function PesvMonitoreoGps() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMapVehicleId, setSelectedMapVehicleId] = useState<string>("");
-  const [summaryDate, setSummaryDate] = useState(new Date().toISOString().split("T")[0]);
+  const [summaryDate, setSummaryDate] = useState(getTodayDateString());
   const [webhookCopied, setWebhookCopied] = useState(false);
   const [showGpsGuide, setShowGpsGuide] = useState(true);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -58,7 +59,7 @@ export default function PesvMonitoreoGps() {
   const [formData, setFormData] = useState({
     vehicleId: "",
     driverId: "",
-    trackingDate: new Date().toISOString().split("T")[0],
+    trackingDate: getTodayDateString(),
     trackingTime: "",
     latitude: "",
     longitude: "",
@@ -154,7 +155,7 @@ export default function PesvMonitoreoGps() {
       setFormData((prev) => ({
         ...prev,
         vehicleId,
-        trackingDate: latest.trackingDate || new Date().toISOString().split("T")[0],
+        trackingDate: latest.trackingDate || getTodayDateString(),
         trackingTime: latest.trackingTime || "",
         latitude: latest.latitude || "",
         longitude: latest.longitude || "",
@@ -170,7 +171,7 @@ export default function PesvMonitoreoGps() {
       setFormData((prev) => ({
         ...prev,
         vehicleId,
-        trackingDate: new Date().toISOString().split("T")[0],
+        trackingDate: getTodayDateString(),
         trackingTime: "",
         latitude: "",
         longitude: "",
@@ -253,7 +254,7 @@ export default function PesvMonitoreoGps() {
     setFormData({
       vehicleId: "",
       driverId: "",
-      trackingDate: new Date().toISOString().split("T")[0],
+      trackingDate: getTodayDateString(),
       trackingTime: "",
       latitude: "",
       longitude: "",

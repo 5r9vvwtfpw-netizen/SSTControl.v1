@@ -20,7 +20,7 @@ import { politicasSstPredefinidas, getPoliticaByCodigo, categoriaPoliticaLabels 
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
-import { getTodayDateString } from "@/lib/utils/formatters";
+import { getTodayDateString, toDateInputValue } from "@/lib/utils/formatters";
 
 const normativaPoliticas = [
   {
@@ -325,8 +325,8 @@ export default function PoliticasSstPage() {
         codigo: politica.codigo,
         version: politica.version,
         estado: politica.estado,
-        fechaEmision: new Date(politica.fechaEmision).toISOString().split("T")[0],
-        fechaProximaRevision: new Date(politica.fechaProximaRevision).toISOString().split("T")[0],
+        fechaEmision: toDateInputValue(politica.fechaEmision),
+        fechaProximaRevision: toDateInputValue(politica.fechaProximaRevision),
         declaracionCompromiso: politica.declaracionCompromiso,
         objetivos: JSON.parse(politica.objetivos),
         alcance: politica.alcance,
@@ -340,7 +340,7 @@ export default function PoliticasSstPage() {
         cedulaRepresentante: politica.cedulaRepresentante,
         responsableSst: politica.responsableSst,
         licenciaSst: politica.licenciaSst || "",
-        fechaFirma: new Date(politica.fechaFirma).toISOString().split("T")[0],
+        fechaFirma: toDateInputValue(politica.fechaFirma),
         elaboradoPorId: politica.elaboradoPorId || "",
         autorizadoPorId: politica.autorizadoPorId || "",
         aprobadoPorId: politica.aprobadoPorId || "",

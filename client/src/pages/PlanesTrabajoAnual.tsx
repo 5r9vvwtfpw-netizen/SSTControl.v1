@@ -11,6 +11,7 @@ import { Link } from "wouter";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState, useEffect } from "react";
+import { toDateInputValue } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -423,7 +424,7 @@ export default function PlanesTrabajoAnual() {
                         <FormControl>
                           <Input
                             type="date"
-                            value={field.value instanceof Date ? field.value.toISOString().split('T')[0] : ''}
+                            value={field.value ? toDateInputValue(field.value) : ''}
                             onChange={(e) => field.onChange(new Date(e.target.value))}
                             data-testid="input-fecha-elaboracion"
                           />

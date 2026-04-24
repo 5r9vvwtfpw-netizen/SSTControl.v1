@@ -17,6 +17,7 @@ import {
 import { Link, useSearch } from "wouter";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, useMemo, useEffect } from "react";
+import { toDateInputValue } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -699,7 +700,7 @@ export default function AnalisisContexto() {
                         <FormControl>
                           <Input 
                             type="date" 
-                            value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''} 
+                            value={field.value ? toDateInputValue(field.value) : ''} 
                             onChange={(e) => field.onChange(new Date(e.target.value))}
                             data-testid="input-fecha-elaboracion"
                           />
@@ -1451,7 +1452,7 @@ export default function AnalisisContexto() {
                       <Input 
                         type="date" 
                         {...field}
-                        value={field.value ? new Date(field.value).toISOString().split('T')[0] : ""}
+                        value={field.value ? toDateInputValue(field.value) : ""}
                         onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
                         data-testid="input-fecha-limite-accion"
                       />

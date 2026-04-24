@@ -139,3 +139,21 @@ export const formatDateCO = (dateStr: string | Date | null | undefined): string 
   const d = /^\d{4}-\d{2}-\d{2}$/.test(str) ? new Date(str + 'T12:00:00') : new Date(str);
   return d.toLocaleDateString('es-CO');
 };
+
+/**
+ * Convierte cualquier fecha (Date object o string) a formato YYYY-MM-DD usando la zona
+ * horaria de Colombia (America/Bogota). Úsalo para valores de <input type="date">.
+ * Evita el bug donde new Date(x).toISOString().split('T')[0] devuelve la fecha UTC
+ * que puede ser el día siguiente a la medianoche en Colombia.
+ */
+export const toDateInputValue = (date: Date | string | null | undefined): string => {
+  if (!date) return '';
+  let d: Date;
+  if (typeof date === 'string') {
+    // Si ya es YYYY-MM-DD añadir T12:00:00 para evitar desfase UTC
+    d = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(date + 'T12:00:00') : new Date(date);
+  } else {
+    d = date;
+  }
+  return d.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+};

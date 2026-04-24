@@ -10,6 +10,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Plus, Search, Eye, Trash2, ArrowLeft, FileDown, Zap, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
+import { getTodayDateString } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { PesvAudit, insertPesvAuditSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -65,7 +66,7 @@ type AuditFormData = {
 };
 
 const initialFormData: AuditFormData = {
-  auditDate: new Date().toISOString().split('T')[0],
+  auditDate: getTodayDateString(),
   auditor: "",
   auditorEntity: "",
   scope: "Auditoría anual del Plan Estratégico de Seguridad Vial (PESV) según Resolución 40595/2022. Evaluación integral de los 24 pasos del ciclo PHVA.",

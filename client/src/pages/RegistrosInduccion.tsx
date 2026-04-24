@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { formatDateCO } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1001,7 +1002,7 @@ export default function RegistrosInduccionPage() {
               <TableBody>
                 {registros.map((registro) => (
                   <TableRow key={registro.id} data-testid={`row-registro-${registro.id}`}>
-                    <TableCell>{new Date(registro.fecha).toLocaleDateString('es-CO')}</TableCell>
+                    <TableCell>{formatDateCO(registro.fecha)}</TableCell>
                     <TableCell>
                       <Badge 
                         variant="secondary" 

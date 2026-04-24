@@ -14,6 +14,7 @@ import { Link } from "wouter";
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useState, useEffect } from "react";
+import { toDateInputValue } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -1223,7 +1224,7 @@ function ObjetivosTab() {
                         <FormControl>
                           <Input
                             type="date"
-                            value={field.value instanceof Date ? field.value.toISOString().split('T')[0] : ''}
+                            value={field.value ? toDateInputValue(field.value) : ''}
                             onChange={(e) => field.onChange(new Date(e.target.value))}
                             data-testid="input-fecha-inicio"
                           />
@@ -1241,7 +1242,7 @@ function ObjetivosTab() {
                         <FormControl>
                           <Input
                             type="date"
-                            value={field.value instanceof Date ? field.value.toISOString().split('T')[0] : ''}
+                            value={field.value ? toDateInputValue(field.value) : ''}
                             onChange={(e) => field.onChange(new Date(e.target.value))}
                             data-testid="input-fecha-fin"
                           />
@@ -2569,7 +2570,7 @@ function MedicionesDialog({ indicador, open, onOpenChange }: MedicionesDialogPro
                             <FormControl>
                               <Input
                                 type="date"
-                                value={field.value instanceof Date ? field.value.toISOString().split('T')[0] : ''}
+                                value={field.value ? toDateInputValue(field.value) : ''}
                                 onChange={(e) => field.onChange(new Date(e.target.value))}
                                 data-testid="input-fecha-medicion"
                               />

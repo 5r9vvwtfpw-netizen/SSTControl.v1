@@ -1464,7 +1464,7 @@ function IncidentesTab({ incidents, workers, controls, isLoading, toast }: { inc
   const [editingIncident, setEditingIncident] = useState<EvsIncident | null>(null);
   
   const now = new Date();
-  const todayStr = now.toISOString().split("T")[0];
+  const todayStr = getTodayDateString();
   const currentTime = now.toTimeString().slice(0, 5);
   
   const getDefaultFormData = () => ({

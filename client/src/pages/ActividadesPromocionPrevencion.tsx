@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { PromotionPreventionActivity, SveProgram } from "@shared/schema";
-import { getTodayDateString } from "@/lib/utils/formatters";
+import { getTodayDateString, toDateInputValue } from "@/lib/utils/formatters";
 import { insertPromotionPreventionActivitySchema, insertSveProgramSchema } from "@shared/schema";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -1199,7 +1199,7 @@ export default function ActividadesPromocionPrevencion() {
                         const today = getTodayDateString();
                         const nextYear = new Date();
                         nextYear.setFullYear(nextYear.getFullYear() + 1);
-                        const reviewDate = nextYear.toISOString().split('T')[0];
+                        const reviewDate = toDateInputValue(nextYear);
                         
                         setSveFormData({ 
                           ...sveFormData, 

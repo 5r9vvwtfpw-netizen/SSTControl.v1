@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getTodayDateString } from "@/lib/utils/formatters";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -749,7 +750,7 @@ export default function ConservacionAuditiva() {
       jobPosition: profileForm.jobPosition || undefined,
     };
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
 
     if (editingProfile) {
       // Update profile

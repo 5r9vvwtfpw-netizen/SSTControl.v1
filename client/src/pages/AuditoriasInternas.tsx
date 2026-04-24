@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Search, ClipboardCheck, Calendar, Users, CheckCircle2, Clock, FileText, Shield, UserCheck, CalendarDays } from "lucide-react";
 import { useState, useEffect } from "react";
+import { toDateInputValue } from "@/lib/utils/formatters";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -316,9 +317,7 @@ export default function AuditoriasInternas() {
                           <Input
                             type="date"
                             {...field}
-                            value={field.value instanceof Date && !isNaN(field.value.getTime()) 
-                              ? field.value.toISOString().split('T')[0] 
-                              : ''}
+                            value={field.value ? toDateInputValue(field.value) : ''}
                             onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
                             data-testid="input-date"
                           />
@@ -523,7 +522,7 @@ export default function AuditoriasInternas() {
                             <FormControl>
                               <Input
                                 type="date"
-                                value={field.value ? new Date(field.value as string | Date).toISOString().split('T')[0] : ''}
+                                value={field.value ? toDateInputValue(field.value as string | Date) : ''}
                                 onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
                                 data-testid="input-copasst-approval-date"
                               />
