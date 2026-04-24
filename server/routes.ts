@@ -12180,14 +12180,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (allocation.elaboradoPorId) {
         const worker = await storage.getWorker(allocation.elaboradoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          elaboroName = `${designeeInfo.name} - ${worker.position}`;
+          elaboroName = `${worker.name || (worker.firstName + ' ' + worker.lastName)} - ${worker.position}`;
         }
       }
 
       if (allocation.autorizadoPorId) {
         const worker = await storage.getWorker(allocation.autorizadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          autorizoName = `${designeeInfo.name} - ${worker.position}`;
+          autorizoName = `${worker.name || (worker.firstName + ' ' + worker.lastName)} - ${worker.position}`;
         }
       }
 
