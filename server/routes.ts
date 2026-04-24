@@ -11758,11 +11758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // For LSO, add employer obligations section
       if (isLsoDesignation) {
         checkPageSpace(doc, 100);
-        if (currentY > doc.page.height - 120) {
-          doc.addPage();
-          doc.font('Helvetica').fontSize(8).fillColor('#000000');
-          currentY = 50;
-        }
+        currentY = doc.y;
         doc.fontSize(9).font('Helvetica-Bold').text('OBLIGACIONES DEL EMPLEADOR:', margin, currentY);
         currentY = doc.y + 6;
         doc.font('Helvetica').fontSize(8);
@@ -11791,11 +11787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Authority paragraph
       checkPageSpace(doc, 80);
-      if (currentY > doc.page.height - 100) {
-        doc.addPage();
-        doc.font('Helvetica').fontSize(8).fillColor('#000000');
-        currentY = 50;
-      }
+      currentY = doc.y;
       
       if (isLsoDesignation) {
         doc.fontSize(8).text(
@@ -11813,11 +11805,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Signature section
       checkPageSpace(doc, 180);
-      if (currentY > doc.page.height - 190) {
-        doc.addPage();
-        doc.font('Helvetica').fontSize(8).fillColor('#000000');
-        currentY = 50;
-      }
+      currentY = doc.y;
       
       doc.fontSize(8).text('En constancia de lo anterior, se firma la presente acta:', margin, currentY, { lineBreak: false });
       currentY += 20;
