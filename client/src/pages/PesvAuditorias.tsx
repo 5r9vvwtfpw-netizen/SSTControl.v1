@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Plus, Search, Eye, Trash2, ArrowLeft, FileDown, Zap } from "lucide-react";
+import { Plus, Search, Eye, Trash2, ArrowLeft, FileDown, Zap, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -115,6 +115,7 @@ export default function PesvAuditorias() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedAudit, setSelectedAudit] = useState<PesvAudit | null>(null);
   const [formData, setFormData] = useState<AuditFormData>(initialFormData);
+  const [editingAuditId, setEditingAuditId] = useState<string | null>(null);
 
   const { data: audits = [], isLoading: auditsLoading } = useQuery<PesvAudit[]>({
     queryKey: ["/api/pesv-audits"],
@@ -237,6 +238,31 @@ export default function PesvAuditorias() {
     },
   });
 
+  const updateAuditMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const res = await apiRequest("PATCH", `/api/pesv-audits/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pesv-audits"] });
+      setDialogOpen(false);
+      setEditingAuditId(null);
+      resetForm();
+      toast({
+        title: "Auditoría actualizada",
+        description: "Los datos de la auditoría se han guardado exitosamente",
+        className: "bg-yellow-50 border-yellow-200",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const data = {
@@ -246,7 +272,58 @@ export default function PesvAuditorias() {
       recommendations: formData.recommendations || undefined,
       actionPlan: formData.actionPlan || undefined,
     };
-    createAuditMutation.mutate(data);
+    if (editingAuditId) {
+      updateAuditMutation.mutate({ id: editingAuditId, data });
+    } else {
+      createAuditMutation.mutate(data);
+    }
+  };
+
+  const handleEditAudit = (audit: PesvAudit) => {
+    setEditingAuditId(audit.id);
+    setFormData({
+      auditDate: audit.auditDate,
+      auditor: audit.auditor,
+      auditorEntity: audit.auditorEntity || "",
+      scope: audit.scope,
+      step1Leader: audit.step1Leader,
+      step2Committee: audit.step2Committee,
+      step3Policy: audit.step3Policy,
+      step4Leadership: audit.step4Leadership,
+      step5Diagnosis: audit.step5Diagnosis,
+      step6RiskAssessment: audit.step6RiskAssessment,
+      step7Objectives: audit.step7Objectives,
+      step8CriticalRisks: audit.step8CriticalRisks,
+      step9AnnualPlan: audit.step9AnnualPlan,
+      step10Training: audit.step10Training,
+      step11Fatigue: audit.step11Fatigue,
+      step12Emergency: audit.step12Emergency,
+      step13Investigation: audit.step13Investigation,
+      step14SafeRoads: audit.step14SafeRoads,
+      step15DriverSelection: audit.step15DriverSelection,
+      step16VehicleInspection: audit.step16VehicleInspection,
+      step17Maintenance: audit.step17Maintenance,
+      step18ChangeManagement: audit.step18ChangeManagement,
+      step19Procurement: audit.step19Procurement,
+      step20Indicators: audit.step20Indicators,
+      step21Supervision: audit.step21Supervision,
+      step22Audit: audit.step22Audit,
+      step23Improvement: audit.step23Improvement,
+      step24Communication: audit.step24Communication,
+      policyCompliance: audit.policyCompliance,
+      planningCompliance: audit.planningCompliance,
+      implementationCompliance: audit.implementationCompliance,
+      verificationCompliance: audit.verificationCompliance,
+      improvementCompliance: audit.improvementCompliance,
+      totalScore: audit.totalScore,
+      compliancePercentage: audit.compliancePercentage,
+      result: audit.result,
+      findings: audit.findings || "",
+      recommendations: audit.recommendations || "",
+      actionPlan: audit.actionPlan || "",
+      status: audit.status,
+    });
+    setDialogOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -262,6 +339,7 @@ export default function PesvAuditorias() {
 
   const resetForm = () => {
     setFormData(initialFormData);
+    setEditingAuditId(null);
   };
 
   const updateStep = (step: keyof AuditFormData, value: number) => {
@@ -378,7 +456,7 @@ export default function PesvAuditorias() {
             </DialogTrigger>
             <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Registrar Auditoría PESV - 24 Pasos</DialogTitle>
+                <DialogTitle>{editingAuditId ? "Editar Auditoría PESV - 24 Pasos" : "Registrar Auditoría PESV - 24 Pasos"}</DialogTitle>
                 <DialogDescription>Complete la evaluación de los 24 pasos del ciclo PHVA según Resolución 40595/2022</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -450,7 +528,7 @@ export default function PesvAuditorias() {
                     <p className="text-xs text-muted-foreground">Calificación 0-100 para cada paso</p>
                   </div>
 
-                  <Accordion type="multiple" defaultValue={["planear"]} className="w-full">
+                  <Accordion type="multiple" defaultValue={["planear", "hacer", "verificar", "actuar"]} className="w-full">
                     <AccordionItem value="planear">
                       <AccordionTrigger className="text-sm font-semibold">
                         <span className="flex items-center gap-2">
@@ -633,10 +711,10 @@ export default function PesvAuditorias() {
                 <DialogFooter>
                   <Button 
                     type="submit" 
-                    disabled={createAuditMutation.isPending} 
+                    disabled={createAuditMutation.isPending || updateAuditMutation.isPending} 
                     data-testid="button-submit-audit"
                   >
-                    {createAuditMutation.isPending ? "Guardando..." : "Guardar Auditoría"}
+                    {(createAuditMutation.isPending || updateAuditMutation.isPending) ? "Guardando..." : editingAuditId ? "Actualizar Auditoría" : "Guardar Auditoría"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -712,15 +790,25 @@ export default function PesvAuditorias() {
                         <FileDown className="h-4 w-4" />
                       </Button>
                       {user?.role && hasCompanyAdminAccess(user.role) && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(audit.id)}
-                          disabled={deleteAuditMutation.isPending}
-                          data-testid={`button-delete-${audit.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditAudit(audit)}
+                            data-testid={`button-edit-${audit.id}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(audit.id)}
+                            disabled={deleteAuditMutation.isPending}
+                            data-testid={`button-delete-${audit.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
                       )}
                     </div>
                   </TableCell>
