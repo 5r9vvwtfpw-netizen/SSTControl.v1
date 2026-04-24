@@ -48,7 +48,7 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { Plus, Pencil, Trash2, UserCheck, FileText, CheckCircle, Bot, Download, Award, MapPin, Mail, Phone, Calendar, Target } from "lucide-react";
+import { Plus, Pencil, Trash2, UserCheck, FileText, CheckCircle, Bot, Download, Award, MapPin, Mail, Phone, Calendar, Target, AlertTriangle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ResponsibleDesignation, Worker, JobProfile } from "@shared/schema";
@@ -274,6 +274,7 @@ export default function ResponsibleDesignationPage() {
   const [editingDesignation, setEditingDesignation] = useState<ResponsibleDesignation | null>(null);
   const [selectedPredefinido, setSelectedPredefinido] = useState("");
   const [useExternalLso, setUseExternalLso] = useState(false);
+  const [deleteConfirmDesignation, setDeleteConfirmDesignation] = useState<ResponsibleDesignation | null>(null);
 
   const { data: designations = [], isLoading: designationsLoading } = useQuery<ResponsibleDesignation[]>({
     queryKey: ["/api/responsible-designations"],
@@ -420,9 +421,14 @@ export default function ResponsibleDesignationPage() {
     setDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("¿Está seguro de eliminar esta designación?")) {
-      deleteDesignationMutation.mutate(id);
+  const handleDelete = (designation: ResponsibleDesignation) => {
+    setDeleteConfirmDesignation(designation);
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirmDesignation) {
+      deleteDesignationMutation.mutate(deleteConfirmDesignation.id);
+      setDeleteConfirmDesignation(null);
     }
   };
 
@@ -1293,7 +1299,7 @@ export default function ResponsibleDesignationPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(designation.id)}
+                            onClick={() => handleDelete(designation)}
                             data-testid={`button-delete-${designation.id}`}
                             title="Eliminar"
                           >
@@ -1408,6 +1414,60 @@ export default function ResponsibleDesignationPage() {
           </p>
         </CardContent>
       </Card>
+
+      {/* Dialog de confirmación de eliminación */}
+      <Dialog open={!!deleteConfirmDesignation} onOpenChange={(open) => { if (!open) setDeleteConfirmDesignation(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Eliminar designación
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-3 pt-1">
+                {deleteConfirmDesignation?.isExternalLso ? (
+                  <div className="space-y-3">
+                    <p>
+                      Estás a punto de eliminar el acta de designación de{" "}
+                      <strong>{deleteConfirmDesignation.externalLsoName || "este LSO externo"}</strong>.
+                    </p>
+                    <div className="flex gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <div>
+                        <p className="font-medium">El acceso al portal LSO no se verá afectado.</p>
+                        <p className="mt-1 text-amber-700">
+                          Solo se elimina el acta de designación. Si también deseas revocar el acceso al portal
+                          del profesional, hazlo por separado desde la sección{" "}
+                          <strong>"Profesional LSO"</strong> en esta misma página o desde el directorio de profesionales.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p>¿Estás seguro de que deseas eliminar esta designación? Esta acción no se puede deshacer.</p>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirmDesignation(null)}
+              data-testid="button-cancel-delete"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleteDesignationMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteDesignationMutation.isPending ? "Eliminando..." : "Eliminar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
