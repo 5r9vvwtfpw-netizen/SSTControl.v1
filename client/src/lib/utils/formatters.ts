@@ -127,3 +127,15 @@ export const formatFileSize = (bytes: number): string => {
 export const getTodayDateString = (): string => {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
 };
+
+/**
+ * Formatea una cadena de fecha (YYYY-MM-DD) a formato colombiano sin desfase de zona horaria.
+ * new Date("2026-04-23") se interpreta como UTC 00:00, lo que en Colombia (UTC-5) muestra el día anterior.
+ * Esta función agrega T12:00:00 para tratar la fecha como hora local y evitar el problema.
+ */
+export const formatDateCO = (dateStr: string | Date | null | undefined): string => {
+  if (!dateStr) return '';
+  const str = typeof dateStr === 'string' ? dateStr : dateStr.toISOString().split('T')[0];
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(str) ? new Date(str + 'T12:00:00') : new Date(str);
+  return d.toLocaleDateString('es-CO');
+};

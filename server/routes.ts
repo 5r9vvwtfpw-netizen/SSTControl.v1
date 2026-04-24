@@ -11603,7 +11603,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         documentTitle: 'ACTA DE DESIGNACIÓN RESPONSABLE SST',
         documentCode: `SST-DES-${designation.id.substring(0, 8)}`,
         version: '1.0',
-        date: new Date(designation.designationDate),
+        date: new Date(designation.designationDate + 'T12:00:00'),
         logoBuffer: logo,
       });
       
@@ -11621,8 +11621,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       currentY += 35;
       
-      // Designation date
-      const designationDate = new Date(designation.designationDate);
+      // Designation date — usar T12:00:00 para evitar desfase de zona horaria UTC vs Colombia
+      const designationDate = new Date(designation.designationDate + 'T12:00:00');
       const formattedDate = designationDate.toLocaleDateString('es-CO', { 
         day: '2-digit', 
         month: 'long', 

@@ -54,7 +54,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { ResponsibleDesignation, Worker, JobProfile } from "@shared/schema";
 import { insertResponsibleDesignationSchema } from "@shared/schema";
 import { AutomationAssistant, type PlantillaInfo } from "@/components/AutomationAssistant";
-import { getTodayDateString } from "@/lib/utils/formatters";
+import { getTodayDateString, formatDateCO } from "@/lib/utils/formatters";
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
@@ -786,7 +786,7 @@ export default function ResponsibleDesignationPage() {
                             <div>
                               <span className="text-muted-foreground">Curso 50h:</span>
                               <span className="ml-2 font-medium">
-                                Si{lsoAssignment.course50HoursDate ? ` — ${new Date(lsoAssignment.course50HoursDate).toLocaleDateString('es-CO')}` : ''}
+                                Si{lsoAssignment.course50HoursDate ? ` — ${formatDateCO(lsoAssignment.course50HoursDate)}` : ''}
                               </span>
                             </div>
                           )}
@@ -1241,7 +1241,7 @@ export default function ResponsibleDesignationPage() {
                               {designation.licenciaSstNumero}
                               {designation.licenciaSstVigencia && (
                                 <span className="text-muted-foreground ml-1">
-                                  (Vence: {new Date(designation.licenciaSstVigencia).toLocaleDateString("es-CO")})
+                                  (Vence: {formatDateCO(designation.licenciaSstVigencia)})
                                 </span>
                               )}
                             </div>
@@ -1250,7 +1250,7 @@ export default function ResponsibleDesignationPage() {
                               Curso 50h
                               {designation.curso50HorasFecha && (
                                 <span className="ml-1">
-                                  ({new Date(designation.curso50HorasFecha).toLocaleDateString("es-CO")})
+                                  ({formatDateCO(designation.curso50HorasFecha)})
                                 </span>
                               )}
                             </Badge>
@@ -1265,7 +1265,7 @@ export default function ResponsibleDesignationPage() {
                         </div>
                       </TableCell>
                       <TableCell data-testid={`text-date-${designation.id}`}>
-                        {new Date(designation.designationDate).toLocaleDateString("es-CO")}
+                        {formatDateCO(designation.designationDate)}
                       </TableCell>
                       <TableCell data-testid={`text-status-${designation.id}`}>
                         <Badge variant={designation.status === "activo" ? "default" : "secondary"}>
@@ -1364,7 +1364,7 @@ export default function ResponsibleDesignationPage() {
                 {lsoAssignment.licenseExpiry && (
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>Vence: {new Date(lsoAssignment.licenseExpiry).toLocaleDateString('es-CO')}</span>
+                    <span>Vence: {formatDateCO(lsoAssignment.licenseExpiry)}</span>
                   </div>
                 )}
               </div>
