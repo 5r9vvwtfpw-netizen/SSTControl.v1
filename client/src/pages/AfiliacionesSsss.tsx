@@ -597,9 +597,12 @@ export default function AfiliacionesSsss() {
     const shuffled = [...workers].sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, muestraRequerida).map(w => w.id);
     setSelectedWorkersForMuestra(selected);
+    const seleccionTotal = muestraRequerida >= totalTrabajadores;
     toast({
-      title: "Muestra seleccionada",
-      description: `Se han seleccionado aleatoriamente ${selected.length} trabajadores de un total de ${totalTrabajadores}`,
+      title: seleccionTotal ? "Todos seleccionados" : "Muestra seleccionada",
+      description: seleccionTotal
+        ? `Se han seleccionado los ${selected.length} trabajadores (verificación al 100% según Res. 0312/2019 para empresas de 1-50 trabajadores)`
+        : `Se han seleccionado aleatoriamente ${selected.length} trabajadores de un total de ${totalTrabajadores}`,
       className: "bg-blue-50 border-blue-200",
     });
   };
@@ -2980,7 +2983,9 @@ export default function AfiliacionesSsss() {
                     data-testid="button-seleccion-aleatoria"
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    Selección Aleatoria
+                    {calcularMuestraRequerida(workers.length) >= workers.length
+                      ? "Seleccionar Todos"
+                      : "Selección Aleatoria"}
                   </Button>
                 </div>
                 
