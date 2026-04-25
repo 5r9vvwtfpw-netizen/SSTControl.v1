@@ -16,7 +16,7 @@
 // FRESH BUILD TRIGGER
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { eq, and, sql, desc, ne, inArray } from "drizzle-orm";
+import { eq, and, sql, desc, ne, inArray, ilike, or } from "drizzle-orm";
 import { initializeWebSocket, notifyNewMessage, notifyMessageRead, setSessionParser, broadcastToSupportAgents, getOnlineSupportUserIds } from "./websocket";
 import { setupAuth, getSessionMiddleware, requireAuth as authRequireAuth, requirePermission, requireAnyPermission, requireRole, hashPassword, stripPassword, requireActiveSubscription } from "./auth";
 import { demoReadOnlyMiddleware } from "../plugins/demo-engine/readonly-middleware";
@@ -43117,6 +43117,59 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     } catch (error: any) {
       console.error('Error archiving message:', error);
       res.status(500).send('Error al archivar mensaje');
+    }
+  });
+
+  // DELETE /api/internal-messages/bulk-delete - Superadmin: bulk delete messages by criteria
+  app.delete("/api/internal-messages/bulk-delete", requirePermission("companies:edit"), async (req, res) => {
+    try {
+      const user = req.user!;
+      if (user.role !== 'superadmin') {
+        return res.status(403).send("Solo el superadmin puede eliminar mensajes en masa");
+      }
+
+      const { senderNames, subjectContains, ids } = req.body as {
+        senderNames?: string[];
+        subjectContains?: string;
+        ids?: string[];
+      };
+
+      if (!senderNames?.length && !subjectContains && !ids?.length) {
+        return res.status(400).send("Debe especificar al menos un criterio de eliminación");
+      }
+
+      let conditions: any[] = [];
+
+      if (ids?.length) {
+        conditions.push(inArray(schema.internalMessages.id, ids));
+      }
+
+      if (senderNames?.length) {
+        const nameConditions = senderNames.map(name =>
+          ilike(schema.internalMessages.senderName, `%${name}%`)
+        );
+        conditions.push(or(...nameConditions));
+      }
+
+      if (subjectContains) {
+        conditions.push(ilike(schema.internalMessages.subject, `%${subjectContains}%`));
+      }
+
+      const whereClause = conditions.length === 1 ? conditions[0] : or(...conditions);
+
+      const deleted = await db
+        .delete(schema.internalMessages)
+        .where(whereClause)
+        .returning({ id: schema.internalMessages.id });
+
+      res.json({
+        success: true,
+        deletedCount: deleted.length,
+        message: `Se eliminaron ${deleted.length} mensajes correctamente`
+      });
+    } catch (error: any) {
+      console.error('Error bulk deleting messages:', error);
+      res.status(500).send('Error al eliminar mensajes');
     }
   });
 
