@@ -3046,6 +3046,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Notify company contact before deletion (superadmin only)
+  app.post("/api/companies/:id/notify-deletion", requireAuth, async (req, res) => {
+    try {
+      if (req.user!.role !== 'superadmin') {
+        return res.status(403).json({ error: "Solo el superadmin puede enviar esta notificación" });
+      }
+      const company = await storage.getCompany(req.params.id);
+      if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
+
+      const contactEmail = company.contactEmail;
+      if (!contactEmail) return res.status(400).json({ error: "La empresa no tiene correo de contacto registrado" });
+
+      const { resend } = await import('./services/email.js');
+      await resend.emails.send({
+        from: 'SST Colombia <notificaciones@sst-colombia.com>',
+        to: contactEmail,
+        subject: `Cuenta cancelada – ${company.name}`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px;">
+            <div style="background:#b91c1c;color:white;padding:20px 24px;border-radius:8px 8px 0 0;text-align:center;">
+              <h2 style="margin:0;font-size:20px;">SST Colombia</h2>
+              <p style="margin:4px 0 0;font-size:13px;opacity:0.9;">Sistema de Gestión SG-SST</p>
+            </div>
+            <div style="background:#f9f9f9;padding:32px 24px;border:1px solid #ddd;border-top:none;border-radius:0 0 8px 8px;">
+              <p style="margin:0 0 16px;color:#333;font-size:15px;">Estimado(a) cliente,</p>
+              <p style="color:#555;font-size:14px;line-height:1.6;">
+                Le informamos que la cuenta de la empresa <strong>${company.name}</strong> ha sido <strong>cancelada y eliminada</strong> del sistema SST Colombia.
+              </p>
+              <p style="color:#555;font-size:14px;line-height:1.6;margin-top:12px;">
+                Si considera que esto es un error o desea más información, comuníquese con nosotros:
+              </p>
+              <div style="background:white;border:1px solid #ddd;border-radius:6px;padding:16px;margin:20px 0;">
+                <p style="margin:0;font-size:14px;color:#333;">
+                  <strong>Correo:</strong> <a href="mailto:admin@sst-colombia.com" style="color:#1e7e34;">admin@sst-colombia.com</a>
+                </p>
+              </div>
+              <p style="color:#999;font-size:12px;margin-top:24px;">Gracias por haber confiado en SST Colombia.</p>
+            </div>
+            <p style="text-align:center;color:#999;font-size:11px;margin-top:16px;">SAGDI S.A.S. – NIT 902.036.337-4</p>
+          </div>`,
+      });
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('[NOTIFY-DELETION] Error:', error);
+      res.status(500).json({ error: "No se pudo enviar la notificación" });
+    }
+  });
+
   // Full delete company with all related data (superadmin only)
   app.delete("/api/companies/:id/full-delete", requireAuth, async (req, res) => {
     try {

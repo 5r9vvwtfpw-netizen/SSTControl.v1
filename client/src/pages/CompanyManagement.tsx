@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search, Unlock } from "lucide-react";
+import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search, Unlock, Mail } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation, useRouter } from "wouter";
@@ -122,6 +123,7 @@ export default function CompanyManagement() {
   const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
+  const [sendDeleteNotification, setSendDeleteNotification] = useState(true);
   const [pricingChangeDialogOpen, setPricingChangeDialogOpen] = useState(false);
   const [companySearchTerm, setCompanySearchTerm] = useState("");
   const [subscriptionFilter, setSubscriptionFilter] = useState<string>("all");
@@ -625,12 +627,21 @@ export default function CompanyManagement() {
 
   const handleDelete = (company: Company) => {
     setCompanyToDelete(company);
+    setSendDeleteNotification(true);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = (fullDelete: boolean) => {
+  const confirmDelete = async (fullDelete: boolean) => {
     if (!companyToDelete) return;
-    
+
+    if (sendDeleteNotification) {
+      try {
+        await apiRequest("POST", `/api/companies/${companyToDelete.id}/notify-deletion`, {});
+      } catch {
+        // Notification failure does not block deletion
+      }
+    }
+
     if (fullDelete) {
       fullDeleteMutation.mutate(companyToDelete.id);
     } else {
@@ -1414,6 +1425,24 @@ export default function CompanyManagement() {
                   </ul>
                 </div>
               )}
+              <div className="flex items-start gap-3 bg-muted/50 rounded-lg p-3">
+                <Checkbox
+                  id="notify-deletion-check"
+                  checked={sendDeleteNotification}
+                  onCheckedChange={(v) => setSendDeleteNotification(Boolean(v))}
+                  data-testid="checkbox-notify-deletion"
+                  className="mt-0.5"
+                />
+                <label htmlFor="notify-deletion-check" className="text-sm cursor-pointer select-none space-y-0.5">
+                  <span className="flex items-center gap-1.5 font-medium text-foreground">
+                    <Mail className="h-3.5 w-3.5" />
+                    Notificar al cliente por correo
+                  </span>
+                  <p className="text-muted-foreground text-xs">
+                    Se enviará un correo a <strong>{companyToDelete?.contactEmail || "sin correo registrado"}</strong> informando la cancelación. Desactiva esta opción en caso de fraude.
+                  </p>
+                </label>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2">
