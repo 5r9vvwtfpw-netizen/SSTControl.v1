@@ -2280,6 +2280,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ─── EMAIL VERIFICATION FOR REGISTRATION ───────────────────────────────
+  // In-memory store: email → { code, expiresAt }
+  const emailVerifCodes = new Map<string, { code: string; expiresAt: number }>();
+
+  app.post("/api/auth/send-verification", async (req, res) => {
+    try {
+      const { email } = req.body as { email?: string };
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ error: "Correo electrónico inválido" });
+      }
+
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+      emailVerifCodes.set(email.toLowerCase(), { code, expiresAt });
+
+      const { resend } = await import('./services/email.js');
+      await resend.emails.send({
+        from: 'SST Colombia <notificaciones@sst-colombia.com>',
+        to: email,
+        subject: `${code} – Código de verificación SST Colombia`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;">
+            <div style="background:#1e7e34;color:white;padding:20px 24px;border-radius:8px 8px 0 0;text-align:center;">
+              <h2 style="margin:0;font-size:20px;">SST Colombia</h2>
+              <p style="margin:4px 0 0;font-size:13px;opacity:0.9;">Sistema de Gestión SG-SST</p>
+            </div>
+            <div style="background:#f9f9f9;padding:32px 24px;border:1px solid #ddd;border-top:none;border-radius:0 0 8px 8px;">
+              <p style="margin:0 0 16px;color:#333;font-size:15px;">Para verificar tu correo electrónico, ingresa este código en el formulario de registro:</p>
+              <div style="background:white;border:2px solid #1e7e34;border-radius:8px;text-align:center;padding:20px;margin:20px 0;">
+                <span style="font-size:40px;font-weight:bold;letter-spacing:12px;color:#1e7e34;">${code}</span>
+              </div>
+              <p style="margin:16px 0 0;color:#666;font-size:13px;">Este código expira en <strong>10 minutos</strong>. Si no solicitaste este código, ignora este mensaje.</p>
+            </div>
+            <p style="text-align:center;color:#999;font-size:11px;margin-top:16px;">SAGDI S.A.S. – NIT 902.036.337-4 · admin@sst-colombia.com</p>
+          </div>`,
+      });
+
+      res.json({ success: true, message: "Código enviado" });
+    } catch (error: any) {
+      console.error('[EMAIL-VERIF] Error sending code:', error);
+      res.status(500).json({ error: "No se pudo enviar el código. Intenta de nuevo." });
+    }
+  });
+
+  app.post("/api/auth/verify-code", async (req, res) => {
+    try {
+      const { email, code } = req.body as { email?: string; code?: string };
+      if (!email || !code) {
+        return res.status(400).json({ error: "Faltan datos" });
+      }
+      const record = emailVerifCodes.get(email.toLowerCase());
+      if (!record) {
+        return res.status(400).json({ error: "No se encontró un código para este correo. Solicita uno nuevo." });
+      }
+      if (Date.now() > record.expiresAt) {
+        emailVerifCodes.delete(email.toLowerCase());
+        return res.status(400).json({ error: "El código ha expirado. Solicita uno nuevo." });
+      }
+      if (record.code !== code.trim()) {
+        return res.status(400).json({ error: "Código incorrecto. Verifica e intenta de nuevo." });
+      }
+      emailVerifCodes.delete(email.toLowerCase());
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('[EMAIL-VERIF] Error verifying code:', error);
+      res.status(500).json({ error: "Error al verificar el código." });
+    }
+  });
+  // ────────────────────────────────────────────────────────────────────────
+
   app.post("/api/my-company", requireAuth, async (req, res) => {
     try {
       const user = req.user!;

@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Building2, CheckCircle2, Loader2, Shield, MapPin, Phone, Mail, Sparkles, Briefcase, ArrowRight, ArrowLeft, AlertTriangle, Users, Factory, Pencil, Truck, FileText } from "lucide-react";
+import { Building2, CheckCircle2, Loader2, Shield, MapPin, Phone, Mail, Sparkles, Briefcase, ArrowRight, ArrowLeft, AlertTriangle, Users, Factory, Pencil, Truck, FileText, ShieldAlert, RefreshCw } from "lucide-react";
 import type { User } from "@shared/schema";
 import { calculateChapter } from "@shared/utils";
 import { CIIU_CODES, CIIU_SECTIONS } from "@/lib/ciiu-codes";
@@ -82,6 +82,24 @@ const createCompanySchema = z.object({
 
 type CreateCompanyForm = z.infer<typeof createCompanySchema>;
 
+// ── Validación NIT colombiano (DIAN - dígito de verificación) ────────────
+function validateNIT(nit: string): { valid: boolean; hasCheckDigit: boolean } {
+  const clean = nit.replace(/[\s.\-]/g, '');
+  if (!/^\d{9,10}$/.test(clean)) return { valid: false, hasCheckDigit: false };
+  if (clean.length === 9) return { valid: true, hasCheckDigit: false };
+  const base = clean.slice(0, 9);
+  const checkDigit = parseInt(clean[9]);
+  const weights = [3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71];
+  let sum = 0;
+  for (let i = 0; i < base.length; i++) {
+    sum += parseInt(base[base.length - 1 - i]) * weights[i];
+  }
+  const remainder = sum % 11;
+  const expected = remainder <= 1 ? remainder : 11 - remainder;
+  return { valid: checkDigit === expected, hasCheckDigit: true };
+}
+// ─────────────────────────────────────────────────────────────────────────
+
 export default function CrearEmpresaCiiuFirst() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -92,6 +110,14 @@ export default function CrearEmpresaCiiuFirst() {
   const bothDocsViewed = termsViewed && policyViewed;
   const [legalDialogOpen, setLegalDialogOpen] = useState(false);
   const [legalDialogType, setLegalDialogType] = useState<"terms" | "ip-policy" | "privacy">("terms");
+  // Security states
+  const [nitInvalidDialogOpen, setNitInvalidDialogOpen] = useState(false);
+  const [emailVerifDialogOpen, setEmailVerifDialogOpen] = useState(false);
+  const [verifyCodeInput, setVerifyCodeInput] = useState("");
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<CreateCompanyForm | null>(null);
+  const [emailVerified, setEmailVerified] = useState(false);
 
   const openLegalDialog = (type: "terms" | "ip-policy" | "privacy") => {
     setLegalDialogType(type);
@@ -247,8 +273,64 @@ export default function CrearEmpresaCiiuFirst() {
     },
   });
 
+  const sendVerificationCode = async (email: string) => {
+    setIsSendingCode(true);
+    try {
+      const res = await apiRequest("POST", "/api/auth/send-verification", { email });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "No se pudo enviar el código");
+      }
+      toast({ title: "Código enviado", description: `Revisa tu correo ${email}` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  const confirmVerificationCode = async () => {
+    if (!pendingFormData) return;
+    setIsVerifyingCode(true);
+    try {
+      const res = await apiRequest("POST", "/api/auth/verify-code", {
+        email: pendingFormData.contactEmail,
+        code: verifyCodeInput,
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Código incorrecto");
+      }
+      setEmailVerified(true);
+      setEmailVerifDialogOpen(false);
+      createCompanyMutation.mutate(pendingFormData);
+    } catch (err: any) {
+      toast({ title: "Error de verificación", description: err.message, variant: "destructive" });
+    } finally {
+      setIsVerifyingCode(false);
+    }
+  };
+
+  const handleNitBlur = (nitValue: string) => {
+    const clean = nitValue.replace(/[\s.\-]/g, '');
+    if (clean.length < 9) return;
+    const result = validateNIT(clean);
+    if (result.hasCheckDigit && !result.valid) {
+      setNitInvalidDialogOpen(true);
+    }
+  };
+
   const onSubmit = (data: CreateCompanyForm) => {
-    createCompanyMutation.mutate(data);
+    // If email already verified (resend path), go directly
+    if (emailVerified) {
+      createCompanyMutation.mutate(data);
+      return;
+    }
+    // Store form data and start email verification
+    setPendingFormData(data);
+    setVerifyCodeInput("");
+    setEmailVerifDialogOpen(true);
+    sendVerificationCode(data.contactEmail);
   };
 
   const goToStep2 = () => {
@@ -580,6 +662,7 @@ export default function CrearEmpresaCiiuFirst() {
                                   const cleaned = e.target.value.replace(/[\s.]/g, '');
                                   field.onChange(cleaned);
                                 }}
+                                onBlur={() => handleNitBlur(field.value)}
                                 data-testid="input-nit"
                               />
                             </FormControl>
@@ -1080,6 +1163,102 @@ export default function CrearEmpresaCiiuFirst() {
             >
               Cerrar
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Dialog: NIT inválido ─────────────────────────────────────── */}
+      <Dialog open={nitInvalidDialogOpen} onOpenChange={setNitInvalidDialogOpen}>
+        <DialogContent className="max-w-md" data-testid="dialog-nit-invalid">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <ShieldAlert className="h-5 w-5" />
+              NIT no válido
+            </DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              El NIT ingresado no supera la validación oficial de la DIAN. Es posible que el número esté incompleto o tenga un error.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-muted/50 rounded-md p-4 space-y-2 text-sm">
+            <p className="font-medium">¿Necesitas un presupuesto o tienes dudas?</p>
+            <p className="text-muted-foreground">Contáctanos directamente y te ayudamos a configurar tu empresa:</p>
+            <a
+              href="mailto:admin@sst-colombia.com"
+              className="flex items-center gap-2 text-primary font-semibold hover:underline"
+            >
+              <Mail className="h-4 w-4" />
+              admin@sst-colombia.com
+            </a>
+          </div>
+          <div className="flex gap-2 justify-end pt-2">
+            <Button variant="outline" onClick={() => setNitInvalidDialogOpen(false)} data-testid="button-nit-dialog-close">
+              Corregir NIT
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => { setNitInvalidDialogOpen(false); }}
+              data-testid="button-nit-dialog-continue"
+            >
+              Continuar de todas formas
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Dialog: Verificación de correo ──────────────────────────── */}
+      <Dialog open={emailVerifDialogOpen} onOpenChange={(open) => { if (!isVerifyingCode) setEmailVerifDialogOpen(open); }}>
+        <DialogContent className="max-w-sm" data-testid="dialog-email-verif">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-primary" />
+              Verifica tu correo
+            </DialogTitle>
+            <DialogDescription className="text-sm pt-1">
+              Enviamos un código de 6 dígitos a{" "}
+              <strong className="text-foreground">{pendingFormData?.contactEmail}</strong>.
+              Revisa tu bandeja de entrada (y spam).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <Input
+              placeholder="_ _ _ _ _ _"
+              maxLength={6}
+              value={verifyCodeInput}
+              onChange={(e) => setVerifyCodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              className="text-center text-2xl font-bold tracking-widest h-14"
+              data-testid="input-verification-code"
+              onKeyDown={(e) => { if (e.key === 'Enter' && verifyCodeInput.length === 6) confirmVerificationCode(); }}
+            />
+
+            <Button
+              className="w-full"
+              onClick={confirmVerificationCode}
+              disabled={verifyCodeInput.length !== 6 || isVerifyingCode}
+              data-testid="button-confirm-code"
+            >
+              {isVerifyingCode ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Verificando...</>
+              ) : (
+                <><CheckCircle2 className="h-4 w-4 mr-2" /> Confirmar código</>
+              )}
+            </Button>
+
+            <div className="text-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={isSendingCode || !pendingFormData}
+                onClick={() => pendingFormData && sendVerificationCode(pendingFormData.contactEmail)}
+                data-testid="button-resend-code"
+              >
+                {isSendingCode ? (
+                  <><RefreshCw className="h-3.5 w-3.5 mr-1 animate-spin" /> Enviando...</>
+                ) : (
+                  <><RefreshCw className="h-3.5 w-3.5 mr-1" /> Reenviar código</>
+                )}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
