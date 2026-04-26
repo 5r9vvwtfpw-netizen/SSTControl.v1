@@ -1,7 +1,7 @@
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 
-const OUT   = './attached_assets/acuerdo-lso-hernan-valencia.pdf';
+const OUT   = './attached_assets/acuerdo-alianza-hernan-valencia.pdf';
 const GREEN = '#1e7e34';
 const DARK  = '#111111';
 const GRAY  = '#555555';
@@ -11,7 +11,7 @@ const doc = new PDFDocument({
   size: 'LETTER',
   margins: { top: 58, bottom: 55, left: 65, right: 65 },
   bufferPages: true,
-  info: { Title: 'Acuerdo de Servicios — Profesional SST', Author: 'SAGDI S.A.S.' },
+  info: { Title: 'Acuerdo de Alianza Estratégica — Profesional SST', Author: 'SAGDI S.A.S.' },
 });
 doc.pipe(fs.createWriteStream(OUT));
 
@@ -59,8 +59,6 @@ function divider() {
 // ══════════════════════════════════════════════════════════════════════════════
 // PÁGINA 1
 // ══════════════════════════════════════════════════════════════════════════════
-
-// Encabezado
 doc.rect(L, 55, W, 55).fill(GREEN);
 doc.fontSize(16).font('Helvetica-Bold').fillColor('white')
    .text('SAGDI S.A.S.', L + 14, 66, { lineBreak: false });
@@ -70,12 +68,11 @@ doc.fontSize(8.5).fillColor('rgba(255,255,255,0.8)')
    .text('sst.sagisas.co  ·  admin@sst-colombia.com', L + 14, 97, { lineBreak: false });
 doc.y = 122;
 
-// Título
 doc.fontSize(13).font('Helvetica-Bold').fillColor(DARK)
-   .text('ACUERDO DE PRESTACIÓN DE SERVICIOS', L, doc.y, { width: W, align: 'center' });
+   .text('ACUERDO DE ALIANZA ESTRATÉGICA', L, doc.y, { width: W, align: 'center' });
 doc.moveDown(0.25);
 doc.fontSize(10).font('Helvetica').fillColor(GRAY)
-   .text('Profesional en Seguridad y Salud en el Trabajo — Modelo Tarifario por Nivel de Riesgo',
+   .text('Vinculación de Profesional SST a la Red de Aliados de la Plataforma SST Colombia',
          L, doc.y, { width: W, align: 'center' });
 doc.moveDown(0.25);
 doc.fontSize(9).fillColor(GRAY)
@@ -84,47 +81,43 @@ doc.fontSize(9).fillColor(GRAY)
 doc.moveDown(0.4);
 divider();
 
-// PRIMERA
-sect('PRIMERA', 'PARTES CONTRATANTES');
-p('LA CONTRATANTE: SAGDI S.A.S., sociedad debidamente constituida bajo las leyes colombianas, identificada con NIT 902.036.337-4, con domicilio principal en Colombia, representada para este acto por su representante legal, en adelante denominada "LA EMPRESA".');
-p('EL CONTRATISTA: Hernán Valencia Gil, Profesional en Seguridad y Salud en el Trabajo con licencia vigente expedida por la autoridad competente, de conformidad con la Resolución 4927 de 2016 del Ministerio de Trabajo, en adelante denominado "EL PROFESIONAL".');
-p('Las partes, con plena capacidad legal para contratar, acuerdan celebrar el presente Acuerdo de Prestación de Servicios, que se regirá por las cláusulas siguientes:');
+sect('PRIMERA', 'PARTES');
+p('LA PLATAFORMA: SAGDI S.A.S., sociedad identificada con NIT 902.036.337-4, desarrolladora y operadora de la plataforma tecnológica SST Colombia (sst.sagisas.co), en adelante "LA PLATAFORMA".');
+p('EL PROFESIONAL ALIADO: Hernán Valencia Gil, Profesional en Seguridad y Salud en el Trabajo con licencia vigente, de conformidad con la Resolución 4927 de 2016 del Ministerio de Trabajo, en adelante "EL PROFESIONAL".');
+p('Las partes acuerdan establecer una alianza estratégica voluntaria y no exclusiva, bajo las condiciones descritas en las siguientes cláusulas:');
 
-// SEGUNDA
-sect('SEGUNDA', 'OBJETO DEL ACUERDO');
-p('EL PROFESIONAL se compromete a prestar sus servicios en Seguridad y Salud en el Trabajo a las empresas clientes de LA EMPRESA, utilizando de forma exclusiva la plataforma tecnológica SST Colombia (sst.sagisas.co) para la gestión, supervisión, firma digital de documentos y seguimiento del Sistema de Gestión SG-SST, en cumplimiento de la Resolución 0312 de 2019 y el Decreto 1072 de 2015.');
-
-// TERCERA
-sect('TERCERA', 'MODELO DE SERVICIO');
-p('El servicio se prestará bajo la modalidad de Profesional SST de Cabecera para el portafolio de empresas clientes de LA EMPRESA. Las responsabilidades de EL PROFESIONAL incluyen:');
-bul('Supervisión técnica del SG-SST de las empresas asignadas.');
-bul('Revisión y firma digital de investigaciones de accidentes e incidentes de trabajo.');
-bul('Validación de documentos técnicos que requieran firma de profesional en SST.');
-bul('Atención de consultas técnicas de las empresas asignadas en máximo 48 horas hábiles.');
-bul('Cumplimiento de los plazos legales establecidos por la normativa vigente.');
+sect('SEGUNDA', 'NATURALEZA Y OBJETO DE LA ALIANZA');
+p('El presente acuerdo establece los términos bajo los cuales EL PROFESIONAL se integra como aliado de la red de Profesionales SST de la plataforma SST Colombia. Esta alianza tiene por objeto:');
+bul('Permitir que LA PLATAFORMA sugiera a EL PROFESIONAL como opción de asesoría profesional SST a las empresas que se incorporen a su ecosistema digital.');
+bul('Establecer las tarifas de referencia que EL PROFESIONAL aplicará a las empresas que decidan contratarlo directamente.');
+bul('Definir las condiciones de uso de la plataforma SST Colombia por parte de EL PROFESIONAL en la atención de sus clientes.');
 doc.moveDown(0.2);
-p('LA EMPRESA proveerá acceso completo a la plataforma SST Colombia, soporte técnico permanente y la cartera de empresas clientes asignadas, sin que EL PROFESIONAL deba gestionar, facturar ni contactar comercialmente a dichos clientes de forma directa.');
+p('Esta alianza no genera ninguna relación de subordinación, exclusividad ni vinculación laboral entre las partes. Las empresas clientes de LA PLATAFORMA son completamente libres de contratar a EL PROFESIONAL u optar por otro profesional de su preferencia.');
+
+sect('TERCERA', 'MODELO DE PAGOS — DOS SERVICIOS INDEPENDIENTES');
+p('Los servicios que recibe cada empresa cliente son independientes entre sí y se pagan por separado a entidades distintas:');
+bul('PAGO A LA PLATAFORMA: Cada empresa paga directamente a SAGDI S.A.S. la suscripción mensual por el uso de la plataforma tecnológica SST Colombia, según el plan contratado. Este pago es obligatorio para todas las empresas que usen la plataforma.');
+bul('PAGO AL PROFESIONAL: Las empresas que decidan contratar a EL PROFESIONAL como su Profesional SST, le pagarán directamente y de forma independiente los honorarios acordados. Este pago es totalmente voluntario y no está condicionado al uso de la plataforma.');
+doc.moveDown(0.2);
+p('LA PLATAFORMA no actúa como intermediaria en los pagos de honorarios entre las empresas y EL PROFESIONAL, ni recibe comisión alguna por la contratación del servicio profesional.');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PÁGINA 2
 // ══════════════════════════════════════════════════════════════════════════════
 doc.addPage();
 
-// Encabezado pág 2
 doc.rect(L, 55, W, 28).fill(GREEN);
 doc.fontSize(9).font('Helvetica-Bold').fillColor('white')
-   .text('SAGDI S.A.S.  ·  Acuerdo de Prestación de Servicios', L + 12, 64, { lineBreak: false });
+   .text('SAGDI S.A.S.  ·  Acuerdo de Alianza Estratégica', L + 12, 64, { lineBreak: false });
 doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.8)')
    .text('NIT 902.036.337-4  ·  sst.sagisas.co', L + 12, 75, { lineBreak: false });
 doc.y = 96;
 
-// CUARTA
-sect('CUARTA', 'TARIFAS POR NIVEL DE RIESGO ARL');
-p('LA EMPRESA reconocerá a EL PROFESIONAL una tarifa mensual fija por cada empresa activa asignada, de acuerdo con el nivel de riesgo ARL clasificado según el código CIIU (Resolución 0312 de 2019):');
+sect('CUARTA', 'TARIFAS DE REFERENCIA DEL PROFESIONAL SST');
+p('Las partes acuerdan las siguientes tarifas mensuales de referencia que EL PROFESIONAL aplicará a las empresas que decidan contratarlo. Estas tarifas serán publicadas como referencia en la plataforma SST Colombia y en los presupuestos del sitio web, para orientación de las empresas:');
 doc.moveDown(0.3);
 
-// Tabla de tarifas
-// Anchos: Nivel=175, Actividades=255, Tarifa=100 (derecha)
+// Tabla
 const COL_N = 175;
 const COL_A = W - COL_N - 110;
 const COL_T = 110;
@@ -133,13 +126,10 @@ const tcw   = [COL_N, COL_A, COL_T];
 const trh   = 21;
 let   try_  = doc.y;
 
-// Encabezado tabla
 doc.rect(L, try_, W, trh).fill(GREEN);
-const theads = ['Nivel de Riesgo', 'Actividades Representativas', 'Tarifa / Mes'];
-const talign = ['left', 'left', 'right'];
-theads.forEach((h, i) => {
+['Nivel de Riesgo ARL', 'Actividades Representativas', 'Tarifa / Mes'].forEach((h, i) => {
   doc.fontSize(9).font('Helvetica-Bold').fillColor('white')
-     .text(h, tcols[i] + 5, try_ + 6, { width: tcw[i] - 8, align: talign[i], lineBreak: false });
+     .text(h, tcols[i] + 5, try_ + 6, { width: tcw[i] - 8, align: i === 2 ? 'right' : 'left', lineBreak: false });
 });
 try_ += trh;
 
@@ -157,68 +147,58 @@ filas.forEach((row, ri) => {
     doc.fontSize(9)
        .font(ci === 0 ? 'Helvetica-Bold' : ci === 2 ? 'Helvetica-Bold' : 'Helvetica')
        .fillColor(ci === 2 ? GREEN : DARK)
-       .text(cell, tcols[ci] + 5, try_ + 6, { width: tcw[ci] - 8, align: talign[ci], lineBreak: false });
+       .text(cell, tcols[ci] + 5, try_ + 6, { width: tcw[ci] - 8, align: ci === 2 ? 'right' : 'left', lineBreak: false });
   });
   try_ += trh;
 });
 doc.y = try_ + 8;
 
-p('Las tarifas aquí establecidas serán revisadas anualmente de mutuo acuerdo entre las partes. Los valores corresponden al ingreso neto de EL PROFESIONAL, excluyendo los impuestos y obligaciones de seguridad social que le correspondan según la normativa tributaria vigente.');
+p('Estas tarifas podrán ser ajustadas de mutuo acuerdo entre EL PROFESIONAL y cada empresa contratante. LA PLATAFORMA las publica únicamente como referencia orientativa y no es parte en dicha relación contractual.');
 
-// QUINTA
-sect('QUINTA', 'FORMA Y PERIODICIDAD DE PAGO');
-p('LA EMPRESA liquidará mensualmente el total de honorarios de EL PROFESIONAL con base en el número de empresas activas asignadas al cierre de cada mes calendario. El pago se realizará dentro de los primeros cinco (5) días hábiles del mes siguiente, mediante transferencia bancaria a la cuenta que EL PROFESIONAL designe por escrito.');
-p('Con cada pago, LA EMPRESA entregará un comprobante detallado de liquidación mensual que especificará: listado de empresas atendidas, nivel de riesgo ARL y tarifa aplicada a cada una.');
+sect('QUINTA', 'COMPROMISOS DE EL PROFESIONAL');
+bul('Mantener vigente su licencia en SST durante toda la vigencia de esta alianza.');
+bul('Atender las empresas que lo contraten utilizando la plataforma SST Colombia.');
+bul('Aplicar los más altos estándares técnicos y éticos en la prestación de sus servicios.');
+bul('Responder oportunamente las solicitudes de las empresas que lo hayan contratado.');
+bul('Informar a LA PLATAFORMA sobre cualquier situación que pueda afectar su disponibilidad.');
 
-// SEXTA
-sect('SEXTA', 'OBLIGACIONES DE LAS PARTES');
-lbl('Obligaciones de EL PROFESIONAL:');
-bul('Mantener vigente su licencia en SST durante toda la vigencia del acuerdo.');
-bul('Responder solicitudes de las empresas asignadas en máximo 48 horas hábiles.');
-bul('Firmar los documentos técnicos requeridos dentro de los plazos legales establecidos.');
-bul('Mantener absoluta confidencialidad sobre la información de los clientes de LA EMPRESA.');
-bul('Usar exclusivamente la plataforma SST Colombia para gestionar las empresas asignadas.');
-
-doc.moveDown(0.35);
-lbl('Obligaciones de LA EMPRESA:');
-bul('Proveer acceso permanente a la plataforma SST Colombia con perfil Profesional SST.');
-bul('Asignar empresas clientes respetando la capacidad operativa de EL PROFESIONAL.');
-bul('Realizar los pagos en los términos y plazos pactados en la cláusula quinta.');
-bul('Notificar con mínimo 15 días de anticipación cualquier cambio en tarifas o condiciones.');
-bul('Brindar soporte técnico sobre el uso de la plataforma cuando sea requerido.');
+sect('SEXTA', 'COMPROMISOS DE LA PLATAFORMA');
+bul('Publicar el perfil y tarifas de referencia de EL PROFESIONAL en la plataforma y en el sitio web.');
+bul('Proveer a EL PROFESIONAL acceso con perfil de Profesional SST a la plataforma SST Colombia.');
+bul('Sugerir a EL PROFESIONAL como opción de asesoría a las empresas que así lo requieran.');
+bul('No cobrar comisión ni porcentaje alguno sobre los honorarios pagados a EL PROFESIONAL.');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PÁGINA 3
 // ══════════════════════════════════════════════════════════════════════════════
 doc.addPage();
 
-// Encabezado pág 3
 doc.rect(L, 55, W, 28).fill(GREEN);
 doc.fontSize(9).font('Helvetica-Bold').fillColor('white')
-   .text('SAGDI S.A.S.  ·  Acuerdo de Prestación de Servicios', L + 12, 64, { lineBreak: false });
+   .text('SAGDI S.A.S.  ·  Acuerdo de Alianza Estratégica', L + 12, 64, { lineBreak: false });
 doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.8)')
    .text('NIT 902.036.337-4  ·  sst.sagisas.co', L + 12, 75, { lineBreak: false });
 doc.y = 96;
 
-// SÉPTIMA
-sect('SÉPTIMA', 'NATURALEZA JURÍDICA DEL ACUERDO');
-p('El presente acuerdo es de naturaleza civil y comercial, correspondiente a un contrato de prestación de servicios independiente. Su celebración no genera relación laboral, vínculo de subordinación ni prestaciones sociales entre las partes.');
-p('EL PROFESIONAL actuará en todo momento como contratista independiente y será el único responsable del cumplimiento de sus obligaciones tributarias, de seguridad social (salud y pensión) y de cualquier otra obligación legal que le corresponda conforme a la legislación colombiana vigente.');
+sect('SÉPTIMA', 'AUTONOMÍA E INDEPENDENCIA');
+p('EL PROFESIONAL conserva plena autonomía e independencia en la prestación de sus servicios a las empresas que lo contraten. LA PLATAFORMA no interviene, supervisa ni es responsable de la relación contractual entre EL PROFESIONAL y sus clientes. Cada empresa contratante es responsable de verificar las credenciales y la idoneidad del profesional que elija.');
+p('La vinculación de una empresa con EL PROFESIONAL es un acuerdo exclusivamente entre ellos dos. LA PLATAFORMA actúa únicamente como facilitador tecnológico y de visibilidad, sin asumir responsabilidad alguna por el contenido, calidad o resultados de los servicios profesionales prestados.');
 
-// OCTAVA
 sect('OCTAVA', 'DURACIÓN Y TERMINACIÓN');
-p('El presente acuerdo tendrá una duración inicial de doce (12) meses contados a partir de la fecha de suscripción por ambas partes. Al vencimiento de este plazo, el acuerdo se renovará automáticamente por períodos iguales, salvo que cualquiera de las partes manifieste por escrito su intención de no renovarlo con un mínimo de treinta (30) días calendario de anticipación.');
-p('Cualquiera de las partes podrá dar por terminado el acuerdo de forma anticipada y sin lugar a indemnización, mediante comunicación escrita dirigida a la otra parte con treinta (30) días de antelación. En caso de incumplimiento grave y comprobado de las obligaciones pactadas, la terminación podrá ser inmediata y sin previo aviso.');
+p('El presente acuerdo de alianza tendrá una vigencia de doce (12) meses contados desde su suscripción, renovándose automáticamente por períodos iguales. Cualquiera de las partes podrá retirarse de la alianza mediante comunicación escrita con quince (15) días de anticipación, sin que esto genere obligación de indemnización alguna.');
+p('La alianza terminará automáticamente si EL PROFESIONAL pierde o no renueva su licencia en SST, o si LA PLATAFORMA cesa sus operaciones.');
 
-// NOVENA
-sect('NOVENA', 'RESOLUCIÓN DE CONTROVERSIAS');
-p('Las diferencias o controversias que surjan con ocasión de la interpretación, ejecución o terminación del presente acuerdo serán resueltas, en primera instancia, de manera directa y amigable entre las partes dentro de los quince (15) días hábiles siguientes a la fecha en que se presente la reclamación. De no llegarse a un acuerdo, las partes acudirán a los mecanismos alternativos de solución de conflictos o, en su defecto, a la jurisdicción ordinaria competente.');
+sect('NOVENA', 'CONFIDENCIALIDAD');
+p('Ambas partes se comprometen a mantener la confidencialidad sobre la información comercial y operativa que intercambien en el marco de esta alianza, durante su vigencia y por un período de dos (2) años después de su terminación.');
+
+sect('DÉCIMA', 'RESOLUCIÓN DE DIFERENCIAS');
+p('Cualquier diferencia derivada de este acuerdo será resuelta de forma directa y amigable dentro de los quince (15) días hábiles siguientes al surgimiento de la misma. De no lograrse acuerdo, las partes acudirán a los mecanismos alternativos de solución de conflictos o a la jurisdicción ordinaria competente.');
 
 // Firmas
 doc.moveDown(0.6);
 divider();
 doc.fontSize(10.5).font('Helvetica-Bold').fillColor(DARK)
-   .text('En señal de aceptación y conformidad, las partes suscriben el presente acuerdo:',
+   .text('En señal de aceptación, las partes suscriben el presente acuerdo de alianza:',
          L, doc.y, { width: W, align: 'center' });
 doc.moveDown(1.5);
 
@@ -226,10 +206,9 @@ const sw = (W - 30) / 2;
 const sy = doc.y;
 doc.rect(L, sy, sw, 72).stroke('#aaaaaa').lineWidth(0.6);
 doc.rect(L + sw + 30, sy, sw, 72).stroke('#aaaaaa').lineWidth(0.6);
-
 doc.fontSize(10).font('Helvetica-Bold').fillColor(DARK)
-   .text('LA EMPRESA', L, sy + 48, { width: sw, align: 'center', lineBreak: false })
-   .text('EL PROFESIONAL', L + sw + 30, sy + 48, { width: sw, align: 'center', lineBreak: false });
+   .text('LA PLATAFORMA', L, sy + 48, { width: sw, align: 'center', lineBreak: false })
+   .text('EL PROFESIONAL ALIADO', L + sw + 30, sy + 48, { width: sw, align: 'center', lineBreak: false });
 doc.fontSize(9).font('Helvetica').fillColor(GRAY)
    .text('SAGDI S.A.S.  ·  NIT 902.036.337-4', L, sy + 60, { width: sw, align: 'center', lineBreak: false })
    .text('Hernán Valencia Gil  ·  Profesional SST', L + sw + 30, sy + 60, { width: sw, align: 'center', lineBreak: false });

@@ -24,3 +24,9 @@ id = "ycSRds-rA_wAn88VLt8NB"
 uri = "file://attached_assets/acuerdo-lso-hernan-valencia.pdf"
 type = "pdf"
 title = "Acuerdo de Servicios — Tabla corregida"
+
+[[outputs]]
+id = "j5w4DoU9mdvTYvUJYdnYc"
+uri = "file://attached_assets/acuerdo-alianza-hernan-valencia.pdf"
+type = "pdf"
+title = "Acuerdo de Alianza Estratégica — Hernán Valencia Gil"

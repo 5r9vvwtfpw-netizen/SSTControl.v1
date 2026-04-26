@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Building2, CheckCircle2, Loader2, Shield, MapPin, Phone, Mail, Sparkles, Briefcase, ArrowRight, ArrowLeft, AlertTriangle, Users, Factory, Pencil, Truck, FileText, ShieldAlert, RefreshCw } from "lucide-react";
+import { Building2, CheckCircle2, Loader2, Shield, MapPin, Phone, Mail, Sparkles, Briefcase, ArrowRight, ArrowLeft, AlertTriangle, Users, Factory, Pencil, Truck, FileText, ShieldAlert, RefreshCw, UserCheck } from "lucide-react";
 import type { User } from "@shared/schema";
 import { calculateChapter } from "@shared/utils";
 import { CIIU_CODES, CIIU_SECTIONS } from "@/lib/ciiu-codes";
@@ -54,6 +54,18 @@ const riskLevelInfo: Record<string, { name: string; description: string; color: 
   "IV": { name: "Riesgo Alto", description: "Construcción, agricultura, industria", color: "text-orange-600 dark:text-orange-400" },
   "V": { name: "Riesgo Máximo", description: "Minería, trabajo en alturas, explosivos", color: "text-red-600 dark:text-red-400" }
 };
+
+const pstTarifas: Record<string, { precio: number; label: string }> = {
+  "I":   { precio: 150000, label: "Nivel I — Bajo" },
+  "II":  { precio: 250000, label: "Nivel II — Medio" },
+  "III": { precio: 350000, label: "Nivel III — Medio-Alto" },
+  "IV":  { precio: 450000, label: "Nivel IV — Alto" },
+  "V":   { precio: 550000, label: "Nivel V — Muy Alto" },
+};
+
+function formatCOP(n: number) {
+  return "$" + n.toLocaleString("es-CO") + "/mes";
+}
 
 const colombianCities = [
   "Bogotá D.C.", "Medellín", "Cali", "Barranquilla", "Cartagena", "Bucaramanga",
@@ -508,6 +520,33 @@ export default function CrearEmpresaCiiuFirst() {
                           Las empresas con actividades de Riesgo IV o V deben cumplir con los <strong>61 estándares completos</strong> de la Resolución 0312/2019, independientemente del número de trabajadores. Esto incluye requisitos adicionales de vigilancia epidemiológica, programas de prevención y controles más estrictos.
                         </AlertDescription>
                       </Alert>
+                    )}
+
+                    {watchedCiiu && watchedRisk && pstTarifas[watchedRisk] && (
+                      <div className="rounded-md border-2 border-green-500 bg-green-50 dark:bg-green-950/30 p-4" data-testid="card-pst-tarifa">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/40 shrink-0">
+                            <UserCheck className="h-5 w-5 text-green-700 dark:text-green-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-green-800 dark:text-green-300 text-sm mb-1">
+                              Profesional SST Sugerido — Servicio Opcional
+                            </p>
+                            <p className="text-xs text-green-700 dark:text-green-400 mb-3">
+                              Según tu nivel de riesgo ({pstTarifas[watchedRisk].label}), la tarifa de referencia mensual de nuestro Profesional SST aliado es:
+                            </p>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <span className="text-2xl font-bold text-green-700 dark:text-green-300" data-testid="text-pst-precio">
+                                {formatCOP(pstTarifas[watchedRisk].precio)}
+                              </span>
+                              <Badge className="bg-green-600 text-white text-xs">Pago directo al Profesional</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Este servicio es independiente de tu suscripción a la plataforma. Si ya tienes tu propio Profesional SST, no es necesario.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
