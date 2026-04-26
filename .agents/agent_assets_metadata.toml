@@ -18,3 +18,9 @@ id = "SFcD5-YMQudGpinD4oj-h"
 uri = "file://docs/captcha-para-cloudbooks.md"
 type = "text"
 title = "Guía CAPTCHA para Cloud Books - Para pasar al otro agente"
+
+[[outputs]]
+id = "ycSRds-rA_wAn88VLt8NB"
+uri = "file://attached_assets/acuerdo-lso-hernan-valencia.pdf"
+type = "pdf"
+title = "Acuerdo de Servicios LSO — Hernán Valencia Gil"
