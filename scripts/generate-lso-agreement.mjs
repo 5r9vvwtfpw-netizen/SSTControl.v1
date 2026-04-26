@@ -43,7 +43,7 @@ doc.fontSize(14).font('Helvetica-Bold').fillColor(DARK)
    .text('ACUERDO DE PRESTACIÓN DE SERVICIOS', L, doc.y, { width: W, align: 'center' });
 doc.moveDown(0.3);
 doc.fontSize(10).font('Helvetica').fillColor(GRAY)
-   .text('Licenciado en Seguridad y Salud en el Trabajo — Modelo por Nivel de Riesgo', L, doc.y, { width: W, align: 'center' });
+   .text('Profesional en Seguridad y Salud en el Trabajo — Modelo por Nivel de Riesgo', L, doc.y, { width: W, align: 'center' });
 doc.moveDown(0.3);
 doc.fontSize(8.5).fillColor(GRAY).text(dateStr, L, doc.y, { width: W, align: 'right' });
 doc.moveDown(0.5);
@@ -83,27 +83,27 @@ function bold(text) {
 sectionTitle('PRIMERA', 'PARTES CONTRATANTES');
 para('Entre los suscritos, a saber:');
 para('LA CONTRATANTE: SAGDI S.A.S., sociedad debidamente constituida bajo las leyes colombianas, identificada con NIT 902.036.337-4, con domicilio en Colombia, representada para este acto por su representante legal, en adelante "LA EMPRESA".');
-para('EL CONTRATISTA: Hernán Valencia Gil, profesional en Seguridad y Salud en el Trabajo, con licencia en SST vigente expedida por la autoridad competente, en adelante "EL LICENCIADO".');
+para('EL CONTRATISTA: Hernán Valencia Gil, profesional en Seguridad y Salud en el Trabajo, con licencia en SST vigente expedida por la autoridad competente, en adelante "EL PROFESIONAL".');
 para('Manifiestan que han acordado celebrar el presente Acuerdo de Prestación de Servicios, el cual se regirá por las siguientes cláusulas:');
 
 // ── SEGUNDA — OBJETO ──────────────────────────────────────────────────────────
 sectionTitle('SEGUNDA', 'OBJETO DEL ACUERDO');
-para('EL LICENCIADO se compromete a prestar sus servicios profesionales de Licenciado en Seguridad y Salud en el Trabajo a las empresas clientes de LA EMPRESA, utilizando exclusivamente la plataforma tecnológica SST Colombia (sst.sagisas.co) para la gestión, supervisión, firma digital de documentos y seguimiento del Sistema de Gestión SG-SST, de conformidad con la Resolución 0312 de 2019 y el Decreto 1072 de 2015.');
+para('EL PROFESIONAL se compromete a prestar sus servicios profesionales de Profesional en Seguridad y Salud en el Trabajo a las empresas clientes de LA EMPRESA, utilizando exclusivamente la plataforma tecnológica SST Colombia (sst.sagisas.co) para la gestión, supervisión, firma digital de documentos y seguimiento del Sistema de Gestión SG-SST, de conformidad con la Resolución 0312 de 2019 y el Decreto 1072 de 2015.');
 
 // ── TERCERA — MODELO ──────────────────────────────────────────────────────────
 sectionTitle('TERCERA', 'MODELO DE SERVICIO');
-para('El servicio se prestará bajo la modalidad de LSO de Cabecera para el portafolio de empresas clientes de LA EMPRESA. Las responsabilidades de EL LICENCIADO incluyen:');
+para('El servicio se prestará bajo la modalidad de LSO de Cabecera para el portafolio de empresas clientes de LA EMPRESA. Las responsabilidades de EL PROFESIONAL incluyen:');
 bullet('Supervisión técnica del SG-SST de las empresas asignadas.');
 bullet('Revisión y firma digital de investigaciones de accidentes e incidentes de trabajo.');
-bullet('Validación de documentos técnicos que requieran firma de profesional licenciado.');
+bullet('Validación de documentos técnicos que requieran firma de profesional profesional SST.');
 bullet('Atención de consultas técnicas de las empresas asignadas a través del sistema.');
 bullet('Cumplimiento de los tiempos de respuesta establecidos por la normativa vigente.');
 doc.moveDown(0.2);
-para('LA EMPRESA proveerá acceso completo a la plataforma SST Colombia, soporte técnico y la cartera de empresas clientes asignadas, sin que EL LICENCIADO deba gestionar, facturar ni contactar directamente a dichos clientes para efectos comerciales.');
+para('LA EMPRESA proveerá acceso completo a la plataforma SST Colombia, soporte técnico y la cartera de empresas clientes asignadas, sin que EL PROFESIONAL deba gestionar, facturar ni contactar directamente a dichos clientes para efectos comerciales.');
 
 // ── CUARTA — TARIFAS ──────────────────────────────────────────────────────────
 sectionTitle('CUARTA', 'TARIFAS POR NIVEL DE RIESGO ARL');
-para('LA EMPRESA reconocerá a EL LICENCIADO una tarifa mensual fija por cada empresa activa asignada, de acuerdo con el nivel de riesgo ARL clasificado según el código CIIU:');
+para('LA EMPRESA reconocerá a EL PROFESIONAL una tarifa mensual fija por cada empresa activa asignada, de acuerdo con el nivel de riesgo ARL clasificado según el código CIIU:');
 doc.moveDown(0.2);
 
 // Tabla de tarifas
@@ -139,16 +139,16 @@ filas.forEach((fila, i) => {
 
 doc.y = ty + rh + 8;
 doc.moveDown(0.4);
-para('Las tarifas serán revisadas anualmente de mutuo acuerdo. Estos valores corresponden al ingreso neto para EL LICENCIADO, sin incluir los impuestos que le correspondan según la normativa tributaria vigente.');
+para('Las tarifas serán revisadas anualmente de mutuo acuerdo. Estos valores corresponden al ingreso neto para EL PROFESIONAL, sin incluir los impuestos que le correspondan según la normativa tributaria vigente.');
 
 // ── QUINTA — PAGO ─────────────────────────────────────────────────────────────
 sectionTitle('QUINTA', 'FORMA Y PERIODICIDAD DE PAGO');
-para('LA EMPRESA liquidará mensualmente el total de honorarios de EL LICENCIADO, con base en el número de empresas activas asignadas al cierre de cada mes calendario. El pago se realizará dentro de los primeros cinco (5) días hábiles del mes siguiente, mediante transferencia bancaria a la cuenta que EL LICENCIADO designe por escrito.');
+para('LA EMPRESA liquidará mensualmente el total de honorarios de EL PROFESIONAL, con base en el número de empresas activas asignadas al cierre de cada mes calendario. El pago se realizará dentro de los primeros cinco (5) días hábiles del mes siguiente, mediante transferencia bancaria a la cuenta que EL PROFESIONAL designe por escrito.');
 para('LA EMPRESA generará un comprobante detallado de liquidación mensual especificando: listado de empresas atendidas, nivel de riesgo y tarifa aplicada a cada una.');
 
 // ── SEXTA — OBLIGACIONES ──────────────────────────────────────────────────────
 sectionTitle('SEXTA', 'OBLIGACIONES DE LAS PARTES');
-bold('Obligaciones de EL LICENCIADO:');
+bold('Obligaciones de EL PROFESIONAL:');
 bullet('Mantener vigente su licencia en SST durante toda la vigencia del acuerdo.');
 bullet('Responder las solicitudes de las empresas en un plazo máximo de 48 horas hábiles.');
 bullet('Firmar los documentos técnicos requeridos dentro de los plazos legales establecidos.');
@@ -157,14 +157,14 @@ bullet('Utilizar exclusivamente la plataforma SST Colombia para la gestión de l
 doc.moveDown(0.3);
 bold('Obligaciones de LA EMPRESA:');
 bullet('Proveer acceso permanente a la plataforma SST Colombia con perfil LSO.');
-bullet('Asignar empresas clientes respetando la capacidad operativa de EL LICENCIADO.');
+bullet('Asignar empresas clientes respetando la capacidad operativa de EL PROFESIONAL.');
 bullet('Realizar los pagos en los términos pactados en la cláusula quinta.');
 bullet('Notificar con mínimo 15 días de anticipación cambios en tarifas o condiciones.');
 bullet('Brindar soporte técnico sobre el uso de la plataforma cuando sea requerido.');
 
 // ── SÉPTIMA — NATURALEZA ──────────────────────────────────────────────────────
 sectionTitle('SÉPTIMA', 'NATURALEZA JURÍDICA DEL ACUERDO');
-para('El presente acuerdo es de naturaleza civil y comercial, de prestación de servicios independiente. No genera relación laboral alguna entre las partes. EL LICENCIADO actuará como contratista independiente y será responsable del cumplimiento de sus propias obligaciones tributarias y de seguridad social conforme a la legislación colombiana vigente.');
+para('El presente acuerdo es de naturaleza civil y comercial, de prestación de servicios independiente. No genera relación laboral alguna entre las partes. EL PROFESIONAL actuará como contratista independiente y será responsable del cumplimiento de sus propias obligaciones tributarias y de seguridad social conforme a la legislación colombiana vigente.');
 
 // ── OCTAVA — DURACIÓN ─────────────────────────────────────────────────────────
 sectionTitle('OCTAVA', 'DURACIÓN Y TERMINACIÓN');
@@ -187,10 +187,10 @@ doc.rect(L + half + 30, sigY, half, 75).stroke('#cccccc').lineWidth(0.5);
 
 doc.fontSize(8.5).font('Helvetica-Bold').fillColor(DARK)
    .text('LA EMPRESA', L, sigY + 52, { width: half, align: 'center' })
-   .text('EL LICENCIADO', L + half + 30, sigY + 52, { width: half, align: 'center' });
+   .text('EL PROFESIONAL', L + half + 30, sigY + 52, { width: half, align: 'center' });
 doc.fontSize(8).font('Helvetica').fillColor(GRAY)
    .text('SAGDI S.A.S. · NIT 902.036.337-4', L, sigY + 63, { width: half, align: 'center' })
-   .text('Hernán Valencia Gil — LSO', L + half + 30, sigY + 63, { width: half, align: 'center' });
+   .text('Hernán Valencia Gil — Profesional SST', L + half + 30, sigY + 63, { width: half, align: 'center' });
 
 doc.y = sigY + 85;
 doc.moveDown(0.6);
