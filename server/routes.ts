@@ -1990,6 +1990,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============================================================================
+  // PST TARIFAS - Public endpoint (CORS abierto para landing page)
+  // ============================================================================
+  app.get("/api/pst-tarifas", (_req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.json({
+      profesional: {
+        nombre: "Hernán Valencia Gil",
+        descripcion: "Profesional en SST · Aliado de SST-Colombia",
+        nota: "Pago directo al Profesional · No a SAGDI"
+      },
+      tarifas: {
+        "I":   { nivel: "Nivel I — Bajo",         precio: 150000, precioFmt: "$150.000 COP/mes" },
+        "II":  { nivel: "Nivel II — Medio",        precio: 250000, precioFmt: "$250.000 COP/mes" },
+        "III": { nivel: "Nivel III — Medio-Alto",  precio: 350000, precioFmt: "$350.000 COP/mes" },
+        "IV":  { nivel: "Nivel IV — Alto",          precio: 450000, precioFmt: "$450.000 COP/mes" },
+        "V":   { nivel: "Nivel V — Muy Alto",      precio: 550000, precioFmt: "$550.000 COP/mes" }
+      }
+    });
+  });
+
+  // ============================================================================
   // SECURITY REPORT PDF - Public endpoint for security documentation
   // ============================================================================
   app.get("/api/security-report/pdf", async (_req, res) => {
