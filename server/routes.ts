@@ -3054,6 +3054,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Send welcome email to existing company (superadmin only)
+  app.post("/api/companies/:id/send-welcome-email", requireAuth, async (req, res) => {
+    try {
+      if (req.user!.role !== 'superadmin') {
+        return res.status(403).json({ error: "Solo el superadmin puede enviar este correo" });
+      }
+      const company = await storage.getCompany(req.params.id);
+      if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
+
+      const contactEmail = (req.body as any).overrideEmail || (company as any).contactEmail;
+      if (!contactEmail) return res.status(400).json({ error: "La empresa no tiene correo de contacto registrado" });
+
+      await emailService.sendClientWelcomeEmail({
+        companyName: company.name,
+        contactEmail,
+      });
+
+      res.json({ success: true, sentTo: contactEmail });
+    } catch (error: any) {
+      console.error('[WELCOME-EMAIL] Error:', error);
+      res.status(500).json({ error: "No se pudo enviar el correo de bienvenida" });
+    }
+  });
+
   // Notify company contact before deletion (superadmin only)
   app.post("/api/companies/:id/notify-deletion", requireAuth, async (req, res) => {
     try {

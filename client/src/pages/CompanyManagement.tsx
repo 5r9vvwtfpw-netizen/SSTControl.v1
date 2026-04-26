@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search, Unlock, Mail } from "lucide-react";
+import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search, Unlock, Mail, Send } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -124,6 +124,9 @@ export default function CompanyManagement() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [sendDeleteNotification, setSendDeleteNotification] = useState(true);
+  const [welcomeEmailDialogOpen, setWelcomeEmailDialogOpen] = useState(false);
+  const [companyForWelcome, setCompanyForWelcome] = useState<Company | null>(null);
+  const [welcomeOverrideEmail, setWelcomeOverrideEmail] = useState("");
   const [pricingChangeDialogOpen, setPricingChangeDialogOpen] = useState(false);
   const [companySearchTerm, setCompanySearchTerm] = useState("");
   const [subscriptionFilter, setSubscriptionFilter] = useState<string>("all");
@@ -623,6 +626,32 @@ export default function CompanyManagement() {
     setLogoPreview(company.logoUrl || null);
     setSignaturePreview(company.legalRepSignatureUrl || null);
     setDialogOpen(true);
+  };
+
+  const sendWelcomeEmailMutation = useMutation({
+    mutationFn: async ({ id, overrideEmail }: { id: string; overrideEmail?: string }) => {
+      const res = await apiRequest("POST", `/api/companies/${id}/send-welcome-email`, overrideEmail ? { overrideEmail } : {});
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Error al enviar el correo");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: "Correo enviado", description: `Correo de bienvenida enviado a ${data.sentTo}` });
+      setWelcomeEmailDialogOpen(false);
+      setCompanyForWelcome(null);
+      setWelcomeOverrideEmail("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleSendWelcomeEmail = (company: Company) => {
+    setCompanyForWelcome(company);
+    setWelcomeOverrideEmail(company.contactEmail || "");
+    setWelcomeEmailDialogOpen(true);
   };
 
   const handleDelete = (company: Company) => {
@@ -1323,6 +1352,24 @@ export default function CompanyManagement() {
                           </Tooltip>
                         )}
                         {user?.role === 'superadmin' && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleSendWelcomeEmail(company)}
+                                disabled={sendWelcomeEmailMutation.isPending}
+                                data-testid={`button-welcome-email-${company.id}`}
+                              >
+                                <Send className="h-4 w-4 text-blue-500" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Enviar correo de bienvenida</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                        {user?.role === 'superadmin' && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1690,6 +1737,55 @@ export default function CompanyManagement() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* ── Dialog: Enviar correo de bienvenida ─────────────────────── */}
+      <Dialog open={welcomeEmailDialogOpen} onOpenChange={setWelcomeEmailDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-blue-500" />
+              Correo de bienvenida
+            </DialogTitle>
+            <DialogDescription>
+              Se enviará el correo de bienvenida con el enlace para agendar la sesión de introducción.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="welcome-email-input">Correo destino</Label>
+              <Input
+                id="welcome-email-input"
+                value={welcomeOverrideEmail}
+                onChange={(e) => setWelcomeOverrideEmail(e.target.value)}
+                placeholder="correo@empresa.com"
+                data-testid="input-welcome-email"
+              />
+              {!companyForWelcome?.contactEmail && (
+                <p className="text-xs text-amber-600 mt-1">Esta empresa no tiene correo registrado. Ingresa uno manualmente.</p>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end pt-2">
+            <Button variant="outline" onClick={() => setWelcomeEmailDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => companyForWelcome && sendWelcomeEmailMutation.mutate({
+                id: companyForWelcome.id,
+                overrideEmail: welcomeOverrideEmail || undefined,
+              })}
+              disabled={!welcomeOverrideEmail || sendWelcomeEmailMutation.isPending}
+              data-testid="button-confirm-welcome-email"
+            >
+              {sendWelcomeEmailMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Enviando...</>
+              ) : (
+                <><Send className="h-4 w-4 mr-2" /> Enviar</>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
