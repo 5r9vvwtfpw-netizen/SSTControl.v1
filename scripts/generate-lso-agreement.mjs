@@ -39,9 +39,17 @@ function p(text) {
 }
 
 function bul(text) {
+  const bx = L + 10;   // x del bullet
+  const tx = L + 24;   // x del texto (sangría colgante)
+  const tw = W - 24;   // ancho del texto
+  const sy = doc.y;
+  // Bullet en su posición fija
   doc.fontSize(10).font('Helvetica').fillColor(DARK)
-     .text(`\u2022   ${text}`, L + 14, doc.y, { width: W - 14, align: 'justify', lineGap: 2 });
-  doc.moveDown(0.4);
+     .text('\u2022', bx, sy, { width: 12, lineBreak: false });
+  // Texto con indent: si hace salto de línea, sigue desde tx, no desde bx
+  doc.fontSize(10).font('Helvetica').fillColor(DARK)
+     .text(text, tx, sy, { width: tw, align: 'justify', lineGap: 2 });
+  doc.moveDown(0.3);
 }
 
 function lbl(text) {
