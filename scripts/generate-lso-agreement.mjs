@@ -175,15 +175,13 @@ doc.fontSize(9.5).font('Helvetica-Bold').fillColor(GREEN)
 doc.y = iy0 + 18;
 doc.moveDown(0.3);
 
-p('De manera independiente y sin restricción alguna, EL PROFESIONAL tiene plena libertad para acordar y cobrar directamente a las empresas la tarifa que considere adecuada por cualquier servicio adicional que la normativa vigente le permita prestar, entre ellos:');
-bul('Capacitaciones en SST (inducción, reinducción, brigadas, primeros auxilios, trabajo en alturas, espacios confinados, etc.).');
-bul('Investigación de accidentes e incidentes de trabajo según la Resolución 1401 de 2007.');
-bul('Inspecciones de seguridad, revisión de puestos de trabajo y visitas técnicas.');
-bul('Elaboración y actualización de la matriz de identificación de peligros (GTC-45).');
-bul('Simulacros de emergencia y elaboración del Plan de Emergencias.');
-bul('Exámenes médicos ocupacionales, profesiogramas y vigilancia epidemiológica.');
-bul('Auditorías internas del SG-SST e informe al Ministerio del Trabajo.');
-bul('Cualquier otro servicio SST permitido por la ley colombiana y su licencia profesional.');
+p('La plataforma SST-Colombia incluye en su suscripción la gestión digital de capacitaciones, investigaciones de accidentes, inspecciones, matriz de peligros GTC-45, plan de emergencias, auditorías y salud ocupacional. Por tanto, EL PROFESIONAL tiene plena libertad para acordar y cobrar directamente a las empresas la tarifa que considere adecuada por servicios que requieran presencia física, equipos especializados o expertise técnico por fuera de las herramientas digitales de la plataforma, entre ellos:');
+bul('Impartir capacitaciones presenciales: charlas, talleres, simulacros y entrenamiento directo a trabajadores en sitio.');
+bul('Visitas técnicas presenciales: inspecciones físicas de instalaciones, puestos de trabajo, maquinaria y equipos que requieran la presencia del profesional en las instalaciones.');
+bul('Ejecución de simulacros de emergencia: coordinación y dirección in situ de los simulacros de evacuación y atención de emergencias.');
+bul('Exámenes médicos ocupacionales y profesiogramas: valoraciones realizadas por médico con especialización en medicina del trabajo o salud ocupacional.');
+bul('Mediciones ambientales y de higiene industrial: ruido, vibraciones, iluminación, material particulado y otras mediciones que requieran equipos certificados.');
+bul('Cualquier otro servicio SST que requiera presencia física del profesional o equipos técnicos especializados, conforme a su licencia y a la normativa colombiana vigente.');
 
 sect('QUINTA', 'COMPROMISOS DE EL PROFESIONAL');
 bul('Mantener vigente su licencia en SST durante toda la vigencia de esta alianza.');
