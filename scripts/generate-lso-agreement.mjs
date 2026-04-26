@@ -11,7 +11,7 @@ const doc = new PDFDocument({
   size: 'LETTER',
   margins: { top: 58, bottom: 55, left: 65, right: 65 },
   bufferPages: true,
-  info: { Title: 'Acuerdo de Alianza Estratégica — Profesional SST', Author: 'SAGDI S.A.S.' },
+  info: { Title: 'Acuerdo de Alianza Estratégica — Profesional SST', Author: 'SADGI S.A.S.' },
 });
 doc.pipe(fs.createWriteStream(OUT));
 
@@ -68,12 +68,12 @@ function divider() {
 // PÁGINA 1
 // ══════════════════════════════════════════════════════════════════════════════
 doc.rect(L, 55, W, 55).fill(GREEN);
-doc.fontSize(16).font('Helvetica-Bold').fillColor('white')
-   .text('SAGDI S.A.S.', L + 14, 66, { lineBreak: false });
-doc.fontSize(9).font('Helvetica').fillColor('white')
-   .text('Sistema de Gestión SG-SST Colombia  ·  NIT 902.036.337-4', L + 14, 84, { lineBreak: false });
-doc.fontSize(8.5).fillColor('rgba(255,255,255,0.8)')
-   .text('sst.sagisas.co  ·  admin@sst-colombia.com', L + 14, 97, { lineBreak: false });
+doc.fontSize(12).font('Helvetica-Bold').fillColor('white')
+   .text('SISTEMA AUTOMATIZADO DE GESTION INTEGRAL S.A.S', L + 14, 63, { lineBreak: false });
+doc.fontSize(9).font('Helvetica').fillColor('rgba(255,255,255,0.9)')
+   .text('SADGI S.A.S.  ·  NIT 902.036.337-4  ·  Comercializadora plataforma SST Colombia', L + 14, 81, { lineBreak: false });
+doc.fontSize(8.5).fillColor('rgba(255,255,255,0.75)')
+   .text('sst.sagisas.co  ·  admin@sst-colombia.com', L + 14, 95, { lineBreak: false });
 doc.y = 122;
 
 doc.fontSize(13).font('Helvetica-Bold').fillColor(DARK)
@@ -90,7 +90,7 @@ doc.moveDown(0.4);
 divider();
 
 sect('PRIMERA', 'PARTES');
-p('LA PLATAFORMA: SAGDI S.A.S., sociedad identificada con NIT 902.036.337-4, desarrolladora y operadora de la plataforma tecnológica SST Colombia (sst.sagisas.co), en adelante "LA PLATAFORMA".');
+p('LA PLATAFORMA: SADGI S.A.S. (Sistema Automatizado de Gestión Integral), sociedad identificada con NIT 902.036.337-4, comercializadora y operadora de la plataforma tecnológica SST Colombia (sst.sagisas.co), representada por su Representante Legal Luz Adriana Díaz Calle, en adelante "LA PLATAFORMA".');
 p('EL PROFESIONAL ALIADO: Hernán Valencia Gil, Profesional en Seguridad y Salud en el Trabajo con licencia vigente, de conformidad con la Resolución 4927 de 2016 del Ministerio de Trabajo, en adelante "EL PROFESIONAL".');
 p('Las partes acuerdan establecer una alianza estratégica voluntaria y no exclusiva, bajo las condiciones descritas en las siguientes cláusulas:');
 
@@ -104,7 +104,7 @@ p('Esta alianza no genera ninguna relación de subordinación, exclusividad ni v
 
 sect('TERCERA', 'MODELO DE PAGOS — DOS SERVICIOS INDEPENDIENTES');
 p('Los servicios que recibe cada empresa cliente son independientes entre sí y se pagan por separado a entidades distintas:');
-bul('PAGO A LA PLATAFORMA: Cada empresa paga directamente a SAGDI S.A.S. la suscripción mensual por el uso de la plataforma tecnológica SST Colombia, según el plan contratado. Este pago es obligatorio para todas las empresas que usen la plataforma.');
+bul('PAGO A LA PLATAFORMA: Cada empresa paga directamente a SADGI S.A.S. la suscripción mensual por el uso de la plataforma tecnológica SST Colombia, según el plan contratado. Este pago es obligatorio para todas las empresas que usen la plataforma.');
 bul('PAGO AL PROFESIONAL: Las empresas suscritas a la plataforma SST Colombia que decidan contratar a EL PROFESIONAL, le pagarán directamente los honorarios acordados según su nivel de riesgo ARL. Este pago se realiza de forma independiente a la suscripción de la plataforma, pero está enmarcado dentro del ecosistema de servicios de SST Colombia.');
 doc.moveDown(0.2);
 p('LA PLATAFORMA no actúa como intermediaria en los pagos de honorarios entre las empresas y EL PROFESIONAL, ni recibe comisión alguna por la contratación del servicio profesional.');
@@ -116,7 +116,7 @@ doc.addPage();
 
 doc.rect(L, 55, W, 28).fill(GREEN);
 doc.fontSize(9).font('Helvetica-Bold').fillColor('white')
-   .text('SAGDI S.A.S.  ·  Acuerdo de Alianza Estratégica', L + 12, 64, { lineBreak: false });
+   .text('SISTEMA AUTOMATIZADO DE GESTION INTEGRAL S.A.S  ·  Acuerdo de Alianza Estratégica', L + 12, 64, { lineBreak: false });
 doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.8)')
    .text('NIT 902.036.337-4  ·  sst.sagisas.co', L + 12, 75, { lineBreak: false });
 doc.y = 96;
@@ -183,7 +183,7 @@ doc.addPage();
 
 doc.rect(L, 55, W, 28).fill(GREEN);
 doc.fontSize(9).font('Helvetica-Bold').fillColor('white')
-   .text('SAGDI S.A.S.  ·  Acuerdo de Alianza Estratégica', L + 12, 64, { lineBreak: false });
+   .text('SISTEMA AUTOMATIZADO DE GESTION INTEGRAL S.A.S  ·  Acuerdo de Alianza Estratégica', L + 12, 64, { lineBreak: false });
 doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.8)')
    .text('NIT 902.036.337-4  ·  sst.sagisas.co', L + 12, 75, { lineBreak: false });
 doc.y = 96;
@@ -218,14 +218,14 @@ doc.fontSize(10).font('Helvetica-Bold').fillColor(DARK)
    .text('LA PLATAFORMA', L, sy + 48, { width: sw, align: 'center', lineBreak: false })
    .text('EL PROFESIONAL ALIADO', L + sw + 30, sy + 48, { width: sw, align: 'center', lineBreak: false });
 doc.fontSize(9).font('Helvetica').fillColor(GRAY)
-   .text('SAGDI S.A.S.  ·  NIT 902.036.337-4', L, sy + 60, { width: sw, align: 'center', lineBreak: false })
+   .text('SISTEMA AUTOMATIZADO DE GESTION INTEGRAL S.A.S  ·  NIT 902.036.337-4', L, sy + 60, { width: sw, align: 'center', lineBreak: false })
    .text('Hernán Valencia Gil  ·  Profesional SST', L + sw + 30, sy + 60, { width: sw, align: 'center', lineBreak: false });
 
 doc.y = sy + 82;
 doc.moveDown(0.6);
 divider();
 doc.fontSize(8).font('Helvetica').fillColor('#aaaaaa')
-   .text('SAGDI S.A.S.  ·  NIT 902.036.337-4  ·  admin@sst-colombia.com  ·  sst.sagisas.co',
+   .text('SISTEMA AUTOMATIZADO DE GESTION INTEGRAL S.A.S  ·  NIT 902.036.337-4  ·  admin@sst-colombia.com  ·  sst.sagisas.co',
          L, doc.y, { width: W, align: 'center', lineBreak: false });
 
 doc.end();
