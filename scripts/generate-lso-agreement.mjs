@@ -76,10 +76,6 @@ doc.rect(L, 55, W, 58).fill(GREEN);
 doc.fontSize(18).font('Helvetica-Bold').fillColor('white')
    .text('SST-Colombia', L + 14, 64, { lineBreak: false });
 
-// Línea separadora sutil
-doc.moveTo(L + 14, 87).lineTo(L + W - 14, 87)
-   .strokeColor('rgba(255,255,255,0.3)').lineWidth(0.5).stroke();
-
 // Razón social y NIT
 doc.fontSize(8.5).font('Helvetica-Bold').fillColor('rgba(255,255,255,0.95)')
    .text(RAZÓN, L + 14, 92, { lineBreak: false });
