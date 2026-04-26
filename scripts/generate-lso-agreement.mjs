@@ -6,12 +6,14 @@ const GREEN = '#1e7e34';
 const DARK  = '#111111';
 const GRAY  = '#555555';
 const LGRAY = '#eef6ef';
+const RAZÓN = 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.';
+const NIT   = 'NIT 902.036.337-4';
 
 const doc = new PDFDocument({
   size: 'LETTER',
   margins: { top: 58, bottom: 55, left: 65, right: 65 },
   bufferPages: true,
-  info: { Title: 'Acuerdo de Alianza Estratégica — Profesional SST', Author: 'SADGI S.A.S.' },
+  info: { Title: 'Acuerdo de Alianza Estratégica — Profesional SST', Author: RAZÓN },
 });
 doc.pipe(fs.createWriteStream(OUT));
 
@@ -57,27 +59,34 @@ function divider() {
 }
 
 function pageHeader() {
-  doc.rect(L, 55, W, 28).fill(GREEN);
-  doc.fontSize(9).font('Helvetica-Bold').fillColor('white')
-     .text('SST-Colombia  ·  Acuerdo de Alianza Estratégica', L + 12, 64, { lineBreak: false });
+  doc.rect(L, 55, W, 30).fill(GREEN);
+  doc.fontSize(10).font('Helvetica-Bold').fillColor('white')
+     .text('SST-Colombia  ·  Acuerdo de Alianza Estratégica', L + 12, 62, { lineBreak: false });
   doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.8)')
-     .text('SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S (SADGI S.A.S.)  ·  NIT 902.036.337-4  ·  sst.sagisas.co', L + 12, 75, { lineBreak: false });
-  doc.y = 96;
+     .text(`${RAZÓN}  ·  ${NIT}`, L + 12, 76, { lineBreak: false });
+  doc.y = 98;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// PÁGINA 1
+// PÁGINA 1 — Encabezado principal
 // ══════════════════════════════════════════════════════════════════════════════
-doc.rect(L, 55, W, 55).fill(GREEN);
-doc.fontSize(16).font('Helvetica-Bold').fillColor('white')
-   .text('SST-Colombia', L + 14, 62, { lineBreak: false });
-doc.fontSize(9).font('Helvetica').fillColor('rgba(255,255,255,0.85)')
-   .text('Plataforma tecnológica SG-SST comercializada por:', L + 14, 82, { lineBreak: false });
-doc.fontSize(9).font('Helvetica-Bold').fillColor('white')
-   .text('SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S (SADGI S.A.S.)  ·  NIT 902.036.337-4', L + 14, 94, { lineBreak: false });
-doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.7)')
-   .text('sst.sagisas.co  ·  admin@sst-colombia.com', L + 14, 106, { lineBreak: false });
-doc.y = 124;
+doc.rect(L, 55, W, 58).fill(GREEN);
+
+// Nombre de la plataforma
+doc.fontSize(18).font('Helvetica-Bold').fillColor('white')
+   .text('SST-Colombia', L + 14, 64, { lineBreak: false });
+
+// Línea separadora sutil
+doc.moveTo(L + 14, 87).lineTo(L + W - 14, 87)
+   .strokeColor('rgba(255,255,255,0.3)').lineWidth(0.5).stroke();
+
+// Razón social y NIT
+doc.fontSize(8.5).font('Helvetica-Bold').fillColor('rgba(255,255,255,0.95)')
+   .text(RAZÓN, L + 14, 92, { lineBreak: false });
+doc.fontSize(8.5).font('Helvetica').fillColor('rgba(255,255,255,0.75)')
+   .text(`${NIT}  ·  sst.sagisas.co  ·  admin@sst-colombia.com`, L + 14, 104, { lineBreak: false });
+
+doc.y = 128;
 
 doc.fontSize(13).font('Helvetica-Bold').fillColor(DARK)
    .text('ACUERDO DE ALIANZA ESTRATÉGICA', L, doc.y, { width: W, align: 'center' });
@@ -94,8 +103,8 @@ divider();
 
 sect('PRIMERA', 'DEFINICIONES Y PARTES');
 p('Para efectos del presente acuerdo se establecen las siguientes definiciones:');
-bul('SADGI S.A.S.: Empresa con razón social SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., NIT 902.036.337-4, con domicilio en Medellín, Antioquia, representada legalmente por Luz Adriana Díaz Calle. Es la empresa comercializadora de SST-Colombia. En adelante "LA EMPRESA".');
-bul('SST-Colombia: Plataforma tecnológica para la gestión del Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST), disponible en sst.sagisas.co, comercializada por SADGI S.A.S. En adelante "LA PLATAFORMA".');
+bul(`LA EMPRESA: ${RAZÓN}, ${NIT}, con domicilio en Medellín, Antioquia, representada legalmente por Luz Adriana Díaz Calle. Es la empresa comercializadora de SST-Colombia. En adelante "LA EMPRESA".`);
+bul('SST-Colombia: Plataforma tecnológica para la gestión del Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST), disponible en sst.sagisas.co, comercializada por LA EMPRESA. En adelante "LA PLATAFORMA".');
 bul('EL PROFESIONAL: Hernán Valencia Gil, Profesional en Seguridad y Salud en el Trabajo con licencia vigente según la Resolución 4927 de 2016 del Ministerio de Trabajo. En adelante "EL PROFESIONAL".');
 p('Las partes suscriben este acuerdo de alianza de forma voluntaria y no exclusiva, bajo las condiciones aquí descritas.');
 
@@ -109,8 +118,8 @@ p('Esta alianza no genera relación laboral, de subordinación ni de exclusivida
 
 sect('TERCERA', 'MODELO DE PAGOS — DOS SERVICIOS INDEPENDIENTES');
 p('Las empresas suscritas a SST-Colombia reciben dos servicios distintos, pagados de forma independiente a entidades diferentes:');
-bul('SUSCRIPCIÓN A LA PLATAFORMA: Cada empresa paga directamente a SADGI S.A.S. la tarifa mensual por el uso de SST-Colombia según el plan contratado. Este pago es obligatorio para acceder a la plataforma.');
-bul('HONORARIOS AL PROFESIONAL: Las empresas que decidan contratar a EL PROFESIONAL le pagarán directamente a él los honorarios establecidos en la Cláusula Cuarta del presente acuerdo. Este pago es independiente de la suscripción a la plataforma.');
+bul(`SUSCRIPCIÓN A LA PLATAFORMA: Cada empresa paga directamente a LA EMPRESA la tarifa mensual por el uso de SST-Colombia según el plan contratado. Este pago es obligatorio para acceder a la plataforma.`);
+bul('HONORARIOS AL PROFESIONAL: Las empresas que decidan contratar a EL PROFESIONAL le pagarán directamente a él los honorarios establecidos en la Cláusula Cuarta. Este pago es independiente de la suscripción a la plataforma.');
 doc.moveDown(0.2);
 p('LA EMPRESA no interviene ni es intermediaria en los pagos entre las empresas y EL PROFESIONAL. La relación económica derivada de los servicios profesionales es directa entre EL PROFESIONAL y cada empresa contratante.');
 
@@ -121,10 +130,10 @@ doc.addPage();
 pageHeader();
 
 sect('CUARTA', 'TARIFAS DEL SERVICIO DE ACOMPAÑAMIENTO SST MENSUAL');
-p('Las partes acuerdan las siguientes tarifas mensuales que EL PROFESIONAL aplicará a cada empresa que lo contrate a través del ecosistema de SST-Colombia, según su nivel de riesgo ARL determinado por el CIIU registrado en la plataforma:');
+p('Las partes acuerdan las siguientes tarifas mensuales que EL PROFESIONAL aplicará a cada empresa que lo contrate a través del ecosistema de SST-Colombia, según el nivel de riesgo ARL determinado por el CIIU registrado en la plataforma:');
 doc.moveDown(0.3);
 
-// Tabla
+// Tabla de tarifas
 const COL_N = 175;
 const COL_A = W - COL_N - 110;
 const COL_T = 110;
@@ -177,18 +186,18 @@ bul('Inspecciones de seguridad, revisión de puestos de trabajo y visitas técni
 bul('Elaboración y actualización de la matriz de identificación de peligros (GTC-45).');
 bul('Simulacros de emergencia y elaboración del Plan de Emergencias.');
 bul('Exámenes médicos ocupacionales, profesiogramas y vigilancia epidemiológica.');
-bul('Auditorías internas del SG-SST y elaboración del informe al Ministerio del Trabajo.');
+bul('Auditorías internas del SG-SST e informe al Ministerio del Trabajo.');
 bul('Cualquier otro servicio SST permitido por la ley colombiana y su licencia profesional.');
 
 sect('QUINTA', 'COMPROMISOS DE EL PROFESIONAL');
 bul('Mantener vigente su licencia en SST durante toda la vigencia de esta alianza.');
 bul('Aplicar las tarifas acordadas en la Cláusula Cuarta para el servicio de acompañamiento SST mensual.');
-bul('Atender a las empresas que lo contraten utilizando la plataforma SST-Colombia como herramienta de gestión.');
+bul('Atender a las empresas que lo contraten utilizando SST-Colombia como herramienta de gestión.');
 bul('Prestar sus servicios con los más altos estándares técnicos, éticos y legales.');
 bul('Responder oportunamente las solicitudes de las empresas contratantes.');
 bul('Informar a LA EMPRESA sobre situaciones que afecten su disponibilidad o licencia.');
 
-sect('SEXTA', 'COMPROMISOS DE LA EMPRESA (SADGI S.A.S.)');
+sect('SEXTA', 'COMPROMISOS DE LA EMPRESA');
 bul('Publicar el perfil de EL PROFESIONAL en SST-Colombia como aliado disponible para las empresas.');
 bul('Mostrar las tarifas acordadas en la Cláusula Cuarta al momento en que las empresas escojan su nivel de riesgo durante el registro en la plataforma.');
 bul('Proveer a EL PROFESIONAL acceso con perfil de Profesional SST a SST-Colombia sin costo alguno.');
@@ -201,7 +210,7 @@ doc.addPage();
 pageHeader();
 
 sect('SÉPTIMA', 'AUTONOMÍA E INDEPENDENCIA PROFESIONAL');
-p('EL PROFESIONAL conserva plena autonomía e independencia en la prestación de sus servicios. SADGI S.A.S. no interviene, supervisa ni es responsable de la relación contractual entre EL PROFESIONAL y sus clientes. Cada empresa es responsable de verificar las credenciales del profesional que elija.');
+p('EL PROFESIONAL conserva plena autonomía e independencia en la prestación de sus servicios. LA EMPRESA no interviene, supervisa ni es responsable de la relación contractual entre EL PROFESIONAL y sus clientes. Cada empresa es responsable de verificar las credenciales del profesional que elija.');
 p('La vinculación de una empresa con EL PROFESIONAL es un acuerdo exclusivamente entre ellos. LA EMPRESA actúa únicamente como facilitador tecnológico y de visibilidad, sin asumir responsabilidad por el contenido, calidad o resultados de los servicios profesionales.');
 
 sect('OCTAVA', 'DURACIÓN Y TERMINACIÓN');
@@ -214,7 +223,7 @@ p('Ambas partes se comprometen a mantener la confidencialidad sobre la informaci
 sect('DÉCIMA', 'RESOLUCIÓN DE DIFERENCIAS');
 p('Cualquier diferencia derivada de este acuerdo será resuelta de forma directa y amigable dentro de los quince (15) días hábiles siguientes. De no lograrse acuerdo, las partes acudirán a mecanismos alternativos de solución de conflictos o a la jurisdicción ordinaria competente en Medellín, Antioquia.');
 
-// Firmas
+// ── Firmas ───────────────────────────────────────────────────────────────────
 doc.moveDown(0.6);
 divider();
 doc.fontSize(10.5).font('Helvetica-Bold').fillColor(DARK)
@@ -224,21 +233,23 @@ doc.moveDown(1.5);
 
 const sw = (W - 30) / 2;
 const sy = doc.y;
-doc.rect(L, sy, sw, 72).stroke('#aaaaaa').lineWidth(0.6);
-doc.rect(L + sw + 30, sy, sw, 72).stroke('#aaaaaa').lineWidth(0.6);
-doc.fontSize(10).font('Helvetica-Bold').fillColor(DARK)
-   .text('SADGI S.A.S.', L, sy + 44, { width: sw, align: 'center', lineBreak: false })
-   .text('EL PROFESIONAL ALIADO', L + sw + 30, sy + 44, { width: sw, align: 'center', lineBreak: false });
-doc.fontSize(9).font('Helvetica').fillColor(GRAY)
-   .text('SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.', L, sy + 56, { width: sw, align: 'center', lineBreak: false })
-   .text('NIT 902.036.337-4', L, sy + 67, { width: sw, align: 'center', lineBreak: false })
-   .text('Hernán Valencia Gil  ·  Profesional SST', L + sw + 30, sy + 56, { width: sw, align: 'center', lineBreak: false });
+doc.rect(L, sy, sw, 76).stroke('#aaaaaa').lineWidth(0.6);
+doc.rect(L + sw + 30, sy, sw, 76).stroke('#aaaaaa').lineWidth(0.6);
 
-doc.y = sy + 84;
+doc.fontSize(10).font('Helvetica-Bold').fillColor(DARK)
+   .text('LA EMPRESA', L, sy + 44, { width: sw, align: 'center', lineBreak: false })
+   .text('EL PROFESIONAL ALIADO', L + sw + 30, sy + 44, { width: sw, align: 'center', lineBreak: false });
+doc.fontSize(8).font('Helvetica').fillColor(GRAY)
+   .text(RAZÓN, L, sy + 57, { width: sw, align: 'center', lineBreak: false })
+   .text(NIT, L, sy + 68, { width: sw, align: 'center', lineBreak: false })
+   .text('Hernán Valencia Gil', L + sw + 30, sy + 57, { width: sw, align: 'center', lineBreak: false })
+   .text('Profesional en SST  ·  Lic. vigente', L + sw + 30, sy + 68, { width: sw, align: 'center', lineBreak: false });
+
+doc.y = sy + 88;
 doc.moveDown(0.6);
 divider();
 doc.fontSize(8).font('Helvetica').fillColor('#aaaaaa')
-   .text('SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S (SADGI S.A.S.)  ·  NIT 902.036.337-4  ·  admin@sst-colombia.com  ·  sst.sagisas.co',
+   .text(`${RAZÓN}  ·  ${NIT}  ·  admin@sst-colombia.com  ·  sst.sagisas.co`,
          L, doc.y, { width: W, align: 'center', lineBreak: false });
 
 doc.end();
