@@ -164,7 +164,7 @@ filas.forEach((row, ri) => {
 });
 doc.y = try_ + 8;
 
-p('Estas tarifas podrán ser ajustadas de mutuo acuerdo entre EL PROFESIONAL y cada empresa contratante. LA PLATAFORMA las publica únicamente como referencia orientativa y no es parte en dicha relación contractual.');
+p('EL PROFESIONAL se compromete a aplicar las tarifas establecidas en la presente tabla al momento de prestar sus servicios a las empresas referidas por LA PLATAFORMA. Estas tarifas son fijas y forman parte de las condiciones de esta alianza.');
 
 sect('QUINTA', 'COMPROMISOS DE EL PROFESIONAL');
 bul('Mantener vigente su licencia en SST durante toda la vigencia de esta alianza.');
