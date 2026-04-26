@@ -124,24 +124,24 @@ p('LA EMPRESA reconocerá a EL PROFESIONAL una tarifa mensual fija por cada empr
 doc.moveDown(0.3);
 
 // Tabla de tarifas
-const tcols = [L, L+128, L+320, L+415];
-const tcw   = [128, 192, 95, W - (415 - L)];
+const tcols = [L, L+160, L+430];
+const tcw   = [160, 270, W - (430 - L)];
 const trh   = 21;
 let   try_  = doc.y;
 
 doc.rect(L, try_, W, trh).fill(GREEN);
-['Nivel de Riesgo', 'Actividades Representativas', 'Trabajadores', 'Tarifa / Mes'].forEach((h, i) => {
+['Nivel de Riesgo', 'Actividades Representativas', 'Tarifa / Mes'].forEach((h, i) => {
   doc.fontSize(9).font('Helvetica-Bold').fillColor('white')
      .text(h, tcols[i] + 5, try_ + 6, { width: tcw[i] - 8, lineBreak: false });
 });
 try_ += trh;
 
 const filas = [
-  ['Nivel I — Bajo',         'Oficinas, comercio, servicios financieros',  'Hasta 10',    '$150.000 COP'],
-  ['Nivel II — Medio',       'Manufactura ligera, salud, educación',        'Hasta 50',    '$250.000 COP'],
-  ['Nivel III — Medio-Alto', 'Industria, transporte, construcción menor',   'Hasta 200',   '$350.000 COP'],
-  ['Nivel IV — Alto',        'Construcción, minería superficial, químicos', 'Hasta 500',   '$450.000 COP'],
-  ['Nivel V — Muy Alto',     'Minería subterránea, explosivos, alturas',    'Sin límite',  '$600.000 COP'],
+  ['Nivel I — Bajo',         'Oficinas, comercio, servicios financieros',  '$150.000 COP'],
+  ['Nivel II — Medio',       'Manufactura ligera, salud, educación',        '$250.000 COP'],
+  ['Nivel III — Medio-Alto', 'Industria, transporte, construcción menor',   '$350.000 COP'],
+  ['Nivel IV — Alto',        'Construcción, minería superficial, químicos', '$450.000 COP'],
+  ['Nivel V — Muy Alto',     'Minería subterránea, explosivos, alturas',    '$550.000 COP'],
 ];
 filas.forEach((row, ri) => {
   doc.rect(L, try_, W, trh).fill(ri % 2 === 0 ? '#ffffff' : '#f3faf4');
