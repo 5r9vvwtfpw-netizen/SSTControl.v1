@@ -1,195 +1,252 @@
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 
-const OUT = './attached_assets/acuerdo-lso-hernan-valencia.pdf';
+const OUT   = './attached_assets/acuerdo-lso-hernan-valencia.pdf';
 const GREEN = '#1e7e34';
 const DARK  = '#1a1a1a';
-const GRAY  = '#666666';
-const LGRAY = '#f0f7f1';
+const GRAY  = '#777777';
+const LGRAY = '#eef6ef';
 
 const doc = new PDFDocument({
   size: 'LETTER',
-  margins: { top: 55, bottom: 55, left: 65, right: 65 },
+  margins: { top: 42, bottom: 36, left: 42, right: 42 },
   bufferPages: true,
   info: { Title: 'Acuerdo de Servicios — Profesional SST', Author: 'SAGDI S.A.S.' },
 });
-
 doc.pipe(fs.createWriteStream(OUT));
 
-const W = doc.page.width - 130;
-const L = 65;
+const PW = doc.page.width;   // 612
+const PH = doc.page.height;  // 792
+const ML = 42, MR = 42, MT = 42, MB = 36;
+const W  = PW - ML - MR;     // 528
+const L  = ML;
+
 const today = new Date();
 const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
-// ── HELPERS ──────────────────────────────────────────────────────────────────
-const sect = (n, t) => {
-  doc.moveDown(0.4);
-  const y0 = doc.y;
-  doc.rect(L, y0, W, 17).fill(LGRAY);
-  doc.fontSize(9.5).font('Helvetica-Bold').fillColor(GREEN)
-     .text(`${n} — ${t}`, L + 8, y0 + 4, { width: W - 16, lineBreak: false });
-  doc.moveDown(0.7);
-};
+// ──────────────────────────────────────────────────────────────────
+// HELPER: cursor manual (columnas)
+// ──────────────────────────────────────────────────────────────────
+const CG = 12;                  // gap entre columnas
+const CW = (W - CG) / 2;       // ancho de cada columna  ≈ 258
+const C1 = L;                   // columna izquierda x
+const C2 = L + CW + CG;        // columna derecha x
 
-const p = t => {
-  doc.fontSize(9.5).font('Helvetica').fillColor(DARK)
-     .text(t, L, doc.y, { width: W, align: 'justify', lineGap: 1.5 });
-  doc.moveDown(0.45);
-};
+let col = 0;      // 0=izq, 1=der
+let cy  = 0;      // y actual dentro de la columna activa
+const colTop = () => 0; // se asigna después del encabezado
 
-const b = t => {
-  doc.fontSize(9.5).font('Helvetica').fillColor(DARK)
-     .text(`\u2022  ${t}`, L + 10, doc.y, { width: W - 10, align: 'justify', lineGap: 1.5 });
-  doc.moveDown(0.3);
-};
+let colStart = 0; // y donde empieza la zona de columnas
 
-const h = t => {
-  doc.fontSize(9.5).font('Helvetica-Bold').fillColor(DARK)
-     .text(t, L, doc.y, { width: W });
-  doc.moveDown(0.25);
-};
+const cx  = () => col === 0 ? C1 : C2;
+const cw  = () => CW;
 
-// ── ENCABEZADO ───────────────────────────────────────────────────────────────
-doc.rect(L, 55, W, 60).fill(GREEN);
-doc.fontSize(16).font('Helvetica-Bold').fillColor('white')
-   .text('SAGDI S.A.S.', L + 14, 68, { lineBreak: false });
-doc.fontSize(9).font('Helvetica').fillColor('white')
-   .text('Sistema de Gestión SG-SST Colombia  ·  NIT 902.036.337-4', L + 14, 88, { lineBreak: false });
-doc.fontSize(8).fillColor('rgba(255,255,255,0.75)')
-   .text('sst.sagisas.co  ·  admin@sst-colombia.com', L + 14, 102, { lineBreak: false });
-doc.y = 130;
+// ── Escribe texto en la columna actual; retorna la nueva cy ───────
+function txt(str, opts = {}) {
+  const x = cx();
+  const w = cw();
+  const absY = colStart + cy;
+  doc.text(str, x, absY, { width: w, ...opts });
+  cy = doc.y - colStart;
+}
 
-// ── TÍTULO ───────────────────────────────────────────────────────────────────
-doc.fontSize(13).font('Helvetica-Bold').fillColor(DARK)
-   .text('ACUERDO DE PRESTACIÓN DE SERVICIOS', L, doc.y, { width: W, align: 'center' });
-doc.moveDown(0.2);
-doc.fontSize(9.5).font('Helvetica').fillColor(GRAY)
-   .text('Profesional en Seguridad y Salud en el Trabajo — Modelo Tarifario por Nivel de Riesgo', L, doc.y, { width: W, align: 'center' });
-doc.moveDown(0.2);
-doc.fontSize(8.5).fillColor(GRAY)
-   .text(`Medellín, ${today.getDate()} de ${meses[today.getMonth()]} de ${today.getFullYear()}`, L, doc.y, { width: W, align: 'right' });
-doc.moveDown(0.3);
-doc.moveTo(L, doc.y).lineTo(L + W, doc.y).strokeColor('#cccccc').lineWidth(0.7).stroke();
-doc.moveDown(0.5);
+function gap(pts) { cy += pts; }
 
-// ── PRIMERA ───────────────────────────────────────────────────────────────────
+function sect(n, t) {
+  gap(3);
+  const absY = colStart + cy;
+  doc.rect(cx(), absY, cw(), 13).fill(LGRAY);
+  doc.fontSize(8).font('Helvetica-Bold').fillColor(GREEN)
+     .text(`${n} — ${t}`, cx() + 5, absY + 3, { width: cw() - 8, lineBreak: false });
+  cy += 16;
+}
+
+function p(str) {
+  doc.fontSize(7.5).font('Helvetica').fillColor(DARK);
+  txt(str, { align: 'justify', lineGap: 0.5 });
+  gap(2);
+}
+
+function bul(str) {
+  const x = cx() + 7;
+  const w = cw() - 7;
+  const absY = colStart + cy;
+  doc.fontSize(7.5).font('Helvetica').fillColor(DARK)
+     .text(`\u2022  ${str}`, x, absY, { width: w, lineGap: 0.5 });
+  cy = doc.y - colStart + 1.5;
+}
+
+function lbl(str) {
+  doc.fontSize(7.5).font('Helvetica-Bold').fillColor(DARK);
+  txt(str, { lineBreak: false });
+  gap(1.5);
+}
+
+function hline(color = '#cccccc', lw = 0.5) {
+  const absY = colStart + cy;
+  doc.moveTo(cx(), absY).lineTo(cx() + cw(), absY)
+     .strokeColor(color).lineWidth(lw).stroke();
+  gap(3);
+}
+
+// Cambia a la siguiente columna (o nueva página)
+function nextCol() {
+  col = 1;
+  cy  = 0;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ENCABEZADO (full-width, fuera de columnas)
+// ═══════════════════════════════════════════════════════════════════
+doc.rect(L, MT, W, 42).fill(GREEN);
+doc.fontSize(13).font('Helvetica-Bold').fillColor('white')
+   .text('SAGDI S.A.S.', L + 10, MT + 7, { lineBreak: false });
+doc.fontSize(7.5).font('Helvetica').fillColor('white')
+   .text('Sistema de Gestión SG-SST Colombia  ·  NIT 902.036.337-4', L + 10, MT + 22, { lineBreak: false });
+doc.fontSize(7).fillColor('rgba(255,255,255,0.8)')
+   .text('sst.sagisas.co  ·  admin@sst-colombia.com', L + 10, MT + 32, { lineBreak: false });
+
+// Título centrado
+const titleY = MT + 48;
+doc.fontSize(10.5).font('Helvetica-Bold').fillColor(DARK)
+   .text('ACUERDO DE PRESTACIÓN DE SERVICIOS', L, titleY, { width: W, align: 'center', lineBreak: false });
+doc.fontSize(7.5).font('Helvetica').fillColor(GRAY)
+   .text(
+     `Profesional en Seguridad y Salud en el Trabajo  ·  Modelo Tarifario por Nivel de Riesgo  ·  ` +
+     `Medellín, ${today.getDate()} de ${meses[today.getMonth()]} de ${today.getFullYear()}`,
+     L, titleY + 13, { width: W, align: 'center', lineBreak: false }
+   );
+doc.moveTo(L, titleY + 23).lineTo(L + W, titleY + 23)
+   .strokeColor('#aaaaaa').lineWidth(0.6).stroke();
+
+colStart = titleY + 28;
+cy = 0;
+
+// ═══════════════════════════════════════════════════════════════════
+// COLUMNA IZQUIERDA  (col=0)
+// ═══════════════════════════════════════════════════════════════════
+col = 0; cy = 0;
+
 sect('PRIMERA', 'PARTES CONTRATANTES');
-p('Entre los suscritos, a saber:');
-p('LA CONTRATANTE: SAGDI S.A.S., sociedad debidamente constituida bajo las leyes colombianas, identificada con NIT 902.036.337-4, con domicilio en Colombia, representada para este acto por su representante legal, en adelante "LA EMPRESA".');
-p('EL CONTRATISTA: Hernán Valencia Gil, Profesional en Seguridad y Salud en el Trabajo con licencia vigente expedida por la autoridad competente, de conformidad con la Resolución 4927 de 2016 del Ministerio de Trabajo, en adelante "EL PROFESIONAL".');
-p('Manifiestan que han acordado celebrar el presente Acuerdo de Prestación de Servicios, el cual se regirá por las siguientes cláusulas:');
+p('LA CONTRATANTE: SAGDI S.A.S., NIT 902.036.337-4, en adelante "LA EMPRESA".');
+p('EL CONTRATISTA: Hernán Valencia Gil, Profesional en SST con licencia vigente (Res. 4927/2016 Min. Trabajo), en adelante "EL PROFESIONAL".');
+p('Acuerdan celebrar el presente contrato bajo las siguientes cláusulas:');
 
-// ── SEGUNDA ───────────────────────────────────────────────────────────────────
-sect('SEGUNDA', 'OBJETO DEL ACUERDO');
-p('EL PROFESIONAL se compromete a prestar sus servicios en Seguridad y Salud en el Trabajo a las empresas clientes de LA EMPRESA, utilizando exclusivamente la plataforma tecnológica SST Colombia (sst.sagisas.co) para la gestión, supervisión, firma digital de documentos y seguimiento del Sistema de Gestión SG-SST, en cumplimiento de la Resolución 0312 de 2019 y el Decreto 1072 de 2015.');
+sect('SEGUNDA', 'OBJETO');
+p('EL PROFESIONAL prestará servicios en SST a las empresas clientes de LA EMPRESA usando la plataforma SST Colombia (sst.sagisas.co), en cumplimiento de la Res. 0312/2019 y Decreto 1072/2015.');
 
-// ── TERCERA ───────────────────────────────────────────────────────────────────
 sect('TERCERA', 'MODELO DE SERVICIO');
-p('El servicio se prestará bajo la modalidad de Profesional SST de Cabecera para el portafolio de empresas clientes de LA EMPRESA. Las responsabilidades de EL PROFESIONAL incluyen:');
-b('Supervisión técnica del SG-SST de las empresas asignadas.');
-b('Revisión y firma digital de investigaciones de accidentes e incidentes de trabajo.');
-b('Validación de documentos técnicos que requieran firma de profesional en SST.');
-b('Atención de consultas técnicas de las empresas asignadas a través del sistema.');
-b('Cumplimiento de los plazos legales establecidos por la normativa vigente.');
-doc.moveDown(0.1);
-p('LA EMPRESA proveerá acceso completo a la plataforma SST Colombia, soporte técnico y la cartera de empresas clientes asignadas, sin que EL PROFESIONAL deba gestionar, facturar ni contactar comercialmente a dichos clientes.');
+p('Modalidad Profesional SST de Cabecera. Responsabilidades:');
+bul('Supervisión técnica del SG-SST de las empresas asignadas.');
+bul('Revisión y firma digital de investigaciones de accidentes.');
+bul('Validación de documentos que requieran firma de profesional SST.');
+bul('Atención de consultas en máximo 48 horas hábiles.');
+gap(1);
+p('LA EMPRESA proveerá acceso a la plataforma, soporte técnico y la cartera de clientes.');
 
-// ── CUARTA ────────────────────────────────────────────────────────────────────
 sect('CUARTA', 'TARIFAS POR NIVEL DE RIESGO ARL');
-p('LA EMPRESA reconocerá a EL PROFESIONAL una tarifa mensual fija por cada empresa activa asignada, de acuerdo con el nivel de riesgo ARL según el código CIIU (Resolución 0312/2019):');
-doc.moveDown(0.1);
+p('Tarifa mensual fija por empresa activa asignada según nivel CIIU (Res. 0312/2019):');
+gap(2);
 
-// Tabla simple sin posicionamiento absoluto
-const rows = [
-  ['Nivel I — Bajo',        'Oficinas, comercio, servicios financieros',   'Hasta 10 trab.',   '$ 120.000 COP'],
-  ['Nivel II — Medio',      'Manufactura ligera, salud, educación',         'Hasta 50 trab.',   '$ 200.000 COP'],
-  ['Nivel III — Medio-Alto','Industria, transporte, construcción menor',    'Hasta 200 trab.',  '$ 350.000 COP'],
-  ['Nivel IV — Alto',       'Construcción, minería superficial, químicos',  'Hasta 500 trab.',  '$ 550.000 COP'],
-  ['Nivel V — Muy Alto',    'Minería subterránea, explosivos, alturas',     'Sin límite',       '$ 800.000 COP'],
+// Tabla dentro de columna
+const tcw = [88, 92, 42, 36];           // anchos columnas tabla
+const tcx = [cx(), cx()+88, cx()+180, cx()+222]; // x absolutas
+const trh = 13;
+let   try_ = colStart + cy;
+
+doc.rect(cx(), try_, cw(), trh).fill(GREEN);
+['Nivel','Actividades','Trab.','Tarifa'].forEach((h, i) => {
+  doc.fontSize(7).font('Helvetica-Bold').fillColor('white')
+     .text(h, tcx[i] + 2, try_ + 3, { width: tcw[i] - 2, lineBreak: false });
+});
+try_ += trh;
+
+const filas = [
+  ['I — Bajo',        'Oficinas, comercio, finanzas',             '≤10',   '$120k'],
+  ['II — Medio',      'Manufactura, salud, educación',            '≤50',   '$200k'],
+  ['III — Med-Alto',  'Industria, transporte, construcción',      '≤200',  '$350k'],
+  ['IV — Alto',       'Construcción, minería superficial',        '≤500',  '$550k'],
+  ['V — Muy Alto',    'Minería subterránea, explosivos',          'Ilim.', '$800k'],
 ];
-
-const cw = [115, 175, 100, 92];
-const cx = [L, L+115, L+290, L+390];
-const rh = 19;
-
-// Header
-let ry = doc.y;
-doc.rect(L, ry, W, rh).fill(GREEN);
-['Nivel de Riesgo','Actividades Típicas','Trabajadores','Tarifa/Mes'].forEach((h, i) => {
-  doc.fontSize(8).font('Helvetica-Bold').fillColor('white')
-     .text(h, cx[i] + 4, ry + 5, { width: cw[i] - 6, lineBreak: false });
-});
-ry += rh;
-
-rows.forEach((row, ri) => {
-  doc.rect(L, ry, W, rh).fill(ri % 2 === 0 ? 'white' : '#f4faf5');
-  doc.rect(L, ry, W, rh).strokeColor('#dddddd').lineWidth(0.4).stroke();
+filas.forEach((row, ri) => {
+  doc.rect(cx(), try_, cw(), trh).fill(ri % 2 === 0 ? 'white' : '#f3faf4');
+  doc.rect(cx(), try_, cw(), trh).strokeColor('#dddddd').lineWidth(0.3).stroke();
   row.forEach((cell, ci) => {
-    doc.fontSize(8).font(ci === 0 ? 'Helvetica-Bold' : 'Helvetica').fillColor(DARK)
-       .text(cell, cx[ci] + 4, ry + 5, { width: cw[ci] - 6, lineBreak: false });
+    doc.fontSize(7).font(ci === 0 ? 'Helvetica-Bold' : 'Helvetica').fillColor(DARK)
+       .text(cell, tcx[ci] + 2, try_ + 3, { width: tcw[ci] - 2, lineBreak: false });
   });
-  ry += rh;
+  try_ += trh;
 });
+cy = try_ - colStart + 3;
+p('Valores netos para EL PROFESIONAL, revisables anualmente. No incluyen obligaciones tributarias.');
 
-doc.y = ry + 6;
-doc.moveDown(0.4);
-p('Las tarifas serán revisadas anualmente de mutuo acuerdo. Estos valores corresponden al ingreso neto de EL PROFESIONAL, sin incluir los impuestos que le correspondan según la normativa tributaria vigente.');
+// ═══════════════════════════════════════════════════════════════════
+// COLUMNA DERECHA  (col=1)
+// ═══════════════════════════════════════════════════════════════════
+nextCol();
 
-// ── QUINTA ────────────────────────────────────────────────────────────────────
-sect('QUINTA', 'FORMA Y PERIODICIDAD DE PAGO');
-p('LA EMPRESA liquidará mensualmente los honorarios de EL PROFESIONAL con base en el número de empresas activas asignadas al cierre de cada mes. El pago se realizará dentro de los primeros cinco (5) días hábiles del mes siguiente, mediante transferencia bancaria a la cuenta que EL PROFESIONAL designe por escrito.');
-p('LA EMPRESA entregará un comprobante detallado de la liquidación mensual con el listado de empresas atendidas, nivel de riesgo y tarifa aplicada a cada una.');
+sect('QUINTA', 'FORMA DE PAGO');
+p('LA EMPRESA liquidará mensualmente los honorarios dentro de los primeros 5 días hábiles del mes siguiente, por transferencia bancaria. Entregará comprobante detallado con listado de empresas y tarifas aplicadas.');
 
-// ── SEXTA ─────────────────────────────────────────────────────────────────────
-sect('SEXTA', 'OBLIGACIONES DE LAS PARTES');
-h('Obligaciones de EL PROFESIONAL:');
-b('Mantener vigente su licencia en SST durante toda la vigencia del acuerdo.');
-b('Responder solicitudes de las empresas asignadas en un plazo máximo de 48 horas hábiles.');
-b('Firmar los documentos técnicos requeridos dentro de los plazos legales establecidos.');
-b('Mantener confidencialidad sobre la información de los clientes de LA EMPRESA.');
-b('Usar exclusivamente la plataforma SST Colombia para la gestión de las empresas asignadas.');
-doc.moveDown(0.2);
-h('Obligaciones de LA EMPRESA:');
-b('Proveer acceso permanente a la plataforma SST Colombia con perfil Profesional SST.');
-b('Asignar empresas clientes respetando la capacidad operativa de EL PROFESIONAL.');
-b('Realizar los pagos en los términos pactados en la cláusula quinta.');
-b('Notificar con mínimo 15 días de anticipación cambios en tarifas o condiciones.');
-b('Brindar soporte técnico sobre el uso de la plataforma cuando sea requerido.');
+sect('SEXTA', 'OBLIGACIONES');
+lbl('EL PROFESIONAL:');
+bul('Mantener vigente su licencia SST durante la vigencia del acuerdo.');
+bul('Firmar documentos técnicos dentro de los plazos legales.');
+bul('Guardar confidencialidad sobre la información de los clientes.');
+bul('Usar exclusivamente la plataforma SST Colombia.');
+gap(2);
+lbl('LA EMPRESA:');
+bul('Proveer acceso a la plataforma con perfil Profesional SST.');
+bul('Asignar empresas respetando la capacidad operativa acordada.');
+bul('Pagar en los términos pactados. Notificar cambios con 15 días.');
+bul('Brindar soporte técnico sobre el uso de la plataforma.');
 
-// ── SÉPTIMA ───────────────────────────────────────────────────────────────────
-sect('SÉPTIMA', 'NATURALEZA JURÍDICA DEL ACUERDO');
-p('El presente acuerdo es de naturaleza civil y comercial, de prestación de servicios independiente. No genera relación laboral alguna entre las partes. EL PROFESIONAL actuará como contratista independiente y será responsable del pago de sus propias obligaciones tributarias y de seguridad social conforme a la legislación colombiana vigente.');
+sect('SÉPTIMA', 'NATURALEZA JURÍDICA');
+p('Contrato de prestación de servicios independiente. No genera relación laboral. EL PROFESIONAL es responsable de sus propias obligaciones tributarias y de seguridad social conforme a la legislación vigente.');
 
-// ── OCTAVA ────────────────────────────────────────────────────────────────────
 sect('OCTAVA', 'DURACIÓN Y TERMINACIÓN');
-p('El presente acuerdo tendrá una duración inicial de doce (12) meses contados a partir de la fecha de suscripción, renovándose automáticamente por períodos iguales, salvo que cualquiera de las partes manifieste por escrito su intención de no renovarlo con un mínimo de treinta (30) días de anticipación.');
-p('Cualquiera de las partes podrá dar por terminado el acuerdo de forma anticipada sin lugar a indemnización, mediante comunicación escrita con treinta (30) días de antelación. En caso de incumplimiento grave de las obligaciones, la terminación podrá ser inmediata.');
+p('Duración inicial de 12 meses, prorrogable automáticamente. Cualquier parte puede terminar con 30 días de preaviso escrito. En caso de incumplimiento grave, la terminación es inmediata.');
 
-// ── FIRMAS ────────────────────────────────────────────────────────────────────
-doc.moveDown(0.4);
-doc.moveTo(L, doc.y).lineTo(L + W, doc.y).strokeColor('#cccccc').lineWidth(0.7).stroke();
-doc.moveDown(0.6);
-doc.fontSize(9.5).font('Helvetica-Bold').fillColor(DARK)
-   .text('En señal de aceptación, las partes suscriben el presente acuerdo:', L, doc.y, { width: W, align: 'center' });
-doc.moveDown(1);
+// ─── LÍNEA SEPARADORA FIRMAS ─────────────────────────────────────
+gap(6);
+hline('#aaaaaa', 0.6);
 
-const sigW = (W - 25) / 2;
-const sigY = doc.y;
-doc.rect(L, sigY, sigW, 70).stroke('#bbbbbb').lineWidth(0.5);
-doc.rect(L + sigW + 25, sigY, sigW, 70).stroke('#bbbbbb').lineWidth(0.5);
-doc.fontSize(9).font('Helvetica-Bold').fillColor(DARK)
-   .text('LA EMPRESA', L, sigY + 48, { width: sigW, align: 'center', lineBreak: false })
-   .text('EL PROFESIONAL', L + sigW + 25, sigY + 48, { width: sigW, align: 'center', lineBreak: false });
-doc.fontSize(8).font('Helvetica').fillColor(GRAY)
-   .text('SAGDI S.A.S. · NIT 902.036.337-4', L, sigY + 59, { width: sigW, align: 'center', lineBreak: false })
-   .text('Hernán Valencia Gil · Profesional SST', L + sigW + 25, sigY + 59, { width: sigW, align: 'center', lineBreak: false });
+// Texto firmas
+doc.fontSize(8).font('Helvetica-Bold').fillColor(DARK)
+   .text('En señal de aceptación, las partes suscriben:', cx(), colStart + cy, { width: cw(), align: 'center', lineBreak: false });
+cy += 12;
 
-doc.y = sigY + 80;
-doc.moveDown(0.4);
-doc.moveTo(L, doc.y).lineTo(L + W, doc.y).strokeColor('#cccccc').lineWidth(0.4).stroke();
-doc.moveDown(0.3);
-doc.fontSize(7.5).font('Helvetica').fillColor('#aaaaaa')
-   .text('SAGDI S.A.S. · NIT 902.036.337-4 · admin@sst-colombia.com · sst.sagisas.co', L, doc.y, { width: W, align: 'center', lineBreak: false });
+// Dos cuadros de firma dentro de la columna derecha (stacked, uno arriba otro abajo)
+const bsw = cw();
+const bsh = 48;
+const bs1y = colStart + cy;
+const bsMid = cx() + bsw / 2;
+
+// Dividir la columna en 2 mitades para firmas
+const hw = (cw() - 8) / 2;
+const hx1 = cx();
+const hx2 = cx() + hw + 8;
+
+doc.rect(hx1, bs1y, hw, bsh).stroke('#bbbbbb').lineWidth(0.5);
+doc.rect(hx2, bs1y, hw, bsh).stroke('#bbbbbb').lineWidth(0.5);
+doc.fontSize(7.5).font('Helvetica-Bold').fillColor(DARK)
+   .text('LA EMPRESA', hx1, bs1y + 31, { width: hw, align: 'center', lineBreak: false })
+   .text('EL PROFESIONAL', hx2, bs1y + 31, { width: hw, align: 'center', lineBreak: false });
+doc.fontSize(7).font('Helvetica').fillColor(GRAY)
+   .text('SAGDI S.A.S. · NIT 902.036.337-4', hx1, bs1y + 39, { width: hw, align: 'center', lineBreak: false })
+   .text('Hernán Valencia Gil', hx2, bs1y + 39, { width: hw, align: 'center', lineBreak: false });
+cy += bsh + 5;
+
+// Footer de columna derecha
+hline('#cccccc', 0.3);
+doc.fontSize(6.5).font('Helvetica').fillColor('#aaaaaa')
+   .text('SAGDI S.A.S. · NIT 902.036.337-4 · admin@sst-colombia.com · sst.sagisas.co',
+         cx(), colStart + cy, { width: cw(), align: 'center', lineBreak: false });
+
+// ─── LÍNEA DIVISORIA ENTRE COLUMNAS (página 1) ───────────────────
+// Dibujamos la línea divisoria después de saber el alto de ambas columnas
+// La línea va de colStart hasta el fondo del contenido de la col más alta
+// (aprox. hasta donde esté el pie de página)
 
 doc.end();
-doc.on('end', () => console.log('PDF listo:', OUT));
+doc.on('end', () => console.log('PDF generado:', OUT));
