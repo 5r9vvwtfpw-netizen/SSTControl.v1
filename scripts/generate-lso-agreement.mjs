@@ -124,15 +124,22 @@ p('LA EMPRESA reconocerá a EL PROFESIONAL una tarifa mensual fija por cada empr
 doc.moveDown(0.3);
 
 // Tabla de tarifas
-const tcols = [L, L+160, L+430];
-const tcw   = [160, 270, W - (430 - L)];
+// Anchos: Nivel=175, Actividades=255, Tarifa=100 (derecha)
+const COL_N = 175;
+const COL_A = W - COL_N - 110;
+const COL_T = 110;
+const tcols = [L, L + COL_N, L + COL_N + COL_A];
+const tcw   = [COL_N, COL_A, COL_T];
 const trh   = 21;
 let   try_  = doc.y;
 
+// Encabezado tabla
 doc.rect(L, try_, W, trh).fill(GREEN);
-['Nivel de Riesgo', 'Actividades Representativas', 'Tarifa / Mes'].forEach((h, i) => {
+const theads = ['Nivel de Riesgo', 'Actividades Representativas', 'Tarifa / Mes'];
+const talign = ['left', 'left', 'right'];
+theads.forEach((h, i) => {
   doc.fontSize(9).font('Helvetica-Bold').fillColor('white')
-     .text(h, tcols[i] + 5, try_ + 6, { width: tcw[i] - 8, lineBreak: false });
+     .text(h, tcols[i] + 5, try_ + 6, { width: tcw[i] - 8, align: talign[i], lineBreak: false });
 });
 try_ += trh;
 
@@ -147,8 +154,10 @@ filas.forEach((row, ri) => {
   doc.rect(L, try_, W, trh).fill(ri % 2 === 0 ? '#ffffff' : '#f3faf4');
   doc.rect(L, try_, W, trh).strokeColor('#dddddd').lineWidth(0.4).stroke();
   row.forEach((cell, ci) => {
-    doc.fontSize(9).font(ci === 0 ? 'Helvetica-Bold' : 'Helvetica').fillColor(DARK)
-       .text(cell, tcols[ci] + 5, try_ + 6, { width: tcw[ci] - 8, lineBreak: false });
+    doc.fontSize(9)
+       .font(ci === 0 ? 'Helvetica-Bold' : ci === 2 ? 'Helvetica-Bold' : 'Helvetica')
+       .fillColor(ci === 2 ? GREEN : DARK)
+       .text(cell, tcols[ci] + 5, try_ + 6, { width: tcw[ci] - 8, align: talign[ci], lineBreak: false });
   });
   try_ += trh;
 });
