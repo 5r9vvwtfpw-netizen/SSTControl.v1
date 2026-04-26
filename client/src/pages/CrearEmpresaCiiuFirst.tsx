@@ -523,28 +523,39 @@ export default function CrearEmpresaCiiuFirst() {
                     )}
 
                     {watchedCiiu && watchedRisk && pstTarifas[watchedRisk] && (
-                      <div className="rounded-md border-2 border-green-500 bg-green-50 dark:bg-green-950/30 p-4" data-testid="card-pst-tarifa">
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/40 shrink-0">
-                            <UserCheck className="h-5 w-5 text-green-700 dark:text-green-400" />
+                      <div className="rounded-md border-2 border-green-600 bg-green-50 dark:bg-green-950/30 p-4 space-y-3" data-testid="card-pst-tarifa">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 rounded-full bg-green-100 dark:bg-green-900/40 shrink-0">
+                            <UserCheck className="h-4 w-4 text-green-700 dark:text-green-400" />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-green-800 dark:text-green-300 text-sm mb-1">
-                              Profesional SST Sugerido — Servicio Opcional
-                            </p>
-                            <p className="text-xs text-green-700 dark:text-green-400 mb-3">
-                              Según tu nivel de riesgo ({pstTarifas[watchedRisk].label}), la tarifa de referencia mensual de nuestro Profesional SST aliado es:
-                            </p>
-                            <div className="flex flex-wrap items-center gap-3">
-                              <span className="text-2xl font-bold text-green-700 dark:text-green-300" data-testid="text-pst-precio">
-                                {formatCOP(pstTarifas[watchedRisk].precio)}
-                              </span>
-                              <Badge className="bg-green-600 text-white text-xs">Pago directo al Profesional</Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-2">
-                              Este servicio es independiente de tu suscripción a la plataforma. Si ya tienes tu propio Profesional SST, no es necesario.
-                            </p>
+                          <p className="font-bold text-green-800 dark:text-green-200 text-sm uppercase tracking-wide">
+                            SAGDI sugiere un Profesional SST Aliado
+                          </p>
+                          <Badge className="bg-green-600 text-white text-xs shrink-0">Opcional</Badge>
+                        </div>
+
+                        <p className="text-sm text-green-900 dark:text-green-300 leading-relaxed">
+                          Como parte de nuestro ecosistema, <strong>SST Colombia pone a tu disposición un Profesional en Seguridad y Salud en el Trabajo de confianza</strong>, vinculado a nuestra red de aliados. Este profesional conoce la plataforma, atiende tu empresa directamente y firma los documentos que exige la ley.
+                        </p>
+
+                        <div className="bg-white dark:bg-green-950/50 rounded border border-green-200 dark:border-green-800 p-3">
+                          <p className="text-xs text-green-700 dark:text-green-400 mb-1">
+                            Tarifa de referencia para tu empresa — {pstTarifas[watchedRisk].label}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <span className="text-2xl font-bold text-green-700 dark:text-green-300" data-testid="text-pst-precio">
+                              {formatCOP(pstTarifas[watchedRisk].precio)}
+                            </span>
+                            <Badge variant="outline" className="text-xs border-green-500 text-green-700 dark:text-green-400">
+                              Pago directo al Profesional · No a SAGDI
+                            </Badge>
                           </div>
+                        </div>
+
+                        <div className="text-xs text-green-800 dark:text-green-400 space-y-1">
+                          <p>✓ <strong>Sugerido por SAGDI</strong> — no es una imposición. Eres libre de contratar al profesional de tu preferencia.</p>
+                          <p>✓ <strong>Dos pagos independientes:</strong> la suscripción a la plataforma se paga a SAGDI; los honorarios profesionales, directamente al Profesional SST.</p>
+                          <p>✓ Si ya cuentas con tu propio Profesional SST, simplemente ignora esta sección.</p>
                         </div>
                       </div>
                     )}
