@@ -68,19 +68,21 @@ function divider() {
 // PÁGINA 1
 // ══════════════════════════════════════════════════════════════════════════════
 doc.rect(L, 55, W, 55).fill(GREEN);
-doc.fontSize(12).font('Helvetica-Bold').fillColor('white')
-   .text('SISTEMA AUTOMATIZADO DE GESTION INTEGRAL S.A.S', L + 14, 63, { lineBreak: false });
-doc.fontSize(9).font('Helvetica').fillColor('rgba(255,255,255,0.9)')
-   .text('SADGI S.A.S.  ·  NIT 902.036.337-4  ·  Comercializadora plataforma SST Colombia', L + 14, 81, { lineBreak: false });
-doc.fontSize(8.5).fillColor('rgba(255,255,255,0.75)')
-   .text('sst.sagisas.co  ·  admin@sst-colombia.com', L + 14, 95, { lineBreak: false });
+doc.fontSize(14).font('Helvetica-Bold').fillColor('white')
+   .text('SST-Colombia', L + 14, 62, { lineBreak: false });
+doc.fontSize(9).font('Helvetica').fillColor('rgba(255,255,255,0.95)')
+   .text('Plataforma tecnológica comercializada por:', L + 14, 81, { lineBreak: false });
+doc.fontSize(9).font('Helvetica-Bold').fillColor('rgba(255,255,255,0.95)')
+   .text('SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S (SADGI S.A.S.)  ·  NIT 902.036.337-4', L + 14, 93, { lineBreak: false });
+doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.75)')
+   .text('sst.sagisas.co  ·  admin@sst-colombia.com', L + 14, 105, { lineBreak: false });
 doc.y = 122;
 
 doc.fontSize(13).font('Helvetica-Bold').fillColor(DARK)
    .text('ACUERDO DE ALIANZA ESTRATÉGICA', L, doc.y, { width: W, align: 'center' });
 doc.moveDown(0.25);
 doc.fontSize(10).font('Helvetica').fillColor(GRAY)
-   .text('Vinculación de Profesional SST a la Red de Aliados de la Plataforma SST Colombia',
+   .text('Vinculación de Profesional SST a la Red de Aliados de SST-Colombia',
          L, doc.y, { width: W, align: 'center' });
 doc.moveDown(0.25);
 doc.fontSize(9).fillColor(GRAY)
@@ -90,7 +92,8 @@ doc.moveDown(0.4);
 divider();
 
 sect('PRIMERA', 'PARTES');
-p('LA PLATAFORMA: SADGI S.A.S. (Sistema Automatizado de Gestión Integral), sociedad identificada con NIT 902.036.337-4, comercializadora y operadora de la plataforma tecnológica SST Colombia (sst.sagisas.co), representada por su Representante Legal Luz Adriana Díaz Calle, en adelante "LA PLATAFORMA".');
+p('SADGI S.A.S.: Empresa identificada con razón social SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., NIT 902.036.337-4, con domicilio en Medellín, Antioquia, representada por su Representante Legal Luz Adriana Díaz Calle. SADGI S.A.S. es la empresa comercializadora de SST-Colombia, plataforma tecnológica para la gestión del Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST), disponible en sst.sagisas.co. En adelante se denominará "LA EMPRESA".');
+p('SST-Colombia: Plataforma tecnológica de gestión SG-SST, comercializada por SADGI S.A.S., que sirve como ecosistema digital para empresas y Profesionales SST. En adelante se denominará "LA PLATAFORMA".');
 p('EL PROFESIONAL ALIADO: Hernán Valencia Gil, Profesional en Seguridad y Salud en el Trabajo con licencia vigente, de conformidad con la Resolución 4927 de 2016 del Ministerio de Trabajo, en adelante "EL PROFESIONAL".');
 p('Las partes acuerdan establecer una alianza estratégica voluntaria y no exclusiva, bajo las condiciones descritas en las siguientes cláusulas:');
 
@@ -107,7 +110,7 @@ p('Los servicios que recibe cada empresa cliente son independientes entre sí y 
 bul('PAGO A LA PLATAFORMA: Cada empresa paga directamente a SADGI S.A.S. la suscripción mensual por el uso de la plataforma tecnológica SST Colombia, según el plan contratado. Este pago es obligatorio para todas las empresas que usen la plataforma.');
 bul('PAGO AL PROFESIONAL: Las empresas suscritas a la plataforma SST Colombia que decidan contratar a EL PROFESIONAL, le pagarán directamente los honorarios acordados según su nivel de riesgo ARL. Este pago se realiza de forma independiente a la suscripción de la plataforma, pero está enmarcado dentro del ecosistema de servicios de SST Colombia.');
 doc.moveDown(0.2);
-p('LA PLATAFORMA no actúa como intermediaria en los pagos de honorarios entre las empresas y EL PROFESIONAL, ni recibe comisión alguna por la contratación del servicio profesional.');
+p('LA EMPRESA no actúa como intermediaria en los pagos de honorarios entre las empresas y EL PROFESIONAL. La relación económica entre EL PROFESIONAL y sus clientes es directa e independiente de SADGI S.A.S.');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PÁGINA 2
@@ -174,7 +177,7 @@ sect('SEXTA', 'COMPROMISOS DE LA PLATAFORMA');
 bul('Publicar el perfil y tarifas de referencia de EL PROFESIONAL en la plataforma y en el sitio web.');
 bul('Proveer a EL PROFESIONAL acceso con perfil de Profesional SST a la plataforma SST Colombia.');
 bul('Sugerir a EL PROFESIONAL como opción de asesoría a las empresas que así lo requieran.');
-bul('No cobrar comisión ni porcentaje alguno sobre los honorarios pagados a EL PROFESIONAL.');
+bul('Garantizar la participación gratuita de EL PROFESIONAL en la red de aliados; la vinculación a la plataforma no tiene costo para el Profesional SST.');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PÁGINA 3
