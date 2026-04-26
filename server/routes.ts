@@ -2437,6 +2437,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         planName: req.body.planId || undefined,
         createdAt: new Date(),
       }).catch((err: any) => console.error('[ADMIN-NOTIFY] Error notifying admin of new company:', err));
+
+      // Enviar correo de bienvenida al cliente con link para agendar sesión
+      if (companyData.contactEmail) {
+        emailService.sendClientWelcomeEmail({
+          companyName: company.name,
+          contactEmail: companyData.contactEmail,
+        }).catch((err: any) => console.error('[WELCOME-EMAIL] Error sending welcome email:', err));
+      }
       
       // Associate company to user (keep role as superusuario)
       await storage.updateUser(user.id, {
