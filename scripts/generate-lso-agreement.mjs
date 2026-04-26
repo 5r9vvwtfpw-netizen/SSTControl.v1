@@ -162,11 +162,11 @@ doc.rect(cx(), try_, cw(), trh).fill(GREEN);
 try_ += trh;
 
 const filas = [
-  ['I — Bajo',        'Oficinas, comercio, finanzas',             '≤10',   '$120k'],
-  ['II — Medio',      'Manufactura, salud, educación',            '≤50',   '$200k'],
-  ['III — Med-Alto',  'Industria, transporte, construcción',      '≤200',  '$350k'],
-  ['IV — Alto',       'Construcción, minería superficial',        '≤500',  '$550k'],
-  ['V — Muy Alto',    'Minería subterránea, explosivos',          'Ilim.', '$800k'],
+  ['I — Bajo',        'Oficinas, comercio, finanzas',             '≤10',   '$200k'],
+  ['II — Medio',      'Manufactura, salud, educación',            '≤50',   '$300k'],
+  ['III — Med-Alto',  'Industria, transporte, construcción',      '≤200',  '$400k'],
+  ['IV — Alto',       'Construcción, minería superficial',        '≤500',  '$500k'],
+  ['V — Muy Alto',    'Minería subterránea, explosivos',          'Ilim.', '$600k'],
 ];
 filas.forEach((row, ri) => {
   doc.rect(cx(), try_, cw(), trh).fill(ri % 2 === 0 ? 'white' : '#f3faf4');
