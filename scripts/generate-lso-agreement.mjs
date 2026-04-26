@@ -11,217 +11,191 @@ const NIT   = 'NIT 902.036.337-4';
 
 const doc = new PDFDocument({
   size: 'LETTER',
-  margins: { top: 105, bottom: 60, left: 65, right: 65 },
-  bufferPages: true,
+  margins: { top: 95, bottom: 50, left: 62, right: 62 },
   info: { Title: 'Acuerdo de Alianza Estratégica — Profesional SST', Author: RAZÓN },
 });
 doc.pipe(fs.createWriteStream(OUT));
 
-const W = doc.page.width - 130;
-const L = 65;
+const W  = doc.page.width  - 124;   // 488 pt
+const L  = 62;
+const PH = doc.page.height;         // 792 pt
+const MB = 50;                       // bottom margin
 const today = new Date();
 const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
                 'septiembre','octubre','noviembre','diciembre'];
 
-// ── HELPERS ──────────────────────────────────────────────────────────────────
-function sect(n, t) {
-  doc.moveDown(0.6);
-  const y0 = doc.y;
-  doc.rect(L, y0, W, 18).fill(LGRAY);
-  doc.fontSize(10).font('Helvetica-Bold').fillColor(GREEN)
-     .text(`${n} — ${t}`, L + 8, y0 + 4, { width: W - 14, lineBreak: false });
-  doc.y = y0 + 22;
+// ── Pequeño encabezado para páginas 2 y 3 ────────────────────────────────────
+function pageHeader() {
+  doc.rect(L, 52, W, 29).fill(GREEN);
+  doc.fontSize(9.5).font('Helvetica-Bold').fillColor('white')
+     .text('SST-Colombia  ·  Acuerdo de Alianza Estratégica', L + 10, 59, { lineBreak: false });
+  doc.fontSize(7.5).font('Helvetica').fillColor('rgba(255,255,255,0.82)')
+     .text(`${RAZÓN}  ·  ${NIT}`, L + 10, 71, { lineBreak: false });
+}
+
+// Registrar encabezado en páginas 2+ (pageAdded no dispara para la página 1 del constructor)
+doc.on('pageAdded', pageHeader);
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function sect(num, title) {
   doc.moveDown(0.4);
+  const y0 = doc.y;
+  doc.rect(L, y0, W, 15).fill(LGRAY);
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(GREEN)
+     .text(`${num} — ${title}`, L + 6, y0 + 3, { width: W - 10, lineBreak: false });
+  doc.y = y0 + 19;
+  doc.moveDown(0.2);
 }
 
 function p(text) {
-  doc.fontSize(10).font('Helvetica').fillColor(DARK)
-     .text(text, L, doc.y, { width: W, align: 'justify', lineGap: 2 });
-  doc.moveDown(0.55);
+  doc.fontSize(9).font('Helvetica').fillColor(DARK)
+     .text(text, L, doc.y, { width: W, align: 'justify', lineGap: 1 });
+  doc.moveDown(0.35);
 }
 
 function bul(text) {
-  const bx = L + 10;
-  const tx = L + 24;
-  const tw = W - 24;
   const sy = doc.y;
-  doc.fontSize(10).font('Helvetica').fillColor(DARK)
-     .text('\u2022', bx, sy, { width: 12, lineBreak: false });
-  doc.fontSize(10).font('Helvetica').fillColor(DARK)
-     .text(text, tx, sy, { width: tw, align: 'justify', lineGap: 2 });
-  doc.moveDown(0.3);
+  doc.fontSize(9).font('Helvetica').fillColor(DARK)
+     .text('\u2022', L + 8, sy, { width: 10, lineBreak: false });
+  doc.fontSize(9).font('Helvetica').fillColor(DARK)
+     .text(text, L + 20, sy, { width: W - 20, align: 'justify', lineGap: 1 });
+  doc.moveDown(0.18);
 }
 
 function divider() {
+  doc.moveDown(0.25);
+  doc.moveTo(L, doc.y).lineTo(L + W, doc.y).strokeColor('#cccccc').lineWidth(0.5).stroke();
   doc.moveDown(0.3);
-  doc.moveTo(L, doc.y).lineTo(L + W, doc.y).strokeColor('#cccccc').lineWidth(0.6).stroke();
-  doc.moveDown(0.4);
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════════
 // PÁGINA 1 — Encabezado principal
-// ══════════════════════════════════════════════════════════════════════════════
-doc.rect(L, 55, W, 58).fill(GREEN);
-doc.fontSize(18).font('Helvetica-Bold').fillColor('white')
-   .text('SST-Colombia', L + 14, 64, { lineBreak: false });
-doc.fontSize(8.5).font('Helvetica-Bold').fillColor('rgba(255,255,255,0.95)')
-   .text(RAZÓN, L + 14, 89, { lineBreak: false });
-doc.fontSize(8.5).font('Helvetica').fillColor('rgba(255,255,255,0.72)')
-   .text(`${NIT}  ·  sst.sagisas.co  ·  admin@sst-colombia.com`, L + 14, 101, { lineBreak: false });
-doc.y = 130;
+// ════════════════════════════════════════════════════════════════════════════
+doc.rect(L, 50, W, 53).fill(GREEN);
+doc.fontSize(17).font('Helvetica-Bold').fillColor('white')
+   .text('SST-Colombia', L + 12, 58, { lineBreak: false });
+doc.fontSize(8).font('Helvetica-Bold').fillColor('rgba(255,255,255,0.95)')
+   .text(RAZÓN, L + 12, 82, { lineBreak: false });
+doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.7)')
+   .text(`${NIT}  ·  sst.sagisas.co  ·  admin@sst-colombia.com`, L + 12, 93, { lineBreak: false });
+doc.y = 118;
 
-doc.fontSize(13).font('Helvetica-Bold').fillColor(DARK)
+doc.fontSize(12).font('Helvetica-Bold').fillColor(DARK)
    .text('ACUERDO DE ALIANZA ESTRATÉGICA', L, doc.y, { width: W, align: 'center' });
-doc.moveDown(0.25);
-doc.fontSize(10).font('Helvetica').fillColor(GRAY)
-   .text('Vinculación de Profesional SST a la Red de Aliados de SST-Colombia',
-         L, doc.y, { width: W, align: 'center' });
-doc.moveDown(0.25);
-doc.fontSize(9).fillColor(GRAY)
-   .text(`Medellín, ${today.getDate()} de ${meses[today.getMonth()]} de ${today.getFullYear()}`,
-         L, doc.y, { width: W, align: 'right' });
-doc.moveDown(0.4);
+doc.moveDown(0.18);
+doc.fontSize(9).font('Helvetica').fillColor(GRAY)
+   .text('Vinculación de Profesional SST a la Red de Aliados de SST-Colombia', L, doc.y, { width: W, align: 'center' });
+doc.moveDown(0.18);
+doc.fontSize(8.5).fillColor(GRAY)
+   .text(`Medellín, ${today.getDate()} de ${meses[today.getMonth()]} de ${today.getFullYear()}`, L, doc.y, { width: W, align: 'right' });
+doc.moveDown(0.28);
 divider();
 
-// ── CLÁUSULAS — paginación automática ─────────────────────────────────────────
-
+// ── CLÁUSULAS ─────────────────────────────────────────────────────────────────
 sect('PRIMERA', 'DEFINICIONES Y PARTES');
-p('Para efectos del presente acuerdo se establecen las siguientes definiciones:');
-bul(`LA EMPRESA: ${RAZÓN}, ${NIT}, domiciliada en Medellín, Antioquia, representada legalmente por Luz Adriana Díaz Calle. Empresa comercializadora de SST-Colombia. En adelante "LA EMPRESA".`);
-bul('SST-Colombia: Plataforma tecnológica para la gestión del SG-SST, disponible en sst.sagisas.co, comercializada por LA EMPRESA. En adelante "LA PLATAFORMA".');
-bul('EL PROFESIONAL: Hernán Valencia Gil, Profesional en SST con licencia vigente según la Resolución 4927 de 2016. En adelante "EL PROFESIONAL".');
-p('Las partes suscriben este acuerdo de forma voluntaria y no exclusiva, bajo las condiciones aquí descritas.');
+bul(`LA EMPRESA: ${RAZÓN}, ${NIT}, domiciliada en Medellín, representada por Luz Adriana Díaz Calle, comercializadora de SST-Colombia. En adelante "LA EMPRESA".`);
+bul('SST-Colombia: Plataforma tecnológica SG-SST (sst.sagisas.co). En adelante "LA PLATAFORMA".');
+bul('EL PROFESIONAL: Hernán Valencia Gil, Profesional en SST, licencia vigente (Res. 4927/2016). En adelante "EL PROFESIONAL".');
+p('Las partes suscriben este acuerdo de forma voluntaria y no exclusiva.');
 
-sect('SEGUNDA', 'NATURALEZA Y OBJETO DE LA ALIANZA');
-p('Este acuerdo establece los términos bajo los cuales EL PROFESIONAL se vincula como aliado a la red de Profesionales SST de SST-Colombia. La alianza tiene por objeto:');
-bul('Incluir el perfil de EL PROFESIONAL como opción de asesoría SST para las empresas del ecosistema digital de LA PLATAFORMA.');
-bul('Acordar las tarifas del servicio de acompañamiento SST mensual que EL PROFESIONAL prestará a las empresas que lo contraten directamente.');
-bul('Definir los derechos, compromisos y autonomía de cada parte dentro del ecosistema de SST-Colombia.');
-p('Esta alianza no genera relación laboral, de subordinación ni de exclusividad entre las partes.');
+sect('SEGUNDA', 'OBJETO DE LA ALIANZA');
+bul('Incluir el perfil de EL PROFESIONAL como opción de asesoría SST en el ecosistema de LA PLATAFORMA.');
+bul('Acordar las tarifas del servicio de acompañamiento SST mensual para las empresas que lo contraten.');
+bul('Definir derechos, compromisos y autonomía. Esta alianza no genera relación laboral ni exclusividad.');
 
 sect('TERCERA', 'MODELO DE PAGOS — DOS SERVICIOS INDEPENDIENTES');
-p('Las empresas suscritas a SST-Colombia reciben dos servicios distintos, pagados de forma independiente:');
-bul('SUSCRIPCIÓN A LA PLATAFORMA: Cada empresa paga directamente a LA EMPRESA la tarifa mensual por el uso de SST-Colombia. Obligatorio para acceder a la plataforma.');
-bul('HONORARIOS AL PROFESIONAL: Las empresas que decidan contratar a EL PROFESIONAL le pagarán directamente los honorarios de la Cláusula Cuarta, con independencia de la suscripción.');
-p('LA EMPRESA no interviene en los pagos entre las empresas y EL PROFESIONAL. La relación económica por servicios profesionales es directa entre ambas partes.');
+bul('SUSCRIPCIÓN: Cada empresa paga a LA EMPRESA la tarifa mensual por uso de SST-Colombia (obligatorio).');
+bul('HONORARIOS: Las empresas pagan directamente a EL PROFESIONAL según la Cláusula Cuarta (independiente de la suscripción).');
+p('LA EMPRESA no interviene en los pagos entre empresas y EL PROFESIONAL.');
 
 sect('CUARTA', 'TARIFAS DEL SERVICIO DE ACOMPAÑAMIENTO SST MENSUAL');
-p('Las partes acuerdan las siguientes tarifas mensuales según el nivel de riesgo ARL de cada empresa, determinado por el CIIU registrado en la plataforma:');
-doc.moveDown(0.2);
+p('Tarifas acordadas según nivel de riesgo ARL, determinado por el CIIU registrado en la plataforma:');
+doc.moveDown(0.1);
 
-// ── Tabla de tarifas ──────────────────────────────────────────────────────────
-const COL_N = 175;
-const COL_A = W - COL_N - 110;
-const COL_T = 110;
-const tcols = [L, L + COL_N, L + COL_N + COL_A];
-const tcw   = [COL_N, COL_A, COL_T];
-const trh   = 20;
-let   try_  = doc.y;
+// Tabla
+const C1 = 160; const C3 = 100; const C2 = W - C1 - C3;
+const cx = [L, L+C1, L+C1+C2];  const cw = [C1, C2, C3];
+const rh = 17;  let ty = doc.y;
 
-doc.rect(L, try_, W, trh).fill(GREEN);
-['Nivel de Riesgo ARL', 'Sectores Representativos', 'Tarifa Mensual'].forEach((h, i) => {
-  doc.fontSize(9).font('Helvetica-Bold').fillColor('white')
-     .text(h, tcols[i] + 5, try_ + 5, { width: tcw[i] - 8, align: i === 2 ? 'right' : 'left', lineBreak: false });
+doc.rect(L, ty, W, rh).fill(GREEN);
+['Nivel de Riesgo ARL','Sectores Representativos','Tarifa/Mes'].forEach((h,i)=>{
+  doc.fontSize(8.5).font('Helvetica-Bold').fillColor('white')
+     .text(h, cx[i]+4, ty+4, {width:cw[i]-6, align: i===2?'right':'left', lineBreak:false});
+}); ty += rh;
+
+[['Nivel I — Bajo','Oficinas, comercio, servicios financieros','$150.000'],
+ ['Nivel II — Medio','Manufactura ligera, salud, educación','$250.000'],
+ ['Nivel III — Medio-Alto','Industria, transporte, construcción menor','$350.000'],
+ ['Nivel IV — Alto','Construcción, minería, químicos','$450.000'],
+ ['Nivel V — Muy Alto','Minería subterránea, explosivos, alturas','$550.000'],
+].forEach((row,ri)=>{
+  doc.rect(L,ty,W,rh).fill(ri%2===0?'#fff':'#f3faf4');
+  doc.rect(L,ty,W,rh).strokeColor('#ddd').lineWidth(0.4).stroke();
+  row.forEach((cell,ci)=>{
+    doc.fontSize(8.5).font(ci===0||ci===2?'Helvetica-Bold':'Helvetica').fillColor(ci===2?GREEN:DARK)
+       .text(cell, cx[ci]+4, ty+4, {width:cw[ci]-6, align:ci===2?'right':'left', lineBreak:false});
+  }); ty += rh;
 });
-try_ += trh;
+doc.y = ty + 8;
+p('EL PROFESIONAL aplicará estas tarifas a las empresas contratadas a través del ecosistema de SST-Colombia.');
 
-[
-  ['Nivel I — Bajo',         'Oficinas, comercio, servicios financieros',  '$150.000 COP'],
-  ['Nivel II — Medio',       'Manufactura ligera, salud, educación',        '$250.000 COP'],
-  ['Nivel III — Medio-Alto', 'Industria, transporte, construcción menor',   '$350.000 COP'],
-  ['Nivel IV — Alto',        'Construcción, minería superficial, químicos', '$450.000 COP'],
-  ['Nivel V — Muy Alto',     'Minería subterránea, explosivos, alturas',    '$550.000 COP'],
-].forEach((row, ri) => {
-  doc.rect(L, try_, W, trh).fill(ri % 2 === 0 ? '#ffffff' : '#f3faf4');
-  doc.rect(L, try_, W, trh).strokeColor('#dddddd').lineWidth(0.4).stroke();
-  row.forEach((cell, ci) => {
-    doc.fontSize(9)
-       .font(ci === 0 || ci === 2 ? 'Helvetica-Bold' : 'Helvetica')
-       .fillColor(ci === 2 ? GREEN : DARK)
-       .text(cell, tcols[ci] + 5, try_ + 5, { width: tcw[ci] - 8, align: ci === 2 ? 'right' : 'left', lineBreak: false });
-  });
-  try_ += trh;
-});
-doc.y = try_ + 10;
+// Bloque servicios adicionales — solo si hay espacio suficiente
+if (doc.y + 130 > PH - MB) doc.addPage();
 
-p('Las tarifas anteriores corresponden exclusivamente al servicio de acompañamiento y gestión SST mensual en la plataforma. EL PROFESIONAL acuerda aplicar estas tarifas a las empresas contratadas a través del ecosistema de SST-Colombia.');
+const gy = doc.y;
+doc.rect(L, gy, W, 13).fill('#eef6ef');
+doc.fontSize(8.5).font('Helvetica-Bold').fillColor(GREEN)
+   .text('Servicios adicionales — Plena autonomía de EL PROFESIONAL', L+6, gy+2.5, {width:W-10, lineBreak:false});
+doc.y = gy + 16;
 
-// Bloque servicios adicionales
-const iy0 = doc.y;
-doc.rect(L, iy0, W, 14).fill('#eef6ef');
-doc.fontSize(9.5).font('Helvetica-Bold').fillColor(GREEN)
-   .text('Servicios adicionales — Plena autonomía de EL PROFESIONAL', L + 8, iy0 + 3, { width: W - 14, lineBreak: false });
-doc.y = iy0 + 20;
-
-p('SST-Colombia incluye en su suscripción la gestión digital de capacitaciones, investigaciones de accidentes, inspecciones, matriz GTC-45, plan de emergencias, auditorías y salud ocupacional. EL PROFESIONAL tiene plena libertad para acordar y cobrar por servicios que requieran presencia física o equipos especializados fuera de la plataforma:');
-bul('Impartir capacitaciones presenciales: charlas, talleres y entrenamiento directo a trabajadores en sitio.');
-bul('Visitas técnicas presenciales: inspecciones físicas de instalaciones, puestos de trabajo y equipos.');
-bul('Ejecución de simulacros de emergencia: coordinación y dirección in situ.');
-bul('Exámenes médicos ocupacionales y profesiogramas por médico especialista en salud ocupacional.');
-bul('Mediciones ambientales e higiene industrial: ruido, vibraciones, iluminación y material particulado con equipos certificados.');
-bul('Cualquier otro servicio que requiera presencia física o equipos especializados, conforme a su licencia y la normativa colombiana.');
+p('SST-Colombia gestiona digitalmente capacitaciones, investigaciones, inspecciones, matriz GTC-45, plan de emergencias, auditorías y salud ocupacional. EL PROFESIONAL puede cobrar libremente por servicios con presencia física o equipos especializados:');
+bul('Capacitaciones presenciales: charlas, talleres y entrenamiento directo a trabajadores en sitio.');
+bul('Visitas e inspecciones físicas de instalaciones, puestos de trabajo y equipos en sitio.');
+bul('Dirección y ejecución in situ de simulacros de emergencia y evacuación.');
+bul('Exámenes médicos ocupacionales y profesiogramas (médico especialista en salud ocupacional).');
+bul('Mediciones ambientales: ruido, vibraciones, iluminación, material particulado con equipos certificados.');
 
 sect('QUINTA', 'COMPROMISOS DE EL PROFESIONAL');
-bul('Mantener vigente su licencia en SST durante toda la vigencia de esta alianza.');
-bul('Aplicar las tarifas de la Cláusula Cuarta para el servicio de acompañamiento SST mensual.');
-bul('Utilizar SST-Colombia como herramienta de gestión al atender las empresas contratantes.');
-bul('Prestar sus servicios con los más altos estándares técnicos, éticos y legales.');
-bul('Notificar a LA EMPRESA si su disponibilidad o licencia se ve afectada.');
+bul('Mantener vigente su licencia SST y aplicar las tarifas de la Cláusula Cuarta para el acompañamiento mensual.');
+bul('Usar SST-Colombia como herramienta de gestión y actuar con los más altos estándares técnicos y éticos.');
+bul('Notificar a LA EMPRESA ante cualquier situación que afecte su disponibilidad o licencia.');
 
 sect('SEXTA', 'COMPROMISOS DE LA EMPRESA');
-bul('Publicar el perfil de EL PROFESIONAL en SST-Colombia como aliado disponible.');
-bul('Mostrar las tarifas de la Cláusula Cuarta cuando las empresas seleccionen su nivel de riesgo durante el registro.');
-bul('Proveer acceso con perfil de Profesional SST a la plataforma sin costo alguno.');
-bul('Sugerir a EL PROFESIONAL como opción de asesoría, dejando la decisión final a la empresa.');
+bul('Publicar el perfil y tarifas de EL PROFESIONAL en la plataforma y mostrarlos al momento del registro de cada empresa.');
+bul('Proveer acceso con perfil Profesional SST sin costo y sugerirlo como opción, dejando la decisión final a la empresa.');
 
-sect('SÉPTIMA', 'AUTONOMÍA E INDEPENDENCIA PROFESIONAL');
-p('EL PROFESIONAL conserva plena autonomía e independencia. LA EMPRESA actúa únicamente como facilitador tecnológico y de visibilidad, sin intervenir ni asumir responsabilidad por la relación contractual entre EL PROFESIONAL y sus clientes.');
+sect('SÉPTIMA', 'AUTONOMÍA, DURACIÓN Y CONFIDENCIALIDAD');
+bul('Autonomía: EL PROFESIONAL actúa con plena independencia. LA EMPRESA es solo facilitador tecnológico y de visibilidad.');
+bul('Duración: doce (12) meses renovables. Retiro con 15 días de aviso escrito. Termina si EL PROFESIONAL pierde la licencia.');
+bul('Confidencialidad: información intercambiada se mantiene reservada durante la vigencia y por dos (2) años posteriores.');
 
-sect('OCTAVA', 'DURACIÓN Y TERMINACIÓN');
-p('Vigencia de doce (12) meses, renovable automáticamente. Cualquiera de las partes puede retirarse con quince (15) días de aviso escrito, sin obligación de indemnización. La alianza termina automáticamente si EL PROFESIONAL pierde su licencia en SST.');
-
-sect('NOVENA', 'CONFIDENCIALIDAD');
-p('Ambas partes mantendrán confidencialidad sobre la información intercambiada, durante la vigencia y por dos (2) años posteriores a su terminación.');
-
-sect('DÉCIMA', 'RESOLUCIÓN DE DIFERENCIAS');
-p('Las diferencias se resolverán de forma directa en quince (15) días hábiles. De no lograrse acuerdo, las partes acudirán a mecanismos alternativos de solución de conflictos o a la jurisdicción ordinaria de Medellín, Antioquia.');
+sect('OCTAVA', 'RESOLUCIÓN DE DIFERENCIAS');
+p('Las diferencias se resolverán directamente en 15 días hábiles. De no lograrse acuerdo, se acudirá a la jurisdicción ordinaria de Medellín, Antioquia.');
 
 // ── Firmas ────────────────────────────────────────────────────────────────────
-doc.moveDown(0.6);
+doc.moveDown(0.4);
 divider();
-doc.fontSize(10.5).font('Helvetica-Bold').fillColor(DARK)
-   .text('En señal de aceptación, las partes suscriben el presente acuerdo:',
-         L, doc.y, { width: W, align: 'center' });
-doc.moveDown(1.5);
+doc.fontSize(9.5).font('Helvetica-Bold').fillColor(DARK)
+   .text('En señal de aceptación, las partes suscriben el presente acuerdo:', L, doc.y, {width:W, align:'center'});
+doc.moveDown(1.2);
 
-const sw  = (W - 30) / 2;
-const ssy = doc.y;
-doc.rect(L, ssy, sw, 76).stroke('#aaaaaa').lineWidth(0.6);
-doc.rect(L + sw + 30, ssy, sw, 76).stroke('#aaaaaa').lineWidth(0.6);
-doc.fontSize(10).font('Helvetica-Bold').fillColor(DARK)
-   .text('LA EMPRESA', L, ssy + 44, { width: sw, align: 'center', lineBreak: false })
-   .text('EL PROFESIONAL ALIADO', L + sw + 30, ssy + 44, { width: sw, align: 'center', lineBreak: false });
-doc.fontSize(8).font('Helvetica').fillColor(GRAY)
-   .text(RAZÓN, L, ssy + 57, { width: sw, align: 'center', lineBreak: false })
-   .text(NIT, L, ssy + 68, { width: sw, align: 'center', lineBreak: false })
-   .text('Hernán Valencia Gil', L + sw + 30, ssy + 57, { width: sw, align: 'center', lineBreak: false })
-   .text('Profesional en SST  ·  Lic. vigente', L + sw + 30, ssy + 68, { width: sw, align: 'center', lineBreak: false });
+const sw = (W - 28) / 2;
+const fy = doc.y;
+doc.rect(L, fy, sw, 68).stroke('#aaa').lineWidth(0.5);
+doc.rect(L+sw+28, fy, sw, 68).stroke('#aaa').lineWidth(0.5);
+doc.fontSize(9).font('Helvetica-Bold').fillColor(DARK)
+   .text('LA EMPRESA', L, fy+38, {width:sw, align:'center', lineBreak:false})
+   .text('EL PROFESIONAL ALIADO', L+sw+28, fy+38, {width:sw, align:'center', lineBreak:false});
+doc.fontSize(7.5).font('Helvetica').fillColor(GRAY)
+   .text(RAZÓN, L, fy+50, {width:sw, align:'center', lineBreak:false})
+   .text(NIT, L, fy+60, {width:sw, align:'center', lineBreak:false})
+   .text('Hernán Valencia Gil', L+sw+28, fy+50, {width:sw, align:'center', lineBreak:false})
+   .text('Profesional en SST  ·  Lic. vigente', L+sw+28, fy+60, {width:sw, align:'center', lineBreak:false});
 
-// ══════════════════════════════════════════════════════════════════════════════
-// INSERTAR ENCABEZADOS EN PÁGINAS 2+ (antes de cerrar el buffer)
-// ══════════════════════════════════════════════════════════════════════════════
-const range = doc.bufferedPageRange();
-for (let i = 1; i < range.count; i++) {
-  doc.switchToPage(i);
-  doc.rect(L, 55, W, 32).fill(GREEN);
-  doc.fontSize(10).font('Helvetica-Bold').fillColor('white')
-     .text('SST-Colombia  ·  Acuerdo de Alianza Estratégica', L + 12, 63, { lineBreak: false });
-  doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.8)')
-     .text(`${RAZÓN}  ·  ${NIT}`, L + 12, 76, { lineBreak: false });
-}
+doc.y = fy + 80;
+divider();
+doc.fontSize(7.5).font('Helvetica').fillColor('#aaa')
+   .text(`${RAZÓN}  ·  ${NIT}  ·  admin@sst-colombia.com  ·  sst.sagisas.co`, L, doc.y, {width:W, align:'center', lineBreak:false});
 
 doc.end();
-doc.on('end', () => {
-  const r = doc.bufferedPageRange ? doc.bufferedPageRange() : { count: '?' };
-  console.log(`PDF listo: ${OUT}`);
-});
+doc.on('end', () => console.log(`PDF listo: ${OUT}`));
