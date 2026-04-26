@@ -140,7 +140,7 @@ const filas = [
   ['Nivel I — Bajo',         'Oficinas, comercio, servicios financieros',  'Hasta 10',    '$150.000 COP'],
   ['Nivel II — Medio',       'Manufactura ligera, salud, educación',        'Hasta 50',    '$250.000 COP'],
   ['Nivel III — Medio-Alto', 'Industria, transporte, construcción menor',   'Hasta 200',   '$350.000 COP'],
-  ['Nivel IV — Alto',        'Construcción, minería superficial, químicos', 'Hasta 500',   '$500.000 COP'],
+  ['Nivel IV — Alto',        'Construcción, minería superficial, químicos', 'Hasta 500',   '$450.000 COP'],
   ['Nivel V — Muy Alto',     'Minería subterránea, explosivos, alturas',    'Sin límite',  '$600.000 COP'],
 ];
 filas.forEach((row, ri) => {
