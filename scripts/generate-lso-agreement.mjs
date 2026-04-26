@@ -105,7 +105,7 @@ p('Esta alianza no genera ninguna relación de subordinación, exclusividad ni v
 sect('TERCERA', 'MODELO DE PAGOS — DOS SERVICIOS INDEPENDIENTES');
 p('Los servicios que recibe cada empresa cliente son independientes entre sí y se pagan por separado a entidades distintas:');
 bul('PAGO A LA PLATAFORMA: Cada empresa paga directamente a SAGDI S.A.S. la suscripción mensual por el uso de la plataforma tecnológica SST Colombia, según el plan contratado. Este pago es obligatorio para todas las empresas que usen la plataforma.');
-bul('PAGO AL PROFESIONAL: Las empresas que decidan contratar a EL PROFESIONAL como su Profesional SST, le pagarán directamente y de forma independiente los honorarios acordados. Este pago es totalmente voluntario y no está condicionado al uso de la plataforma.');
+bul('PAGO AL PROFESIONAL: Las empresas suscritas a la plataforma SST Colombia que decidan contratar a EL PROFESIONAL, le pagarán directamente los honorarios acordados según su nivel de riesgo ARL. Este pago se realiza de forma independiente a la suscripción de la plataforma, pero está enmarcado dentro del ecosistema de servicios de SST Colombia.');
 doc.moveDown(0.2);
 p('LA PLATAFORMA no actúa como intermediaria en los pagos de honorarios entre las empresas y EL PROFESIONAL, ni recibe comisión alguna por la contratación del servicio profesional.');
 
