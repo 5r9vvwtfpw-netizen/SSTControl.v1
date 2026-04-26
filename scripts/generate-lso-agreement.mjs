@@ -137,7 +137,7 @@ doc.rect(L, try_, W, trh).fill(GREEN);
 try_ += trh;
 
 const filas = [
-  ['Nivel I — Bajo',         'Oficinas, comercio, servicios financieros',  'Hasta 10',    '$200.000 COP'],
+  ['Nivel I — Bajo',         'Oficinas, comercio, servicios financieros',  'Hasta 10',    '$150.000 COP'],
   ['Nivel II — Medio',       'Manufactura ligera, salud, educación',        'Hasta 50',    '$300.000 COP'],
   ['Nivel III — Medio-Alto', 'Industria, transporte, construcción menor',   'Hasta 200',   '$400.000 COP'],
   ['Nivel IV — Alto',        'Construcción, minería superficial, químicos', 'Hasta 500',   '$500.000 COP'],
