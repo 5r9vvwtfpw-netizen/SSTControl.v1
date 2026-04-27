@@ -174,51 +174,64 @@ doc.rect(0, 0, 6, PH).fill(MGREEN);
 doc.circle(PW * 0.8, PH * 0.38, 210).strokeColor('rgba(255,255,255,0.06)').lineWidth(1).fillOpacity(0).stroke();
 doc.circle(PW * 0.8, PH * 0.38, 135).strokeColor('rgba(255,255,255,0.04)').lineWidth(0.5).fillOpacity(0).stroke();
 
-// Bloque logo
-doc.rect(L + 8, 72, 58, 58).fill(WHITE);
-doc.fontSize(28).font('Helvetica-Bold').fillColor(GREEN)
-   .text('SST', L + 13, 86, { lineBreak: false });
-doc.fontSize(9).font('Helvetica-Bold').fillColor(GREEN)
-   .text('CO', L + 14, 119, { lineBreak: false });
-doc.fontSize(10).font('Helvetica-Bold').fillColor(WHITE)
-   .text('SST-Colombia', L + 76, 83, { lineBreak: false });
-doc.fontSize(8.5).font('Helvetica').fillColor('rgba(255,255,255,0.5)')
-   .text('sst.sagisas.co', L + 76, 98, { lineBreak: false });
+// ── Cabecera empresa ─────────────────────────────────────────────────────────
+// Logo SST (cuadro blanco)
+doc.rect(L + 8, 62, 54, 54).fill(WHITE);
+doc.fontSize(26).font('Helvetica-Bold').fillColor(GREEN)
+   .text('SST', L + 13, 75, { lineBreak: false });
+doc.fontSize(8.5).font('Helvetica-Bold').fillColor(GREEN)
+   .text('CO', L + 14, 108, { lineBreak: false });
+// Nombre comercial
+doc.fontSize(18).font('Helvetica-Bold').fillColor(WHITE)
+   .text('SST-Colombia', L + 72, 65, { lineBreak: false });
+// Razón social completa — el nombre que firma el informe
+doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.65)')
+   .text(RAZÓN, L + 72, 88, { lineBreak: false });
+doc.fontSize(7.5).font('Helvetica').fillColor('rgba(255,255,255,0.45)')
+   .text(`${NIT}   |   sst.sagisas.co`, L + 72, 101, { lineBreak: false });
 
-// Línea blanca
-doc.moveTo(L + 8, 148).lineTo(PW - 60, 148).strokeColor(WHITE).lineWidth(0.6).stroke();
+// Línea separadora
+doc.moveTo(L + 8, 130).lineTo(PW - 60, 130).strokeColor(WHITE).lineWidth(0.5).stroke();
 
-// Títulos
-doc.fontSize(36).font('Helvetica-Bold').fillColor(WHITE)
-   .text('Plataforma de', L + 8, 162);
-doc.fontSize(36).font('Helvetica-Bold').fillColor(MGREEN)
-   .text('Gestion Inteligente', L + 8, 200);
+// Badge INFORME EJECUTIVO
+doc.rect(L + 8, 142, 142, 20).fill(MGREEN);
+doc.fontSize(9).font('Helvetica-Bold').fillColor(DGREEN)
+   .text('INFORME EJECUTIVO', L + 16, 148, { lineBreak: false });
+
+// Título principal
+doc.fontSize(38).font('Helvetica-Bold').fillColor(WHITE)
+   .text('Plataforma de', L + 8, 174);
+doc.fontSize(38).font('Helvetica-Bold').fillColor(MGREEN)
+   .text('Gestion Inteligente', L + 8, 215);
 doc.fontSize(13).font('Helvetica').fillColor('rgba(255,255,255,0.6)')
-   .text('Seguridad y Salud en el Trabajo', L + 8, 244);
+   .text('Seguridad y Salud en el Trabajo  —  Colombia', L + 8, 262);
 
 // Caja de puntos clave
-doc.rect(L + 8, 278, W - 8, 70).fill('rgba(255,255,255,0.07)');
-doc.rect(L + 8, 278, 3, 70).fill(MGREEN);
+doc.rect(L + 8, 294, W - 8, 74).fill('rgba(255,255,255,0.07)');
+doc.rect(L + 8, 294, 3, 74).fill(MGREEN);
 const bullets = [
   'Modulos 100% automatizados  -  sin papel, sin reprocesos',
   'Informes ejecutivos con indicadores y estadisticas en tiempo real',
   'Portal del Empleado: votacion COPASST y Convivencia digital',
   'Seguridad nivel bancario: AES-256 + AWS + TLS 1.3 + auditoria',
+  'GPS integrado por API  -  Rastreo de flota en tiempo real',
   'Custodia garantizada de informacion por 20 anos  -  Ley 1581',
 ];
 bullets.forEach((b, i) => {
-  doc.fontSize(9).font('Helvetica').fillColor('rgba(255,255,255,0.85)')
-     .text('  ' + b, L + 20, 292 + i * 11, { lineBreak: false });
+  doc.fontSize(8.8).font('Helvetica').fillColor('rgba(255,255,255,0.85)')
+     .text('  ' + b, L + 20, 306 + i * 11, { lineBreak: false });
 });
 
 // Franja inferior
-doc.rect(0, PH - 82, PW, 82).fill('rgba(0,0,0,0.3)');
-doc.fontSize(8.5).font('Helvetica-Bold').fillColor(MGREEN)
-   .text('PRESENTADO A', L + 8, PH - 66, { lineBreak: false });
-doc.fontSize(10).font('Helvetica-Bold').fillColor(WHITE)
-   .text('Capacidades del Sistema  -  Inicio de Piloto', L + 8, PH - 52, { lineBreak: false });
-doc.fontSize(8.5).font('Helvetica').fillColor('rgba(255,255,255,0.5)')
-   .text(`${RAZÓN}  -  ${NIT}`, L + 8, PH - 36, { lineBreak: false });
+doc.rect(0, PH - 88, PW, 88).fill('rgba(0,0,0,0.32)');
+doc.fontSize(7.5).font('Helvetica-Bold').fillColor(MGREEN)
+   .text('DOCUMENTO CONFIDENCIAL  —  INICIO DE PILOTO', L + 8, PH - 74, { lineBreak: false });
+doc.fontSize(11).font('Helvetica-Bold').fillColor(WHITE)
+   .text('Software de Gestion SST  —  Capacidades y Caracteristicas del Sistema', L + 8, PH - 58, { lineBreak: false });
+doc.fontSize(8.5).font('Helvetica').fillColor('rgba(255,255,255,0.55)')
+   .text(`${RAZÓN}  -  ${NIT}`, L + 8, PH - 40, { lineBreak: false });
+doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.35)')
+   .text(`${today.getDate()} de ${meses[today.getMonth()]} de ${today.getFullYear()}`, PW - 130, PH - 40, { width: 98, align: 'right', lineBreak: false });
 doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.35)')
    .text(`${today.getDate()} de ${meses[today.getMonth()]} de ${today.getFullYear()}`, PW - 130, PH - 36, { width: 98, align: 'right', lineBreak: false });
 
