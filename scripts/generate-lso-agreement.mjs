@@ -11,6 +11,11 @@ const BGRAY = '#f7f7f7';
 const RAZÓN = 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.';
 const NIT   = 'NIT 902.036.337-4';
 
+const today = new Date();
+const meses = ['enero','febrero','marzo','abril','mayo','junio','julio',
+                'agosto','septiembre','octubre','noviembre','diciembre'];
+const FECHA = `${today.getDate()} de ${meses[today.getMonth()]} de ${today.getFullYear()}`;
+
 const doc = new PDFDocument({
   size: 'LETTER',
   margins: { top: 118, bottom: 72, left: 65, right: 65 },
@@ -23,18 +28,14 @@ const doc = new PDFDocument({
 });
 doc.pipe(fs.createWriteStream(OUT));
 
-const PW  = doc.page.width;
-const PH  = doc.page.height;
-const W   = PW - 130;
-const L   = 65;
-const today = new Date();
-const meses = ['enero','febrero','marzo','abril','mayo','junio','julio',
-                'agosto','septiembre','octubre','noviembre','diciembre'];
-const FECHA = `${today.getDate()} de ${meses[today.getMonth()]} de ${today.getFullYear()}`;
+const PW = doc.page.width;
+const PH = doc.page.height;
+const W  = PW - 130;
+const L  = 65;
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 function sect(n, t) {
-  if (doc.y > PH - 180) doc.addPage();
+  if (doc.y > PH - 160) doc.addPage();
   doc.moveDown(0.5);
   const y0 = doc.y;
   doc.rect(L, y0, W, 20).fill(GREEN);
@@ -73,42 +74,64 @@ function divider() {
   doc.moveDown(0.4);
 }
 
-function infoBox(label, text) {
-  const y0 = doc.y;
-  doc.rect(L, y0, 90, 14).fill(LGRAY);
-  doc.fontSize(7.5).font('Helvetica-Bold').fillColor(GREEN)
-     .text(label, L + 4, y0 + 3, { width: 84, lineBreak: false });
-  doc.fontSize(9).font('Helvetica').fillColor(DARK)
-     .text(text, L + 96, y0 + 2, { width: W - 96, lineBreak: false });
-  doc.y = y0 + 18;
+// Dibuja encabezado compacto y pie en la página actual (páginas 2+)
+let pageNum = 0;
+function drawRunningDecor() {
+  // Salvar y remover márgenes temporalmente
+  const origTop    = doc.page.margins.top;
+  const origBottom = doc.page.margins.bottom;
+  const savedY     = doc.y;
+  doc.page.margins.top    = 0;
+  doc.page.margins.bottom = 0;
+
+  // Encabezado compacto
+  doc.rect(L, 48, W, 38).fill(GREEN);
+  doc.rect(L, 48, 4, 38).fill(DGREEN);
+  doc.fontSize(10).font('Helvetica-Bold').fillColor('white')
+     .text('SST-Colombia  ·  Acuerdo de Alianza Estratégica', L + 14, 56, { lineBreak: false });
+  doc.fontSize(7.5).font('Helvetica').fillColor('rgba(255,255,255,0.75)')
+     .text(`${RAZÓN}  ·  ${NIT}`, L + 14, 70, { lineBreak: false });
+
+  // Pie
+  doc.moveTo(L, PH - 50).lineTo(L + W, PH - 50).strokeColor('#cccccc').lineWidth(0.4).stroke();
+  doc.fontSize(7.5).font('Helvetica').fillColor(GRAY)
+     .text(`Documento Confidencial  ·  SST-Colombia  ·  sst.sagisas.co  ·  Página ${pageNum}`,
+           L, PH - 44, { lineBreak: false });
+  doc.fontSize(7.5).font('Helvetica').fillColor('#aaaaaa')
+     .text(FECHA, L, PH - 34, { lineBreak: false });
+
+  // Restaurar
+  doc.page.margins.top    = origTop;
+  doc.page.margins.bottom = origBottom;
+  doc.y = savedY;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ENCABEZADO PÁGINA 1
-// ══════════════════════════════════════════════════════════════════════════════
-// Franja verde empresa
-doc.rect(L, 48, W, 68).fill(GREEN);
-// Acento lateral oscuro
-doc.rect(L, 48, 4, 68).fill(DGREEN);
+// Evento: cada vez que se agrega una página nueva, dibuja encabezado+pie
+doc.on('pageAdded', () => {
+  pageNum++;
+  drawRunningDecor();
+});
 
+// ══════════════════════════════════════════════════════════════════════════════
+// PÁGINA 1 — Encabezado principal
+// ══════════════════════════════════════════════════════════════════════════════
+doc.rect(L, 48, W, 68).fill(GREEN);
+doc.rect(L, 48, 4, 68).fill(DGREEN);
 doc.fontSize(20).font('Helvetica-Bold').fillColor('white')
    .text('SST-Colombia', L + 16, 57, { lineBreak: false });
 doc.fontSize(8.5).font('Helvetica').fillColor('rgba(255,255,255,0.9)')
    .text(RAZÓN, L + 16, 82, { lineBreak: false });
 doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.65)')
    .text(`${NIT}  ·  sst.sagisas.co  ·  admin@sst-colombia.com`, L + 16, 95, { lineBreak: false });
-
-// Número de documento + fecha alineados a la derecha dentro del banner
 doc.fontSize(7.5).font('Helvetica-Bold').fillColor('rgba(255,255,255,0.55)')
    .text('ACUERDO N.°', PW - 175, 57, { width: 108, align: 'right', lineBreak: false });
 doc.fontSize(9).font('Helvetica-Bold').fillColor('rgba(255,255,255,0.9)')
-   .text(`AL-${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`, PW - 175, 68, { width: 108, align: 'right', lineBreak: false });
+   .text(`AL-${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`,
+         PW - 175, 68, { width: 108, align: 'right', lineBreak: false });
 doc.fontSize(7.5).font('Helvetica').fillColor('rgba(255,255,255,0.55)')
    .text(FECHA, PW - 175, 84, { width: 108, align: 'right', lineBreak: false });
 
 doc.y = 130;
-
-// Título del documento
 doc.fontSize(14).font('Helvetica-Bold').fillColor(DARK)
    .text('ACUERDO DE ALIANZA ESTRATÉGICA', L, doc.y, { width: W, align: 'center' });
 doc.moveDown(0.2);
@@ -136,8 +159,8 @@ p('Esta alianza no genera relación laboral, de subordinación ni de exclusivida
 
 sect('TERCERA', 'MODELO DE PAGOS — DOS SERVICIOS INDEPENDIENTES');
 p('Las empresas suscritas a SST-Colombia reciben dos servicios distintos, pagados de forma independiente:');
-bul('SUSCRIPCIÓN A LA PLATAFORMA: Cada empresa paga directamente a LA EMPRESA la tarifa mensual por el uso de SST-Colombia. Obligatorio para acceder a la plataforma.');
-bul('HONORARIOS AL PROFESIONAL: Las empresas que decidan contratar a EL PROFESIONAL le pagarán directamente los honorarios de la Cláusula Cuarta, con independencia de la suscripción.');
+bul('SUSCRIPCIÓN A LA PLATAFORMA: Cada empresa se registra directamente en sst.sagisas.co y completa el pago de su suscripción mensual a través de la pasarela Stripe. El acceso a la plataforma se activa de forma automática. Obligatorio para operar en SST-Colombia.');
+bul('HONORARIOS AL PROFESIONAL: Las empresas que decidan contratar a EL PROFESIONAL le pagarán directamente sus honorarios, según las tarifas de la Cláusula Cuarta. Este pago es independiente de la suscripción a la plataforma.');
 p('LA EMPRESA no interviene en los pagos entre las empresas y EL PROFESIONAL. La relación económica por servicios profesionales es directa entre ambas partes.');
 
 sect('CUARTA', 'TARIFAS DEL SERVICIO DE ACOMPAÑAMIENTO SST MENSUAL');
@@ -153,7 +176,6 @@ const tcw   = [COL_N, COL_A, COL_T];
 const trh   = 21;
 let   try_  = doc.y;
 
-// Encabezado tabla
 doc.rect(L, try_, W, trh).fill(GREEN);
 doc.rect(L, try_, W, trh).strokeColor(DGREEN).lineWidth(0.3).stroke();
 ['Nivel de Riesgo ARL', 'Sectores Representativos', 'Tarifa Mensual'].forEach((h, i) => {
@@ -162,7 +184,6 @@ doc.rect(L, try_, W, trh).strokeColor(DGREEN).lineWidth(0.3).stroke();
 });
 try_ += trh;
 
-// Filas
 [
   ['Nivel I — Bajo',         'Oficinas, comercio, servicios financieros',  '$150.000 COP'],
   ['Nivel II — Medio',       'Manufactura ligera, salud, educación',        '$250.000 COP'],
@@ -170,8 +191,7 @@ try_ += trh;
   ['Nivel IV — Alto',        'Construcción, minería superficial, químicos', '$450.000 COP'],
   ['Nivel V — Muy Alto',     'Minería subterránea, explosivos, alturas',    '$550.000 COP'],
 ].forEach((row, ri) => {
-  const bg = ri % 2 === 0 ? '#ffffff' : BGRAY;
-  doc.rect(L, try_, W, trh).fill(bg);
+  doc.rect(L, try_, W, trh).fill(ri % 2 === 0 ? '#ffffff' : BGRAY);
   doc.rect(L, try_, W, trh).strokeColor('#dddddd').lineWidth(0.3).stroke();
   row.forEach((cell, ci) => {
     doc.fontSize(9)
@@ -190,12 +210,12 @@ p('Para empresas que no presenten solicitudes especiales, requerimientos extraor
 p('Cualquier gestión adicional derivada de información incompleta, inconsistencias, requerimientos especiales, trámites extraordinarios o compilación documental manual podrá ser acordada y cobrada por separado entre EL PROFESIONAL y la empresa contratante.');
 
 subsect('Servicios adicionales — Plena autonomía de EL PROFESIONAL');
-p('SST-Colombia incluye en su suscripción la gestión digital de capacitaciones, investigaciones de accidentes, inspecciones, matriz GTC-45, plan de emergencias, auditorías y salud ocupacional. EL PROFESIONAL tiene plena libertad para acordar y cobrar por servicios que requieran presencia física o equipos especializados fuera de la plataforma:');
-bul('Impartir capacitaciones presenciales: charlas, talleres y entrenamiento directo a trabajadores en sitio.');
+p('SST-Colombia incluye en su suscripción la gestión digital de capacitaciones, investigaciones de accidentes, inspecciones, matriz GTC-45, plan de emergencias, auditorías y salud ocupacional. EL PROFESIONAL tiene plena libertad para acordar y cobrar por servicios que requieran presencia física o equipos especializados:');
+bul('Capacitaciones presenciales: charlas, talleres y entrenamiento directo a trabajadores en sitio.');
 bul('Visitas técnicas presenciales: inspecciones físicas de instalaciones, puestos de trabajo y equipos.');
 bul('Ejecución de simulacros de emergencia: coordinación y dirección in situ.');
-bul('Exámenes médicos ocupacionales y profesiogramas por médico especialista en salud ocupacional.');
-bul('Mediciones ambientales e higiene industrial: ruido, vibraciones, iluminación y material particulado con equipos certificados.');
+bul('Exámenes médicos ocupacionales y profesiogramas por médico especialista.');
+bul('Mediciones ambientales e higiene industrial: ruido, vibraciones, iluminación y material particulado.');
 bul('Cualquier otro servicio que requiera presencia física o equipos especializados, conforme a su licencia y la normativa colombiana.');
 
 sect('QUINTA', 'COMPROMISOS DE EL PROFESIONAL');
@@ -223,50 +243,28 @@ p('Ambas partes mantendrán confidencialidad sobre la información comercial, t�
 sect('DÉCIMA', 'RESOLUCIÓN DE DIFERENCIAS');
 p('Las diferencias derivadas de la interpretación o cumplimiento del presente acuerdo se resolverán de forma directa entre las partes en un plazo máximo de quince (15) días hábiles. De no lograrse acuerdo, las partes acudirán a mecanismos alternativos de solución de conflictos o a la jurisdicción ordinaria de la ciudad de Medellín, Antioquia.');
 
-sect('DÉCIMA PRIMERA', 'OFERTA ESPECIAL DE INCORPORACIÓN Y COMISIÓN POR REFERIDOS');
+sect('DÉCIMA PRIMERA', 'OFERTA ESPECIAL DE INCORPORACIÓN — VÁLIDA POR 30 DÍAS');
 
-// Bloque visual de oferta destacada
+// Banner oferta
 const of0 = doc.y;
 doc.rect(L, of0, W, 20).fill(GREEN);
-doc.rect(L, of0, 4, 20).fill('#0d4a1a');
-doc.fontSize(10).font('Helvetica-Bold').fillColor('white')
-   .text('OFERTA DE VALOR — VÁLIDA POR 30 DÍAS CALENDARIO A PARTIR DE LA FIRMA', L + 12, of0 + 5, { width: W - 16, lineBreak: false });
+doc.rect(L, of0, 4, 20).fill(DGREEN);
+doc.fontSize(9.5).font('Helvetica-Bold').fillColor('white')
+   .text('OFERTA DE VALOR — SUSCRIPCIÓN GRATUITA 6 MESES PARA SU PORTAFOLIO DE EMPRESAS', L + 12, of0 + 5, { width: W - 16, lineBreak: false });
 doc.y = of0 + 26;
 
-p('En reconocimiento al portafolio de clientes de EL PROFESIONAL y con el objetivo de facilitar la incorporación de sus empresas al ecosistema de SST-Colombia, LA EMPRESA extiende la siguiente oferta especial de bienvenida:');
+p('En reconocimiento al portafolio de clientes de EL PROFESIONAL y con el objetivo de facilitar su incorporación al ecosistema de SST-Colombia, LA EMPRESA extiende la siguiente oferta especial de bienvenida:');
 
 subsect('1.  Suscripción gratuita de bienvenida — 6 meses sin costo');
-p('Si EL PROFESIONAL orienta a la totalidad o parte de las treinta y cinco (35) empresas de su portafolio actual para que se registren en SST-Colombia dentro de los treinta (30) días calendario siguientes a la firma del presente acuerdo, LA EMPRESA aplicará una promoción de seis (6) meses sin costo a cada una de esas empresas.');
-bul('Cada empresa realiza su propio registro directamente en la página de SST-Colombia (sst.sagisas.co), ingresa sus datos y completa el proceso de suscripción a través de la pasarela de pago Stripe. EL PROFESIONAL no gestiona cuentas, contraseñas ni información de sus clientes.');
-bul('Para acceder a los 6 meses gratuitos, cada empresa deberá ingresar durante su registro el código promocional exclusivo que LA EMPRESA generará para el portafolio de EL PROFESIONAL. Este código aplicará automáticamente el descuento del 100% durante seis (6) meses en Stripe.');
-bul('Vencido el período promocional, Stripe reanudará el cobro automático de la suscripción según la tarifa que corresponda al nivel de riesgo ARL de cada empresa, sin intervención adicional de ninguna de las partes.');
-bul('La plataforma registra de forma automática qué empresas utilizaron el código promocional de EL PROFESIONAL, generando así la trazabilidad de su portafolio para el pago de comisiones.');
+p('Si EL PROFESIONAL orienta a la totalidad o parte de las treinta y cinco (35) empresas de su portafolio actual para que se registren en SST-Colombia dentro de los treinta (30) días calendario siguientes a la firma del presente acuerdo, LA EMPRESA aplicará una promoción de seis (6) meses completamente gratuitos a cada una de esas empresas.');
+bul('Cada empresa realiza su propio registro directamente en sst.sagisas.co, ingresa sus datos y completa el proceso a través de la pasarela de pago Stripe. EL PROFESIONAL no gestiona cuentas, contraseñas ni información de sus clientes.');
+bul('Para acceder a los 6 meses gratuitos, cada empresa deberá ingresar durante su registro el código promocional exclusivo que LA EMPRESA generará para el portafolio de EL PROFESIONAL. Stripe aplicará automáticamente el descuento del 100% durante seis (6) meses.');
+bul('Vencido el período promocional, Stripe reanudará el cobro automático según la tarifa que corresponda al nivel de riesgo ARL de cada empresa, sin intervención adicional de ninguna de las partes.');
 
-subsect('2.  Comisión de referido — 15% mensual recurrente y permanente');
-p('Por cada empresa del portafolio de EL PROFESIONAL que permanezca activa en SST-Colombia una vez finalizado el período gratuito, y por cada empresa nueva que EL PROFESIONAL incorpore en el futuro, LA EMPRESA reconocerá una comisión equivalente al quince por ciento (15%) del valor de la suscripción mensual pagada por dicha empresa, calculada sobre la tarifa neta facturada.');
-bul('La comisión es recurrente y se pagará mes a mes, durante todo el tiempo que la empresa contratante mantenga su suscripción activa.');
-bul('No existe límite de tiempo ni tope máximo de empresas para el reconocimiento de esta comisión.');
-bul('El pago de comisiones se realizará dentro de los primeros diez (10) días hábiles de cada mes, por el total causado en el mes inmediatamente anterior, mediante transferencia bancaria a la cuenta indicada por EL PROFESIONAL.');
-bul('EL PROFESIONAL recibirá un reporte mensual detallado con el listado de empresas activas, el valor de su suscripción y el cálculo de la comisión correspondiente.');
-
-// Cuadro ejemplo numérico — dos líneas
-const ej0 = doc.y;
-doc.rect(L, ej0, W, 28).fill('#f0fff4');
-doc.rect(L, ej0, 3, 28).fill(GREEN);
-doc.fontSize(8.5).font('Helvetica-Bold').fillColor(GREEN)
-   .text('Ejemplo ilustrativo:', L + 10, ej0 + 4, { lineBreak: false });
-doc.fontSize(8.5).font('Helvetica').fillColor(DARK)
-   .text('35 empresas × suscripción promedio $200.000 COP/mes = $7.000.000 COP facturados', L + 10, ej0 + 4, { width: W - 16, align: 'right', lineBreak: false });
-doc.fontSize(8.5).font('Helvetica-Bold').fillColor(GREEN)
-   .text('Comisión mensual recurrente para EL PROFESIONAL:', L + 10, ej0 + 16, { lineBreak: false });
-doc.fontSize(8.5).font('Helvetica-Bold').fillColor(GREEN)
-   .text('$1.050.000 COP', L + 10, ej0 + 16, { width: W - 16, align: 'right', lineBreak: false });
-doc.y = ej0 + 34;
-
-subsect('3.  Condiciones generales de la oferta');
-bul('La gratuidad aplica exclusivamente a las empresas que utilicen el código promocional asignado a EL PROFESIONAL durante su proceso de registro en la landing page dentro del plazo de 30 días. No aplica a empresas que se registren sin dicho código.');
-bul('LA EMPRESA generará y entregará el código promocional a EL PROFESIONAL dentro de los tres (3) días hábiles siguientes a la firma del presente acuerdo, y confirmará por escrito la lista de empresas que lo utilizaron.');
-bul('Si por cualquier causa EL PROFESIONAL decide retirarse de la alianza, las comisiones causadas hasta la fecha de retiro serán pagadas en el siguiente ciclo de liquidación. Las empresas activas continuarán con su suscripción de forma independiente.');
+subsect('2.  Condiciones generales de la oferta');
+bul('La gratuidad aplica exclusivamente a las empresas que utilicen el código promocional asignado a EL PROFESIONAL durante su registro en la landing page, dentro del plazo de 30 días. No aplica a empresas que se registren sin dicho código.');
+bul('LA EMPRESA generará y entregará el código promocional a EL PROFESIONAL dentro de los tres (3) días hábiles siguientes a la firma del presente acuerdo.');
+bul('Si EL PROFESIONAL decide retirarse de la alianza, las empresas activas continuarán con su suscripción de forma independiente y podrán seguir usando la plataforma sin interrupción.');
 bul('Esta oferta no es acumulable con otras promociones vigentes, salvo acuerdo escrito entre las partes.');
 
 // ── Bloque de firmas ──────────────────────────────────────────────────────────
@@ -284,7 +282,6 @@ doc.moveDown(2.2);
 const sw  = (W - 36) / 2;
 const ssy = doc.y;
 
-// Caja firma izquierda
 doc.rect(L, ssy, sw, 72).fill(BGRAY).stroke('#cccccc');
 doc.moveTo(L + 14, ssy + 42).lineTo(L + sw - 14, ssy + 42).strokeColor('#999999').lineWidth(0.7).stroke();
 doc.fontSize(8.5).font('Helvetica-Bold').fillColor(DARK)
@@ -294,7 +291,6 @@ doc.fontSize(7.5).font('Helvetica').fillColor(GRAY)
 doc.fontSize(7.5).font('Helvetica').fillColor(GRAY)
    .text(NIT, L, ssy + 67, { width: sw, align: 'center', lineBreak: false });
 
-// Caja firma derecha
 const rx = L + sw + 36;
 doc.rect(rx, ssy, sw, 72).fill(BGRAY).stroke('#cccccc');
 doc.moveTo(rx + 14, ssy + 42).lineTo(rx + sw - 14, ssy + 42).strokeColor('#999999').lineWidth(0.7).stroke();
@@ -305,39 +301,21 @@ doc.fontSize(7.5).font('Helvetica').fillColor(GRAY)
 doc.fontSize(7.5).font('Helvetica').fillColor(GRAY)
    .text('Profesional SST  ·  Licencia vigente Res. 4927/2016', rx, ssy + 67, { width: sw, align: 'center', lineBreak: false });
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ENCABEZADOS Y PIE DE PÁGINA — inyectar ANTES de doc.end()
-// ══════════════════════════════════════════════════════════════════════════════
-const range = doc.bufferedPageRange();
-const total = range.count;
-
-for (let i = 0; i < total; i++) {
-  doc.switchToPage(range.start + i);
-  // Desactivar márgenes para poder dibujar en zona de cabecera y pie
-  const mOrig = { ...doc.page.margins };
-  doc.page.margins = { top: 0, bottom: 0, left: 0, right: 0 };
-
-  if (i > 0) {
-    // Encabezado compacto páginas 2+
-    doc.rect(L, 48, W, 38).fill(GREEN);
-    doc.rect(L, 48, 4, 38).fill(DGREEN);
-    doc.fontSize(10).font('Helvetica-Bold').fillColor('white')
-       .text('SST-Colombia  ·  Acuerdo de Alianza Estratégica', L + 14, 56, { lineBreak: false });
-    doc.fontSize(7.5).font('Helvetica').fillColor('rgba(255,255,255,0.75)')
-       .text(`${RAZÓN}  ·  ${NIT}`, L + 14, 70, { lineBreak: false });
-  }
-
-  // Pie de página en todas
+// ── Pie página 1 (la primera página no pasa por el evento pageAdded) ──────────
+{
+  const origTop    = doc.page.margins.top;
+  const origBottom = doc.page.margins.bottom;
+  doc.switchToPage(0);
+  doc.page.margins.top    = 0;
+  doc.page.margins.bottom = 0;
   doc.moveTo(L, PH - 50).lineTo(L + W, PH - 50).strokeColor('#cccccc').lineWidth(0.4).stroke();
   doc.fontSize(7.5).font('Helvetica').fillColor(GRAY)
-     .text('Documento Confidencial  ·  SST-Colombia  ·  sst.sagisas.co', L, PH - 44, { lineBreak: false });
-  doc.fontSize(7.5).font('Helvetica').fillColor(GRAY)
-     .text(`Página ${i + 1} de ${total}`, L, PH - 44, { width: W, align: 'right', lineBreak: false });
+     .text('Documento Confidencial  ·  SST-Colombia  ·  sst.sagisas.co  ·  Página 1',
+           L, PH - 44, { lineBreak: false });
   doc.fontSize(7.5).font('Helvetica').fillColor('#aaaaaa')
      .text(FECHA, L, PH - 34, { lineBreak: false });
-
-  // Restaurar márgenes originales
-  doc.page.margins = mOrig;
+  doc.page.margins.top    = origTop;
+  doc.page.margins.bottom = origBottom;
 }
 
 doc.end();
