@@ -223,6 +223,46 @@ p('Ambas partes mantendrán confidencialidad sobre la información comercial, t�
 sect('DÉCIMA', 'RESOLUCIÓN DE DIFERENCIAS');
 p('Las diferencias derivadas de la interpretación o cumplimiento del presente acuerdo se resolverán de forma directa entre las partes en un plazo máximo de quince (15) días hábiles. De no lograrse acuerdo, las partes acudirán a mecanismos alternativos de solución de conflictos o a la jurisdicción ordinaria de la ciudad de Medellín, Antioquia.');
 
+sect('DÉCIMA PRIMERA', 'OFERTA ESPECIAL DE INCORPORACIÓN Y COMISIÓN POR REFERIDOS');
+
+// Bloque visual de oferta destacada
+const of0 = doc.y;
+doc.rect(L, of0, W, 20).fill(GREEN);
+doc.rect(L, of0, 4, 20).fill('#0d4a1a');
+doc.fontSize(10).font('Helvetica-Bold').fillColor('white')
+   .text('OFERTA DE VALOR — VÁLIDA POR 30 DÍAS CALENDARIO A PARTIR DE LA FIRMA', L + 12, of0 + 5, { width: W - 16, lineBreak: false });
+doc.y = of0 + 26;
+
+p('En reconocimiento al portafolio de clientes de EL PROFESIONAL y con el objetivo de facilitar la incorporación de sus empresas al ecosistema de SST-Colombia, LA EMPRESA extiende la siguiente oferta especial de bienvenida:');
+
+subsect('1.  Suscripción gratuita de bienvenida — 6 meses sin costo');
+p('Si EL PROFESIONAL incorpora a la plataforma la totalidad o parte de las treinta y cinco (35) empresas de su portafolio actual dentro de los treinta (30) días calendario siguientes a la firma del presente acuerdo, LA EMPRESA otorgará a cada una de esas empresas una suscripción completamente gratuita por un período de seis (6) meses contados a partir de su fecha de registro.');
+bul('La gratuidad aplica exclusivamente a las empresas registradas dentro del plazo de 30 días indicado.');
+bul('Las empresas deberán ser registradas por EL PROFESIONAL utilizando su enlace de aliado o código de referido asignado por SST-Colombia.');
+bul('Durante el período gratuito, las empresas tendrán acceso completo a todos los módulos de la plataforma sin restricción.');
+bul('Al finalizar los seis (6) meses, las empresas podrán continuar con la suscripción paga según las tarifas vigentes del plan que corresponda a su nivel de riesgo ARL.');
+
+subsect('2.  Comisión de referido — 15% mensual recurrente y permanente');
+p('Por cada empresa del portafolio de EL PROFESIONAL que permanezca activa en SST-Colombia una vez finalizado el período gratuito, y por cada empresa nueva que EL PROFESIONAL incorpore en el futuro, LA EMPRESA reconocerá una comisión equivalente al quince por ciento (15%) del valor de la suscripción mensual pagada por dicha empresa, calculada sobre la tarifa neta facturada.');
+bul('La comisión es recurrente y se pagará mes a mes, durante todo el tiempo que la empresa contratante mantenga su suscripción activa.');
+bul('No existe límite de tiempo ni tope máximo de empresas para el reconocimiento de esta comisión.');
+bul('El pago de comisiones se realizará dentro de los primeros diez (10) días hábiles de cada mes, por el total causado en el mes inmediatamente anterior, mediante transferencia bancaria a la cuenta indicada por EL PROFESIONAL.');
+bul('EL PROFESIONAL recibirá un reporte mensual detallado con el listado de empresas activas, el valor de su suscripción y el cálculo de la comisión correspondiente.');
+
+// Cuadro ejemplo numérico
+const ej0 = doc.y;
+doc.rect(L, ej0, W, 13).fill('#f0fff4');
+doc.rect(L, ej0, 3, 13).fill(GREEN);
+doc.fontSize(8.5).font('Helvetica-Bold').fillColor(GREEN)
+   .text('Ejemplo ilustrativo: 35 empresas activas con suscripción promedio de $200.000 COP/mes = $7.000.000 COP/mes  →  Comisión: $1.050.000 COP/mes recurrentes.', L + 10, ej0 + 3, { width: W - 16, lineBreak: false });
+doc.y = ej0 + 19;
+
+subsect('3.  Condiciones generales de la oferta');
+bul('La oferta de suscripción gratuita es intransferible y aplica exclusivamente a empresas del portafolio actual de EL PROFESIONAL, no a clientes nuevos adquiridos después de la firma.');
+bul('LA EMPRESA se reserva el derecho de verificar que las empresas registradas correspondan a clientes reales con actividad económica activa.');
+bul('Si por cualquier causa EL PROFESIONAL decide retirarse de la alianza, las comisiones causadas hasta la fecha de retiro serán pagadas en el siguiente ciclo de liquidación. Las empresas activas continuarán con su suscripción de forma independiente.');
+bul('Esta oferta no es acumulable con otras promociones vigentes, salvo acuerdo escrito entre las partes.');
+
 // ── Bloque de firmas ──────────────────────────────────────────────────────────
 if (doc.y > PH - 200) doc.addPage();
 doc.moveDown(0.8);
