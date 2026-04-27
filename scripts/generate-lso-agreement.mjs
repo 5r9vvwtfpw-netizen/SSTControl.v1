@@ -236,9 +236,10 @@ doc.y = of0 + 26;
 p('En reconocimiento al portafolio de clientes de EL PROFESIONAL y con el objetivo de facilitar la incorporación de sus empresas al ecosistema de SST-Colombia, LA EMPRESA extiende la siguiente oferta especial de bienvenida:');
 
 subsect('1.  Suscripción gratuita de bienvenida — 6 meses sin costo');
-p('Si EL PROFESIONAL incorpora a la plataforma la totalidad o parte de las treinta y cinco (35) empresas de su portafolio actual dentro de los treinta (30) días calendario siguientes a la firma del presente acuerdo, LA EMPRESA otorgará a cada una de esas empresas una suscripción completamente gratuita por un período de seis (6) meses contados a partir de su fecha de registro.');
-bul('La gratuidad aplica exclusivamente a las empresas registradas dentro del plazo de 30 días indicado.');
-bul('Las empresas deberán ser registradas por EL PROFESIONAL utilizando su enlace de aliado o código de referido asignado por SST-Colombia.');
+p('Si EL PROFESIONAL facilita la incorporación de la totalidad o parte de las treinta y cinco (35) empresas de su portafolio actual dentro de los treinta (30) días calendario siguientes a la firma del presente acuerdo, LA EMPRESA otorgará a cada una de esas empresas una suscripción completamente gratuita por un período de seis (6) meses contados a partir de su fecha de activación en la plataforma.');
+bul('Cada empresa se registrará en SST-Colombia de forma autónoma a través de la plataforma (sst.sagisas.co), con sus propias credenciales y datos de la empresa. EL PROFESIONAL no gestiona cuentas ni datos de sus clientes.');
+bul('Una vez registrada cada empresa, LA EMPRESA la vinculará a EL PROFESIONAL como su Profesional SST asignado directamente desde el panel de administración de la plataforma.');
+bul('LA EMPRESA llevará el registro de las empresas asociadas a EL PROFESIONAL en el sistema, garantizando la trazabilidad de su portafolio para efectos del presente acuerdo.');
 bul('Durante el período gratuito, las empresas tendrán acceso completo a todos los módulos de la plataforma sin restricción.');
 bul('Al finalizar los seis (6) meses, las empresas podrán continuar con la suscripción paga según las tarifas vigentes del plan que corresponda a su nivel de riesgo ARL.');
 
@@ -264,8 +265,8 @@ doc.fontSize(8.5).font('Helvetica-Bold').fillColor(GREEN)
 doc.y = ej0 + 34;
 
 subsect('3.  Condiciones generales de la oferta');
-bul('La oferta de suscripción gratuita es intransferible y aplica exclusivamente a empresas del portafolio actual de EL PROFESIONAL, no a clientes nuevos adquiridos después de la firma.');
-bul('LA EMPRESA se reserva el derecho de verificar que las empresas registradas correspondan a clientes reales con actividad económica activa.');
+bul('La oferta de suscripción gratuita aplica exclusivamente a las empresas cuyo registro en la plataforma sea gestionado por SST-Colombia a solicitud de EL PROFESIONAL dentro del plazo de 30 días. No aplica a empresas que se registren de forma independiente sin mediación de EL PROFESIONAL.');
+bul('LA EMPRESA verificará que cada empresa vinculada al portafolio de EL PROFESIONAL corresponda a un cliente real con actividad económica activa, y confirmará por escrito la lista de empresas beneficiarias de la gratuidad.');
 bul('Si por cualquier causa EL PROFESIONAL decide retirarse de la alianza, las comisiones causadas hasta la fecha de retiro serán pagadas en el siguiente ciclo de liquidación. Las empresas activas continuarán con su suscripción de forma independiente.');
 bul('Esta oferta no es acumulable con otras promociones vigentes, salvo acuerdo escrito entre las partes.');
 
