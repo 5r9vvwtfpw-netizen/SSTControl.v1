@@ -3,12 +3,12 @@ import fs from 'fs';
 
 const OUT = './attached_assets/informe-ejecutivo-sst-colombia.pdf';
 
-// ── Paleta: Verde · Blanco · Negro ───────────────────────────────────────────
-const GREEN  = '#1a7a3c';   // verde principal
-const DGREEN = '#0f4d24';   // verde oscuro (portada, headers)
-const MGREEN = '#2ea05a';   // verde medio
-const LGREEN = '#edfaf2';   // verde muy claro (fondos de card)
-const BGREEN = '#c6efd6';   // verde borde sutil
+// ── Paleta: Verde claro · Blanco · Negro ─────────────────────────────────────
+const GREEN  = '#2e8b57';   // verde principal (sea green — más claro y amable)
+const DGREEN = '#1f6b41';   // verde oscuro (portada, headers de sección)
+const MGREEN = '#48bb78';   // verde medio / acento
+const LGREEN = '#f0fff4';   // verde muy claro (fondos de card)
+const BGREEN = '#9ae6b4';   // verde borde sutil
 const WHITE  = '#ffffff';
 const BLACK  = '#111111';
 const DARK   = '#1f2937';
@@ -128,17 +128,18 @@ function reportCard(title, desc, chips, x, y, w) {
   return y + h + 8;
 }
 
-// Bloque de seguridad: verde oscuro, texto blanco
+// Bloque de seguridad: fondo blanco con borde verde, texto oscuro
 function secBlock(label, title, body, x, y, w) {
   const lines = Math.ceil(body.length / 62);
   const h = 18 + 14 + lines * 12 + 16;
-  doc.rect(x, y, w, h).fill(DGREEN);
-  doc.rect(x, y, 4, h).fill(MGREEN);
-  doc.fontSize(7).font('Helvetica-Bold').fillColor(MGREEN)
+  doc.rect(x, y, w, h).fill(LGREEN);
+  doc.rect(x, y, w, h).strokeColor(BGREEN).lineWidth(0.5).stroke();
+  doc.rect(x, y, 4, h).fill(GREEN);
+  doc.fontSize(7).font('Helvetica-Bold').fillColor(GREEN)
      .text(label, x + 14, y + 10, { lineBreak: false });
-  doc.fontSize(9).font('Helvetica-Bold').fillColor(WHITE)
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(BLACK)
      .text(title, x + 14, y + 22, { width: w - 20, lineBreak: false });
-  doc.fontSize(8.5).font('Helvetica').fillColor('rgba(255,255,255,0.75)')
+  doc.fontSize(8.5).font('Helvetica').fillColor(DARK)
      .text(body, x + 14, y + 36, { width: w - 22, lineGap: 2.5 });
   return y + h + 7;
 }
@@ -439,15 +440,17 @@ sL = sR = Math.max(sL, sR);
 doc.y = sL + 4;
 
 // Barra certificaciones
-doc.rect(L, doc.y, W, 36).fill(DGREEN);
-doc.fontSize(7.5).font('Helvetica-Bold').fillColor('rgba(255,255,255,0.5)')
+doc.rect(L, doc.y, W, 36).fill(LGREEN);
+doc.rect(L, doc.y, W, 36).strokeColor(BGREEN).lineWidth(0.5).stroke();
+doc.fontSize(7.5).font('Helvetica-Bold').fillColor(GREEN)
    .text('ESTANDARES Y CERTIFICACIONES APLICADOS', L, doc.y + 8, { width: W, align: 'center', lineBreak: false });
 const certs = ['ISO 27001', 'AWS RDS', 'TLS 1.3', 'AES-256-GCM', 'PCI-DSS', 'SOC 2 Type II', 'bcrypt'];
 let cx0 = L + 10, certY = doc.y + 18;
 certs.forEach(c => {
   const cw = doc.widthOfString(c, { fontSize: 7.5 }) + 16;
-  doc.rect(cx0, certY, cw, 13).fill('rgba(255,255,255,0.12)');
-  doc.fontSize(7.5).font('Helvetica-Bold').fillColor(WHITE)
+  doc.rect(cx0, certY, cw, 13).fill(WHITE);
+  doc.rect(cx0, certY, cw, 13).strokeColor(BGREEN).lineWidth(0.5).stroke();
+  doc.fontSize(7.5).font('Helvetica-Bold').fillColor(GREEN)
      .text(c, cx0 + 8, certY + 3, { lineBreak: false });
   cx0 += cw + 6;
 });
@@ -468,14 +471,22 @@ doc.moveDown(0.2);
 const gw = (W - 14) / 3;
 const gy = doc.y;
 
-// Bloque 1 — Ley 1581
-doc.rect(L, gy, gw, 168).fill(DGREEN);
-doc.rect(L, gy, gw, 4).fill(MGREEN);
-doc.fontSize(9.5).font('Helvetica-Bold').fillColor(WHITE)
-   .text('Ley 1581 de 2012', L + 12, gy + 14, { width: gw - 18 });
-doc.fontSize(8).font('Helvetica').fillColor(MGREEN)
-   .text('Proteccion de Datos Personales', L + 12, gy + 30, { width: gw - 18 });
-[
+// Función helper para los 3 bloques de garantía
+function garantiaBlock(titulo, subtitulo, items, bx, by, bw, accentColor) {
+  doc.rect(bx, by, bw, 168).fill(WHITE);
+  doc.rect(bx, by, bw, 168).strokeColor(BGREEN).lineWidth(0.6).stroke();
+  doc.rect(bx, by, bw, 36).fill(accentColor);
+  doc.fontSize(10).font('Helvetica-Bold').fillColor(WHITE)
+     .text(titulo, bx + 12, by + 10, { width: bw - 18, lineBreak: false });
+  doc.fontSize(7.5).font('Helvetica').fillColor('rgba(255,255,255,0.8)')
+     .text(subtitulo, bx + 12, by + 25, { width: bw - 18, lineBreak: false });
+  items.forEach((item, i) => {
+    doc.fontSize(7.5).font('Helvetica').fillColor(DARK)
+       .text('- ' + item, bx + 12, by + 46 + i * 15, { width: bw - 18, lineBreak: false });
+  });
+}
+
+garantiaBlock('Ley 1581 de 2012', 'Proteccion de Datos Personales', [
   'Datos recopilados con proposito definido',
   'Almacenamiento cifrado y controlado',
   'Acceso solo a personas autorizadas',
@@ -483,19 +494,9 @@ doc.fontSize(8).font('Helvetica').fillColor(MGREEN)
   'Sin transferencia a terceros',
   'Registro ante Superintendencia (SIC)',
   'Politica de privacidad publicada',
-].forEach((item, i) => {
-  doc.fontSize(7.5).font('Helvetica').fillColor('rgba(255,255,255,0.75)')
-     .text('- ' + item, L + 12, gy + 50 + i * 15, { width: gw - 18, lineBreak: false });
-});
+], L, gy, gw, DGREEN);
 
-// Bloque 2 — Backups
-doc.rect(L + gw + 7, gy, gw, 168).fill(GREEN);
-doc.rect(L + gw + 7, gy, gw, 4).fill(MGREEN);
-doc.fontSize(9.5).font('Helvetica-Bold').fillColor(WHITE)
-   .text('Copias de Seguridad', L + gw + 19, gy + 14, { width: gw - 18 });
-doc.fontSize(8).font('Helvetica').fillColor(MGREEN)
-   .text('Backups automaticos multicapa', L + gw + 19, gy + 30, { width: gw - 18 });
-[
+garantiaBlock('Copias de Seguridad', 'Backups automaticos multicapa', [
   'Respaldo automatico diario completo',
   'Backup incremental cada 6 horas',
   'Replicacion en multiples regiones AWS',
@@ -503,30 +504,17 @@ doc.fontSize(8).font('Helvetica').fillColor(MGREEN)
   'Perdida maxima: 6 horas de datos',
   'Pruebas de restauracion mensuales',
   'Sin costo adicional — incluido',
-].forEach((item, i) => {
-  doc.fontSize(7.5).font('Helvetica').fillColor('rgba(255,255,255,0.85)')
-     .text('- ' + item, L + gw + 19, gy + 50 + i * 15, { width: gw - 18, lineBreak: false });
-});
+], L + gw + 7, gy, gw, GREEN);
 
-// Bloque 3 — 20 años
-doc.rect(L + (gw + 7) * 2, gy, gw, 168).fill(DGREEN);
-doc.rect(L + (gw + 7) * 2, gy, gw, 4).fill(MGREEN);
-doc.fontSize(9.5).font('Helvetica-Bold').fillColor(WHITE)
-   .text('Custodia 20 Anos', L + (gw + 7) * 2 + 12, gy + 14, { width: gw - 18 });
-doc.fontSize(8).font('Helvetica').fillColor(MGREEN)
-   .text('Resguardo garantizado por contrato', L + (gw + 7) * 2 + 12, gy + 30, { width: gw - 18 });
-[
+garantiaBlock('Custodia 20 Anos', 'Resguardo garantizado por contrato', [
   'Toda la historia disponible siempre',
   'Acceso a registros de hace 20 anos',
   'Documentos con validez legal probatoria',
   'Respaldo ante demandas o litigios',
   'Sin perdida por migraciones o versiones',
   'Garantia contractual de continuidad',
-  'Exportacion total de datos en cualquier momento',
-].forEach((item, i) => {
-  doc.fontSize(7.5).font('Helvetica').fillColor('rgba(255,255,255,0.75)')
-     .text('- ' + item, L + (gw + 7) * 2 + 12, gy + 50 + i * 15, { width: gw - 18, lineBreak: false });
-});
+  'Exportacion total de datos',
+], L + (gw + 7) * 2, gy, gw, DGREEN);
 doc.y = gy + 178;
 
 // Por que importa
