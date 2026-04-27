@@ -30,3 +30,9 @@ id = "j5w4DoU9mdvTYvUJYdnYc"
 uri = "file://attached_assets/acuerdo-alianza-hernan-valencia.pdf"
 type = "pdf"
 title = "Acuerdo de Alianza — 4 páginas, sin blancos"
+
+[[outputs]]
+id = "6c62UU8RRhn8RpEpd4MBa"
+uri = "file://attached_assets/informe-ejecutivo-sst-colombia.pdf"
+type = "pdf"
+title = "Informe Ejecutivo SST-Colombia"
