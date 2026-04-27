@@ -216,60 +216,67 @@ doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.35)')
    .text(`${today.getDate()} de ${meses[today.getMonth()]} de ${today.getFullYear()}`, PW - 130, PH - 36, { width: 98, align: 'right', lineBreak: false });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// PÁGINA 2 — MÓDULOS AUTOMATIZADOS
+// PÁGINA 2 — MÓDULOS SST AUTOMATIZADOS
 // ══════════════════════════════════════════════════════════════════════════════
 doc.addPage();
 doc.y = 55;
-section('Modulos Completamente Automatizados',
+section('Modulos SST Completamente Automatizados',
         'Todo el ciclo SST desde una sola plataforma  -  Sin papeles  -  Sin reprocesos');
 
 p('Cada modulo elimina el trabajo manual: las alertas se generan solas, los documentos se producen al instante y los indicadores se actualizan en tiempo real. Esto es lo que encuentra en el sistema:');
 
-// 3 columnas para que los 8 módulos quepan en menos filas
 const mCols = 3;
 const mGap  = 8;
 const mw3   = (W - mGap * (mCols - 1)) / mCols;
-const mods  = [
-  ['TRABAJADORES', 'Gestion de Trabajadores', [
-    'Hoja de vida SST y control de afiliaciones',
-    'Alertas automaticas de vencimientos y EPPs',
+
+const mods = [
+  ['TRABAJADORES', 'Trabajadores y Perfiles', [
+    'Hoja de vida SST completa por empleado',
+    'Control de afiliaciones, EPPs y examenes medicos',
+    'Alertas automaticas de vencimientos criticos',
   ]],
   ['CAPACITACION', 'Capacitaciones', [
     'Programacion automatica segun perfil de riesgo',
+    'Registro digital de asistencia y evaluaciones',
     'Certificados generados al instante',
   ]],
   ['ACCIDENTES', 'Investigacion y FURAT', [
-    'Flujo guiado de reporte y arbol de causas',
-    'Generacion automatica del FURAT',
+    'Flujo guiado de reporte con arbol de causas',
+    'Generacion automatica del FURAT oficial',
+    'Seguimiento de correctivos con alertas',
   ]],
-  ['INSPECCION', 'Inspecciones', [
+  ['INSPECCION', 'Inspecciones de Seguridad', [
     'Checklists dinamicos por area y cargo',
     'Hallazgo genera plan de accion automatico',
+    'Registro fotografico y trazabilidad completa',
   ]],
-  ['RIESGOS', 'Matriz GTC-45', [
-    'Valoracion de riesgo por cargo automatizada',
-    'Controles sugeridos por nivel de peligro',
+  ['RIESGOS', 'Matriz de Peligros GTC-45', [
+    'Valoracion automatica de riesgo por cargo',
+    'Actualizacion dinamica con cada cambio',
+    'Controles sugeridos segun nivel de riesgo',
   ]],
   ['EMERGENCIAS', 'Plan de Emergencias', [
-    'Brigadas, roles y simulacros con trazabilidad',
+    'Brigadas, roles y responsables definidos',
+    'Simulacros programados con seguimiento',
     'Documentos legales generados al instante',
   ]],
-  ['AUDITORIA', 'Evaluacion Res. 0312', [
-    'Los 61 estandares evaluados automaticamente',
-    'Informe oficial para Ministerio del Trabajo',
+  ['AUDITORIA', 'Evaluacion Res. 0312/2019', [
+    'Los 61 estandares obligatorios evaluados',
+    'Calificacion automatica y brecha detectada',
+    'Informe oficial listo para Ministerio del Trabajo',
   ]],
   ['SALUD', 'Salud Ocupacional', [
-    'Control de examenes y perfil sociodemografico',
+    'Control de examenes medicos y vencimientos',
+    'Perfil sociodemografico automatizado',
     'Programas de vigilancia epidemiologica',
   ]],
 ];
 
-const rowYs = [doc.y, doc.y, doc.y]; // y de cada columna
+const rowYs = [doc.y, doc.y, doc.y];
 mods.forEach((m, i) => {
   const col = i % mCols;
   const x   = L + col * (mw3 + mGap);
   rowYs[col] = moduleCard(m[0], m[1], m[2], x, rowYs[col], mw3);
-  // al completar cada fila, igualar alturas
   if (col === mCols - 1 || i === mods.length - 1) {
     const maxRow = Math.max(...rowYs);
     rowYs.fill(maxRow);
@@ -277,40 +284,68 @@ mods.forEach((m, i) => {
 });
 doc.y = Math.max(...rowYs) + 4;
 
-// ── Sub-sección PESV ─────────────────────────────────────────────────────────
-const pesvHdrY = doc.y + 6;
-doc.rect(L, pesvHdrY, W, 34).fill(DGREEN);
-doc.fontSize(9.5).font('Helvetica-Bold').fillColor(WHITE)
-   .text('Plan Estrategico de Seguridad Vial (PESV)  -  Res. 40595/2022', L + 14, pesvHdrY + 6, { lineBreak: false });
-doc.fontSize(8).font('Helvetica').fillColor(BGREEN)
-   .text('Para empresas con flota vehicular — cobertura de los 10 lineamientos obligatorios en tres niveles de complejidad.',
-         L + 14, pesvHdrY + 19, { width: W - 20, lineBreak: false });
-doc.y = pesvHdrY + 40;
+// ══════════════════════════════════════════════════════════════════════════════
+// PÁGINA 3 — MÓDULO PESV COMPLETO
+// ══════════════════════════════════════════════════════════════════════════════
+doc.addPage();
+doc.y = 55;
+section('Plan Estrategico de Seguridad Vial  —  PESV',
+        'Res. 40595/2022  -  Niveles basico, estandar y avanzado  -  Con GPS integrado por API');
+
+p('El modulo PESV de SST-Colombia es el unico del mercado con integracion GPS en tiempo real. Conecta directamente con los dispositivos GPS de su flota via API, sin necesidad de operadores adicionales, convirtiendo datos de telemetria en evidencia legal de cumplimiento.');
+
+// Banner GPS destacado
+const gpsY0 = doc.y + 4;
+doc.rect(L, gpsY0, W, 48).fill(DGREEN);
+doc.rect(L, gpsY0, 5, 48).fill(MGREEN);
+doc.fontSize(11).font('Helvetica-Bold').fillColor(WHITE)
+   .text('GPS INTEGRADO POR API  —  Tiempo Real', L + 18, gpsY0 + 8, { lineBreak: false });
+doc.fontSize(8.5).font('Helvetica').fillColor(BGREEN)
+   .text('Conexion directa con Teltonika, Queclink, Coban y principales marcas GPS del mercado. Los datos de velocidad,', L + 18, gpsY0 + 24, { width: W - 30, lineBreak: false });
+doc.fontSize(8.5).font('Helvetica').fillColor(BGREEN)
+   .text('frenadas bruscas, rutas y alertas se convierten automaticamente en evidencia de cumplimiento PESV.', L + 18, gpsY0 + 35, { width: W - 30, lineBreak: false });
+doc.y = gpsY0 + 56;
 
 const pesvMods = [
   ['DIAGNOSTICO', 'Evaluacion de Lineamientos', [
     'Los 10 lineamientos de la Res. 40595/2022',
-    'Nivel basico, estandar o avanzado automatico',
+    'Nivel de complejidad calculado automaticamente',
+    'Brechas identificadas con plan de cierre',
+  ]],
+  ['GPS / API', 'Rastreo GPS en Tiempo Real', [
+    'Integracion directa con dispositivos GPS via API',
+    'Velocidad, frenadas bruscas y desvios detectados',
+    'Historial de rutas con evidencia legal automatica',
   ]],
   ['CONDUCTORES', 'Gestion de Conductores', [
     'Licencias, infracciones y capacitaciones',
-    'Alertas automaticas de vencimientos',
+    'Alertas automaticas de vencimientos por conductor',
+    'Historial completo de comportamiento vial',
   ]],
   ['FLOTA', 'Control de Vehiculos', [
-    'SOAT, tecnomecanica y mantenimientos',
+    'SOAT, tecnomecanica y mantenimientos controlados',
     'Plan de accion ante vencimientos automatico',
+    'Estado de la flota actualizado en tiempo real',
   ]],
   ['PLAN ACCION', 'Plan de Accion PESV', [
-    'Cronograma generado automaticamente',
-    'Semaforo de cumplimiento por actividad',
+    'Cronograma de actividades generado automaticamente',
+    'Semaforo de cumplimiento por lineamiento',
+    'Cierre de acciones con evidencia digital',
   ]],
-  ['CAPACITACION', 'Formacion Vial', [
-    'Programas segun perfil del conductor',
-    'Certificados de asistencia al instante',
+  ['CAPACITACION', 'Formacion en Seguridad Vial', [
+    'Programas de capacitacion segun perfil del conductor',
+    'Evaluaciones y certificados generados al instante',
+    'Control de brecha de formacion vial por cargo',
   ]],
-  ['REPORTES', 'Informes PESV', [
-    'Informe oficial de avance para autoridades',
+  ['INCIDENTES', 'Accidentes Viales', [
+    'Reporte guiado de accidente de transito',
+    'Cruce automatico con datos GPS del momento',
+    'Estadisticas de siniestralidad por conductor y ruta',
+  ]],
+  ['REPORTES', 'Informes PESV Oficiales', [
+    'Informe de avance listo para Superintendencia',
     'Indicadores de cumplimiento en tiempo real',
+    'Trazabilidad bidireccional completa del plan',
   ]],
 ];
 
