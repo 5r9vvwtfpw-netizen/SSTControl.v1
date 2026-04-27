@@ -159,7 +159,7 @@ p('Esta alianza no genera relación laboral, de subordinación ni de exclusivida
 
 sect('TERCERA', 'MODELO DE PAGOS — DOS SERVICIOS INDEPENDIENTES');
 p('Las empresas suscritas a SST-Colombia reciben dos servicios distintos, pagados de forma independiente:');
-bul('SUSCRIPCIÓN A LA PLATAFORMA: Cada empresa se registra directamente en sst.sagisas.co y completa el pago de su suscripción mensual a través de la pasarela Stripe. El acceso a la plataforma se activa de forma automática. Obligatorio para operar en SST-Colombia.');
+bul('SUSCRIPCIÓN A LA PLATAFORMA: Cada empresa se registra directamente en sst.sagisas.co y paga su suscripción mensual de forma autónoma. El acceso a la plataforma se activa de forma automática. Obligatorio para operar en SST-Colombia.');
 bul('HONORARIOS AL PROFESIONAL: Las empresas que decidan contratar a EL PROFESIONAL le pagarán directamente sus honorarios, según las tarifas de la Cláusula Cuarta. Este pago es independiente de la suscripción a la plataforma.');
 p('LA EMPRESA no interviene en los pagos entre las empresas y EL PROFESIONAL. La relación económica por servicios profesionales es directa entre ambas partes.');
 
@@ -257,9 +257,9 @@ p('En reconocimiento al portafolio de clientes de EL PROFESIONAL y con el objeti
 
 subsect('1.  Suscripción gratuita de bienvenida — 6 meses sin costo');
 p('Si EL PROFESIONAL orienta a la totalidad o parte de las treinta y cinco (35) empresas de su portafolio actual para que se registren en SST-Colombia dentro de los treinta (30) días calendario siguientes a la firma del presente acuerdo, LA EMPRESA aplicará una promoción de seis (6) meses completamente gratuitos a cada una de esas empresas.');
-bul('Cada empresa realiza su propio registro directamente en sst.sagisas.co, ingresa sus datos y completa el proceso a través de la pasarela de pago Stripe. EL PROFESIONAL no gestiona cuentas, contraseñas ni información de sus clientes.');
-bul('Para acceder a los 6 meses gratuitos, cada empresa deberá ingresar durante su registro el código promocional exclusivo que LA EMPRESA generará para el portafolio de EL PROFESIONAL. Stripe aplicará automáticamente el descuento del 100% durante seis (6) meses.');
-bul('Vencido el período promocional, Stripe reanudará el cobro automático según la tarifa que corresponda al nivel de riesgo ARL de cada empresa, sin intervención adicional de ninguna de las partes.');
+bul('Cada empresa realiza su propio registro directamente en sst.sagisas.co con sus propios datos. EL PROFESIONAL no gestiona cuentas ni información de sus clientes.');
+bul('Para acceder a los 6 meses gratuitos, cada empresa deberá ingresar durante su registro el código promocional exclusivo que LA EMPRESA generará para el portafolio de EL PROFESIONAL.');
+bul('Vencido el período gratuito, la empresa continuará con su suscripción mensual según la tarifa correspondiente a su nivel de riesgo ARL, sin intervención adicional de ninguna de las partes.');
 
 subsect('2.  Condiciones generales de la oferta');
 bul('La gratuidad aplica exclusivamente a las empresas que utilicen el código promocional asignado a EL PROFESIONAL durante su registro en la landing page, dentro del plazo de 30 días. No aplica a empresas que se registren sin dicho código.');
