@@ -3,87 +3,122 @@ import fs from 'fs';
 
 const OUT   = './attached_assets/acuerdo-alianza-hernan-valencia.pdf';
 const GREEN = '#1e7e34';
+const DGREEN= '#155a25';
 const DARK  = '#111111';
 const GRAY  = '#555555';
 const LGRAY = '#eef6ef';
+const BGRAY = '#f7f7f7';
 const RAZÓN = 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.';
 const NIT   = 'NIT 902.036.337-4';
 
 const doc = new PDFDocument({
   size: 'LETTER',
-  margins: { top: 105, bottom: 60, left: 65, right: 65 },
+  margins: { top: 118, bottom: 72, left: 65, right: 65 },
   bufferPages: true,
-  info: { Title: 'Acuerdo de Alianza Estratégica — Profesional SST', Author: RAZÓN },
+  info: {
+    Title: 'Acuerdo de Alianza Estratégica — Profesional SST',
+    Author: RAZÓN,
+    Subject: 'Vinculación de Profesional SST — Hernán Valencia Gil',
+  },
 });
 doc.pipe(fs.createWriteStream(OUT));
 
-const W = doc.page.width - 130;
-const L = 65;
+const PW  = doc.page.width;
+const PH  = doc.page.height;
+const W   = PW - 130;
+const L   = 65;
 const today = new Date();
-const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
-                'septiembre','octubre','noviembre','diciembre'];
+const meses = ['enero','febrero','marzo','abril','mayo','junio','julio',
+                'agosto','septiembre','octubre','noviembre','diciembre'];
+const FECHA = `${today.getDate()} de ${meses[today.getMonth()]} de ${today.getFullYear()}`;
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 function sect(n, t) {
-  doc.moveDown(0.6);
+  if (doc.y > PH - 180) doc.addPage();
+  doc.moveDown(0.5);
   const y0 = doc.y;
-  doc.rect(L, y0, W, 18).fill(LGRAY);
-  doc.fontSize(10).font('Helvetica-Bold').fillColor(GREEN)
-     .text(`${n} — ${t}`, L + 8, y0 + 4, { width: W - 14, lineBreak: false });
-  doc.y = y0 + 22;
-  doc.moveDown(0.4);
+  doc.rect(L, y0, W, 20).fill(GREEN);
+  doc.fontSize(9.5).font('Helvetica-Bold').fillColor('white')
+     .text(`${n}  —  ${t}`, L + 10, y0 + 5, { width: W - 16, lineBreak: false });
+  doc.y = y0 + 26;
+}
+
+function subsect(t) {
+  const y0 = doc.y;
+  doc.rect(L, y0, W, 17).fill(LGRAY);
+  doc.rect(L, y0, 3, 17).fill(GREEN);
+  doc.fontSize(9.5).font('Helvetica-Bold').fillColor(GREEN)
+     .text(t, L + 10, y0 + 4, { width: W - 16, lineBreak: false });
+  doc.y = y0 + 23;
 }
 
 function p(text) {
-  doc.fontSize(10).font('Helvetica').fillColor(DARK)
-     .text(text, L, doc.y, { width: W, align: 'justify', lineGap: 2 });
-  doc.moveDown(0.55);
+  doc.fontSize(9.5).font('Helvetica').fillColor(DARK)
+     .text(text, L, doc.y, { width: W, align: 'justify', lineGap: 2.5 });
+  doc.moveDown(0.5);
 }
 
 function bul(text) {
-  const bx = L + 10;
-  const tx = L + 24;
-  const tw = W - 24;
   const sy = doc.y;
-  doc.fontSize(10).font('Helvetica').fillColor(DARK)
-     .text('\u2022', bx, sy, { width: 12, lineBreak: false });
-  doc.fontSize(10).font('Helvetica').fillColor(DARK)
-     .text(text, tx, sy, { width: tw, align: 'justify', lineGap: 2 });
-  doc.moveDown(0.3);
+  doc.fontSize(9.5).font('Helvetica').fillColor(GREEN)
+     .text('\u2022', L + 8, sy, { width: 14, lineBreak: false });
+  doc.fontSize(9.5).font('Helvetica').fillColor(DARK)
+     .text(text, L + 24, sy, { width: W - 24, align: 'justify', lineGap: 2.5 });
+  doc.moveDown(0.25);
 }
 
 function divider() {
-  doc.moveDown(0.3);
-  doc.moveTo(L, doc.y).lineTo(L + W, doc.y).strokeColor('#cccccc').lineWidth(0.6).stroke();
+  doc.moveDown(0.25);
+  doc.moveTo(L, doc.y).lineTo(L + W, doc.y).strokeColor('#cccccc').lineWidth(0.5).stroke();
   doc.moveDown(0.4);
 }
 
+function infoBox(label, text) {
+  const y0 = doc.y;
+  doc.rect(L, y0, 90, 14).fill(LGRAY);
+  doc.fontSize(7.5).font('Helvetica-Bold').fillColor(GREEN)
+     .text(label, L + 4, y0 + 3, { width: 84, lineBreak: false });
+  doc.fontSize(9).font('Helvetica').fillColor(DARK)
+     .text(text, L + 96, y0 + 2, { width: W - 96, lineBreak: false });
+  doc.y = y0 + 18;
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
-// PÁGINA 1 — Encabezado principal
+// ENCABEZADO PÁGINA 1
 // ══════════════════════════════════════════════════════════════════════════════
-doc.rect(L, 55, W, 58).fill(GREEN);
-doc.fontSize(18).font('Helvetica-Bold').fillColor('white')
-   .text('SST-Colombia', L + 14, 64, { lineBreak: false });
-doc.fontSize(8.5).font('Helvetica-Bold').fillColor('rgba(255,255,255,0.95)')
-   .text(RAZÓN, L + 14, 89, { lineBreak: false });
-doc.fontSize(8.5).font('Helvetica').fillColor('rgba(255,255,255,0.72)')
-   .text(`${NIT}  ·  sst.sagisas.co  ·  admin@sst-colombia.com`, L + 14, 101, { lineBreak: false });
+// Franja verde empresa
+doc.rect(L, 48, W, 68).fill(GREEN);
+// Acento lateral oscuro
+doc.rect(L, 48, 4, 68).fill(DGREEN);
+
+doc.fontSize(20).font('Helvetica-Bold').fillColor('white')
+   .text('SST-Colombia', L + 16, 57, { lineBreak: false });
+doc.fontSize(8.5).font('Helvetica').fillColor('rgba(255,255,255,0.9)')
+   .text(RAZÓN, L + 16, 82, { lineBreak: false });
+doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.65)')
+   .text(`${NIT}  ·  sst.sagisas.co  ·  admin@sst-colombia.com`, L + 16, 95, { lineBreak: false });
+
+// Número de documento + fecha alineados a la derecha dentro del banner
+doc.fontSize(7.5).font('Helvetica-Bold').fillColor('rgba(255,255,255,0.55)')
+   .text('ACUERDO N.°', PW - 175, 57, { width: 108, align: 'right', lineBreak: false });
+doc.fontSize(9).font('Helvetica-Bold').fillColor('rgba(255,255,255,0.9)')
+   .text(`AL-${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`, PW - 175, 68, { width: 108, align: 'right', lineBreak: false });
+doc.fontSize(7.5).font('Helvetica').fillColor('rgba(255,255,255,0.55)')
+   .text(FECHA, PW - 175, 84, { width: 108, align: 'right', lineBreak: false });
+
 doc.y = 130;
 
-doc.fontSize(13).font('Helvetica-Bold').fillColor(DARK)
+// Título del documento
+doc.fontSize(14).font('Helvetica-Bold').fillColor(DARK)
    .text('ACUERDO DE ALIANZA ESTRATÉGICA', L, doc.y, { width: W, align: 'center' });
-doc.moveDown(0.25);
+doc.moveDown(0.2);
 doc.fontSize(10).font('Helvetica').fillColor(GRAY)
    .text('Vinculación de Profesional SST a la Red de Aliados de SST-Colombia',
          L, doc.y, { width: W, align: 'center' });
-doc.moveDown(0.25);
-doc.fontSize(9).fillColor(GRAY)
-   .text(`Medellín, ${today.getDate()} de ${meses[today.getMonth()]} de ${today.getFullYear()}`,
-         L, doc.y, { width: W, align: 'right' });
-doc.moveDown(0.4);
+doc.moveDown(0.55);
 divider();
 
-// ── CLÁUSULAS — paginación automática ─────────────────────────────────────────
+// ── CLÁUSULAS ─────────────────────────────────────────────────────────────────
 
 sect('PRIMERA', 'DEFINICIONES Y PARTES');
 p('Para efectos del presente acuerdo se establecen las siguientes definiciones:');
@@ -109,22 +144,25 @@ sect('CUARTA', 'TARIFAS DEL SERVICIO DE ACOMPAÑAMIENTO SST MENSUAL');
 p('Las partes acuerdan las siguientes tarifas mensuales según el nivel de riesgo ARL de cada empresa, determinado por el CIIU registrado en la plataforma:');
 doc.moveDown(0.2);
 
-// ── Tabla de tarifas ──────────────────────────────────────────────────────────
+// ── Tabla de tarifas ─────────────────────────────────────────────────────────
 const COL_N = 175;
-const COL_A = W - COL_N - 110;
-const COL_T = 110;
+const COL_A = W - COL_N - 112;
+const COL_T = 112;
 const tcols = [L, L + COL_N, L + COL_N + COL_A];
 const tcw   = [COL_N, COL_A, COL_T];
-const trh   = 20;
+const trh   = 21;
 let   try_  = doc.y;
 
+// Encabezado tabla
 doc.rect(L, try_, W, trh).fill(GREEN);
+doc.rect(L, try_, W, trh).strokeColor(DGREEN).lineWidth(0.3).stroke();
 ['Nivel de Riesgo ARL', 'Sectores Representativos', 'Tarifa Mensual'].forEach((h, i) => {
   doc.fontSize(9).font('Helvetica-Bold').fillColor('white')
-     .text(h, tcols[i] + 5, try_ + 5, { width: tcw[i] - 8, align: i === 2 ? 'right' : 'left', lineBreak: false });
+     .text(h, tcols[i] + 6, try_ + 6, { width: tcw[i] - 10, align: i === 2 ? 'right' : 'left', lineBreak: false });
 });
 try_ += trh;
 
+// Filas
 [
   ['Nivel I — Bajo',         'Oficinas, comercio, servicios financieros',  '$150.000 COP'],
   ['Nivel II — Medio',       'Manufactura ligera, salud, educación',        '$250.000 COP'],
@@ -132,38 +170,26 @@ try_ += trh;
   ['Nivel IV — Alto',        'Construcción, minería superficial, químicos', '$450.000 COP'],
   ['Nivel V — Muy Alto',     'Minería subterránea, explosivos, alturas',    '$550.000 COP'],
 ].forEach((row, ri) => {
-  doc.rect(L, try_, W, trh).fill(ri % 2 === 0 ? '#ffffff' : '#f3faf4');
-  doc.rect(L, try_, W, trh).strokeColor('#dddddd').lineWidth(0.4).stroke();
+  const bg = ri % 2 === 0 ? '#ffffff' : BGRAY;
+  doc.rect(L, try_, W, trh).fill(bg);
+  doc.rect(L, try_, W, trh).strokeColor('#dddddd').lineWidth(0.3).stroke();
   row.forEach((cell, ci) => {
     doc.fontSize(9)
        .font(ci === 0 || ci === 2 ? 'Helvetica-Bold' : 'Helvetica')
        .fillColor(ci === 2 ? GREEN : DARK)
-       .text(cell, tcols[ci] + 5, try_ + 5, { width: tcw[ci] - 8, align: ci === 2 ? 'right' : 'left', lineBreak: false });
+       .text(cell, tcols[ci] + 6, try_ + 6, { width: tcw[ci] - 10, align: ci === 2 ? 'right' : 'left', lineBreak: false });
   });
   try_ += trh;
 });
-doc.y = try_ + 10;
+doc.y = try_ + 12;
 
 p('Las tarifas anteriores corresponden exclusivamente al servicio de acompañamiento y gestión SST mensual en la plataforma. EL PROFESIONAL acuerda aplicar estas tarifas a las empresas contratadas a través del ecosistema de SST-Colombia.');
 
-// Subtítulo "Alcance incluido en la tarifa mensual"
-const alc0 = doc.y;
-doc.rect(L, alc0, W, 16).fill('#eef6ef');
-doc.fontSize(9.5).font('Helvetica-Bold').fillColor(GREEN)
-   .text('Alcance incluido en la tarifa mensual', L + 8, alc0 + 4, { width: W - 14, lineBreak: false });
-doc.y = alc0 + 22;
-
+subsect('Alcance incluido en la tarifa mensual');
 p('Para empresas que no presenten solicitudes especiales, requerimientos extraordinarios ni necesidad de compilación, reconstrucción o depuración documental adicional, la tarifa mensual de EL PROFESIONAL incluye la revisión y firma de todos los formatos, formularios y reportes ordinarios del SG-SST que deban ser presentados o enviados periódicamente al Ministerio del Trabajo, siempre que la información necesaria se encuentre completa, veraz y actualizada en LA PLATAFORMA.');
-
 p('Cualquier gestión adicional derivada de información incompleta, inconsistencias, requerimientos especiales, trámites extraordinarios o compilación documental manual podrá ser acordada y cobrada por separado entre EL PROFESIONAL y la empresa contratante.');
 
-// Bloque servicios adicionales
-const iy0 = doc.y;
-doc.rect(L, iy0, W, 14).fill('#eef6ef');
-doc.fontSize(9.5).font('Helvetica-Bold').fillColor(GREEN)
-   .text('Servicios adicionales — Plena autonomía de EL PROFESIONAL', L + 8, iy0 + 3, { width: W - 14, lineBreak: false });
-doc.y = iy0 + 20;
-
+subsect('Servicios adicionales — Plena autonomía de EL PROFESIONAL');
 p('SST-Colombia incluye en su suscripción la gestión digital de capacitaciones, investigaciones de accidentes, inspecciones, matriz GTC-45, plan de emergencias, auditorías y salud ocupacional. EL PROFESIONAL tiene plena libertad para acordar y cobrar por servicios que requieran presencia física o equipos especializados fuera de la plataforma:');
 bul('Impartir capacitaciones presenciales: charlas, talleres y entrenamiento directo a trabajadores en sitio.');
 bul('Visitas técnicas presenciales: inspecciones físicas de instalaciones, puestos de trabajo y equipos.');
@@ -189,50 +215,84 @@ sect('SÉPTIMA', 'AUTONOMÍA E INDEPENDENCIA PROFESIONAL');
 p('EL PROFESIONAL conserva plena autonomía e independencia. LA EMPRESA actúa únicamente como facilitador tecnológico y de visibilidad, sin intervenir ni asumir responsabilidad por la relación contractual entre EL PROFESIONAL y sus clientes.');
 
 sect('OCTAVA', 'DURACIÓN Y TERMINACIÓN');
-p('Vigencia de doce (12) meses, renovable automáticamente. Cualquiera de las partes puede retirarse con quince (15) días de aviso escrito, sin obligación de indemnización. La alianza termina automáticamente si EL PROFESIONAL pierde su licencia en SST.');
+p('Vigencia de doce (12) meses contados a partir de la firma, renovable automáticamente por períodos iguales. Cualquiera de las partes puede retirarse con quince (15) días hábiles de aviso escrito, sin obligación de indemnización. La alianza termina automáticamente si EL PROFESIONAL pierde o suspende su licencia en SST.');
 
 sect('NOVENA', 'CONFIDENCIALIDAD');
-p('Ambas partes mantendrán confidencialidad sobre la información intercambiada, durante la vigencia y por dos (2) años posteriores a su terminación.');
+p('Ambas partes mantendrán confidencialidad sobre la información comercial, técnica y operativa intercambiada durante la ejecución de este acuerdo, durante su vigencia y por dos (2) años posteriores a su terminación, salvo obligación legal en contrario.');
 
 sect('DÉCIMA', 'RESOLUCIÓN DE DIFERENCIAS');
-p('Las diferencias se resolverán de forma directa en quince (15) días hábiles. De no lograrse acuerdo, las partes acudirán a mecanismos alternativos de solución de conflictos o a la jurisdicción ordinaria de Medellín, Antioquia.');
+p('Las diferencias derivadas de la interpretación o cumplimiento del presente acuerdo se resolverán de forma directa entre las partes en un plazo máximo de quince (15) días hábiles. De no lograrse acuerdo, las partes acudirán a mecanismos alternativos de solución de conflictos o a la jurisdicción ordinaria de la ciudad de Medellín, Antioquia.');
 
-// ── Firmas ────────────────────────────────────────────────────────────────────
-doc.moveDown(0.6);
+// ── Bloque de firmas ──────────────────────────────────────────────────────────
+if (doc.y > PH - 200) doc.addPage();
+doc.moveDown(0.8);
 divider();
-doc.fontSize(10.5).font('Helvetica-Bold').fillColor(DARK)
-   .text('En señal de aceptación, las partes suscriben el presente acuerdo:',
-         L, doc.y, { width: W, align: 'center' });
-doc.moveDown(1.5);
-
-const sw  = (W - 30) / 2;
-const ssy = doc.y;
-doc.rect(L, ssy, sw, 76).stroke('#aaaaaa').lineWidth(0.6);
-doc.rect(L + sw + 30, ssy, sw, 76).stroke('#aaaaaa').lineWidth(0.6);
 doc.fontSize(10).font('Helvetica-Bold').fillColor(DARK)
-   .text('LA EMPRESA', L, ssy + 44, { width: sw, align: 'center', lineBreak: false })
-   .text('EL PROFESIONAL ALIADO', L + sw + 30, ssy + 44, { width: sw, align: 'center', lineBreak: false });
-doc.fontSize(8).font('Helvetica').fillColor(GRAY)
-   .text(RAZÓN, L, ssy + 57, { width: sw, align: 'center', lineBreak: false })
-   .text(NIT, L, ssy + 68, { width: sw, align: 'center', lineBreak: false })
-   .text('Hernán Valencia Gil', L + sw + 30, ssy + 57, { width: sw, align: 'center', lineBreak: false })
-   .text('Profesional en SST  ·  Lic. vigente', L + sw + 30, ssy + 68, { width: sw, align: 'center', lineBreak: false });
+   .text('En señal de aceptación, las partes suscriben el presente acuerdo en la ciudad de Medellín,',
+         L, doc.y, { width: W, align: 'center' });
+doc.fontSize(10).font('Helvetica-Bold').fillColor(DARK)
+   .text(`Antioquia, a los ${today.getDate()} días del mes de ${meses[today.getMonth()]} de ${today.getFullYear()}.`,
+         L, doc.y, { width: W, align: 'center' });
+doc.moveDown(2.2);
+
+const sw  = (W - 36) / 2;
+const ssy = doc.y;
+
+// Caja firma izquierda
+doc.rect(L, ssy, sw, 72).fill(BGRAY).stroke('#cccccc');
+doc.moveTo(L + 14, ssy + 42).lineTo(L + sw - 14, ssy + 42).strokeColor('#999999').lineWidth(0.7).stroke();
+doc.fontSize(8.5).font('Helvetica-Bold').fillColor(DARK)
+   .text('LA EMPRESA', L, ssy + 46, { width: sw, align: 'center', lineBreak: false });
+doc.fontSize(7.5).font('Helvetica').fillColor(GRAY)
+   .text(RAZÓN, L, ssy + 57, { width: sw, align: 'center', lineBreak: false });
+doc.fontSize(7.5).font('Helvetica').fillColor(GRAY)
+   .text(NIT, L, ssy + 67, { width: sw, align: 'center', lineBreak: false });
+
+// Caja firma derecha
+const rx = L + sw + 36;
+doc.rect(rx, ssy, sw, 72).fill(BGRAY).stroke('#cccccc');
+doc.moveTo(rx + 14, ssy + 42).lineTo(rx + sw - 14, ssy + 42).strokeColor('#999999').lineWidth(0.7).stroke();
+doc.fontSize(8.5).font('Helvetica-Bold').fillColor(DARK)
+   .text('EL PROFESIONAL ALIADO', rx, ssy + 46, { width: sw, align: 'center', lineBreak: false });
+doc.fontSize(7.5).font('Helvetica').fillColor(GRAY)
+   .text('Hernán Valencia Gil', rx, ssy + 57, { width: sw, align: 'center', lineBreak: false });
+doc.fontSize(7.5).font('Helvetica').fillColor(GRAY)
+   .text('Profesional SST  ·  Licencia vigente Res. 4927/2016', rx, ssy + 67, { width: sw, align: 'center', lineBreak: false });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// INSERTAR ENCABEZADOS EN PÁGINAS 2+ (antes de cerrar el buffer)
+// ENCABEZADOS Y PIE DE PÁGINA — inyectar ANTES de doc.end()
 // ══════════════════════════════════════════════════════════════════════════════
 const range = doc.bufferedPageRange();
-for (let i = 1; i < range.count; i++) {
-  doc.switchToPage(i);
-  doc.rect(L, 55, W, 32).fill(GREEN);
-  doc.fontSize(10).font('Helvetica-Bold').fillColor('white')
-     .text('SST-Colombia  ·  Acuerdo de Alianza Estratégica', L + 12, 63, { lineBreak: false });
-  doc.fontSize(8).font('Helvetica').fillColor('rgba(255,255,255,0.8)')
-     .text(`${RAZÓN}  ·  ${NIT}`, L + 12, 76, { lineBreak: false });
+const total = range.count;
+
+for (let i = 0; i < total; i++) {
+  doc.switchToPage(range.start + i);
+  // Desactivar márgenes para poder dibujar en zona de cabecera y pie
+  const mOrig = { ...doc.page.margins };
+  doc.page.margins = { top: 0, bottom: 0, left: 0, right: 0 };
+
+  if (i > 0) {
+    // Encabezado compacto páginas 2+
+    doc.rect(L, 48, W, 38).fill(GREEN);
+    doc.rect(L, 48, 4, 38).fill(DGREEN);
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('white')
+       .text('SST-Colombia  ·  Acuerdo de Alianza Estratégica', L + 14, 56, { lineBreak: false });
+    doc.fontSize(7.5).font('Helvetica').fillColor('rgba(255,255,255,0.75)')
+       .text(`${RAZÓN}  ·  ${NIT}`, L + 14, 70, { lineBreak: false });
+  }
+
+  // Pie de página en todas
+  doc.moveTo(L, PH - 50).lineTo(L + W, PH - 50).strokeColor('#cccccc').lineWidth(0.4).stroke();
+  doc.fontSize(7.5).font('Helvetica').fillColor(GRAY)
+     .text('Documento Confidencial  ·  SST-Colombia  ·  sst.sagisas.co', L, PH - 44, { lineBreak: false });
+  doc.fontSize(7.5).font('Helvetica').fillColor(GRAY)
+     .text(`Página ${i + 1} de ${total}`, L, PH - 44, { width: W, align: 'right', lineBreak: false });
+  doc.fontSize(7.5).font('Helvetica').fillColor('#aaaaaa')
+     .text(FECHA, L, PH - 34, { lineBreak: false });
+
+  // Restaurar márgenes originales
+  doc.page.margins = mOrig;
 }
 
 doc.end();
-doc.on('end', () => {
-  const r = doc.bufferedPageRange ? doc.bufferedPageRange() : { count: '?' };
-  console.log(`PDF listo: ${OUT}`);
-});
+doc.on('end', () => console.log(`PDF listo: ${OUT}`));
