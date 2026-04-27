@@ -163,11 +163,6 @@ doc.page.margins.bottom = 0;
 doc.page.margins.top    = 0;
 
 doc.rect(0, 0, PW, PH).fill(DGREEN);
-// Tramado diagonal sutil
-for (let i = -20; i < PW + PH; i += 28) {
-  doc.moveTo(i, 0).lineTo(i + PH, PH)
-     .strokeColor('rgba(255,255,255,0.03)').lineWidth(1).stroke();
-}
 // Franja lateral
 doc.rect(0, 0, 6, PH).fill(MGREEN);
 // Círculo decorativo
@@ -207,9 +202,7 @@ doc.fontSize(38).font('Helvetica-Bold').fillColor(MGREEN)
 doc.fontSize(13).font('Helvetica').fillColor('rgba(255,255,255,0.6)')
    .text('Seguridad y Salud en el Trabajo  —  Colombia', L + 8, 262);
 
-// Caja de puntos clave
-doc.rect(L + 8, 294, W - 8, 74).fill('rgba(255,255,255,0.07)');
-doc.rect(L + 8, 294, 3, 74).fill(MGREEN);
+// Puntos clave — sin caja, solo texto limpio con guión verde
 const bullets = [
   'Modulos 100% automatizados  -  sin papel, sin reprocesos',
   'Informes ejecutivos con indicadores y estadisticas en tiempo real',
@@ -219,8 +212,10 @@ const bullets = [
   'Custodia garantizada de informacion por 20 anos  -  Ley 1581',
 ];
 bullets.forEach((b, i) => {
-  doc.fontSize(8.8).font('Helvetica').fillColor('rgba(255,255,255,0.85)')
-     .text('  ' + b, L + 20, 306 + i * 11, { lineBreak: false });
+  const by = 294 + i * 13;
+  doc.rect(L + 8, by + 4, 3, 7).fill(MGREEN);
+  doc.fontSize(9).font('Helvetica').fillColor('rgba(255,255,255,0.82)')
+     .text(b, L + 18, by, { lineBreak: false });
 });
 
 // Franja inferior
