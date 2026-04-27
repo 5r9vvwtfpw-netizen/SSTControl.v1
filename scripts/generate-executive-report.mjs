@@ -73,22 +73,27 @@ function p(text, opts = {}) {
 
 // Tarjeta de módulo: banda verde arriba, fondo blanco/verde claro
 function moduleCard(label, title, lines, x, y, w) {
-  const lineH = 12.5;
-  const h     = 12 + 16 + lines.length * lineH + 14;
-  // sombra visual
+  // lineH holgado para que el texto pueda hacer wrap dentro de la tarjeta
+  const lineH = 24;
+  const h     = 14 + 18 + lines.length * lineH + 10;
+  // fondo y barra superior
   doc.rect(x, y, w, h).fill(LGREEN);
   doc.rect(x, y, w, 3).fill(GREEN);
+  // clip: nada escapa de los bordes de la tarjeta
+  doc.save();
+  doc.rect(x + 1, y + 1, w - 2, h - 2).clip();
   // etiqueta pequeña
   doc.fontSize(7).font('Helvetica-Bold').fillColor(GREEN)
-     .text(label, x + 10, y + 7, { lineBreak: false });
+     .text(label, x + 10, y + 7, { width: w - 16, lineBreak: false });
   // título
   doc.fontSize(8.5).font('Helvetica-Bold').fillColor(BLACK)
      .text(title, x + 10, y + 18, { width: w - 16, lineBreak: false });
-  // bullets
+  // bullets con wrap activado
   lines.forEach((l, i) => {
-    doc.fontSize(8).font('Helvetica').fillColor(MID)
-       .text('- ' + l, x + 14, y + 32 + i * lineH, { width: w - 22, lineBreak: false });
+    doc.fontSize(7.8).font('Helvetica').fillColor(MID)
+       .text('- ' + l, x + 10, y + 34 + i * lineH, { width: w - 18, lineBreak: true });
   });
+  doc.restore();
   return y + h + 6;
 }
 
