@@ -236,12 +236,11 @@ doc.y = of0 + 26;
 p('En reconocimiento al portafolio de clientes de EL PROFESIONAL y con el objetivo de facilitar la incorporación de sus empresas al ecosistema de SST-Colombia, LA EMPRESA extiende la siguiente oferta especial de bienvenida:');
 
 subsect('1.  Suscripción gratuita de bienvenida — 6 meses sin costo');
-p('Si EL PROFESIONAL facilita la incorporación de la totalidad o parte de las treinta y cinco (35) empresas de su portafolio actual dentro de los treinta (30) días calendario siguientes a la firma del presente acuerdo, LA EMPRESA otorgará a cada una de esas empresas una suscripción completamente gratuita por un período de seis (6) meses contados a partir de su fecha de activación en la plataforma.');
-bul('Cada empresa se registrará en SST-Colombia de forma autónoma a través de la plataforma (sst.sagisas.co), con sus propias credenciales y datos de la empresa. EL PROFESIONAL no gestiona cuentas ni datos de sus clientes.');
-bul('Una vez registrada cada empresa, LA EMPRESA la vinculará a EL PROFESIONAL como su Profesional SST asignado directamente desde el panel de administración de la plataforma.');
-bul('LA EMPRESA llevará el registro de las empresas asociadas a EL PROFESIONAL en el sistema, garantizando la trazabilidad de su portafolio para efectos del presente acuerdo.');
-bul('Durante el período gratuito, las empresas tendrán acceso completo a todos los módulos de la plataforma sin restricción.');
-bul('Al finalizar los seis (6) meses, las empresas podrán continuar con la suscripción paga según las tarifas vigentes del plan que corresponda a su nivel de riesgo ARL.');
+p('Si EL PROFESIONAL orienta a la totalidad o parte de las treinta y cinco (35) empresas de su portafolio actual para que se registren en SST-Colombia dentro de los treinta (30) días calendario siguientes a la firma del presente acuerdo, LA EMPRESA aplicará una promoción de seis (6) meses sin costo a cada una de esas empresas.');
+bul('Cada empresa realiza su propio registro directamente en la página de SST-Colombia (sst.sagisas.co), ingresa sus datos y completa el proceso de suscripción a través de la pasarela de pago Stripe. EL PROFESIONAL no gestiona cuentas, contraseñas ni información de sus clientes.');
+bul('Para acceder a los 6 meses gratuitos, cada empresa deberá ingresar durante su registro el código promocional exclusivo que LA EMPRESA generará para el portafolio de EL PROFESIONAL. Este código aplicará automáticamente el descuento del 100% durante seis (6) meses en Stripe.');
+bul('Vencido el período promocional, Stripe reanudará el cobro automático de la suscripción según la tarifa que corresponda al nivel de riesgo ARL de cada empresa, sin intervención adicional de ninguna de las partes.');
+bul('La plataforma registra de forma automática qué empresas utilizaron el código promocional de EL PROFESIONAL, generando así la trazabilidad de su portafolio para el pago de comisiones.');
 
 subsect('2.  Comisión de referido — 15% mensual recurrente y permanente');
 p('Por cada empresa del portafolio de EL PROFESIONAL que permanezca activa en SST-Colombia una vez finalizado el período gratuito, y por cada empresa nueva que EL PROFESIONAL incorpore en el futuro, LA EMPRESA reconocerá una comisión equivalente al quince por ciento (15%) del valor de la suscripción mensual pagada por dicha empresa, calculada sobre la tarifa neta facturada.');
@@ -265,8 +264,8 @@ doc.fontSize(8.5).font('Helvetica-Bold').fillColor(GREEN)
 doc.y = ej0 + 34;
 
 subsect('3.  Condiciones generales de la oferta');
-bul('La oferta de suscripción gratuita aplica exclusivamente a las empresas cuyo registro en la plataforma sea gestionado por SST-Colombia a solicitud de EL PROFESIONAL dentro del plazo de 30 días. No aplica a empresas que se registren de forma independiente sin mediación de EL PROFESIONAL.');
-bul('LA EMPRESA verificará que cada empresa vinculada al portafolio de EL PROFESIONAL corresponda a un cliente real con actividad económica activa, y confirmará por escrito la lista de empresas beneficiarias de la gratuidad.');
+bul('La gratuidad aplica exclusivamente a las empresas que utilicen el código promocional asignado a EL PROFESIONAL durante su proceso de registro en la landing page dentro del plazo de 30 días. No aplica a empresas que se registren sin dicho código.');
+bul('LA EMPRESA generará y entregará el código promocional a EL PROFESIONAL dentro de los tres (3) días hábiles siguientes a la firma del presente acuerdo, y confirmará por escrito la lista de empresas que lo utilizaron.');
 bul('Si por cualquier causa EL PROFESIONAL decide retirarse de la alianza, las comisiones causadas hasta la fecha de retiro serán pagadas en el siguiente ciclo de liquidación. Las empresas activas continuarán con su suscripción de forma independiente.');
 bul('Esta oferta no es acumulable con otras promociones vigentes, salvo acuerdo escrito entre las partes.');
 
