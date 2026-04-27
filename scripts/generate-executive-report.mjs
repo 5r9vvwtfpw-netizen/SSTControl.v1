@@ -145,8 +145,11 @@ function secBlock(label, title, body, x, y, w) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// PORTADA
+// PORTADA — margen inferior en 0 para que el diseño full-bleed no desborde
 // ══════════════════════════════════════════════════════════════════════════════
+doc.page.margins.bottom = 0;
+doc.page.margins.top    = 0;
+
 doc.rect(0, 0, PW, PH).fill(DGREEN);
 // Tramado diagonal sutil
 for (let i = -20; i < PW + PH; i += 28) {
@@ -217,69 +220,67 @@ section('Modulos Completamente Automatizados',
 
 p('Cada modulo elimina el trabajo manual: las alertas se generan solas, los documentos se producen al instante y los indicadores se actualizan en tiempo real. Esto es lo que encuentra en el sistema:');
 
-const mw2 = (W - 10) / 2;
-let lY = doc.y, rY = doc.y;
-
-const mods = [
-  ['GESTION SST', 'Trabajadores y Perfiles', [
-    'Hoja de vida SST completa por empleado',
-    'Control de afiliaciones, EPPs y examenes',
-    'Alertas automaticas de vencimientos',
+// 3 columnas para que los 8 módulos quepan en menos filas
+const mCols = 3;
+const mGap  = 8;
+const mw3   = (W - mGap * (mCols - 1)) / mCols;
+const mods  = [
+  ['TRABAJADORES', 'Gestion de Trabajadores', [
+    'Hoja de vida SST y control de afiliaciones',
+    'Alertas automaticas de vencimientos y EPPs',
   ]],
-  ['FORMACION', 'Capacitaciones', [
+  ['CAPACITACION', 'Capacitaciones', [
     'Programacion automatica segun perfil de riesgo',
-    'Registro digital de asistencia y evaluaciones',
     'Certificados generados al instante',
   ]],
   ['ACCIDENTES', 'Investigacion y FURAT', [
-    'Flujo guiado de reporte con arbol de causas',
+    'Flujo guiado de reporte y arbol de causas',
     'Generacion automatica del FURAT',
-    'Seguimiento de correctivos con alertas',
   ]],
-  ['INSPECCION', 'Inspecciones de Seguridad', [
+  ['INSPECCION', 'Inspecciones', [
     'Checklists dinamicos por area y cargo',
-    'Hallazgo automatico de plan de accion',
-    'Registro fotografico y trazabilidad',
+    'Hallazgo genera plan de accion automatico',
   ]],
-  ['RIESGOS', 'Matriz de Peligros GTC-45', [
-    'Valoracion automatica de riesgo por cargo',
-    'Actualizacion dinamica con cada cambio',
-    'Controles sugeridos segun nivel de riesgo',
+  ['RIESGOS', 'Matriz GTC-45', [
+    'Valoracion de riesgo por cargo automatizada',
+    'Controles sugeridos por nivel de peligro',
   ]],
   ['EMERGENCIAS', 'Plan de Emergencias', [
-    'Brigadas, roles y responsables definidos',
-    'Simulacros programados con seguimiento',
+    'Brigadas, roles y simulacros con trazabilidad',
     'Documentos legales generados al instante',
   ]],
   ['AUDITORIA', 'Evaluacion Res. 0312', [
-    'Evaluacion de los 61 estandares obligatorios',
-    'Calificacion automatica y brecha detectada',
+    'Los 61 estandares evaluados automaticamente',
     'Informe oficial para Ministerio del Trabajo',
   ]],
   ['SALUD', 'Salud Ocupacional', [
-    'Control de examenes medicos y vencimientos',
-    'Perfil sociodemografico automatizado',
+    'Control de examenes y perfil sociodemografico',
     'Programas de vigilancia epidemiologica',
   ]],
 ];
 
+const rowYs = [doc.y, doc.y, doc.y]; // y de cada columna
 mods.forEach((m, i) => {
-  if (i % 2 === 0) lY = moduleCard(m[0], m[1], m[2], L, lY, mw2);
-  else {
-    rY = moduleCard(m[0], m[1], m[2], L + mw2 + 10, rY, mw2);
-    lY = rY = Math.max(lY, rY);
+  const col = i % mCols;
+  const x   = L + col * (mw3 + mGap);
+  rowYs[col] = moduleCard(m[0], m[1], m[2], x, rowYs[col], mw3);
+  // al completar cada fila, igualar alturas
+  if (col === mCols - 1 || i === mods.length - 1) {
+    const maxRow = Math.max(...rowYs);
+    rowYs.fill(maxRow);
   }
 });
-doc.y = Math.max(lY, rY) + 4;
+doc.y = Math.max(...rowYs) + 4;
 
-// Nota PESV
-doc.rect(L, doc.y, W, 26).fill(LGREEN);
-doc.rect(L, doc.y, 4, 26).fill(GREEN);
+// Nota PESV — posición fija para evitar desbordamiento
+const pesvY0 = doc.y;
+doc.rect(L, pesvY0, W, 28).fill(LGREEN);
+doc.rect(L, pesvY0, 4, 28).fill(GREEN);
 doc.fontSize(8.5).font('Helvetica-Bold').fillColor(BLACK)
-   .text('+ Modulo PESV completo (Res. 40595/2022)', L + 14, doc.y + 5, { lineBreak: false });
+   .text('+ Modulo PESV completo (Res. 40595/2022)', L + 14, pesvY0 + 6, { lineBreak: false });
 doc.fontSize(8).font('Helvetica').fillColor(MID)
-   .text('Plan Estrategico de Seguridad Vial para empresas con flota vehicular. Niveles basico, estandar y avanzado.', L + 14, doc.y + 17, { lineBreak: false });
-doc.y += 34;
+   .text('Plan Estrategico de Seguridad Vial para empresas con flota vehicular. Niveles basico, estandar y avanzado.', L + 14, pesvY0 + 18, { width: W - 20, lineBreak: false });
+doc.y = pesvY0 + 36;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PÁGINA 3 — INFORMES + INDICADORES
