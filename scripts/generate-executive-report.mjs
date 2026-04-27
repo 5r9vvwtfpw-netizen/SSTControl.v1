@@ -135,17 +135,24 @@ function reportCard(title, desc, chips, x, y, w) {
 
 // Bloque de seguridad: fondo blanco con borde verde, texto oscuro
 function secBlock(label, title, body, x, y, w) {
-  const lines = Math.ceil(body.length / 62);
-  const h = 18 + 14 + lines * 12 + 16;
+  // Cálculo preciso: ~4.8px/char a 8.5pt Helvetica en el ancho disponible
+  const charsPerLine = Math.max(28, Math.floor((w - 26) / 4.8));
+  const bodyLines    = Math.ceil(body.length / charsPerLine) + 1;
+  const h = 14 + 16 + bodyLines * 13 + 12;
+  // Fondo y bordes
   doc.rect(x, y, w, h).fill(LGREEN);
   doc.rect(x, y, w, h).strokeColor(BGREEN).lineWidth(0.5).stroke();
   doc.rect(x, y, 4, h).fill(GREEN);
+  // Clip: ningún texto escapa del bloque
+  doc.save();
+  doc.rect(x + 1, y + 1, w - 2, h - 2).clip();
   doc.fontSize(7).font('Helvetica-Bold').fillColor(GREEN)
-     .text(label, x + 14, y + 10, { lineBreak: false });
+     .text(label, x + 14, y + 9, { lineBreak: false });
   doc.fontSize(9).font('Helvetica-Bold').fillColor(BLACK)
-     .text(title, x + 14, y + 22, { width: w - 20, lineBreak: false });
+     .text(title, x + 14, y + 21, { width: w - 20, lineBreak: true });
   doc.fontSize(8.5).font('Helvetica').fillColor(DARK)
-     .text(body, x + 14, y + 36, { width: w - 22, lineGap: 2.5 });
+     .text(body, x + 14, y + 38, { width: w - 22, lineGap: 2.5 });
+  doc.restore();
   return y + h + 7;
 }
 
