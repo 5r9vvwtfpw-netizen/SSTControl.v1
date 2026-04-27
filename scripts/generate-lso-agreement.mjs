@@ -249,13 +249,19 @@ bul('No existe límite de tiempo ni tope máximo de empresas para el reconocimie
 bul('El pago de comisiones se realizará dentro de los primeros diez (10) días hábiles de cada mes, por el total causado en el mes inmediatamente anterior, mediante transferencia bancaria a la cuenta indicada por EL PROFESIONAL.');
 bul('EL PROFESIONAL recibirá un reporte mensual detallado con el listado de empresas activas, el valor de su suscripción y el cálculo de la comisión correspondiente.');
 
-// Cuadro ejemplo numérico
+// Cuadro ejemplo numérico — dos líneas
 const ej0 = doc.y;
-doc.rect(L, ej0, W, 13).fill('#f0fff4');
-doc.rect(L, ej0, 3, 13).fill(GREEN);
+doc.rect(L, ej0, W, 28).fill('#f0fff4');
+doc.rect(L, ej0, 3, 28).fill(GREEN);
 doc.fontSize(8.5).font('Helvetica-Bold').fillColor(GREEN)
-   .text('Ejemplo ilustrativo: 35 empresas activas con suscripción promedio de $200.000 COP/mes = $7.000.000 COP/mes  →  Comisión: $1.050.000 COP/mes recurrentes.', L + 10, ej0 + 3, { width: W - 16, lineBreak: false });
-doc.y = ej0 + 19;
+   .text('Ejemplo ilustrativo:', L + 10, ej0 + 4, { lineBreak: false });
+doc.fontSize(8.5).font('Helvetica').fillColor(DARK)
+   .text('35 empresas × suscripción promedio $200.000 COP/mes = $7.000.000 COP facturados', L + 10, ej0 + 4, { width: W - 16, align: 'right', lineBreak: false });
+doc.fontSize(8.5).font('Helvetica-Bold').fillColor(GREEN)
+   .text('Comisión mensual recurrente para EL PROFESIONAL:', L + 10, ej0 + 16, { lineBreak: false });
+doc.fontSize(8.5).font('Helvetica-Bold').fillColor(GREEN)
+   .text('$1.050.000 COP', L + 10, ej0 + 16, { width: W - 16, align: 'right', lineBreak: false });
+doc.y = ej0 + 34;
 
 subsect('3.  Condiciones generales de la oferta');
 bul('La oferta de suscripción gratuita es intransferible y aplica exclusivamente a empresas del portafolio actual de EL PROFESIONAL, no a clientes nuevos adquiridos después de la firma.');
