@@ -144,30 +144,18 @@ try_ += trh;
 });
 doc.y = try_ + 10;
 
-p('Las tarifas anteriores corresponden EXCLUSIVAMENTE al servicio de auditoría y seguimiento SST mensual — es decir, las visitas de campo y el acompañamiento profesional que requieren la presencia y el criterio licenciado de EL PROFESIONAL.');
+p('Las tarifas anteriores corresponden exclusivamente al servicio de acompañamiento y gestión SST mensual en la plataforma. EL PROFESIONAL acuerda aplicar estas tarifas a las empresas contratadas a través del ecosistema de SST-Colombia.');
 
-// Cuadro explicativo: qué NO genera trabajo adicional al profesional
-const cx0 = doc.y;
-doc.rect(L, cx0, W, 13).fill('#1f6b41');
-doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff')
-   .text('¿Por qué la tarifa cubre solo auditorías?  —  El sistema hace el resto automáticamente', L + 8, cx0 + 3, { width: W - 14, lineBreak: false });
-doc.y = cx0 + 13;
-const cby = doc.y;
-doc.rect(L, cby, W, 52).fill('#f0fff4');
-doc.fontSize(8.5).font('Helvetica-Bold').fillColor('#1f6b41')
-   .text('SST-Colombia genera de forma automática — sin intervención del profesional:', L + 8, cby + 5, { width: W - 14, lineBreak: false });
-const autoItems = [
-  'Implementación completa del SG-SST: matrices, formatos, programas y planes normativos.',
-  'Informes ejecutivos, estadísticas e indicadores de gestión en tiempo real.',
-  'Documentación legal, actas, registros y trazabilidad de todas las actividades.',
-];
-autoItems.forEach((item, i) => {
-  doc.fontSize(8).font('Helvetica').fillColor('#1a4731')
-     .text('✓  ' + item, L + 12, cby + 18 + i * 12, { width: W - 20, lineBreak: false });
-});
-doc.y = cby + 58;
+// Subtítulo "Alcance incluido en la tarifa mensual"
+const alc0 = doc.y;
+doc.rect(L, alc0, W, 16).fill('#eef6ef');
+doc.fontSize(9.5).font('Helvetica-Bold').fillColor(GREEN)
+   .text('Alcance incluido en la tarifa mensual', L + 8, alc0 + 4, { width: W - 14, lineBreak: false });
+doc.y = alc0 + 22;
 
-p('EL PROFESIONAL acuerda aplicar estas tarifas a las empresas contratadas a través del ecosistema de SST-Colombia.');
+p('Para empresas que no presenten solicitudes especiales, requerimientos extraordinarios ni necesidad de compilación, reconstrucción o depuración documental adicional, la tarifa mensual de EL PROFESIONAL incluye la revisión y firma de todos los formatos, formularios y reportes ordinarios del SG-SST que deban ser presentados o enviados periódicamente al Ministerio del Trabajo, siempre que la información necesaria se encuentre completa, veraz y actualizada en LA PLATAFORMA.');
+
+p('Cualquier gestión adicional derivada de información incompleta, inconsistencias, requerimientos especiales, trámites extraordinarios o compilación documental manual podrá ser acordada y cobrada por separado entre EL PROFESIONAL y la empresa contratante.');
 
 // Bloque servicios adicionales
 const iy0 = doc.y;
