@@ -201,7 +201,7 @@ const bullets = [
   'Portal del Empleado: votacion COPASST y Convivencia digital',
   'Seguridad nivel bancario: AES-256 + AWS + TLS 1.3 + auditoria',
   'GPS integrado por API  -  Rastreo de flota en tiempo real',
-  'Custodia garantizada de informacion por 20 anos  -  Ley 1581',
+  'Custodia garantizada de informacion por 20 años  -  Ley 1581',
 ];
 bullets.forEach((b, i) => {
   const by = 288 + i * 14;
@@ -554,7 +554,7 @@ doc.y = 55;
 section('Ley 1581/2012 y Custodia de Informacion por 20 Anos',
         'Cumplimiento legal total en proteccion de datos  -  Informacion disponible y segura por dos decadas');
 
-p('La informacion de sus clientes y sus trabajadores esta protegida no solo por tecnologia, sino por las mas estrictas garantias legales y operacionales disponibles en Colombia. SST-Colombia es la unica plataforma del mercado que ofrece custodia documental garantizada por 20 anos:');
+p('La informacion de sus clientes y sus trabajadores esta protegida no solo por tecnologia, sino por las mas estrictas garantias legales y operacionales disponibles en Colombia. SST-Colombia es la unica plataforma del mercado que ofrece custodia documental garantizada por 20 años:');
 
 doc.moveDown(0.2);
 
@@ -598,7 +598,7 @@ garantiaBlock('Copias de Seguridad', 'Backups automaticos multicapa', [
 
 garantiaBlock('Custodia 20 Anos', 'Resguardo garantizado por contrato', [
   'Toda la historia disponible siempre',
-  'Acceso a registros de hace 20 anos',
+  'Acceso a registros de hace 20 años',
   'Documentos con validez legal probatoria',
   'Respaldo ante demandas o litigios',
   'Sin perdida por migraciones o versiones',
@@ -614,9 +614,9 @@ const custH  = 80;
 doc.rect(L, custY0, W, custH).fill(LGREEN);
 doc.rect(L, custY0, 4, custH).fill(GREEN);
 doc.fontSize(9.5).font('Helvetica-Bold').fillColor(BLACK)
-   .text('Por que la custodia de 20 anos es critica para sus clientes?', L + 16, custY0 + 10, { width: W - 24, lineBreak: false });
+   .text('Por que la custodia de 20 años es critica para sus clientes?', L + 16, custY0 + 10, { width: W - 24, lineBreak: false });
 doc.fontSize(8.5).font('Helvetica').fillColor(DARK)
-   .text('El Ministerio del Trabajo y los tribunales laborales pueden requerir evidencia de gestion SST con hasta 20 anos de retroactividad en casos de enfermedad laboral o accidente grave. Con SST-Colombia, la empresa siempre puede demostrar que hizo, cuando lo hizo y quien fue el responsable — con documentos legalmente validos.',
+   .text('El Ministerio del Trabajo y los tribunales laborales pueden requerir evidencia de gestion SST con hasta 20 años de retroactividad en casos de enfermedad laboral o accidente grave. Con SST-Colombia, la empresa siempre puede demostrar que hizo, cuando lo hizo y quien fue el responsable — con documentos legalmente validos.',
          L + 16, custY0 + 27, { width: W - 24, lineGap: 2.5 });
 doc.y = custY0 + custH + 8;
 
@@ -628,7 +628,7 @@ doc.fontSize(14).font('Helvetica-Bold').fillColor(BLACK)
    .text('La plataforma que sus clientes necesitan — y que su empresa merece ofrecer', L, doc.y, { width: W, align: 'center' });
 doc.moveDown(0.3);
 doc.fontSize(8.5).font('Helvetica').fillColor(MID)
-   .text('Automatizacion  -  Estadisticas  -  Portal empleado  -  Seguridad bancaria  -  Custodia 20 anos', L, doc.y, { width: W, align: 'center', lineBreak: false });
+   .text('Automatizacion  -  Estadisticas  -  Portal empleado  -  Seguridad bancaria  -  Custodia 20 años', L, doc.y, { width: W, align: 'center', lineBreak: false });
 doc.moveDown(0.4);
 doc.rect(L, doc.y, W, 2).fill(GREEN);
 doc.moveDown(0.4);
