@@ -272,15 +272,54 @@ mods.forEach((m, i) => {
 });
 doc.y = Math.max(...rowYs) + 4;
 
-// Nota PESV — posición fija para evitar desbordamiento
-const pesvY0 = doc.y;
-doc.rect(L, pesvY0, W, 28).fill(LGREEN);
-doc.rect(L, pesvY0, 4, 28).fill(GREEN);
-doc.fontSize(8.5).font('Helvetica-Bold').fillColor(BLACK)
-   .text('+ Modulo PESV completo (Res. 40595/2022)', L + 14, pesvY0 + 6, { lineBreak: false });
-doc.fontSize(8).font('Helvetica').fillColor(MID)
-   .text('Plan Estrategico de Seguridad Vial para empresas con flota vehicular. Niveles basico, estandar y avanzado.', L + 14, pesvY0 + 18, { width: W - 20, lineBreak: false });
-doc.y = pesvY0 + 36;
+// ── Sub-sección PESV ─────────────────────────────────────────────────────────
+const pesvHdrY = doc.y + 6;
+doc.rect(L, pesvHdrY, W, 34).fill(DGREEN);
+doc.fontSize(9.5).font('Helvetica-Bold').fillColor(WHITE)
+   .text('Plan Estrategico de Seguridad Vial (PESV)  -  Res. 40595/2022', L + 14, pesvHdrY + 6, { lineBreak: false });
+doc.fontSize(8).font('Helvetica').fillColor(BGREEN)
+   .text('Para empresas con flota vehicular — cobertura de los 10 lineamientos obligatorios en tres niveles de complejidad.',
+         L + 14, pesvHdrY + 19, { width: W - 20, lineBreak: false });
+doc.y = pesvHdrY + 40;
+
+const pesvMods = [
+  ['DIAGNOSTICO', 'Evaluacion de Lineamientos', [
+    'Los 10 lineamientos de la Res. 40595/2022',
+    'Nivel basico, estandar o avanzado automatico',
+  ]],
+  ['CONDUCTORES', 'Gestion de Conductores', [
+    'Licencias, infracciones y capacitaciones',
+    'Alertas automaticas de vencimientos',
+  ]],
+  ['FLOTA', 'Control de Vehiculos', [
+    'SOAT, tecnomecanica y mantenimientos',
+    'Plan de accion ante vencimientos automatico',
+  ]],
+  ['PLAN ACCION', 'Plan de Accion PESV', [
+    'Cronograma generado automaticamente',
+    'Semaforo de cumplimiento por actividad',
+  ]],
+  ['CAPACITACION', 'Formacion Vial', [
+    'Programas segun perfil del conductor',
+    'Certificados de asistencia al instante',
+  ]],
+  ['REPORTES', 'Informes PESV', [
+    'Informe oficial de avance para autoridades',
+    'Indicadores de cumplimiento en tiempo real',
+  ]],
+];
+
+const pRowYs = [doc.y, doc.y, doc.y];
+pesvMods.forEach((m, i) => {
+  const col = i % mCols;
+  const x   = L + col * (mw3 + mGap);
+  pRowYs[col] = moduleCard(m[0], m[1], m[2], x, pRowYs[col], mw3);
+  if (col === mCols - 1 || i === pesvMods.length - 1) {
+    const maxRow = Math.max(...pRowYs);
+    pRowYs.fill(maxRow);
+  }
+});
+doc.y = Math.max(...pRowYs) + 4;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PÁGINA 3 — INFORMES + INDICADORES
