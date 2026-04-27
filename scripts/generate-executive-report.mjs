@@ -294,17 +294,17 @@ section('Plan Estrategico de Seguridad Vial  —  PESV',
 
 p('El modulo PESV de SST-Colombia es el unico del mercado con integracion GPS en tiempo real. Conecta directamente con los dispositivos GPS de su flota via API, sin necesidad de operadores adicionales, convirtiendo datos de telemetria en evidencia legal de cumplimiento.');
 
-// Banner GPS destacado
+// Banner GPS destacado — alto calculado para contener el texto completo
 const gpsY0 = doc.y + 4;
-doc.rect(L, gpsY0, W, 48).fill(DGREEN);
-doc.rect(L, gpsY0, 5, 48).fill(MGREEN);
+const gpsH  = 64;
+doc.rect(L, gpsY0, W, gpsH).fill(DGREEN);
+doc.rect(L, gpsY0, 5, gpsH).fill(MGREEN);
 doc.fontSize(11).font('Helvetica-Bold').fillColor(WHITE)
-   .text('GPS INTEGRADO POR API  —  Tiempo Real', L + 18, gpsY0 + 8, { lineBreak: false });
+   .text('GPS INTEGRADO POR API  —  Tiempo Real', L + 18, gpsY0 + 9, { width: W - 28, lineBreak: false });
 doc.fontSize(8.5).font('Helvetica').fillColor(BGREEN)
-   .text('Conexion directa con Teltonika, Queclink, Coban y principales marcas GPS del mercado. Los datos de velocidad,', L + 18, gpsY0 + 24, { width: W - 30, lineBreak: false });
-doc.fontSize(8.5).font('Helvetica').fillColor(BGREEN)
-   .text('frenadas bruscas, rutas y alertas se convierten automaticamente en evidencia de cumplimiento PESV.', L + 18, gpsY0 + 35, { width: W - 30, lineBreak: false });
-doc.y = gpsY0 + 56;
+   .text('Conexion directa con Teltonika, Queclink, Coban y principales marcas GPS del mercado. Los datos de velocidad, frenadas bruscas, rutas y alertas se convierten automaticamente en evidencia legal de cumplimiento PESV.',
+         L + 18, gpsY0 + 27, { width: W - 30, lineBreak: true, lineGap: 2 });
+doc.y = gpsY0 + gpsH + 8;
 
 const pesvMods = [
   ['DIAGNOSTICO', 'Evaluacion de Lineamientos', [
@@ -424,14 +424,17 @@ section('Portal del Empleado — Participacion Digital y Transparente',
 
 p('El Portal del Empleado conecta directamente a cada trabajador con el sistema SST de su empresa. Sin papel, sin formularios fisicos: cada empleado accede desde su celular o computador para participar activamente en los procesos que exige la ley.');
 
-// Hero
-doc.rect(L, doc.y, W, 44).fill(DGREEN);
-doc.rect(L, doc.y, 4, 44).fill(MGREEN);
+// Hero — alto calculado para contener todo el texto sin desbordarse
+const heroY0 = doc.y + 4;
+const heroH  = 78;
+doc.rect(L, heroY0, W, heroH).fill(DGREEN);
+doc.rect(L, heroY0, 5, heroH).fill(MGREEN);
 doc.fontSize(10).font('Helvetica-Bold').fillColor(WHITE)
-   .text('Por que es diferente?', L + 16, doc.y + 8, { lineBreak: false });
-doc.fontSize(8.5).font('Helvetica').fillColor('rgba(255,255,255,0.75)')
-   .text('La mayoria de sistemas SST son herramientas para el area de RRHH. SST-Colombia es el unico que incluye un portal dedicado al trabajador, convirtiendo el cumplimiento normativo en una experiencia participativa, verificable y sin friccion para toda la organizacion.', L + 16, doc.y + 22, { width: W - 24, lineGap: 2 });
-doc.y += 54;
+   .text('Por que es diferente?', L + 16, heroY0 + 9, { lineBreak: false });
+doc.fontSize(8.5).font('Helvetica').fillColor('rgba(255,255,255,0.88)')
+   .text('La mayoria de sistemas SST son herramientas para el area de RRHH. SST-Colombia es el unico que incluye un portal dedicado al trabajador, convirtiendo el cumplimiento normativo en una experiencia participativa, verificable y sin friccion para toda la organizacion.',
+         L + 16, heroY0 + 26, { width: W - 28, lineGap: 3 });
+doc.y = heroY0 + heroH + 10;
 
 const pw4 = (W - 10) / 2;
 let pL = doc.y, pR = doc.y;
@@ -468,13 +471,15 @@ pL = pR = Math.max(pL, pR);
 
 doc.y = pL + 4;
 
-doc.rect(L, doc.y, W, 30).fill(LGREEN);
-doc.rect(L, doc.y, 4, 30).fill(GREEN);
+const accY0 = doc.y;
+doc.rect(L, accY0, W, 42).fill(LGREEN);
+doc.rect(L, accY0, 4, 42).fill(GREEN);
 doc.fontSize(8.5).font('Helvetica-Bold').fillColor(BLACK)
-   .text('Acceso universal sin complicaciones', L + 14, doc.y + 7, { lineBreak: false });
+   .text('Acceso universal sin complicaciones', L + 14, accY0 + 8, { lineBreak: false });
 doc.fontSize(8.5).font('Helvetica').fillColor(MID)
-   .text('El trabajador accede con su numero de cedula. Sin contraseñas complejas. Compatible con cualquier celular, tableta o computador con internet.', L + 14, doc.y + 19, { width: W - 22, lineBreak: false });
-doc.y += 40;
+   .text('El trabajador accede con su numero de cedula. Sin contraseñas complejas. Compatible con cualquier celular, tableta o computador con internet.',
+         L + 14, accY0 + 23, { width: W - 22, lineBreak: true });
+doc.y = accY0 + 50;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PÁGINA 5 — SEGURIDAD NIVEL BANCARIO Y MILITAR
@@ -599,13 +604,16 @@ doc.y = gy + 178;
 
 // Por que importa
 doc.moveDown(0.3);
-doc.rect(L, doc.y, W, 56).fill(LGREEN);
-doc.rect(L, doc.y, 4, 56).fill(GREEN);
+const custY0 = doc.y;
+const custH  = 80;
+doc.rect(L, custY0, W, custH).fill(LGREEN);
+doc.rect(L, custY0, 4, custH).fill(GREEN);
 doc.fontSize(9.5).font('Helvetica-Bold').fillColor(BLACK)
-   .text('Por que la custodia de 20 anos es critica para sus clientes?', L + 16, doc.y + 10, { width: W - 24 });
+   .text('Por que la custodia de 20 anos es critica para sus clientes?', L + 16, custY0 + 10, { width: W - 24, lineBreak: false });
 doc.fontSize(8.5).font('Helvetica').fillColor(DARK)
-   .text('El Ministerio del Trabajo y los tribunales laborales pueden requerir evidencia de gestion SST con hasta 20 anos de retroactividad en casos de enfermedad laboral o accidente grave. Con SST-Colombia, la empresa siempre puede demostrar que hizo, cuando lo hizo y quien fue el responsable — con documentos legalmente validos.', L + 16, doc.y + 28, { width: W - 24, lineGap: 2.5 });
-doc.y += 66;
+   .text('El Ministerio del Trabajo y los tribunales laborales pueden requerir evidencia de gestion SST con hasta 20 anos de retroactividad en casos de enfermedad laboral o accidente grave. Con SST-Colombia, la empresa siempre puede demostrar que hizo, cuando lo hizo y quien fue el responsable — con documentos legalmente validos.',
+         L + 16, custY0 + 27, { width: W - 24, lineGap: 2.5 });
+doc.y = custY0 + custH + 8;
 
 // Cierre
 doc.moveDown(0.2);
