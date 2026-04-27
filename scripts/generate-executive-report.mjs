@@ -173,6 +173,7 @@ doc.rect(0, 0, 6, PH).fill(MGREEN);
 // Círculo decorativo
 doc.circle(PW * 0.8, PH * 0.38, 210).strokeColor('rgba(255,255,255,0.06)').lineWidth(1).fillOpacity(0).stroke();
 doc.circle(PW * 0.8, PH * 0.38, 135).strokeColor('rgba(255,255,255,0.04)').lineWidth(0.5).fillOpacity(0).stroke();
+doc.fillOpacity(1); // restaurar: fillOpacity(0) queda como estado global en PDFKit
 
 // ── Cabecera empresa ─────────────────────────────────────────────────────────
 // Logo SST (cuadro blanco)
