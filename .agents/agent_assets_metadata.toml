@@ -1,5 +1,16 @@
 uploads = []
-generated = []
+
+[[generated]]
+id = "vU6gMTtCcq-DrpmpXJqwG"
+uri = "file://attached_assets/gmail-ad-header.png"
+type = "image"
+title = "gmail ad header sst colombia"
+
+[[generated]]
+id = "VE7imQLTEVHP2PY2HAp-S"
+uri = "file://attached_assets/gmail-ad-logo.png"
+type = "image"
+title = "sst colombia logo badge"
 
 [[outputs]]
 id = "zfo2unhJ0OjKHfLpC35u3"
@@ -36,3 +47,15 @@ id = "6c62UU8RRhn8RpEpd4MBa"
 uri = "file://attached_assets/informe-ejecutivo-sst-colombia.pdf"
 type = "pdf"
 title = "Informe Ejecutivo SST-Colombia — 20 años corregido"
+
+[[outputs]]
+id = "_9SfqTQmKE4EyQ2ZdLo4X"
+uri = "file://attached_assets/gmail-ad-header.png"
+type = "image"
+title = "Imagen de cabecera — horizontal (súbela en Medios → Imágenes)"
+
+[[outputs]]
+id = "wpoz4OtwzKpQAdftbWO5K"
+uri = "file://attached_assets/gmail-ad-logo.png"
+type = "image"
+title = "Logo cuadrado — ícono de empresa (súbelo en Medios → Logo)"
