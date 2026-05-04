@@ -7,7 +7,7 @@ import { CirclePlay, X, Clock } from "lucide-react";
 import type { HelpVideo } from "@shared/schema";
 
 // Interruptor global: cambiar a true para reactivar el botón en toda la plataforma
-const HELP_VIDEOS_ENABLED = false;
+const HELP_VIDEOS_ENABLED = true;
 
 const EXCLUDED_ROUTES = [
   "/auth",
