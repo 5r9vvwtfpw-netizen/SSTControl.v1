@@ -81,7 +81,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
         { label: "Usuarios de Soporte", path: "/admin-usuarios-soporte" },
         { label: "Profesionales Licenciados", path: "/profesionales-licenciados" },
         { label: "Documentos Legales", path: "/documentos-legales" },
-        // { label: "Videos de Ayuda", path: "/admin-videos-ayuda" }, // Temporalmente oculto
+        { label: "Videos de Ayuda", path: "/admin-videos-ayuda" },
       ],
     },
     {
@@ -95,7 +95,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
       title: "Ayuda",
       items: [
         { label: "Tickets de Soporte", path: "/tickets-soporte" },
-        // { label: "Videos de Ayuda", path: "/videos-ayuda" }, // Temporalmente oculto
+        { label: "Videos de Ayuda", path: "/videos-ayuda" },
       ],
     },
   ],
