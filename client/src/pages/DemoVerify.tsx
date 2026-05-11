@@ -18,6 +18,7 @@ export default function DemoVerify() {
   const token = params.get("token");
   const errorParam = params.get("error");
   const statusParam = params.get("status");
+  const apiParam = params.get("api");
 
   useEffect(() => {
     if (errorParam) {
@@ -29,6 +30,12 @@ export default function DemoVerify() {
     if (!token) {
       setStatus("error");
       setErrorMessage("No se proporcionó un token de verificación.");
+      return;
+    }
+
+    // LSO fallback flow: api param present means we must exchange the LSO token
+    if (apiParam) {
+      handleLsoTokenExchange(token, apiParam);
       return;
     }
 
@@ -48,7 +55,42 @@ export default function DemoVerify() {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [token, errorParam, statusParam]);
+  }, [token, errorParam, statusParam, apiParam]);
+
+  async function handleLsoTokenExchange(lsoToken: string, apiBase: string) {
+    setStatus("loading");
+    setStatusMessage("Verificando acceso al demo...");
+
+    try {
+      const response = await fetch(`${apiBase}/api/demo/verify-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: lsoToken }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success && data.redirectPath) {
+        setStatus("redirecting");
+        setStatusMessage("Acceso verificado. Redirigiendo...");
+        window.location.href = `${apiBase}${data.redirectPath}`;
+        return;
+      }
+
+      const errorMessages: Record<string, string> = {
+        invalid_token: "El token de verificación no es válido.",
+        not_found: "El token de verificación no existe.",
+        expired: "El token de verificación ha expirado.",
+        server_error: "Error interno del servidor. Intente de nuevo.",
+      };
+
+      setStatus("error");
+      setErrorMessage(errorMessages[data.code] || "No se pudo verificar el acceso al demo.");
+    } catch {
+      setStatus("error");
+      setErrorMessage("Error de conexión al verificar el token. Intente de nuevo.");
+    }
+  }
 
   async function pollUntilReady(tokenValue: string) {
     setStatus("loading");
@@ -99,6 +141,10 @@ export default function DemoVerify() {
 
   function handleManualRetry() {
     if (!token) return;
+    if (apiParam) {
+      handleLsoTokenExchange(token, apiParam);
+      return;
+    }
     redirectedRef.current = false;
     retryCountRef.current = 0;
     setStatus("redirecting");

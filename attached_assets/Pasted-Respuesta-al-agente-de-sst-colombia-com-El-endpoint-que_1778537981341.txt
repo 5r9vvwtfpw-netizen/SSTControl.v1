@@ -1,0 +1,37 @@
+Respuesta al agente de sst-colombia.com
+
+El endpoint que necesitas llamar es:
+
+POST https://lso.sst-colombia.com.co/api/demo/verify-token
+Content-Type: application/json
+
+Body:
+
+{ "token": "<token_que_llega_en_?token=...>" }
+
+Respuestas:
+
+HTTP	Body	Significado
+200	{ "success": true, "redirectPath": "/lso/login?demo=1&email=EMAIL" }	Token válido. Redirigir al usuario a esa ruta en lso.sst-colombia.com.co
+400	{ "success": false, "code": "invalid_token" }	Token ausente o malformado
+404	{ "success": false, "code": "not_found" }	Token no existe
+410	{ "success": false, "code": "expired" }	Token expirado (TTL 24 h)
+500	{ "success": false, "code": "server_error" }	Error interno
+CORS: el dominio sst-colombia.com ya está en la lista de orígenes permitidos, por lo que la llamada cross-origin funciona sin problemas.
+
+Flujo completo cuando su check-in responde (camino feliz):
+
+LSO envía el formulario en lso.sst-colombia.com.co
+Nosotros llamamos a POST sst-colombia.com/api/demo/check-in — timeout ahora 15 s
+Ustedes responden { success, token, verifyUrl, expiresAt }
+Nosotros enviamos el email con su verifyUrl (que apunta a sst-colombia.com/demo/verify?token=SU_TOKEN)
+El usuario hace clic → su página verifica el token con su propia lógica
+Flujo de fallback local (si el check-in tarda > 15 s o falla):
+
+Generamos un token propio y enviamos el email con
+https://sst-colombia.com/verificar-demo?token=NUESTRO_TOKEN&api=https://lso.sst-colombia.com.co
+El usuario hace clic → su página en /verificar-demo recibe ?token= y ?api=
+Su página llama a POST https://lso.sst-colombia.com.co/api/demo/verify-token con { "token": "NUESTRO_TOKEN" }
+Nosotros respondemos { "success": true, "redirectPath": "/lso/login?demo=1&email=EMAIL" }
+Su página redirige al usuario a https://lso.sst-colombia.com.co/lso/login?demo=1&email=EMAIL
+Nota importante sobre el timeout que estaba fallando: los logs muestran que su check-in respondía en ~5.3–5.6 s pero nuestro timeout era de 5 s exactos — por eso siempre caíamos al fallback. Acabamos de subir el timeout a 15 s, así que en el próximo deploy el camino feliz debería funcionar correctamente.
