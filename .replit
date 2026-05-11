@@ -46,8 +46,8 @@ integrations = ["javascript_auth_all_persistance:1.0.0", "javascript_database:1.
 
 [userenv.shared]
 ENABLE_PRICING_PLUGIN = "true"
-VITE_APP_URL = "https://sst-colombia.com"
-APP_URL = "https://sst-colombia.com"
+VITE_APP_URL = "https://sst.sagisas.co"
+APP_URL = "https://sst.sagisas.co"
 PUBLIC_OBJECT_SEARCH_PATHS = "/sst-evidences"
 PRIVATE_OBJECT_DIR = "/sst-evidences"
 OBJECT_STORAGE_BUCKET_ID = "replit-objstore-1a32e428-68e0-4edd-a4f5-f7aa98c8512e"
