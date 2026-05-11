@@ -372,6 +372,7 @@ function Router() {
       <ProtectedRoute path="/documentos-legales" component={DocumentosLegalesPdf} />
       <Route path="/demo" component={DemoLanding} />
       <Route path="/demo/verify" component={DemoVerify} />
+      <Route path="/verificar-demo" component={DemoVerify} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/login" component={LoginEmpresa} />
       <Route path="/soporte/login" component={LoginSoporte} />
