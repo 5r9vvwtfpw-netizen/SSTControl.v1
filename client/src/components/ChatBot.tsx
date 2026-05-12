@@ -126,6 +126,7 @@ function ExpandableMessage({ text }: { text: string }) {
 
 export function ChatBot() {
   const { data: user } = useQuery<any>({ queryKey: ["/api/user"] });
+  const isDemoSession = !!(user as any)?.isDemoSession;
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -284,7 +285,7 @@ export function ChatBot() {
       {!isOpen && (
         <div
           className="fixed z-50 flex flex-col items-center gap-1.5"
-          style={{ bottom: "24px", right: "24px" }}
+          style={{ bottom: isDemoSession ? "68px" : "24px", right: "24px" }}
         >
           <span className="text-xs font-semibold px-3 py-1 rounded-full shadow-md bg-white text-[#357947] border border-[#357947]/20">
             Preguntame
@@ -309,10 +310,11 @@ export function ChatBot() {
         <div
           className="fixed z-50 flex flex-col"
           style={{
-            bottom: "24px",
+            bottom: isDemoSession ? "68px" : "24px",
             right: "24px",
             width: "min(380px, calc(100vw - 2rem))",
-            height: "500px",
+            height: isDemoSession ? "calc(100vh - 140px)" : "500px",
+            maxHeight: "500px",
             animation: "chatbot-slide-up 200ms ease-out",
           }}
         >

@@ -9,8 +9,9 @@ export function DemoWatermark() {
 
   return (
     <>
+      {/* Marca de agua diagonal — no bloquea interacciones */}
       <div
-        className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden"
+        className="fixed inset-0 pointer-events-none z-[9997] overflow-hidden"
         aria-hidden="true"
         data-testid="demo-watermark-overlay"
       >
@@ -34,15 +35,18 @@ export function DemoWatermark() {
         </div>
       </div>
 
+      {/* Barra superior: parte del flujo normal para que el menú quede debajo */}
       <div
-        className="fixed top-0 left-0 right-0 z-[9998] bg-red-600 text-white text-center py-1.5 pointer-events-none"
+        className="sticky top-0 left-0 right-0 z-[9998] bg-red-600 text-white text-center py-1.5 pointer-events-none w-full"
         data-testid="demo-watermark-banner"
+        style={{ marginBottom: 0 }}
       >
         <span className="text-sm font-bold tracking-wide">
           MODO DEMOSTRACIÓN — Los datos se eliminarán automáticamente — sst-colombia.com.co
         </span>
       </div>
 
+      {/* Barra inferior fija */}
       <div
         className="fixed bottom-0 left-0 right-0 z-[9998] bg-red-600 text-white text-center py-1.5 pointer-events-none"
         data-testid="demo-watermark-banner-bottom"
