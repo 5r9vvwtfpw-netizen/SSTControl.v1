@@ -54,20 +54,24 @@ export function WelcomeGate({ children }: WelcomeGateProps) {
 
       {visible && (
         <div
-          className="fixed bottom-6 right-6 z-[9000] w-80 bg-card border rounded-md shadow-lg p-4 space-y-3"
+          className="fixed bottom-6 right-6 z-[9000] w-80 rounded-md shadow-xl overflow-hidden"
+          style={{ border: "1.5px solid #2d6a3e" }}
           data-testid="card-welcome-banner"
         >
-          {/* Encabezado */}
-          <div className="flex items-start justify-between gap-2">
+          {/* Franja superior verde */}
+          <div
+            className="flex items-center justify-between gap-2 px-4 py-3"
+            style={{ background: "#357947" }}
+          >
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-              <p className="font-semibold text-sm leading-snug">
+              <Sparkles className="h-4 w-4 text-white shrink-0" />
+              <p className="font-semibold text-sm text-white leading-snug">
                 ¡Bienvenido a SST Colombia!
               </p>
             </div>
             <button
               onClick={dismiss}
-              className="text-muted-foreground hover:text-foreground shrink-0"
+              className="text-white/80 hover:text-white shrink-0"
               aria-label="Cerrar aviso de bienvenida"
               data-testid="button-dismiss-welcome"
             >
@@ -75,47 +79,47 @@ export function WelcomeGate({ children }: WelcomeGateProps) {
             </button>
           </div>
 
-          {/* Cuerpo */}
-          <div className="space-y-2 text-xs text-muted-foreground leading-relaxed">
-            <p>
-              Para empezar a operar el sistema, haz clic en el botón{" "}
-              <span className="font-semibold text-foreground inline-flex items-center gap-1">
-                <PlayCircle className="h-3 w-3" /> Video de Ayuda
-              </span>{" "}
-              que encontrarás en este panel de control. Allí te explicamos paso a paso cómo configurar tu empresa.
-            </p>
-            <p>
-              También tienes nuestro{" "}
-              <span className="font-semibold text-foreground inline-flex items-center gap-1">
-                <Bot className="h-3 w-3" /> Asistente Virtual
-              </span>{" "}
-              disponible en todo momento para responder tus preguntas.
-            </p>
-            <p>
-              Si prefieres una sesión personalizada con nuestro equipo, escríbenos al correo.
+          {/* Cuerpo con fondo ligeramente verde */}
+          <div className="bg-[#f0f7f2] dark:bg-[#1a2e20] p-4 space-y-3">
+            <div className="space-y-2 text-xs text-[#2d4a35] dark:text-green-200 leading-relaxed">
+              <p>
+                Para empezar a operar el sistema, haz clic en el botón{" "}
+                <span className="font-semibold inline-flex items-center gap-1">
+                  <PlayCircle className="h-3 w-3" /> Video de Ayuda
+                </span>{" "}
+                que encontrarás en este panel de control. Allí te explicamos paso a paso cómo configurar tu empresa.
+              </p>
+              <p>
+                También tienes nuestro{" "}
+                <span className="font-semibold inline-flex items-center gap-1">
+                  <Bot className="h-3 w-3" /> Asistente Virtual
+                </span>{" "}
+                disponible en todo momento para responder tus preguntas.
+              </p>
+              <p>
+                Si prefieres una sesión personalizada con nuestro equipo, escríbenos al correo.
+              </p>
+            </div>
+
+            <button
+              className="w-full flex items-center justify-center gap-2 text-sm font-medium text-white rounded-md py-2 px-3 transition-opacity hover:opacity-90"
+              style={{ background: "#357947" }}
+              onClick={() =>
+                window.open(
+                  `mailto:${INDUCTION_EMAIL}?subject=Solicitud%20de%20sesión%20de%20inducción&body=Hola,%20me%20gustaría%20agendar%20una%20sesión%20de%20inducción%20personalizada%20para%20comenzar%20a%20operar%20el%20sistema.`,
+                  "_blank"
+                )
+              }
+              data-testid="button-request-induction"
+            >
+              <Mail className="h-4 w-4" />
+              Solicitar inducción personalizada
+            </button>
+
+            <p className="text-[11px] text-center" style={{ color: "#4a7a5a" }}>
+              {INDUCTION_EMAIL}
             </p>
           </div>
-
-          {/* Botón de inducción */}
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-full justify-start gap-2"
-            onClick={() =>
-              window.open(
-                `mailto:${INDUCTION_EMAIL}?subject=Solicitud%20de%20sesión%20de%20inducción&body=Hola,%20me%20gustaría%20agendar%20una%20sesión%20de%20inducción%20personalizada%20para%20comenzar%20a%20operar%20el%20sistema.`,
-                "_blank"
-              )
-            }
-            data-testid="button-request-induction"
-          >
-            <Mail className="h-4 w-4" />
-            Solicitar inducción personalizada
-          </Button>
-
-          <p className="text-[11px] text-muted-foreground text-center">
-            {INDUCTION_EMAIL}
-          </p>
         </div>
       )}
     </>
