@@ -704,9 +704,37 @@ export async function runHousekeeping(): Promise<{ resetCount: number; errorCoun
     ORDER BY room_id
   `);
 
+  // Salas atascadas en "resetting" por más de 15 minutos (reset colgado)
+  const stuckResettingRooms = await db.execute(sql`
+    SELECT * FROM demo_room_bookings 
+    WHERE status = 'resetting' AND updated_at < now() - interval '15 minutes'
+    ORDER BY room_id
+  `);
+
   const expiredRows = extractRows(expiredRooms);
   const errorRows = extractRows(errorRooms);
-  const roomsToReset = [...expiredRows, ...errorRows];
+  const stuckRows = extractRows(stuckResettingRooms);
+
+  if (stuckRows.length > 0) {
+    logger.warn(`[DemoEngine] Found ${stuckRows.length} room(s) stuck in 'resetting' for >15 min — marking as error for cleanup`);
+    for (const stuck of stuckRows) {
+      await db.execute(sql`
+        UPDATE demo_room_bookings
+        SET status = 'error',
+            error_message = 'Reset process timed out after 15 minutes',
+            updated_at = now()
+        WHERE room_id = ${stuck.room_id}
+      `);
+    }
+  }
+
+  // Re-fetch error rooms after marking stuck rooms
+  const allErrorRooms = await db.execute(sql`
+    SELECT * FROM demo_room_bookings WHERE status = 'error' ORDER BY room_id
+  `);
+  const allErrorRows = extractRows(allErrorRooms);
+
+  const roomsToReset = [...expiredRows, ...allErrorRows];
   let resetCount = 0;
   let errorCount = 0;
 

@@ -88,7 +88,7 @@ export default function DemoLanding() {
               </div>
               <div className="flex flex-col items-center gap-1 p-3 rounded-md bg-muted/50">
                 <Clock className="h-5 w-5 text-orange-500" />
-                <span className="text-xs text-center text-muted-foreground">30 min de acceso</span>
+                <span className="text-xs text-center text-muted-foreground">Acceso hasta las 2 AM</span>
               </div>
               <div className="flex flex-col items-center gap-1 p-3 rounded-md bg-muted/50">
                 <Shield className="h-5 w-5 text-green-500" />
