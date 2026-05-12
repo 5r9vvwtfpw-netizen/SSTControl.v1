@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { X, PlayCircle, Mail, BookOpen } from "lucide-react";
+import { X, PlayCircle, Mail, Bot, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type CompanyBasic = {
@@ -13,10 +13,6 @@ type CompanyBasic = {
 
 const BYPASS_ROLES = ["superadmin", "soporte", "lso", "lso_externo"];
 const INDUCTION_EMAIL = "admin@sst-colombia.com";
-
-// URL del primer video tutorial del panel de control
-// Actualizar cuando el video esté disponible
-const TUTORIAL_VIDEO_URL = "https://www.youtube.com/@SG-SST";
 
 interface WelcomeGateProps {
   children: React.ReactNode;
@@ -64,7 +60,7 @@ export function WelcomeGate({ children }: WelcomeGateProps) {
           {/* Encabezado */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+              <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
               <p className="font-semibold text-sm leading-snug">
                 ¡Bienvenido a SST Colombia!
               </p>
@@ -72,7 +68,7 @@ export function WelcomeGate({ children }: WelcomeGateProps) {
             <button
               onClick={dismiss}
               className="text-muted-foreground hover:text-foreground shrink-0"
-              aria-label="Cerrar"
+              aria-label="Cerrar aviso de bienvenida"
               data-testid="button-dismiss-welcome"
             >
               <X className="h-4 w-4" />
@@ -80,39 +76,42 @@ export function WelcomeGate({ children }: WelcomeGateProps) {
           </div>
 
           {/* Cuerpo */}
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Para comenzar, te recomendamos ver el video introductorio del panel de control.
-            Si prefieres una sesión personalizada con nuestro equipo, escríbenos al correo.
-          </p>
-
-          {/* Acciones */}
-          <div className="flex flex-col gap-2">
-            <Button
-              size="sm"
-              className="w-full justify-start gap-2"
-              onClick={() => window.open(TUTORIAL_VIDEO_URL, "_blank")}
-              data-testid="button-watch-tutorial"
-            >
-              <PlayCircle className="h-4 w-4" />
-              Ver video tutorial
-            </Button>
-
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full justify-start gap-2"
-              onClick={() =>
-                window.open(
-                  `mailto:${INDUCTION_EMAIL}?subject=Solicitud%20de%20inducción%20SST%20Colombia&body=Hola,%20me%20gustaría%20agendar%20una%20sesión%20de%20inducción%20personalizada.`,
-                  "_blank"
-                )
-              }
-              data-testid="button-request-induction"
-            >
-              <Mail className="h-4 w-4" />
-              Solicitar inducción por correo
-            </Button>
+          <div className="space-y-2 text-xs text-muted-foreground leading-relaxed">
+            <p>
+              Para empezar a operar el sistema, haz clic en el botón{" "}
+              <span className="font-semibold text-foreground inline-flex items-center gap-1">
+                <PlayCircle className="h-3 w-3" /> Video de Ayuda
+              </span>{" "}
+              que encontrarás en este panel de control. Allí te explicamos paso a paso cómo configurar tu empresa.
+            </p>
+            <p>
+              También tienes nuestro{" "}
+              <span className="font-semibold text-foreground inline-flex items-center gap-1">
+                <Bot className="h-3 w-3" /> Asistente Virtual
+              </span>{" "}
+              disponible en todo momento para responder tus preguntas.
+            </p>
+            <p>
+              Si prefieres una sesión personalizada con nuestro equipo, escríbenos al correo.
+            </p>
           </div>
+
+          {/* Botón de inducción */}
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full justify-start gap-2"
+            onClick={() =>
+              window.open(
+                `mailto:${INDUCTION_EMAIL}?subject=Solicitud%20de%20sesión%20de%20inducción&body=Hola,%20me%20gustaría%20agendar%20una%20sesión%20de%20inducción%20personalizada%20para%20comenzar%20a%20operar%20el%20sistema.`,
+                "_blank"
+              )
+            }
+            data-testid="button-request-induction"
+          >
+            <Mail className="h-4 w-4" />
+            Solicitar inducción personalizada
+          </Button>
 
           <p className="text-[11px] text-muted-foreground text-center">
             {INDUCTION_EMAIL}
