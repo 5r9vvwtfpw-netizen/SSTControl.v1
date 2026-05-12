@@ -30,7 +30,6 @@ import { registerStripeRoutes } from "./routes/stripe";
 import { registerDbDiagnosticRoutes } from "./routes/db-diagnostic";
 import companyCreationDiagnosticRoutes from "./routes/company-creation-diagnostic";
 import writeTestDiagnosticRoutes from "./routes/write-test-diagnostic";
-import restoreSadgiRoutes from "./routes/restore-sadgi";
 import { registerSubscriptionCheckRoutes } from "./routes/subscription-check";
 import { registerLicensedProfessionalsRoutes } from "./routes/licensed-professionals";
 import { registerRiesgosVinculacionRoutes } from "./routes/riesgos-vinculacion";
@@ -46942,7 +46941,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   registerDbDiagnosticRoutes(app);
   app.use(companyCreationDiagnosticRoutes);
   app.use(writeTestDiagnosticRoutes);
-  app.use("/api/internal", restoreSadgiRoutes);
   registerBillingRoutes(app);
   registerSubscriptionCheckRoutes(app);
 
