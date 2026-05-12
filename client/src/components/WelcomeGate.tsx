@@ -50,6 +50,11 @@ export function WelcomeGate({ children }: WelcomeGateProps) {
     return <>{children}</>;
   }
 
+  // Usuarios demo (acceso con token) no deben ver la pantalla de inducción
+  if (user.username?.startsWith("demo_")) {
+    return <>{children}</>;
+  }
+
   if (isLoading) {
     return <>{children}</>;
   }
