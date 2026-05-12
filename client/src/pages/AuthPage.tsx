@@ -69,6 +69,7 @@ export default function AuthPage() {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [quotePreFilled, setQuotePreFilled] = useState<{
     companyName?: boolean;
     ciiuCode?: boolean;
@@ -307,6 +308,27 @@ export default function AuthPage() {
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const errors: Record<string, string> = {};
+    if (!registerData.fullName.trim()) errors.fullName = "Ingresa el nombre de la empresa";
+    if (!registerData.email.trim()) errors.email = "Ingresa el correo empresarial";
+    if (!companyData.ciiuCode) errors.ciiuCode = "Selecciona la actividad económica (CIIU)";
+    if (companyData.numberOfWorkers < 1) errors.numberOfWorkers = "Ingresa el número de trabajadores";
+    if (!companyData.nit.trim() || companyData.nit.length < 9) errors.nit = "Ingresa el NIT (mínimo 9 caracteres)";
+    if (!companyData.city) errors.city = "Selecciona la ciudad";
+    if (!companyData.address.trim() || companyData.address.length < 5) errors.address = "Ingresa la dirección (mínimo 5 caracteres)";
+    if (!companyData.contactPhone.trim() || companyData.contactPhone.length < 7) errors.contactPhone = "Ingresa el teléfono (mínimo 7 dígitos)";
+    if (!registerData.username.trim()) errors.username = "Ingresa el nombre de usuario";
+    if (!registerData.password || registerData.password.length < 6) errors.password = "La contraseña debe tener al menos 6 caracteres";
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      const firstErrorField = document.querySelector('[data-field-error]');
+      if (firstErrorField) firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    setFieldErrors({});
     const savedQuoteToken = localStorage.getItem('sst_quote_token') || undefined;
     registerMutation.mutate({ ...registerData, quoteToken: savedQuoteToken }, {
       onSuccess: (data: any) => {
@@ -525,11 +547,12 @@ export default function AuthPage() {
                       id="register-fullname"
                       placeholder="Ingrese el nombre de su empresa"
                       value={registerData.fullName}
-                      onChange={(e) => setRegisterData({ ...registerData, fullName: e.target.value })}
-                      required
-                      className={quotePreFilled.companyName ? "border-green-300 dark:border-green-700" : ""}
+                      onChange={(e) => { setRegisterData({ ...registerData, fullName: e.target.value }); setFieldErrors(prev => ({ ...prev, fullName: "" })); }}
+                      className={fieldErrors.fullName ? "border-red-500 dark:border-red-500" : quotePreFilled.companyName ? "border-green-300 dark:border-green-700" : ""}
                       data-testid="input-register-fullname"
+                      data-field-error={fieldErrors.fullName ? "true" : undefined}
                     />
+                    {fieldErrors.fullName && <p className="text-xs text-red-600 dark:text-red-400">{fieldErrors.fullName}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -539,10 +562,12 @@ export default function AuthPage() {
                       type="email"
                       placeholder="contacto@empresa.com"
                       value={registerData.email}
-                      onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                      required
+                      onChange={(e) => { setRegisterData({ ...registerData, email: e.target.value }); setFieldErrors(prev => ({ ...prev, email: "" })); }}
+                      className={fieldErrors.email ? "border-red-500 dark:border-red-500" : ""}
                       data-testid="input-register-email"
+                      data-field-error={fieldErrors.email ? "true" : undefined}
                     />
+                    {fieldErrors.email && <p className="text-xs text-red-600 dark:text-red-400">{fieldErrors.email}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -560,9 +585,9 @@ export default function AuthPage() {
                     </Label>
                     <Select 
                       value={companyData.ciiuCode} 
-                      onValueChange={(val) => setCompanyData({ ...companyData, ciiuCode: val })}
+                      onValueChange={(val) => { setCompanyData({ ...companyData, ciiuCode: val }); setFieldErrors(prev => ({ ...prev, ciiuCode: "" })); }}
                     >
-                      <SelectTrigger data-testid="select-register-ciiu" className={quotePreFilled.ciiuCode ? "border-green-300 dark:border-green-700" : ""}>
+                      <SelectTrigger data-testid="select-register-ciiu" className={fieldErrors.ciiuCode ? "border-red-500 dark:border-red-500" : quotePreFilled.ciiuCode ? "border-green-300 dark:border-green-700" : ""} data-field-error={fieldErrors.ciiuCode ? "true" : undefined}>
                         <SelectValue placeholder="Selecciona tu actividad económica" />
                       </SelectTrigger>
                       <SelectContent className="max-h-80">
@@ -671,9 +696,12 @@ export default function AuthPage() {
                       <Input 
                         placeholder="Ej: 900123456-7" 
                         value={companyData.nit}
-                        onChange={(e) => setCompanyData({ ...companyData, nit: e.target.value.replace(/[\s.]/g, '') })}
+                        onChange={(e) => { setCompanyData({ ...companyData, nit: e.target.value.replace(/[\s.]/g, '') }); setFieldErrors(prev => ({ ...prev, nit: "" })); }}
+                        className={fieldErrors.nit ? "border-red-500 dark:border-red-500" : ""}
                         data-testid="input-register-nit"
+                        data-field-error={fieldErrors.nit ? "true" : undefined}
                       />
+                      {fieldErrors.nit && <p className="text-xs text-red-600 dark:text-red-400">{fieldErrors.nit}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1">
@@ -682,9 +710,9 @@ export default function AuthPage() {
                       </Label>
                       <Select 
                         value={companyData.city} 
-                        onValueChange={(val) => setCompanyData({ ...companyData, city: val })}
+                        onValueChange={(val) => { setCompanyData({ ...companyData, city: val }); setFieldErrors(prev => ({ ...prev, city: "" })); }}
                       >
-                        <SelectTrigger data-testid="select-register-city">
+                        <SelectTrigger data-testid="select-register-city" className={fieldErrors.city ? "border-red-500 dark:border-red-500" : ""} data-field-error={fieldErrors.city ? "true" : undefined}>
                           <SelectValue placeholder="Selecciona" />
                         </SelectTrigger>
                         <SelectContent>
@@ -693,6 +721,7 @@ export default function AuthPage() {
                           ))}
                         </SelectContent>
                       </Select>
+                      {fieldErrors.city && <p className="text-xs text-red-600 dark:text-red-400">{fieldErrors.city}</p>}
                     </div>
                   </div>
 
@@ -702,9 +731,12 @@ export default function AuthPage() {
                       <Input 
                         placeholder="Ej: Calle 100 # 15-20" 
                         value={companyData.address}
-                        onChange={(e) => setCompanyData({ ...companyData, address: e.target.value })}
+                        onChange={(e) => { setCompanyData({ ...companyData, address: e.target.value }); setFieldErrors(prev => ({ ...prev, address: "" })); }}
+                        className={fieldErrors.address ? "border-red-500 dark:border-red-500" : ""}
                         data-testid="input-register-address"
+                        data-field-error={fieldErrors.address ? "true" : undefined}
                       />
+                      {fieldErrors.address && <p className="text-xs text-red-600 dark:text-red-400">{fieldErrors.address}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1">
@@ -714,9 +746,12 @@ export default function AuthPage() {
                       <Input 
                         placeholder="Ej: 3001234567" 
                         value={companyData.contactPhone}
-                        onChange={(e) => setCompanyData({ ...companyData, contactPhone: e.target.value })}
+                        onChange={(e) => { setCompanyData({ ...companyData, contactPhone: e.target.value }); setFieldErrors(prev => ({ ...prev, contactPhone: "" })); }}
+                        className={fieldErrors.contactPhone ? "border-red-500 dark:border-red-500" : ""}
                         data-testid="input-register-phone"
+                        data-field-error={fieldErrors.contactPhone ? "true" : undefined}
                       />
+                      {fieldErrors.contactPhone && <p className="text-xs text-red-600 dark:text-red-400">{fieldErrors.contactPhone}</p>}
                     </div>
                   </div>
 
@@ -727,10 +762,12 @@ export default function AuthPage() {
                         id="register-username"
                         placeholder="Nombre de usuario"
                         value={registerData.username}
-                        onChange={(e) => setRegisterData({ ...registerData, username: e.target.value })}
-                        required
+                        onChange={(e) => { setRegisterData({ ...registerData, username: e.target.value }); setFieldErrors(prev => ({ ...prev, username: "" })); }}
+                        className={fieldErrors.username ? "border-red-500 dark:border-red-500" : ""}
                         data-testid="input-register-username"
+                        data-field-error={fieldErrors.username ? "true" : undefined}
                       />
+                      {fieldErrors.username && <p className="text-xs text-red-600 dark:text-red-400">{fieldErrors.username}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="register-password">Contraseña *</Label>
@@ -740,11 +777,10 @@ export default function AuthPage() {
                           type={showRegisterPassword ? "text" : "password"}
                           placeholder="Mín. 6 caracteres"
                           value={registerData.password}
-                          onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-                          required
-                          minLength={6}
-                          className="pr-10"
+                          onChange={(e) => { setRegisterData({ ...registerData, password: e.target.value }); setFieldErrors(prev => ({ ...prev, password: "" })); }}
+                          className={fieldErrors.password ? "border-red-500 pr-10 dark:border-red-500" : "pr-10"}
                           data-testid="input-register-password"
+                          data-field-error={fieldErrors.password ? "true" : undefined}
                         />
                         <button
                           type="button"
@@ -756,6 +792,7 @@ export default function AuthPage() {
                           {showRegisterPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
+                      {fieldErrors.password && <p className="text-xs text-red-600 dark:text-red-400">{fieldErrors.password}</p>}
                     </div>
                   </div>
 
@@ -769,7 +806,7 @@ export default function AuthPage() {
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={registerMutation.isPending || !allFieldsValid}
+                    disabled={registerMutation.isPending}
                     data-testid="button-register"
                   >
                     {registerMutation.isPending ? "Registrando..." : "Crear cuenta gratis"}
