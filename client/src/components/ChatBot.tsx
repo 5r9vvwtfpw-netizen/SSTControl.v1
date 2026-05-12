@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, Fragment } from "react";
-import { MessageCircle, X, Send, Loader2, User, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { X, Send, Loader2, User, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import chatbotAvatar from "@assets/image_1771096260727.png";
@@ -130,7 +130,6 @@ export function ChatBot() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -286,13 +285,8 @@ export function ChatBot() {
         <div
           className="fixed z-50 flex flex-col items-center gap-1.5"
           style={{ bottom: "24px", right: "24px" }}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
         >
-          <span
-            className="text-xs font-semibold px-3 py-1 rounded-full shadow-md bg-white text-[#357947] border border-[#357947]/20 transition-opacity duration-200"
-            style={{ opacity: isHovered ? 1 : 0, pointerEvents: "none" }}
-          >
+          <span className="text-xs font-semibold px-3 py-1 rounded-full shadow-md bg-white text-[#357947] border border-[#357947]/20">
             Preguntame
           </span>
           <button
@@ -302,15 +296,10 @@ export function ChatBot() {
             aria-label="Abrir asistente virtual"
             style={{ overflow: "hidden" }}
           >
-            <MessageCircle
-              className="absolute inset-0 m-auto h-6 w-6 text-white transition-opacity duration-200"
-              style={{ opacity: isHovered ? 0 : 1 }}
-            />
             <img
               src={chatbotAvatar}
               alt="Asistente SST Colombia"
-              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-200"
-              style={{ opacity: isHovered ? 1 : 0 }}
+              className="absolute inset-0 w-full h-full object-cover"
             />
           </button>
         </div>
