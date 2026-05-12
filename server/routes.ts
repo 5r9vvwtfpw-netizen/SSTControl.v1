@@ -2766,6 +2766,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Auto-assign trial subscription for admin-created companies
+      // (self-registration flow already does this; admin panel flow did not — closing the gap)
+      if (isAdmin) {
+        try {
+          const ADMIN_TRIAL_DAYS = 7;
+          let subscriptionPlan = await storage.getSubscriptionPlanByName("microempresa");
+          if (!subscriptionPlan) {
+            const allPlans = await storage.getSubscriptionPlans();
+            const activePlans = allPlans.filter((p: any) => p.status === "active");
+            if (activePlans.length > 0) subscriptionPlan = activePlans[0];
+          }
+          if (subscriptionPlan) {
+            await storage.createTrialSubscription(company.id, subscriptionPlan.id, ADMIN_TRIAL_DAYS);
+            console.log(`✅ [ADMIN-TRIAL] Suscripción trial asignada automáticamente a empresa creada por admin: ${company.name} (${company.id})`);
+          } else {
+            console.warn(`⚠️ [ADMIN-TRIAL] No se encontró plan disponible para asignar trial a empresa ${company.id}`);
+          }
+        } catch (trialErr: any) {
+          // Non-fatal: company is created, admin can assign trial manually from billing dashboard
+          console.error(`⚠️ [ADMIN-TRIAL] Error al crear trial automático para empresa ${company.id}: ${trialErr.message}`);
+        }
+      }
+
       // Notificar al administrador sobre nueva empresa registrada
       emailService.sendAdminNewCompanyNotification({
         companyName: company.name,
