@@ -137,19 +137,6 @@ export default function CrearEmpresaCiiuFirst() {
     if (type === "terms") setTermsViewed(true);
     if (type === "ip-policy") setPolicyViewed(true);
   };
-  const hasRegistrationData = typeof window !== 'undefined' && !!localStorage.getItem('sst_registration_ciiu');
-  const hasAllRegistrationData = typeof window !== 'undefined' && !!(
-    localStorage.getItem('sst_registration_ciiu') &&
-    localStorage.getItem('sst_registration_company_name') &&
-    localStorage.getItem('sst_registration_nit') &&
-    localStorage.getItem('sst_registration_city') &&
-    localStorage.getItem('sst_registration_address') &&
-    localStorage.getItem('sst_registration_phone') &&
-    localStorage.getItem('sst_registration_email')
-  );
-  const [currentStep, setCurrentStep] = useState(hasRegistrationData ? 2 : 1);
-  const [editMode, setEditMode] = useState(false);
-
   const { data: user } = useQuery<User>({
     queryKey: ["/api/user"],
   });
@@ -166,8 +153,9 @@ export default function CrearEmpresaCiiuFirst() {
   const workersParam = urlWorkers || storedWorkers;
   const initialWorkers = workersParam ? parseInt(workersParam, 10) : 1;
 
+  // Read all data sources first, before deciding the initial step
   const storedQuote = typeof window !== 'undefined' ? localStorage.getItem('sst_quote_data') : null;
-  const quoteData = storedQuote ? JSON.parse(storedQuote) : null;
+  const quoteData = storedQuote ? (() => { try { return JSON.parse(storedQuote); } catch { return null; } })() : null;
 
   const regCompanyName = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_company_name') : null;
   const regEmail = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_email') : null;
@@ -179,6 +167,23 @@ export default function CrearEmpresaCiiuFirst() {
   const regAddress = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_address') : null;
   const regPhone = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_phone') : null;
   const regRisk = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_risk') : null;
+
+  // Check if CIIU is available from ANY source (registration localStorage OR quote JWT)
+  const hasRegistrationData = !!(regCiiu || quoteData?.ciiuCode);
+
+  // Check if ALL required company data is available from any combination of sources
+  const hasAllRegistrationData = !!(
+    (regCiiu || quoteData?.ciiuCode) &&
+    (regCompanyName || quoteData?.companyName) &&
+    regNit &&
+    regCity &&
+    regAddress &&
+    regPhone &&
+    (regEmail || quoteData?.email)
+  );
+
+  const [currentStep, setCurrentStep] = useState(hasRegistrationData ? 2 : 1);
+  const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
     sessionStorage.removeItem('sst_new_registration');
