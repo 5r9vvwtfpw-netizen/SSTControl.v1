@@ -1414,7 +1414,7 @@ function DetalleEvaluacionPesvInner() {
                 return (
                   <Card 
                     key={paso.codigo}
-                    className="hover-elevate cursor-pointer transition-all"
+                    className={`hover-elevate cursor-pointer transition-all${paso.codigo === 'H06' ? ' border-emerald-200 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20' : ''}`}
                     onClick={() => handlePasoClick(paso)}
                     data-testid={`card-paso-${paso.codigo}`}
                   >
