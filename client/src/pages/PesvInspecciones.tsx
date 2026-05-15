@@ -5,9 +5,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Eye, Trash2, ArrowLeft, FileDown, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Plus, Search, Eye, Trash2, ArrowLeft, FileDown, CheckCircle2, XCircle, AlertCircle, CheckSquare, XSquare, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { VehicleInspection, Vehicle, Driver, insertVehicleInspectionSchema } from "@shared/schema";
@@ -20,6 +20,55 @@ import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
+
+const ITEMS_INSPECCION = [
+  {
+    grupo: "Exterior",
+    items: [
+      { key: "tires" as const, label: "Llantas / Neumáticos", critical: true },
+      { key: "lights" as const, label: "Luces" },
+      { key: "mirrors" as const, label: "Espejos" },
+      { key: "bodywork" as const, label: "Carrocería" },
+    ],
+  },
+  {
+    grupo: "Interior",
+    items: [
+      { key: "seatbelts" as const, label: "Cinturones de seguridad" },
+      { key: "horn" as const, label: "Bocina / Pito" },
+      { key: "windshield" as const, label: "Parabrisas / Limpiabrisas" },
+      { key: "instruments" as const, label: "Instrumentos / Tablero" },
+    ],
+  },
+  {
+    grupo: "Mecánica",
+    items: [
+      { key: "brakes" as const, label: "Frenos", critical: true },
+      { key: "steering" as const, label: "Dirección" },
+      { key: "suspension" as const, label: "Suspensión" },
+      { key: "fluids" as const, label: "Fluidos (aceite, refrigerante)" },
+    ],
+  },
+  {
+    grupo: "Equipos de seguridad",
+    items: [
+      { key: "fireExtinguisher" as const, label: "Extintor", critical: true },
+      { key: "firstAidKit" as const, label: "Botiquín de primeros auxilios" },
+      { key: "reflectiveTriangles" as const, label: "Triángulos reflectivos" },
+      { key: "safetyVest" as const, label: "Chaleco reflectivo" },
+    ],
+  },
+];
+
+type ItemKey = "tires" | "lights" | "mirrors" | "bodywork" | "seatbelts" | "horn" | "windshield" | "instruments" | "brakes" | "steering" | "suspension" | "fluids" | "fireExtinguisher" | "firstAidKit" | "reflectiveTriangles" | "safetyVest";
+
+function computeResult(data: Record<ItemKey, number>): "apto" | "apto-con-observaciones" | "no-apto" {
+  const criticalKeys: ItemKey[] = ["tires", "brakes", "fireExtinguisher"];
+  if (criticalKeys.some(k => data[k] === 0)) return "no-apto";
+  const allKeys: ItemKey[] = ["tires", "lights", "mirrors", "bodywork", "seatbelts", "horn", "windshield", "instruments", "brakes", "steering", "suspension", "fluids", "fireExtinguisher", "firstAidKit", "reflectiveTriangles", "safetyVest"];
+  if (allKeys.some(k => data[k] === 0)) return "apto-con-observaciones";
+  return "apto";
+}
 
 export default function PesvInspecciones() {
   const { user } = useAuth();
@@ -116,13 +165,18 @@ export default function PesvInspecciones() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+    const autoResult = computeResult(formData as Record<ItemKey, number>);
     const data = {
       ...formData,
+      result: autoResult,
       observations: formData.observations || undefined,
       correctiveActions: formData.correctiveActions || undefined,
     };
     createInspectionMutation.mutate(data);
+  };
+
+  const toggleItem = (key: ItemKey) => {
+    setFormData(prev => ({ ...prev, [key]: prev[key] === 1 ? 0 : 1 }));
   };
 
   const handleDelete = (id: string) => {
@@ -312,212 +366,94 @@ export default function PesvInspecciones() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <h3 className="font-semibold">Revisión Exterior</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="tires"
-                      checked={formData.tires === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, tires: checked ? 1 : 0 })}
-                      data-testid="checkbox-tires"
-                    />
-                    <Label htmlFor="tires">Neumáticos</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="lights"
-                      checked={formData.lights === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, lights: checked ? 1 : 0 })}
-                      data-testid="checkbox-lights"
-                    />
-                    <Label htmlFor="lights">Luces</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="mirrors"
-                      checked={formData.mirrors === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, mirrors: checked ? 1 : 0 })}
-                      data-testid="checkbox-mirrors"
-                    />
-                    <Label htmlFor="mirrors">Espejos</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="bodywork"
-                      checked={formData.bodywork === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, bodywork: checked ? 1 : 0 })}
-                      data-testid="checkbox-bodywork"
-                    />
-                    <Label htmlFor="bodywork">Carrocería</Label>
+              {/* Ítems de inspección por grupo — toggle buttons */}
+              {ITEMS_INSPECCION.map(grupo => (
+                <div key={grupo.grupo} className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{grupo.grupo}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {grupo.items.map(item => {
+                      const esBien = formData[item.key] === 1;
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          data-testid={`toggle-inspeccion-${item.key}`}
+                          onClick={() => toggleItem(item.key)}
+                          className={`flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors text-left ${
+                            esBien
+                              ? "border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 text-green-800 dark:text-green-300"
+                              : item.critical
+                              ? "border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-800 text-red-800 dark:text-red-300"
+                              : "border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 text-amber-800 dark:text-amber-300"
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            {item.critical && !esBien && (
+                              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                            )}
+                            <span>{item.label}</span>
+                            {item.critical && (
+                              <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">Crítico</Badge>
+                            )}
+                          </span>
+                          {esBien ? (
+                            <CheckSquare className="h-4 w-4 shrink-0 text-green-600" />
+                          ) : (
+                            <XSquare className="h-4 w-4 shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-              </div>
+              ))}
 
-              <div className="space-y-3">
-                <h3 className="font-semibold">Revisión Interior</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="seatbelts"
-                      checked={formData.seatbelts === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, seatbelts: checked ? 1 : 0 })}
-                      data-testid="checkbox-seatbelts"
-                    />
-                    <Label htmlFor="seatbelts">Cinturones de Seguridad</Label>
+              {/* Resumen de fallas */}
+              {(() => {
+                const allKeys: ItemKey[] = ["tires","lights","mirrors","bodywork","seatbelts","horn","windshield","instruments","brakes","steering","suspension","fluids","fireExtinguisher","firstAidKit","reflectiveTriangles","safetyVest"];
+                const criticalKeys: ItemKey[] = ["tires","brakes","fireExtinguisher"];
+                const failingCount = allKeys.filter(k => formData[k] === 0).length;
+                const hasCriticalFail = criticalKeys.some(k => formData[k] === 0);
+                if (failingCount === 0) return null;
+                return (
+                  <div className={`flex items-start gap-2 rounded-md border p-3 ${hasCriticalFail ? "border-red-200 bg-red-50 dark:bg-red-950/30" : "border-amber-200 bg-amber-50 dark:bg-amber-950/30"}`}>
+                    <AlertTriangle className={`h-4 w-4 shrink-0 mt-0.5 ${hasCriticalFail ? "text-red-600" : "text-amber-600"}`} />
+                    <p className="text-sm">
+                      {failingCount} ítem{failingCount > 1 ? "s" : ""} con falla.{" "}
+                      {hasCriticalFail
+                        ? "Hay ítems CRÍTICOS fallando — el resultado será NO APTO."
+                        : "El resultado será APTO CON OBSERVACIONES."}
+                    </p>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="horn"
-                      checked={formData.horn === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, horn: checked ? 1 : 0 })}
-                      data-testid="checkbox-horn"
-                    />
-                    <Label htmlFor="horn">Pito/Claxon</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="windshield"
-                      checked={formData.windshield === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, windshield: checked ? 1 : 0 })}
-                      data-testid="checkbox-windshield"
-                    />
-                    <Label htmlFor="windshield">Parabrisas/Limpiabrisas</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="instruments"
-                      checked={formData.instruments === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, instruments: checked ? 1 : 0 })}
-                      data-testid="checkbox-instruments"
-                    />
-                    <Label htmlFor="instruments">Instrumentos/Panel</Label>
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
 
-              <div className="space-y-3">
-                <h3 className="font-semibold">Revisión Mecánica</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="brakes"
-                      checked={formData.brakes === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, brakes: checked ? 1 : 0 })}
-                      data-testid="checkbox-brakes"
-                    />
-                    <Label htmlFor="brakes">Frenos</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="steering"
-                      checked={formData.steering === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, steering: checked ? 1 : 0 })}
-                      data-testid="checkbox-steering"
-                    />
-                    <Label htmlFor="steering">Dirección</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="suspension"
-                      checked={formData.suspension === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, suspension: checked ? 1 : 0 })}
-                      data-testid="checkbox-suspension"
-                    />
-                    <Label htmlFor="suspension">Suspensión</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="fluids"
-                      checked={formData.fluids === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, fluids: checked ? 1 : 0 })}
-                      data-testid="checkbox-fluids"
-                    />
-                    <Label htmlFor="fluids">Niveles de Fluidos</Label>
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="observations">Observaciones</Label>
+                <Textarea
+                  id="observations"
+                  value={formData.observations}
+                  onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+                  placeholder="Describa las fallas encontradas o novedades del vehículo..."
+                  data-testid="input-observations"
+                />
               </div>
-
-              <div className="space-y-3">
-                <h3 className="font-semibold">Kit de Seguridad</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="fireExtinguisher"
-                      checked={formData.fireExtinguisher === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, fireExtinguisher: checked ? 1 : 0 })}
-                      data-testid="checkbox-fire-extinguisher"
+              {(() => {
+                const allKeys: ItemKey[] = ["tires","lights","mirrors","bodywork","seatbelts","horn","windshield","instruments","brakes","steering","suspension","fluids","fireExtinguisher","firstAidKit","reflectiveTriangles","safetyVest"];
+                if (allKeys.some(k => formData[k] === 0)) return (
+                  <div className="space-y-2">
+                    <Label htmlFor="correctiveActions">Acciones Correctivas</Label>
+                    <Textarea
+                      id="correctiveActions"
+                      value={formData.correctiveActions}
+                      onChange={(e) => setFormData({ ...formData, correctiveActions: e.target.value })}
+                      placeholder="Acciones a tomar antes de conducir..."
+                      data-testid="input-corrective-actions"
                     />
-                    <Label htmlFor="fireExtinguisher">Extintor</Label>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="firstAidKit"
-                      checked={formData.firstAidKit === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, firstAidKit: checked ? 1 : 0 })}
-                      data-testid="checkbox-first-aid-kit"
-                    />
-                    <Label htmlFor="firstAidKit">Botiquín</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="reflectiveTriangles"
-                      checked={formData.reflectiveTriangles === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, reflectiveTriangles: checked ? 1 : 0 })}
-                      data-testid="checkbox-reflective-triangles"
-                    />
-                    <Label htmlFor="reflectiveTriangles">Triángulos Reflectivos</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="safetyVest"
-                      checked={formData.safetyVest === 1}
-                      onCheckedChange={(checked) => setFormData({ ...formData, safetyVest: checked ? 1 : 0 })}
-                      data-testid="checkbox-safety-vest"
-                    />
-                    <Label htmlFor="safetyVest">Chaleco Reflectivo</Label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="result">Resultado de la Inspección *</Label>
-                  <Select
-                    value={formData.result}
-                    onValueChange={(value: any) => setFormData({ ...formData, result: value })}
-                  >
-                    <SelectTrigger id="result" data-testid="select-result">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="apto">Apto</SelectItem>
-                      <SelectItem value="apto-con-observaciones">Apto con Observaciones</SelectItem>
-                      <SelectItem value="no-apto">No Apto</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="observations">Observaciones</Label>
-                  <Textarea
-                    id="observations"
-                    value={formData.observations}
-                    onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
-                    placeholder="Detalles de hallazgos o problemas encontrados"
-                    data-testid="input-observations"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="correctiveActions">Acciones Correctivas</Label>
-                  <Textarea
-                    id="correctiveActions"
-                    value={formData.correctiveActions}
-                    onChange={(e) => setFormData({ ...formData, correctiveActions: e.target.value })}
-                    placeholder="Acciones tomadas o programadas para corregir hallazgos"
-                    data-testid="input-corrective-actions"
-                  />
-                </div>
-              </div>
+                );
+                return null;
+              })()}
 
               <DialogFooter>
                 <Button 

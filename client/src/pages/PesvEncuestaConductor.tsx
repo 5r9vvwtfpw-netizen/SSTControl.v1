@@ -166,7 +166,9 @@ export default function PesvEncuestaConductor() {
       toast({ title: "Error", description: "Las horas de sueño son obligatorias.", variant: "destructive" });
       return;
     }
-    createMutation.mutate(formData);
+    const noApto = formData.consumoAlcohol || formData.estadoFisico === "malo" || formData.estadoEmocional === "malo" || formData.presentaEnfermedad || parseInt(formData.horasSueno) < 6;
+    const autoResultado = noApto ? "no_apto" : "apto";
+    createMutation.mutate({ ...formData, resultado: autoResultado });
   };
 
   const noAptoCount = encuestas.filter(e => e.resultado === "no_apto").length;
@@ -370,119 +372,140 @@ export default function PesvEncuestaConductor() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label>Estado Físico *</Label>
-                  <Select
-                    value={formData.estadoFisico}
-                    onValueChange={v => setFormData(f => ({ ...f, estadoFisico: v }))}
-                  >
-                    <SelectTrigger data-testid="select-estado-fisico">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ESTADO_OPTIONS.map(o => (
-                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <Label>Estado Emocional *</Label>
-                  <Select
-                    value={formData.estadoEmocional}
-                    onValueChange={v => setFormData(f => ({ ...f, estadoEmocional: v }))}
-                  >
-                    <SelectTrigger data-testid="select-estado-emocional">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ESTADO_OPTIONS.map(o => (
-                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              {/* Estado físico */}
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Estado Físico *</Label>
+                <div className="flex gap-2">
+                  {([
+                    { value: "bueno", label: "Bueno", bg: "bg-green-600" },
+                    { value: "regular", label: "Regular", bg: "bg-amber-500" },
+                    { value: "malo", label: "Malo", bg: "bg-red-600" },
+                  ] as const).map(op => (
+                    <button
+                      key={op.value}
+                      type="button"
+                      data-testid={`btn-estado-fisico-${op.value}`}
+                      onClick={() => setFormData(f => ({ ...f, estadoFisico: op.value }))}
+                      className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${
+                        formData.estadoFisico === op.value
+                          ? `${op.bg} text-white border-transparent`
+                          : "bg-background border-border text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {op.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
+              {/* Estado emocional */}
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Estado Emocional *</Label>
+                <div className="flex gap-2">
+                  {([
+                    { value: "bueno", label: "Bueno", bg: "bg-green-600" },
+                    { value: "regular", label: "Regular", bg: "bg-amber-500" },
+                    { value: "malo", label: "Malo", bg: "bg-red-600" },
+                  ] as const).map(op => (
+                    <button
+                      key={op.value}
+                      type="button"
+                      data-testid={`btn-estado-emocional-${op.value}`}
+                      onClick={() => setFormData(f => ({ ...f, estadoEmocional: op.value }))}
+                      className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${
+                        formData.estadoEmocional === op.value
+                          ? `${op.bg} text-white border-transparent`
+                          : "bg-background border-border text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {op.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Declaraciones del conductor */}
               <div className="space-y-3 rounded-md border p-3 bg-muted/30">
                 <p className="text-sm font-medium">Declaraciones del conductor</p>
 
-                <div className="flex items-center justify-between gap-2">
-                  <Label htmlFor="tomaMedicamentos" className="text-sm font-normal cursor-pointer">
-                    ¿Está tomando algún medicamento?
-                  </Label>
-                  <input
-                    id="tomaMedicamentos"
-                    type="checkbox"
-                    checked={formData.tomaMedicamentos}
-                    onChange={e => setFormData(f => ({ ...f, tomaMedicamentos: e.target.checked, medicamentosDetalle: e.target.checked ? f.medicamentosDetalle : "" }))}
-                    className="w-4 h-4 accent-primary"
-                    data-testid="check-toma-medicamentos"
-                  />
-                </div>
-                {formData.tomaMedicamentos && (
-                  <Input
-                    placeholder="¿Cuáles medicamentos?"
-                    value={formData.medicamentosDetalle}
-                    onChange={e => setFormData(f => ({ ...f, medicamentosDetalle: e.target.value }))}
-                    data-testid="input-medicamentos-detalle"
-                  />
-                )}
-
-                <div className="flex items-center justify-between gap-2">
-                  <Label htmlFor="consumoAlcohol" className="text-sm font-normal cursor-pointer">
-                    ¿Consumió alcohol en las últimas 12 horas?
-                  </Label>
-                  <input
-                    id="consumoAlcohol"
-                    type="checkbox"
-                    checked={formData.consumoAlcohol}
-                    onChange={e => setFormData(f => ({ ...f, consumoAlcohol: e.target.checked }))}
-                    className="w-4 h-4 accent-primary"
-                    data-testid="check-consumo-alcohol"
-                  />
+                <div className="space-y-1">
+                  <p className="text-sm">¿Está tomando algún medicamento que afecte la conducción?</p>
+                  <div className="flex gap-2">
+                    <button type="button" data-testid="btn-medicamentos-no"
+                      onClick={() => setFormData(f => ({ ...f, tomaMedicamentos: false, medicamentosDetalle: "" }))}
+                      className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${!formData.tomaMedicamentos ? "bg-green-600 text-white border-transparent" : "bg-background border-border text-foreground hover:bg-muted"}`}
+                    >No</button>
+                    <button type="button" data-testid="btn-medicamentos-si"
+                      onClick={() => setFormData(f => ({ ...f, tomaMedicamentos: true }))}
+                      className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${formData.tomaMedicamentos ? "bg-red-600 text-white border-transparent" : "bg-background border-border text-foreground hover:bg-muted"}`}
+                    >Sí</button>
+                  </div>
+                  {formData.tomaMedicamentos && (
+                    <Input
+                      placeholder="¿Cuáles medicamentos?"
+                      value={formData.medicamentosDetalle}
+                      onChange={e => setFormData(f => ({ ...f, medicamentosDetalle: e.target.value }))}
+                      data-testid="input-medicamentos-detalle"
+                      className="mt-1"
+                    />
+                  )}
                 </div>
 
-                <div className="flex items-center justify-between gap-2">
-                  <Label htmlFor="presentaEnfermedad" className="text-sm font-normal cursor-pointer">
-                    ¿Presenta alguna enfermedad o molestia hoy?
-                  </Label>
-                  <input
-                    id="presentaEnfermedad"
-                    type="checkbox"
-                    checked={formData.presentaEnfermedad}
-                    onChange={e => setFormData(f => ({ ...f, presentaEnfermedad: e.target.checked, enfermedadDetalle: e.target.checked ? f.enfermedadDetalle : "" }))}
-                    className="w-4 h-4 accent-primary"
-                    data-testid="check-presenta-enfermedad"
-                  />
+                <div className="space-y-1">
+                  <p className="text-sm">¿Consumió alcohol en las últimas 12 horas?</p>
+                  <div className="flex gap-2">
+                    <button type="button" data-testid="btn-alcohol-no"
+                      onClick={() => setFormData(f => ({ ...f, consumoAlcohol: false }))}
+                      className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${!formData.consumoAlcohol ? "bg-green-600 text-white border-transparent" : "bg-background border-border text-foreground hover:bg-muted"}`}
+                    >No</button>
+                    <button type="button" data-testid="btn-alcohol-si"
+                      onClick={() => setFormData(f => ({ ...f, consumoAlcohol: true }))}
+                      className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${formData.consumoAlcohol ? "bg-red-600 text-white border-transparent" : "bg-background border-border text-foreground hover:bg-muted"}`}
+                    >Sí</button>
+                  </div>
                 </div>
-                {formData.presentaEnfermedad && (
-                  <Input
-                    placeholder="Describa la enfermedad o molestia"
-                    value={formData.enfermedadDetalle}
-                    onChange={e => setFormData(f => ({ ...f, enfermedadDetalle: e.target.value }))}
-                    data-testid="input-enfermedad-detalle"
-                  />
-                )}
+
+                <div className="space-y-1">
+                  <p className="text-sm">¿Presenta alguna enfermedad o molestia hoy?</p>
+                  <div className="flex gap-2">
+                    <button type="button" data-testid="btn-enfermedad-no"
+                      onClick={() => setFormData(f => ({ ...f, presentaEnfermedad: false, enfermedadDetalle: "" }))}
+                      className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${!formData.presentaEnfermedad ? "bg-green-600 text-white border-transparent" : "bg-background border-border text-foreground hover:bg-muted"}`}
+                    >No</button>
+                    <button type="button" data-testid="btn-enfermedad-si"
+                      onClick={() => setFormData(f => ({ ...f, presentaEnfermedad: true }))}
+                      className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${formData.presentaEnfermedad ? "bg-red-600 text-white border-transparent" : "bg-background border-border text-foreground hover:bg-muted"}`}
+                    >Sí</button>
+                  </div>
+                  {formData.presentaEnfermedad && (
+                    <Input
+                      placeholder="Describa la enfermedad o molestia"
+                      value={formData.enfermedadDetalle}
+                      onChange={e => setFormData(f => ({ ...f, enfermedadDetalle: e.target.value }))}
+                      data-testid="input-enfermedad-detalle"
+                      className="mt-1"
+                    />
+                  )}
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <Label>Resultado *</Label>
-                <Select
-                  value={formData.resultado}
-                  onValueChange={v => setFormData(f => ({ ...f, resultado: v }))}
-                >
-                  <SelectTrigger data-testid="select-resultado">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {RESULTADO_OPTIONS.map(o => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Resultado auto-calculado */}
+              {(() => {
+                const noApto = formData.consumoAlcohol || formData.estadoFisico === "malo" || formData.estadoEmocional === "malo" || formData.presentaEnfermedad || parseInt(formData.horasSueno) < 6;
+                return (
+                  <div className={`flex items-center gap-2 rounded-md border p-3 ${noApto ? "border-red-200 bg-red-50 dark:bg-red-950/30" : "border-green-200 bg-green-50 dark:bg-green-950/30"}`}>
+                    {noApto
+                      ? <XCircle className="h-5 w-5 text-red-600 shrink-0" />
+                      : <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />}
+                    <div>
+                      <p className={`text-sm font-semibold ${noApto ? "text-red-800 dark:text-red-300" : "text-green-800 dark:text-green-300"}`}>
+                        Resultado estimado: {noApto ? "NO APTO para conducir" : "APTO para conducir"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Se calcula automáticamente según las respuestas</p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="space-y-1">
                 <Label htmlFor="registradoPor">Registrado por (supervisor SST)</Label>
