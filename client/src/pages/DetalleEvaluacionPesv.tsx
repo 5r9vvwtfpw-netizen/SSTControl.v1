@@ -1457,7 +1457,7 @@ function DetalleEvaluacionPesvInner() {
                   <ClipboardList className="w-3.5 h-3.5" />
                   Registros Operativos del Conductor
                 </p>
-                <Link href={`/pesv/evaluacion/${evaluacionId}/encuesta-conductor`}>
+                <Link href={`/pesv/evaluacion/${id}/encuesta-conductor`}>
                   <Card
                     className="hover-elevate cursor-pointer border-emerald-200 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20"
                     data-testid="card-encuesta-conductor"
