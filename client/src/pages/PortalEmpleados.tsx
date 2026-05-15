@@ -34,7 +34,7 @@ import {
   GraduationCap, Calendar, Clock, MapPin, UserCheck, Users, Mail, KeyRound, Eye, EyeOff, Vote,
   Building2, BarChart3, Shield, UserCog, BookOpen, Award, Play, Trophy, Star, FolderOpen, Inbox, Download, Bell, ChevronDown,
   History, Monitor, Smartphone, Tablet, Video, Heart, ClipboardList, Camera, Upload, Trash2, Loader2, Headphones, Car, Search, X,
-  Brain, Pill, Wine, Thermometer, Moon
+  Brain, Pill, Wine, Thermometer, Moon, Truck, CheckSquare, XSquare, AlertTriangle
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
@@ -970,6 +970,7 @@ const portalNavGroups = [
       { id: "comite-pesv", label: "Comité de Seguridad Vial", icon: Shield },
       { id: "capacitaciones-pesv", label: "Capacitaciones PESV", icon: GraduationCap },
       { id: "encuesta-conductor", label: "Encuesta Diaria", icon: ClipboardList },
+      { id: "inspeccion-vehiculo", label: "Inspección Vehículo", icon: Truck },
     ]
   },
 ];
@@ -1029,7 +1030,7 @@ function WorkerPortal() {
   // Filtrar items PESV según perfil de conductor
   const filteredNavGroups = portalNavGroups.map(group => {
     if (group.id === 'pesv' && !conductorStatus?.esConductor) {
-      return { ...group, items: group.items.filter(i => i.id !== 'encuesta-conductor') };
+      return { ...group, items: group.items.filter(i => i.id !== 'encuesta-conductor' && i.id !== 'inspeccion-vehiculo') };
     }
     return group;
   });
@@ -1219,6 +1220,7 @@ function WorkerPortal() {
         {activeSection === "comite-pesv" && <MiComitePesvTab />}
         {activeSection === "capacitaciones-pesv" && <MisCapacitacionesPesvTab />}
         {activeSection === "encuesta-conductor" && <EncuestaConductorPortalTab />}
+        {activeSection === "inspeccion-vehiculo" && <InspeccionVehiculoPortalTab />}
       </div>
     </div>
   );
@@ -5086,6 +5088,383 @@ function MisCapacitacionesPesvTab() {
 }
 
 // ==================== ENCUESTA DIARIA DEL CONDUCTOR (Portal Auto-diligenciamiento) ====================
+// ==================== INSPECCIÓN PREOPERACIONAL VEHÍCULO TAB ====================
+
+type VehiculoPortal = {
+  id: string;
+  plate: string;
+  brand: string;
+  model: string;
+  year: number;
+  type: string;
+};
+
+type InspeccionVehiculoPortal = {
+  id: string;
+  inspectionDate: string;
+  inspectionTime: string;
+  result: string;
+  observations: string | null;
+  vehiclePlate: string | null;
+  vehicleBrand: string | null;
+  vehicleModel: string | null;
+  tires: number; lights: number; mirrors: number; bodywork: number;
+  seatbelts: number; horn: number; windshield: number; instruments: number;
+  brakes: number; steering: number; suspension: number; fluids: number;
+  fireExtinguisher: number; firstAidKit: number; reflectiveTriangles: number; safetyVest: number;
+};
+
+type ItemInspeccion = {
+  key: keyof Omit<InspeccionVehiculoPortal, 'id'|'inspectionDate'|'inspectionTime'|'result'|'observations'|'vehiclePlate'|'vehicleBrand'|'vehicleModel'>;
+  label: string;
+  critical?: boolean;
+};
+
+const ITEMS_INSPECCION: { grupo: string; items: ItemInspeccion[] }[] = [
+  {
+    grupo: "Exterior",
+    items: [
+      { key: "tires", label: "Llantas", critical: true },
+      { key: "lights", label: "Luces" },
+      { key: "mirrors", label: "Espejos" },
+      { key: "bodywork", label: "Carrocería" },
+    ],
+  },
+  {
+    grupo: "Interior",
+    items: [
+      { key: "seatbelts", label: "Cinturones de seguridad" },
+      { key: "horn", label: "Bocina" },
+      { key: "windshield", label: "Parabrisas" },
+      { key: "instruments", label: "Instrumentos / tablero" },
+    ],
+  },
+  {
+    grupo: "Mecánica",
+    items: [
+      { key: "brakes", label: "Frenos", critical: true },
+      { key: "steering", label: "Dirección" },
+      { key: "suspension", label: "Suspensión" },
+      { key: "fluids", label: "Fluidos (aceite, refrigerante)" },
+    ],
+  },
+  {
+    grupo: "Equipos de seguridad",
+    items: [
+      { key: "fireExtinguisher", label: "Extintor", critical: true },
+      { key: "firstAidKit", label: "Botiquín de primeros auxilios" },
+      { key: "reflectiveTriangles", label: "Triángulos reflectivos" },
+      { key: "safetyVest", label: "Chaleco reflectivo" },
+    ],
+  },
+];
+
+type InspeccionState = Record<string, number>;
+
+function InspeccionVehiculoPortalTab() {
+  const { toast } = useToast();
+  const nowCO = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+  const hoyStr = nowCO.toISOString().split('T')[0];
+
+  const [enviado, setEnviado] = useState(false);
+  const [resultadoEnvio, setResultadoEnvio] = useState<string | null>(null);
+  const [vehicleId, setVehicleId] = useState<string>("");
+  const [items, setItems] = useState<InspeccionState>(() => {
+    const init: InspeccionState = {};
+    ITEMS_INSPECCION.forEach(g => g.items.forEach(i => { init[i.key] = 1; }));
+    return init;
+  });
+  const [observations, setObservations] = useState("");
+  const [correctiveActions, setCorrectiveActions] = useState("");
+
+  const { data: vehiculosData, isLoading: vehiculosLoading } = useQuery<{ vehiculos: VehiculoPortal[] }>({
+    queryKey: ["/api/portal/mis-vehiculos"],
+  });
+  const vehiculos = vehiculosData?.vehiculos || [];
+
+  const { data: historialData, isLoading: historialLoading } = useQuery<{ inspecciones: InspeccionVehiculoPortal[] }>({
+    queryKey: ["/api/portal/mis-inspecciones-vehiculo"],
+  });
+  const inspecciones = historialData?.inspecciones || [];
+
+  const inspeccionHoy = inspecciones.find(i => i.inspectionDate === hoyStr && i.vehiclePlate === vehiculos.find(v => v.id === vehicleId)?.plate);
+  const yaEnviada = enviado || !!inspeccionHoy;
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const payload: Record<string, any> = { vehicleId, observations, correctiveActions };
+      ITEMS_INSPECCION.forEach(g => g.items.forEach(i => { payload[i.key] = items[i.key]; }));
+      return apiRequest("POST", "/api/portal/inspeccion-vehiculo", payload);
+    },
+    onSuccess: async (response) => {
+      const data = await response.json();
+      setResultadoEnvio(data.result);
+      setEnviado(true);
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/mis-inspecciones-vehiculo"] });
+      toast({
+        title: data.result === 'apto' ? "Vehículo APTO" : data.result === 'apto-con-observaciones' ? "Vehículo APTO con observaciones" : "Vehículo NO APTO",
+        description: "Inspección registrada exitosamente.",
+        variant: data.result === 'no-apto' ? "destructive" : "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error al enviar inspección", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const toggleItem = (key: string) => {
+    setItems(prev => ({ ...prev, [key]: prev[key] === 1 ? 0 : 1 }));
+  };
+
+  const failingItems = Object.entries(items).filter(([, v]) => v === 0).length;
+
+  return (
+    <div className="space-y-4">
+      {/* Banner normativo */}
+      <div className="flex items-start gap-3 rounded-md border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-3">
+        <Truck className="h-5 w-5 text-green-700 dark:text-green-400 mt-0.5 shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-green-800 dark:text-green-300">
+            Inspección Preoperacional del Vehículo — Paso H06
+          </p>
+          <p className="text-xs text-green-700 dark:text-green-400 mt-0.5">
+            Resolución 40595/2022 · PESV · Registro obligatorio antes de cada jornada de conducción
+          </p>
+        </div>
+      </div>
+
+      {/* Ya enviada hoy */}
+      {yaEnviada ? (
+        <Card data-testid="card-inspeccion-ya-enviada">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center gap-3 text-center py-4">
+              {(resultadoEnvio ?? inspeccionHoy?.result) === 'apto' ? (
+                <CheckCircle className="h-12 w-12 text-green-600" />
+              ) : (resultadoEnvio ?? inspeccionHoy?.result) === 'apto-con-observaciones' ? (
+                <AlertTriangle className="h-12 w-12 text-amber-500" />
+              ) : (
+                <XSquare className="h-12 w-12 text-red-600" />
+              )}
+              <div>
+                <p className="font-semibold text-base">
+                  {(resultadoEnvio ?? inspeccionHoy?.result) === 'apto'
+                    ? "Vehículo APTO para circular"
+                    : (resultadoEnvio ?? inspeccionHoy?.result) === 'apto-con-observaciones'
+                    ? "Apto con observaciones"
+                    : "Vehículo NO APTO — No conduzca"}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  La inspección de hoy fue registrada exitosamente.
+                </p>
+              </div>
+              {inspeccionHoy && (
+                <Badge variant="outline" className="text-xs">
+                  Registrada a las {inspeccionHoy.inspectionTime}
+                </Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card data-testid="card-formulario-inspeccion-vehiculo">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Inspección del día</CardTitle>
+            <CardDescription>Marque cada ítem como Bien (✓) o Falla (✗). Ítems críticos en rojo generan resultado NO APTO.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {/* Selector de vehículo */}
+            <div className="space-y-1.5">
+              <Label htmlFor="vehiculo-select" className="text-sm font-medium">Vehículo a inspeccionar</Label>
+              {vehiculosLoading ? (
+                <Skeleton className="h-9 w-full" />
+              ) : vehiculos.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No hay vehículos activos registrados en su empresa.</p>
+              ) : (
+                <Select value={vehicleId} onValueChange={setVehicleId} data-testid="select-vehiculo-inspeccion">
+                  <SelectTrigger id="vehiculo-select">
+                    <SelectValue placeholder="Seleccione un vehículo..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehiculos.map(v => (
+                      <SelectItem key={v.id} value={v.id}>
+                        {v.plate} — {v.brand} {v.model} {v.year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {/* Ítems de inspección por grupo */}
+            {ITEMS_INSPECCION.map(grupo => (
+              <div key={grupo.grupo} className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{grupo.grupo}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {grupo.items.map(item => {
+                    const esBien = items[item.key] === 1;
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        data-testid={`toggle-inspeccion-${item.key}`}
+                        onClick={() => toggleItem(item.key)}
+                        className={`flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors text-left ${
+                          esBien
+                            ? "border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 text-green-800 dark:text-green-300"
+                            : item.critical
+                            ? "border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-800 text-red-800 dark:text-red-300"
+                            : "border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 text-amber-800 dark:text-amber-300"
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          {item.critical && !esBien && (
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                          )}
+                          <span>{item.label}</span>
+                          {item.critical && <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">Crítico</Badge>}
+                        </span>
+                        {esBien ? (
+                          <CheckSquare className="h-4 w-4 shrink-0 text-green-600" />
+                        ) : (
+                          <XSquare className="h-4 w-4 shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
+            {/* Resumen de fallas */}
+            {failingItems > 0 && (
+              <div className={`flex items-start gap-2 rounded-md border p-3 ${
+                ITEMS_INSPECCION.flatMap(g => g.items).filter(i => i.critical && items[i.key] === 0).length > 0
+                  ? "border-red-200 bg-red-50 dark:bg-red-950/30"
+                  : "border-amber-200 bg-amber-50 dark:bg-amber-950/30"
+              }`}>
+                <AlertTriangle className={`h-4 w-4 shrink-0 mt-0.5 ${
+                  ITEMS_INSPECCION.flatMap(g => g.items).filter(i => i.critical && items[i.key] === 0).length > 0
+                    ? "text-red-600" : "text-amber-600"
+                }`} />
+                <p className="text-sm">
+                  {failingItems} ítem{failingItems > 1 ? 's' : ''} con falla.{" "}
+                  {ITEMS_INSPECCION.flatMap(g => g.items).filter(i => i.critical && items[i.key] === 0).length > 0
+                    ? "Hay ítems CRÍTICOS fallando — el resultado será NO APTO."
+                    : "El resultado será APTO CON OBSERVACIONES."}
+                </p>
+              </div>
+            )}
+
+            {/* Observaciones */}
+            <div className="space-y-1.5">
+              <Label htmlFor="obs-inspeccion" className="text-sm font-medium">Observaciones</Label>
+              <Textarea
+                id="obs-inspeccion"
+                placeholder="Describa las fallas encontradas o novedades del vehículo..."
+                value={observations}
+                onChange={e => setObservations(e.target.value)}
+                className="min-h-[72px]"
+                data-testid="textarea-observaciones-inspeccion"
+              />
+            </div>
+
+            {failingItems > 0 && (
+              <div className="space-y-1.5">
+                <Label htmlFor="ac-inspeccion" className="text-sm font-medium">Acciones correctivas</Label>
+                <Textarea
+                  id="ac-inspeccion"
+                  placeholder="Acciones a tomar antes de conducir..."
+                  value={correctiveActions}
+                  onChange={e => setCorrectiveActions(e.target.value)}
+                  className="min-h-[60px]"
+                  data-testid="textarea-acciones-inspeccion"
+                />
+              </div>
+            )}
+
+            <Button
+              className="w-full"
+              disabled={!vehicleId || mutation.isPending}
+              onClick={() => mutation.mutate()}
+              data-testid="button-enviar-inspeccion-vehiculo"
+            >
+              {mutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Registrando...</>
+              ) : (
+                <><CheckSquare className="h-4 w-4 mr-2" />Registrar Inspección</>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Historial */}
+      <Card data-testid="card-historial-inspecciones-vehiculo">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <History className="h-4 w-4" />
+            Historial de Inspecciones
+          </CardTitle>
+          <CardDescription>Últimas 30 inspecciones registradas</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {historialLoading ? (
+            <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+          ) : inspecciones.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">No hay inspecciones registradas aún</p>
+          ) : (
+            <div className="space-y-2">
+              {inspecciones.map(ins => {
+                const failCount = [ins.tires, ins.lights, ins.mirrors, ins.bodywork,
+                  ins.seatbelts, ins.horn, ins.windshield, ins.instruments,
+                  ins.brakes, ins.steering, ins.suspension, ins.fluids,
+                  ins.fireExtinguisher, ins.firstAidKit, ins.reflectiveTriangles, ins.safetyVest
+                ].filter(v => v === 0).length;
+                return (
+                  <div
+                    key={ins.id}
+                    data-testid={`card-inspeccion-historial-${ins.id}`}
+                    className="flex items-center justify-between gap-2 rounded-md border p-3"
+                  >
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Truck className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        {ins.vehiclePlate ? `${ins.vehiclePlate} — ${ins.vehicleBrand} ${ins.vehicleModel}` : "Vehículo eliminado"}
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {format(new Date(ins.inspectionDate + 'T12:00:00'), "d 'de' MMMM yyyy", { locale: es })}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />{ins.inspectionTime}
+                        </span>
+                        {failCount > 0 && <span className="text-amber-600">{failCount} falla{failCount > 1 ? 's' : ''}</span>}
+                      </div>
+                    </div>
+                    <Badge
+                      className={
+                        ins.result === 'apto'
+                          ? "bg-green-600 text-white shrink-0"
+                          : ins.result === 'apto-con-observaciones'
+                          ? "bg-amber-500 text-white shrink-0"
+                          : "bg-red-600 text-white shrink-0"
+                      }
+                      data-testid={`badge-resultado-inspeccion-${ins.id}`}
+                    >
+                      {ins.result === 'apto' ? 'APTO' : ins.result === 'apto-con-observaciones' ? 'OBS' : 'NO APTO'}
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 type PesvEncuestaConductorPortal = {
   id: string;
   fechaRegistro: string;

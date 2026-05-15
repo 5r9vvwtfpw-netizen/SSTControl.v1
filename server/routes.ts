@@ -41035,6 +41035,190 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // GET /api/portal/mis-vehiculos — vehículos activos de la empresa para el conductor
+  app.get("/api/portal/mis-vehiculos", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as schema.User;
+      const companyId = user.companyId;
+      if (!companyId) return res.status(403).json({ error: "Sin empresa asociada" });
+
+      const vehiculos = await db
+        .select({
+          id: schema.vehicles.id,
+          plate: schema.vehicles.plate,
+          brand: schema.vehicles.brand,
+          model: schema.vehicles.model,
+          year: schema.vehicles.year,
+          type: schema.vehicles.type,
+        })
+        .from(schema.vehicles)
+        .where(and(eq(schema.vehicles.companyId, companyId), eq(schema.vehicles.status, "activo")))
+        .orderBy(schema.vehicles.plate);
+
+      res.json({ vehiculos });
+    } catch (error: any) {
+      console.error('[portal/mis-vehiculos]', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/portal/mis-inspecciones-vehiculo — historial de inspecciones del conductor
+  app.get("/api/portal/mis-inspecciones-vehiculo", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as schema.User;
+      const companyId = user.companyId;
+      if (!companyId) return res.status(403).json({ error: "Sin empresa asociada" });
+
+      let workerId = user.workerId;
+      if (!workerId && user.email) {
+        const worker = await storage.getWorkerByEmail(user.email, companyId);
+        if (worker) workerId = worker.id;
+      }
+      if (!workerId) return res.status(403).json({ error: "Trabajador no encontrado" });
+
+      const [driverRecord] = await db
+        .select({ id: schema.drivers.id })
+        .from(schema.drivers)
+        .where(and(eq(schema.drivers.workerId, workerId), eq(schema.drivers.companyId, companyId)))
+        .limit(1);
+
+      if (!driverRecord) return res.json({ inspecciones: [] });
+
+      const inspecciones = await db
+        .select({
+          id: schema.vehicleInspections.id,
+          inspectionDate: schema.vehicleInspections.inspectionDate,
+          inspectionTime: schema.vehicleInspections.inspectionTime,
+          result: schema.vehicleInspections.result,
+          observations: schema.vehicleInspections.observations,
+          vehiclePlate: schema.vehicles.plate,
+          vehicleBrand: schema.vehicles.brand,
+          vehicleModel: schema.vehicles.model,
+          tires: schema.vehicleInspections.tires,
+          lights: schema.vehicleInspections.lights,
+          mirrors: schema.vehicleInspections.mirrors,
+          bodywork: schema.vehicleInspections.bodywork,
+          seatbelts: schema.vehicleInspections.seatbelts,
+          horn: schema.vehicleInspections.horn,
+          windshield: schema.vehicleInspections.windshield,
+          instruments: schema.vehicleInspections.instruments,
+          brakes: schema.vehicleInspections.brakes,
+          steering: schema.vehicleInspections.steering,
+          suspension: schema.vehicleInspections.suspension,
+          fluids: schema.vehicleInspections.fluids,
+          fireExtinguisher: schema.vehicleInspections.fireExtinguisher,
+          firstAidKit: schema.vehicleInspections.firstAidKit,
+          reflectiveTriangles: schema.vehicleInspections.reflectiveTriangles,
+          safetyVest: schema.vehicleInspections.safetyVest,
+        })
+        .from(schema.vehicleInspections)
+        .leftJoin(schema.vehicles, eq(schema.vehicleInspections.vehicleId, schema.vehicles.id))
+        .where(and(
+          eq(schema.vehicleInspections.driverId, driverRecord.id),
+          eq(schema.vehicleInspections.companyId, companyId)
+        ))
+        .orderBy(desc(schema.vehicleInspections.createdAt))
+        .limit(30);
+
+      res.json({ inspecciones });
+    } catch (error: any) {
+      console.error('[portal/mis-inspecciones-vehiculo]', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/portal/inspeccion-vehiculo — conductor diligencia inspección preoperacional del vehículo
+  app.post("/api/portal/inspeccion-vehiculo", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as schema.User;
+      const companyId = user.companyId;
+      if (!companyId) return res.status(403).json({ error: "Sin empresa asociada" });
+
+      let workerId = user.workerId;
+      if (!workerId && user.email) {
+        const worker = await storage.getWorkerByEmail(user.email, companyId);
+        if (worker) workerId = worker.id;
+      }
+      if (!workerId) return res.status(403).json({ error: "Trabajador no encontrado" });
+
+      const [driverRecord] = await db
+        .select({ id: schema.drivers.id, name: schema.drivers.name })
+        .from(schema.drivers)
+        .where(and(eq(schema.drivers.workerId, workerId), eq(schema.drivers.companyId, companyId)))
+        .limit(1);
+
+      if (!driverRecord) return res.status(403).json({ error: "Solo conductores registrados pueden diligenciar inspecciones" });
+
+      const {
+        vehicleId,
+        tires, lights, mirrors, bodywork,
+        seatbelts, horn, windshield, instruments,
+        brakes, steering, suspension, fluids,
+        fireExtinguisher, firstAidKit, reflectiveTriangles, safetyVest,
+        observations, correctiveActions,
+      } = req.body;
+
+      if (!vehicleId) return res.status(400).json({ error: "Debe seleccionar un vehículo" });
+
+      // Verificar que el vehículo pertenece a la empresa
+      const [vehicleCheck] = await db
+        .select({ id: schema.vehicles.id })
+        .from(schema.vehicles)
+        .where(and(eq(schema.vehicles.id, vehicleId), eq(schema.vehicles.companyId, companyId)))
+        .limit(1);
+      if (!vehicleCheck) return res.status(400).json({ error: "Vehículo no válido" });
+
+      // Auto-calcular resultado
+      const toInt = (v: any) => Number(v) || 0;
+      const criticalFail = [brakes, tires, fireExtinguisher].some(v => toInt(v) === 0);
+      const anyFail = [tires, lights, mirrors, bodywork, seatbelts, horn, windshield, instruments,
+        brakes, steering, suspension, fluids, fireExtinguisher, firstAidKit, reflectiveTriangles, safetyVest
+      ].some(v => toInt(v) === 0);
+
+      let result: "apto" | "apto-con-observaciones" | "no-apto";
+      if (criticalFail) result = "no-apto";
+      else if (anyFail) result = "apto-con-observaciones";
+      else result = "apto";
+
+      // Fecha y hora Colombia
+      const nowCO = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+      const inspectionDate = nowCO.toISOString().split('T')[0];
+      const inspectionTime = `${String(nowCO.getHours()).padStart(2,'0')}:${String(nowCO.getMinutes()).padStart(2,'0')}`;
+
+      // Evaluación PESV activa (opcional)
+      const [evaluacionActiva] = await db
+        .select({ id: evaluacionesPesv.id })
+        .from(evaluacionesPesv)
+        .where(and(eq(evaluacionesPesv.companyId, companyId), eq(evaluacionesPesv.estado, 'en-progreso')))
+        .limit(1);
+
+      const [nuevaInspeccion] = await db
+        .insert(schema.vehicleInspections)
+        .values({
+          companyId,
+          vehicleId,
+          driverId: driverRecord.id,
+          inspectionDate,
+          inspectionTime,
+          tires: toInt(tires), lights: toInt(lights), mirrors: toInt(mirrors), bodywork: toInt(bodywork),
+          seatbelts: toInt(seatbelts), horn: toInt(horn), windshield: toInt(windshield), instruments: toInt(instruments),
+          brakes: toInt(brakes), steering: toInt(steering), suspension: toInt(suspension), fluids: toInt(fluids),
+          fireExtinguisher: toInt(fireExtinguisher), firstAidKit: toInt(firstAidKit),
+          reflectiveTriangles: toInt(reflectiveTriangles), safetyVest: toInt(safetyVest),
+          result,
+          observations: observations || null,
+          correctiveActions: correctiveActions || null,
+          evaluacionPesvId: evaluacionActiva?.id || null,
+        })
+        .returning();
+
+      res.json({ inspeccion: nuevaInspeccion, result });
+    } catch (error: any) {
+      console.error('[portal/inspeccion-vehiculo POST]', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // GET /api/document-acknowledgments/:documentId - Admin: Get acknowledgment status for a document
   app.get("/api/document-acknowledgments/:documentId", requireAuth, requirePermission("sst_management:view"), async (req, res) => {
     try {
