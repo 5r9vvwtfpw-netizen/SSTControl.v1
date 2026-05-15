@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, ArrowLeft, Eye, ClipboardCheck, Calendar, Car, User } from "lucide-react";
+import { Plus, ArrowLeft, Eye, ClipboardCheck, Calendar, Car, User, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -330,42 +330,123 @@ export default function PesvInspeccionesEvaluacion() {
       </Card>
 
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Detalle de Inspección</DialogTitle>
+            <DialogTitle>Detalle de Inspección Preoperacional</DialogTitle>
           </DialogHeader>
-          {selectedInspection && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-muted-foreground">Fecha</Label>
-                  <p className="font-medium">{selectedInspection.inspectionDate}</p>
+          {selectedInspection && (() => {
+            const ins = selectedInspection;
+            const grupos = [
+              { label: "Exterior", items: [
+                { label: "Llantas / Neumáticos", val: ins.tires, critical: true },
+                { label: "Luces", val: ins.lights },
+                { label: "Espejos", val: ins.mirrors },
+                { label: "Carrocería", val: ins.bodywork },
+              ]},
+              { label: "Interior", items: [
+                { label: "Cinturones de seguridad", val: ins.seatbelts },
+                { label: "Bocina / Pito", val: ins.horn },
+                { label: "Parabrisas / Limpiabrisas", val: ins.windshield },
+                { label: "Instrumentos / Tablero", val: ins.instruments },
+              ]},
+              { label: "Mecánica", items: [
+                { label: "Frenos", val: ins.brakes, critical: true },
+                { label: "Dirección", val: ins.steering },
+                { label: "Suspensión", val: ins.suspension },
+                { label: "Fluidos (aceite, refrigerante)", val: ins.fluids },
+              ]},
+              { label: "Equipos de seguridad", items: [
+                { label: "Extintor", val: ins.fireExtinguisher, critical: true },
+                { label: "Botiquín de primeros auxilios", val: ins.firstAidKit },
+                { label: "Triángulos reflectivos", val: ins.reflectiveTriangles },
+                { label: "Chaleco reflectivo", val: ins.safetyVest },
+              ]},
+            ];
+            const resultColor = ins.result === 'apto'
+              ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+              : ins.result === 'apto-con-observaciones'
+              ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'
+              : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800';
+            const resultText = ins.result === 'apto'
+              ? 'text-green-800 dark:text-green-300'
+              : ins.result === 'apto-con-observaciones'
+              ? 'text-amber-800 dark:text-amber-300'
+              : 'text-red-800 dark:text-red-300';
+            const failCount = grupos.flatMap(g => g.items).filter(i => !i.val).length;
+            return (
+              <div className="space-y-4">
+                <div className={`flex items-center gap-3 rounded-md border p-3 ${resultColor}`}>
+                  {ins.result === 'apto'
+                    ? <CheckCircle2 className="h-7 w-7 text-green-600 shrink-0" />
+                    : ins.result === 'apto-con-observaciones'
+                    ? <AlertCircle className="h-7 w-7 text-amber-500 shrink-0" />
+                    : <XCircle className="h-7 w-7 text-red-600 shrink-0" />}
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-semibold ${resultText}`}>{getResultBadge(ins.result)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {ins.inspectionDate} · {ins.inspectionTime || ""}
+                      {failCount > 0 && ` · ${failCount} ítem${failCount > 1 ? 's' : ''} con falla`}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-muted-foreground">Hora</Label>
-                  <p className="font-medium">{selectedInspection.inspectionTime || "N/A"}</p>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Vehículo</p>
+                    <p className="font-medium">{getVehiclePlate(ins.vehicleId)}</p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Conductor</p>
+                    <p className="font-medium">{getDriverName(ins.driverId)}</p>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-muted-foreground">Vehículo</Label>
-                  <p className="font-medium">{getVehiclePlate(selectedInspection.vehicleId)}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Conductor</Label>
-                  <p className="font-medium">{getDriverName(selectedInspection.driverId)}</p>
-                </div>
+
+                {grupos.map(grupo => (
+                  <div key={grupo.label} className="space-y-1.5">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{grupo.label}</p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {grupo.items.map(item => (
+                        <div
+                          key={item.label}
+                          className={`flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm ${
+                            item.val
+                              ? 'bg-green-50 dark:bg-green-950/20 text-green-800 dark:text-green-300'
+                              : item.critical
+                              ? 'bg-red-50 dark:bg-red-950/20 text-red-800 dark:text-red-300'
+                              : 'bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300'
+                          }`}
+                        >
+                          <span className="truncate">
+                            {item.label}
+                            {item.critical && !item.val && <span className="ml-1 text-[10px] font-semibold">CRÍTICO</span>}
+                          </span>
+                          {item.val
+                            ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
+                            : <XCircle className="h-4 w-4 shrink-0" />}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                {ins.observations && (
+                  <div className="rounded-md border p-3 space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Observaciones</p>
+                    <p className="text-sm">{ins.observations}</p>
+                  </div>
+                )}
+                {ins.correctiveActions && (
+                  <div className="rounded-md border p-3 space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Acciones Correctivas</p>
+                    <p className="text-sm">{ins.correctiveActions}</p>
+                  </div>
+                )}
               </div>
-              <div>
-                <Label className="text-muted-foreground">Resultado</Label>
-                <div className="mt-1">{getResultBadge(selectedInspection.result)}</div>
-              </div>
-              {selectedInspection.observations && (
-                <div>
-                  <Label className="text-muted-foreground">Observaciones</Label>
-                  <p className="mt-1">{selectedInspection.observations}</p>
-                </div>
-              )}
-            </div>
-          )}
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>Cerrar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
