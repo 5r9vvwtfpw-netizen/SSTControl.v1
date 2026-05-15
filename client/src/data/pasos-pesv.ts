@@ -32,6 +32,8 @@ export interface PasoPesvData {
   // ADD-ONLY: Navegación a módulos PESV desde la evaluación
   moduloPesvUrl?: string;
   moduloPesvNombre?: string;
+  // ADD-ONLY: Módulos PESV secundarios (cuando un paso cubre más de un módulo)
+  modulosPesvSecundarios?: { nombre: string; url: string; }[];
   // ADD-ONLY: Navegación bidireccional a módulos SST
   modulosSstUrls?: ModuloSstUrl[];
   // ADD-ONLY: Smart Form Auto-Fill Data (Resolución 40595/2022)
@@ -481,6 +483,9 @@ export const PASOS_PESV: PasoPesvData[] = [
     modulosSstRelacionados: ['inspecciones'],
     moduloPesvUrl: '/pesv/inspecciones',
     moduloPesvNombre: 'Inspecciones Preoperacionales',
+    modulosPesvSecundarios: [
+      { nombre: 'Encuesta Diaria del Conductor', url: '/pesv/encuesta-conductor' }
+    ],
     modoVerificacionSugerido: ['Revisión de formato de inspección', 'Verificación de registros diarios', 'Revisión de seguimiento a hallazgos'],
     hallazgoSugeridoNoCumple: 'No se evidencian inspecciones preoperacionales diarias de vehículos con formato estandarizado y seguimiento a hallazgos según Art. 18 de la Resolución 40595/2022.',
     observacionesCumple: 'Se verifican inspecciones preoperacionales con formato estandarizado, registros diarios y seguimiento a hallazgos conforme a la Resolución 40595/2022.',

@@ -729,7 +729,7 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
 
 
             {paso.moduloPesvUrl && (
-              <div className="border-t pt-4">
+              <div className="border-t pt-4 flex flex-col gap-2">
                 <Link href={paso.moduloPesvUrl.includes(':evaluacionId') ? paso.moduloPesvUrl.replace(':evaluacionId', evaluacionId!) : `/pesv/evaluacion/${evaluacionId}${paso.moduloPesvUrl.replace('/pesv', '')}`}>
                   <Button 
                     type="button" 
@@ -740,6 +740,18 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
                     Ir a {paso.moduloPesvNombre}
                   </Button>
                 </Link>
+                {paso.modulosPesvSecundarios?.map((mod) => (
+                  <Link key={mod.url} href={`/pesv/evaluacion/${evaluacionId}${mod.url.replace('/pesv', '')}`}>
+                    <Button
+                      type="button"
+                      className="w-full gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-md"
+                      data-testid={`button-ir-modulo-secundario-${mod.url.replace(/\//g, '-')}`}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Ir a {mod.nombre}
+                    </Button>
+                  </Link>
+                ))}
               </div>
             )}
 

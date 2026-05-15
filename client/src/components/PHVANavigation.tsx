@@ -122,6 +122,12 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
         { label: "Panel HACER - Controles", path: "/dashboard-hacer" },
       ],
     },
+    {
+      title: "PESV - Conductores",
+      items: [
+        { label: "Encuesta Diaria Conductor", path: "/pesv/encuesta-conductor" },
+      ],
+    },
   ],
   verificar: [
     {
