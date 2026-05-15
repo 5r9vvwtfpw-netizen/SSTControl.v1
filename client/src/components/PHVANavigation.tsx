@@ -122,12 +122,6 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
         { label: "Panel HACER - Controles", path: "/dashboard-hacer" },
       ],
     },
-    {
-      title: "PESV - Conductores",
-      items: [
-        { label: "Encuesta Diaria Conductor", path: "/pesv/encuesta-conductor" },
-      ],
-    },
   ],
   verificar: [
     {
@@ -158,7 +152,6 @@ const phvaTabs: { key: PHVASection; label: string; icon?: typeof Settings }[] = 
 const pesvNavMenuItems: { label: string; path: string; group?: string }[] = [
   { label: "Panel de Control", path: "/pesv" },
   { label: "Evaluaciones PESV", path: "/pesv/evaluaciones" },
-  { label: "Encuesta Diaria Conductor", path: "/pesv/encuesta-conductor" },
 ];
 
 export function PHVANavigation() {
