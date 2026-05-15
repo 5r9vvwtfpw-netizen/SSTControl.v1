@@ -51810,6 +51810,121 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // ============================================================================
+  // H06b - PESV Encuesta Diaria del Conductor (Art. 18, Resolución 40595/2022)
+  // ============================================================================
+
+  app.get("/api/pesv/encuestas-conductor", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : userCompanyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const result = await db.execute(sql`
+        SELECT * FROM pesv_encuestas_conductor
+        WHERE company_id = ${companyId}
+        ORDER BY fecha_registro DESC, hora_registro DESC, created_at DESC
+      `);
+      res.json(result.rows.map(rowToCamel));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/pesv/evaluacion/:evaluacionId/encuestas-conductor", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : userCompanyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const result = await db.execute(sql`
+        SELECT * FROM pesv_encuestas_conductor
+        WHERE company_id = ${companyId}
+          AND (evaluacion_id = ${req.params.evaluacionId} OR evaluacion_id IS NULL)
+        ORDER BY fecha_registro DESC, hora_registro DESC, created_at DESC
+      `);
+      res.json(result.rows.map(rowToCamel));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/pesv/encuestas-conductor", requirePermission("vehicles:create"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const companyId = (isAdmin && req.body.companyId) ? req.body.companyId : userCompanyId;
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const {
+        evaluacionId, conductorNombre, fechaRegistro, horaRegistro, horasSueno,
+        estadoFisico, estadoEmocional, tomaMedicamentos, medicamentosDetalle,
+        consumoAlcohol, presentaEnfermedad, enfermedadDetalle, resultado,
+        registradoPor, observaciones
+      } = req.body;
+      if (!conductorNombre || !fechaRegistro || !horaRegistro || horasSueno === undefined || !estadoFisico || !estadoEmocional || !resultado) {
+        return res.status(400).json({ error: "Campos obligatorios faltantes" });
+      }
+      const insertResult = await db.execute(sql`
+        INSERT INTO pesv_encuestas_conductor
+          (company_id, evaluacion_id, conductor_nombre, fecha_registro, hora_registro, horas_sueno,
+           estado_fisico, estado_emocional, toma_medicamentos, medicamentos_detalle,
+           consumo_alcohol, presenta_enfermedad, enfermedad_detalle, resultado, registrado_por, observaciones)
+        VALUES
+          (${companyId}, ${evaluacionId || null}, ${conductorNombre}, ${fechaRegistro}, ${horaRegistro}, ${horasSueno},
+           ${estadoFisico}, ${estadoEmocional}, ${tomaMedicamentos ? 1 : 0}, ${medicamentosDetalle || null},
+           ${consumoAlcohol ? 1 : 0}, ${presentaEnfermedad ? 1 : 0}, ${enfermedadDetalle || null}, ${resultado}, ${registradoPor || null}, ${observaciones || null})
+        RETURNING *
+      `);
+      res.status(201).json(rowToCamel(insertResult.rows[0]));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/pesv/encuestas-conductor/:id", requirePermission("vehicles:edit"), async (req, res) => {
+    try {
+      const {
+        evaluacionId, conductorNombre, fechaRegistro, horaRegistro, horasSueno,
+        estadoFisico, estadoEmocional, tomaMedicamentos, medicamentosDetalle,
+        consumoAlcohol, presentaEnfermedad, enfermedadDetalle, resultado,
+        registradoPor, observaciones
+      } = req.body;
+      const updateResult = await db.execute(sql`
+        UPDATE pesv_encuestas_conductor SET
+          evaluacion_id = ${evaluacionId || null},
+          conductor_nombre = ${conductorNombre},
+          fecha_registro = ${fechaRegistro},
+          hora_registro = ${horaRegistro},
+          horas_sueno = ${horasSueno},
+          estado_fisico = ${estadoFisico},
+          estado_emocional = ${estadoEmocional},
+          toma_medicamentos = ${tomaMedicamentos ? 1 : 0},
+          medicamentos_detalle = ${medicamentosDetalle || null},
+          consumo_alcohol = ${consumoAlcohol ? 1 : 0},
+          presenta_enfermedad = ${presentaEnfermedad ? 1 : 0},
+          enfermedad_detalle = ${enfermedadDetalle || null},
+          resultado = ${resultado},
+          registrado_por = ${registradoPor || null},
+          observaciones = ${observaciones || null}
+        WHERE id = ${req.params.id}
+        RETURNING *
+      `);
+      if (!updateResult.rows[0]) return res.status(404).json({ error: "Registro no encontrado" });
+      res.json(rowToCamel(updateResult.rows[0]));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/pesv/encuestas-conductor/:id", requirePermission("vehicles:delete"), async (req, res) => {
+    try {
+      await db.execute(sql`DELETE FROM pesv_encuestas_conductor WHERE id = ${req.params.id}`);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   // Initialize WebSocket for real-time notifications
   initializeWebSocket(httpServer);

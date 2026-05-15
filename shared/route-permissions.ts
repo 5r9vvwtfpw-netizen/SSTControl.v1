@@ -119,6 +119,7 @@ export const routePermissions: Record<string, Permission[]> = {
   "/pesv/monitoreo-gps": ["vehicles:view"],
   "/pesv/rutas-seguras": ["vehicles:view", "drivers:view"],
   "/pesv/fatiga-somnolencia": ["vehicles:view", "drivers:view"],
+  "/pesv/encuesta-conductor": ["vehicles:view", "drivers:view"],
   "/pesv/alcohol-sustancias": ["vehicles:view", "drivers:view"],
   "/pesv/atencion-victimas": ["vehicles:view", "drivers:view"],
   "/pesv/mejora-continua": ["vehicles:view", "drivers:view"],

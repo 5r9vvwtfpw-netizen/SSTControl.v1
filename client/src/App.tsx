@@ -51,6 +51,7 @@ import PesvMantenimientoVehicular from "@/pages/PesvMantenimientoVehicular";
 import PesvMonitoreoGps from "@/pages/PesvMonitoreoGps";
 import PesvRutasSeguras from "@/pages/PesvRutasSeguras";
 import PesvFatigaSomnolencia from "@/pages/PesvFatigaSomnolencia";
+import PesvEncuestaConductor from "@/pages/PesvEncuestaConductor";
 import PesvAlcoholSustancias from "@/pages/PesvAlcoholSustancias";
 import PesvAtencionVictimas from "@/pages/PesvAtencionVictimas";
 import PesvSiniestros from "@/pages/PesvSiniestros";
@@ -336,6 +337,7 @@ function Router() {
       <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/monitoreo-gps" component={PesvMonitoreoGps} feature="hasPESV" featureName="Módulo PESV - Monitoreo GPS" />
       <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/rutas-seguras" component={PesvRutasSeguras} feature="hasPESV" featureName="Módulo PESV - Rutas Seguras" />
       <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/fatiga-somnolencia" component={PesvFatigaSomnolencia} feature="hasPESV" featureName="Módulo PESV - Fatiga y Somnolencia" />
+      <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/encuesta-conductor" component={PesvEncuestaConductor} feature="hasPESV" featureName="Módulo PESV - Encuesta Diaria Conductor" />
       <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/alcohol-sustancias" component={PesvAlcoholSustancias} feature="hasPESV" featureName="Módulo PESV - Alcohol y Sustancias" />
       <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/atencion-victimas" component={PesvAtencionVictimas} feature="hasPESV" featureName="Módulo PESV - Atención a Víctimas" />
       <SubscriptionProtectedRoute path="/pesv/evaluacion/:evaluacionId/indicadores" component={IndicadoresPesv} feature="hasPESV" featureName="Módulo PESV - Indicadores" />
@@ -348,6 +350,7 @@ function Router() {
       <SubscriptionProtectedRoute path="/pesv/monitoreo-gps" component={PesvMonitoreoGps} feature="hasPESV" featureName="Módulo PESV - Monitoreo GPS" />
       <SubscriptionProtectedRoute path="/pesv/rutas-seguras" component={PesvRutasSeguras} feature="hasPESV" featureName="Módulo PESV - Rutas Seguras" />
       <SubscriptionProtectedRoute path="/pesv/fatiga-somnolencia" component={PesvFatigaSomnolencia} feature="hasPESV" featureName="Módulo PESV - Fatiga y Somnolencia" />
+      <SubscriptionProtectedRoute path="/pesv/encuesta-conductor" component={PesvEncuestaConductor} feature="hasPESV" featureName="Módulo PESV - Encuesta Diaria Conductor" />
       <SubscriptionProtectedRoute path="/pesv/alcohol-sustancias" component={PesvAlcoholSustancias} feature="hasPESV" featureName="Módulo PESV - Alcohol y Sustancias" />
       <SubscriptionProtectedRoute path="/pesv/atencion-victimas" component={PesvAtencionVictimas} feature="hasPESV" featureName="Módulo PESV - Atención a Víctimas" />
       <SubscriptionProtectedRoute path="/pesv/matriz-riesgos" component={MatrizRiesgosViales} feature="hasPESV" featureName="Módulo PESV - Matriz de Riesgos" />

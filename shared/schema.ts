@@ -10867,3 +10867,33 @@ export const insertPesvVictimasRegistroSchema = createInsertSchema(pesvVictimasR
   .omit({ id: true, createdAt: true, companyId: true });
 export type InsertPesvVictimasRegistro = z.infer<typeof insertPesvVictimasRegistroSchema>;
 export type PesvVictimasRegistro = typeof pesvVictimasRegistros.$inferSelect;
+
+// ============================================================================
+// H06b - PESV Encuesta Diaria del Conductor (Art. 18, Resolución 40595/2022)
+// Auto-reporte del estado físico/mental del conductor antes de cada jornada
+// ============================================================================
+export const pesvEncuestasConductor = pgTable("pesv_encuestas_conductor", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  evaluacionId: varchar("evaluacion_id").references(() => evaluacionesPesv.id, { onDelete: "set null" }),
+  conductorNombre: varchar("conductor_nombre").notNull(),
+  fechaRegistro: date("fecha_registro").notNull(),
+  horaRegistro: varchar("hora_registro").notNull(),
+  horasSueno: integer("horas_sueno").notNull(),
+  estadoFisico: varchar("estado_fisico").notNull(),       // bueno, regular, malo
+  estadoEmocional: varchar("estado_emocional").notNull(), // bueno, regular, malo
+  tomaMedicamentos: integer("toma_medicamentos").notNull().default(0), // 0=no, 1=si
+  medicamentosDetalle: text("medicamentos_detalle"),
+  consumoAlcohol: integer("consumo_alcohol").notNull().default(0),       // 0=no, 1=si
+  presentaEnfermedad: integer("presenta_enfermedad").notNull().default(0), // 0=no, 1=si
+  enfermedadDetalle: text("enfermedad_detalle"),
+  resultado: varchar("resultado").notNull(), // apto, no_apto
+  registradoPor: varchar("registrado_por"),
+  observaciones: text("observaciones"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+export const insertPesvEncuestaConductorSchema = createInsertSchema(pesvEncuestasConductor)
+  .omit({ id: true, createdAt: true, companyId: true });
+export type InsertPesvEncuestaConductor = z.infer<typeof insertPesvEncuestaConductorSchema>;
+export type PesvEncuestaConductor = typeof pesvEncuestasConductor.$inferSelect;
