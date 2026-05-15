@@ -1450,6 +1450,38 @@ function DetalleEvaluacionPesvInner() {
                 );
               })}
             </div>
+
+            {ciclo.key === 'hacer' && (
+              <div className="mt-2 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1 px-1">
+                  <ClipboardList className="w-3.5 h-3.5" />
+                  Registros Operativos del Conductor
+                </p>
+                <Link href={`/pesv/evaluacion/${evaluacionId}/encuesta-conductor`}>
+                  <Card
+                    className="hover-elevate cursor-pointer border-emerald-200 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20"
+                    data-testid="card-encuesta-conductor"
+                  >
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="font-mono text-emerald-700 border-emerald-400 dark:text-emerald-400 dark:border-emerald-700">
+                              H06+
+                            </Badge>
+                            <CardTitle className="text-base">Encuesta Diaria del Conductor</CardTitle>
+                          </div>
+                          <CardDescription className="mt-1">
+                            Auto-reporte del estado físico y mental del conductor antes de cada jornada · Art. 18, Res. 40595/2022
+                          </CardDescription>
+                        </div>
+                        <ExternalLink className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />
+                      </div>
+                    </CardHeader>
+                  </Card>
+                </Link>
+              </div>
+            )}
           </TabsContent>
           );
         })}
