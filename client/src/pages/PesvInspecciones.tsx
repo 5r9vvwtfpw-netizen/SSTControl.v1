@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Eye, Trash2, ArrowLeft, FileDown } from "lucide-react";
+import { Plus, Search, Eye, Trash2, ArrowLeft, FileDown, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { VehicleInspection, Vehicle, Driver, insertVehicleInspectionSchema } from "@shared/schema";
@@ -616,68 +616,124 @@ export default function PesvInspecciones() {
       </div>
 
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalle de Inspección Preoperacional</DialogTitle>
-            <DialogDescription>
-              Fecha: {selectedInspection && new Date(selectedInspection.inspectionDate).toLocaleDateString("es-CO")}
-            </DialogDescription>
           </DialogHeader>
-          {selectedInspection && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="font-semibold">Vehículo:</p>
-                  <p>{getVehiclePlate(selectedInspection.vehicleId)}</p>
+          {selectedInspection && (() => {
+            const ins = selectedInspection;
+            const grupos = [
+              { label: "Exterior", items: [
+                { label: "Llantas / Neumáticos", val: ins.tires, critical: true },
+                { label: "Luces", val: ins.lights },
+                { label: "Espejos", val: ins.mirrors },
+                { label: "Carrocería", val: ins.bodywork },
+              ]},
+              { label: "Interior", items: [
+                { label: "Cinturones de seguridad", val: ins.seatbelts },
+                { label: "Bocina / Pito", val: ins.horn },
+                { label: "Parabrisas / Limpiabrisas", val: ins.windshield },
+                { label: "Instrumentos / Tablero", val: ins.instruments },
+              ]},
+              { label: "Mecánica", items: [
+                { label: "Frenos", val: ins.brakes, critical: true },
+                { label: "Dirección", val: ins.steering },
+                { label: "Suspensión", val: ins.suspension },
+                { label: "Fluidos (aceite, refrigerante)", val: ins.fluids },
+              ]},
+              { label: "Equipos de seguridad", items: [
+                { label: "Extintor", val: ins.fireExtinguisher, critical: true },
+                { label: "Botiquín de primeros auxilios", val: ins.firstAidKit },
+                { label: "Triángulos reflectivos", val: ins.reflectiveTriangles },
+                { label: "Chaleco reflectivo", val: ins.safetyVest },
+              ]},
+            ];
+            const resultColor = ins.result === 'apto'
+              ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+              : ins.result === 'apto-con-observaciones'
+              ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'
+              : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800';
+            const resultText = ins.result === 'apto'
+              ? 'text-green-800 dark:text-green-300'
+              : ins.result === 'apto-con-observaciones'
+              ? 'text-amber-800 dark:text-amber-300'
+              : 'text-red-800 dark:text-red-300';
+            const failCount = grupos.flatMap(g => g.items).filter(i => i.val === 0).length;
+            return (
+              <div className="space-y-4">
+                {/* Resultado + cabecera */}
+                <div className={`flex items-center gap-3 rounded-md border p-3 ${resultColor}`}>
+                  {ins.result === 'apto'
+                    ? <CheckCircle2 className="h-7 w-7 text-green-600 shrink-0" />
+                    : ins.result === 'apto-con-observaciones'
+                    ? <AlertCircle className="h-7 w-7 text-amber-500 shrink-0" />
+                    : <XCircle className="h-7 w-7 text-red-600 shrink-0" />}
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-semibold ${resultText}`}>{getResultLabel(ins.result)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(ins.inspectionDate).toLocaleDateString("es-CO")} · {ins.inspectionTime}
+                      {failCount > 0 && ` · ${failCount} ítem${failCount > 1 ? 's' : ''} con falla`}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold">Conductor:</p>
-                  <p>{getDriverName(selectedInspection.driverId)}</p>
+
+                {/* Vehículo y conductor */}
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Vehículo</p>
+                    <p className="font-medium">{getVehiclePlate(ins.vehicleId)}</p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Conductor</p>
+                    <p className="font-medium">{getDriverName(ins.driverId)}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold">Hora:</p>
-                  <p>{selectedInspection.inspectionTime}</p>
-                </div>
-                <div>
-                  <p className="font-semibold">Resultado:</p>
-                  <p>{getResultLabel(selectedInspection.result)}</p>
-                </div>
+
+                {/* Ítems por grupo */}
+                {grupos.map(grupo => (
+                  <div key={grupo.label} className="space-y-1.5">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{grupo.label}</p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {grupo.items.map(item => (
+                        <div
+                          key={item.label}
+                          className={`flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm ${
+                            item.val === 1
+                              ? 'bg-green-50 dark:bg-green-950/20 text-green-800 dark:text-green-300'
+                              : item.critical
+                              ? 'bg-red-50 dark:bg-red-950/20 text-red-800 dark:text-red-300'
+                              : 'bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300'
+                          }`}
+                        >
+                          <span className="truncate">{item.label}{item.critical && item.val === 0 && <span className="ml-1 text-[10px] font-semibold">CRÍTICO</span>}</span>
+                          {item.val === 1
+                            ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
+                            : <XCircle className="h-4 w-4 shrink-0" />}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Observaciones y acciones */}
+                {ins.observations && (
+                  <div className="rounded-md border p-3 space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Observaciones</p>
+                    <p className="text-sm">{ins.observations}</p>
+                  </div>
+                )}
+                {ins.correctiveActions && (
+                  <div className="rounded-md border p-3 space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Acciones Correctivas</p>
+                    <p className="text-sm">{ins.correctiveActions}</p>
+                  </div>
+                )}
               </div>
-              <div className="space-y-2">
-                <h4 className="font-semibold">Ítems Revisados:</h4>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <p>Neumáticos: {selectedInspection.tires ? "✓" : "✗"}</p>
-                  <p>Luces: {selectedInspection.lights ? "✓" : "✗"}</p>
-                  <p>Espejos: {selectedInspection.mirrors ? "✓" : "✗"}</p>
-                  <p>Carrocería: {selectedInspection.bodywork ? "✓" : "✗"}</p>
-                  <p>Cinturones: {selectedInspection.seatbelts ? "✓" : "✗"}</p>
-                  <p>Pito: {selectedInspection.horn ? "✓" : "✗"}</p>
-                  <p>Parabrisas: {selectedInspection.windshield ? "✓" : "✗"}</p>
-                  <p>Instrumentos: {selectedInspection.instruments ? "✓" : "✗"}</p>
-                  <p>Frenos: {selectedInspection.brakes ? "✓" : "✗"}</p>
-                  <p>Dirección: {selectedInspection.steering ? "✓" : "✗"}</p>
-                  <p>Suspensión: {selectedInspection.suspension ? "✓" : "✗"}</p>
-                  <p>Fluidos: {selectedInspection.fluids ? "✓" : "✗"}</p>
-                  <p>Extintor: {selectedInspection.fireExtinguisher ? "✓" : "✗"}</p>
-                  <p>Botiquín: {selectedInspection.firstAidKit ? "✓" : "✗"}</p>
-                  <p>Triángulos: {selectedInspection.reflectiveTriangles ? "✓" : "✗"}</p>
-                  <p>Chaleco: {selectedInspection.safetyVest ? "✓" : "✗"}</p>
-                </div>
-              </div>
-              {selectedInspection.observations && (
-                <div>
-                  <p className="font-semibold">Observaciones:</p>
-                  <p className="text-sm">{selectedInspection.observations}</p>
-                </div>
-              )}
-              {selectedInspection.correctiveActions && (
-                <div>
-                  <p className="font-semibold">Acciones Correctivas:</p>
-                  <p className="text-sm">{selectedInspection.correctiveActions}</p>
-                </div>
-              )}
-            </div>
-          )}
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>Cerrar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

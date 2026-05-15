@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Trash2, ArrowLeft, ClipboardList, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, ClipboardList, CheckCircle2, XCircle, AlertTriangle, Eye } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -99,6 +99,8 @@ export default function PesvEncuestaConductor() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [selectedEncuesta, setSelectedEncuesta] = useState<EncuestaType | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [formData, setFormData] = useState<FormData>(defaultForm());
 
   const apiBase = evaluacionId
@@ -284,14 +286,24 @@ export default function PesvEncuestaConductor() {
                     <TableCell>{getEstadoBadge(enc.estadoEmocional)}</TableCell>
                     <TableCell>{getResultadoBadge(enc.resultado)}</TableCell>
                     <TableCell>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => setDeleteId(enc.id)}
-                        data-testid={`button-delete-${enc.id}`}
-                      >
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => { setSelectedEncuesta(enc); setDetailOpen(true); }}
+                          data-testid={`button-view-encuesta-${enc.id}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setDeleteId(enc.id)}
+                          data-testid={`button-delete-${enc.id}`}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -504,6 +516,107 @@ export default function PesvEncuestaConductor() {
             <Button onClick={handleSubmit} disabled={createMutation.isPending} data-testid="button-submit-encuesta">
               {createMutation.isPending ? "Guardando..." : "Guardar Encuesta"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Detail Dialog */}
+      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalle de Encuesta Diaria</DialogTitle>
+          </DialogHeader>
+          {selectedEncuesta && (
+            <div className="space-y-4 py-1">
+              {/* Resultado destacado */}
+              <div className={`flex items-center gap-3 rounded-md p-3 ${selectedEncuesta.resultado === 'apto' ? 'bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800'}`}>
+                {selectedEncuesta.resultado === 'apto'
+                  ? <CheckCircle2 className="h-6 w-6 text-green-600 shrink-0" />
+                  : <XCircle className="h-6 w-6 text-red-600 shrink-0" />}
+                <div>
+                  <p className={`font-semibold ${selectedEncuesta.resultado === 'apto' ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
+                    {selectedEncuesta.resultado === 'apto' ? 'APTO para conducir' : 'NO APTO para conducir'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{selectedEncuesta.fechaRegistro} · {selectedEncuesta.horaRegistro}</p>
+                </div>
+              </div>
+
+              {/* Datos del conductor */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="space-y-0.5">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Conductor</p>
+                  <p className="font-medium">{selectedEncuesta.conductorNombre}</p>
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Registrado por</p>
+                  <p className="font-medium">{selectedEncuesta.registradoPor || <span className="text-muted-foreground italic">Auto-reporte portal</span>}</p>
+                </div>
+              </div>
+
+              {/* Signos vitales / estado */}
+              <div className="rounded-md border p-3 space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Estado del conductor</p>
+                <div className="grid grid-cols-3 gap-3 text-sm">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold">{selectedEncuesta.horasSueno}h</p>
+                    <p className="text-xs text-muted-foreground">Horas de sueño</p>
+                    {Number(selectedEncuesta.horasSueno) < 6 && (
+                      <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-[10px] mt-1">Insuficiente</Badge>
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <div className="flex justify-center mb-1">{getEstadoBadge(selectedEncuesta.estadoFisico)}</div>
+                    <p className="text-xs text-muted-foreground">Estado físico</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex justify-center mb-1">{getEstadoBadge(selectedEncuesta.estadoEmocional)}</div>
+                    <p className="text-xs text-muted-foreground">Estado emocional</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Declaraciones */}
+              <div className="rounded-md border p-3 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Declaraciones del conductor</p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <span>¿Toma medicamentos que afecten conducción?</span>
+                    {Number(selectedEncuesta.tomaMedicamentos) === 1
+                      ? <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 shrink-0">Sí</Badge>
+                      : <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 shrink-0">No</Badge>}
+                  </div>
+                  {Number(selectedEncuesta.tomaMedicamentos) === 1 && selectedEncuesta.medicamentosDetalle && (
+                    <p className="text-xs text-muted-foreground pl-2 border-l-2 border-amber-300">{selectedEncuesta.medicamentosDetalle}</p>
+                  )}
+                  <div className="flex items-center justify-between gap-2">
+                    <span>¿Consumió alcohol en las últimas 12 horas?</span>
+                    {Number(selectedEncuesta.consumoAlcohol) === 1
+                      ? <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 shrink-0">Sí</Badge>
+                      : <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 shrink-0">No</Badge>}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span>¿Presenta enfermedad o molestia hoy?</span>
+                    {Number(selectedEncuesta.presentaEnfermedad) === 1
+                      ? <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 shrink-0">Sí</Badge>
+                      : <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 shrink-0">No</Badge>}
+                  </div>
+                  {Number(selectedEncuesta.presentaEnfermedad) === 1 && selectedEncuesta.enfermedadDetalle && (
+                    <p className="text-xs text-muted-foreground pl-2 border-l-2 border-red-300">{selectedEncuesta.enfermedadDetalle}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Observaciones */}
+              {selectedEncuesta.observaciones && (
+                <div className="rounded-md border p-3 space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Observaciones</p>
+                  <p className="text-sm">{selectedEncuesta.observaciones}</p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailOpen(false)}>Cerrar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
