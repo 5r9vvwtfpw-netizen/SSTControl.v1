@@ -33,7 +33,8 @@ import {
   MessageSquare, AlertCircle, Send, CheckCircle, CheckCircle2, FileText, User, Briefcase, FileCheck,
   GraduationCap, Calendar, Clock, MapPin, UserCheck, Users, Mail, KeyRound, Eye, EyeOff, Vote,
   Building2, BarChart3, Shield, UserCog, BookOpen, Award, Play, Trophy, Star, FolderOpen, Inbox, Download, Bell, ChevronDown,
-  History, Monitor, Smartphone, Tablet, Video, Heart, ClipboardList, Camera, Upload, Trash2, Loader2, Headphones, Car, Search, X
+  History, Monitor, Smartphone, Tablet, Video, Heart, ClipboardList, Camera, Upload, Trash2, Loader2, Headphones, Car, Search, X,
+  Brain, Pill, Wine, Thermometer, Moon
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
@@ -968,6 +969,7 @@ const portalNavGroups = [
     items: [
       { id: "comite-pesv", label: "Comité de Seguridad Vial", icon: Shield },
       { id: "capacitaciones-pesv", label: "Capacitaciones PESV", icon: GraduationCap },
+      { id: "encuesta-conductor", label: "Encuesta Diaria", icon: ClipboardList },
     ]
   },
 ];
@@ -1018,15 +1020,29 @@ function WorkerPortal() {
   const hayEleccionCopasstActiva = esEleccionActiva(eleccionCopasst);
   const hayEleccionConvivenciaActiva = esEleccionActiva(eleccionConvivencia);
 
+  // Detectar si el trabajador es conductor para mostrar encuesta diaria
+  const { data: conductorStatus } = useQuery<{ esConductor: boolean; conductorNombre?: string }>({
+    queryKey: ["/api/portal/conductor-status"],
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Filtrar items PESV según perfil de conductor
+  const filteredNavGroups = portalNavGroups.map(group => {
+    if (group.id === 'pesv' && !conductorStatus?.esConductor) {
+      return { ...group, items: group.items.filter(i => i.id !== 'encuesta-conductor') };
+    }
+    return group;
+  });
+
   // Encontrar el grupo y el item activo para mostrar en el header
   const findActiveInfo = () => {
-    for (const group of portalNavGroups) {
+    for (const group of filteredNavGroups) {
       const item = group.items.find(i => i.id === activeSection);
       if (item) {
         return { group, item };
       }
     }
-    return { group: portalNavGroups[0], item: portalNavGroups[0].items[0] };
+    return { group: filteredNavGroups[0], item: filteredNavGroups[0].items[0] };
   };
 
   const { group: activeGroup, item: activeItem } = findActiveInfo();
@@ -1128,7 +1144,7 @@ function WorkerPortal() {
       <Card className="border-0 shadow-sm bg-card/50">
         <CardContent className="p-2 sm:p-3">
           <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-            {portalNavGroups.map((group) => {
+            {filteredNavGroups.map((group) => {
               const GroupIcon = group.icon;
               const isActiveGroup = group.items.some(item => item.id === activeSection);
               
@@ -1202,6 +1218,7 @@ function WorkerPortal() {
         {activeSection === "mis-audiometrias" && <MisAudiometriasTab />}
         {activeSection === "comite-pesv" && <MiComitePesvTab />}
         {activeSection === "capacitaciones-pesv" && <MisCapacitacionesPesvTab />}
+        {activeSection === "encuesta-conductor" && <EncuestaConductorPortalTab />}
       </div>
     </div>
   );
@@ -5064,6 +5081,429 @@ function MisCapacitacionesPesvTab() {
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
+
+// ==================== ENCUESTA DIARIA DEL CONDUCTOR (Portal Auto-diligenciamiento) ====================
+type PesvEncuestaConductorPortal = {
+  id: string;
+  fechaRegistro: string;
+  horaRegistro: string;
+  horasSueno: number;
+  estadoFisico: string;
+  estadoEmocional: string;
+  tomaMedicamentos: number;
+  medicamentosDetalle?: string | null;
+  consumoAlcohol: number;
+  presentaEnfermedad: number;
+  enfermedadDetalle?: string | null;
+  resultado: string;
+  observaciones?: string | null;
+};
+
+function EncuestaConductorPortalTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const [horasSueno, setHorasSueno] = useState(7);
+  const [estadoFisico, setEstadoFisico] = useState<'bueno' | 'regular' | 'malo'>('bueno');
+  const [estadoEmocional, setEstadoEmocional] = useState<'bueno' | 'regular' | 'malo'>('bueno');
+  const [tomaMedicamentos, setTomaMedicamentos] = useState(false);
+  const [medicamentosDetalle, setMedicamentosDetalle] = useState('');
+  const [consumoAlcohol, setConsumoAlcohol] = useState(false);
+  const [presentaEnfermedad, setPresentaEnfermedad] = useState(false);
+  const [enfermedadDetalle, setEnfermedadDetalle] = useState('');
+  const [observaciones, setObservaciones] = useState('');
+  const [enviado, setEnviado] = useState(false);
+  const [resultadoEnvio, setResultadoEnvio] = useState<'apto' | 'no_apto' | null>(null);
+
+  const { data: historialData, isLoading: historialLoading } = useQuery<{
+    encuestas: PesvEncuestaConductorPortal[];
+    conductorNombre: string | null;
+  }>({
+    queryKey: ["/api/portal/mis-encuestas-conductor"],
+  });
+
+  const encuestas = historialData?.encuestas || [];
+
+  const hoyStr = (() => {
+    const nowCO = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+    return nowCO.toISOString().split('T')[0];
+  })();
+
+  const encuestaHoy = encuestas.find(e => e.fechaRegistro === hoyStr);
+  const yaEnviada = enviado || !!encuestaHoy;
+
+  const submitMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/portal/encuesta-conductor", {
+        horasSueno,
+        estadoFisico,
+        estadoEmocional,
+        tomaMedicamentos: tomaMedicamentos ? 1 : 0,
+        medicamentosDetalle: tomaMedicamentos ? medicamentosDetalle : null,
+        consumoAlcohol: consumoAlcohol ? 1 : 0,
+        presentaEnfermedad: presentaEnfermedad ? 1 : 0,
+        enfermedadDetalle: presentaEnfermedad ? enfermedadDetalle : null,
+        observaciones: observaciones || null,
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setEnviado(true);
+      setResultadoEnvio(data.resultado);
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/mis-encuestas-conductor"] });
+      toast({
+        title: data.resultado === 'apto' ? "Encuesta enviada — APTO" : "Encuesta enviada — NO APTO",
+        description: data.resultado === 'apto'
+          ? "Su condición cumple los requisitos para conducir hoy."
+          : "Se ha registrado una condición que requiere evaluación antes de conducir.",
+        variant: data.resultado === 'apto' ? "default" : "destructive",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error al enviar encuesta",
+        description: error.message || "Intente nuevamente",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const estadoOpciones = {
+    bueno: { label: "Bueno", bg: "bg-green-600" },
+    regular: { label: "Regular", bg: "bg-amber-500" },
+    malo: { label: "Malo", bg: "bg-red-600" },
+  };
+
+  const renderEstadoSelector = (
+    value: 'bueno' | 'regular' | 'malo',
+    onChange: (v: 'bueno' | 'regular' | 'malo') => void,
+    testPrefix: string
+  ) => (
+    <div className="flex gap-2 flex-wrap">
+      {(['bueno', 'regular', 'malo'] as const).map((opcion) => (
+        <button
+          key={opcion}
+          type="button"
+          onClick={() => onChange(opcion)}
+          data-testid={`btn-${testPrefix}-${opcion}`}
+          className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${
+            value === opcion
+              ? `${estadoOpciones[opcion].bg} text-white border-transparent`
+              : 'bg-background border-border text-foreground hover:bg-muted'
+          }`}
+        >
+          {estadoOpciones[opcion].label}
+        </button>
+      ))}
+    </div>
+  );
+
+  const renderToggle = (
+    value: boolean,
+    onChange: (v: boolean) => void,
+    testId: string
+  ) => (
+    <div className="flex gap-2">
+      <button
+        type="button"
+        onClick={() => onChange(false)}
+        data-testid={`${testId}-no`}
+        className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${
+          !value ? 'bg-green-600 text-white border-transparent' : 'bg-background border-border text-foreground hover:bg-muted'
+        }`}
+      >
+        No
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(true)}
+        data-testid={`${testId}-si`}
+        className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${
+          value ? 'bg-red-600 text-white border-transparent' : 'bg-background border-border text-foreground hover:bg-muted'
+        }`}
+      >
+        Sí
+      </button>
+    </div>
+  );
+
+  const hayAlertaNoApto = estadoFisico === 'malo' || estadoEmocional === 'malo' || consumoAlcohol || presentaEnfermedad || horasSueno < 6;
+
+  return (
+    <div className="space-y-6">
+      {/* Banner normativo */}
+      <Card className="bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-emerald-100 dark:bg-emerald-900 rounded-full mt-0.5">
+              <Car className="h-4 w-4 text-emerald-700 dark:text-emerald-300" />
+            </div>
+            <div>
+              <p className="font-semibold text-emerald-800 dark:text-emerald-200 text-sm">
+                Encuesta Pre-operacional del Conductor — Paso H06
+              </p>
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
+                Resolución 40595/2022 · PESV · Registro obligatorio antes de cada jornada de conducción
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Resultado si ya fue enviada hoy */}
+      {yaEnviada && (
+        <Card data-testid="card-encuesta-ya-enviada">
+          <CardContent className="p-6">
+            <div className="flex flex-col items-center text-center gap-4">
+              {(resultadoEnvio ?? encuestaHoy?.resultado) === 'apto' ? (
+                <>
+                  <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                    <CheckCircle2 className="h-8 w-8 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-green-700 dark:text-green-400" data-testid="text-resultado-apto">
+                      APTO para conducir hoy
+                    </h3>
+                    <p className="text-muted-foreground text-sm mt-1">
+                      Su encuesta del {format(new Date(hoyStr + 'T12:00:00'), "d 'de' MMMM yyyy", { locale: es })} fue registrada exitosamente.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+                    <AlertCircle className="h-8 w-8 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-red-700 dark:text-red-400" data-testid="text-resultado-no-apto">
+                      NO APTO — Requiere evaluación
+                    </h3>
+                    <p className="text-muted-foreground text-sm mt-1">
+                      Informe a su supervisor antes de iniciar operaciones.
+                    </p>
+                  </div>
+                </>
+              )}
+              {encuestaHoy && (
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  Registrada a las {encuestaHoy.horaRegistro}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Formulario — solo si no se ha enviado hoy */}
+      {!yaEnviada && (
+        <Card data-testid="card-formulario-encuesta-conductor">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 dark:bg-blue-950 rounded-full">
+                <ClipboardList className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Encuesta del día</CardTitle>
+                <CardDescription>
+                  Responda con honestidad. Sus respuestas garantizan su seguridad y la de los demás.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Horas de sueño */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2 flex-wrap">
+                <Moon className="h-4 w-4 text-indigo-500" />
+                ¿Cuántas horas durmió anoche?
+                <span className="ml-auto text-lg font-bold text-indigo-600" data-testid="text-horas-sueno-valor">
+                  {horasSueno}h
+                </span>
+              </label>
+              <input
+                type="range"
+                min={1}
+                max={12}
+                value={horasSueno}
+                onChange={e => setHorasSueno(Number(e.target.value))}
+                className="w-full accent-indigo-600"
+                data-testid="input-horas-sueno"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>1h</span>
+                <span className={horasSueno < 6 ? "text-red-500 font-medium" : "text-green-600 font-medium"}>
+                  {horasSueno < 6 ? "Insuficiente para conducir" : "Suficiente"}
+                </span>
+                <span>12h</span>
+              </div>
+            </div>
+
+            {/* Estado físico */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Heart className="h-4 w-4 text-rose-500" />
+                Estado físico general hoy
+              </label>
+              {renderEstadoSelector(estadoFisico, setEstadoFisico, "fisico")}
+            </div>
+
+            {/* Estado emocional */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Brain className="h-4 w-4 text-purple-500" />
+                Estado emocional hoy
+              </label>
+              {renderEstadoSelector(estadoEmocional, setEstadoEmocional, "emocional")}
+            </div>
+
+            {/* Toma medicamentos */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Pill className="h-4 w-4 text-amber-500" />
+                ¿Está tomando medicamentos que puedan afectar la conducción?
+              </label>
+              {renderToggle(tomaMedicamentos, setTomaMedicamentos, "medicamentos")}
+              {tomaMedicamentos && (
+                <Textarea
+                  placeholder="Indique cuáles medicamentos..."
+                  value={medicamentosDetalle}
+                  onChange={e => setMedicamentosDetalle(e.target.value)}
+                  className="mt-2 text-sm"
+                  rows={2}
+                  data-testid="input-medicamentos-detalle"
+                />
+              )}
+            </div>
+
+            {/* Consumo de alcohol */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Wine className="h-4 w-4 text-red-500" />
+                ¿Consumió bebidas alcohólicas en las últimas 12 horas?
+              </label>
+              {renderToggle(consumoAlcohol, setConsumoAlcohol, "alcohol")}
+            </div>
+
+            {/* Presenta enfermedad */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Thermometer className="h-4 w-4 text-orange-500" />
+                ¿Presenta alguna enfermedad o malestar que pueda afectar la conducción?
+              </label>
+              {renderToggle(presentaEnfermedad, setPresentaEnfermedad, "enfermedad")}
+              {presentaEnfermedad && (
+                <Textarea
+                  placeholder="Describa el malestar o enfermedad..."
+                  value={enfermedadDetalle}
+                  onChange={e => setEnfermedadDetalle(e.target.value)}
+                  className="mt-2 text-sm"
+                  rows={2}
+                  data-testid="input-enfermedad-detalle"
+                />
+              )}
+            </div>
+
+            {/* Observaciones */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">
+                Observaciones adicionales (opcional)
+              </label>
+              <Textarea
+                placeholder="Cualquier otra información relevante..."
+                value={observaciones}
+                onChange={e => setObservaciones(e.target.value)}
+                className="text-sm"
+                rows={2}
+                data-testid="input-observaciones"
+              />
+            </div>
+
+            {/* Alerta previa si va a quedar no apto */}
+            {hayAlertaNoApto && (
+              <div className="flex items-start gap-3 p-3 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+                <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
+                <p className="text-sm text-red-700 dark:text-red-400">
+                  Con las condiciones indicadas el resultado será <strong>NO APTO</strong>. Informe a su supervisor antes de continuar.
+                </p>
+              </div>
+            )}
+
+            <Button
+              className="w-full"
+              onClick={() => submitMutation.mutate()}
+              disabled={submitMutation.isPending}
+              data-testid="button-enviar-encuesta-conductor"
+            >
+              {submitMutation.isPending ? "Enviando..." : "Enviar Encuesta"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Historial */}
+      <Card data-testid="card-historial-encuestas-conductor">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-muted rounded-full">
+              <Calendar className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Historial de Encuestas</CardTitle>
+              <CardDescription>Últimas 30 encuestas registradas</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {historialLoading ? (
+            <CardSkeletonLoading rows={4} />
+          ) : encuestas.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="mx-auto w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mb-3">
+                <ClipboardList className="h-7 w-7 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground">No hay encuestas registradas aún</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {encuestas.map((enc) => (
+                <div
+                  key={enc.id}
+                  className="flex items-center justify-between border rounded-lg p-3 gap-3 flex-wrap"
+                  data-testid={`card-encuesta-historial-${enc.id}`}
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      {format(new Date(enc.fechaRegistro + 'T12:00:00'), "EEEE d 'de' MMMM, yyyy", { locale: es })}
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {enc.horaRegistro}
+                      </span>
+                      <span>{enc.horasSueno}h sueño</span>
+                      <span>Físico: {estadoOpciones[enc.estadoFisico as keyof typeof estadoOpciones]?.label ?? enc.estadoFisico}</span>
+                      <span>Emocional: {estadoOpciones[enc.estadoEmocional as keyof typeof estadoOpciones]?.label ?? enc.estadoEmocional}</span>
+                    </div>
+                  </div>
+                  <Badge
+                    className={enc.resultado === 'apto'
+                      ? "bg-green-600 text-white shrink-0"
+                      : "bg-red-600 text-white shrink-0"}
+                    data-testid={`badge-resultado-encuesta-${enc.id}`}
+                  >
+                    {enc.resultado === 'apto' ? 'APTO' : 'NO APTO'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

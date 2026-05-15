@@ -40844,6 +40844,197 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // ================================================
+  // PORTAL: Encuesta Diaria del Conductor
+  // ================================================
+
+  // GET /api/portal/conductor-status — verifica si el trabajador es conductor
+  app.get("/api/portal/conductor-status", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as schema.User;
+      const companyId = user.companyId;
+      if (!companyId) return res.json({ esConductor: false });
+
+      let workerId = user.workerId;
+      if (!workerId && user.email) {
+        const worker = await storage.getWorkerByEmail(user.email, companyId);
+        if (worker) workerId = worker.id;
+      }
+      if (!workerId) return res.json({ esConductor: false });
+
+      // Nivel 1: registro en tabla drivers (PESV)
+      const [driverRecord] = await db
+        .select({ id: schema.drivers.id, nombre: schema.drivers.name })
+        .from(schema.drivers)
+        .where(and(eq(schema.drivers.workerId, workerId), eq(schema.drivers.companyId, companyId)))
+        .limit(1);
+
+      if (driverRecord) {
+        return res.json({ esConductor: true, conductorNombre: driverRecord.nombre, origen: 'pesv' });
+      }
+
+      // Nivel 2: perfil de cargo o posición del contrato contiene "conductor"
+      const [contrato] = await db
+        .select({ profileName: schema.jobProfiles.name, position: schema.contracts.position })
+        .from(schema.contracts)
+        .leftJoin(schema.jobProfiles, eq(schema.contracts.jobProfileId, schema.jobProfiles.id))
+        .where(and(eq(schema.contracts.workerId, workerId), eq(schema.contracts.companyId, companyId)))
+        .limit(1);
+
+      const esConductorPorCargo = contrato && (
+        contrato.profileName?.toLowerCase().includes('conductor') ||
+        contrato.position?.toLowerCase().includes('conductor')
+      );
+
+      if (esConductorPorCargo) {
+        const worker = await storage.getWorker(workerId);
+        const conductorNombre = worker ? `${worker.firstName} ${worker.lastName}` : user.username;
+        return res.json({ esConductor: true, conductorNombre, origen: 'cargo' });
+      }
+
+      return res.json({ esConductor: false });
+    } catch (error: any) {
+      console.error('[portal/conductor-status]', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/portal/mis-encuestas-conductor — historial personal del conductor
+  app.get("/api/portal/mis-encuestas-conductor", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as schema.User;
+      const companyId = user.companyId;
+      if (!companyId) return res.json({ encuestas: [], conductorNombre: null });
+
+      let workerId = user.workerId;
+      if (!workerId && user.email) {
+        const worker = await storage.getWorkerByEmail(user.email, companyId);
+        if (worker) workerId = worker.id;
+      }
+      if (!workerId) return res.json({ encuestas: [], conductorNombre: null });
+
+      // Obtener nombre del conductor desde drivers o worker
+      const [driverRecord] = await db
+        .select({ nombre: schema.drivers.name })
+        .from(schema.drivers)
+        .where(and(eq(schema.drivers.workerId, workerId), eq(schema.drivers.companyId, companyId)))
+        .limit(1);
+
+      let conductorNombre = driverRecord?.nombre;
+      if (!conductorNombre) {
+        const worker = await storage.getWorker(workerId);
+        conductorNombre = worker ? `${worker.firstName} ${worker.lastName}` : undefined;
+      }
+      if (!conductorNombre) return res.json({ encuestas: [], conductorNombre: null });
+
+      const encuestas = await db
+        .select()
+        .from(schema.pesvEncuestasConductor)
+        .where(and(
+          eq(schema.pesvEncuestasConductor.companyId, companyId),
+          ilike(schema.pesvEncuestasConductor.conductorNombre, conductorNombre)
+        ))
+        .orderBy(desc(schema.pesvEncuestasConductor.fechaRegistro), desc(schema.pesvEncuestasConductor.createdAt))
+        .limit(30);
+
+      res.json({ encuestas, conductorNombre });
+    } catch (error: any) {
+      console.error('[portal/mis-encuestas-conductor]', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/portal/encuesta-conductor — conductor diligencia su encuesta diaria desde el portal
+  app.post("/api/portal/encuesta-conductor", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as schema.User;
+      const companyId = user.companyId;
+      if (!companyId) return res.status(403).json({ error: "Sin empresa asociada" });
+
+      let workerId = user.workerId;
+      if (!workerId && user.email) {
+        const worker = await storage.getWorkerByEmail(user.email, companyId);
+        if (worker) workerId = worker.id;
+      }
+      if (!workerId) return res.status(403).json({ error: "Trabajador no encontrado" });
+
+      // Obtener nombre del conductor (drivers → cargo → error)
+      const [driverRecord] = await db
+        .select({ nombre: schema.drivers.name })
+        .from(schema.drivers)
+        .where(and(eq(schema.drivers.workerId, workerId), eq(schema.drivers.companyId, companyId)))
+        .limit(1);
+
+      let conductorNombre = driverRecord?.nombre;
+      if (!conductorNombre) {
+        const worker = await storage.getWorker(workerId);
+        if (!worker) return res.status(403).json({ error: "Trabajador no encontrado" });
+        const [contrato] = await db
+          .select({ profileName: schema.jobProfiles.name, position: schema.contracts.position })
+          .from(schema.contracts)
+          .leftJoin(schema.jobProfiles, eq(schema.contracts.jobProfileId, schema.jobProfiles.id))
+          .where(and(eq(schema.contracts.workerId, workerId), eq(schema.contracts.companyId, companyId)))
+          .limit(1);
+        const esConductor = contrato && (
+          contrato.profileName?.toLowerCase().includes('conductor') ||
+          contrato.position?.toLowerCase().includes('conductor')
+        );
+        if (!esConductor) return res.status(403).json({ error: "Solo conductores pueden diligenciar esta encuesta" });
+        conductorNombre = `${worker.firstName} ${worker.lastName}`;
+      }
+
+      const { horasSueno, estadoFisico, estadoEmocional, tomaMedicamentos, medicamentosDetalle, consumoAlcohol, presentaEnfermedad, enfermedadDetalle, observaciones } = req.body;
+
+      // Auto-calcular aptitud
+      const resultado = (
+        estadoFisico === 'malo' ||
+        estadoEmocional === 'malo' ||
+        Number(consumoAlcohol) === 1 ||
+        Number(presentaEnfermedad) === 1 ||
+        Number(horasSueno) < 6
+      ) ? 'no_apto' : 'apto';
+
+      // Evaluación PESV activa (opcional)
+      const [evaluacionActiva] = await db
+        .select({ id: evaluacionesPesv.id })
+        .from(evaluacionesPesv)
+        .where(and(eq(evaluacionesPesv.companyId, companyId), eq(evaluacionesPesv.estado, 'en-progreso')))
+        .limit(1);
+
+      // Fecha y hora Colombia (UTC-5)
+      const nowCO = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+      const fechaRegistro = nowCO.toISOString().split('T')[0];
+      const horaRegistro = `${String(nowCO.getHours()).padStart(2,'0')}:${String(nowCO.getMinutes()).padStart(2,'0')}`;
+
+      const [nuevaEncuesta] = await db
+        .insert(schema.pesvEncuestasConductor)
+        .values({
+          companyId,
+          evaluacionId: evaluacionActiva?.id || null,
+          conductorNombre,
+          fechaRegistro,
+          horaRegistro,
+          horasSueno: Number(horasSueno),
+          estadoFisico,
+          estadoEmocional,
+          tomaMedicamentos: Number(tomaMedicamentos) || 0,
+          medicamentosDetalle: medicamentosDetalle || null,
+          consumoAlcohol: Number(consumoAlcohol) || 0,
+          presentaEnfermedad: Number(presentaEnfermedad) || 0,
+          enfermedadDetalle: enfermedadDetalle || null,
+          resultado,
+          registradoPor: `${conductorNombre} (Portal)`,
+          observaciones: observaciones || null,
+        })
+        .returning();
+
+      res.json({ encuesta: nuevaEncuesta, resultado });
+    } catch (error: any) {
+      console.error('[portal/encuesta-conductor POST]', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // GET /api/document-acknowledgments/:documentId - Admin: Get acknowledgment status for a document
   app.get("/api/document-acknowledgments/:documentId", requireAuth, requirePermission("sst_management:view"), async (req, res) => {
     try {
