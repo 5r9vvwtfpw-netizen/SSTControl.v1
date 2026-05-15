@@ -339,19 +339,6 @@ export default function PesvConductores() {
                       </p>
                     </div>
                   )}
-                  <div className="space-y-2 col-span-2">
-                    <Label htmlFor="name">Nombre Completo *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      required
-                      placeholder="Juan Pérez García"
-                      data-testid="input-name"
-                      className={formData.workerId ? "bg-muted" : ""}
-                      readOnly={!!formData.workerId}
-                    />
-                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="identificationNumber">Número de Identificación *</Label>
                     <Input
