@@ -58,8 +58,15 @@ import {
   FileText,
   Briefcase,
   KeyRound,
-  ShieldCheck
+  ShieldCheck,
+  Tag
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface LsoRegistration {
   id: number;
@@ -79,6 +86,8 @@ interface LsoRegistration {
   profileVisits?: number;
   documentId?: string;
   department?: string;
+  badgeCertified?: boolean;
+  badgeNegotiatedRate?: boolean;
 }
 
 interface LsoAssignment {
@@ -557,16 +566,87 @@ export default function AsignarLsoExterno() {
                   data-testid={`card-lso-${lso.id}`}
                 >
                   <CardContent className="py-4">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-primary" />
+                    <div className="flex items-start gap-3">
+                      {/* Avatar / Foto */}
+                      <div className="flex-shrink-0" onClick={e => e.stopPropagation()}>
+                        {lso.photoUrl ? (
+                          <img
+                            src={lso.photoUrl}
+                            alt={lso.fullName}
+                            className="w-12 h-12 rounded-full object-cover border border-muted"
+                            data-testid={`img-lso-avatar-${lso.id}`}
+                            onError={(e) => {
+                              const el = e.currentTarget;
+                              el.style.display = 'none';
+                              const fallback = el.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="w-12 h-12 rounded-full bg-muted border border-muted items-center justify-center"
+                          style={{ display: lso.photoUrl ? 'none' : 'flex' }}
+                          data-testid={`avatar-lso-initials-${lso.id}`}
+                        >
+                          <span className="text-sm font-semibold text-muted-foreground">
+                            {lso.fullName.trim().split(/\s+/).slice(0, 2).map(n => n[0]?.toUpperCase() ?? '').join('')}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Contenido */}
+                      <div className="flex-1 space-y-2 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium">{lso.fullName}</span>
                           <Badge variant="outline" className="text-green-600 border-green-300">
                             <CheckCircle2 className="h-3 w-3 mr-1" />
                             Verificado
                           </Badge>
                         </div>
+
+                        {/* Badges de certificación y tarifa */}
+                        <TooltipProvider>
+                          <div className="flex flex-wrap gap-2">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge
+                                  className={lso.badgeCertified
+                                    ? "bg-emerald-600 text-white cursor-default"
+                                    : "bg-amber-500 text-white cursor-default"}
+                                  data-testid={`badge-certified-${lso.id}`}
+                                >
+                                  <Award className="h-3 w-3 mr-1" />
+                                  {lso.badgeCertified ? "Certificación plataforma" : "Pendiente de certificación"}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs text-xs">
+                                {lso.badgeCertified
+                                  ? "Este Profesional SST ha completado el proceso de certificación y conoce el funcionamiento de la plataforma SST-COLOMBIA™. Está habilitado para acompañar empresas usuarias del software."
+                                  : "Este Profesional SST aún no ha completado el proceso de certificación en la plataforma SST-COLOMBIA™. Su habilitación para acompañar empresas usuarias del software está pendiente."}
+                              </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge
+                                  className={lso.badgeNegotiatedRate
+                                    ? "bg-blue-600 text-white cursor-default"
+                                    : "bg-gray-400 text-white cursor-default"}
+                                  data-testid={`badge-rate-${lso.id}`}
+                                >
+                                  <Tag className="h-3 w-3 mr-1" />
+                                  {lso.badgeNegotiatedRate ? "Tarifa negociada" : "Sin tarifa negociada"}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs text-xs">
+                                {lso.badgeNegotiatedRate
+                                  ? "Este Profesional SST ha aceptado ofrecer una tarifa especial a las empresas que utilizan el software SST-COLOMBIA™."
+                                  : "Este Profesional SST no tiene actualmente una tarifa especial acordada para empresas usuarias del software SST-COLOMBIA™."}
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </TooltipProvider>
+
                         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Mail className="h-3 w-3" />
@@ -590,7 +670,8 @@ export default function AsignarLsoExterno() {
                           </div>
                         )}
                       </div>
-                      <Button variant="outline" size="sm" data-testid={`button-select-lso-${lso.id}`}>
+
+                      <Button variant="outline" size="sm" className="flex-shrink-0" data-testid={`button-select-lso-${lso.id}`}>
                         Seleccionar
                       </Button>
                     </div>
