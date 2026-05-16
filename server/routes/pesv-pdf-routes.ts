@@ -878,7 +878,7 @@ export function registerPesvPdfRoutes(app: Express) {
         y = addParagraph(doc, ins.correctiveActions, { y });
       }
 
-      await addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true, { startY: y + 24 });
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-inspeccion-individual');
@@ -980,7 +980,7 @@ export function registerPesvPdfRoutes(app: Express) {
         y = addParagraph(doc, enc.observaciones, { y });
       }
 
-      await addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true, { startY: y + 24 });
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-encuesta-conductor');

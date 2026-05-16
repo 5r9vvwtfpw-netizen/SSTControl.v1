@@ -391,7 +391,8 @@ export function addDocumentTitle(
 export async function addSignatureFooter(
   doc: typeof PDFDocument.prototype,
   signers: PdfSigners,
-  includeLSO: boolean = false
+  includeLSO: boolean = false,
+  opts?: { startY?: number }
 ): Promise<void> {
   const margin = PDF_CONFIG.MARGIN;
   const pageWidth = doc.page.width;
@@ -404,7 +405,17 @@ export async function addSignatureFooter(
 
   const potentialFooterY = pageHeight - margin - footerHeight;
   let footerY: number;
-  if (doc.y > potentialFooterY) {
+
+  if (opts?.startY !== undefined) {
+    // Modo inline: colocar la tabla justo a partir de startY (sin forzar al fondo)
+    const requestedY = opts.startY;
+    if (requestedY + footerHeight > pageHeight - margin) {
+      doc.addPage();
+      footerY = margin + 20;
+    } else {
+      footerY = requestedY;
+    }
+  } else if (doc.y > potentialFooterY) {
     doc.addPage();
     footerY = pageHeight - margin - footerHeight;
   } else {
