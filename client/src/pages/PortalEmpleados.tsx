@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { formatCurrency } from "@/lib/utils/formatters";
+import { formatCurrency, getTodayDateString } from "@/lib/utils/formatters";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -5240,10 +5240,9 @@ type InspeccionState = Record<string, number>;
 
 function InspeccionVehiculoPortalTab() {
   const { toast } = useToast();
-  const nowCO = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
-  const hoyStr = nowCO.toISOString().split('T')[0];
+  const hoyStr = getTodayDateString();
 
-  const [enviado, setEnviado] = useState(false);
+  const [enviadoFecha, setEnviadoFecha] = useState<string | null>(null);
   const [resultadoEnvio, setResultadoEnvio] = useState<string | null>(null);
   const [vehicleId, setVehicleId] = useState<string>("");
   const [items, setItems] = useState<InspeccionState>(() => {
@@ -5265,7 +5264,7 @@ function InspeccionVehiculoPortalTab() {
   const inspecciones = historialData?.inspecciones || [];
 
   const inspeccionHoy = inspecciones.find(i => i.inspectionDate === hoyStr && i.vehiclePlate === vehiculos.find(v => v.id === vehicleId)?.plate);
-  const yaEnviada = enviado || !!inspeccionHoy;
+  const yaEnviada = (enviadoFecha === hoyStr) || !!inspeccionHoy;
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -5276,7 +5275,7 @@ function InspeccionVehiculoPortalTab() {
     onSuccess: async (response) => {
       const data = await response.json();
       setResultadoEnvio(data.result);
-      setEnviado(true);
+      setEnviadoFecha(getTodayDateString());
       queryClient.invalidateQueries({ queryKey: ["/api/portal/mis-inspecciones-vehiculo"] });
       toast({
         title: data.result === 'apto' ? "Vehículo APTO" : data.result === 'apto-con-observaciones' ? "Vehículo APTO con observaciones" : "Vehículo NO APTO",
@@ -5571,7 +5570,7 @@ function EncuestaConductorPortalTab() {
   const [presentaEnfermedad, setPresentaEnfermedad] = useState(false);
   const [enfermedadDetalle, setEnfermedadDetalle] = useState('');
   const [observaciones, setObservaciones] = useState('');
-  const [enviado, setEnviado] = useState(false);
+  const [enviadoFecha, setEnviadoFecha] = useState<string | null>(null);
   const [resultadoEnvio, setResultadoEnvio] = useState<'apto' | 'no_apto' | null>(null);
 
   const { data: historialData, isLoading: historialLoading } = useQuery<{
@@ -5583,13 +5582,10 @@ function EncuestaConductorPortalTab() {
 
   const encuestas = historialData?.encuestas || [];
 
-  const hoyStr = (() => {
-    const nowCO = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
-    return nowCO.toISOString().split('T')[0];
-  })();
+  const hoyStr = getTodayDateString();
 
   const encuestaHoy = encuestas.find(e => e.fechaRegistro === hoyStr);
-  const yaEnviada = enviado || !!encuestaHoy;
+  const yaEnviada = (enviadoFecha === hoyStr) || !!encuestaHoy;
 
   const submitMutation = useMutation({
     mutationFn: async () => {
@@ -5607,7 +5603,7 @@ function EncuestaConductorPortalTab() {
       return response.json();
     },
     onSuccess: (data) => {
-      setEnviado(true);
+      setEnviadoFecha(getTodayDateString());
       setResultadoEnvio(data.resultado);
       queryClient.invalidateQueries({ queryKey: ["/api/portal/mis-encuestas-conductor"] });
       toast({
