@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, ArrowLeft, Eye, ClipboardCheck, Calendar, Car, User, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Plus, ArrowLeft, Eye, ClipboardCheck, Calendar, Car, User, CheckCircle2, XCircle, AlertCircle, FileDown } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -309,17 +309,29 @@ export default function PesvInspeccionesEvaluacion() {
                     </TableCell>
                     <TableCell>{getResultBadge(inspection.result)}</TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setSelectedInspection(inspection);
-                          setDetailDialogOpen(true);
-                        }}
-                        data-testid={`button-view-inspection-${inspection.id}`}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedInspection(inspection);
+                            setDetailDialogOpen(true);
+                          }}
+                          data-testid={`button-view-inspection-${inspection.id}`}
+                          title="Ver detalle"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => window.open(`/api/pesv/inspecciones/${inspection.id}/pdf`, '_blank')}
+                          data-testid={`button-pdf-inspection-${inspection.id}`}
+                          title="Descargar PDF"
+                        >
+                          <FileDown className="h-4 w-4 text-blue-600" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

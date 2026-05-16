@@ -528,8 +528,18 @@ export default function PesvInspecciones() {
                         size="icon"
                         onClick={() => handleViewDetail(inspection)}
                         data-testid={`button-view-${inspection.id}`}
+                        title="Ver detalle"
                       >
                         <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => window.open(`/api/pesv/inspecciones/${inspection.id}/pdf`, '_blank')}
+                        data-testid={`button-pdf-inspection-${inspection.id}`}
+                        title="Descargar PDF"
+                      >
+                        <FileDown className="h-4 w-4 text-blue-600" />
                       </Button>
                       {user?.role && hasCompanyAdminAccess(user.role) && (
                         <Button
@@ -538,6 +548,7 @@ export default function PesvInspecciones() {
                           onClick={() => handleDelete(inspection.id)}
                           disabled={deleteInspectionMutation.isPending}
                           data-testid={`button-delete-${inspection.id}`}
+                          title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

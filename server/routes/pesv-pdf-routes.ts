@@ -758,6 +758,133 @@ export function registerPesvPdfRoutes(app: Express) {
     }
   });
 
+  // 15b. GET /api/pesv/inspecciones/:id/pdf — PDF individual de una inspección preoperacional
+  app.get('/api/pesv/inspecciones/:id/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+      const { id } = req.params;
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const [ins] = await db.select().from(schema.vehicleInspections)
+        .where(eq(schema.vehicleInspections.id, id)).limit(1);
+      if (!ins) return res.status(404).send('Inspección no encontrada');
+
+      const [vehicle] = await db.select().from(schema.vehicles)
+        .where(eq(schema.vehicles.id, ins.vehicleId)).limit(1);
+      const [driver] = await db.select().from(schema.drivers)
+        .where(eq(schema.drivers.id, ins.driverId)).limit(1);
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: PDF_CONFIG.MARGIN, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      const plate = vehicle?.plate || ins.vehicleId;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="inspeccion-${plate}-${ins.inspectionDate}.pdf"`);
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company,
+        documentTitle: 'INSPECCIÓN PREOPERACIONAL DE VEHÍCULO',
+        documentCode: 'PESV-H08-INS',
+        logoBuffer,
+      });
+
+      y = addParagraph(doc, 'Resolución 40595/2022 — Art. 14 · Plan Estratégico de Seguridad Vial (PESV)', { y, fontSize: 8 });
+      y += 6;
+
+      // ─── SECCIÓN 1: Datos del registro ───────────────────────────────────
+      y = addSectionBar(doc, '1. Datos del Registro', y);
+      y = addLabeledField(doc, 'Vehículo (Placa)', vehicle ? `${vehicle.plate} — ${vehicle.brand} ${vehicle.model} ${vehicle.year}` : ins.vehicleId, { y });
+      y = addLabeledField(doc, 'Conductor', driver?.name || ins.driverId, { y });
+      y = addLabeledField(doc, 'Fecha', formatDate(ins.inspectionDate), { y });
+      y = addLabeledField(doc, 'Hora', ins.inspectionTime || 'N/A', { y });
+
+      const bienFalla = (val: number) => val === 1 ? 'BIEN' : 'FALLA';
+
+      // ─── SECCIÓN 2: Verificación Exterior ────────────────────────────────
+      y = addSectionBar(doc, '2. Verificación Exterior', y);
+      const extRows = [
+        ['Llantas', bienFalla(ins.tires)],
+        ['Luces', bienFalla(ins.lights)],
+        ['Espejos', bienFalla(ins.mirrors)],
+        ['Carrocería', bienFalla(ins.bodywork)],
+      ];
+      y = addSimpleTable(doc, ['Ítem', 'Estado'], extRows, { y, columnWidths: [400, 131] });
+
+      // ─── SECCIÓN 3: Verificación Interior ────────────────────────────────
+      y = addSectionBar(doc, '3. Verificación Interior', y);
+      const intRows = [
+        ['Cinturones de Seguridad', bienFalla(ins.seatbelts)],
+        ['Pito / Bocina', bienFalla(ins.horn)],
+        ['Parabrisas', bienFalla(ins.windshield)],
+        ['Instrumentos del Panel', bienFalla(ins.instruments)],
+      ];
+      y = addSimpleTable(doc, ['Ítem', 'Estado'], intRows, { y, columnWidths: [400, 131] });
+
+      // ─── SECCIÓN 4: Verificación Mecánica ────────────────────────────────
+      y = addSectionBar(doc, '4. Verificación Mecánica', y);
+      const mecRows = [
+        ['Frenos', bienFalla(ins.brakes)],
+        ['Dirección', bienFalla(ins.steering)],
+        ['Suspensión', bienFalla(ins.suspension)],
+        ['Fluidos (aceite, agua, refrigerante)', bienFalla(ins.fluids)],
+      ];
+      y = addSimpleTable(doc, ['Ítem', 'Estado'], mecRows, { y, columnWidths: [400, 131] });
+
+      // ─── SECCIÓN 5: Equipos de Seguridad ─────────────────────────────────
+      y = addSectionBar(doc, '5. Equipos de Seguridad', y);
+      const segRows = [
+        ['Extintor', bienFalla(ins.fireExtinguisher)],
+        ['Botiquín de Primeros Auxilios', bienFalla(ins.firstAidKit)],
+        ['Triángulos Reflectivos', bienFalla(ins.reflectiveTriangles)],
+        ['Chaleco Reflectivo', bienFalla(ins.safetyVest)],
+      ];
+      y = addSimpleTable(doc, ['Ítem', 'Estado'], segRows, { y, columnWidths: [400, 131] });
+
+      // ─── SECCIÓN 6: Resultado ─────────────────────────────────────────────
+      y = addSectionBar(doc, '6. Resultado de la Inspección', y);
+      const esApto = ins.result === 'apto';
+      const resultText = esApto ? 'APTO PARA CIRCULAR' : 'NO APTO — REQUIERE CORRECCIONES';
+      const resultBg = esApto ? '#dcfce7' : '#fee2e2';
+      const resultColor = esApto ? '#166534' : '#991b1b';
+      const margin = PDF_CONFIG.MARGIN;
+      const tableWidth = doc.page.width - margin * 2;
+      const resultBoxHeight = 44;
+      const safeY = checkPageBreak(doc, resultBoxHeight + 10, y);
+      doc.rect(margin, safeY, tableWidth, resultBoxHeight).fill(resultBg);
+      doc.fontSize(16).font('Helvetica-Bold').fillColor(resultColor)
+        .text(resultText, margin, safeY + 13, { width: tableWidth, align: 'center' });
+      doc.fillColor(PDF_COLORS.BLACK);
+      doc.y = safeY + resultBoxHeight + 8;
+      y = doc.y;
+
+      // ─── SECCIÓN 7: Observaciones y acciones ─────────────────────────────
+      if (ins.observations) {
+        y = addSectionBar(doc, '7. Observaciones', y);
+        y = addParagraph(doc, ins.observations, { y });
+      }
+      if (ins.correctiveActions) {
+        y = addSectionBar(doc, '8. Acciones Correctivas', y);
+        y = addParagraph(doc, ins.correctiveActions, { y });
+      }
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-inspeccion-individual');
+    }
+  });
+
   // 16. GET /api/pesv/encuestas-conductor/:id/pdf — PDF individual de una encuesta diaria
   app.get('/api/pesv/encuestas-conductor/:id/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
     try {
