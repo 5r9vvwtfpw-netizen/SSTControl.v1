@@ -30,6 +30,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { Footer, FooterMinimal } from "@/components/Footer";
 import { ChatBot } from "@/components/ChatBot";
 import NotFound from "@/pages/not-found";
+import InstalarApp from "@/pages/InstalarApp";
 import Dashboard from "@/pages/Dashboard";
 import Trabajadores from "@/pages/Trabajadores";
 import Accidentes from "@/pages/Accidentes";
@@ -384,6 +385,7 @@ function Router() {
       <Route path="/induccion-virtual/:token" component={InduccionVirtualPublica} />
       <Route path="/restablecer-contrasena" component={RestablecerContrasena} />
       <Route path="/recomendar" component={Recomendar} />
+      <Route path="/instalar" component={InstalarApp} />
       <Route component={NotFound} />
     </Switch>
   );

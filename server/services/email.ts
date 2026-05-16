@@ -476,7 +476,7 @@ export class EmailService {
 
               <!-- Download App Button -->
               <div style="text-align: center; margin: 0 0 20px 0;">
-                <a href="${portalUrl}" style="display: inline-block; background-color: #1d4ed8; color: #ffffff; text-decoration: none; padding: 13px 32px; border-radius: 8px; font-size: 15px; font-weight: 700;">
+                <a href="${portalUrl.replace(/\/login.*$/, '/instalar')}" style="display: inline-block; background-color: #1d4ed8; color: #ffffff; text-decoration: none; padding: 13px 32px; border-radius: 8px; font-size: 15px; font-weight: 700;">
                   Descargar App
                 </a>
               </div>
