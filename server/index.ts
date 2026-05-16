@@ -331,47 +331,48 @@ app.post(
                       }, 'Invoice created for payment');
 
                       if (accountingService.isEnabled()) {
-                        let parsedLineItems: any[] = [];
                         try {
-                          parsedLineItems = typeof lineItems === 'string' ? JSON.parse(lineItems) : (lineItems || []);
-                        } catch { parsedLineItems = []; }
-                        accountingService.sendInvoiceToAccounting({
-                          invoiceId: invoice.id,
-                          invoiceNumber,
-                          companyId,
-                          customerName: company.name,
-                          customerNit: company.nit || 'N/A',
-                          customerEmail: company.contactEmail || '',
-                          customerAddress: company.address || '',
-                          customerPhone: company.contactPhone || '',
-                          customerCity: company.city || '',
-                          subtotal,
-                          taxAmount,
-                          total: priceInPesos,
-                          currency: 'COP',
-                          periodStart: now,
-                          periodEnd: nextBillingDate,
-                          issueDate: now,
-                          dueDate: now,
-                          paidDate: now,
-                          status: 'paid',
-                          lineItems: parsedLineItems,
-                          snapshotCiiuCode: company.ciiuCode || null,
-                          snapshotNumberOfWorkers: company.numberOfWorkers ?? null,
-                          snapshotNumberOfVehicles: company.numberOfVehicles ?? null,
-                          stripePaymentId: session.id,
-                        }).then(async (result) => {
-                          if (result.success && result.dianCufe) {
+                          let parsedLineItems: any[] = [];
+                          try {
+                            parsedLineItems = typeof lineItems === 'string' ? JSON.parse(lineItems) : (lineItems || []);
+                          } catch { parsedLineItems = []; }
+                          const accountingResult = await accountingService.sendInvoiceToAccounting({
+                            invoiceId: invoice.id,
+                            invoiceNumber,
+                            companyId,
+                            customerName: company.name,
+                            customerNit: company.nit || 'N/A',
+                            customerEmail: company.contactEmail || '',
+                            customerAddress: company.address || '',
+                            customerPhone: company.contactPhone || '',
+                            customerCity: company.city || '',
+                            subtotal,
+                            taxAmount,
+                            total: priceInPesos,
+                            currency: 'COP',
+                            periodStart: now,
+                            periodEnd: nextBillingDate,
+                            issueDate: now,
+                            dueDate: now,
+                            paidDate: now,
+                            status: 'paid',
+                            lineItems: parsedLineItems,
+                            snapshotCiiuCode: company.ciiuCode || null,
+                            snapshotNumberOfWorkers: company.numberOfWorkers ?? null,
+                            snapshotNumberOfVehicles: company.numberOfVehicles ?? null,
+                            stripePaymentId: session.id,
+                          });
+                          if (accountingResult.success && accountingResult.dianCufe) {
                             await storage.updateInvoice(invoice.id, {
-                              dianCufe: result.dianCufe,
-                              dianXmlUrl: result.dianXmlUrl || null,
-                              dianPdfUrl: result.dianPdfUrl || null,
+                              dianCufe: accountingResult.dianCufe,
+                              dianXmlUrl: accountingResult.dianXmlUrl || null,
+                              dianPdfUrl: accountingResult.dianPdfUrl || null,
                             });
-                            logger.info({ invoiceId: invoice.id, dianCufe: result.dianCufe }, '[Accounting] DIAN data updated on invoice');
+                            logger.info({ invoiceId: invoice.id, dianCufe: accountingResult.dianCufe }, '[Accounting] DIAN data saved on invoice');
                           }
-                        }).catch((err) => {
-                          logger.error({ err, invoiceId: invoice.id }, '[Accounting] Non-critical error sending to accounting');
-                        });
+                        } catch (accountingErr) {
+                          logger.error({ err: accountingErr, invoiceId: invoice.id }, '[Accounting] Error sending to accounting - non-critical');
+                        }
                       }
                     }
                   } catch (invoiceError) {

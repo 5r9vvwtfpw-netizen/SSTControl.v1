@@ -29,7 +29,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { DollarSign, Users, TrendingUp, TrendingDown, Loader2, Ban, CheckCircle, XCircle, ShieldAlert, AlertTriangle, Plus, Search, ArrowLeft, Building2, CalendarClock, ChevronRight } from "lucide-react";
+import { DollarSign, Users, TrendingUp, TrendingDown, Loader2, Ban, CheckCircle, XCircle, ShieldAlert, AlertTriangle, Plus, Search, ArrowLeft, Building2, CalendarClock, ChevronRight, RefreshCw, FileText, ExternalLink } from "lucide-react";
 import { useState, useMemo } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -190,6 +190,31 @@ export default function DashboardFacturacion() {
         description: error.message || "No se pudo actualizar el estado",
       });
     }
+  });
+
+  const { data: vaultInvoices, isLoading: vaultInvoicesLoading, refetch: refetchVaultInvoices } = useQuery<any[]>({
+    queryKey: ['/api/billing/admin/invoices', selectedVaultCompanyId],
+    enabled: !!selectedVaultCompanyId,
+  });
+
+  const retryAccountingMutation = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const response = await apiRequest('POST', `/api/billing/admin/retry-accounting/${invoiceId}`);
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      refetchVaultInvoices();
+      toast({
+        title: data.ok ? "Factura DIAN generada" : "Sin respuesta del sistema contable",
+        description: data.ok
+          ? `CUFE: ${data.dianCufe?.substring(0, 30)}...`
+          : data.message || "Intenta de nuevo más tarde",
+        variant: data.ok ? "default" : "destructive",
+      });
+    },
+    onError: (error: any) => {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    },
   });
 
   const formatCurrency = (amount: number) => {

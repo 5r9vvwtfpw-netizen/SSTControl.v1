@@ -1284,6 +1284,94 @@ export function registerBillingRoutes(app: Express) {
    * TEMPORAL: Corrige el monto de una factura (para facturas con precio incorrecto del plan base)
    * Solo superadmin. Eliminar después de usar.
    */
+
+  /**
+   * POST /api/billing/admin/retry-accounting/:invoiceId
+   * Reintenta el envío de una factura al sistema contable (genera factura DIAN).
+   * Útil cuando el webhook de Stripe procesó el pago pero la integración contable falló.
+   * Permisos: Solo superadmin.
+   */
+  app.post("/api/billing/admin/retry-accounting/:invoiceId", requireSuperadmin, async (req, res) => {
+    try {
+      const { invoiceId } = req.params;
+      const invoice = await storage.getInvoice(invoiceId);
+      if (!invoice) {
+        return res.status(404).json({ error: "Factura no encontrada" });
+      }
+
+      if (invoice.dianCufe) {
+        return res.status(400).json({ error: "Esta factura ya tiene CUFE asignado", dianCufe: invoice.dianCufe });
+      }
+
+      const company = await storage.getCompany(invoice.companyId);
+      if (!company) {
+        return res.status(404).json({ error: "Empresa no encontrada" });
+      }
+
+      let parsedLineItems: any[] = [];
+      try {
+        parsedLineItems = typeof invoice.lineItems === 'string'
+          ? JSON.parse(invoice.lineItems as string)
+          : (invoice.lineItems || []);
+      } catch { parsedLineItems = []; }
+
+      const result = await accountingService.sendInvoiceToAccounting({
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        companyId: invoice.companyId,
+        customerName: invoice.customerName,
+        customerNit: invoice.customerNit,
+        customerEmail: invoice.customerEmail || '',
+        customerAddress: invoice.customerAddress || '',
+        customerPhone: company.contactPhone || '',
+        customerCity: company.city || '',
+        subtotal: invoice.subtotal,
+        taxAmount: invoice.taxAmount,
+        total: invoice.total,
+        currency: invoice.currency,
+        periodStart: invoice.periodStart ? new Date(invoice.periodStart) : new Date(),
+        periodEnd: invoice.periodEnd ? new Date(invoice.periodEnd) : new Date(),
+        issueDate: invoice.issueDate ? new Date(invoice.issueDate) : new Date(),
+        dueDate: invoice.dueDate ? new Date(invoice.dueDate) : new Date(),
+        paidDate: invoice.paidDate ? new Date(invoice.paidDate) : null,
+        status: invoice.status,
+        lineItems: parsedLineItems,
+        snapshotCiiuCode: invoice.snapshotCiiuCode || null,
+        snapshotNumberOfWorkers: invoice.snapshotNumberOfWorkers ?? null,
+        snapshotNumberOfVehicles: invoice.snapshotNumberOfVehicles ?? null,
+        stripePaymentId: undefined,
+      });
+
+      if (result.success && result.dianCufe) {
+        await storage.updateInvoice(invoiceId, {
+          dianCufe: result.dianCufe,
+          dianXmlUrl: result.dianXmlUrl || null,
+          dianPdfUrl: result.dianPdfUrl || null,
+        });
+        return res.json({ ok: true, dianCufe: result.dianCufe, message: "Factura DIAN generada exitosamente" });
+      }
+
+      return res.status(502).json({ ok: false, message: result.message || "El sistema contable no devolvió CUFE" });
+    } catch (error: any) {
+      console.error('[retry-accounting] Error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  /**
+   * GET /api/billing/admin/invoices/:companyId
+   * Lista todas las facturas de una empresa (para el panel admin).
+   * Permisos: Solo superadmin.
+   */
+  app.get("/api/billing/admin/invoices/:companyId", requireSuperadmin, async (req, res) => {
+    try {
+      const invoices = await storage.getInvoicesByCompany(req.params.companyId);
+      res.json(invoices);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.patch("/api/billing/admin/fix-invoice-amount", requireSuperadmin, async (req, res) => {
     try {
       const { invoiceId, correctAmountCOP } = req.body;
