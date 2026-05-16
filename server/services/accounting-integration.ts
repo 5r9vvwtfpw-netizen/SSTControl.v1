@@ -144,7 +144,7 @@ class AccountingIntegrationService {
         totalRetefuente: 0,
         granTotal,
         formaPago: 'Contado',
-        medioPago: 'Tarjeta de Crédito',
+        medioPago: 'Transferencia',
         observaciones: buildObservaciones(data.periodStart, data.invoiceNumber),
         items: data.lineItems.length > 0
           ? data.lineItems.map(item => ({
