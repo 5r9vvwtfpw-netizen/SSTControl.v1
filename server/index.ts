@@ -293,7 +293,7 @@ app.post(
                       const taxAmount = priceInPesos - subtotal;
                       
                       const lineItems = JSON.stringify([{
-                        description: `Suscripción ${plan.displayName || plan.name} - Mensual`,
+                        description: 'Suscripción Software SST Colombia - Mensual',
                         quantity: 1,
                         unitPrice: priceInPesos,
                         total: priceInPesos

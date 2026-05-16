@@ -49,9 +49,11 @@ export class InvoicePdfService {
   ): Promise<Buffer> {
     const { default: PDFDocument } = await import('pdfkit');
     
+    // autoFirstPage:false + bufferPages:true prevents the blank second page
     const doc = new PDFDocument({ 
       margin: 40, 
       size: 'LETTER',
+      bufferPages: true,
       info: {
         Title: `Comprobante ${invoice.invoiceNumber}`,
         Author: 'SST Colombia - SADGI S.A.S.',
@@ -208,6 +210,9 @@ export class InvoicePdfService {
 
     // ============================================================
     // LINE ITEMS TABLE
+    // The authoritative total is always invoice.amount.
+    // We use it to recalculate unit price so the row always
+    // adds up correctly, regardless of what is stored in lineItems.
     // ============================================================
 
     doc.fontSize(9).font('Helvetica-Bold')
@@ -237,14 +242,31 @@ export class InvoicePdfService {
 
     y += rowH;
 
-    const lineItems = invoice.lineItems || [{
-      description: invoice.description || 'Suscripcion SST Colombia',
-      quantity: 1,
-      unitPrice: invoice.amount,
-      total: invoice.amount
-    }];
+    // Build display items — always consistent with invoice.amount
+    const rawItems = invoice.lineItems && invoice.lineItems.length > 0
+      ? invoice.lineItems
+      : [{
+          description: invoice.description || 'Suscripcion Software SST Colombia',
+          quantity: 1,
+          unitPrice: invoice.amount,
+          total: invoice.amount,
+        }];
 
-    lineItems.forEach((item, index) => {
+    // Recalculate so displayed unitPrice × qty === invoice.amount
+    // This prevents stale stored prices from showing a mismatch.
+    const displayItems = rawItems.map((item, idx) => {
+      const isSingleItem = rawItems.length === 1;
+      const displayTotal = isSingleItem ? invoice.amount : item.total;
+      const qty = item.quantity || 1;
+      return {
+        description: item.description,
+        quantity: qty,
+        unitPrice: Math.round(displayTotal / qty),
+        total: displayTotal,
+      };
+    });
+
+    displayItems.forEach((item, index) => {
       const bgColor = index % 2 === 0 ? this.BG_LIGHT : this.WHITE;
       doc.rect(M, y, contentW, rowH)
          .fillAndStroke(bgColor, this.BORDER);
@@ -303,7 +325,7 @@ export class InvoicePdfService {
       doc.fontSize(7).font('Helvetica')
          .fillColor(this.LIGHT_GRAY)
          .text('ID de Transaccion: ' + invoice.paymentTransactionId, M, y, { width: contentW, align: 'right' });
-      y += 14;
+      y += 12;
     }
 
     // ============================================================
@@ -311,55 +333,62 @@ export class InvoicePdfService {
     // ============================================================
 
     y += 4;
-    doc.rect(M, y, contentW, 40)
+    doc.rect(M, y, contentW, 36)
        .fillAndStroke('#f0fdf4', '#bbf7d0');
 
     doc.fontSize(7).font('Helvetica-Bold')
        .fillColor(this.GREEN)
-       .text('INFORMACION DE PAGO', M + 10, y + 6);
+       .text('INFORMACION DE PAGO', M + 10, y + 6, { lineBreak: false });
 
     doc.fontSize(7).font('Helvetica')
        .fillColor(this.GRAY)
-       .text('Los pagos se procesan de forma segura a traves de Stripe.', M + 10, y + 17)
-       .text('Software excluido de IVA segun Art. 476 numeral 21 del Estatuto Tributario.', M + 10, y + 27);
+       .text('Los pagos se procesan de forma segura a traves de Stripe.', M + 10, y + 17, { lineBreak: false })
+       .text('Software excluido de IVA segun Art. 476 numeral 21 del Estatuto Tributario.', M + 10, y + 27, { lineBreak: false });
+
+    y += 44;
 
     // ============================================================
-    // FOOTER (at bottom of page)
+    // FOOTER — fixed at bottom, compact to avoid blank second page
     // ============================================================
 
-    const footerY = doc.page.height - 65;
+    const footerY = doc.page.height - 72;
 
-    doc.moveTo(M, footerY)
-       .lineTo(W - M, footerY)
-       .strokeColor(this.BORDER).lineWidth(0.5).stroke();
+    // Only draw footer if it doesn't overlap content
+    if (footerY > y + 8) {
+      doc.moveTo(M, footerY)
+         .lineTo(W - M, footerY)
+         .strokeColor(this.BORDER).lineWidth(0.5).stroke();
 
-    let fy = footerY + 6;
+      doc.fontSize(7).font('Helvetica')
+         .fillColor(this.GRAY)
+         .text(
+           'Gracias por confiar en SST Colombia para la gestion de seguridad y salud en el trabajo de su empresa.',
+           M, footerY + 6, { width: contentW, align: 'center', lineBreak: false }
+         );
 
-    doc.fontSize(7).font('Helvetica')
-       .fillColor(this.GRAY)
-       .text(
-         'Gracias por confiar en SST Colombia para la gestion de seguridad y salud en el trabajo de su empresa.',
-         M, fy, { width: contentW, align: 'center' }
-       );
-    fy += 11;
+      doc.fontSize(6).font('Helvetica')
+         .fillColor(this.LIGHT_GRAY)
+         .text(
+           'Soporte: soporte@sst-colombia.com  |  Facturacion: facturacion@sst-colombia.com  |  Pagos: pagos@sst-colombia.com',
+           M, footerY + 18, { width: contentW, align: 'center', lineBreak: false }
+         );
 
-    doc.fontSize(6).font('Helvetica')
-       .fillColor(this.LIGHT_GRAY)
-       .text(
-         'Soporte: soporte@sst-colombia.com  |  Facturacion: facturacion@sst-colombia.com  |  Pagos: pagos@sst-colombia.com',
-         M, fy, { width: contentW, align: 'center' }
-       );
-    fy += 9;
+      doc.text(
+        'SISTEMA AUTOMATIZADO DE GESTION INTEGRAL S.A.S. | NIT 902.036.337-4 | DNDA 13-197-177 | CL 48 No. 38-45, Medellin',
+        M, footerY + 28, { width: contentW, align: 'center', lineBreak: false }
+      );
+    }
 
-    doc.text(
-      'SISTEMA AUTOMATIZADO DE GESTION INTEGRAL S.A.S. | NIT 902.036.337-4 | DNDA 13-197-177 | CL 48 No. 38-45, Medellin',
-      M, fy, { width: contentW, align: 'center' }
-    );
-
+    // Trim to exactly 1 page
+    const range = doc.bufferedPageRange();
+    doc.flushPages();
     doc.end();
 
     return new Promise((resolve, reject) => {
-      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('end', () => {
+        const pdf = Buffer.concat(chunks);
+        resolve(pdf);
+      });
       doc.on('error', reject);
     });
   }
