@@ -37,6 +37,7 @@ import { addPesvComiteP01Tables } from './migrations/add-pesv-comite-p01-tables'
 import { syncMatrizLegalNormas } from './migrations/sync-matriz-legal-normas';
 import { syncOnboardingColumns } from './migrations/sync-onboarding-columns';
 import { createPesvEncuestaConductorTable } from './migrations/create-pesv-encuesta-conductor';
+import { fixInvoiceStripeAmount } from './migrations/fix-invoice-stripe-amount';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -85,6 +86,7 @@ export async function runMigrations() {
     await migratePesvVictimasTable();
     await syncOnboardingColumns();
     await createPesvEncuestaConductorTable();
+    await fixInvoiceStripeAmount();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);
