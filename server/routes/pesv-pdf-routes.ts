@@ -770,19 +770,18 @@ export function registerPesvPdfRoutes(app: Express) {
 
       const [enc] = await db.select().from(schema.pesvEncuestasConductor)
         .where(eq(schema.pesvEncuestasConductor.id, id)).limit(1);
-
       if (!enc) return res.status(404).send('Encuesta no encontrada');
 
       const { default: PDFDocument } = await import('pdfkit');
-      const doc = new PDFDocument({ margin: 40, size: 'LETTER' });
+      const doc = new PDFDocument({ margin: PDF_CONFIG.MARGIN, size: 'LETTER' });
 
       const subscription = await storage.getSubscriptionByCompany(companyId);
       const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
 
-      const fileName = `encuesta-conductor-${enc.conductorNombre.replace(/\s+/g, '-')}-${enc.fechaRegistro}.pdf`;
+      const safeName = (enc.conductorNombre || 'conductor').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+      res.setHeader('Content-Disposition', `inline; filename="encuesta-${safeName}-${enc.fechaRegistro}.pdf"`);
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
@@ -795,114 +794,63 @@ export function registerPesvPdfRoutes(app: Express) {
         logoBuffer,
       });
 
-      const margin = 40;
-      const pageWidth = doc.page.width - margin * 2;
+      // Referencia normativa
+      y = addParagraph(doc, 'Resolución 40595/2022 — Art. 18 · Plan Estratégico de Seguridad Vial (PESV)', { y, fontSize: 8 });
+      y += 6;
 
-      // Normativa reference
-      doc.font('Helvetica-Oblique').fontSize(8).fillColor('#555555')
-        .text('Art. 18 — Resolución 40595/2022 · Plan Estratégico de Seguridad Vial (PESV)', margin, y);
-      y = doc.y + 14;
+      // ─── SECCIÓN 1: Datos del registro ───────────────────────────────────
+      y = addSectionBar(doc, '1. Datos del Registro', y);
+      y = addLabeledField(doc, 'Conductor', enc.conductorNombre || 'N/A', { y });
+      y = addLabeledField(doc, 'Empresa', company.name, { y });
+      y = addLabeledField(doc, 'Fecha', enc.fechaRegistro ? formatDate(enc.fechaRegistro) : 'N/A', { y });
+      y = addLabeledField(doc, 'Hora', enc.horaRegistro || 'N/A', { y });
+      y = addLabeledField(doc, 'Horas de Sueño', `${enc.horasSueno} hora(s)`, { y });
+      if (enc.registradoPor) {
+        y = addLabeledField(doc, 'Registrado Por', enc.registradoPor, { y });
+      }
 
-      // ─── SECCIÓN 1: Datos del registro ────────────────────────────────────
-      doc.font('Helvetica-Bold').fontSize(9).fillColor('#FFFFFF')
-        .rect(margin, y, pageWidth, 16).fill(PDF_COLORS.primary);
-      doc.fillColor('#FFFFFF').text('1. DATOS DEL REGISTRO', margin + 6, y + 3);
-      y += 20;
-      doc.fillColor('#000000');
-
-      const col = pageWidth / 2;
-      const labelW = 100;
-
-      const row = (label: string, value: string, x: number, rowY: number) => {
-        doc.font('Helvetica-Bold').fontSize(8).fillColor('#333333').text(label, x, rowY, { width: labelW });
-        doc.font('Helvetica').fontSize(8).fillColor('#000000').text(value || '—', x + labelW + 4, rowY, { width: col - labelW - 10 });
-      };
-
-      row('Conductor:', enc.conductorNombre, margin, y);
-      row('Empresa:', company.name, margin + col, y);
-      y = doc.y + 6;
-      row('Fecha:', enc.fechaRegistro ? formatDate(enc.fechaRegistro) : '—', margin, y);
-      row('Hora:', enc.horaRegistro || '—', margin + col, y);
-      y = doc.y + 6;
-      row('Horas de sueño:', `${enc.horasSueno} hora(s)`, margin, y);
-      if (enc.registradoPor) row('Registrado por:', enc.registradoPor, margin + col, y);
-      y = doc.y + 14;
-
-      // ─── SECCIÓN 2: Estado del conductor ──────────────────────────────────
-      y = checkPageBreak(doc, y, 80);
-      doc.font('Helvetica-Bold').fontSize(9).fillColor('#FFFFFF')
-        .rect(margin, y, pageWidth, 16).fill(PDF_COLORS.primary);
-      doc.fillColor('#FFFFFF').text('2. ESTADO DEL CONDUCTOR', margin + 6, y + 3);
-      y += 20;
-      doc.fillColor('#000000');
-
+      // ─── SECCIÓN 2: Estado del conductor ─────────────────────────────────
+      y = addSectionBar(doc, '2. Estado del Conductor', y);
       const estadoLabel = (val: string) =>
-        val === 'bueno' ? 'Bueno' : val === 'regular' ? 'Regular' : val === 'malo' ? 'Malo' : val || '—';
-      const estadoColor = (val: string) =>
-        val === 'bueno' ? '#166534' : val === 'malo' ? '#991b1b' : '#92400e';
+        val === 'bueno' ? 'BUENO' : val === 'regular' ? 'REGULAR' : val === 'malo' ? 'MALO' : (val || 'N/A').toUpperCase();
+      y = addLabeledField(doc, 'Estado Físico', estadoLabel(enc.estadoFisico), { y });
+      y = addLabeledField(doc, 'Estado Emocional', estadoLabel(enc.estadoEmocional), { y });
 
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#333333').text('Estado Físico:', margin, y, { width: 120 });
-      doc.font('Helvetica-Bold').fontSize(8).fillColor(estadoColor(enc.estadoFisico))
-        .text(estadoLabel(enc.estadoFisico), margin + 124, y);
-      y = doc.y + 6;
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#333333').text('Estado Emocional:', margin, y, { width: 120 });
-      doc.font('Helvetica-Bold').fontSize(8).fillColor(estadoColor(enc.estadoEmocional))
-        .text(estadoLabel(enc.estadoEmocional), margin + 124, y);
-      y = doc.y + 14;
-
-      // ─── SECCIÓN 3: Declaraciones ──────────────────────────────────────────
-      y = checkPageBreak(doc, y, 100);
-      doc.font('Helvetica-Bold').fontSize(9).fillColor('#FFFFFF')
-        .rect(margin, y, pageWidth, 16).fill(PDF_COLORS.primary);
-      doc.fillColor('#FFFFFF').text('3. DECLARACIONES DEL CONDUCTOR', margin + 6, y + 3);
-      y += 20;
-      doc.fillColor('#000000');
-
-      const declRow = (label: string, value: boolean, detail?: string | null) => {
-        doc.font('Helvetica').fontSize(8).fillColor('#333333').text(label, margin, y, { width: pageWidth - 80 });
-        doc.font('Helvetica-Bold').fontSize(8).fillColor(value ? '#991b1b' : '#166534')
-          .text(value ? 'SÍ' : 'NO', margin + pageWidth - 60, y);
-        y = doc.y + (detail && value ? 2 : 6);
-        if (detail && value) {
-          doc.font('Helvetica-Oblique').fontSize(8).fillColor('#555555')
-            .text(`Detalle: ${detail}`, margin + 10, y);
-          y = doc.y + 6;
-        }
-      };
-
-      declRow(
-        '¿Está tomando algún medicamento que afecte la conducción?',
-        !!enc.tomaMedicamentos, enc.medicamentosDetalle
-      );
-      declRow('¿Consumió alcohol en las últimas 12 horas?', !!enc.consumoAlcohol);
-      declRow(
-        '¿Presenta alguna enfermedad o molestia hoy?',
-        !!enc.presentaEnfermedad, enc.enfermedadDetalle
-      );
-      y += 8;
+      // ─── SECCIÓN 3: Declaraciones ─────────────────────────────────────────
+      y = addSectionBar(doc, '3. Declaraciones del Conductor', y);
+      const siNo = (val: number | boolean) => (val ? 'SÍ' : 'NO');
+      y = addLabeledField(doc, '¿Toma medicamentos que afecten conducción?', siNo(enc.tomaMedicamentos), { y });
+      if (enc.tomaMedicamentos && enc.medicamentosDetalle) {
+        y = addLabeledField(doc, '  Detalle medicamentos', enc.medicamentosDetalle, { y });
+      }
+      y = addLabeledField(doc, '¿Consumió alcohol en las últimas 12 horas?', siNo(enc.consumoAlcohol), { y });
+      y = addLabeledField(doc, '¿Presenta enfermedad o molestia hoy?', siNo(enc.presentaEnfermedad), { y });
+      if (enc.presentaEnfermedad && enc.enfermedadDetalle) {
+        y = addLabeledField(doc, '  Detalle enfermedad', enc.enfermedadDetalle, { y });
+      }
 
       // ─── SECCIÓN 4: Resultado ─────────────────────────────────────────────
-      y = checkPageBreak(doc, y, 80);
+      y = addSectionBar(doc, '4. Resultado de la Evaluación', y);
       const esApto = enc.resultado === 'apto';
-      const resultColor = esApto ? '#166534' : '#991b1b';
-      const resultBg = esApto ? '#dcfce7' : '#fee2e2';
       const resultText = esApto ? 'APTO PARA CONDUCIR' : 'NO APTO PARA CONDUCIR';
+      const resultBg = esApto ? '#dcfce7' : '#fee2e2';
+      const resultColor = esApto ? '#166534' : '#991b1b';
+      const margin = PDF_CONFIG.MARGIN;
+      const tableWidth = doc.page.width - margin * 2;
+      const resultBoxHeight = 44;
 
-      doc.rect(margin, y, pageWidth, 40).fill(resultBg);
-      doc.font('Helvetica-Bold').fontSize(16).fillColor(resultColor)
-        .text(resultText, margin, y + 12, { width: pageWidth, align: 'center' });
-      y += 48;
+      const safeY = checkPageBreak(doc, resultBoxHeight + 10, y);
+      doc.rect(margin, safeY, tableWidth, resultBoxHeight).fill(resultBg);
+      doc.fontSize(16).font('Helvetica-Bold').fillColor(resultColor)
+        .text(resultText, margin, safeY + 13, { width: tableWidth, align: 'center' });
+      doc.fillColor(PDF_COLORS.BLACK);
+      doc.y = safeY + resultBoxHeight + 8;
+      y = doc.y;
 
-      // ─── SECCIÓN 5: Observaciones ─────────────────────────────────────────
+      // ─── SECCIÓN 5: Observaciones (si las hay) ───────────────────────────
       if (enc.observaciones) {
-        y = checkPageBreak(doc, y, 60);
-        doc.font('Helvetica-Bold').fontSize(9).fillColor('#FFFFFF')
-          .rect(margin, y, pageWidth, 16).fill(PDF_COLORS.secondary || '#4b5563');
-        doc.fillColor('#FFFFFF').text('5. OBSERVACIONES', margin + 6, y + 3);
-        y += 20;
-        doc.font('Helvetica').fontSize(8).fillColor('#000000')
-          .text(enc.observaciones, margin, y, { width: pageWidth });
-        y = doc.y + 14;
+        y = addSectionBar(doc, '5. Observaciones', y);
+        y = addParagraph(doc, enc.observaciones, { y });
       }
 
       await addSignatureFooter(doc, signers, true);
