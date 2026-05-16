@@ -1738,9 +1738,6 @@ function getPortalAccessEmailHTML(data: PortalAccessEmailData): string {
                 <p style="margin: 0 0 6px 0; color: #166534; font-size: 14px; font-weight: 700;">
                   Descarga la app en tu celular
                 </p>
-                <p style="margin: 0 0 16px 0; color: #4b5563; font-size: 13px; line-height: 1.5;">
-                  Sin tienda de aplicaciones. Solo abre el enlace y agrégala a tu pantalla de inicio.
-                </p>
                 <a href="${data.loginUrl}" style="display: inline-block; background-color: #166534; color: #ffffff; text-decoration: none; padding: 13px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; margin-bottom: 18px;">
                   Descargar App
                 </a>
