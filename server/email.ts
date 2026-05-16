@@ -1652,21 +1652,21 @@ function getPortalAccessEmailHTML(data: PortalAccessEmailData): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Credenciales de Acceso - Portal SST Colombia</title>
+  <title>Bienvenido al Portal de Empleados - SST Colombia</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
     <tr>
-      <td align="center" style="padding: 40px 0;">
-        <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-          
+      <td align="center" style="padding: 40px 16px;">
+        <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
+
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #166534 0%, #15803d 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">
+            <td style="background: linear-gradient(135deg, #166534 0%, #15803d 100%); padding: 32px 30px; text-align: center; border-radius: 12px 12px 0 0;">
+              <h1 style="margin: 0 0 6px 0; color: #ffffff; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">
                 SST Colombia
               </h1>
-              <p style="margin: 8px 0 0 0; color: #dcfce7; font-size: 14px;">
+              <p style="margin: 0; color: #bbf7d0; font-size: 14px; font-weight: 500;">
                 Portal de Empleados
               </p>
             </td>
@@ -1674,43 +1674,48 @@ function getPortalAccessEmailHTML(data: PortalAccessEmailData): string {
 
           <!-- Welcome Banner -->
           <tr>
-            <td style="background-color: #3b82f6; padding: 12px 30px; text-align: center;">
+            <td style="background-color: #2563eb; padding: 14px 30px; text-align: center;">
               <p style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 600;">
-                Bienvenido al Portal de Empleados
+                &#x1F44B; &nbsp;Tu cuenta esta lista. &iexcl;Bienvenido!
               </p>
             </td>
           </tr>
 
           <!-- Content -->
           <tr>
-            <td style="padding: 40px 30px;">
-              <h2 style="margin: 0 0 20px 0; color: #166534; font-size: 20px;">
-                Hola ${data.workerName},
+            <td style="padding: 36px 30px 24px 30px;">
+              <h2 style="margin: 0 0 16px 0; color: #166534; font-size: 20px; font-weight: 600;">
+                Hola, ${data.workerName}
               </h2>
-              
-              <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                Se ha creado tu cuenta de acceso al <strong>Portal de Empleados SST</strong> de <strong>${data.companyName}</strong>.
-              </p>
 
-              <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                A continuación encontrarás tus credenciales de acceso:
+              <p style="margin: 0 0 20px 0; color: #374151; font-size: 15px; line-height: 1.7;">
+                El equipo de SST de <strong>${data.companyName}</strong> te ha dado acceso al
+                <strong>Portal de Empleados</strong>, donde podrás ver tus capacitaciones, exámenes médicos,
+                documentos y mucho más. Aquí están tus datos de ingreso:
               </p>
 
               <!-- Credentials Box -->
-              <div style="background-color: #f0fdf4; border: 2px solid #16a34a; padding: 24px; margin: 24px 0; border-radius: 8px;">
+              <div style="background-color: #f0fdf4; border: 2px solid #16a34a; padding: 24px; margin: 0 0 28px 0; border-radius: 10px;">
+                <p style="margin: 0 0 16px 0; color: #166534; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                  Tus credenciales de acceso
+                </p>
                 <table role="presentation" style="width: 100%;">
                   <tr>
-                    <td style="padding: 12px 0; border-bottom: 1px solid #dcfce7;">
-                      <strong style="color: #166534; font-size: 14px;">Usuario:</strong>
-                      <div style="color: #1f2937; font-size: 18px; font-family: monospace; margin-top: 4px; background: white; padding: 8px 12px; border-radius: 4px;">
+                    <td style="padding: 10px 0 14px 0; border-bottom: 1px solid #dcfce7;">
+                      <div style="color: #4b5563; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                        Usuario
+                      </div>
+                      <div style="color: #111827; font-size: 20px; font-family: 'Courier New', monospace; font-weight: 700; background: #ffffff; padding: 10px 14px; border-radius: 6px; border: 1px solid #d1fae5; letter-spacing: 1px;">
                         ${data.username}
                       </div>
                     </td>
                   </tr>
                   <tr>
-                    <td style="padding: 12px 0;">
-                      <strong style="color: #166534; font-size: 14px;">Contraseña temporal:</strong>
-                      <div style="color: #1f2937; font-size: 18px; font-family: monospace; margin-top: 4px; background: white; padding: 8px 12px; border-radius: 4px;">
+                    <td style="padding: 14px 0 0 0;">
+                      <div style="color: #4b5563; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                        Contrase&ntilde;a temporal
+                      </div>
+                      <div style="color: #111827; font-size: 20px; font-family: 'Courier New', monospace; font-weight: 700; background: #ffffff; padding: 10px 14px; border-radius: 6px; border: 1px solid #d1fae5; letter-spacing: 1px;">
                         ${data.temporaryPassword}
                       </div>
                     </td>
@@ -1719,40 +1724,105 @@ function getPortalAccessEmailHTML(data: PortalAccessEmailData): string {
               </div>
 
               <!-- CTA Button -->
-              <div style="text-align: center; margin: 32px 0;">
-                <a href="${data.loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #166534 0%, #15803d 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
-                  Ingresar al Portal
+              <div style="text-align: center; margin: 0 0 32px 0;">
+                <a href="${data.loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #166534 0%, #15803d 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 10px; font-size: 17px; font-weight: 700; letter-spacing: 0.3px;">
+                  Ingresar al Portal &rarr;
                 </a>
-              </div>
-
-              <!-- Security Notice -->
-              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 4px;">
-                <p style="margin: 0; color: #92400e; font-size: 14px;">
-                  <strong>Importante:</strong> Por seguridad, te recomendamos cambiar tu contraseña despues del primer inicio de sesion. 
-                  Esta contraseña es temporal y solo tu debes conocerla.
+                <p style="margin: 10px 0 0 0; color: #9ca3af; font-size: 12px;">
+                  O copia este enlace en tu navegador: <a href="${data.loginUrl}" style="color: #2563eb; word-break: break-all;">${data.loginUrl}</a>
                 </p>
               </div>
 
-              <p style="margin: 24px 0 0 0; color: #374151; font-size: 14px; line-height: 1.6;">
-                En el portal podrás:
+              <!-- Divider -->
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0 0 28px 0;">
+
+              <!-- Install as App Section -->
+              <div style="background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border-radius: 10px; padding: 24px; margin: 0 0 24px 0;">
+                <p style="margin: 0 0 4px 0; color: #1e40af; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                  &#x1F4F2; &nbsp;Descarga la app en tu celular
+                </p>
+                <p style="margin: 0 0 20px 0; color: #374151; font-size: 14px; line-height: 1.6;">
+                  No necesitas ir a ninguna tienda. Puedes instalarla directo desde tu celular en 3 pasos:
+                </p>
+
+                <!-- Android steps -->
+                <table role="presentation" style="width: 100%; margin-bottom: 16px;">
+                  <tr>
+                    <td style="width: 28px; vertical-align: top; padding-top: 2px;">
+                      <div style="width: 24px; height: 24px; background: #16a34a; border-radius: 50%; text-align: center; line-height: 24px; color: white; font-size: 12px; font-weight: 700;">A</div>
+                    </td>
+                    <td style="padding-left: 10px;">
+                      <p style="margin: 0 0 4px 0; color: #166534; font-size: 13px; font-weight: 700;">
+                        En Android (Chrome)
+                      </p>
+                      <p style="margin: 0; color: #374151; font-size: 13px; line-height: 1.6;">
+                        Abre el portal &rarr; toca los <strong>3 puntos</strong> del menu del navegador &rarr; selecciona
+                        <strong>"Instalar app"</strong> o <strong>"Agregar a pantalla de inicio"</strong>.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- iPhone steps -->
+                <table role="presentation" style="width: 100%;">
+                  <tr>
+                    <td style="width: 28px; vertical-align: top; padding-top: 2px;">
+                      <div style="width: 24px; height: 24px; background: #2563eb; border-radius: 50%; text-align: center; line-height: 24px; color: white; font-size: 12px; font-weight: 700;">i</div>
+                    </td>
+                    <td style="padding-left: 10px;">
+                      <p style="margin: 0 0 4px 0; color: #1e40af; font-size: 13px; font-weight: 700;">
+                        En iPhone (Safari)
+                      </p>
+                      <p style="margin: 0; color: #374151; font-size: 13px; line-height: 1.6;">
+                        Abre el portal en <strong>Safari</strong> &rarr; toca el boton de
+                        <strong>compartir &#x2B06;</strong> (cuadrado con flecha) &rarr; elige
+                        <strong>"Agregar a pantalla de inicio"</strong>.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 12px; font-style: italic;">
+                  Listo. El portal quedara como una app en tu pantalla principal, sin necesidad de tiendas de aplicaciones.
+                </p>
+              </div>
+
+              <!-- Security Notice -->
+              <div style="background-color: #fef9c3; border-left: 4px solid #eab308; padding: 14px 16px; margin: 0 0 24px 0; border-radius: 6px;">
+                <p style="margin: 0; color: #713f12; font-size: 13px; line-height: 1.6;">
+                  <strong>&#x26A0;&#xFE0F; Importante:</strong> Esta contrase&ntilde;a es temporal.
+                  Al ingresar por primera vez, el sistema te pedira que la cambies.
+                  No la compartas con nadie.
+                </p>
+              </div>
+
+              <!-- Features list -->
+              <p style="margin: 0 0 10px 0; color: #374151; font-size: 14px; font-weight: 600;">
+                En el portal podras:
               </p>
-              <ul style="color: #374151; font-size: 14px; line-height: 1.8; padding-left: 20px;">
-                <li>Consultar tus capacitaciones y certificados</li>
-                <li>Ver tus exámenes médicos ocupacionales</li>
-                <li>Acceder a documentos importantes de SST</li>
-                <li>Reportar condiciones inseguras</li>
-              </ul>
+              <table role="presentation" style="width: 100%;">
+                <tr>
+                  <td style="width: 50%; vertical-align: top; padding: 0 8px 0 0;">
+                    <p style="margin: 0 0 8px 0; color: #374151; font-size: 13px;">&#x1F4DA; Ver tus capacitaciones y certificados</p>
+                    <p style="margin: 0 0 8px 0; color: #374151; font-size: 13px;">&#x1FA7A; Ver tus examenes medicos</p>
+                  </td>
+                  <td style="width: 50%; vertical-align: top; padding: 0 0 0 8px;">
+                    <p style="margin: 0 0 8px 0; color: #374151; font-size: 13px;">&#x26A0;&#xFE0F; Reportar condiciones inseguras</p>
+                    <p style="margin: 0 0 8px 0; color: #374151; font-size: 13px;">&#x1F4C4; Acceder a tus documentos SST</p>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="background-color: #f9fafb; padding: 24px 30px; border-radius: 0 0 8px 8px; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 12px; text-align: center;">
-                Este es un mensaje automático del Sistema SST Colombia.
+            <td style="background-color: #f9fafb; padding: 20px 30px; border-radius: 0 0 12px 12px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0 0 6px 0; color: #6b7280; font-size: 12px; text-align: center;">
+                Este es un mensaje automatico del Sistema SST Colombia.
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 11px; text-align: center;">
-                Si no solicitaste esta cuenta, por favor contacta al área de SST de tu empresa.
+                Si no esperabas este correo, contacta al area de SST de tu empresa.
               </p>
             </td>
           </tr>
