@@ -1718,13 +1718,6 @@ function getPortalAccessEmailHTML(data: PortalAccessEmailData): string {
                 </a>
               </div>
 
-              <!-- Download App Button -->
-              <div style="text-align: center; margin: 0 0 20px 0;">
-                <a href="${data.loginUrl.replace(/\/login.*$/, '/instalar')}" style="display: inline-block; background-color: #1d4ed8; color: #ffffff; text-decoration: none; padding: 13px 32px; border-radius: 8px; font-size: 15px; font-weight: 700;">
-                  Descargar App
-                </a>
-              </div>
-
               <!-- Security Notice -->
               <p style="margin: 0; color: #6b7280; font-size: 13px; text-align: center; line-height: 1.6;">
                 Esta contrase&ntilde;a es temporal. Al ingresar por primera vez te pediremos que la cambies.
