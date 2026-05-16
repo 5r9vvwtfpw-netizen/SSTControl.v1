@@ -758,6 +758,219 @@ export function registerPesvPdfRoutes(app: Express) {
     }
   });
 
+  // 16. GET /api/pesv/encuestas-conductor/:id/pdf — PDF individual de una encuesta diaria
+  app.get('/api/pesv/encuestas-conductor/:id/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+      const { id } = req.params;
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const [enc] = await db.select().from(schema.pesvEncuestasConductor)
+        .where(eq(schema.pesvEncuestasConductor.id, id)).limit(1);
+
+      if (!enc) return res.status(404).send('Encuesta no encontrada');
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 40, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      const fileName = `encuesta-conductor-${enc.conductorNombre.replace(/\s+/g, '-')}-${enc.fechaRegistro}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company,
+        documentTitle: 'ENCUESTA DIARIA DEL CONDUCTOR',
+        documentCode: 'PESV-H06-ENC',
+        logoBuffer,
+      });
+
+      const margin = 40;
+      const pageWidth = doc.page.width - margin * 2;
+
+      // Normativa reference
+      doc.font('Helvetica-Oblique').fontSize(8).fillColor('#555555')
+        .text('Art. 18 — Resolución 40595/2022 · Plan Estratégico de Seguridad Vial (PESV)', margin, y);
+      y = doc.y + 14;
+
+      // ─── SECCIÓN 1: Datos del registro ────────────────────────────────────
+      doc.font('Helvetica-Bold').fontSize(9).fillColor('#FFFFFF')
+        .rect(margin, y, pageWidth, 16).fill(PDF_COLORS.primary);
+      doc.fillColor('#FFFFFF').text('1. DATOS DEL REGISTRO', margin + 6, y + 3);
+      y += 20;
+      doc.fillColor('#000000');
+
+      const col = pageWidth / 2;
+      const labelW = 100;
+
+      const row = (label: string, value: string, x: number, rowY: number) => {
+        doc.font('Helvetica-Bold').fontSize(8).fillColor('#333333').text(label, x, rowY, { width: labelW });
+        doc.font('Helvetica').fontSize(8).fillColor('#000000').text(value || '—', x + labelW + 4, rowY, { width: col - labelW - 10 });
+      };
+
+      row('Conductor:', enc.conductorNombre, margin, y);
+      row('Empresa:', company.name, margin + col, y);
+      y = doc.y + 6;
+      row('Fecha:', enc.fechaRegistro ? formatDate(enc.fechaRegistro) : '—', margin, y);
+      row('Hora:', enc.horaRegistro || '—', margin + col, y);
+      y = doc.y + 6;
+      row('Horas de sueño:', `${enc.horasSueno} hora(s)`, margin, y);
+      if (enc.registradoPor) row('Registrado por:', enc.registradoPor, margin + col, y);
+      y = doc.y + 14;
+
+      // ─── SECCIÓN 2: Estado del conductor ──────────────────────────────────
+      y = checkPageBreak(doc, y, 80);
+      doc.font('Helvetica-Bold').fontSize(9).fillColor('#FFFFFF')
+        .rect(margin, y, pageWidth, 16).fill(PDF_COLORS.primary);
+      doc.fillColor('#FFFFFF').text('2. ESTADO DEL CONDUCTOR', margin + 6, y + 3);
+      y += 20;
+      doc.fillColor('#000000');
+
+      const estadoLabel = (val: string) =>
+        val === 'bueno' ? 'Bueno' : val === 'regular' ? 'Regular' : val === 'malo' ? 'Malo' : val || '—';
+      const estadoColor = (val: string) =>
+        val === 'bueno' ? '#166534' : val === 'malo' ? '#991b1b' : '#92400e';
+
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#333333').text('Estado Físico:', margin, y, { width: 120 });
+      doc.font('Helvetica-Bold').fontSize(8).fillColor(estadoColor(enc.estadoFisico))
+        .text(estadoLabel(enc.estadoFisico), margin + 124, y);
+      y = doc.y + 6;
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#333333').text('Estado Emocional:', margin, y, { width: 120 });
+      doc.font('Helvetica-Bold').fontSize(8).fillColor(estadoColor(enc.estadoEmocional))
+        .text(estadoLabel(enc.estadoEmocional), margin + 124, y);
+      y = doc.y + 14;
+
+      // ─── SECCIÓN 3: Declaraciones ──────────────────────────────────────────
+      y = checkPageBreak(doc, y, 100);
+      doc.font('Helvetica-Bold').fontSize(9).fillColor('#FFFFFF')
+        .rect(margin, y, pageWidth, 16).fill(PDF_COLORS.primary);
+      doc.fillColor('#FFFFFF').text('3. DECLARACIONES DEL CONDUCTOR', margin + 6, y + 3);
+      y += 20;
+      doc.fillColor('#000000');
+
+      const declRow = (label: string, value: boolean, detail?: string | null) => {
+        doc.font('Helvetica').fontSize(8).fillColor('#333333').text(label, margin, y, { width: pageWidth - 80 });
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(value ? '#991b1b' : '#166534')
+          .text(value ? 'SÍ' : 'NO', margin + pageWidth - 60, y);
+        y = doc.y + (detail && value ? 2 : 6);
+        if (detail && value) {
+          doc.font('Helvetica-Oblique').fontSize(8).fillColor('#555555')
+            .text(`Detalle: ${detail}`, margin + 10, y);
+          y = doc.y + 6;
+        }
+      };
+
+      declRow(
+        '¿Está tomando algún medicamento que afecte la conducción?',
+        !!enc.tomaMedicamentos, enc.medicamentosDetalle
+      );
+      declRow('¿Consumió alcohol en las últimas 12 horas?', !!enc.consumoAlcohol);
+      declRow(
+        '¿Presenta alguna enfermedad o molestia hoy?',
+        !!enc.presentaEnfermedad, enc.enfermedadDetalle
+      );
+      y += 8;
+
+      // ─── SECCIÓN 4: Resultado ─────────────────────────────────────────────
+      y = checkPageBreak(doc, y, 80);
+      const esApto = enc.resultado === 'apto';
+      const resultColor = esApto ? '#166534' : '#991b1b';
+      const resultBg = esApto ? '#dcfce7' : '#fee2e2';
+      const resultText = esApto ? 'APTO PARA CONDUCIR' : 'NO APTO PARA CONDUCIR';
+
+      doc.rect(margin, y, pageWidth, 40).fill(resultBg);
+      doc.font('Helvetica-Bold').fontSize(16).fillColor(resultColor)
+        .text(resultText, margin, y + 12, { width: pageWidth, align: 'center' });
+      y += 48;
+
+      // ─── SECCIÓN 5: Observaciones ─────────────────────────────────────────
+      if (enc.observaciones) {
+        y = checkPageBreak(doc, y, 60);
+        doc.font('Helvetica-Bold').fontSize(9).fillColor('#FFFFFF')
+          .rect(margin, y, pageWidth, 16).fill(PDF_COLORS.secondary || '#4b5563');
+        doc.fillColor('#FFFFFF').text('5. OBSERVACIONES', margin + 6, y + 3);
+        y += 20;
+        doc.font('Helvetica').fontSize(8).fillColor('#000000')
+          .text(enc.observaciones, margin, y, { width: pageWidth });
+        y = doc.y + 14;
+      }
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-encuesta-conductor');
+    }
+  });
+
+  // 17. GET /api/pesv/encuestas-conductor/pdf — PDF lista completa de encuestas
+  app.get('/api/pesv/encuestas-conductor/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const encuestas = await db.select().from(schema.pesvEncuestasConductor)
+        .where(eq(schema.pesvEncuestasConductor.companyId, companyId))
+        .orderBy(desc(schema.pesvEncuestasConductor.fechaRegistro));
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="encuestas-diarias-conductores.pdf"');
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: 'ENCUESTAS DIARIAS DE CONDUCTORES',
+        documentCode: 'PESV-H06-ENC', logoBuffer
+      });
+
+      const estadoLabel = (val: string) =>
+        val === 'bueno' ? 'Bueno' : val === 'regular' ? 'Regular' : val === 'malo' ? 'Malo' : val || '—';
+
+      const rows = encuestas.map(e => [
+        e.conductorNombre,
+        e.fechaRegistro ? formatDate(e.fechaRegistro) : '—',
+        e.horaRegistro || '—',
+        `${e.horasSueno}h`,
+        estadoLabel(e.estadoFisico),
+        estadoLabel(e.estadoEmocional),
+        e.resultado === 'apto' ? 'APTO' : 'NO APTO',
+      ]);
+
+      y = addSimpleTable(
+        doc,
+        ['Conductor', 'Fecha', 'Hora', 'Sueño', 'F. Físico', 'F. Emocional', 'Resultado'],
+        rows,
+        { y }
+      );
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-encuestas-lista');
+    }
+  });
+
   // 15. GET /api/pesv/siniestros/pdf
   app.get('/api/pesv/siniestros/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
     try {

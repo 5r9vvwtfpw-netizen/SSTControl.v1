@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Trash2, ArrowLeft, ClipboardList, CheckCircle2, XCircle, AlertTriangle, Eye } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, ClipboardList, CheckCircle2, XCircle, AlertTriangle, Eye, FileDown } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -300,14 +300,25 @@ export default function PesvEncuestaConductor() {
                           variant="ghost"
                           onClick={() => { setSelectedEncuesta(enc); setDetailOpen(true); }}
                           data-testid={`button-view-encuesta-${enc.id}`}
+                          title="Ver detalle"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
                         <Button
                           size="icon"
                           variant="ghost"
+                          onClick={() => window.open(`/api/pesv/encuestas-conductor/${enc.id}/pdf`, '_blank')}
+                          data-testid={`button-pdf-encuesta-${enc.id}`}
+                          title="Descargar PDF"
+                        >
+                          <FileDown className="w-4 h-4 text-blue-600" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
                           onClick={() => setDeleteId(enc.id)}
                           data-testid={`button-delete-${enc.id}`}
+                          title="Eliminar"
                         >
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
