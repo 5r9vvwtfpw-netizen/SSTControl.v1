@@ -490,22 +490,25 @@ export class EmailService {
               </div>
 
               <!-- Install as App Section -->
-              <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 20px 24px; margin: 0 0 20px 0;">
-                <p style="margin: 0 0 8px 0; color: #166534; font-size: 14px; font-weight: 700;">
+              <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 20px 24px; margin: 0 0 20px 0; text-align: center;">
+                <p style="margin: 0 0 6px 0; color: #166534; font-size: 14px; font-weight: 700;">
                   Descarga la app en tu celular
                 </p>
-                <p style="margin: 0 0 14px 0; color: #374151; font-size: 13px; line-height: 1.6;">
-                  Abre el enlace del portal en tu celular y guardalo como app en tu pantalla de inicio. No necesitas ir a ninguna tienda.
+                <p style="margin: 0 0 16px 0; color: #4b5563; font-size: 13px; line-height: 1.5;">
+                  Sin tienda de aplicaciones. Solo abre el enlace y agrégala a tu pantalla de inicio.
                 </p>
-                <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                <a href="${portalUrl}" style="display: inline-block; background-color: #166534; color: #ffffff; text-decoration: none; padding: 13px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; margin-bottom: 18px;">
+                  Descargar App
+                </a>
+                <table role="presentation" style="width: 100%; border-collapse: collapse; margin-top: 4px;">
                   <tr>
-                    <td style="width: 50%; vertical-align: top; padding-right: 12px;">
-                      <p style="margin: 0 0 4px 0; color: #166534; font-size: 12px; font-weight: 700;">Android (Chrome)</p>
-                      <p style="margin: 0; color: #4b5563; font-size: 12px; line-height: 1.5;">Toca los 3 puntos &rarr; "Instalar app" o "Agregar a pantalla de inicio"</p>
+                    <td style="width: 50%; vertical-align: top; padding-right: 12px; text-align: left;">
+                      <p style="margin: 0 0 3px 0; color: #166534; font-size: 11px; font-weight: 700;">Android (Chrome)</p>
+                      <p style="margin: 0; color: #6b7280; font-size: 11px; line-height: 1.5;">Toca los 3 puntos &rarr; "Instalar app"</p>
                     </td>
-                    <td style="width: 50%; vertical-align: top; padding-left: 12px; border-left: 1px solid #dcfce7;">
-                      <p style="margin: 0 0 4px 0; color: #166534; font-size: 12px; font-weight: 700;">iPhone (Safari)</p>
-                      <p style="margin: 0; color: #4b5563; font-size: 12px; line-height: 1.5;">Toca compartir &#x2B06; &rarr; "Agregar a pantalla de inicio"</p>
+                    <td style="width: 50%; vertical-align: top; padding-left: 12px; border-left: 1px solid #dcfce7; text-align: left;">
+                      <p style="margin: 0 0 3px 0; color: #166534; font-size: 11px; font-weight: 700;">iPhone (Safari)</p>
+                      <p style="margin: 0; color: #6b7280; font-size: 11px; line-height: 1.5;">Compartir &#x2B06; &rarr; "Agregar a inicio"</p>
                     </td>
                   </tr>
                 </table>

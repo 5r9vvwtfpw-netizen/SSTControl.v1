@@ -1733,6 +1733,31 @@ function getPortalAccessEmailHTML(data: PortalAccessEmailData): string {
                 </p>
               </div>
 
+              <!-- Install as App Section -->
+              <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 20px 24px; margin: 0 0 20px 0; text-align: center;">
+                <p style="margin: 0 0 6px 0; color: #166534; font-size: 14px; font-weight: 700;">
+                  Descarga la app en tu celular
+                </p>
+                <p style="margin: 0 0 16px 0; color: #4b5563; font-size: 13px; line-height: 1.5;">
+                  Sin tienda de aplicaciones. Solo abre el enlace y agrégala a tu pantalla de inicio.
+                </p>
+                <a href="${data.loginUrl}" style="display: inline-block; background-color: #166534; color: #ffffff; text-decoration: none; padding: 13px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; margin-bottom: 18px;">
+                  Descargar App
+                </a>
+                <table role="presentation" style="width: 100%; border-collapse: collapse; margin-top: 4px;">
+                  <tr>
+                    <td style="width: 50%; vertical-align: top; padding-right: 12px; text-align: left;">
+                      <p style="margin: 0 0 3px 0; color: #166534; font-size: 11px; font-weight: 700;">Android (Chrome)</p>
+                      <p style="margin: 0; color: #6b7280; font-size: 11px; line-height: 1.5;">Toca los 3 puntos &rarr; "Instalar app"</p>
+                    </td>
+                    <td style="width: 50%; vertical-align: top; padding-left: 12px; border-left: 1px solid #dcfce7; text-align: left;">
+                      <p style="margin: 0 0 3px 0; color: #166534; font-size: 11px; font-weight: 700;">iPhone (Safari)</p>
+                      <p style="margin: 0; color: #6b7280; font-size: 11px; line-height: 1.5;">Compartir &#x2B06; &rarr; "Agregar a inicio"</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
               <!-- Security Notice -->
               <p style="margin: 0; color: #6b7280; font-size: 13px; text-align: center; line-height: 1.6;">
                 Esta contrase&ntilde;a es temporal. Al ingresar por primera vez te pediremos que la cambies.
