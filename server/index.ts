@@ -284,7 +284,10 @@ app.post(
                     const company = await storage.getCompany(companyId);
                     if (company && plan) {
                       const invoiceNumber = await storage.getNextInvoiceNumber();
-                      const priceInPesos = plan.priceMonthly;
+                      // Use the actual amount Stripe charged (amount_total is in centavos → divide by 100)
+                      const priceInPesos = session.amount_total
+                        ? Math.round(session.amount_total / 100)
+                        : plan.priceMonthly;
                       const taxRate = 0.19; // 19% IVA Colombia
                       const subtotal = Math.round(priceInPesos / (1 + taxRate));
                       const taxAmount = priceInPesos - subtotal;

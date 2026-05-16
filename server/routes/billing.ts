@@ -1242,4 +1242,79 @@ export function registerBillingRoutes(app: Express) {
       res.status(500).json({ error: "Error al obtener features" });
     }
   });
+
+  /**
+   * GET /api/billing/admin/list-invoices-by-company
+   * TEMPORAL: Lista facturas de una empresa por nombre (para encontrar IDs en producción)
+   * Solo superadmin. Eliminar después de usar.
+   */
+  app.get("/api/billing/admin/list-invoices-by-company", requireSuperadmin, async (req, res) => {
+    try {
+      const companyName = (req.query.name as string) || '';
+      if (!companyName) {
+        return res.status(400).json({ error: "Parámetro 'name' requerido" });
+      }
+      const { companies, invoices: invoicesTable } = await import('@shared/schema');
+      const { ilike, eq } = await import('drizzle-orm');
+      const db = (await import('../db')).db;
+
+      const matchingCompanies = await db
+        .select({ id: companies.id, name: companies.name })
+        .from(companies)
+        .where(ilike(companies.name, `%${companyName}%`))
+        .limit(5);
+
+      if (!matchingCompanies.length) {
+        return res.json({ companies: [], invoices: [] });
+      }
+
+      const results = [];
+      for (const co of matchingCompanies) {
+        const invs = await storage.getInvoicesByCompany(co.id);
+        results.push({ company: co, invoices: invs.map(i => ({ id: i.id, invoiceNumber: i.invoiceNumber, total: i.total, status: i.status, issueDate: i.issueDate })) });
+      }
+      res.json(results);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  /**
+   * PATCH /api/billing/admin/fix-invoice-amount
+   * TEMPORAL: Corrige el monto de una factura (para facturas con precio incorrecto del plan base)
+   * Solo superadmin. Eliminar después de usar.
+   */
+  app.patch("/api/billing/admin/fix-invoice-amount", requireSuperadmin, async (req, res) => {
+    try {
+      const { invoiceId, correctAmountCOP } = req.body;
+      if (!invoiceId || !correctAmountCOP || typeof correctAmountCOP !== 'number') {
+        return res.status(400).json({ error: "Requiere invoiceId y correctAmountCOP (número)" });
+      }
+
+      const invoice = await storage.getInvoice(invoiceId);
+      if (!invoice) {
+        return res.status(404).json({ error: "Factura no encontrada" });
+      }
+
+      const taxRate = 0.19;
+      const newSubtotal = Math.round(correctAmountCOP / (1 + taxRate));
+      const newTaxAmount = correctAmountCOP - newSubtotal;
+
+      await storage.updateInvoice(invoiceId, {
+        total: correctAmountCOP,
+        subtotal: newSubtotal,
+        taxAmount: newTaxAmount,
+      });
+
+      return res.json({
+        ok: true,
+        invoiceId,
+        before: { total: invoice.total, subtotal: invoice.subtotal, taxAmount: invoice.taxAmount },
+        after: { total: correctAmountCOP, subtotal: newSubtotal, taxAmount: newTaxAmount },
+      });
+    } catch (error: any) {
+      console.error('Error fixing invoice amount:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
 }
