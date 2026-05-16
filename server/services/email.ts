@@ -489,6 +489,28 @@ export class EmailService {
                 </p>
               </div>
 
+              <!-- Install as App Section -->
+              <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 20px 24px; margin: 0 0 20px 0;">
+                <p style="margin: 0 0 8px 0; color: #166534; font-size: 14px; font-weight: 700;">
+                  Descarga la app en tu celular
+                </p>
+                <p style="margin: 0 0 14px 0; color: #374151; font-size: 13px; line-height: 1.6;">
+                  Abre el enlace del portal en tu celular y guardalo como app en tu pantalla de inicio. No necesitas ir a ninguna tienda.
+                </p>
+                <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="width: 50%; vertical-align: top; padding-right: 12px;">
+                      <p style="margin: 0 0 4px 0; color: #166534; font-size: 12px; font-weight: 700;">Android (Chrome)</p>
+                      <p style="margin: 0; color: #4b5563; font-size: 12px; line-height: 1.5;">Toca los 3 puntos &rarr; "Instalar app" o "Agregar a pantalla de inicio"</p>
+                    </td>
+                    <td style="width: 50%; vertical-align: top; padding-left: 12px; border-left: 1px solid #dcfce7;">
+                      <p style="margin: 0 0 4px 0; color: #166534; font-size: 12px; font-weight: 700;">iPhone (Safari)</p>
+                      <p style="margin: 0; color: #4b5563; font-size: 12px; line-height: 1.5;">Toca compartir &#x2B06; &rarr; "Agregar a pantalla de inicio"</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
               <!-- Security Notice -->
               <p style="margin: 0; color: #6b7280; font-size: 13px; text-align: center; line-height: 1.6;">
                 Esta contrase&ntilde;a es temporal. Al ingresar por primera vez te pediremos que la cambies.
