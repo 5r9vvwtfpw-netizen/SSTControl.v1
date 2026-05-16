@@ -313,15 +313,6 @@ export default function PesvEncuestaConductor() {
                         >
                           <FileDown className="w-4 h-4 text-blue-600" />
                         </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => setDeleteId(enc.id)}
-                          data-testid={`button-delete-${enc.id}`}
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
