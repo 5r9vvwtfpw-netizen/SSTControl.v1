@@ -474,6 +474,11 @@ export class EmailService {
                 </a>
               </div>
 
+              <!-- Portal URL -->
+              <p style="text-align: center; margin: 0 0 20px 0;">
+                <a href="${portalUrl}" style="color: #2563eb; font-size: 13px; word-break: break-all;">${portalUrl}</a>
+              </p>
+
               <!-- Security Notice -->
               <p style="margin: 0; color: #6b7280; font-size: 13px; text-align: center; line-height: 1.6;">
                 Esta contrase&ntilde;a es temporal. Al ingresar por primera vez te pediremos que la cambies.
