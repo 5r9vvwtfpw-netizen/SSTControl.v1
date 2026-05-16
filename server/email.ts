@@ -1672,26 +1672,14 @@ function getPortalAccessEmailHTML(data: PortalAccessEmailData): string {
             </td>
           </tr>
 
-          <!-- Welcome Banner -->
-          <tr>
-            <td style="background-color: #2563eb; padding: 14px 30px; text-align: center;">
-              <p style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 600;">
-                &#x1F44B; &nbsp;Tu cuenta esta lista. &iexcl;Bienvenido!
-              </p>
-            </td>
-          </tr>
-
           <!-- Content -->
           <tr>
             <td style="padding: 36px 30px 24px 30px;">
-              <h2 style="margin: 0 0 16px 0; color: #166534; font-size: 20px; font-weight: 600;">
+              <h2 style="margin: 0 0 8px 0; color: #166534; font-size: 20px; font-weight: 600;">
                 Hola, ${data.workerName}
               </h2>
-
-              <p style="margin: 0 0 20px 0; color: #374151; font-size: 15px; line-height: 1.7;">
-                El equipo de SST de <strong>${data.companyName}</strong> te ha dado acceso al
-                <strong>Portal de Empleados</strong>, donde podrás ver tus capacitaciones, exámenes médicos,
-                documentos y mucho más. Aquí están tus datos de ingreso:
+              <p style="margin: 0 0 24px 0; color: #374151; font-size: 14px;">
+                <strong>${data.companyName}</strong> te da acceso al Portal de Empleados:
               </p>
 
               <!-- Credentials Box -->
@@ -1724,13 +1712,10 @@ function getPortalAccessEmailHTML(data: PortalAccessEmailData): string {
               </div>
 
               <!-- CTA Button -->
-              <div style="text-align: center; margin: 0 0 32px 0;">
+              <div style="text-align: center; margin: 0 0 12px 0;">
                 <a href="${data.loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #166534 0%, #15803d 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 10px; font-size: 17px; font-weight: 700; letter-spacing: 0.3px;">
                   Ingresar al Portal &rarr;
                 </a>
-                <p style="margin: 10px 0 0 0; color: #9ca3af; font-size: 12px;">
-                  O copia este enlace en tu navegador: <a href="${data.loginUrl}" style="color: #2563eb; word-break: break-all;">${data.loginUrl}</a>
-                </p>
               </div>
 
               <!-- Download App Button -->
