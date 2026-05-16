@@ -164,7 +164,6 @@ export default function CompanyManagement() {
     }
     const hasChanges =
       formData.numberOfWorkers !== (editingCompany.numberOfWorkers ?? 1) ||
-      formData.numberOfVehicles !== (editingCompany.numberOfVehicles ?? 0) ||
       formData.ciiuCode !== (editingCompany.ciiuCode ?? "") ||
       formData.riskLevel !== (editingCompany.riskLevel ?? "I");
 
@@ -181,7 +180,7 @@ export default function CompanyManagement() {
     return () => {
       if (livePriceTimerRef.current) clearTimeout(livePriceTimerRef.current);
     };
-  }, [editingCompany, formData.numberOfWorkers, formData.numberOfVehicles, formData.ciiuCode, formData.riskLevel, fetchLivePrice]);
+  }, [editingCompany, formData.numberOfWorkers, formData.ciiuCode, formData.riskLevel, fetchLivePrice]);
 
   // Estados para diagnóstico de empresas (superadmin)
   const [diagnosticoEmpresasOpen, setDiagnosticoEmpresasOpen] = useState(false);
