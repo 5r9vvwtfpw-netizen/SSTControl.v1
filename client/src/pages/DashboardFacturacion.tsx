@@ -59,6 +59,8 @@ type SubscriptionWithDetails = {
   companyName: string;
   planName: string;
   planPrice: number;
+  numberOfWorkers: number;
+  quoteBaseMonthlyPrice: number | null;
 };
 
 type RevenueDataPoint = {
@@ -248,8 +250,17 @@ export default function DashboardFacturacion() {
       companyId: sub.companyId,
       companyName: sub.companyName,
       subscription: sub,
-      planDisplay: sub.planId === 'sst_dinamico' ? 'Plan Dinámico' : sub.planName,
-      priceDisplay: sub.planId === 'sst_dinamico' ? 'Calculado' : formatCurrency(sub.planPrice),
+      planDisplay: 'SST Colombia',
+      priceDisplay: (() => {
+        // Precio real: quote de la landing page, o cálculo por trabajadores ($10,000/trabajador)
+        if (sub.quoteBaseMonthlyPrice && sub.quoteBaseMonthlyPrice > 0) {
+          return formatCurrency(sub.quoteBaseMonthlyPrice);
+        }
+        if (sub.numberOfWorkers && sub.numberOfWorkers > 0) {
+          return formatCurrency(sub.numberOfWorkers * 10000);
+        }
+        return 'Por definir';
+      })(),
       nextRenewal: formatDate(sub.currentPeriodEnd),
     }));
   }, [subscriptions]);

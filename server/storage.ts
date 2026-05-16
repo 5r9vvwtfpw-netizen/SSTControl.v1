@@ -1539,6 +1539,8 @@ export interface IStorage {
     companyName: string; 
     planName: string;
     planPrice: number;
+    numberOfWorkers: number;
+    quoteBaseMonthlyPrice: number | null;
   }>>;
   getRevenueTimeSeries(months: number): Promise<Array<{
     month: string;
@@ -12755,7 +12757,9 @@ export class DbStorage implements IStorage {
       ...r.subscription,
       companyName: r.company?.name || 'N/A',
       planName: r.plan?.name || 'N/A',
-      planPrice: r.plan?.priceMonthly || 0
+      planPrice: r.plan?.priceMonthly || 0,
+      numberOfWorkers: r.company?.numberOfWorkers || 0,
+      quoteBaseMonthlyPrice: r.company?.quoteBaseMonthlyPrice ?? null,
     }));
   }
 
