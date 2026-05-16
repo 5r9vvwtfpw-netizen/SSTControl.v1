@@ -4,6 +4,8 @@ const ACCOUNTING_API_URL = process.env.ACCOUNTING_API_URL || '';
 const ACCOUNTING_API_KEY = process.env.ACCOUNTING_API_KEY || '';
 const ACCOUNTING_ENABLED = process.env.ACCOUNTING_INTEGRATION_ENABLED === 'true';
 
+const IVA_RATE = 19; // Colombia: 19% IVA
+
 interface AccountingInvoiceData {
   invoiceId: string;
   invoiceNumber: string;
@@ -38,11 +40,43 @@ interface AccountingInvoiceData {
 
 interface AccountingResponse {
   success: boolean;
+  invoiceNumber?: string;
   dianCufe?: string;
   dianXmlUrl?: string;
   dianPdfUrl?: string;
   accountingInvoiceId?: string;
+  dian?: { success: boolean; trackId?: string };
   message?: string;
+}
+
+/**
+ * Parses a Colombian NIT which may be stored as "900123456-1" or "900123456".
+ * Returns the base number and the verification digit separately.
+ */
+function parseNit(nit: string): { numero: string; digito: string } {
+  const clean = (nit || '').trim().replace(/\s/g, '');
+  const dashIdx = clean.lastIndexOf('-');
+  if (dashIdx !== -1) {
+    return {
+      numero: clean.substring(0, dashIdx),
+      digito: clean.substring(dashIdx + 1),
+    };
+  }
+  return { numero: clean, digito: '0' };
+}
+
+/**
+ * Builds a human-readable period description for the invoice observations.
+ * e.g. "Suscripción mensual Software SST Colombia - Mayo 2026"
+ */
+function buildObservaciones(periodStart: Date, invoiceNumber: string): string {
+  const months = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+  ];
+  const month = months[periodStart.getMonth()];
+  const year = periodStart.getFullYear();
+  return `Suscripción mensual Software SST Colombia - ${month} ${year} | Ref: ${invoiceNumber}`;
 }
 
 class AccountingIntegrationService {
@@ -64,7 +98,7 @@ class AccountingIntegrationService {
     return {
       enabled: this.enabled,
       configured: !!this.baseUrl && !!this.apiKey,
-      url: this.baseUrl ? `${this.baseUrl.substring(0, 30)}...` : '(no configurada)',
+      url: this.baseUrl ? `${this.baseUrl.substring(0, 40)}...` : '(no configurada)',
     };
   }
 
@@ -77,92 +111,124 @@ class AccountingIntegrationService {
       return { success: false, message: 'Integration disabled' };
     }
 
+    const { numero: nitNumero, digito: nitDigito } = parseNit(data.customerNit);
+
+    // granTotal is what Stripe actually charged (IVA-inclusive).
+    // subtotal and taxAmount were already computed by the caller as:
+    //   subtotal = Math.round(granTotal / 1.19)
+    //   taxAmount = granTotal - subtotal
+    const granTotal = data.total;
+    const subtotal = data.subtotal;
+    const totalIva = data.taxAmount;
+
+    // Build Cloud Books payload following their exact spec
     const payload = {
-      origen: 'sst-colombia',
-      facturaOrigenId: data.invoiceId,
-      facturaOrigenNumero: data.invoiceNumber,
-      enviarDian: true,
       cliente: {
+        tipoDocumento: 'NIT',
+        numeroDocumento: nitNumero,
+        digitoVerificacion: nitDigito,
         razonSocial: data.customerName,
-        numeroDocumento: data.customerNit,
-        nombre: data.customerName,
-        nit: data.customerNit,
-        email: data.customerEmail,
-        direccion: data.customerAddress,
+        tipoPersona: 'Juridica',
+        regimen: 'Responsable de IVA',
+        email: data.customerEmail || '',
+        direccion: data.customerAddress || '',
+        departamento: data.customerCity || '',   // best approximation we have
+        municipio: data.customerCity || '',
+        codigoMunicipio: '',                      // not stored; Cloud Books should handle blank
         telefono: data.customerPhone || '',
-        ciudad: data.customerCity || '',
       },
       factura: {
-        subtotal: data.subtotal,
-        impuesto: data.taxAmount,
-        totalIva: data.taxAmount,
-        total: data.total,
-        granTotal: data.total,
-        moneda: data.currency,
-        periodoInicio: data.periodStart.toISOString(),
-        periodoFin: data.periodEnd.toISOString(),
-        fechaEmision: data.issueDate.toISOString(),
-        fechaVencimiento: data.dueDate.toISOString(),
-        fechaPago: data.paidDate?.toISOString() || null,
-        estado: data.status,
-        items: data.lineItems.map(item => ({
-          descripcion: item.description,
-          cantidad: item.quantity,
-          precioUnitario: item.unitPrice,
-          total: item.total,
-        })),
+        subtotal,
+        tarifaIva: IVA_RATE,
+        totalIva,
+        totalRetefuente: 0,
+        granTotal,
+        formaPago: 'Contado',
+        medioPago: 'Tarjeta de Crédito',
+        observaciones: buildObservaciones(data.periodStart, data.invoiceNumber),
+        items: data.lineItems.length > 0
+          ? data.lineItems.map(item => ({
+              descripcion: item.description,
+              cantidad: item.quantity,
+              precioUnitario: item.unitPrice,
+              tarifaIva: IVA_RATE,
+            }))
+          : [{
+              descripcion: `Suscripción mensual Software SST Colombia`,
+              cantidad: 1,
+              precioUnitario: subtotal,
+              tarifaIva: IVA_RATE,
+            }],
       },
-      metadata: {
+      enviarDian: true,
+      // Reference fields so Cloud Books can trace back to SST Colombia
+      referencia: {
+        origen: 'sst-colombia',
+        facturaOrigenId: data.invoiceId,
+        facturaOrigenNumero: data.invoiceNumber,
         empresaId: data.companyId,
-        codigoCiiu: data.snapshotCiiuCode || null,
-        numeroTrabajadores: data.snapshotNumberOfWorkers || null,
-        numeroVehiculos: data.snapshotNumberOfVehicles || null,
         stripePagoId: data.stripePaymentId || null,
       },
     };
 
     try {
       logger.info(
-        { invoiceNumber: data.invoiceNumber, url: `${this.baseUrl}/api/integration/sst-invoice` },
-        '[Accounting] Sending invoice to accounting system'
+        {
+          invoiceNumber: data.invoiceNumber,
+          nit: nitNumero,
+          granTotal,
+          url: `${this.baseUrl}/api/integration/sst-invoice`,
+        },
+        '[Accounting] Sending invoice to Cloud Books'
       );
 
       const response = await fetch(`${this.baseUrl}/api/integration/sst-invoice`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': this.apiKey,
-          'X-Source': 'sst-colombia',
+          'x-api-key': this.apiKey,
         },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(20000),
       });
 
+      const responseText = await response.text().catch(() => '');
+
       if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
         logger.error(
-          { invoiceNumber: data.invoiceNumber, status: response.status, error: errorText },
-          '[Accounting] Failed to send invoice'
+          {
+            invoiceNumber: data.invoiceNumber,
+            httpStatus: response.status,
+            body: responseText.substring(0, 500),
+          },
+          '[Accounting] Cloud Books rejected the invoice'
         );
-        return { success: false, message: `HTTP ${response.status}: ${errorText}` };
+        return { success: false, message: `HTTP ${response.status}: ${responseText}` };
       }
 
-      const result: AccountingResponse = await response.json();
+      let result: AccountingResponse;
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        logger.error({ invoiceNumber: data.invoiceNumber, responseText }, '[Accounting] Invalid JSON from Cloud Books');
+        return { success: false, message: 'Invalid JSON response from Cloud Books' };
+      }
 
       logger.info(
         {
           invoiceNumber: data.invoiceNumber,
+          cloudBooksInvoice: result.invoiceNumber,
           dianCufe: result.dianCufe || '(pending)',
-          accountingId: result.accountingInvoiceId,
+          dianSuccess: result.dian?.success,
         },
-        '[Accounting] Invoice sent successfully'
+        '[Accounting] Invoice accepted by Cloud Books'
       );
 
       return result;
     } catch (error: any) {
       logger.error(
         { invoiceNumber: data.invoiceNumber, error: error.message },
-        '[Accounting] Error sending invoice - non-critical, manual review required'
+        '[Accounting] Network error sending to Cloud Books - non-critical, manual review required'
       );
       return { success: false, message: error.message };
     }
@@ -178,8 +244,7 @@ class AccountingIntegrationService {
         `${this.baseUrl}/api/integration/sst-invoice/${encodeURIComponent(invoiceNumber)}/status`,
         {
           headers: {
-            'X-API-Key': this.apiKey,
-            'X-Source': 'sst-colombia',
+            'x-api-key': this.apiKey,
           },
           signal: AbortSignal.timeout(10000),
         }
