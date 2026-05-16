@@ -858,14 +858,14 @@ function PortalAccessLogsTab() {
               <p>No hay registros de acceso</p>
             </div>
           ) : (
-            <div className="rounded-md border">
-              <table className="w-full">
+            <div className="rounded-md border overflow-x-auto">
+              <table className="w-full min-w-[540px]">
                 <thead className="bg-muted/50">
                   <tr>
                     <th className="text-left p-3 font-medium text-sm">Empleado</th>
                     <th className="text-left p-3 font-medium text-sm">Fecha y Hora</th>
-                    <th className="text-left p-3 font-medium text-sm">Dispositivo</th>
-                    <th className="text-left p-3 font-medium text-sm">IP</th>
+                    <th className="text-left p-3 font-medium text-sm hidden sm:table-cell">Dispositivo</th>
+                    <th className="text-left p-3 font-medium text-sm hidden sm:table-cell">IP</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -884,13 +884,13 @@ function PortalAccessLogsTab() {
                       <td className="p-3 text-sm">
                         {format(new Date(log.accessTime), "d MMM yyyy, HH:mm", { locale: es })}
                       </td>
-                      <td className="p-3">
+                      <td className="p-3 hidden sm:table-cell">
                         <div className="flex items-center gap-2">
                           {getDeviceIcon(log.deviceType)}
                           <span className="text-sm">{getDeviceLabel(log.deviceType)}</span>
                         </div>
                       </td>
-                      <td className="p-3 text-sm text-muted-foreground font-mono">
+                      <td className="p-3 text-sm text-muted-foreground font-mono hidden sm:table-cell">
                         {log.ipAddress || "-"}
                       </td>
                     </tr>
@@ -977,6 +977,7 @@ const portalNavGroups = [
 
 function WorkerPortal() {
   const [activeSection, setActiveSection] = useState("contrato");
+  const [expandedBottomGroup, setExpandedBottomGroup] = useState<string | null>(null);
 
   // Tipo para elecciones con fechas
   type EleccionPortal = {
@@ -1050,7 +1051,7 @@ function WorkerPortal() {
   const ActiveIcon = activeItem.icon;
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
       {/* Banner de Elecciones Activas */}
       {(hayEleccionCopasstActiva || hayEleccionConvivenciaActiva) && (
         <div className="space-y-2">
@@ -1141,8 +1142,8 @@ function WorkerPortal() {
         </div>
       </div>
 
-      {/* Navegación Profesional con Menús Desplegables */}
-      <Card className="border-0 shadow-sm bg-card/50">
+      {/* Navegación Profesional con Menús Desplegables — escritorio */}
+      <Card className="border-0 shadow-sm bg-card/50 hidden sm:block">
         <CardContent className="p-2 sm:p-3">
           <div className="flex flex-wrap items-center gap-1 sm:gap-2">
             {filteredNavGroups.map((group) => {
@@ -1221,6 +1222,82 @@ function WorkerPortal() {
         {activeSection === "capacitaciones-pesv" && <MisCapacitacionesPesvTab />}
         {activeSection === "encuesta-conductor" && <EncuestaConductorPortalTab />}
         {activeSection === "inspeccion-vehiculo" && <InspeccionVehiculoPortalTab />}
+      </div>
+
+      {/* ===== BOTTOM NAV — solo mobile (sm:hidden) ===== */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden">
+        {/* Panel expandido con items del grupo seleccionado */}
+        {expandedBottomGroup && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/30"
+              onClick={() => setExpandedBottomGroup(null)}
+            />
+            <div className="relative z-10 bg-card border-t shadow-xl">
+              <div className="grid grid-cols-3 gap-1 p-3">
+                {filteredNavGroups
+                  .find(g => g.id === expandedBottomGroup)
+                  ?.items.map(item => {
+                    const ItemIcon = item.icon;
+                    const isActive = activeSection === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setActiveSection(item.id);
+                          setExpandedBottomGroup(null);
+                        }}
+                        className={`touch-manipulation flex flex-col items-center gap-1.5 p-3 rounded-xl text-xs transition-colors ${
+                          isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                        }`}
+                        data-testid={`bottom-nav-item-${item.id}`}
+                      >
+                        <ItemIcon className="h-5 w-5 shrink-0" />
+                        <span className="text-center leading-tight line-clamp-2">{item.label}</span>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Barra principal inferior */}
+        <div className="bg-card border-t shadow-lg">
+          <div className="flex items-stretch justify-around h-16">
+            {filteredNavGroups.map(group => {
+              const GroupIcon = group.icon;
+              const isActiveGroup = group.items.some(item => item.id === activeSection);
+              const isExpanded = expandedBottomGroup === group.id;
+              return (
+                <button
+                  key={group.id}
+                  onClick={() => {
+                    if (group.items.length === 1) {
+                      setActiveSection(group.items[0].id);
+                      setExpandedBottomGroup(null);
+                    } else {
+                      setExpandedBottomGroup(isExpanded ? null : group.id);
+                    }
+                  }}
+                  className={`touch-manipulation flex flex-col items-center justify-center gap-0.5 flex-1 px-1 text-[10px] transition-colors ${
+                    isActiveGroup || isExpanded ? "text-primary" : "text-muted-foreground"
+                  }`}
+                  data-testid={`bottom-nav-group-${group.id}`}
+                >
+                  <div className={`p-1.5 rounded-full transition-colors ${
+                    isActiveGroup || isExpanded ? "bg-primary/10" : ""
+                  }`}>
+                    <GroupIcon className="h-5 w-5" />
+                  </div>
+                  <span className="truncate w-full text-center leading-tight">{group.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -3169,7 +3246,7 @@ function MisReportesTab() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2 px-3 sm:px-6">
               <CardTitle className="text-xs sm:text-sm font-medium">En Proceso</CardTitle>
