@@ -1285,6 +1285,28 @@ export function registerBillingRoutes(app: Express) {
    * Solo superadmin. Eliminar después de usar.
    */
 
+  /**
+   * POST /api/billing/admin/test-worker-email
+   * TEMPORAL: Envía un correo de prueba del template de bienvenida al trabajador.
+   */
+  app.post("/api/billing/admin/test-worker-email", requireSuperadmin, async (req, res) => {
+    try {
+      const { to } = req.body;
+      if (!to) return res.status(400).json({ error: "Requiere campo 'to' (email destino)" });
+      const { sendPortalAccessEmail } = await import('../email');
+      const result = await sendPortalAccessEmail(to, {
+        workerName: 'Laurent',
+        username: 'laurent',
+        temporaryPassword: 'jZfWDkfXR3dLFhDP',
+        companyName: 'Mi Comida S.A.S.',
+        loginUrl: 'https://sst.sagisas.co/login',
+      });
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.patch("/api/billing/admin/fix-invoice-amount", requireSuperadmin, async (req, res) => {
     try {
       const { invoiceId, correctAmountCOP } = req.body;
