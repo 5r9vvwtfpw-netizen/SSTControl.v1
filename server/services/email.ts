@@ -489,85 +489,10 @@ export class EmailService {
                 </p>
               </div>
 
-              <!-- Divider -->
-              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0 0 28px 0;">
-
-              <!-- Install as App Section -->
-              <div style="background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border-radius: 10px; padding: 24px; margin: 0 0 24px 0;">
-                <p style="margin: 0 0 4px 0; color: #1e40af; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                  &#x1F4F2; &nbsp;Descarga la app en tu celular
-                </p>
-                <p style="margin: 0 0 20px 0; color: #374151; font-size: 14px; line-height: 1.6;">
-                  No necesitas ir a ninguna tienda. Puedes instalarla directo desde tu celular en 3 pasos:
-                </p>
-
-                <!-- Android steps -->
-                <table role="presentation" style="width: 100%; margin-bottom: 16px;">
-                  <tr>
-                    <td style="width: 28px; vertical-align: top; padding-top: 2px;">
-                      <div style="width: 24px; height: 24px; background: #16a34a; border-radius: 50%; text-align: center; line-height: 24px; color: white; font-size: 12px; font-weight: 700;">A</div>
-                    </td>
-                    <td style="padding-left: 10px;">
-                      <p style="margin: 0 0 4px 0; color: #166534; font-size: 13px; font-weight: 700;">
-                        En Android (Chrome)
-                      </p>
-                      <p style="margin: 0; color: #374151; font-size: 13px; line-height: 1.6;">
-                        Abre el portal &rarr; toca los <strong>3 puntos</strong> del menu del navegador &rarr; selecciona
-                        <strong>"Instalar app"</strong> o <strong>"Agregar a pantalla de inicio"</strong>.
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-
-                <!-- iPhone steps -->
-                <table role="presentation" style="width: 100%;">
-                  <tr>
-                    <td style="width: 28px; vertical-align: top; padding-top: 2px;">
-                      <div style="width: 24px; height: 24px; background: #2563eb; border-radius: 50%; text-align: center; line-height: 24px; color: white; font-size: 12px; font-weight: 700;">i</div>
-                    </td>
-                    <td style="padding-left: 10px;">
-                      <p style="margin: 0 0 4px 0; color: #1e40af; font-size: 13px; font-weight: 700;">
-                        En iPhone (Safari)
-                      </p>
-                      <p style="margin: 0; color: #374151; font-size: 13px; line-height: 1.6;">
-                        Abre el portal en <strong>Safari</strong> &rarr; toca el boton de
-                        <strong>compartir &#x2B06;</strong> (cuadrado con flecha) &rarr; elige
-                        <strong>"Agregar a pantalla de inicio"</strong>.
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-
-                <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 12px; font-style: italic;">
-                  Listo. El portal quedara como una app en tu pantalla principal, sin necesidad de tiendas de aplicaciones.
-                </p>
-              </div>
-
               <!-- Security Notice -->
-              <div style="background-color: #fef9c3; border-left: 4px solid #eab308; padding: 14px 16px; margin: 0 0 24px 0; border-radius: 6px;">
-                <p style="margin: 0; color: #713f12; font-size: 13px; line-height: 1.6;">
-                  <strong>&#x26A0;&#xFE0F; Importante:</strong> Esta contrase&ntilde;a es temporal.
-                  Al ingresar por primera vez, el sistema te pedira que la cambies.
-                  No la compartas con nadie.
-                </p>
-              </div>
-
-              <!-- Features list -->
-              <p style="margin: 0 0 10px 0; color: #374151; font-size: 14px; font-weight: 600;">
-                En el portal podras:
+              <p style="margin: 0; color: #6b7280; font-size: 13px; text-align: center; line-height: 1.6;">
+                Esta contrase&ntilde;a es temporal. Al ingresar por primera vez te pediremos que la cambies.
               </p>
-              <table role="presentation" style="width: 100%;">
-                <tr>
-                  <td style="width: 50%; vertical-align: top; padding: 0 8px 0 0;">
-                    <p style="margin: 0 0 8px 0; color: #374151; font-size: 13px;">&#x1F4DA; Ver tus capacitaciones y certificados</p>
-                    <p style="margin: 0 0 8px 0; color: #374151; font-size: 13px;">&#x1FA7A; Ver tus examenes medicos</p>
-                  </td>
-                  <td style="width: 50%; vertical-align: top; padding: 0 0 0 8px;">
-                    <p style="margin: 0 0 8px 0; color: #374151; font-size: 13px;">&#x26A0;&#xFE0F; Reportar condiciones inseguras</p>
-                    <p style="margin: 0 0 8px 0; color: #374151; font-size: 13px;">&#x1F4C4; Acceder a tus documentos SST</p>
-                  </td>
-                </tr>
-              </table>
             </td>
           </tr>
 
