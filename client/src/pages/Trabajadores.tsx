@@ -442,48 +442,33 @@ export default function Trabajadores() {
 
   const createWorkerMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertWorkerSchema>) => {
-      // Guard: Verificar que el usuario esté autenticado
       if (!user?.id) {
         throw new Error("Debe estar autenticado para registrar trabajadores");
       }
       
-      // STAGE 1: Crear trabajador
+      // Crear trabajador — responde de inmediato desde el servidor
       const workerRes = await apiRequest("POST", "/api/workers", data);
       const createdWorker = await workerRes.json();
       
-      // STAGE 2: Crear registro de consentimiento (obligatorio para cumplimiento legal)
-      try {
-        const consentPayload = {
-          workerId: createdWorker.id,
-          workerName: createdWorker.name,
-          workerEmail: createdWorker.email || null,
-          workerIdentification: createdWorker.identificationNumber,
-          companyId: createdWorker.companyId,
-          dataType: "informacion_laboral",
-          consentType: CONSENT_METADATA.consentType,
-          purpose: CONSENT_METADATA.purposes,
-          channel: CONSENT_METADATA.channel,
-          policyVersion: CONSENT_METADATA.policyVersion,
-          policyDocumentUrl: CONSENT_METADATA.policyDocumentUrl,
-          consentMethod: "Formulario de registro de trabajador",
-          legalBasis: "consentimiento expreso - Ley 1581/2012",
-          recordedBy: user.id, // Usuario que registró el consentimiento (garantizado por guard)
-        };
-        
-        const consentRes = await apiRequest("POST", "/api/consent-records", consentPayload);
-        await consentRes.json();
-      } catch (consentError) {
-        // ROLLBACK: Si el consentimiento falla, eliminar el trabajador creado
-        try {
-          await apiRequest("DELETE", `/api/workers/${createdWorker.id}`);
-        } catch (deleteError) {
-          // Ignorar errores 404 en el rollback
-          console.error("Error en rollback de trabajador:", deleteError);
-        }
-        
-        // Re-lanzar el error para que onError lo maneje
-        throw new Error("No se pudo registrar el consentimiento. El trabajador no fue creado. Por favor, intente nuevamente.");
-      }
+      // Registro de consentimiento en background (no bloquea la respuesta al usuario)
+      apiRequest("POST", "/api/consent-records", {
+        workerId: createdWorker.id,
+        workerName: createdWorker.name,
+        workerEmail: createdWorker.email || null,
+        workerIdentification: createdWorker.identificationNumber,
+        companyId: createdWorker.companyId,
+        dataType: "informacion_laboral",
+        consentType: CONSENT_METADATA.consentType,
+        purpose: CONSENT_METADATA.purposes,
+        channel: CONSENT_METADATA.channel,
+        policyVersion: CONSENT_METADATA.policyVersion,
+        policyDocumentUrl: CONSENT_METADATA.policyDocumentUrl,
+        consentMethod: "Formulario de registro de trabajador",
+        legalBasis: "consentimiento expreso - Ley 1581/2012",
+        recordedBy: user.id,
+      }).catch((err: any) => {
+        console.warn("[Consent] Background consent creation failed:", err);
+      });
       
       return createdWorker;
     },

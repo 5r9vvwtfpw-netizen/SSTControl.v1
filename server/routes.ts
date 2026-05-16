@@ -3595,20 +3595,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertWorkerSchema.parse(req.body);
       
-      // SECURITY: Validate identification number uniqueness BEFORE database operation
-      if (validatedData.identificationNumber) {
-        const existingByIdentification = await storage.getWorkersByIdentification(validatedData.identificationNumber);
-        if (existingByIdentification && existingByIdentification.length > 0) {
-          return res.status(409).send(`Ya existe un empleado con número de documento ${validatedData.identificationNumber}. Los números de documento deben ser únicos.`);
-        }
+      // SECURITY: Validate uniqueness in parallel before DB write
+      const [existingByIdentification, existingByEmail] = await Promise.all([
+        validatedData.identificationNumber
+          ? storage.getWorkersByIdentification(validatedData.identificationNumber)
+          : Promise.resolve([]),
+        validatedData.email
+          ? storage.getWorkersByEmail(validatedData.email)
+          : Promise.resolve([]),
+      ]);
+      if (existingByIdentification.length > 0) {
+        return res.status(409).send(`Ya existe un empleado con número de documento ${validatedData.identificationNumber}. Los números de documento deben ser únicos.`);
       }
-
-      // SECURITY: Validate email uniqueness BEFORE database operation
-      if (validatedData.email) {
-        const existingByEmail = await storage.getWorkersByEmail(validatedData.email);
-        if (existingByEmail && existingByEmail.length > 0) {
-          return res.status(409).send(`Ya existe un empleado con email ${validatedData.email}. Los emails deben ser únicos.`);
-        }
+      if (existingByEmail.length > 0) {
+        return res.status(409).send(`Ya existe un empleado con email ${validatedData.email}. Los emails deben ser únicos.`);
       }
       
       // For admin/super_admin: use companyId from request body (selected from dropdown)
@@ -3636,19 +3636,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const auditContext = getAuditContext(req);
       
       const worker = await storage.createWorker(validatedData, companyId, userId, auditContext);
-      
-      // Auto-create contract for the new worker
-      try {
-        // Map worker contract type to contract table contract type
-        const contractTypeMap: Record<string, string> = {
-          'indefinido': 'indefinido',
-          'fijo': 'fijo',
-          'temporal': 'fijo',  // Temporal maps to 'fijo' in contracts v2 enum
-          'obra-labor': 'obra_labor',
-          'aprendizaje': 'aprendizaje'
-        };
-        
-        const contractData = {
+
+      // Auto-create contract + affiliation in parallel (non-blocking for response)
+      const contractTypeMap: Record<string, string> = {
+        'indefinido': 'indefinido',
+        'fijo': 'fijo',
+        'temporal': 'fijo',
+        'obra-labor': 'obra_labor',
+        'aprendizaje': 'aprendizaje'
+      };
+
+      // Respond immediately — run side effects in background
+      res.status(201).json(worker);
+
+      // Run contract and affiliation creation in parallel after responding
+      Promise.all([
+        storage.createContract({
           workerId: worker.id,
           contractType: contractTypeMap[validatedData.contractType] || 'indefinido',
           startDate: validatedData.startDate,
@@ -3656,47 +3659,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           position: validatedData.position,
           department: validatedData.department,
           status: 'activo' as const
-        };
-        
-        await storage.createContract(contractData, companyId);
-      } catch (contractError: any) {
-        // Log contract creation error but don't fail the worker creation
-        console.warn(`[Create Worker] Worker ${designeeInfo.name} created but contract failed: ${contractError.message}`);
-      }
-      
-      // Auto-create affiliation for the new worker using company defaults
-      try {
-        // Get company default affiliations
-        const company = await storage.getCompany(companyId);
-        
-        if (!company) {
-          console.warn(`[Create Worker] Company not found - skipping affiliation creation`);
-        } else {
-          // ARL MUST come from company (Decreto 1295/1994 - unique per company in Colombia)
-          // EPS/AFP/CCF can use worker values or company defaults
+        }, companyId).catch((e: any) => console.warn(`[Create Worker] Contract failed: ${e.message}`)),
+
+        storage.getCompany(companyId).then((company) => {
+          if (!company) return;
           const afiliacionData = {
             workerId: worker.id,
             fecha: validatedData.startDate || new Date().toISOString().split('T')[0],
-            epsNombre: validatedData.epsNombre || company.epsNombreEmpresa || null,
-            arlNombre: company.arlNombreEmpresa || null, // STRICTLY from company only
-            afpNombre: validatedData.afpNombre || company.afpNombreEmpresa || null,
-            ccfNombre: validatedData.ccfNombre || company.ccfNombreEmpresa || null,
+            epsNombre: (validatedData as any).epsNombre || company.epsNombreEmpresa || null,
+            arlNombre: company.arlNombreEmpresa || null,
+            afpNombre: (validatedData as any).afpNombre || company.afpNombreEmpresa || null,
+            ccfNombre: (validatedData as any).ccfNombre || company.ccfNombreEmpresa || null,
           };
-          
-          // Warn if ARL is missing (required by Decreto 1295/1994)
           if (!afiliacionData.arlNombre) {
-            console.warn(`[Create Worker] ⚠️ COMPLIANCE WARNING: Worker ${designeeInfo.name} - ARL not configured for company. Configure ARL in company settings.`);
+            console.warn(`[Create Worker] ARL not configured for company ${companyId}`);
           }
-          
-          // Create affiliation record (even partial - allows completing later)
-          await storage.createAfiliacionSsss(afiliacionData, companyId);
-          console.log(`[Create Worker] Affiliation created for worker ${designeeInfo.name}${!afiliacionData.arlNombre ? ' (ARL pending)' : ''}`);
-        }
-      } catch (afiliacionError: any) {
-        console.warn(`[Create Worker] Worker ${designeeInfo.name} created but affiliation failed: ${afiliacionError.message}`);
-      }
-      
-      res.status(201).json(worker);
+          return storage.createAfiliacionSsss(afiliacionData, companyId);
+        }).catch((e: any) => console.warn(`[Create Worker] Affiliation failed: ${e.message}`)),
+      ]).catch(() => {});
+
     } catch (error: any) {
       res.status(400).send(error.message);
     }
