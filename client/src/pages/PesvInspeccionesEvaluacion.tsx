@@ -1,8 +1,8 @@
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, ArrowLeft, Eye, ClipboardCheck, Calendar, Car, User, CheckCircle2, XCircle, AlertCircle, FileDown } from "lucide-react";
+import { Plus, ArrowLeft, Eye, ClipboardCheck, ClipboardList, Calendar, Car, User, CheckCircle2, XCircle, AlertCircle, FileDown, ExternalLink } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -140,6 +140,33 @@ export default function PesvInspeccionesEvaluacion() {
         currentPhase="hacer"
         isLoading={evaluacionLoading}
       />
+
+      {evaluacionId && (
+        <Link href={`/pesv/evaluacion/${evaluacionId}/encuesta-conductor`}>
+          <Card
+            className="hover-elevate cursor-pointer mb-4 border-emerald-200 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20"
+            data-testid="card-link-encuesta-conductor"
+          >
+            <CardHeader className="py-3 flex flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="font-mono text-xs text-emerald-700 border-emerald-400 dark:text-emerald-400 dark:border-emerald-700">
+                      H06+
+                    </Badge>
+                    <CardTitle className="text-sm font-medium">Encuesta Diaria del Conductor</CardTitle>
+                  </div>
+                  <CardDescription className="text-xs mt-0.5">
+                    Auto-reporte de aptitud del conductor · Art. 18, Res. 40595/2022
+                  </CardDescription>
+                </div>
+              </div>
+              <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
+            </CardHeader>
+          </Card>
+        </Link>
+      )}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
