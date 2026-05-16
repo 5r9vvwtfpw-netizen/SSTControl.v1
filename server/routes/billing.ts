@@ -1299,7 +1299,7 @@ export function registerBillingRoutes(app: Express) {
         username: 'laurent',
         temporaryPassword: 'jZfWDkfXR3dLFhDP',
         companyName: 'Mi Comida S.A.S.',
-        loginUrl: 'https://sst.sagisas.co/login',
+        loginUrl: 'https://sst.sagisas.co/portal-empleados',
       });
       res.json(result);
     } catch (error: any) {

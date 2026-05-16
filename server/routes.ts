@@ -4092,7 +4092,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username,
         temporaryPassword,
         companyName,
-        loginUrl: `${baseUrl}/login`,
+        loginUrl: `${baseUrl}/portal-empleados`,
         companyEmail: company?.contactEmail || undefined,
       });
 
@@ -4233,7 +4233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             username,
             temporaryPassword,
             companyName,
-            loginUrl: `${baseUrl}/login`,
+            loginUrl: `${baseUrl}/portal-empleados`,
             companyEmail,
           });
 
