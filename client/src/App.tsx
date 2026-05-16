@@ -531,11 +531,17 @@ function AuthenticatedLayout() {
 
   if (user.role === "trabajador") {
     return (
-      <WelcomeGate>
-        <SubscriptionGate>
-          <WorkerLayout />
-        </SubscriptionGate>
-      </WelcomeGate>
+      <SubscriptionGate>
+        <WorkerLayout />
+      </SubscriptionGate>
+    );
+  }
+
+  if (user.role === "lso" || user.role === "lso_externo") {
+    return (
+      <SubscriptionGate>
+        <AdminLayout />
+      </SubscriptionGate>
     );
   }
 
@@ -548,6 +554,13 @@ function AuthenticatedLayout() {
   );
 }
 
+function ConditionalChatBot() {
+  const { user } = useAuth();
+  if (!user) return null;
+  if (user.role === "trabajador" || user.role === "lso" || user.role === "lso_externo") return null;
+  return <ChatBot />;
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -555,8 +568,8 @@ export default function App() {
         <AuthProvider>
           <DemoWatermark />
           <AuthenticatedLayout />
+          <ConditionalChatBot />
         </AuthProvider>
-        <ChatBot />
         <Toaster />
         <CookieConsentBanner />
       </TooltipProvider>
