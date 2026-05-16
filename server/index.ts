@@ -340,7 +340,7 @@ app.post(
                           customerNit: company.nit || 'N/A',
                           customerEmail: company.contactEmail || '',
                           customerAddress: company.address || '',
-                          customerPhone: company.phone || '',
+                          customerPhone: company.contactPhone || '',
                           customerCity: company.city || '',
                           subtotal,
                           taxAmount,
