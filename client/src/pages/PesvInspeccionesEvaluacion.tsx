@@ -11,11 +11,61 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, ArrowLeft, Eye, ClipboardCheck, ClipboardList, Calendar, Car, User, CheckCircle2, XCircle, AlertCircle, FileDown, ExternalLink } from "lucide-react";
+import { Plus, ArrowLeft, Eye, ClipboardCheck, ClipboardList, Calendar, Car, User, CheckCircle2, XCircle, AlertCircle, FileDown, ExternalLink, CheckSquare, XSquare, AlertTriangle } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { EvaluacionPesv, VehicleInspection, Vehicle, Driver } from "@shared/schema";
+
+const ITEMS_INSPECCION = [
+  {
+    grupo: "Exterior",
+    items: [
+      { key: "tires" as const, label: "Llantas / Neumáticos", critical: true },
+      { key: "lights" as const, label: "Luces" },
+      { key: "mirrors" as const, label: "Espejos" },
+      { key: "bodywork" as const, label: "Carrocería" },
+    ],
+  },
+  {
+    grupo: "Interior",
+    items: [
+      { key: "seatbelts" as const, label: "Cinturones de seguridad" },
+      { key: "horn" as const, label: "Bocina / Pito" },
+      { key: "windshield" as const, label: "Parabrisas / Limpiabrisas" },
+      { key: "instruments" as const, label: "Instrumentos / Tablero" },
+    ],
+  },
+  {
+    grupo: "Mecánica",
+    items: [
+      { key: "brakes" as const, label: "Frenos", critical: true },
+      { key: "steering" as const, label: "Dirección" },
+      { key: "suspension" as const, label: "Suspensión" },
+      { key: "fluids" as const, label: "Fluidos (aceite, refrigerante)" },
+    ],
+  },
+  {
+    grupo: "Equipos de seguridad",
+    items: [
+      { key: "fireExtinguisher" as const, label: "Extintor", critical: true },
+      { key: "firstAidKit" as const, label: "Botiquín de primeros auxilios" },
+      { key: "reflectiveTriangles" as const, label: "Triángulos reflectivos" },
+      { key: "safetyVest" as const, label: "Chaleco reflectivo" },
+    ],
+  },
+];
+
+type ItemKey = "tires" | "lights" | "mirrors" | "bodywork" | "seatbelts" | "horn" | "windshield" | "instruments" | "brakes" | "steering" | "suspension" | "fluids" | "fireExtinguisher" | "firstAidKit" | "reflectiveTriangles" | "safetyVest";
+
+const ALL_KEYS: ItemKey[] = ["tires","lights","mirrors","bodywork","seatbelts","horn","windshield","instruments","brakes","steering","suspension","fluids","fireExtinguisher","firstAidKit","reflectiveTriangles","safetyVest"];
+const CRITICAL_KEYS: ItemKey[] = ["tires","brakes","fireExtinguisher"];
+
+function computeResult(data: Record<ItemKey, number>): "apto" | "apto-con-observaciones" | "no-apto" {
+  if (CRITICAL_KEYS.some(k => data[k] === 0)) return "no-apto";
+  if (ALL_KEYS.some(k => data[k] === 0)) return "apto-con-observaciones";
+  return "apto";
+}
 
 export default function PesvInspeccionesEvaluacion() {
   const { evaluacionId } = useParams<{ evaluacionId: string }>();
@@ -23,20 +73,30 @@ export default function PesvInspeccionesEvaluacion() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedInspection, setSelectedInspection] = useState<VehicleInspection | null>(null);
-  const [formData, setFormData] = useState<{
-    vehicleId: string;
-    driverId: string;
-    inspectionDate: string;
-    inspectionTime: string;
-    result: "apto" | "apto-con-observaciones" | "no-apto";
-    observations: string;
-  }>({
+  const [formData, setFormData] = useState({
     vehicleId: "",
     driverId: "",
     inspectionDate: "",
     inspectionTime: "",
-    result: "apto",
+    tires: 0,
+    lights: 0,
+    mirrors: 0,
+    bodywork: 0,
+    seatbelts: 0,
+    horn: 0,
+    windshield: 0,
+    instruments: 0,
+    brakes: 0,
+    steering: 0,
+    suspension: 0,
+    fluids: 0,
+    fireExtinguisher: 0,
+    firstAidKit: 0,
+    reflectiveTriangles: 0,
+    safetyVest: 0,
+    result: "apto" as "apto" | "apto-con-observaciones" | "no-apto",
     observations: "",
+    correctiveActions: "",
   });
 
   const { data: evaluacion, isLoading: evaluacionLoading } = useQuery<EvaluacionPesv>({
@@ -96,14 +156,41 @@ export default function PesvInspeccionesEvaluacion() {
       driverId: "",
       inspectionDate: "",
       inspectionTime: "",
+      tires: 0,
+      lights: 0,
+      mirrors: 0,
+      bodywork: 0,
+      seatbelts: 0,
+      horn: 0,
+      windshield: 0,
+      instruments: 0,
+      brakes: 0,
+      steering: 0,
+      suspension: 0,
+      fluids: 0,
+      fireExtinguisher: 0,
+      firstAidKit: 0,
+      reflectiveTriangles: 0,
+      safetyVest: 0,
       result: "apto",
       observations: "",
+      correctiveActions: "",
     });
+  };
+
+  const toggleItem = (key: ItemKey) => {
+    setFormData(prev => ({ ...prev, [key]: prev[key] === 1 ? 0 : 1 }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createInspectionMutation.mutate(formData);
+    const autoResult = computeResult(formData as Record<ItemKey, number>);
+    createInspectionMutation.mutate({
+      ...formData,
+      result: autoResult,
+      observations: formData.observations || undefined,
+      correctiveActions: formData.correctiveActions || undefined,
+    });
   };
 
   const getVehiclePlate = (vehicleId: string) => {
@@ -181,17 +268,17 @@ export default function PesvInspeccionesEvaluacion() {
                 Nueva Inspección
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Registrar Inspección Preoperacional</DialogTitle>
                 <DialogDescription>
-                  Complete los datos de la inspección del vehículo
+                  Marque cada ítem como Bien (✓) o Falla (✗). Ítems críticos en rojo generan resultado NO APTO automáticamente.
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="vehicleId">Vehículo</Label>
+                    <Label htmlFor="vehicleId">Vehículo *</Label>
                     <Select
                       value={formData.vehicleId}
                       onValueChange={(value) => setFormData({ ...formData, vehicleId: value })}
@@ -200,16 +287,16 @@ export default function PesvInspeccionesEvaluacion() {
                         <SelectValue placeholder="Seleccione vehículo" />
                       </SelectTrigger>
                       <SelectContent>
-                        {vehicles.map((vehicle) => (
+                        {vehicles.filter(v => v.status === "activo").map((vehicle) => (
                           <SelectItem key={vehicle.id} value={vehicle.id}>
-                            {vehicle.plate} - {vehicle.brand}
+                            {vehicle.plate} - {vehicle.brand} {vehicle.model}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="driverId">Conductor</Label>
+                    <Label htmlFor="driverId">Conductor *</Label>
                     <Select
                       value={formData.driverId}
                       onValueChange={(value) => setFormData({ ...formData, driverId: value })}
@@ -218,7 +305,7 @@ export default function PesvInspeccionesEvaluacion() {
                         <SelectValue placeholder="Seleccione conductor" />
                       </SelectTrigger>
                       <SelectContent>
-                        {drivers.map((driver) => (
+                        {drivers.filter(d => d.status === "activo").map((driver) => (
                           <SelectItem key={driver.id} value={driver.id}>
                             {driver.name}
                           </SelectItem>
@@ -226,59 +313,116 @@ export default function PesvInspeccionesEvaluacion() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="inspectionDate">Fecha</Label>
+                    <Label htmlFor="inspectionDate">Fecha *</Label>
                     <Input
                       id="inspectionDate"
                       type="date"
                       value={formData.inspectionDate}
                       onChange={(e) => setFormData({ ...formData, inspectionDate: e.target.value })}
+                      required
                       data-testid="input-inspection-date"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="inspectionTime">Hora</Label>
+                    <Label htmlFor="inspectionTime">Hora *</Label>
                     <Input
                       id="inspectionTime"
                       type="time"
                       value={formData.inspectionTime}
                       onChange={(e) => setFormData({ ...formData, inspectionTime: e.target.value })}
+                      required
                       data-testid="input-inspection-time"
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="result">Resultado</Label>
-                  <Select
-                    value={formData.result}
-                    onValueChange={(value: "apto" | "apto-con-observaciones" | "no-apto") => 
-                      setFormData({ ...formData, result: value })
-                    }
-                  >
-                    <SelectTrigger data-testid="select-result">
-                      <SelectValue placeholder="Seleccione resultado" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="apto">Apto</SelectItem>
-                      <SelectItem value="apto-con-observaciones">Apto con Observaciones</SelectItem>
-                      <SelectItem value="no-apto">No Apto</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+
+                {/* Checklist de 16 ítems por grupo */}
+                {ITEMS_INSPECCION.map(grupo => (
+                  <div key={grupo.grupo} className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{grupo.grupo}</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {grupo.items.map(item => {
+                        const esBien = formData[item.key] === 1;
+                        return (
+                          <button
+                            key={item.key}
+                            type="button"
+                            data-testid={`toggle-inspeccion-${item.key}`}
+                            onClick={() => toggleItem(item.key)}
+                            className={`flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors text-left ${
+                              esBien
+                                ? "border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 text-green-800 dark:text-green-300"
+                                : item.critical
+                                ? "border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-800 text-red-800 dark:text-red-300"
+                                : "border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 text-amber-800 dark:text-amber-300"
+                            }`}
+                          >
+                            <span className="flex items-center gap-2">
+                              {item.critical && !esBien && (
+                                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                              )}
+                              <span>{item.label}</span>
+                              {item.critical && (
+                                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">Crítico</Badge>
+                              )}
+                            </span>
+                            {esBien ? (
+                              <CheckSquare className="h-4 w-4 shrink-0 text-green-600" />
+                            ) : (
+                              <XSquare className="h-4 w-4 shrink-0" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Resumen de fallas */}
+                {(() => {
+                  const failingCount = ALL_KEYS.filter(k => formData[k] === 0).length;
+                  const hasCriticalFail = CRITICAL_KEYS.some(k => formData[k] === 0);
+                  if (failingCount === 0) return null;
+                  return (
+                    <div className={`flex items-start gap-2 rounded-md border p-3 ${hasCriticalFail ? "border-red-200 bg-red-50 dark:bg-red-950/30" : "border-amber-200 bg-amber-50 dark:bg-amber-950/30"}`}>
+                      <AlertTriangle className={`h-4 w-4 shrink-0 mt-0.5 ${hasCriticalFail ? "text-red-600" : "text-amber-600"}`} />
+                      <p className="text-sm">
+                        {failingCount} ítem{failingCount > 1 ? "s" : ""} con falla.{" "}
+                        {hasCriticalFail
+                          ? "Hay ítems CRÍTICOS fallando — el resultado será NO APTO."
+                          : "El resultado será APTO CON OBSERVACIONES."}
+                      </p>
+                    </div>
+                  );
+                })()}
+
                 <div className="space-y-2">
                   <Label htmlFor="observations">Observaciones</Label>
                   <Textarea
                     id="observations"
                     value={formData.observations}
                     onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
-                    placeholder="Ingrese observaciones de la inspección..."
+                    placeholder="Describa las fallas encontradas o novedades del vehículo..."
                     data-testid="textarea-observations"
                   />
                 </div>
+
+                {ALL_KEYS.some(k => formData[k] === 0) && (
+                  <div className="space-y-2">
+                    <Label htmlFor="correctiveActions">Acciones Correctivas</Label>
+                    <Textarea
+                      id="correctiveActions"
+                      value={formData.correctiveActions}
+                      onChange={(e) => setFormData({ ...formData, correctiveActions: e.target.value })}
+                      placeholder="Acciones a tomar antes de conducir..."
+                      data-testid="textarea-corrective-actions"
+                    />
+                  </div>
+                )}
+
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                  <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>
                     Cancelar
                   </Button>
                   <Button type="submit" disabled={createInspectionMutation.isPending} data-testid="button-submit-inspection">
