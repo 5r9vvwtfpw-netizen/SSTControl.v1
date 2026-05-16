@@ -19,7 +19,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
-import { PesvEncuestaConductor as EncuestaType } from "@shared/schema";
+import { PesvEncuestaConductor as EncuestaType, Driver } from "@shared/schema";
 import { getTodayDateString } from "@/lib/utils/formatters";
 import { hasGlobalAccess } from "@shared/permissions";
 
@@ -117,6 +117,12 @@ export default function PesvEncuestaConductor() {
       return res.json();
     },
   });
+
+  const { data: drivers = [] } = useQuery<Driver[]>({
+    queryKey: ["/api/drivers"],
+  });
+
+  const activeDrivers = drivers.filter(d => d.status === "activo");
 
   const createMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -325,14 +331,24 @@ export default function PesvEncuestaConductor() {
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-1 gap-3">
               <div className="space-y-1">
-                <Label htmlFor="conductorNombre">Nombre del Conductor *</Label>
-                <Input
-                  id="conductorNombre"
-                  placeholder="Nombre completo"
+                <Label htmlFor="conductorNombre">Conductor *</Label>
+                <Select
                   value={formData.conductorNombre}
-                  onChange={e => setFormData(f => ({ ...f, conductorNombre: e.target.value }))}
-                  data-testid="input-conductor-nombre"
-                />
+                  onValueChange={v => setFormData(f => ({ ...f, conductorNombre: v }))}
+                >
+                  <SelectTrigger id="conductorNombre" data-testid="select-conductor-nombre">
+                    <SelectValue placeholder="Seleccione conductor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeDrivers.length === 0 ? (
+                      <SelectItem value="_none" disabled>Sin conductores activos registrados</SelectItem>
+                    ) : (
+                      activeDrivers.map(d => (
+                        <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
