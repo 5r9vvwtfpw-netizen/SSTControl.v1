@@ -40816,6 +40816,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         asistio: inv.attended === 1,
         notificadoEn: inv.notifiedAt,
         confirmadoEn: inv.confirmedAt,
+        contentType: inv.training.contentType ?? "presencial",
+        contentUrl: inv.training.contentUrl ?? null,
+        contentText: inv.training.contentText ?? null,
       }));
 
       res.json({ capacitaciones });

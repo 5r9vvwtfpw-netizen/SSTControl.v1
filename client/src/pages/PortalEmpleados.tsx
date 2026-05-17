@@ -5011,6 +5011,9 @@ interface PesvCapacitacion {
   asistio: boolean;
   notificadoEn: string | null;
   confirmadoEn: string | null;
+  contentType: string | null;
+  contentUrl: string | null;
+  contentText: string | null;
 }
 
 function MisCapacitacionesPesvTab() {
@@ -5118,6 +5121,52 @@ function MisCapacitacionesPesvTab() {
                       )}
                     </div>
                   </div>
+                  {/* Contenido digital adjunto */}
+                  {cap.contentType && cap.contentType !== "presencial" && (
+                    <div className="mt-3 pt-3 border-t">
+                      {cap.contentType === "video" && cap.contentUrl && (
+                        <a
+                          href={cap.contentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-red-700"
+                          data-testid={`link-video-${cap.id}`}
+                        >
+                          <Play className="h-4 w-4" />
+                          Ver Video
+                        </a>
+                      )}
+                      {cap.contentType === "pdf" && cap.contentUrl && (
+                        <a
+                          href={cap.contentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-orange-700"
+                          data-testid={`link-pdf-${cap.id}`}
+                        >
+                          <FileText className="h-4 w-4" />
+                          Ver PDF
+                        </a>
+                      )}
+                      {cap.contentType === "formulario" && cap.contentUrl && (
+                        <a
+                          href={cap.contentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 bg-purple-600 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-purple-700"
+                          data-testid={`link-formulario-${cap.id}`}
+                        >
+                          <ClipboardList className="h-4 w-4" />
+                          Completar Formulario
+                        </a>
+                      )}
+                      {cap.contentType === "texto" && cap.contentText && (
+                        <div className="bg-muted/40 rounded-md p-3 text-sm text-foreground whitespace-pre-wrap" data-testid={`text-contenido-${cap.id}`}>
+                          {cap.contentText}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

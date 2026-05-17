@@ -44,6 +44,9 @@ export default function PesvCapacitaciones() {
     topics: "",
     totalAttendees: 0,
     status: "programada" as const,
+    contentType: "presencial" as string,
+    contentUrl: "" as string,
+    contentText: "" as string,
   });
 
   const { data: trainings = [], isLoading: trainingsLoading } = useQuery<RoadSafetyTraining[]>({
@@ -221,6 +224,9 @@ export default function PesvCapacitaciones() {
       topics: "",
       totalAttendees: 0,
       status: "programada",
+      contentType: "presencial",
+      contentUrl: "",
+      contentText: "",
     });
   };
 
@@ -413,6 +419,58 @@ export default function PesvCapacitaciones() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contentType">Tipo de Contenido</Label>
+                    <Select
+                      value={formData.contentType}
+                      onValueChange={(value: string) => setFormData({ ...formData, contentType: value, contentUrl: "", contentText: "" })}
+                    >
+                      <SelectTrigger id="contentType" data-testid="select-content-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="presencial">Presencial (sin contenido digital)</SelectItem>
+                        <SelectItem value="video">Video (URL)</SelectItem>
+                        <SelectItem value="pdf">PDF (URL)</SelectItem>
+                        <SelectItem value="formulario">Formulario (URL)</SelectItem>
+                        <SelectItem value="texto">Texto / Descripción</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {(formData.contentType === "video" || formData.contentType === "pdf" || formData.contentType === "formulario") && (
+                    <div className="space-y-2 col-span-2">
+                      <Label htmlFor="contentUrl">
+                        {formData.contentType === "video" ? "URL del Video" : formData.contentType === "pdf" ? "URL del PDF" : "URL del Formulario"}
+                      </Label>
+                      <Input
+                        id="contentUrl"
+                        type="url"
+                        value={formData.contentUrl}
+                        onChange={(e) => setFormData({ ...formData, contentUrl: e.target.value })}
+                        placeholder={
+                          formData.contentType === "video"
+                            ? "https://youtube.com/..."
+                            : formData.contentType === "pdf"
+                            ? "https://ejemplo.com/documento.pdf"
+                            : "https://forms.google.com/..."
+                        }
+                        data-testid="input-content-url"
+                      />
+                    </div>
+                  )}
+                  {formData.contentType === "texto" && (
+                    <div className="space-y-2 col-span-2">
+                      <Label htmlFor="contentText">Contenido de Texto</Label>
+                      <Textarea
+                        id="contentText"
+                        value={formData.contentText}
+                        onChange={(e) => setFormData({ ...formData, contentText: e.target.value })}
+                        placeholder="Escribe aquí el contenido de la capacitación que verán los trabajadores..."
+                        rows={5}
+                        data-testid="input-content-text"
+                      />
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button 

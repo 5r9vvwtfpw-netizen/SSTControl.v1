@@ -1050,6 +1050,11 @@ export const roadSafetyTrainings = pgTable("road_safety_trainings", {
   
   // Vinculación a evaluación PESV anual (opcional para datos existentes)
   evaluacionPesvId: varchar("evaluacion_pesv_id"),
+
+  // Contenido digital de la capacitación
+  contentType: text("content_type").default("presencial"), // presencial | video | pdf | formulario | texto
+  contentUrl: text("content_url"),
+  contentText: text("content_text"),
   
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });

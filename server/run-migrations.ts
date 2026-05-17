@@ -38,6 +38,7 @@ import { syncMatrizLegalNormas } from './migrations/sync-matriz-legal-normas';
 import { syncOnboardingColumns } from './migrations/sync-onboarding-columns';
 import { createPesvEncuestaConductorTable } from './migrations/create-pesv-encuesta-conductor';
 import { fixInvoiceStripeAmount } from './migrations/fix-invoice-stripe-amount';
+import { syncRoadSafetyContentFields } from './migrations/sync-road-safety-content-fields';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -87,6 +88,7 @@ export async function runMigrations() {
     await syncOnboardingColumns();
     await createPesvEncuestaConductorTable();
     await fixInvoiceStripeAmount();
+    await syncRoadSafetyContentFields();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);
