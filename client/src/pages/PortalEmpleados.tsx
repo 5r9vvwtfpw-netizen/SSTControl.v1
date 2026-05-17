@@ -5016,7 +5016,25 @@ interface PesvCapacitacion {
   contentText: string | null;
 }
 
+function getEmbedUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    // YouTube
+    const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1`;
+    // Vimeo
+    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+    if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
+    // Generic — return as-is (works for direct mp4, Google Drive preview, etc.)
+    return url;
+  } catch {
+    return url;
+  }
+}
+
 function MisCapacitacionesPesvTab() {
+  const [videoModal, setVideoModal] = useState<{ open: boolean; url: string; titulo: string }>({ open: false, url: "", titulo: "" });
+
   const { data, isLoading } = useQuery<{ capacitaciones: PesvCapacitacion[] }>({
     queryKey: ["/api/portal/worker/pesv-capacitaciones"],
   });
@@ -5125,16 +5143,14 @@ function MisCapacitacionesPesvTab() {
                   {cap.contentType && cap.contentType !== "presencial" && (
                     <div className="mt-3 pt-3 border-t">
                       {cap.contentType === "video" && cap.contentUrl && (
-                        <a
-                          href={cap.contentUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          onClick={() => setVideoModal({ open: true, url: cap.contentUrl!, titulo: cap.titulo })}
                           className="inline-flex items-center gap-2 bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-red-700"
                           data-testid={`link-video-${cap.id}`}
                         >
                           <Play className="h-4 w-4" />
                           Ver Video
-                        </a>
+                        </button>
                       )}
                       {cap.contentType === "pdf" && cap.contentUrl && (
                         <a
@@ -5209,6 +5225,42 @@ function MisCapacitacionesPesvTab() {
           </CardContent>
         </Card>
       )}
+
+      {/* Modal de Video */}
+      <Dialog open={videoModal.open} onOpenChange={(open) => setVideoModal(v => ({ ...v, open }))}>
+        <DialogContent className="max-w-3xl w-full p-0 overflow-hidden">
+          <DialogHeader className="px-4 pt-4 pb-2">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Play className="h-4 w-4 text-red-500" />
+              {videoModal.titulo}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+            <iframe
+              key={videoModal.url}
+              src={getEmbedUrl(videoModal.url)}
+              className="absolute inset-0 w-full h-full"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+              title={videoModal.titulo}
+              data-testid="iframe-video-modal"
+            />
+          </div>
+          <div className="px-4 py-3 flex items-center justify-between">
+            <a
+              href={videoModal.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground underline"
+            >
+              Abrir en nueva pestaña
+            </a>
+            <Button variant="outline" size="sm" onClick={() => setVideoModal(v => ({ ...v, open: false }))}>
+              Cerrar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
