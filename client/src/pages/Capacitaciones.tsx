@@ -93,6 +93,9 @@ export default function Capacitaciones() {
     totalWorkers: "" as number | string,
     validityMonths: "" as number | string,
     status: "programada" as const,
+    contentType: "presencial" as string,
+    contentUrl: "" as string,
+    contentText: "" as string,
   });
 
   const [editFormData, setEditFormData] = useState({
@@ -106,6 +109,9 @@ export default function Capacitaciones() {
     totalWorkers: "" as number | string,
     validityMonths: "" as number | string,
     status: "programada" as "programada" | "en-curso" | "completada" | "cancelada",
+    contentType: "presencial" as string,
+    contentUrl: "" as string,
+    contentText: "" as string,
   });
 
   const { data: trainings = [], isLoading: trainingsLoading } = useQuery<Training[]>({
@@ -186,6 +192,9 @@ export default function Capacitaciones() {
         totalWorkers: "",
         validityMonths: "",
         status: "programada",
+        contentType: "presencial",
+        contentUrl: "",
+        contentText: "",
       });
       toast({
         title: "Capacitación creada",
@@ -340,6 +349,9 @@ export default function Capacitaciones() {
         totalWorkers: editTotalWorkersValue,
         validityMonths: editValidityMonthsValue,
         status: editFormData.status,
+        contentType: editFormData.contentType || "presencial",
+        contentUrl: editFormData.contentUrl || null,
+        contentText: editFormData.contentText || null,
       },
     });
   };
@@ -360,6 +372,9 @@ export default function Capacitaciones() {
       totalWorkers: training.totalWorkers ?? "",
       validityMonths: training.validityMonths ?? "",
       status: training.status as "programada" | "en-curso" | "completada" | "cancelada",
+      contentType: (training as any).contentType || "presencial",
+      contentUrl: (training as any).contentUrl || "",
+      contentText: (training as any).contentText || "",
     });
     setEditDialogOpen(true);
   };
@@ -568,6 +583,52 @@ export default function Capacitaciones() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contentType">Tipo de Contenido</Label>
+                    <Select
+                      value={formData.contentType}
+                      onValueChange={(value: string) => setFormData({ ...formData, contentType: value, contentUrl: "", contentText: "" })}
+                    >
+                      <SelectTrigger id="contentType" data-testid="select-content-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="presencial">Presencial (sin contenido digital)</SelectItem>
+                        <SelectItem value="video">Video (URL)</SelectItem>
+                        <SelectItem value="pdf">PDF (URL)</SelectItem>
+                        <SelectItem value="formulario">Formulario (URL)</SelectItem>
+                        <SelectItem value="texto">Texto / Descripción</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {(formData.contentType === "video" || formData.contentType === "pdf" || formData.contentType === "formulario") && (
+                    <div className="space-y-2 col-span-2">
+                      <Label htmlFor="contentUrl">
+                        {formData.contentType === "video" ? "URL del Video" : formData.contentType === "pdf" ? "URL del PDF" : "URL del Formulario"}
+                      </Label>
+                      <Input
+                        id="contentUrl"
+                        type="url"
+                        value={formData.contentUrl}
+                        onChange={(e) => setFormData({ ...formData, contentUrl: e.target.value })}
+                        placeholder={formData.contentType === "video" ? "https://youtube.com/..." : formData.contentType === "pdf" ? "https://ejemplo.com/doc.pdf" : "https://forms.google.com/..."}
+                        data-testid="input-content-url"
+                      />
+                    </div>
+                  )}
+                  {formData.contentType === "texto" && (
+                    <div className="space-y-2 col-span-2">
+                      <Label htmlFor="contentText">Contenido de Texto</Label>
+                      <Textarea
+                        id="contentText"
+                        value={formData.contentText}
+                        onChange={(e) => setFormData({ ...formData, contentText: e.target.value })}
+                        placeholder="Escribe el contenido que verán los trabajadores..."
+                        rows={4}
+                        data-testid="input-content-text"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="text-xs text-muted-foreground">
                   Los campos marcados con * son obligatorios
@@ -706,6 +767,52 @@ export default function Capacitaciones() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-contentType">Tipo de Contenido</Label>
+                <Select
+                  value={editFormData.contentType}
+                  onValueChange={(value: string) => setEditFormData({ ...editFormData, contentType: value, contentUrl: "", contentText: "" })}
+                >
+                  <SelectTrigger id="edit-contentType" data-testid="select-edit-content-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="presencial">Presencial (sin contenido digital)</SelectItem>
+                    <SelectItem value="video">Video (URL)</SelectItem>
+                    <SelectItem value="pdf">PDF (URL)</SelectItem>
+                    <SelectItem value="formulario">Formulario (URL)</SelectItem>
+                    <SelectItem value="texto">Texto / Descripción</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {(editFormData.contentType === "video" || editFormData.contentType === "pdf" || editFormData.contentType === "formulario") && (
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="edit-contentUrl">
+                    {editFormData.contentType === "video" ? "URL del Video" : editFormData.contentType === "pdf" ? "URL del PDF" : "URL del Formulario"}
+                  </Label>
+                  <Input
+                    id="edit-contentUrl"
+                    type="url"
+                    value={editFormData.contentUrl}
+                    onChange={(e) => setEditFormData({ ...editFormData, contentUrl: e.target.value })}
+                    placeholder={editFormData.contentType === "video" ? "https://youtube.com/..." : editFormData.contentType === "pdf" ? "https://ejemplo.com/doc.pdf" : "https://forms.google.com/..."}
+                    data-testid="input-edit-content-url"
+                  />
+                </div>
+              )}
+              {editFormData.contentType === "texto" && (
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="edit-contentText">Contenido de Texto</Label>
+                  <Textarea
+                    id="edit-contentText"
+                    value={editFormData.contentText}
+                    onChange={(e) => setEditFormData({ ...editFormData, contentText: e.target.value })}
+                    placeholder="Escribe el contenido que verán los trabajadores..."
+                    rows={4}
+                    data-testid="input-edit-content-text"
+                  />
+                </div>
+              )}
             </div>
             <div className="text-xs text-muted-foreground">
               Los campos marcados con * son obligatorios

@@ -35661,6 +35661,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             estado: attendee.attended ? 'asistio' : (attendee.confirmed ? 'confirmado' : 'invitado'),
             asistenciaId: attendee.id,
             source: 'legacy',
+            contentType: (training as any).contentType ?? 'presencial',
+            contentUrl: (training as any).contentUrl ?? null,
+            contentText: (training as any).contentText ?? null,
           });
         }
       }

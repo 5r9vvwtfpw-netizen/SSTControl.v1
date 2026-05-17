@@ -542,6 +542,10 @@ export const trainings = pgTable("trainings", {
   totalWorkers: integer("total_workers").notNull().default(0),
   validityMonths: integer("validity_months"), // Meses de vigencia para renovación (null = no requiere renovación)
   status: trainingStatusEnum("status").notNull().default("programada"),
+  // Contenido digital de la capacitación
+  contentType: text("content_type").default("presencial"), // presencial | video | pdf | formulario | texto
+  contentUrl: text("content_url"),
+  contentText: text("content_text"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 

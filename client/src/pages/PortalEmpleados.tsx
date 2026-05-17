@@ -2310,6 +2310,9 @@ interface WorkerCapacitacion {
   normativa: string | null;
   estado: string;
   asistenciaId: string;
+  contentType: string | null;
+  contentUrl: string | null;
+  contentText: string | null;
 }
 
 
@@ -2333,6 +2336,7 @@ interface AssignedDocument {
 
 function MisCapacitacionesTab() {
   const { toast } = useToast();
+  const [videoModal, setVideoModal] = useState<{ open: boolean; url: string; titulo: string }>({ open: false, url: "", titulo: "" });
   
   const { data: capacitaciones = [], isLoading } = useQuery<WorkerCapacitacion[]>({
     queryKey: ["/api/portal/mis-capacitaciones"],
@@ -2491,6 +2495,50 @@ function MisCapacitacionesTab() {
                           <TrazabilidadPesvBanner codigoPaso="H02" compacto={true} />
                         </div>
                       )}
+                      {/* Contenido digital adjunto */}
+                      {cap.contentType && cap.contentType !== "presencial" && (
+                        <div className="mt-3 pt-3 border-t">
+                          {cap.contentType === "video" && cap.contentUrl && (
+                            <button
+                              onClick={() => setVideoModal({ open: true, url: cap.contentUrl!, titulo: cap.tituloCurso })}
+                              className="inline-flex items-center gap-2 bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-red-700"
+                              data-testid={`link-video-sst-${cap.asistenciaId}`}
+                            >
+                              <Play className="h-4 w-4" />
+                              Ver Video
+                            </button>
+                          )}
+                          {cap.contentType === "pdf" && cap.contentUrl && (
+                            <a
+                              href={cap.contentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-orange-700"
+                              data-testid={`link-pdf-sst-${cap.asistenciaId}`}
+                            >
+                              <FileText className="h-4 w-4" />
+                              Ver PDF
+                            </a>
+                          )}
+                          {cap.contentType === "formulario" && cap.contentUrl && (
+                            <a
+                              href={cap.contentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 bg-purple-600 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-purple-700"
+                              data-testid={`link-formulario-sst-${cap.asistenciaId}`}
+                            >
+                              <ClipboardList className="h-4 w-4" />
+                              Completar Formulario
+                            </a>
+                          )}
+                          {cap.contentType === "texto" && cap.contentText && (
+                            <div className="bg-muted/40 rounded-md p-3 text-sm text-foreground whitespace-pre-wrap" data-testid={`text-contenido-sst-${cap.asistenciaId}`}>
+                              {cap.contentText}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );
@@ -2546,6 +2594,36 @@ function MisCapacitacionesTab() {
           </CardContent>
         </Card>
       )}
+
+      {/* Modal de Video SST */}
+      <Dialog open={videoModal.open} onOpenChange={(open) => setVideoModal(v => ({ ...v, open }))}>
+        <DialogContent className="max-w-3xl w-full p-0 overflow-hidden">
+          <DialogHeader className="px-4 pt-4 pb-2">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Play className="h-4 w-4 text-red-500" />
+              {videoModal.titulo}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+            <iframe
+              key={videoModal.url}
+              src={getEmbedUrl(videoModal.url)}
+              className="absolute inset-0 w-full h-full"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+              title={videoModal.titulo}
+            />
+          </div>
+          <div className="px-4 py-3 flex items-center justify-between">
+            <a href={videoModal.url} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground underline">
+              Abrir en nueva pestaña
+            </a>
+            <Button variant="outline" size="sm" onClick={() => setVideoModal(v => ({ ...v, open: false }))}>
+              Cerrar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
