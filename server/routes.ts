@@ -40835,6 +40835,47 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PORTAL: Encuesta Diaria del Conductor
   // ================================================
 
+  // POST /api/portal/pesv-capacitaciones/:attendeeId/confirmar - Confirmar asistencia PESV
+  app.post("/api/portal/pesv-capacitaciones/:attendeeId/confirmar", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as schema.User;
+      const { attendeeId } = req.params;
+
+      if (!user.workerId) {
+        return res.status(404).json({ error: "Usuario no asociado a un trabajador" });
+      }
+
+      const [attendee] = await db
+        .select()
+        .from(schema.roadSafetyWorkerAttendees)
+        .where(eq(schema.roadSafetyWorkerAttendees.id, attendeeId))
+        .limit(1);
+
+      if (!attendee) {
+        return res.status(404).json({ error: "Registro de asistencia no encontrado" });
+      }
+
+      if (attendee.workerId !== user.workerId) {
+        return res.status(403).json({ error: "No tiene permiso para confirmar esta asistencia" });
+      }
+
+      if (attendee.confirmedAt) {
+        return res.status(400).json({ error: "Ya ha confirmado asistencia a esta capacitación" });
+      }
+
+      const [updated] = await db
+        .update(schema.roadSafetyWorkerAttendees)
+        .set({ confirmedAt: new Date() })
+        .where(eq(schema.roadSafetyWorkerAttendees.id, attendeeId))
+        .returning();
+
+      return res.json(updated);
+    } catch (error: any) {
+      console.error("Error confirming PESV attendance:", error);
+      res.status(500).json({ error: error.message || "Error al confirmar asistencia" });
+    }
+  });
+
   // GET /api/portal/conductor-status — verifica si el trabajador es conductor
   app.get("/api/portal/conductor-status", requireAuth, async (req, res) => {
     try {

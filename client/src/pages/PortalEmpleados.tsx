@@ -5111,10 +5111,23 @@ function getEmbedUrl(url: string): string {
 }
 
 function MisCapacitacionesPesvTab() {
+  const { toast } = useToast();
   const [videoModal, setVideoModal] = useState<{ open: boolean; url: string; titulo: string }>({ open: false, url: "", titulo: "" });
 
   const { data, isLoading } = useQuery<{ capacitaciones: PesvCapacitacion[] }>({
     queryKey: ["/api/portal/worker/pesv-capacitaciones"],
+  });
+
+  const confirmarPesvMutation = useMutation({
+    mutationFn: (attendeeId: string) =>
+      apiRequest("POST", `/api/portal/pesv-capacitaciones/${attendeeId}/confirmar`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/worker/pesv-capacitaciones"] });
+      toast({ title: "Asistencia confirmada", description: "Ha confirmado su asistencia a la capacitación PESV." });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "No se pudo confirmar la asistencia.", variant: "destructive" });
+    },
   });
 
   if (isLoading) {
@@ -5155,114 +5168,148 @@ function MisCapacitacionesPesvTab() {
             </div>
           ) : (
             <div className="space-y-4">
-              {pendientes.map((cap) => (
-                <div 
-                  key={cap.id} 
-                  className="border rounded-lg p-4"
-                  data-testid={`card-capacitacion-pesv-${cap.id}`}
-                >
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
-                    <div className="space-y-2">
-                      <h4 className="font-semibold" data-testid={`text-titulo-${cap.id}`}>
-                        {cap.titulo}
-                      </h4>
-                      {cap.descripcion && (
-                        <p className="text-sm text-muted-foreground">{cap.descripcion}</p>
-                      )}
-                      <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {format(new Date(cap.fecha), "d 'de' MMMM, yyyy", { locale: es })}
-                        </span>
-                        {cap.horaInicio && (
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            {cap.horaInicio} {cap.horaFin && `- ${cap.horaFin}`}
-                          </span>
-                        )}
+              {pendientes.map((cap) => {
+                const fechaEvento = new Date(cap.fecha);
+                let fechaFinEvento = new Date(cap.fecha);
+                if (cap.horaFin) {
+                  const [hh, mm] = cap.horaFin.split(':').map(Number);
+                  fechaFinEvento.setHours(hh || 23, mm || 59, 59);
+                } else if (cap.horaInicio) {
+                  const [hh, mm] = cap.horaInicio.split(':').map(Number);
+                  fechaFinEvento.setHours((hh || 0) + 2, mm || 0, 0);
+                } else {
+                  fechaFinEvento.setHours(23, 59, 59);
+                }
+                const esFuturo = fechaFinEvento > new Date();
+                const yaConfirmado = !!cap.confirmadoEn;
+
+                return (
+                  <Card key={cap.id} data-testid={`card-capacitacion-pesv-${cap.id}`}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2 flex-wrap">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-base" data-testid={`text-titulo-${cap.id}`}>
+                            {cap.titulo}
+                          </CardTitle>
+                          <CardDescription className="flex items-center gap-2 mt-1 flex-wrap">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {format(fechaEvento, "EEEE d 'de' MMMM, yyyy", { locale: es })}
+                            </span>
+                            {cap.horaInicio && (
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {cap.horaInicio}{cap.horaFin ? ` - ${cap.horaFin}` : ''}
+                              </span>
+                            )}
+                          </CardDescription>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {yaConfirmado ? (
+                            <Badge className="bg-green-600 text-white" data-testid={`badge-confirmado-${cap.id}`}>
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Confirmado
+                            </Badge>
+                          ) : cap.invitado ? (
+                            <Badge className="bg-blue-600 text-white" data-testid={`badge-invitado-${cap.id}`}>
+                              Invitado
+                            </Badge>
+                          ) : null}
+                          {!yaConfirmado && cap.invitado && esFuturo && (
+                            <Button
+                              size="sm"
+                              onClick={() => confirmarPesvMutation.mutate(cap.id)}
+                              disabled={confirmarPesvMutation.isPending}
+                              className="gap-1"
+                              data-testid={`button-confirmar-pesv-${cap.id}`}
+                            >
+                              <UserCheck className="h-4 w-4" />
+                              {confirmarPesvMutation.isPending ? "..." : "Confirmar"}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="grid sm:grid-cols-2 gap-3 text-sm">
                         {cap.lugar && (
-                          <span className="flex items-center gap-1">
+                          <div className="flex items-center gap-2 text-muted-foreground">
                             <MapPin className="h-4 w-4" />
-                            {cap.lugar}
-                          </span>
+                            <span>{cap.lugar}</span>
+                          </div>
+                        )}
+                        {cap.instructor && (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <User className="h-4 w-4" />
+                            <span>Instructor: {cap.instructor}</span>
+                          </div>
+                        )}
+                        {cap.temas && cap.temas.length > 0 && (
+                          <div className="col-span-2 flex flex-wrap gap-1 mt-1">
+                            {cap.temas.map((tema, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">{tema}</Badge>
+                            ))}
+                          </div>
                         )}
                       </div>
-                      {cap.instructor && (
-                        <p className="text-sm">
-                          <span className="text-muted-foreground">Instructor:</span> {cap.instructor}
-                        </p>
-                      )}
-                      {cap.temas && cap.temas.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {cap.temas.map((tema, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">
-                              {tema}
-                            </Badge>
-                          ))}
+
+                      {yaConfirmado && (
+                        <div className="mt-4 pt-3 border-t">
+                          <p className="text-sm text-green-600 flex items-center gap-2">
+                            <CheckCircle2 className="h-4 w-4" />
+                            Usted ha confirmado asistencia a esta capacitación
+                          </p>
                         </div>
                       )}
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      {cap.invitado && (
-                        <Badge className="bg-blue-600 text-white" data-testid={`badge-invitado-${cap.id}`}>
-                          <Bell className="h-3 w-3 mr-1" />
-                          Invitado
-                        </Badge>
-                      )}
-                      {cap.confirmadoEn && (
-                        <Badge className="bg-green-600 text-white" data-testid={`badge-confirmado-${cap.id}`}>
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Confirmado
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  {/* Contenido digital adjunto */}
-                  {cap.contentType && cap.contentType !== "presencial" && (
-                    <div className="mt-3 pt-3 border-t">
-                      {cap.contentType === "video" && cap.contentUrl && (
-                        <button
-                          onClick={() => setVideoModal({ open: true, url: cap.contentUrl!, titulo: cap.titulo })}
-                          className="inline-flex items-center gap-2 bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-red-700"
-                          data-testid={`link-video-${cap.id}`}
-                        >
-                          <Play className="h-4 w-4" />
-                          Ver Video
-                        </button>
-                      )}
-                      {cap.contentType === "pdf" && cap.contentUrl && (
-                        <a
-                          href={cap.contentUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-orange-700"
-                          data-testid={`link-pdf-${cap.id}`}
-                        >
-                          <FileText className="h-4 w-4" />
-                          Ver PDF
-                        </a>
-                      )}
-                      {cap.contentType === "formulario" && cap.contentUrl && (
-                        <a
-                          href={cap.contentUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 bg-purple-600 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-purple-700"
-                          data-testid={`link-formulario-${cap.id}`}
-                        >
-                          <ClipboardList className="h-4 w-4" />
-                          Completar Formulario
-                        </a>
-                      )}
-                      {cap.contentType === "texto" && cap.contentText && (
-                        <div className="bg-muted/40 rounded-md p-3 text-sm text-foreground whitespace-pre-wrap" data-testid={`text-contenido-${cap.id}`}>
-                          {cap.contentText}
+
+                      {/* Contenido digital adjunto */}
+                      {cap.contentType && cap.contentType !== "presencial" && (
+                        <div className="mt-3 pt-3 border-t">
+                          {cap.contentType === "video" && cap.contentUrl && (
+                            <button
+                              onClick={() => setVideoModal({ open: true, url: cap.contentUrl!, titulo: cap.titulo })}
+                              className="inline-flex items-center gap-2 bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-red-700"
+                              data-testid={`link-video-pesv-${cap.id}`}
+                            >
+                              <Play className="h-4 w-4" />
+                              Ver Video
+                            </button>
+                          )}
+                          {cap.contentType === "pdf" && cap.contentUrl && (
+                            <a
+                              href={cap.contentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-orange-700"
+                              data-testid={`link-pdf-pesv-${cap.id}`}
+                            >
+                              <FileText className="h-4 w-4" />
+                              Ver PDF
+                            </a>
+                          )}
+                          {cap.contentType === "formulario" && cap.contentUrl && (
+                            <a
+                              href={cap.contentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 bg-purple-600 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-purple-700"
+                              data-testid={`link-formulario-pesv-${cap.id}`}
+                            >
+                              <ClipboardList className="h-4 w-4" />
+                              Completar Formulario
+                            </a>
+                          )}
+                          {cap.contentType === "texto" && cap.contentText && (
+                            <div className="bg-muted/40 rounded-md p-3 text-sm text-foreground whitespace-pre-wrap" data-testid={`text-contenido-pesv-${cap.id}`}>
+                              {cap.contentText}
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
-                  )}
-                </div>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </CardContent>
