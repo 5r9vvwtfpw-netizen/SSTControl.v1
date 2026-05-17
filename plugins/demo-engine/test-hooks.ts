@@ -3,6 +3,8 @@ import { db } from "../../server/db";
 import { sql } from "drizzle-orm";
 import { runHousekeeping } from "./service";
 import logger from "../../server/lib/logger";
+import { storage } from "../../server/storage";
+import { comparePasswords } from "../../server/auth";
 
 function extractRows(result: any): any[] {
   return (result as any).rows || result;
@@ -95,6 +97,64 @@ router.post("/demo/force-available", async (req: Request, res: Response) => {
     return res.json({ success: true, message: `Room ${roomId} forced to available` });
   } catch (error: any) {
     logger.error({ err: error }, "[TestHooks] force-available failed");
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/test/login-redirect?username=X&password=Y — login sin CAPTCHA con redirect (para Playwright)
+// El navegador navega a esta URL, recibe la cookie de sesión y es redirigido al dashboard
+router.get("/login-redirect", async (req: Request, res: Response) => {
+  try {
+    const { username, password, redirect = "/" } = req.query as { username?: string; password?: string; redirect?: string };
+    if (!username || !password) {
+      return res.status(400).send("username y password son requeridos como query params");
+    }
+    const user = await storage.getUserByUsername(username);
+    if (!user) {
+      return res.status(401).send("Usuario no encontrado");
+    }
+    const valid = await comparePasswords(password, user.password);
+    if (!valid) {
+      return res.status(401).send("Contraseña incorrecta");
+    }
+    req.logIn(user, (err) => {
+      if (err) {
+        logger.error({ err }, "[TestHooks] login-redirect session error");
+        return res.status(500).send("Error al establecer sesión");
+      }
+      return res.redirect(redirect as string);
+    });
+  } catch (error: any) {
+    logger.error({ err: error }, "[TestHooks] login-redirect failed");
+    return res.status(500).send(error.message);
+  }
+});
+
+// POST /api/test/login — login sin CAPTCHA para pruebas automatizadas (solo TEST_MODE)
+router.post("/login", async (req: Request, res: Response) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: "username y password requeridos" });
+    }
+    const user = await storage.getUserByUsername(username);
+    if (!user) {
+      return res.status(401).json({ error: "Usuario no encontrado" });
+    }
+    const valid = await comparePasswords(password, user.password);
+    if (!valid) {
+      return res.status(401).json({ error: "Contraseña incorrecta" });
+    }
+    req.logIn(user, (err) => {
+      if (err) {
+        logger.error({ err }, "[TestHooks] login session error");
+        return res.status(500).json({ error: "Error al establecer sesión" });
+      }
+      const { password: _pw, ...safeUser } = user as any;
+      return res.json({ ok: true, user: safeUser });
+    });
+  } catch (error: any) {
+    logger.error({ err: error }, "[TestHooks] login failed");
     return res.status(500).json({ error: error.message });
   }
 });
