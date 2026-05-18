@@ -14,6 +14,7 @@ interface TrainingCardProps {
   onManageAttendees?: (id: string) => void;
   canEdit?: boolean;
   canPrint?: boolean;
+  pdfUrl?: string;
 }
 
 const statusConfig = {
@@ -23,7 +24,7 @@ const statusConfig = {
   cancelada: { label: "Cancelada", variant: "destructive" as const },
 };
 
-export function TrainingCard({ id, title, date, attendees, totalWorkers, status, onEdit, onManageAttendees, canEdit, canPrint }: TrainingCardProps) {
+export function TrainingCard({ id, title, date, attendees, totalWorkers, status, onEdit, onManageAttendees, canEdit, canPrint, pdfUrl }: TrainingCardProps) {
   // Corregir división por cero y mostrar 100% cuando está completada
   // Limitar a máximo 100% para evitar desbordamiento visual
   const rawPercentage = totalWorkers > 0 
@@ -97,7 +98,7 @@ export function TrainingCard({ id, title, date, attendees, totalWorkers, status,
           <Button
             variant="outline"
             className="w-full"
-            onClick={() => window.open(`/api/trainings/${id}/lista-asistencia/pdf`, '_blank')}
+            onClick={() => window.open(pdfUrl ?? `/api/trainings/${id}/lista-asistencia/pdf`, '_blank')}
             data-testid={`button-attendance-pdf-${id}`}
           >
             <Printer className="h-4 w-4 mr-2" />
