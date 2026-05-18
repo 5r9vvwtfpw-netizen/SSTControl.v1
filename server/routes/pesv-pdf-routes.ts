@@ -715,6 +715,153 @@ export function registerPesvPdfRoutes(app: Express) {
     }
   });
 
+  // 13b. GET /api/pesv/capacitaciones/:id/lista-asistencia/pdf — Lista de asistencia individual con firmas
+  app.get('/api/pesv/capacitaciones/:id/lista-asistencia/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+      const { id } = req.params;
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const [training] = await db.select().from(schema.roadSafetyTrainings)
+        .where(and(eq(schema.roadSafetyTrainings.id, id), eq(schema.roadSafetyTrainings.companyId, companyId)))
+        .limit(1);
+      if (!training) return res.status(404).send('Capacitación no encontrada');
+
+      // Trabajadores invitados (roadSafetyWorkerAttendees)
+      const workerRows = await db.select({
+        name: schema.workers.name,
+        identificationNumber: schema.workers.identificationNumber,
+        position: schema.workers.position,
+      })
+        .from(schema.roadSafetyWorkerAttendees)
+        .innerJoin(schema.workers, eq(schema.roadSafetyWorkerAttendees.workerId, schema.workers.id))
+        .where(eq(schema.roadSafetyWorkerAttendees.trainingId, id));
+
+      // Conductores (roadSafetyAttendees)
+      const driverRows = await db.select({
+        name: schema.drivers.name,
+        identificationNumber: schema.drivers.identificationNumber,
+      })
+        .from(schema.roadSafetyAttendees)
+        .innerJoin(schema.drivers, eq(schema.roadSafetyAttendees.driverId, schema.drivers.id))
+        .where(eq(schema.roadSafetyAttendees.trainingId, id));
+
+      const allAttendees: { name: string; identificationNumber: string; position: string }[] = [
+        ...workerRows.map(w => ({ name: w.name, identificationNumber: w.identificationNumber, position: w.position })),
+        ...driverRows.map(d => ({ name: d.name, identificationNumber: d.identificationNumber, position: 'Conductor' })),
+      ];
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      const safeName = (training.title || 'capacitacion').replace(/[^a-z0-9]/gi, '-').toLowerCase();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="lista-asistencia-pesv-${safeName}.pdf"`);
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company,
+        documentTitle: 'LISTA DE ASISTENCIA A CAPACITACIÓN PESV',
+        documentCode: 'PESV-H02-LISTA',
+        logoBuffer,
+      });
+
+      // ── Datos de la capacitación ──
+      const margin = 35;
+      const pageWidth = doc.page.width;
+      const colW = (pageWidth - 2 * margin) / 2;
+
+      doc.y = y + 8;
+      addSectionBar(doc, 'DATOS DE LA CAPACITACIÓN', y + 8);
+      y = doc.y + 6;
+
+      const field = (label: string, value: string, x: number, yw: number, w: number) => {
+        doc.fontSize(8).font('Helvetica-Bold').fillColor('#333333').text(label + ': ', x, yw, { continued: true, width: w });
+        doc.font('Helvetica').text(value || 'N/A', { width: w });
+      };
+
+      field('Tema', training.title, margin, y, colW - 10);
+      field('Fecha', training.trainingDate ? formatDate(training.trainingDate) : 'N/A', margin + colW, y, colW - 10);
+      y = doc.y + 2;
+      field('Instructor', training.instructor || 'N/A', margin, y, colW - 10);
+      field('Lugar', training.location || 'N/A', margin + colW, y, colW - 10);
+      y = doc.y + 2;
+      const horario = training.startTime && training.endTime ? `${training.startTime} - ${training.endTime}` : 'N/A';
+      field('Horario', horario, margin, y, colW - 10);
+      field('Normativa', 'Resolución 40595/2022', margin + colW, y, colW - 10);
+      y = doc.y + 10;
+
+      // ── Tabla de asistentes ──
+      addSectionBar(doc, 'PARTICIPANTES', y);
+      y = doc.y + 8;
+
+      const tableWidth = pageWidth - 2 * margin;
+      const colNum = 22;
+      const colFirma = 110;
+      const colDoc = 80;
+      const colCargo = 90;
+      const colName = tableWidth - colNum - colFirma - colDoc - colCargo;
+      const rowH = 22;
+      const headerH = 18;
+
+      // Encabezado de tabla
+      doc.rect(margin, y, tableWidth, headerH).fill('#1a4f8a');
+      doc.fillColor('#ffffff').fontSize(7.5).font('Helvetica-Bold');
+      let tx = margin;
+      doc.text('N°', tx + 3, y + 5, { width: colNum - 4, lineBreak: false, align: 'center' }); tx += colNum;
+      doc.text('Nombre Completo', tx + 3, y + 5, { width: colName - 4, lineBreak: false }); tx += colName;
+      doc.text('Documento', tx + 3, y + 5, { width: colDoc - 4, lineBreak: false }); tx += colDoc;
+      doc.text('Cargo', tx + 3, y + 5, { width: colCargo - 4, lineBreak: false }); tx += colCargo;
+      doc.text('Firma', tx + 3, y + 5, { width: colFirma - 4, lineBreak: false });
+      y += headerH;
+
+      const totalRows = allAttendees.length > 0 ? allAttendees.length : Math.max(training.totalAttendees || 10, 5);
+      const emptyRows = allAttendees.length === 0;
+
+      for (let i = 0; i < totalRows; i++) {
+        if (y + rowH > doc.page.height - 100) {
+          doc.addPage();
+          y = 35;
+        }
+        const att = emptyRows ? null : allAttendees[i];
+        const bg = i % 2 === 0 ? '#f5f7fa' : '#ffffff';
+        doc.rect(margin, y, tableWidth, rowH).fill(bg).stroke('#d0d7de');
+        doc.fillColor('#222222').font('Helvetica').fontSize(7.5);
+
+        tx = margin;
+        doc.text(String(i + 1), tx + 2, y + 7, { width: colNum - 4, lineBreak: false, align: 'center' }); tx += colNum;
+        doc.moveTo(tx, y).lineTo(tx, y + rowH).stroke('#d0d7de');
+        doc.text(att?.name || '', tx + 3, y + 7, { width: colName - 6, lineBreak: false }); tx += colName;
+        doc.moveTo(tx, y).lineTo(tx, y + rowH).stroke('#d0d7de');
+        doc.text(att?.identificationNumber || '', tx + 3, y + 7, { width: colDoc - 6, lineBreak: false }); tx += colDoc;
+        doc.moveTo(tx, y).lineTo(tx, y + rowH).stroke('#d0d7de');
+        doc.text(att?.position || '', tx + 3, y + 7, { width: colCargo - 6, lineBreak: false }); tx += colCargo;
+        doc.moveTo(tx, y).lineTo(tx, y + rowH).stroke('#d0d7de');
+        y += rowH;
+      }
+
+      doc.y = y + 14;
+      doc.fontSize(7).fillColor('#666666').font('Helvetica-Oblique')
+        .text('Al firmar esta lista, el participante certifica su asistencia y comprensión del tema impartido.', margin, doc.y);
+      doc.y += 4;
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-lista-asistencia');
+    }
+  });
+
   // 14. GET /api/pesv/inspecciones/pdf
   app.get('/api/pesv/inspecciones/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
     try {

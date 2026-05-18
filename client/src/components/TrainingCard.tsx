@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, CheckCircle2, Pencil, UserPlus } from "lucide-react";
+import { Calendar, Users, CheckCircle2, Pencil, UserPlus, Printer } from "lucide-react";
 
 interface TrainingCardProps {
   id: string;
@@ -13,6 +13,7 @@ interface TrainingCardProps {
   onEdit?: (id: string) => void;
   onManageAttendees?: (id: string) => void;
   canEdit?: boolean;
+  canPrint?: boolean;
 }
 
 const statusConfig = {
@@ -22,7 +23,7 @@ const statusConfig = {
   cancelada: { label: "Cancelada", variant: "destructive" as const },
 };
 
-export function TrainingCard({ id, title, date, attendees, totalWorkers, status, onEdit, onManageAttendees, canEdit }: TrainingCardProps) {
+export function TrainingCard({ id, title, date, attendees, totalWorkers, status, onEdit, onManageAttendees, canEdit, canPrint }: TrainingCardProps) {
   // Corregir división por cero y mostrar 100% cuando está completada
   // Limitar a máximo 100% para evitar desbordamiento visual
   const rawPercentage = totalWorkers > 0 
@@ -91,6 +92,17 @@ export function TrainingCard({ id, title, date, attendees, totalWorkers, status,
             </div>
             <span className="text-xs font-medium text-chart-2">{percentage}%</span>
           </div>
+        )}
+        {canPrint && (
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => window.open(`/api/trainings/${id}/lista-asistencia/pdf`, '_blank')}
+            data-testid={`button-attendance-pdf-${id}`}
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            Lista de Asistencia (PDF)
+          </Button>
         )}
       </CardContent>
     </Card>

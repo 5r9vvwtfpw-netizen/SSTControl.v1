@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Users, ArrowLeft, FileDown } from "lucide-react";
+import { Plus, Search, Users, ArrowLeft, FileDown, Printer } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { RoadSafetyTraining, Driver, Worker, insertRoadSafetyTrainingSchema } from "@shared/schema";
@@ -557,6 +557,15 @@ export default function PesvCapacitaciones() {
                     Gestionar Asistencia
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => window.open(`/api/pesv/capacitaciones/${training.id}/lista-asistencia/pdf`, '_blank')}
+                  data-testid={`button-attendance-pdf-${training.id}`}
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Lista de Asistencia (PDF)
+                </Button>
               </CardContent>
             </Card>
           ))

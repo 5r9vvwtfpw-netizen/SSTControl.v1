@@ -6773,6 +6773,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/trainings/:id/lista-asistencia/pdf — Lista de asistencia individual SST con espacio de firma
+  app.get("/api/trainings/:id/lista-asistencia/pdf", requirePermission("trainings:view"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const { id } = req.params;
+
+      const training = await storage.getTrainingById(id);
+      if (!training) return res.status(404).send("Capacitación no encontrada");
+      if (!isAdmin && training.companyId !== userCompanyId) return res.status(403).send("Sin permiso");
+
+      const effectiveCompanyId = training.companyId;
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, effectiveCompanyId)).limit(1);
+      if (!company) return res.status(404).send("Empresa no encontrada");
+
+      // Asistentes con datos de trabajador
+      const attendeeRows = await db.select({
+        name: schema.workers.name,
+        identificationNumber: schema.workers.identificationNumber,
+        position: schema.workers.position,
+      })
+        .from(schema.trainingAttendees)
+        .innerJoin(schema.workers, eq(schema.trainingAttendees.workerId, schema.workers.id))
+        .where(eq(schema.trainingAttendees.trainingId, id));
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const pdf_subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
+      const pdf_trialStatus = getTrialStatus(pdf_subscription?.status || 'trial', pdf_subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf_trialStatus.requiresWatermark);
+
+      const safeName = (training.title || 'capacitacion').replace(/[^a-z0-9]/gi, '-').toLowerCase();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="lista-asistencia-sst-${safeName}.pdf"`);
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(effectiveCompanyId, false);
+
+      let y = await addStandardHeader({
+        doc, company,
+        documentTitle: 'LISTA DE ASISTENCIA A CAPACITACIÓN SST',
+        documentCode: `SST-1.2.1-LISTA-${new Date().getFullYear()}`,
+        logoBuffer,
+      });
+
+      const margin = 35;
+      const pageWidth = doc.page.width;
+      const colW = (pageWidth - 2 * margin) / 2;
+
+      // ── Datos de la capacitación ──
+      addSectionBar(doc, 'DATOS DE LA CAPACITACIÓN', y + 8);
+      y = doc.y + 6;
+
+      const field = (label: string, value: string, x: number, yw: number, w: number) => {
+        doc.fontSize(8).font('Helvetica-Bold').fillColor('#333333').text(label + ': ', x, yw, { continued: true, width: w });
+        doc.font('Helvetica').text(value || 'N/A', { width: w });
+      };
+
+      const trainingDate = training.date
+        ? (() => { const [yr, mo, dy] = String(training.date).split('-'); return `${dy}/${mo}/${yr}`; })()
+        : 'N/A';
+
+      field('Tema', training.title, margin, y, colW - 10);
+      field('Fecha', trainingDate, margin + colW, y, colW - 10);
+      y = doc.y + 2;
+      field('Instructor', training.instructor || 'N/A', margin, y, colW - 10);
+      field('Lugar', training.location || 'N/A', margin + colW, y, colW - 10);
+      y = doc.y + 2;
+      const horario = training.startTime && training.endTime ? `${training.startTime} - ${training.endTime}` : 'N/A';
+      field('Horario', horario, margin, y, colW - 10);
+      field('Normativa', 'Resolución 0312/2019 — ISO 45001:2018', margin + colW, y, colW - 10);
+      y = doc.y + 10;
+
+      // ── Tabla de asistentes ──
+      addSectionBar(doc, 'PARTICIPANTES', y);
+      y = doc.y + 8;
+
+      const tableWidth = pageWidth - 2 * margin;
+      const colNum = 22;
+      const colFirma = 110;
+      const colDoc = 80;
+      const colCargo = 90;
+      const colName = tableWidth - colNum - colFirma - colDoc - colCargo;
+      const rowH = 22;
+      const headerH = 18;
+
+      doc.rect(margin, y, tableWidth, headerH).fill('#1a5c2e');
+      doc.fillColor('#ffffff').fontSize(7.5).font('Helvetica-Bold');
+      let tx = margin;
+      doc.text('N°', tx + 3, y + 5, { width: colNum - 4, lineBreak: false, align: 'center' }); tx += colNum;
+      doc.text('Nombre Completo', tx + 3, y + 5, { width: colName - 4, lineBreak: false }); tx += colName;
+      doc.text('Documento', tx + 3, y + 5, { width: colDoc - 4, lineBreak: false }); tx += colDoc;
+      doc.text('Cargo', tx + 3, y + 5, { width: colCargo - 4, lineBreak: false }); tx += colCargo;
+      doc.text('Firma', tx + 3, y + 5, { width: colFirma - 4, lineBreak: false });
+      y += headerH;
+
+      const totalRows = attendeeRows.length > 0 ? attendeeRows.length : Math.max(training.totalWorkers || 10, 5);
+      const emptyRows = attendeeRows.length === 0;
+
+      for (let i = 0; i < totalRows; i++) {
+        if (y + rowH > doc.page.height - 100) {
+          doc.addPage();
+          y = 35;
+        }
+        const att = emptyRows ? null : attendeeRows[i];
+        const bg = i % 2 === 0 ? '#f5f7fa' : '#ffffff';
+        doc.rect(margin, y, tableWidth, rowH).fill(bg).stroke('#d0d7de');
+        doc.fillColor('#222222').font('Helvetica').fontSize(7.5);
+
+        tx = margin;
+        doc.text(String(i + 1), tx + 2, y + 7, { width: colNum - 4, lineBreak: false, align: 'center' }); tx += colNum;
+        doc.moveTo(tx, y).lineTo(tx, y + rowH).stroke('#d0d7de');
+        doc.text(att?.name || '', tx + 3, y + 7, { width: colName - 6, lineBreak: false }); tx += colName;
+        doc.moveTo(tx, y).lineTo(tx, y + rowH).stroke('#d0d7de');
+        doc.text(att?.identificationNumber || '', tx + 3, y + 7, { width: colDoc - 6, lineBreak: false }); tx += colDoc;
+        doc.moveTo(tx, y).lineTo(tx, y + rowH).stroke('#d0d7de');
+        doc.text(att?.position || '', tx + 3, y + 7, { width: colCargo - 6, lineBreak: false }); tx += colCargo;
+        doc.moveTo(tx, y).lineTo(tx, y + rowH).stroke('#d0d7de');
+        y += rowH;
+      }
+
+      doc.y = y + 14;
+      doc.fontSize(7).fillColor('#666666').font('Helvetica-Oblique')
+        .text('Al firmar esta lista, el participante certifica su asistencia y comprensión del tema impartido. Resolución 0312/2019 Art. 1.2.1.', margin, doc.y);
+      doc.y += 4;
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error: any) {
+      console.error('Error generando lista asistencia SST:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
   app.post("/api/trainings/:trainingId/attendees", requirePermission("trainings:edit"), async (req, res) => {
     try {
       const userCompanyId = req.user!.companyId;

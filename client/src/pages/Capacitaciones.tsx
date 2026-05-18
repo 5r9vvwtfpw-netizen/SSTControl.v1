@@ -885,6 +885,7 @@ export default function Capacitaciones() {
               onEdit={handleEditClick}
               onManageAttendees={handleManageAttendeesClick}
               canEdit={user?.role ? hasCompanyAdminAccess(user.role) : false}
+              canPrint={user?.role ? hasCompanyAdminAccess(user.role) : false}
             />
           ))}
         </div>
