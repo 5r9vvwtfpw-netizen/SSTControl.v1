@@ -415,12 +415,7 @@ export default function CompanyManagement() {
       changes.push(`Trabajadores: ${editingCompany.numberOfWorkers ?? 1} → ${formData.numberOfWorkers}`);
     }
 
-    if (formData.ciiuCode !== (editingCompany.ciiuCode ?? "")) {
-      changes.push(`Código CIIU: ${editingCompany.ciiuCode || 'Sin definir'} → ${formData.ciiuCode}`);
-    }
-    if (formData.riskLevel !== (editingCompany.riskLevel ?? "I")) {
-      changes.push(`Nivel de Riesgo: ${editingCompany.riskLevel || 'I'} → ${formData.riskLevel}`);
-    }
+
     return changes;
   };
 
