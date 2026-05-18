@@ -510,24 +510,6 @@ export default function CompanyManagement() {
             });
           }, 500);
 
-          // Mensaje informativo sobre ajuste de facturación en próxima factura
-          if (migration.isUpgrade && migration.diferenciaMensual > 0) {
-            setTimeout(() => {
-              toast({
-                title: "Información de facturación PESV",
-                description: `Su plan PESV ha sido actualizado. La diferencia se aplicará automáticamente en su próxima factura mensual. No requiere acción adicional.`,
-                duration: 20000,
-              });
-            }, 2000);
-          } else if (migration.diferenciaMensual < 0) {
-            setTimeout(() => {
-              toast({
-                title: "Ajuste de facturación PESV",
-                description: `Su plan PESV ha sido ajustado. El cambio se reflejará en su próxima factura mensual.`,
-                duration: 15000,
-              });
-            }, 2000);
-          }
         }
       } else {
         const newCompany = await createCompanyMutation.mutateAsync(formData);
