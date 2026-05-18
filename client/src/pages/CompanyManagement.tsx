@@ -414,9 +414,7 @@ export default function CompanyManagement() {
     if (formData.numberOfWorkers !== (editingCompany.numberOfWorkers ?? 1)) {
       changes.push(`Trabajadores: ${editingCompany.numberOfWorkers ?? 1} → ${formData.numberOfWorkers}`);
     }
-    if (formData.numberOfVehicles !== (editingCompany.numberOfVehicles ?? 0)) {
-      changes.push(`Vehículos: ${editingCompany.numberOfVehicles ?? 0} → ${formData.numberOfVehicles}`);
-    }
+
     if (formData.ciiuCode !== (editingCompany.ciiuCode ?? "")) {
       changes.push(`Código CIIU: ${editingCompany.ciiuCode || 'Sin definir'} → ${formData.ciiuCode}`);
     }
