@@ -35882,6 +35882,44 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           fechaConfirmacion: new Date(),
         });
 
+        // Notificar al administrador de la empresa
+        try {
+          const [worker, evento] = await Promise.all([
+            storage.getWorker(user.workerId!, companyId!),
+            storage.getCapacitacionEvento(asistencia.eventoId, companyId!),
+          ]);
+          let adminUser = await storage.getCompanySuperusuario(companyId!);
+          if (!adminUser) {
+            const [fallback] = await db.select().from(schema.users)
+              .where(and(eq(schema.users.companyId, companyId!), eq(schema.users.role, 'admin')))
+              .limit(1);
+            adminUser = fallback;
+          }
+          if (adminUser && worker && evento) {
+            const fechaStr = evento.fechaInicio
+              ? new Date(evento.fechaInicio).toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+              : 'fecha programada';
+            const msg = await storage.createInternalMessage({
+              companyId: companyId!,
+              senderId: user.id,
+              senderName: worker.name || user.fullName || user.username,
+              senderRole: user.role,
+              receiverId: adminUser.id,
+              receiverName: adminUser.fullName || adminUser.username,
+              receiverRole: adminUser.role,
+              subject: `Confirmación de asistencia: ${evento.tituloCurso}`,
+              content: `${worker.name} ha confirmado su asistencia a la capacitación "${evento.tituloCurso}" programada para el ${fechaStr}.`,
+              priority: 'normal',
+              status: 'unread',
+              relatedEntity: 'training',
+              relatedEntityId: asistencia.eventoId,
+            });
+            notifyNewMessage(adminUser.id, user.id, msg.id);
+          }
+        } catch (notifErr: any) {
+          console.error('[Training Confirmation] Error notifying admin (new system):', notifErr.message);
+        }
+
         return res.json(updated);
       }
       
@@ -35903,6 +35941,45 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           confirmed: 1,
           confirmedAt: new Date(),
         });
+
+        // Notificar al administrador de la empresa
+        try {
+          const [worker, training] = await Promise.all([
+            storage.getWorker(user.workerId!, companyId!),
+            storage.getTraining(legacyAttendee.trainingId, companyId!),
+          ]);
+          let adminUser = await storage.getCompanySuperusuario(companyId!);
+          if (!adminUser) {
+            const [fallback] = await db.select().from(schema.users)
+              .where(and(eq(schema.users.companyId, companyId!), eq(schema.users.role, 'admin')))
+              .limit(1);
+            adminUser = fallback;
+          }
+          if (adminUser && worker && training) {
+            const trainingTopic = training.topic || training.title || 'Capacitación';
+            const fechaStr = training.date
+              ? new Date(training.date).toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+              : 'fecha programada';
+            const msg = await storage.createInternalMessage({
+              companyId: companyId!,
+              senderId: user.id,
+              senderName: worker.name || user.fullName || user.username,
+              senderRole: user.role,
+              receiverId: adminUser.id,
+              receiverName: adminUser.fullName || adminUser.username,
+              receiverRole: adminUser.role,
+              subject: `Confirmación de asistencia: ${trainingTopic}`,
+              content: `${worker.name} ha confirmado su asistencia a la capacitación "${trainingTopic}" programada para el ${fechaStr}.`,
+              priority: 'normal',
+              status: 'unread',
+              relatedEntity: 'training',
+              relatedEntityId: legacyAttendee.trainingId,
+            });
+            notifyNewMessage(adminUser.id, user.id, msg.id);
+          }
+        } catch (notifErr: any) {
+          console.error('[Training Confirmation] Error notifying admin (legacy):', notifErr.message);
+        }
 
         return res.json(updated);
       }
