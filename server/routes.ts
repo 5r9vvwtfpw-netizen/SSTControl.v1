@@ -9171,6 +9171,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
             })
             .returning();
           invitations.push(invitation);
+
+          // Enviar notificación al Portal del trabajador
+          try {
+            const workerUser = await storage.getUserByWorkerId(workerId);
+            if (workerUser) {
+              const fechaStr = training.trainingDate
+                ? new Date(training.trainingDate).toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+                : 'Fecha por confirmar';
+              const msg = await storage.createInternalMessage({
+                companyId,
+                senderId: user.id,
+                senderName: user.fullName || user.username,
+                senderRole: user.role,
+                receiverId: workerUser.id,
+                receiverName: workerUser.fullName || workerUser.username,
+                receiverRole: workerUser.role,
+                subject: `Invitación a capacitación PESV: ${training.title}`,
+                content: `Has sido invitado(a) a la capacitación de seguridad vial "${training.title}" programada para el ${fechaStr}. Por favor confirma tu asistencia desde el Portal de Empleados, en la sección Capacitaciones PESV.`,
+                priority: 'normal',
+                status: 'unread',
+                relatedEntity: 'training',
+                relatedEntityId: id,
+              });
+              notifyNewMessage(workerUser.id, user.id, msg.id);
+            }
+          } catch (notifErr: any) {
+            console.error(`[PESV Invite] Error notifying worker ${workerId}:`, notifErr.message);
+          }
         }
       }
 
