@@ -41082,6 +41082,49 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         .where(eq(schema.roadSafetyWorkerAttendees.id, attendeeId))
         .returning();
 
+      // Notificar al administrador de la empresa
+      try {
+        const companyId = user.companyId;
+        const [training] = await db
+          .select()
+          .from(schema.roadSafetyTrainings)
+          .where(eq(schema.roadSafetyTrainings.id, attendee.trainingId))
+          .limit(1);
+
+        const worker = companyId ? await storage.getWorker(user.workerId!, companyId) : undefined;
+        let adminUser = companyId ? await storage.getCompanySuperusuario(companyId) : undefined;
+        if (!adminUser && companyId) {
+          const [fallback] = await db.select().from(schema.users)
+            .where(and(eq(schema.users.companyId, companyId), eq(schema.users.role, 'admin')))
+            .limit(1);
+          adminUser = fallback;
+        }
+
+        if (adminUser && worker && training) {
+          const fechaStr = training.trainingDate
+            ? new Date(training.trainingDate).toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+            : 'fecha programada';
+          const msg = await storage.createInternalMessage({
+            companyId: companyId!,
+            senderId: user.id,
+            senderName: worker.name || user.fullName || user.username,
+            senderRole: user.role,
+            receiverId: adminUser.id,
+            receiverName: adminUser.fullName || adminUser.username,
+            receiverRole: adminUser.role,
+            subject: `Confirmación de asistencia PESV: ${training.title}`,
+            content: `${worker.name} ha confirmado su asistencia a la capacitación PESV "${training.title}" programada para el ${fechaStr}.`,
+            priority: 'normal',
+            status: 'unread',
+            relatedEntity: 'training',
+            relatedEntityId: attendee.trainingId,
+          });
+          notifyNewMessage(adminUser.id, user.id, msg.id);
+        }
+      } catch (notifErr: any) {
+        console.error('[PESV Confirmation] Error notifying admin:', notifErr.message);
+      }
+
       return res.json(updated);
     } catch (error: any) {
       console.error("Error confirming PESV attendance:", error);
