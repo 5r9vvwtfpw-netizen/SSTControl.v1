@@ -133,52 +133,36 @@ export default function CompanyManagement() {
   const [pendingPricingUpdate, setPendingPricingUpdate] = useState<{ changedFields: string[] } | null>(null);
   
   const [livePrice, setLivePrice] = useState<{ base: number; current: number } | null>(null);
-  const [livePriceLoading, setLivePriceLoading] = useState(false);
   const livePriceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchLivePrice = useCallback(async (companyId: string, data: CompanyFormData) => {
-    setLivePriceLoading(true);
-    try {
-      const res = await apiRequest("POST", `/api/companies/${companyId}/preview-quote`, {
-        numberOfWorkers: data.numberOfWorkers,
-        numberOfVehicles: data.numberOfVehicles,
-        riskLevel: data.riskLevel,
-        ciiuCode: data.ciiuCode,
-        name: data.name,
-      });
-      const result = await res.json();
-      if (result.success && result.newBaseMonthlyPrice) {
-        setLivePrice({ base: result.newBaseMonthlyPrice, current: result.newCurrentPeriodPrice || result.newBaseMonthlyPrice });
-      }
-    } catch {
-      setLivePrice(null);
-    } finally {
-      setLivePriceLoading(false);
-    }
-  }, []);
+  const calcWorkerPrice = (workers: number): number => {
+    const base = 20000;
+    const additionalRate = 10000;
+    return base + Math.max(0, workers - 2) * additionalRate;
+  };
+
+  const formatCOP = (amount: number): string =>
+    `$${amount.toLocaleString("es-CO")} COP`;
 
   useEffect(() => {
     if (!editingCompany) {
       setLivePrice(null);
       return;
     }
-    const hasChanges =
-      formData.numberOfWorkers !== (editingCompany.numberOfWorkers ?? 1);
+    const hasChanges = formData.numberOfWorkers !== (editingCompany.numberOfWorkers ?? 1);
 
     if (!hasChanges) {
       setLivePrice(null);
       return;
     }
 
-    if (livePriceTimerRef.current) clearTimeout(livePriceTimerRef.current);
-    livePriceTimerRef.current = setTimeout(() => {
-      fetchLivePrice(editingCompany.id, formData);
-    }, 800);
+    const newPrice = calcWorkerPrice(formData.numberOfWorkers);
+    setLivePrice({ base: newPrice, current: newPrice });
 
     return () => {
       if (livePriceTimerRef.current) clearTimeout(livePriceTimerRef.current);
     };
-  }, [editingCompany, formData.numberOfWorkers, fetchLivePrice]);
+  }, [editingCompany, formData.numberOfWorkers]);
 
   // Estados para diagnóstico de empresas (superadmin)
   const [diagnosticoEmpresasOpen, setDiagnosticoEmpresasOpen] = useState(false);
@@ -1060,34 +1044,30 @@ export default function CompanyManagement() {
                 </div>
               </div>
 
-              {editingCompany && (livePriceLoading || livePrice) && (
+              {editingCompany && livePrice && (
                 <div className="col-span-2 mt-2" data-testid="live-price-preview">
                   <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <CreditCard className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Vista previa del nuevo precio</span>
+                        <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Vista previa del nuevo precio mensual</span>
                       </div>
-                      {livePriceLoading ? (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                          Consultando precio actualizado...
-                        </div>
-                      ) : livePrice ? (
-                        <div className="space-y-1">
-                          <p className="text-lg font-semibold" data-testid="text-live-price">
-                            Nuevo precio disponible
+                      <div className="space-y-1">
+                        <div className="flex items-baseline gap-2">
+                          <p className="text-2xl font-bold text-foreground" data-testid="text-live-price">
+                            {formatCOP(livePrice.base)}
                           </p>
-                          {editingCompany.quoteBaseMonthlyPrice && (
-                            <p className="text-xs text-muted-foreground" data-testid="text-price-comparison">
-                              El precio se actualizará al guardar los cambios
-                            </p>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            Este precio se aplicará en la próxima factura al guardar los cambios.
-                          </p>
+                          <span className="text-sm text-muted-foreground">/ mes</span>
                         </div>
-                      ) : null}
+                        {editingCompany.numberOfWorkers != null && (
+                          <p className="text-xs text-muted-foreground" data-testid="text-price-comparison">
+                            Antes: {formatCOP(calcWorkerPrice(editingCompany.numberOfWorkers ?? 1))} — Después: {formatCOP(livePrice.base)}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          $20,000 base (hasta 2 trabajadores) + $10,000 por trabajador adicional.
+                        </p>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -1403,19 +1383,22 @@ export default function CompanyManagement() {
                     ))}
                   </ul>
                 </div>
-                {livePrice && (
-                  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm">
-                    <p className="font-medium text-blue-700 dark:text-blue-300 mb-1">Nuevo precio estimado:</p>
-                    <p className="text-lg font-semibold text-foreground">Nuevo precio calculado por la landing page</p>
-                    {editingCompany?.quoteBaseMonthlyPrice && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        El precio se actualizará automáticamente
-                      </p>
-                    )}
+                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm">
+                  <p className="font-medium text-blue-700 dark:text-blue-300 mb-2">Nuevo precio mensual:</p>
+                  <div className="flex items-baseline gap-2 mb-1">
+                    <p className="text-2xl font-bold text-foreground" data-testid="text-dialog-new-price">
+                      {livePrice ? formatCOP(livePrice.base) : formatCOP(calcWorkerPrice(formData.numberOfWorkers))}
+                    </p>
+                    <span className="text-sm text-muted-foreground">/ mes</span>
                   </div>
-                )}
+                  {editingCompany && (
+                    <p className="text-xs text-muted-foreground">
+                      Precio anterior: {formatCOP(calcWorkerPrice(editingCompany.numberOfWorkers ?? 1))}
+                    </p>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">
-                  {livePrice ? 'El nuevo precio se reflejará en su' : 'Se solicitará el nuevo precio a la landing page antes de guardar los cambios. El nuevo precio se reflejará en su'} <strong>próxima factura mensual</strong>. Si no es posible obtener el precio, los cambios no se guardarán.
+                  Este precio se reflejará en su <strong>próxima factura mensual</strong>.
                 </p>
               </div>
             </AlertDialogDescription>
