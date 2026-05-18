@@ -2954,8 +2954,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const requestData = {
         company_name: name || company.name,
         employees: numberOfWorkers ?? company.numberOfWorkers ?? 1,
-        vehicles: numberOfVehicles ?? company.numberOfVehicles ?? 0,
-        risk_level: riskLevel ?? company.riskLevel ?? "I",
+        vehicles: 0,
+        risk_level: "I",
         coupon_code: (company as any).quoteCouponCode || undefined,
       };
 
@@ -3007,8 +3007,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const requestData = {
         company_name: company.name,
         employees: numberOfWorkers ?? company.numberOfWorkers ?? 1,
-        vehicles: numberOfVehicles ?? company.numberOfVehicles ?? 0,
-        risk_level: riskLevel ?? company.riskLevel ?? "I",
+        vehicles: 0,
+        risk_level: "I",
         coupon_code: (company as any).quoteCouponCode || undefined,
       };
 
@@ -3016,8 +3016,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`[Quote-Recalculate] Requesting recalculation for company ${companyId}:`, {
         employees: requestData.employees,
-        vehicles: requestData.vehicles,
-        risk_level: requestData.risk_level,
+        vehicles: 0,
+        risk_level: "I",
       });
 
       const response = await fetch(`${LANDING_PAGE_BASE_URL}/api/recalculate`, {

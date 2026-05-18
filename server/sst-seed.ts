@@ -1242,12 +1242,13 @@ async function seedPricingConfig() {
     }
     
     // Crear configuración de precios por defecto
+    // Fórmula: $20,000 base (1-2 trabajadores) + $10,000 por trabajador adicional
     await db.insert(pricingConfig).values({
-      minFeeSmall: "60000.00",
-      price1To10: "26000.00",
-      price11To49: "24000.00",
-      price50To199: "22000.00",
-      price200Plus: "20000.00",
+      minFeeSmall: "20000.00",
+      price1To10: "10000.00",
+      price11To49: "10000.00",
+      price50To199: "10000.00",
+      price200Plus: "10000.00",
       currency: "COP",
       isActive: true,
     });

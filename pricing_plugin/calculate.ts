@@ -1,9 +1,17 @@
+/**
+ * Fórmula de precios simplificada:
+ * - 1 trabajador: $20,000 COP/mes
+ * - 2 trabajadores: $20,000 COP/mes (el segundo es gratis)
+ * - Cada trabajador adicional más allá de 2: $10,000 COP/mes
+ *
+ * Configuración en pricing_config:
+ *   min_fee_small  = precio base (para 1-2 trabajadores) → $20,000
+ *   price_1_10     = precio por trabajador adicional más allá de 2 → $10,000
+ */
+
 export interface PricingParams {
-  minFeeSmall: number;
-  price1To10: number;
-  price11To49: number;
-  price50To199: number;
-  price200Plus: number;
+  basePrice: number;
+  additionalWorkerPrice: number;
   currency: string;
 }
 
@@ -22,41 +30,15 @@ export function calculatePricing(employees: number, config: PricingParams): Pric
     throw new Error("Employee count must be at least 1");
   }
 
-  let tier: string;
-  let pricePerLicense: number;
-  let minimumFee: number;
-  let monthlyCost: number;
-
-  if (employees >= 1 && employees <= 10) {
-    tier = "1-10";
-    pricePerLicense = config.price1To10;
-    const baseAmount = employees * pricePerLicense;
-    minimumFee = config.minFeeSmall;
-    monthlyCost = Math.max(minimumFee, baseAmount);
-  } else if (employees >= 11 && employees <= 49) {
-    tier = "11-49";
-    pricePerLicense = config.price11To49;
-    minimumFee = 0;
-    monthlyCost = employees * pricePerLicense;
-  } else if (employees >= 50 && employees <= 199) {
-    tier = "50-199";
-    pricePerLicense = config.price50To199;
-    minimumFee = 0;
-    monthlyCost = employees * pricePerLicense;
-  } else {
-    tier = "200+";
-    pricePerLicense = config.price200Plus;
-    minimumFee = 0;
-    monthlyCost = employees * pricePerLicense;
-  }
-
+  const additionalWorkers = Math.max(0, employees - 2);
+  const monthlyCost = config.basePrice + additionalWorkers * config.additionalWorkerPrice;
   const costPerEmployee = monthlyCost / employees;
 
   return {
-    tier,
+    tier: "flat",
     employeeCount: employees,
-    pricePerLicense,
-    minimumFee,
+    pricePerLicense: config.additionalWorkerPrice,
+    minimumFee: config.basePrice,
     monthlyCost,
     costPerEmployee,
     currency: config.currency,

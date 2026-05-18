@@ -22,11 +22,8 @@ const router = Router();
 
 function configToParams(config: PricingConfig): PricingParams {
   return {
-    minFeeSmall: parseFloat(config.minFeeSmall),
-    price1To10: parseFloat(config.price1To10),
-    price11To49: parseFloat(config.price11To49),
-    price50To199: parseFloat(config.price50To199),
-    price200Plus: parseFloat(config.price200Plus),
+    basePrice: parseFloat(config.minFeeSmall),
+    additionalWorkerPrice: parseFloat(config.price1To10),
     currency: config.currency,
   };
 }

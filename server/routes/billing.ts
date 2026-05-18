@@ -605,8 +605,8 @@ export function registerBillingRoutes(app: Express) {
             const requestData = {
               company_name: company.name,
               employees: company.numberOfWorkers ?? 1,
-              vehicles: (company as any).numberOfVehicles ?? 0,
-              risk_level: company.riskLevel ?? "I",
+              vehicles: 0,
+              risk_level: "I",
               coupon_code: companyCouponCode || undefined,
             };
 
