@@ -35884,6 +35884,56 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           }
         }
       }
+
+      // === Source 4: PESV Road Safety Trainings via Worker Invitations (road_safety_worker_attendees) ===
+      // This covers workers invited via the "invite-workers" endpoint (non-driver workers)
+      {
+        const existingTrainingIds = new Set(capacitaciones.map(c => c.id));
+        const workerInvitations = await db
+          .select({
+            id: roadSafetyWorkerAttendees.id,
+            trainingId: roadSafetyWorkerAttendees.trainingId,
+            invited: roadSafetyWorkerAttendees.invited,
+            attended: roadSafetyWorkerAttendees.attended,
+            confirmedAt: roadSafetyWorkerAttendees.confirmedAt,
+          })
+          .from(roadSafetyWorkerAttendees)
+          .where(eq(roadSafetyWorkerAttendees.workerId, user.workerId));
+
+        if (workerInvitations.length > 0) {
+          const pesvTrainings = await storage.getRoadSafetyTrainings(companyId);
+          const pesvTrainingsMap = new Map(pesvTrainings.map(t => [t.id, t]));
+
+          for (const inv of workerInvitations) {
+            // Skip if already included via driver attendance (Source 3)
+            if (existingTrainingIds.has(inv.trainingId)) continue;
+            const training = pesvTrainingsMap.get(inv.trainingId);
+            if (!training) continue;
+            const dateStr = training.trainingDate
+              ? (typeof training.trainingDate === 'string' ? training.trainingDate : new Date(training.trainingDate).toISOString().split('T')[0])
+              : new Date().toISOString().split('T')[0];
+            capacitaciones.push({
+              id: training.id,
+              eventoId: training.id,
+              tituloCurso: training.title || 'Capacitación de Seguridad Vial',
+              categoria: 'seguridad-vial',
+              fechaInicio: dateStr,
+              fechaFin: null,
+              horaInicio: null,
+              horaFin: null,
+              lugar: training.location || null,
+              instructor: training.instructor || null,
+              duracionHoras: 4,
+              normativa: 'Resolución 40595/2022 - Plan Estratégico de Seguridad Vial',
+              estado: inv.attended ? 'asistio' : (inv.confirmedAt ? 'confirmado' : 'invitado'),
+              asistenciaId: inv.id,
+              source: 'programa',
+            });
+            existingTrainingIds.add(training.id);
+          }
+        }
+      }
+
       // Ordenar por fecha (más recientes primero)
       capacitaciones.sort((a, b) => new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime());
 
