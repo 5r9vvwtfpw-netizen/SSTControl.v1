@@ -9253,6 +9253,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/road-safety-trainings/:id/worker-attendees/:workerId", requirePermission("road_safety_trainings:edit"), async (req, res) => {
+    try {
+      const user = req.user as schema.User;
+      const companyId = user.companyId;
+      const { id, workerId } = req.params;
+      if (!companyId) return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      await db.delete(roadSafetyWorkerAttendees)
+        .where(and(
+          eq(roadSafetyWorkerAttendees.trainingId, id),
+          eq(roadSafetyWorkerAttendees.workerId, workerId)
+        ));
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error removing worker attendee:', error);
+      res.status(500).json({ error: error.message || "Error al eliminar asistente" });
+    }
+  });
+
   // Road Safety Attendees routes
   app.get("/api/road-safety-attendees/:trainingId", requireAuth, async (req, res) => {
     const companyId = req.user!.companyId;

@@ -10,17 +10,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, GraduationCap, Search, Sparkles, RefreshCw } from "lucide-react";
+import { Plus, GraduationCap, Search, Sparkles, RefreshCw, Users, UserPlus, Trash2 } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { hasCompanyAdminAccess } from "@shared/permissions";
-import type { EvaluacionPesv, RoadSafetyTraining, Driver, Worker } from "@shared/schema";
+import type { EvaluacionPesv, RoadSafetyTraining, Worker } from "@shared/schema";
 
 interface PlantillaCapacitacion {
   title: string;
@@ -32,7 +31,7 @@ interface PlantillaCapacitacion {
   location: string;
 }
 
-const PLANTILLAS_CAPACITACION_PESV: PlantillaCapacitacion[] = [
+const PLANTILLAS: PlantillaCapacitacion[] = [
   {
     title: "Seguridad vial y normas de tránsito vigentes",
     description: "Capacitación sobre normativa de tránsito colombiana, Código Nacional de Tránsito (Ley 769/2002) y Resolución 40595/2022. Incluye señalización, derechos de vía y responsabilidades de conductores y peatones.",
@@ -120,6 +119,217 @@ const emptyForm = {
   status: "programada" as "programada" | "en-curso" | "completada" | "cancelada",
 };
 
+interface PesvTrainingForDialog {
+  id: string;
+  title: string;
+  trainingDate: string;
+  totalAttendees: number | null;
+}
+
+interface PesvAsistentesDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  training: PesvTrainingForDialog;
+  workers: Worker[];
+  evaluacionId: string;
+}
+
+function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId }: PesvAsistentesDialogProps) {
+  const { toast } = useToast();
+  const [selectedWorkerId, setSelectedWorkerId] = useState("");
+
+  const { data: attendees = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/road-safety-trainings", training.id, "worker-attendees"],
+    queryFn: async () => {
+      const res = await fetch(`/api/road-safety-trainings/${training.id}/worker-attendees`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error al cargar asistentes");
+      return res.json();
+    },
+    enabled: isOpen,
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async (workerId: string) => {
+      const res = await apiRequest("POST", `/api/road-safety-trainings/${training.id}/invite-workers`, { workerIds: [workerId] });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/road-safety-trainings", training.id, "worker-attendees"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", evaluacionId, "capacitaciones", "worker-counts"] });
+      toast({ title: "Trabajador agregado", description: "El trabajador ha sido agregado a la capacitación", className: "bg-green-50 border-green-200" });
+      setSelectedWorkerId("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async (workerId: string) => {
+      return await apiRequest("DELETE", `/api/road-safety-trainings/${training.id}/worker-attendees/${workerId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/road-safety-trainings", training.id, "worker-attendees"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", evaluacionId, "capacitaciones", "worker-counts"] });
+      toast({ title: "Asistente eliminado", description: "El trabajador ha sido removido de la capacitación", className: "bg-yellow-50 border-yellow-200" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const addedWorkerIds = new Set(attendees.map((a: any) => a.workerId));
+  const availableWorkers = workers.filter(w => w.status === "activo" && !addedWorkerIds.has(w.id));
+
+  const getWorkerPosition = (workerId: string) => {
+    const w = workers.find(w => w.id === workerId);
+    return w?.position || "";
+  };
+
+  const totalCupo = training.totalAttendees ?? 0;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Asistentes a la Capacitación
+          </DialogTitle>
+          <DialogDescription>
+            {training.title} - {new Date(training.trainingDate).toLocaleDateString("es-CO")}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-1.5 block">Agregar Trabajador</label>
+              <Select value={selectedWorkerId} onValueChange={setSelectedWorkerId}>
+                <SelectTrigger data-testid="select-worker-attendee">
+                  <SelectValue placeholder="Seleccione un trabajador" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableWorkers.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground text-center">
+                      Todos los trabajadores ya están agregados
+                    </div>
+                  ) : (
+                    availableWorkers.map(worker => (
+                      <SelectItem key={worker.id} value={worker.id}>
+                        {worker.name} - {worker.identificationNumber}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={() => selectedWorkerId && addMutation.mutate(selectedWorkerId)}
+              disabled={!selectedWorkerId || addMutation.isPending}
+              className="gap-1"
+              data-testid="button-add-attendee"
+            >
+              <UserPlus className="h-4 w-4" />
+              Agregar
+            </Button>
+          </div>
+
+          <Separator />
+
+          <div>
+            <h4 className="font-medium mb-2">
+              Trabajadores Inscritos ({attendees.length})
+            </h4>
+            {isLoading ? (
+              <div className="text-center py-4 text-muted-foreground">Cargando...</div>
+            ) : attendees.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No hay trabajadores inscritos</p>
+                <p className="text-sm mt-1">Agregue trabajadores usando el selector de arriba</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>Documento</TableHead>
+                    <TableHead>Cargo</TableHead>
+                    <TableHead className="text-center">Confirmó</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {attendees.map((attendee: any) => (
+                    <TableRow key={attendee.id} data-testid={`row-attendee-${attendee.id}`}>
+                      <TableCell className="font-medium" data-testid={`text-attendee-name-${attendee.id}`}>
+                        {attendee.workerName}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground" data-testid={`text-attendee-document-${attendee.id}`}>
+                        {attendee.workerDocument}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground" data-testid={`text-attendee-position-${attendee.id}`}>
+                        {getWorkerPosition(attendee.workerId)}
+                      </TableCell>
+                      <TableCell className="text-center" data-testid={`text-attendee-confirmed-${attendee.id}`}>
+                        {attendee.confirmedAt ? (
+                          <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">Sí</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            if (window.confirm("¿Está seguro de eliminar este asistente?")) {
+                              removeMutation.mutate(attendee.workerId);
+                            }
+                          }}
+                          title="Eliminar"
+                          data-testid={`button-remove-attendee-${attendee.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+
+          {attendees.length > 0 && (
+            <Card className="bg-muted/50">
+              <CardContent className="p-4">
+                <h5 className="font-medium mb-2">Resumen</h5>
+                <div className="flex flex-wrap gap-3 text-sm">
+                  <div className="flex items-center gap-1">
+                    <Badge variant="default">{attendees.length}</Badge>
+                    <span className="text-muted-foreground">Inscritos</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Badge variant="outline">{Math.max(0, totalCupo - attendees.length)}</Badge>
+                    <span className="text-muted-foreground">Cupos disponibles</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <Button variant="outline" onClick={onClose} data-testid="button-close-attendees-dialog">
+            Cerrar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function PesvCapacitacionesEvaluacion() {
   const { evaluacionId } = useParams<{ evaluacionId: string }>();
   const { user } = useAuth();
@@ -140,12 +350,9 @@ export default function PesvCapacitacionesEvaluacion() {
   const [editingTraining, setEditingTraining] = useState<RoadSafetyTraining | null>(null);
   const [editFormData, setEditFormData] = useState({ ...emptyForm });
 
-  // Attendance / invite dialogs
-  const [attendanceDialogOpen, setAttendanceDialogOpen] = useState(false);
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  // Asistentes dialog (SST pattern)
+  const [asistentesDialogOpen, setAsistentesDialogOpen] = useState(false);
   const [selectedTraining, setSelectedTraining] = useState<RoadSafetyTraining | null>(null);
-  const [selectedWorkerIds, setSelectedWorkerIds] = useState<string[]>([]);
-  const [attendanceData, setAttendanceData] = useState<Record<string, boolean>>({});
 
   const { data: evaluacion, isLoading: evaluacionLoading } = useQuery<EvaluacionPesv>({
     queryKey: ["/api/evaluaciones-pesv", evaluacionId],
@@ -165,10 +372,6 @@ export default function PesvCapacitacionesEvaluacion() {
       return res.json();
     },
     enabled: !!evaluacionId,
-  });
-
-  const { data: drivers = [] } = useQuery<Driver[]>({
-    queryKey: ["/api/drivers"],
   });
 
   const { data: workers = [] } = useQuery<Worker[]>({
@@ -195,28 +398,6 @@ export default function PesvCapacitacionesEvaluacion() {
       return counts;
     },
     enabled: trainings.length > 0,
-  });
-
-  const { data: attendees = [] } = useQuery({
-    queryKey: ["/api/road-safety-attendees", selectedTraining?.id],
-    queryFn: async () => {
-      if (!selectedTraining?.id) return [];
-      const res = await fetch(`/api/road-safety-attendees/${selectedTraining.id}`, { credentials: "include" });
-      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
-      return res.json();
-    },
-    enabled: !!selectedTraining,
-  });
-
-  const { data: invitedWorkers = [] } = useQuery({
-    queryKey: ["/api/road-safety-trainings", selectedTraining?.id, "worker-attendees"],
-    queryFn: async () => {
-      if (!selectedTraining?.id) return [];
-      const res = await fetch(`/api/road-safety-trainings/${selectedTraining.id}/worker-attendees`, { credentials: "include" });
-      if (!res.ok) return [];
-      return res.json();
-    },
-    enabled: !!selectedTraining,
   });
 
   const createMutation = useMutation({
@@ -257,38 +438,6 @@ export default function PesvCapacitacionesEvaluacion() {
     },
   });
 
-  const saveAttendanceMutation = useMutation({
-    mutationFn: async (data: { trainingId: string; attendance: Array<{ driverId: string; attended: number }> }) => {
-      const res = await apiRequest("POST", "/api/road-safety-attendees/bulk", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/road-safety-attendees", selectedTraining?.id] });
-      setAttendanceDialogOpen(false);
-      toast({ title: "Asistencia guardada", description: "La asistencia se ha registrado exitosamente" });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const inviteWorkersMutation = useMutation({
-    mutationFn: async (data: { trainingId: string; workerIds: string[] }) => {
-      const res = await apiRequest("POST", `/api/road-safety-trainings/${data.trainingId}/invite-workers`, { workerIds: data.workerIds });
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/road-safety-trainings", selectedTraining?.id, "worker-attendees"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", evaluacionId, "capacitaciones", "worker-counts"] });
-      setInviteDialogOpen(false);
-      setSelectedWorkerIds([]);
-      toast({ title: "Trabajadores invitados", description: "Los trabajadores han sido notificados en su Portal de Empleados" });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    },
-  });
-
   const resetForm = () => {
     setFormData({ ...emptyForm });
     setAutoFilled(false);
@@ -296,7 +445,7 @@ export default function PesvCapacitacionesEvaluacion() {
   };
 
   const applyTemplate = (templateTitle: string) => {
-    const template = PLANTILLAS_CAPACITACION_PESV.find(t => t.title === templateTitle);
+    const template = PLANTILLAS.find(t => t.title === templateTitle);
     if (!template) return;
     const nextMonth = new Date();
     nextMonth.setMonth(nextMonth.getMonth() + 1);
@@ -364,32 +513,8 @@ export default function PesvCapacitacionesEvaluacion() {
     const training = trainings.find(t => t.id === trainingId);
     if (!training) return;
     setSelectedTraining(training);
-    const existingAttendance: Record<string, boolean> = {};
-    attendees.forEach((a: any) => {
-      existingAttendance[a.driverId] = a.attended === 1;
-    });
-    setAttendanceData(existingAttendance);
-    setAttendanceDialogOpen(true);
+    setAsistentesDialogOpen(true);
   };
-
-  const handleSaveAttendance = () => {
-    if (!selectedTraining) return;
-    const attendance = Object.entries(attendanceData).map(([driverId, attended]) => ({
-      driverId,
-      attended: attended ? 1 : 0,
-    }));
-    saveAttendanceMutation.mutate({ trainingId: selectedTraining.id, attendance });
-  };
-
-  const handleInviteWorkers = () => {
-    if (!selectedTraining || selectedWorkerIds.length === 0) return;
-    inviteWorkersMutation.mutate({ trainingId: selectedTraining.id, workerIds: selectedWorkerIds });
-  };
-
-  const availableWorkers = workers.filter(w =>
-    w.status === "activo" &&
-    !invitedWorkers.some((inv: any) => inv.workerId === w.id)
-  );
 
   const filteredTrainings = trainings.filter(t => {
     const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -500,7 +625,7 @@ export default function PesvCapacitacionesEvaluacion() {
                       <SelectValue placeholder="Seleccione una plantilla de capacitación..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {PLANTILLAS_CAPACITACION_PESV.map(t => (
+                      {PLANTILLAS.map(t => (
                         <SelectItem key={t.title} value={t.title}>{t.title}</SelectItem>
                       ))}
                     </SelectContent>
@@ -528,7 +653,7 @@ export default function PesvCapacitacionesEvaluacion() {
           )}
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Search + filter bar */}
+          {/* Search + filter */}
           <div className="flex flex-wrap items-center gap-4">
             <div className="relative flex-1 min-w-60">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -607,129 +732,19 @@ export default function PesvCapacitacionesEvaluacion() {
         </DialogContent>
       </Dialog>
 
-      {/* Attendance Management Dialog */}
-      <Dialog open={attendanceDialogOpen} onOpenChange={setAttendanceDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Gestionar Asistencia</DialogTitle>
-            <DialogDescription>
-              {selectedTraining?.title} — {selectedTraining && new Date(selectedTraining.trainingDate).toLocaleDateString("es-CO")}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <p className="font-semibold text-sm">Conductores</p>
-              {drivers.filter(d => d.status === "activo").length === 0 ? (
-                <p className="text-sm text-muted-foreground">No hay conductores activos registrados</p>
-              ) : (
-                drivers.filter(d => d.status === "activo").map(driver => (
-                  <div key={driver.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`driver-${driver.id}`}
-                      checked={attendanceData[driver.id] || false}
-                      onCheckedChange={checked => setAttendanceData({ ...attendanceData, [driver.id]: checked as boolean })}
-                      data-testid={`checkbox-driver-${driver.id}`}
-                    />
-                    <Label htmlFor={`driver-${driver.id}`}>{driver.name}</Label>
-                  </div>
-                ))
-              )}
-            </div>
-            <Separator />
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <p className="font-semibold text-sm">Trabajadores invitados al portal</p>
-                <Button variant="outline" size="sm" onClick={() => setInviteDialogOpen(true)} data-testid="button-invite-workers">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Invitar Trabajadores
-                </Button>
-              </div>
-              {invitedWorkers.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No hay trabajadores invitados</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead className="text-center">Confirmó</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {invitedWorkers.map((inv: any) => (
-                      <TableRow key={inv.id} data-testid={`row-invited-worker-${inv.workerId}`}>
-                        <TableCell className="font-medium">{inv.workerName}</TableCell>
-                        <TableCell className="text-center">
-                          {inv.confirmedAt ? (
-                            <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">Confirmó</Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">Pendiente</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAttendanceDialogOpen(false)}>Cerrar</Button>
-            <Button onClick={handleSaveAttendance} disabled={saveAttendanceMutation.isPending} data-testid="button-save-attendance">
-              {saveAttendanceMutation.isPending ? "Guardando..." : "Guardar Asistencia"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Invite Workers Dialog */}
-      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Invitar Trabajadores</DialogTitle>
-            <DialogDescription>
-              Seleccione los trabajadores a invitar. Recibirán una notificación en su Portal de Empleados.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {availableWorkers.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">No hay trabajadores disponibles para invitar</p>
-            ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {availableWorkers.map(worker => (
-                  <div key={worker.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`worker-${worker.id}`}
-                      checked={selectedWorkerIds.includes(worker.id)}
-                      onCheckedChange={checked => {
-                        if (checked) {
-                          setSelectedWorkerIds([...selectedWorkerIds, worker.id]);
-                        } else {
-                          setSelectedWorkerIds(selectedWorkerIds.filter(id => id !== worker.id));
-                        }
-                      }}
-                      data-testid={`checkbox-worker-${worker.id}`}
-                    />
-                    <Label htmlFor={`worker-${worker.id}`}>
-                      {worker.name}
-                      <span className="text-muted-foreground ml-2 text-sm">({worker.position || "Sin cargo"})</span>
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setInviteDialogOpen(false)}>Cancelar</Button>
-            <Button
-              onClick={handleInviteWorkers}
-              disabled={inviteWorkersMutation.isPending || selectedWorkerIds.length === 0}
-              data-testid="button-confirm-invite"
-            >
-              {inviteWorkersMutation.isPending ? "Invitando..." : `Invitar (${selectedWorkerIds.length})`}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Asistentes Dialog — mismo patrón que SST */}
+      {selectedTraining && (
+        <PesvAsistentesDialog
+          isOpen={asistentesDialogOpen}
+          onClose={() => {
+            setAsistentesDialogOpen(false);
+            setSelectedTraining(null);
+          }}
+          training={selectedTraining}
+          workers={workers}
+          evaluacionId={evaluacionId!}
+        />
+      )}
     </div>
   );
 }
