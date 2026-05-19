@@ -572,10 +572,6 @@ export default function PesvCapacitacionesEvaluacion() {
         <Label htmlFor="f-topics">Temas</Label>
         <Textarea id="f-topics" value={data.topics} onChange={e => setData({ ...data, topics: e.target.value })} placeholder="Temas a tratar..." data-testid="textarea-topics" />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="f-attendees">Asistentes Esperados</Label>
-        <Input id="f-attendees" type="number" min="1" value={data.totalAttendees || ""} onChange={e => setData({ ...data, totalAttendees: e.target.value === "" ? "" : parseInt(e.target.value, 10) })} placeholder="Ej: 10" data-testid="input-total-attendees" />
-      </div>
     </div>
   );
 
