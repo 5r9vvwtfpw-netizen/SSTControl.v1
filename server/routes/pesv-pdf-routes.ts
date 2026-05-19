@@ -815,7 +815,7 @@ export function registerPesvPdfRoutes(app: Express) {
       const headerH = 18;
 
       // Encabezado de tabla
-      doc.rect(margin, y, tableWidth, headerH).fill('#1a4f8a');
+      doc.rect(margin, y, tableWidth, headerH).fill('#1a5c2e');
       doc.fillColor('#ffffff').fontSize(7.5).font('Helvetica-Bold');
       let tx = margin;
       doc.text('N°', tx + 3, y + 5, { width: colNum - 4, lineBreak: false, align: 'center' }); tx += colNum;
