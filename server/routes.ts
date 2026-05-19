@@ -35826,7 +35826,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       for (const attendee of legacyAttendees) {
         const training = trainingsMap.get(attendee.trainingId);
         if (training && training.companyId === companyId) {
-          const dateStr = training.trainingDate ? (typeof training.trainingDate === 'string' ? training.trainingDate : training.trainingDate.toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
+          const rawDate = (training as any).date || (training as any).trainingDate;
+          const dateStr = rawDate ? (typeof rawDate === 'string' ? rawDate : rawDate.toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
           capacitaciones.push({
             id: training.id,
             eventoId: training.id,
@@ -35880,6 +35881,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               estado: myAttendance.attended === 1 ? 'asistio' : 'invitado',
               asistenciaId: myAttendance.id,
               source: 'programa',
+              contentType: (training as any).contentType ?? 'presencial',
+              contentUrl: (training as any).contentUrl ?? null,
+              contentText: (training as any).contentText ?? null,
             });
           }
         }
@@ -35928,6 +35932,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               estado: inv.attended ? 'asistio' : (inv.confirmedAt ? 'confirmado' : 'invitado'),
               asistenciaId: inv.id,
               source: 'programa',
+              contentType: (training as any).contentType ?? 'presencial',
+              contentUrl: (training as any).contentUrl ?? null,
+              contentText: (training as any).contentText ?? null,
             });
             existingTrainingIds.add(training.id);
           }
