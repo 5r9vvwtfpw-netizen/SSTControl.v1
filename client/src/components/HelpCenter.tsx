@@ -152,7 +152,7 @@ export function HelpCenter() {
   return (
     <>
       {/* Botón flotante */}
-      <div className="fixed bottom-24 right-5 z-[9998] flex flex-col items-end gap-2">
+      <div className="fixed bottom-40 right-5 z-[9998] flex flex-col items-end gap-2">
         {!open && pulse && (
           <div className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-medium px-3 py-1.5 rounded-full shadow-lg border border-slate-200 dark:border-slate-600 animate-bounce whitespace-nowrap">
             Centro de Ayuda
