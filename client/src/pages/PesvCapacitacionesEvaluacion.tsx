@@ -3,7 +3,6 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -11,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Eye, GraduationCap, Calendar, Clock, MapPin, Users, Sparkles, RefreshCw } from "lucide-react";
+import { Plus, Eye, GraduationCap, Calendar, Users, Sparkles, RefreshCw } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -451,52 +450,44 @@ export default function PesvCapacitacionesEvaluacion() {
               <p className="text-sm">Haga clic en "Nueva Capacitación" para comenzar</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Título</TableHead>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Instructor</TableHead>
-                  <TableHead>Asistentes</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {trainings.map((training) => (
-                  <TableRow key={training.id} data-testid={`row-training-${training.id}`}>
-                    <TableCell className="font-medium">{training.title}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        {training.trainingDate}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {trainings.map((training) => (
+                <Card key={training.id} className="hover-elevate" data-testid={`card-training-${training.id}`}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-base">{training.title}</CardTitle>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {getStatusBadge(training.status)}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedTraining(training);
+                            setDetailDialogOpen(true);
+                          }}
+                          data-testid={`button-view-training-${training.id}`}
+                          title="Ver detalle"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </TableCell>
-                    <TableCell>{training.instructor || "N/A"}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        {training.totalAttendees || 0}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>{training.trainingDate}</span>
                       </div>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(training.status)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setSelectedTraining(training);
-                          setDetailDialogOpen(true);
-                        }}
-                        data-testid={`button-view-training-${training.id}`}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                      <div className="flex items-center gap-1">
+                        <Users className="h-4 w-4" />
+                        <span>{training.totalAttendees || 0} asistentes</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
