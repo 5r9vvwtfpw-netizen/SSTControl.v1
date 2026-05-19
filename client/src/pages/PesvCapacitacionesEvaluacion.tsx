@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, GraduationCap, Search, Sparkles, RefreshCw, Users, UserPlus, Trash2 } from "lucide-react";
+import { Plus, GraduationCap, Search, Sparkles, RefreshCw, Users, UserPlus, Trash2, Bot } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -117,6 +117,9 @@ const emptyForm = {
   topics: "",
   totalAttendees: "" as string | number,
   status: "programada" as "programada" | "en-curso" | "completada" | "cancelada",
+  contentType: "presencial" as string,
+  contentUrl: "" as string,
+  contentText: "" as string,
 };
 
 interface PesvTrainingForDialog {
@@ -450,7 +453,6 @@ export default function PesvCapacitacionesEvaluacion() {
     const nextMonth = new Date();
     nextMonth.setMonth(nextMonth.getMonth() + 1);
     const dateStr = nextMonth.toISOString().split("T")[0];
-    const attendeesCount = (evaluacion as any)?.numeroConductores || (evaluacion as any)?.numeroVehiculos || 10;
     setFormData({
       title: template.title,
       description: template.description,
@@ -460,8 +462,11 @@ export default function PesvCapacitacionesEvaluacion() {
       endTime: template.endTime,
       location: template.location,
       topics: template.topics,
-      totalAttendees: String(attendeesCount),
+      totalAttendees: "",
       status: "programada",
+      contentType: "presencial",
+      contentUrl: "",
+      contentText: "",
     });
     setAutoFilled(true);
     setSelectedTemplate(templateTitle);
@@ -493,8 +498,11 @@ export default function PesvCapacitacionesEvaluacion() {
       endTime: training.endTime || "",
       location: training.location || "",
       topics: training.topics || "",
-      totalAttendees: training.totalAttendees ?? "",
+      totalAttendees: training.totalAttendees || "",
       status: training.status as typeof emptyForm.status,
+      contentType: (training as any).contentType || "presencial",
+      contentUrl: (training as any).contentUrl || "",
+      contentText: (training as any).contentText || "",
     });
     setEditOpen(true);
   };
@@ -523,54 +531,84 @@ export default function PesvCapacitacionesEvaluacion() {
   });
 
   const TrainingFormFields = ({ data, setData }: { data: typeof emptyForm; setData: (d: typeof emptyForm) => void }) => (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="f-title">Título *</Label>
-        <Input id="f-title" value={data.title} onChange={e => setData({ ...data, title: e.target.value })} placeholder="Nombre de la capacitación" data-testid="input-title" />
+    <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2 col-span-2">
+        <Label htmlFor="f-title">Título de la Capacitación *</Label>
+        <Input id="f-title" value={data.title} onChange={e => setData({ ...data, title: e.target.value })} placeholder="Ej: Manejo defensivo y prevención de siniestros viales" data-testid="input-title" />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="f-description">Descripción</Label>
+      <div className="space-y-2 col-span-2">
+        <Label htmlFor="f-description">Descripción (opcional)</Label>
         <Textarea id="f-description" value={data.description} onChange={e => setData({ ...data, description: e.target.value })} placeholder="Describa el contenido de la capacitación..." data-testid="textarea-description" />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="f-instructor">Instructor</Label>
+        <Label htmlFor="f-instructor">Instructor (opcional)</Label>
         <Input id="f-instructor" value={data.instructor} onChange={e => setData({ ...data, instructor: e.target.value })} placeholder="Nombre del instructor" data-testid="input-instructor" />
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="f-date">Fecha *</Label>
-          <Input id="f-date" type="date" value={data.trainingDate} onChange={e => setData({ ...data, trainingDate: e.target.value })} data-testid="input-training-date" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="f-status">Estado</Label>
-          <Select value={data.status} onValueChange={v => setData({ ...data, status: v as typeof data.status })}>
-            <SelectTrigger id="f-status" data-testid="select-status"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="programada">Programada</SelectItem>
-              <SelectItem value="en-curso">En Curso</SelectItem>
-              <SelectItem value="completada">Completada</SelectItem>
-              <SelectItem value="cancelada">Cancelada</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="f-start">Hora Inicio</Label>
-          <Input id="f-start" type="time" value={data.startTime} onChange={e => setData({ ...data, startTime: e.target.value })} data-testid="input-start-time" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="f-end">Hora Fin</Label>
-          <Input id="f-end" type="time" value={data.endTime} onChange={e => setData({ ...data, endTime: e.target.value })} data-testid="input-end-time" />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="f-date">Fecha *</Label>
+        <Input id="f-date" type="date" value={data.trainingDate} onChange={e => setData({ ...data, trainingDate: e.target.value })} data-testid="input-training-date" />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="f-location">Ubicación</Label>
+        <Label htmlFor="f-start">Hora de Inicio (opcional)</Label>
+        <Input id="f-start" type="time" value={data.startTime} onChange={e => setData({ ...data, startTime: e.target.value })} data-testid="input-start-time" />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="f-end">Hora de Fin (opcional)</Label>
+        <Input id="f-end" type="time" value={data.endTime} onChange={e => setData({ ...data, endTime: e.target.value })} data-testid="input-end-time" />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="f-location">Ubicación (opcional)</Label>
         <Input id="f-location" value={data.location} onChange={e => setData({ ...data, location: e.target.value })} placeholder="Lugar de la capacitación" data-testid="input-location" />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="f-topics">Temas</Label>
+        <Label htmlFor="f-total">Cupo Total (opcional)</Label>
+        <Input id="f-total" type="number" min="1" value={data.totalAttendees} onChange={e => setData({ ...data, totalAttendees: e.target.value === "" ? "" : parseInt(e.target.value, 10) })} placeholder="Número de cupos" data-testid="input-total-attendees" />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="f-status">Estado</Label>
+        <Select value={data.status} onValueChange={v => setData({ ...data, status: v as typeof data.status })}>
+          <SelectTrigger id="f-status" data-testid="select-status"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="programada">Programada</SelectItem>
+            <SelectItem value="en-curso">En Curso</SelectItem>
+            <SelectItem value="completada">Completada</SelectItem>
+            <SelectItem value="cancelada">Cancelada</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2 col-span-2">
+        <Label htmlFor="f-topics">Temas (opcional)</Label>
         <Textarea id="f-topics" value={data.topics} onChange={e => setData({ ...data, topics: e.target.value })} placeholder="Temas a tratar..." data-testid="textarea-topics" />
+      </div>
+      <div className="space-y-2 col-span-2">
+        <Label htmlFor="f-content-type">Tipo de Contenido</Label>
+        <Select value={data.contentType} onValueChange={v => setData({ ...data, contentType: v, contentUrl: "", contentText: "" })}>
+          <SelectTrigger id="f-content-type" data-testid="select-content-type"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="presencial">Presencial (sin contenido digital)</SelectItem>
+            <SelectItem value="video">Video (URL)</SelectItem>
+            <SelectItem value="pdf">PDF (URL)</SelectItem>
+            <SelectItem value="formulario">Formulario (URL)</SelectItem>
+            <SelectItem value="texto">Texto / Descripción</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {(data.contentType === "video" || data.contentType === "pdf" || data.contentType === "formulario") && (
+        <div className="space-y-2 col-span-2">
+          <Label htmlFor="f-content-url">
+            {data.contentType === "video" ? "URL del Video" : data.contentType === "pdf" ? "URL del PDF" : "URL del Formulario"}
+          </Label>
+          <Input id="f-content-url" type="url" value={data.contentUrl} onChange={e => setData({ ...data, contentUrl: e.target.value })} placeholder={data.contentType === "video" ? "https://youtube.com/..." : data.contentType === "pdf" ? "https://ejemplo.com/doc.pdf" : "https://forms.google.com/..."} data-testid="input-content-url" />
+        </div>
+      )}
+      {data.contentType === "texto" && (
+        <div className="space-y-2 col-span-2">
+          <Label htmlFor="f-content-text">Contenido de Texto</Label>
+          <Textarea id="f-content-text" value={data.contentText} onChange={e => setData({ ...data, contentText: e.target.value })} placeholder="Escribe el contenido que verán los trabajadores..." rows={4} data-testid="input-content-text" />
+        </div>
+      )}
+      <div className="col-span-2 text-xs text-muted-foreground">
+        Los campos marcados con * son obligatorios
       </div>
     </div>
   );
@@ -598,44 +636,49 @@ export default function PesvCapacitacionesEvaluacion() {
                   Nueva Capacitación
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Programar Capacitación</DialogTitle>
                   <DialogDescription>Complete los datos de la capacitación en seguridad vial</DialogDescription>
                 </DialogHeader>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <Label className="flex items-center gap-1">
-                      <Sparkles className="h-4 w-4 text-amber-500" />
-                      Auto-completar con plantilla
-                    </Label>
-                    {autoFilled && (
-                      <Button type="button" variant="ghost" size="sm" onClick={resetForm} data-testid="button-reset-form">
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                        Limpiar
-                      </Button>
-                    )}
-                  </div>
-                  <Select value={selectedTemplate} onValueChange={applyTemplate}>
-                    <SelectTrigger data-testid="select-template">
-                      <SelectValue placeholder="Seleccione una plantilla de capacitación..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PLANTILLAS.map(t => (
-                        <SelectItem key={t.title} value={t.title}>{t.title}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {autoFilled && (
-                    <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md p-3 flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
-                      <p className="text-sm text-green-700 dark:text-green-300">
-                        Campos auto-completados. Revise y ajuste si es necesario.
-                      </p>
-                    </div>
-                  )}
-                </div>
                 <form onSubmit={handleCreateSubmit} className="space-y-4">
+                  <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
+                    <div className="flex items-start gap-3">
+                      <Bot className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Asistente Inteligente</p>
+                            <p className="text-xs text-blue-700 dark:text-blue-300">Seleccione una plantilla para auto-rellenar los campos</p>
+                          </div>
+                          {autoFilled && (
+                            <Button type="button" variant="ghost" size="sm" onClick={resetForm} data-testid="button-reset-form">
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Limpiar
+                            </Button>
+                          )}
+                        </div>
+                        <Select value={selectedTemplate} onValueChange={applyTemplate}>
+                          <SelectTrigger className="bg-white dark:bg-gray-950" data-testid="select-template">
+                            <SelectValue placeholder="Seleccione una plantilla de capacitación..." />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            {PLANTILLAS.map(t => (
+                              <SelectItem key={t.title} value={t.title}>{t.title}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {autoFilled && (
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-blue-500 shrink-0" />
+                            <p className="text-xs text-blue-700 dark:text-blue-300">
+                              Campos auto-completados. Revise y ajuste si es necesario.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                   <TrainingFormFields data={formData} setData={setFormData} />
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
@@ -711,15 +754,15 @@ export default function PesvCapacitacionesEvaluacion() {
 
       {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={open => { setEditOpen(open); if (!open) setEditingTraining(null); }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Capacitación</DialogTitle>
-            <DialogDescription>Modifique los datos de la capacitación</DialogDescription>
+            <DialogDescription>Modifique los datos de la capacitación en seguridad vial</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditSubmit} className="space-y-4">
             <TrainingFormFields data={editFormData} setData={setEditFormData} />
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => setEditOpen(false)}>Cancelar</Button>
+              <Button variant="outline" type="button" onClick={() => setEditOpen(false)} data-testid="button-cancel-edit">Cancelar</Button>
               <Button type="submit" disabled={updateMutation.isPending} data-testid="button-submit-edit">
                 {updateMutation.isPending ? "Guardando..." : "Guardar Cambios"}
               </Button>
