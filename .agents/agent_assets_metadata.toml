@@ -59,3 +59,63 @@ id = "wpoz4OtwzKpQAdftbWO5K"
 uri = "file://attached_assets/gmail-ad-logo.png"
 type = "image"
 title = "Logo cuadrado — ícono de empresa (súbelo en Medios → Logo)"
+
+[[outputs]]
+id = "X-H-YwToIdgd6mUImRhKj"
+uri = "file://attached_assets/pdfs_capacitacion/sst-presencial.pdf"
+type = "pdf"
+title = "SST — Lista Asistencia: Induccion Presencial"
+
+[[outputs]]
+id = "Y4Nl8p_urpNfA49gjMMmN"
+uri = "file://attached_assets/pdfs_capacitacion/sst-video.pdf"
+type = "pdf"
+title = "SST — Lista Asistencia: Uso EPP - Video"
+
+[[outputs]]
+id = "UlPYKwMkKMSPWOwZNhFn5"
+uri = "file://attached_assets/pdfs_capacitacion/sst-pdf.pdf"
+type = "pdf"
+title = "SST — Lista Asistencia: Manejo Quimicos - PDF"
+
+[[outputs]]
+id = "sBWHv92b-KQCuPejeNYXU"
+uri = "file://attached_assets/pdfs_capacitacion/sst-formulario.pdf"
+type = "pdf"
+title = "SST — Lista Asistencia: Trabajo en Alturas - Formulario"
+
+[[outputs]]
+id = "jqkW1To2c9w0-OBrWqLdO"
+uri = "file://attached_assets/pdfs_capacitacion/sst-texto.pdf"
+type = "pdf"
+title = "SST — Lista Asistencia: Primeros Auxilios - Texto"
+
+[[outputs]]
+id = "n_UX5rWtWFXIbGTw8IFDF"
+uri = "file://attached_assets/pdfs_capacitacion/pesv-presencial.pdf"
+type = "pdf"
+title = "PESV — Lista Asistencia: Seguridad Vial Presencial"
+
+[[outputs]]
+id = "bq6bgPpUxpMlGUiErCwi3"
+uri = "file://attached_assets/pdfs_capacitacion/pesv-video.pdf"
+type = "pdf"
+title = "PESV — Lista Asistencia: Manejo Defensivo - Video"
+
+[[outputs]]
+id = "Nt7SJkFTJiWF2JPoQb62q"
+uri = "file://attached_assets/pdfs_capacitacion/pesv-pdf.pdf"
+type = "pdf"
+title = "PESV — Lista Asistencia: Normas de Tránsito - PDF"
+
+[[outputs]]
+id = "Hhm1nAhwLwNPZ9Bnwl5bp"
+uri = "file://attached_assets/pdfs_capacitacion/pesv-formulario.pdf"
+type = "pdf"
+title = "PESV — Lista Asistencia: Evaluación Primeros Auxilios - Formulario"
+
+[[outputs]]
+id = "U_X_-fwhFv6bddiaEseLS"
+uri = "file://attached_assets/pdfs_capacitacion/pesv-texto.pdf"
+type = "pdf"
+title = "PESV — Lista Asistencia: Fatiga y Somnolencia al Volante - Texto"
