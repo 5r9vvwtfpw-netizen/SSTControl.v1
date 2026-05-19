@@ -844,13 +844,7 @@ app.use(requestLoggerMiddleware);
 
   app.use(requireValidLicense);
 
-  // Esperar un poco para que la base de datos esté lista en producción
-  if (isProduction) {
-    logger.info('⏳ Esperando a que la base de datos de producción esté lista...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
-  }
-  
-  // Crear carpetas necesarias para uploads
+  // Crear carpetas necesarias para uploads (sync/fast — siempre blocking)
   const uploadDirs = [
     'public/uploads/logos',
     'public/uploads/afiliaciones',
@@ -865,41 +859,60 @@ app.use(requestLoggerMiddleware);
       logger.info({ dir }, `📁 Carpeta creada: ${dir}`);
     }
   });
-  
-  // Ejecutar migraciones automáticas (sincroniza columnas faltantes)
-  try {
-    await runMigrations();
-  } catch (error) {
-    logger.error({ err: error }, "⚠️ Migraciones fallaron");
-  }
 
-  // Sincronizar esquema con base de datos (AWS RDS en producción)
-  try {
-    await ensureSchemaSync();
-  } catch (error) {
-    logger.error({ err: error }, "⚠️ Sincronización de esquema falló");
-  }
-
-  // Crear usuario admin si no existe (crítico para primer acceso)
-  try {
-    await seedAdminUser();
-  } catch (error) {
-    logger.error({ err: error }, "⚠️ Seed admin falló");
-  }
-  
-  // CRÍTICO: Crear planes de suscripción si no existen (necesario para registro de empresas)
-  try {
-    await seedSubscriptionPlans();
-  } catch (error) {
-    logger.error({ err: error }, "⚠️ Seed planes de suscripción falló");
-  }
-  
-  // Seed datos maestros SST al inicio (idempotente y no crítico)
-  try {
-    await seedSstCatalog();
-  } catch (error) {
-    logger.error({ err: error }, "⚠️ Seed SST falló");
-  }
+  // DB initialization: migrations, schema sync, seeds.
+  // In production this runs AFTER server.listen() so Cloud Run health checks
+  // don't time out waiting for migrations to complete (~60 s).
+  const runDbInitialization = async () => {
+    if (isProduction) {
+      logger.info('⏳ Esperando a que la base de datos de producción esté lista...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+    // Ejecutar migraciones automáticas (sincroniza columnas faltantes)
+    try {
+      await runMigrations();
+    } catch (error) {
+      logger.error({ err: error }, "⚠️ Migraciones fallaron");
+    }
+    // Sincronizar esquema con base de datos (AWS RDS en producción)
+    try {
+      await ensureSchemaSync();
+    } catch (error) {
+      logger.error({ err: error }, "⚠️ Sincronización de esquema falló");
+    }
+    // Crear usuario admin si no existe
+    try {
+      await seedAdminUser();
+    } catch (error) {
+      logger.error({ err: error }, "⚠️ Seed admin falló");
+    }
+    // Crear planes de suscripción si no existen
+    try {
+      await seedSubscriptionPlans();
+    } catch (error) {
+      logger.error({ err: error }, "⚠️ Seed planes de suscripción falló");
+    }
+    // Seed datos maestros SST (idempotente)
+    try {
+      await seedSstCatalog();
+    } catch (error) {
+      logger.error({ err: error }, "⚠️ Seed SST falló");
+    }
+    // Demo Engine migration (si está habilitado)
+    if (isDemoEnabled()) {
+      try {
+        const { runDemoEngineMigration } = await import("../plugins/demo-engine/migration");
+        await runDemoEngineMigration();
+      } catch (migrationError) {
+        logger.warn({ err: migrationError }, "⚠️ Demo Engine migration failed (non-critical)");
+      }
+      try {
+        await initializeDemoRooms();
+      } catch (initError) {
+        logger.warn({ err: initError }, "⚠️ Demo Engine room initialization failed (non-critical)");
+      }
+    }
+  };
   
   // AUTOSCALE OPTIMIZATION: Don't initialize Stripe or cron jobs at startup
   // For Autoscale deployments, these should run lazily or on Reserved VM
@@ -1015,18 +1028,8 @@ app.use(requestLoggerMiddleware);
 
 
   // Demo Engine Plugin (Sidecar - Hotel Room Model)
+  // Migration + room initialization run in runDbInitialization() (background in production)
   if (isDemoEnabled()) {
-    try {
-      const { runDemoEngineMigration } = await import("../plugins/demo-engine/migration");
-      await runDemoEngineMigration();
-    } catch (migrationError) {
-      logger.warn({ err: migrationError }, "⚠️ Demo Engine migration failed (non-critical)");
-    }
-    try {
-      await initializeDemoRooms();
-    } catch (initError) {
-      logger.warn({ err: initError }, "⚠️ Demo Engine room initialization failed (non-critical)");
-    }
     app.use("/api/demo", demoEngineRouter);
     startDemoHousekeepingCron();
     logger.info("✅ Demo Engine montado en /api/demo (ENABLE_DEMO_MODE=true)");
@@ -1095,6 +1098,17 @@ app.use(requestLoggerMiddleware);
   server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
     log(`serving on port ${port}`);
   });
+
+  // In production: run DB migrations/seeds in background so the server responds
+  // to Cloud Run health checks immediately (avoids promote-step timeout).
+  // In development: await so migrations complete before the first request.
+  if (isProduction) {
+    runDbInitialization().catch(err =>
+      logger.error({ err }, "⚠️ DB initialization error")
+    );
+  } else {
+    await runDbInitialization();
+  }
 })();
 
 process.on('uncaughtException', (err) => {
