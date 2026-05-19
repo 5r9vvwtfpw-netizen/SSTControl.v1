@@ -119,3 +119,33 @@ id = "U_X_-fwhFv6bddiaEseLS"
 uri = "file://attached_assets/pdfs_capacitacion/pesv-texto.pdf"
 type = "pdf"
 title = "PESV — Fatiga y Somnolencia al Volante"
+
+[[outputs]]
+id = "UgreAqg-nKQMJfAgF771Q"
+uri = "file://attached_assets/pdfs_capacitacion/pesv-eval-presencial.pdf"
+type = "pdf"
+title = "PESV — Seguridad Vial Presencial (desde admin)"
+
+[[outputs]]
+id = "rf3G-50UXL1RAecSut77A"
+uri = "file://attached_assets/pdfs_capacitacion/pesv-eval-video.pdf"
+type = "pdf"
+title = "PESV — Manejo Defensivo - Video (desde admin)"
+
+[[outputs]]
+id = "k9atKH3ONOVvi6VRESZb2"
+uri = "file://attached_assets/pdfs_capacitacion/pesv-eval-pdf.pdf"
+type = "pdf"
+title = "PESV — Normas de Tránsito - PDF (desde admin)"
+
+[[outputs]]
+id = "MOmNwsRBlcSoq3Usr3Qf0"
+uri = "file://attached_assets/pdfs_capacitacion/pesv-eval-formulario.pdf"
+type = "pdf"
+title = "PESV — Evaluación Primeros Auxilios (desde admin)"
+
+[[outputs]]
+id = "De5gkbN84eOizNcRDZV-o"
+uri = "file://attached_assets/pdfs_capacitacion/pesv-eval-texto.pdf"
+type = "pdf"
+title = "PESV — Fatiga y Somnolencia al Volante (desde admin)"

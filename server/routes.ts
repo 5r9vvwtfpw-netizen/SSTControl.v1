@@ -49262,7 +49262,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       // Asistentes conductores
       const driverAttendees = await db.select({
-        name: schema.drivers.fullName,
+        name: schema.drivers.name,
         identificationNumber: schema.drivers.identificationNumber,
         position: sql<string>`'Conductor'`,
       }).from(schema.roadSafetyAttendees)
