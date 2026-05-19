@@ -40,6 +40,7 @@ import { createPesvEncuestaConductorTable } from './migrations/create-pesv-encue
 import { fixInvoiceStripeAmount } from './migrations/fix-invoice-stripe-amount';
 import { syncRoadSafetyContentFields } from './migrations/sync-road-safety-content-fields';
 import { syncSstTrainingContentFields } from './migrations/sync-sst-training-content-fields';
+import { createRoadSafetyWorkerAttendees } from './migrations/create-road-safety-worker-attendees';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -91,6 +92,7 @@ export async function runMigrations() {
     await fixInvoiceStripeAmount();
     await syncRoadSafetyContentFields();
     await syncSstTrainingContentFields();
+    await createRoadSafetyWorkerAttendees();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);
