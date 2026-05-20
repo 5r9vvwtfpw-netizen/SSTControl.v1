@@ -13,6 +13,7 @@ export interface SubscriptionStatus {
   subscriptionStatus: string;
   blockedReason: string | null;
   daysRemaining: number | null;
+  licenseExpiresAt: Date | null;
 }
 
 export async function getSubscriptionStatus(companyId: string): Promise<SubscriptionStatus> {
@@ -42,6 +43,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
       subscriptionStatus: "active",
       blockedReason: null,
       daysRemaining: null,
+      licenseExpiresAt: null,
     };
   }
 
@@ -77,6 +79,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
               subscriptionStatus: "past_due",
               blockedReason: "Su período de suscripción ha vencido. Por favor renueve su suscripción.",
               daysRemaining: null,
+              licenseExpiresAt: periodEnd,
             };
           }
           return {
@@ -87,6 +90,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
             subscriptionStatus: "active",
             blockedReason: null,
             daysRemaining: null,
+            licenseExpiresAt: periodEnd,
           };
         }
 
@@ -102,6 +106,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
                 subscriptionStatus: "trial_expired",
                 blockedReason: "Su período de prueba ha expirado. Por favor active su suscripción para continuar.",
                 daysRemaining: 0,
+                licenseExpiresAt: null,
               };
             }
             return {
@@ -112,6 +117,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
               subscriptionStatus: "trial",
               blockedReason: null,
               daysRemaining,
+              licenseExpiresAt: null,
             };
           }
           return {
@@ -122,6 +128,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
             subscriptionStatus: "trial",
             blockedReason: null,
             daysRemaining: null,
+            licenseExpiresAt: null,
           };
         }
 
@@ -134,6 +141,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
             subscriptionStatus: "cancelled",
             blockedReason: "Su suscripción ha sido cancelada.",
             daysRemaining: null,
+            licenseExpiresAt: null,
           };
         }
 
@@ -146,6 +154,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
             subscriptionStatus: "past_due",
             blockedReason: "Su pago está pendiente. Por favor actualice su método de pago.",
             daysRemaining: null,
+            licenseExpiresAt: null,
           };
         }
       }
@@ -161,6 +170,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
       subscriptionStatus: "no_subscription",
       blockedReason: "No tiene una suscripción activa",
       daysRemaining: null,
+      licenseExpiresAt: null,
     };
   }
 
@@ -177,6 +187,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
       subscriptionStatus: "blocked",
       blockedReason: subscription.blockedReason || "Suscripción bloqueada por falta de pago",
       daysRemaining: null,
+      licenseExpiresAt: null,
     };
   }
 
@@ -192,6 +203,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
         subscriptionStatus: "trial_expired",
         blockedReason: "Su período de prueba ha expirado. Por favor active su suscripción para continuar.",
         daysRemaining: 0,
+        licenseExpiresAt: null,
       };
     }
 
@@ -203,6 +215,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
       subscriptionStatus: "trial",
       blockedReason: null,
       daysRemaining,
+      licenseExpiresAt: null,
     };
   }
 
@@ -215,6 +228,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
       subscriptionStatus: "active",
       blockedReason: null,
       daysRemaining: null,
+      licenseExpiresAt: null,
     };
   }
 
@@ -227,6 +241,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
       subscriptionStatus: "past_due",
       blockedReason: "Su pago está pendiente. Por favor actualice su método de pago.",
       daysRemaining: null,
+      licenseExpiresAt: null,
     };
   }
 
@@ -239,6 +254,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
       subscriptionStatus: "cancelled",
       blockedReason: "Su suscripción ha sido cancelada.",
       daysRemaining: null,
+      licenseExpiresAt: null,
     };
   }
 
@@ -250,6 +266,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
     subscriptionStatus: status,
     blockedReason: null,
     daysRemaining: null,
+    licenseExpiresAt: null,
   };
 }
 
