@@ -29,6 +29,7 @@ import { LogOut } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { Footer, FooterMinimal } from "@/components/Footer";
 import { ChatBot } from "@/components/ChatBot";
+import { SubscriptionValidityDialog } from "@/components/SubscriptionValidityDialog";
 import NotFound from "@/pages/not-found";
 import InstalarApp from "@/pages/InstalarApp";
 import Dashboard from "@/pages/Dashboard";
@@ -569,6 +570,7 @@ export default function App() {
           <DemoWatermark />
           <AuthenticatedLayout />
           <ConditionalChatBot />
+          <SubscriptionValidityDialog />
         </AuthProvider>
         <Toaster />
         <CookieConsentBanner />

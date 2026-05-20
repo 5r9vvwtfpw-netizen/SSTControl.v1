@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search, Unlock, Mail, Send } from "lucide-react";
+import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search, Unlock, Mail, Send, CalendarCheck } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -131,6 +131,9 @@ export default function CompanyManagement() {
   const [companySearchTerm, setCompanySearchTerm] = useState("");
   const [subscriptionFilter, setSubscriptionFilter] = useState<string>("all");
   const [pendingPricingUpdate, setPendingPricingUpdate] = useState<{ changedFields: string[] } | null>(null);
+  const [licenseDialogOpen, setLicenseDialogOpen] = useState(false);
+  const [companyForLicense, setCompanyForLicense] = useState<Company | null>(null);
+  const [licenseDate, setLicenseDate] = useState("2026-12-31");
   
   const [livePrice, setLivePrice] = useState<{ base: number; current: number } | null>(null);
   const livePriceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -386,6 +389,29 @@ export default function CompanyManagement() {
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/company/current"] });
       toast({ title: "Empresa liberada", description: "El cliente ahora tiene acceso completo al sistema." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const extendLicenseMutation = useMutation({
+    mutationFn: async ({ companyId, expiresAt }: { companyId: string; expiresAt: string }) => {
+      const res = await apiRequest("PATCH", `/api/admin/companies/${companyId}/extend-license`, { expiresAt });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Error al extender la licencia");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      const dateLabel = new Date(licenseDate + "T12:00:00").toLocaleDateString("es-CO", {
+        day: "numeric", month: "long", year: "numeric"
+      });
+      toast({ title: "Licencia actualizada", description: `La suscripción de ${companyForLicense?.name} está activa hasta el ${dateLabel}.` });
+      setLicenseDialogOpen(false);
+      setCompanyForLicense(null);
     },
     onError: (err: Error) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -1322,6 +1348,27 @@ export default function CompanyManagement() {
                           </Tooltip>
                         )}
                         {user?.role === 'superadmin' && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setCompanyForLicense(company);
+                                  setLicenseDate("2026-12-31");
+                                  setLicenseDialogOpen(true);
+                                }}
+                                data-testid={`button-extend-license-${company.id}`}
+                              >
+                                <CalendarCheck className="h-4 w-4 text-emerald-600" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Extender licencia / fijar fecha de vencimiento</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                        {user?.role === 'superadmin' && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1739,6 +1786,70 @@ export default function CompanyManagement() {
               )}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Dialog: Extender licencia / fijar fecha de vencimiento ───── */}
+      <Dialog open={licenseDialogOpen} onOpenChange={(open) => {
+        setLicenseDialogOpen(open);
+        if (!open) setCompanyForLicense(null);
+      }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarCheck className="h-5 w-5 text-emerald-600" />
+              Extender Licencia
+            </DialogTitle>
+            <DialogDescription>
+              Fije manualmente la fecha de vencimiento de la suscripción para{" "}
+              <strong>{companyForLicense?.name}</strong>. El estado pasará a{" "}
+              <span className="font-semibold text-emerald-700 dark:text-emerald-400">activo</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="license-date">Nueva fecha de vencimiento</Label>
+              <Input
+                id="license-date"
+                type="date"
+                value={licenseDate}
+                min={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setLicenseDate(e.target.value)}
+                data-testid="input-license-date"
+              />
+            </div>
+            {licenseDate && (
+              <p className="text-sm text-muted-foreground">
+                La suscripción quedará activa hasta el{" "}
+                <span className="font-semibold text-foreground">
+                  {new Date(licenseDate + "T12:00:00").toLocaleDateString("es-CO", {
+                    day: "numeric", month: "long", year: "numeric"
+                  })}
+                </span>.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLicenseDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (companyForLicense && licenseDate) {
+                  extendLicenseMutation.mutate({ companyId: companyForLicense.id, expiresAt: licenseDate });
+                }
+              }}
+              disabled={!licenseDate || extendLicenseMutation.isPending}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              data-testid="button-confirm-extend-license"
+            >
+              {extendLicenseMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Guardando...</>
+              ) : (
+                <><CalendarCheck className="h-4 w-4 mr-2" /> Confirmar</>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

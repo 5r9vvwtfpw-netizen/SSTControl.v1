@@ -2938,6 +2938,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Extender/fijar manualmente la fecha de vencimiento de licencia de una empresa (superadmin)
+  app.patch("/api/admin/companies/:id/extend-license", requireRole(['superadmin']), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { expiresAt } = req.body;
+
+      if (!expiresAt) {
+        return res.status(400).json({ error: "Se requiere la fecha de vencimiento (expiresAt)" });
+      }
+
+      const newDate = new Date(expiresAt);
+      if (isNaN(newDate.getTime())) {
+        return res.status(400).json({ error: "Fecha inválida" });
+      }
+
+      const company = await storage.getCompany(id);
+      if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
+
+      const updated = await db.update(schema.subscriptions)
+        .set({
+          currentPeriodEnd: newDate,
+          nextPaymentDate: newDate,
+          status: 'active' as any,
+          cancelAtPeriodEnd: 0,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.subscriptions.companyId, id))
+        .returning();
+
+      if (!updated.length) {
+        return res.status(404).json({ error: "No se encontró suscripción para esta empresa" });
+      }
+
+      console.log(`[EXTEND-LICENSE] Empresa ${company.name} (${id}) licencia extendida hasta ${expiresAt} por superadmin ${req.user!.username}`);
+      res.json({ success: true, subscription: updated[0] });
+    } catch (error: any) {
+      console.error('[EXTEND-LICENSE] Error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
 
 
   // Recalcular cotización enviando datos a la landing page
