@@ -1616,29 +1616,6 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
     capacitacionesObligatorias: ['Ergonomía de oficina', 'Manejo del estrés', 'Pausas activas', 'Higiene visual']
   },
 
-  {
-    codigoCIIU: '6419',
-    descripcionCIIU: 'Otros tipos de intermediación monetaria (bancos comerciales)',
-    nivelRiesgo: 'II',
-    sector: 'Finanzas',
-    peligrosPrioritarios: ['PSI-001', 'PSI-002', 'BIO-MEC-001', 'SEG-002'],
-    peligrosEspecificos: [
-      {
-        codigo: 'BANC-002',
-        clasificacion: 'condiciones_seguridad',
-        peligro: 'Riesgo de atraco a sucursales',
-        descripcion: 'Asalto a instalaciones bancarias',
-        riesgoPotencial: 'Lesiones, trauma psicológico',
-        efectosPosibles: 'Heridas, estrés postraumático, ansiedad',
-        medidasControl: ['Sistemas de seguridad', 'Capacitación en atracos', 'Apoyo psicológico post-evento', 'Protocolos de emergencia']
-      }
-    ],
-    normativaEspecifica: [
-      { codigo: 'RES-2646-2008', norma: 'Resolución 2646/2008', descripcion: 'Riesgo psicosocial', obligatorio: true }
-    ],
-    eppRecomendado: ['Mobiliario ergonómico'],
-    capacitacionesObligatorias: ['Protocolo de atracos', 'Manejo del estrés', 'Ergonomía', 'Primeros auxilios psicológicos']
-  },
 
   // ==================== SECCIÓN M: SERVICIOS PROFESIONALES ====================
   {
@@ -1665,29 +1642,6 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
     capacitacionesObligatorias: ['Manejo del estrés', 'Ergonomía', 'Pausas activas']
   },
 
-  {
-    codigoCIIU: '7111',
-    descripcionCIIU: 'Actividades de arquitectura e ingeniería',
-    nivelRiesgo: 'II',
-    sector: 'Servicios profesionales',
-    peligrosPrioritarios: ['PSI-001', 'BIO-MEC-001', 'BIO-MEC-002', 'SEG-001'],
-    peligrosEspecificos: [
-      {
-        codigo: 'ING-001',
-        clasificacion: 'condiciones_seguridad',
-        peligro: 'Visitas a obras de construcción',
-        descripcion: 'Inspección de obras con riesgos de construcción',
-        riesgoPotencial: 'Caídas, golpes',
-        efectosPosibles: 'Fracturas, contusiones, caída de objetos',
-        medidasControl: ['EPP en obra', 'Capacitación en obra segura', 'Acompañamiento del residente']
-      }
-    ],
-    normativaEspecifica: [
-      { codigo: 'RES-4272-2021', norma: 'Resolución 4272/2021', descripcion: 'Trabajo en alturas', obligatorio: true }
-    ],
-    eppRecomendado: ['Casco', 'Chaleco reflectivo', 'Botas de seguridad', 'Gafas'],
-    capacitacionesObligatorias: ['Seguridad en obras', 'Trabajo en alturas básico', 'Ergonomía de oficina']
-  },
 
   // ==================== SECCIÓN N: SERVICIOS ADMINISTRATIVOS ====================
   {
@@ -3176,30 +3130,6 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
     capacitacionesObligatorias: ['Manejo seguro de artículos cortantes', 'Primeros auxilios']
   },
 
-  {
-    codigoCIIU: '4759',
-    descripcionCIIU: 'Comercio al por menor de otros artículos domésticos en establecimientos especializados',
-    nivelRiesgo: 'I',
-    sector: 'Comercio',
-    peligrosPrioritarios: ['BIO-MEC-001', 'BIO-MEC-002', 'SEG-002', 'PSI-001', 'FIS-002'],
-    peligrosEspecificos: [
-      {
-        codigo: 'DOMRET-BIO-MEC-001',
-        clasificacion: 'biomecanico',
-        peligro: 'Bipedestación prolongada y manejo de artículos del hogar',
-        descripcion: 'Atención al cliente de pie y organización de artículos domésticos de diferente tamaño y peso',
-        riesgoPotencial: 'Fatiga musculoesquelética',
-        efectosPosibles: 'Dolor de espalda, pies y extremidades inferiores',
-        medidasControl: ['Tapetes antifatiga', 'Calzado ergonómico', 'Pausas activas', 'Rotación de funciones']
-      }
-    ],
-    normativaEspecifica: [
-      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
-      { codigo: 'RES-0312-2019', norma: 'Resolución 0312/2019', descripcion: 'Estándares Mínimos SG-SST', obligatorio: true }
-    ],
-    eppRecomendado: ['Calzado ergonómico', 'Tapete antifatiga'],
-    capacitacionesObligatorias: ['Pausas activas', 'Higiene postural', 'Primeros auxilios']
-  },
 
   {
     codigoCIIU: '4761',
@@ -7658,63 +7588,7 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
     capacitacionesObligatorias: ['Manejo seguro de ácidos y bases', 'Primeros auxilios - quemaduras químicas']
   },
 
-  {
-    codigoCIIU: '1311',
-    descripcionCIIU: 'Preparación e hilatura de fibras textiles (ver grupo textil)',
-    nivelRiesgo: 'III',
-    sector: 'Manufactura - Textiles',
-    peligrosPrioritarios: ['QUI-002', 'FIS-001', 'BIO-MEC-001', 'SEG-005'],
-    peligrosEspecificos: [
-      {
-        codigo: 'HILAR2-QUI-001',
-        clasificacion: 'quimico',
-        peligro: 'Polvo de fibras en hilatura',
-        descripcion: 'Inhalación de polvo en procesos de apertura, cardado e hilatura de fibras',
-        riesgoPotencial: 'Neumoconiosis textil',
-        efectosPosibles: 'Bisinosis, asma',
-        medidasControl: ['Extracción de polvo', 'Mascarilla FFP2', 'Espirometría anual']
-      }
-    ],
-    normativaEspecifica: [
-      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
-    ],
-    eppRecomendado: ['Mascarilla FFP2', 'Protección auditiva'],
-    capacitacionesObligatorias: ['Vigilancia respiratoria textil', 'Primeros auxilios']
-  },
 
-  {
-    codigoCIIU: '2710',
-    descripcionCIIU: 'Fabricación de motores, generadores y transformadores eléctricos, y de aparatos de distribución y control de la energía eléctrica',
-    nivelRiesgo: 'III',
-    sector: 'Manufactura - Eléctrica',
-    peligrosPrioritarios: ['SEG-004', 'QUI-001', 'FIS-005', 'BIO-MEC-001', 'SEG-005'],
-    peligrosEspecificos: [
-      {
-        codigo: 'ELECFAB-SEG-001',
-        clasificacion: 'condiciones_seguridad',
-        peligro: 'Riesgo eléctrico en pruebas de equipos de alta tensión',
-        descripcion: 'Pruebas de alta tensión a transformadores y generadores durante fabricación y control de calidad',
-        riesgoPotencial: 'Arco eléctrico y electrocución',
-        efectosPosibles: 'Quemaduras por arco eléctrico, paro cardiorrespiratorio, ceguera',
-        medidasControl: ['Análisis de arco eléctrico (NFPA 70E)', 'EPP para arco eléctrico (traje Nomex/arco)', 'Barrera y señalización en pruebas de alta tensión', 'Procedimientos escritos de pruebas eléctricas']
-      },
-      {
-        codigo: 'ELECFAB-QUI-001',
-        clasificacion: 'quimico',
-        peligro: 'PCBs en transformadores viejos y solventes en bobinado',
-        descripcion: 'Riesgo de PCBs en transformadores antiguos y solventes orgánicos en barnizado de bobinas',
-        riesgoPotencial: 'Intoxicación crónica por PCBs',
-        efectosPosibles: 'Cáncer (PCBs), daño hepático, dermatitis por cloro',
-        medidasControl: ['Identificación de transformadores con PCBs', 'EPP completo en manejo de PCBs', 'Gestión de residuos de PCBs como peligrosos', 'Preferir barnices de base acuosa']
-      }
-    ],
-    normativaEspecifica: [
-      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
-      { codigo: 'RES-180508-2010', norma: 'Resolución 180508/2010', descripcion: 'RETIE - Reglamento técnico de instalaciones eléctricas', obligatorio: true }
-    ],
-    eppRecomendado: ['Traje de protección ante arco eléctrico (Nomex)', 'Guantes dieléctricos', 'Careta de arco', 'Calzado dieléctrico', 'Mascarilla para vapores'],
-    capacitacionesObligatorias: ['Seguridad eléctrica - arco eléctrico', 'Manejo de PCBs', 'LOTO', 'Primeros auxilios']
-  },
 
   {
     codigoCIIU: '2720',
@@ -7872,39 +7746,6 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
     capacitacionesObligatorias: ['Riesgo eléctrico', 'LOTO', 'Primeros auxilios']
   },
 
-  {
-    codigoCIIU: '2410',
-    descripcionCIIU: 'Industrias básicas de hierro y de acero',
-    nivelRiesgo: 'IV',
-    sector: 'Manufactura - Metalurgia',
-    peligrosPrioritarios: ['FIS-004', 'QUI-001', 'QUI-002', 'SEG-005', 'FIS-001', 'FIS-005'],
-    peligrosEspecificos: [
-      {
-        codigo: 'ACERO-FIS-001',
-        clasificacion: 'fisico',
-        peligro: 'Calor extremo en acería y laminación',
-        descripcion: 'Trabajo en alto horno, convertidores y laminadores con metal líquido a 1500°C',
-        riesgoPotencial: 'Estrés térmico grave y quemaduras por metal fundido',
-        efectosPosibles: 'Golpe de calor, catarata (infrarrojo), quemaduras por salpicadura',
-        medidasControl: ['Ropa aluminizada reflectante', 'Careta de protección infrarroja', 'Rotación de personal estricta', 'WBGT monitoreo', 'Hidratación programada']
-      },
-      {
-        codigo: 'ACERO-QUI-001',
-        clasificacion: 'quimico',
-        peligro: 'Humos metálicos en fusión de hierro y acero',
-        descripcion: 'Inhalación de humos de hierro, manganeso, cromo y níquel en operaciones de fusión',
-        riesgoPotencial: 'Fiebre de los metales y manganismo',
-        efectosPosibles: 'Fiebre del metal (humos de zinc), manganismo (Parkinson laboral), siderosis',
-        medidasControl: ['Ventilación por extracción en alto horno y convertidores', 'Respirador P100 en fusión', 'Monitoreo de manganeso en sangre', 'Espirometría anual']
-      }
-    ],
-    normativaEspecifica: [
-      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
-      { codigo: 'RES-2400-1979', norma: 'Resolución 2400/1979', descripcion: 'Estatuto de Seguridad Industrial', obligatorio: true }
-    ],
-    eppRecomendado: ['Ropa aluminizada', 'Careta infrarroja + visera', 'Respirador P100', 'Guantes de horno', 'Botas de acero refractario', 'Protección auditiva'],
-    capacitacionesObligatorias: ['Seguridad en acerías', 'Prevención de estrés térmico extremo', 'Humos metálicos', 'Primeros auxilios - quemaduras graves']
-  },
 
   {
     codigoCIIU: '2421',
@@ -7979,39 +7820,6 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
     capacitacionesObligatorias: ['Silicosis en fundiciones', 'Manganismo', 'Seguridad en fundición', 'Primeros auxilios']
   },
 
-  {
-    codigoCIIU: '2511',
-    descripcionCIIU: 'Fabricación de productos metálicos para uso estructural',
-    nivelRiesgo: 'III',
-    sector: 'Manufactura - Metal',
-    peligrosPrioritarios: ['QUI-001', 'FIS-005', 'SEG-005', 'FIS-001', 'BIO-MEC-001', 'SEG-001'],
-    peligrosEspecificos: [
-      {
-        codigo: 'ESTMET-QUI-001',
-        clasificacion: 'quimico',
-        peligro: 'Humos de soldadura en fabricación de estructuras metálicas',
-        descripcion: 'Inhalación de humos de manganeso, cromo hexavalente y partículas metálicas en soldadura masiva',
-        riesgoPotencial: 'Siderosis, manganismo, cáncer por Cr VI',
-        efectosPosibles: 'Siderosis pulmonar, manganismo, cáncer en soldadores con acero inoxidable',
-        medidasControl: ['Extracción localizada en puesto de soldadura', 'Mascarilla P100 para humos de soldadura', 'Monitoreo de humos de soldadura', 'Espirometría semestral en soldadores']
-      },
-      {
-        codigo: 'ESTMET-SEG-001',
-        clasificacion: 'condiciones_seguridad',
-        peligro: 'Trabajo en alturas en montaje de estructuras',
-        descripcion: 'Instalación de estructuras metálicas en obra con trabajo en alturas',
-        riesgoPotencial: 'Caída en altura',
-        efectosPosibles: 'Traumatismos graves, muerte',
-        medidasControl: ['Certificación trabajo en alturas (Res. 4272/2021)', 'Arnés y línea de vida', 'Redes de seguridad', 'Análisis de riesgo previo']
-      }
-    ],
-    normativaEspecifica: [
-      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
-      { codigo: 'RES-4272-2021', norma: 'Resolución 4272/2021', descripcion: 'Trabajo seguro en alturas', obligatorio: true }
-    ],
-    eppRecomendado: ['Careta de soldadura auto-oscurecente', 'Mascarilla P100', 'Protección auditiva', 'Arnés de seguridad en alturas', 'Guantes de soldador', 'Calzado con puntera'],
-    capacitacionesObligatorias: ['Seguridad en soldadura', 'Trabajo en alturas', 'LOTO', 'Primeros auxilios']
-  },
 
   {
     codigoCIIU: '2512',
@@ -8038,30 +7846,6 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
     capacitacionesObligatorias: ['Espacios confinados', 'Seguridad en soldadura', 'Primeros auxilios']
   },
 
-  {
-    codigoCIIU: '2521',
-    descripcionCIIU: 'Fabricación de generadores de vapor, excepto calderas de agua caliente para calefacción central',
-    nivelRiesgo: 'IV',
-    sector: 'Manufactura - Metal',
-    peligrosPrioritarios: ['SEG-005', 'SEG-004', 'QUI-001', 'FIS-004', 'SEG-003'],
-    peligrosEspecificos: [
-      {
-        codigo: 'CALD-SEG-001',
-        clasificacion: 'condiciones_seguridad',
-        peligro: 'Explosión de recipientes a presión en prueba hidrostática y neumática',
-        descripcion: 'Pruebas hidrostáticas y neumáticas de calderas y generadores de vapor fabricados',
-        riesgoPotencial: 'Explosión de recipiente a presión',
-        efectosPosibles: 'Traumatismos graves, muerte, destrucción de instalaciones',
-        medidasControl: ['Zona de exclusión durante pruebas', 'Procedimientos certificados de prueba a presión', 'Equipo de inspección certificado', 'Revisión de diseño por persona competente']
-      }
-    ],
-    normativaEspecifica: [
-      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
-      { codigo: 'DEC-2106-1983', norma: 'Decreto 2106/1983', descripcion: 'Recipientes sujetos a presión', obligatorio: true }
-    ],
-    eppRecomendado: ['Careta facial', 'Casco', 'Protección auditiva', 'Ropa resistente al calor'],
-    capacitacionesObligatorias: ['Seguridad en recipientes a presión', 'Seguridad en soldadura', 'Primeros auxilios']
-  },
 
   {
     codigoCIIU: '2591',
@@ -8372,29 +8156,6 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
     capacitacionesObligatorias: ['Manejo de solventes', 'Higiene visual en óptica', 'Primeros auxilios']
   },
 
-  {
-    codigoCIIU: '2690',
-    descripcionCIIU: 'Fabricación de otros equipos y aparatos eléctricos n.c.p.',
-    nivelRiesgo: 'II',
-    sector: 'Manufactura - Electrónica',
-    peligrosPrioritarios: ['SEG-004', 'QUI-001', 'BIO-MEC-001', 'FIS-001'],
-    peligrosEspecificos: [
-      {
-        codigo: 'OTRELEC-SEG-001',
-        clasificacion: 'condiciones_seguridad',
-        peligro: 'Riesgo eléctrico en fabricación y prueba de equipos',
-        descripcion: 'Pruebas de equipos eléctricos en línea de fabricación',
-        riesgoPotencial: 'Contacto eléctrico',
-        efectosPosibles: 'Quemaduras, electrocución',
-        medidasControl: ['Procedimientos de prueba seguros', 'Herramientas aisladas', 'LOTO']
-      }
-    ],
-    normativaEspecifica: [
-      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
-    ],
-    eppRecomendado: ['Guantes dieléctricos', 'Gafas de seguridad', 'Calzado antiestático'],
-    capacitacionesObligatorias: ['Riesgo eléctrico', 'LOTO', 'Primeros auxilios']
-  },
 
   {
     codigoCIIU: '2811',
@@ -9410,30 +9171,6 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
     capacitacionesObligatorias: ['Trabajo en alturas', 'Operación de equipos de izaje', 'Primeros auxilios']
   },
 
-  {
-    codigoCIIU: '2090',
-    descripcionCIIU: 'Fabricación de otros productos químicos n.c.p.',
-    nivelRiesgo: 'III',
-    sector: 'Manufactura - Química',
-    peligrosPrioritarios: ['QUI-001', 'QUI-003', 'QUI-004', 'SEG-006', 'BIO-MEC-001'],
-    peligrosEspecificos: [
-      {
-        codigo: 'QUIMNCP-QUI-001',
-        clasificacion: 'quimico',
-        peligro: 'Sustancias químicas diversas en fabricación',
-        descripcion: 'Producción de adhesivos, ceras, lubricantes, aditivos u otros químicos con riesgos variables',
-        riesgoPotencial: 'Intoxicación, quemaduras o incendio según producto',
-        efectosPosibles: 'Variable según química del producto',
-        medidasControl: ['SDS actualizada para cada materia prima y producto', 'EPP específico por proceso', 'Ventilación adecuada', 'Plan de emergencias químicas']
-      }
-    ],
-    normativaEspecifica: [
-      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
-      { codigo: 'DEC-4741-2005', norma: 'Decreto 4741/2005', descripcion: 'Residuos peligrosos', obligatorio: true }
-    ],
-    eppRecomendado: ['EPP específico según proceso - consultar SDS'],
-    capacitacionesObligatorias: ['SDS y etiquetado de químicos', 'Manejo de derrame químico', 'Primeros auxilios']
-  },
 
   {
     codigoCIIU: '2100',
@@ -9470,30 +9207,6 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
     capacitacionesObligatorias: ['Manejo de HPAPI', 'Bioseguridad en industria farmacéutica', 'Gestión de residuos farmacéuticos', 'Primeros auxilios']
   },
 
-  {
-    codigoCIIU: '2210',
-    descripcionCIIU: 'Fabricación de llantas y neumáticos de caucho',
-    nivelRiesgo: 'III',
-    sector: 'Manufactura - Caucho y Plásticos',
-    peligrosPrioritarios: ['QUI-001', 'QUI-002', 'FIS-001', 'FIS-004', 'SEG-005'],
-    peligrosEspecificos: [
-      {
-        codigo: 'LLANTA-QUI-001',
-        clasificacion: 'quimico',
-        peligro: 'Humos de vulcanización y negro de humo',
-        descripcion: 'Inhalación de humos de vulcanización de caucho y negro de humo en fabricación de llantas',
-        riesgoPotencial: 'Cáncer y afecciones respiratorias crónicas',
-        efectosPosibles: 'Cáncer de vejiga (negro de humo, IARC grupo 2B), bronquitis crónica',
-        medidasControl: ['Extracción en prensas de vulcanización', 'Mascarilla P100', 'Monitoreo ambiental de negro de humo', 'Espirometría anual']
-      }
-    ],
-    normativaEspecifica: [
-      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
-      { codigo: 'RES-2400-1979', norma: 'Resolución 2400/1979', descripcion: 'Estatuto de Seguridad Industrial', obligatorio: true }
-    ],
-    eppRecomendado: ['Mascarilla P100', 'Protección auditiva', 'Guantes de cuero', 'Calzado con puntera', 'Ropa de algodón'],
-    capacitacionesObligatorias: ['Vigilancia de cáncer en industria del caucho', 'Control de humos de vulcanización', 'Primeros auxilios']
-  },
 
   {
     codigoCIIU: '2219',
@@ -9519,29 +9232,6 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
     capacitacionesObligatorias: ['Control de humos de caucho', 'Primeros auxilios']
   },
 
-  {
-    codigoCIIU: '2220',
-    descripcionCIIU: 'Fabricación de productos de plástico',
-    nivelRiesgo: 'III',
-    sector: 'Manufactura - Caucho y Plásticos',
-    peligrosPrioritarios: ['QUI-001', 'FIS-004', 'FIS-001', 'SEG-005', 'BIO-MEC-001'],
-    peligrosEspecificos: [
-      {
-        codigo: 'PLPROD-QUI-001',
-        clasificacion: 'quimico',
-        peligro: 'Vapores de plásticos en extrusión, inyección y termoformado',
-        descripcion: 'Degradación térmica de PVC, ABS, polietileno y otros plásticos con emisión de vapores y partículas',
-        riesgoPotencial: 'Intoxicación por vapores de degradación de plásticos',
-        efectosPosibles: 'Fiebre del plástico, irritación respiratoria, daño neurológico crónico',
-        medidasControl: ['Extracción localizada en boquillas de extrusoras e inyectoras', 'Mascarilla con filtro para vapores orgánicos', 'Monitoreo de COV en planta', 'Temperatura de proceso optimizada para minimizar degradación']
-      }
-    ],
-    normativaEspecifica: [
-      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
-    ],
-    eppRecomendado: ['Mascarilla con filtro para vapores', 'Guantes térmicos para purgas', 'Protección auditiva', 'Gafas de seguridad'],
-    capacitacionesObligatorias: ['Control de vapores en plásticos', 'Seguridad en maquinaria de plásticos', 'Primeros auxilios']
-  },
 
   {
     codigoCIIU: '2310',
@@ -11004,6 +10694,4312 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
     ],
     eppRecomendado: ['Botas de caucho altas', 'Guantes impermeables', 'Overol impermeable'],
     capacitacionesObligatorias: ['Leptospirosis y enfermedades acuáticas', 'Seguridad en estanques', 'Primeros auxilios']
+  },
+
+
+  // ==================== SECCIÓN C - MANUFACTURA (CÓDIGOS FALTANTES) ====================
+
+  {
+    codigoCIIU: '2029',
+    descripcionCIIU: 'Fabricación de otros productos químicos n.c.p.',
+    sector: 'Manufactura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a sustancias químicas diversas',
+        categoria: 'Químico',
+        descripcion: 'Contacto con productos químicos de diversa naturaleza durante procesos de fabricación',
+        fuenteGeneradora: 'Reactivos, solventes, catalizadores y productos intermedios',
+        actividadAsociada: 'Síntesis química, mezcla y envasado de productos',
+        riesgoPotencial: 'Intoxicación, quemaduras químicas, sensibilización',
+        efectosPosibles: 'Dermatitis, enfermedades respiratorias, daño orgánico',
+        medidasControl: ['Sustitución de sustancias peligrosas', 'Sistemas de ventilación local', 'EPP químico especializado', 'Fichas de seguridad (SDS)']
+      },
+      {
+        codigo: 'INC-001',
+        nombre: 'Riesgo de incendio y explosión',
+        categoria: 'Físico',
+        descripcion: 'Presencia de materiales inflamables y reactivos en procesos de manufactura química',
+        fuenteGeneradora: 'Solventes inflamables, gases y polvos combustibles',
+        actividadAsociada: 'Almacenamiento y manejo de materias primas y productos terminados',
+        riesgoPotencial: 'Incendio, explosión, quemaduras graves',
+        efectosPosibles: 'Lesiones por quemadura, pérdidas materiales, fatalidad',
+        medidasControl: ['Sistemas contra incendios', 'Almacenamiento seguro de inflamables', 'Control de fuentes de ignición', 'Plan de emergencia']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares Mínimos del SG-SST para industria química', obligatorio: true },
+      { codigo: 'Dec. 1072/2015', norma: 'Decreto 1072 de 2015', descripcion: 'Reglamento único del sector trabajo', obligatorio: true }
+    ],
+    eppRecomendado: ['Respirador con filtros para vapores orgánicos', 'Guantes de nitrilo', 'Gafas de seguridad', 'Traje de protección química', 'Botas con punta de acero'],
+    capacitacionesObligatorias: ['Manejo seguro de sustancias químicas', 'Uso correcto de EPP', 'Plan de emergencia y evacuación', 'Primeros auxilios en accidentes químicos']
+  },
+  {
+    codigoCIIU: '2030',
+    descripcionCIIU: 'Fabricación de fibras sintéticas y artificiales',
+    sector: 'Manufactura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a monómeros y solventes',
+        categoria: 'Químico',
+        descripcion: 'Inhalación y contacto con compuestos químicos usados en síntesis de fibras',
+        fuenteGeneradora: 'Monómeros, catalizadores, solventes y lubricantes de hilatura',
+        actividadAsociada: 'Polimerización, hilatura, estirado y texturizado de fibras',
+        riesgoPotencial: 'Intoxicación, sensibilización respiratoria y dérmica',
+        efectosPosibles: 'Asma ocupacional, dermatitis, daño hepático y renal',
+        medidasControl: ['Ventilación industrial en cabinas de hilatura', 'Monitoreo de COV en ambiente', 'EPP de vías respiratorias y dérmico', 'Sustitución de monómeros peligrosos']
+      },
+      {
+        codigo: 'ERG-001',
+        nombre: 'Carga física en operación de maquinaria',
+        categoria: 'Ergonómico',
+        descripcion: 'Posturas forzadas y movimientos repetitivos en operación de telares y bobinadoras',
+        fuenteGeneradora: 'Maquinaria de hilatura, bobinado y estirado',
+        actividadAsociada: 'Operación continua de equipos de producción de fibra',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas',
+        efectosPosibles: 'Síndrome del túnel carpiano, tendinitis, dorsalgia',
+        medidasControl: ['Rotación de puestos de trabajo', 'Pausas activas', 'Diseño ergonómico de puestos', 'Capacitación en higiene postural']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST', obligatorio: true },
+      { codigo: 'GTC-45', norma: 'GTC 45:2012', descripcion: 'Guía para identificación de peligros en manufactura', obligatorio: false }
+    ],
+    eppRecomendado: ['Protección respiratoria para vapores', 'Guantes de nitrilo', 'Gafas de seguridad', 'Calzado de seguridad', 'Tapa oídos (ruido de maquinaria)'],
+    capacitacionesObligatorias: ['Higiene industrial en manufactura textil', 'Ergonomía y prevención de lesiones', 'Uso y mantenimiento de EPP']
+  },
+  {
+    codigoCIIU: '2211',
+    descripcionCIIU: 'Fabricación de llantas y neumáticos de caucho',
+    sector: 'Manufactura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a negro de humo y compuestos de azufre',
+        categoria: 'Químico',
+        descripcion: 'Inhalación de partículas y vapores generados en vulcanización y mezclado de caucho',
+        fuenteGeneradora: 'Negro de humo, acelerantes, azufre y plastificantes',
+        actividadAsociada: 'Mezclado, vulcanización y acabado de neumáticos',
+        riesgoPotencial: 'Neumoconiosis, cáncer de pulmón, dermatitis',
+        efectosPosibles: 'Enfermedades respiratorias crónicas, sensibilización, daño pulmonar',
+        medidasControl: ['Captación en fuente de humos de vulcanización', 'Monitoreo continuo de material particulado', 'EPP respiratorio con filtros P100', 'Vigilancia epidemiológica respiratoria']
+      },
+      {
+        codigo: 'FIS-001',
+        nombre: 'Exposición a altas temperaturas',
+        categoria: 'Físico',
+        descripcion: 'Calor radiante y convectivo en hornos de vulcanización',
+        fuenteGeneradora: 'Prensas de vulcanización, hornos y autoclaves',
+        actividadAsociada: 'Vulcanización y curado de neumáticos',
+        riesgoPotencial: 'Estrés térmico, golpe de calor',
+        efectosPosibles: 'Fatiga térmica, deshidratación, colapso por calor',
+        medidasControl: ['Barreras térmicas y aislamiento', 'Rotación en áreas calientes', 'Hidratación adecuada', 'Monitoreo de temperatura corporal']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST para manufactura de caucho', obligatorio: true },
+      { codigo: 'GTC-45', norma: 'GTC 45:2012', descripcion: 'Identificación de peligros en procesos industriales', obligatorio: false }
+    ],
+    eppRecomendado: ['Respirador con filtros P100', 'Guantes de caucho resistente a calor', 'Gafas de seguridad', 'Mandil de cuero', 'Botas de seguridad con suela antideslizante'],
+    capacitacionesObligatorias: ['Riesgos en industria del caucho', 'Control de exposición a sustancias químicas', 'Estrés térmico y medidas preventivas']
+  },
+  {
+    codigoCIIU: '2212',
+    descripcionCIIU: 'Reencauche de llantas usadas',
+    sector: 'Manufactura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'MEC-001',
+        nombre: 'Riesgos mecánicos en raspado y preparación',
+        categoria: 'Mecánico',
+        descripcion: 'Contacto con equipos de raspado, bufado y prensas durante el proceso de reencauche',
+        fuenteGeneradora: 'Raspadoras, bufadoras, prensas de reencauche',
+        actividadAsociada: 'Preparación de carcasa, aplicación de caucho y vulcanización',
+        riesgoPotencial: 'Atrapamiento, cortes, amputación',
+        efectosPosibles: 'Lesiones graves en manos y extremidades',
+        medidasControl: ['Guardas de seguridad en maquinaria', 'Procedimientos de bloqueo LOTO', 'Capacitación en operación segura', 'Mantenimiento preventivo de equipos']
+      },
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a vapores de caucho y solventes',
+        categoria: 'Químico',
+        descripcion: 'Inhalación de vapores generados en bufado y vulcanización de caucho',
+        fuenteGeneradora: 'Caucho raspado, solventes de pegamento y vulcanizadora',
+        actividadAsociada: 'Bufado, cementado y vulcanización de llantas',
+        riesgoPotencial: 'Intoxicación por inhalación, dermatitis',
+        efectosPosibles: 'Irritación de vías respiratorias, sensibilización química',
+        medidasControl: ['Ventilación localizada en áreas de bufado', 'EPP respiratorio', 'Fichas de datos de seguridad disponibles', 'Monitoreo de higiene industrial']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos del SG-SST', obligatorio: true },
+      { codigo: 'Dec. 1072/2015', norma: 'Decreto 1072 de 2015', descripcion: 'Reglamento único del sector trabajo', obligatorio: true }
+    ],
+    eppRecomendado: ['Mascarilla con filtro para vapores orgánicos', 'Guantes de nitrilo grueso', 'Careta de protección facial', 'Delantal de cuero', 'Botas de seguridad'],
+    capacitacionesObligatorias: ['Operación segura de maquinaria de reencauche', 'Manejo de sustancias químicas', 'Bloqueo y etiquetado LOTO']
+  },
+  {
+    codigoCIIU: '2221',
+    descripcionCIIU: 'Fabricación de formas básicas de plástico',
+    sector: 'Manufactura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a vapores de plásticos fundidos',
+        categoria: 'Químico',
+        descripcion: 'Inhalación de gases y vapores generados durante extrusión, inyección y moldeo de plásticos',
+        fuenteGeneradora: 'Extrusoras, inyectoras y prensas de moldeo',
+        actividadAsociada: 'Extrusión, inyección, termoformado y calandrado de plásticos',
+        riesgoPotencial: 'Intoxicación por COV, sensibilización respiratoria',
+        efectosPosibles: 'Irritación de vías respiratorias, náuseas, cefalea',
+        medidasControl: ['Ventilación general y localizada', 'Monitoreo de COV en ambiente', 'Uso de polímeros con menor toxicidad', 'Vigilancia médica periódica']
+      },
+      {
+        codigo: 'FIS-001',
+        nombre: 'Exposición a altas temperaturas en moldeo',
+        categoria: 'Físico',
+        descripcion: 'Contacto con superficies calientes y proyección de plástico fundido',
+        fuenteGeneradora: 'Extrusoras, cabezales de extrusión, moldes calientes',
+        actividadAsociada: 'Operación de maquinaria de transformación de plásticos',
+        riesgoPotencial: 'Quemaduras por contacto o salpicadura',
+        efectosPosibles: 'Quemaduras de primero y segundo grado',
+        medidasControl: ['Guantes resistentes al calor', 'Pantallas de protección en máquinas', 'Señalización de superficies calientes', 'Procedimientos seguros de operación']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST manufactura', obligatorio: true },
+      { codigo: 'GTC-45', norma: 'GTC 45:2012', descripcion: 'Guía para identificación de peligros', obligatorio: false }
+    ],
+    eppRecomendado: ['Mascarilla con filtros para vapores', 'Guantes resistentes al calor', 'Gafas de seguridad', 'Mandil de protección térmica', 'Calzado de seguridad'],
+    capacitacionesObligatorias: ['Riesgos en transformación de plásticos', 'Control de exposición a vapores químicos', 'Operación segura de extrusoras e inyectoras']
+  },
+  {
+    codigoCIIU: '2229',
+    descripcionCIIU: 'Fabricación de artículos de plástico n.c.p.',
+    sector: 'Manufactura',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Movimientos repetitivos en producción',
+        categoria: 'Ergonómico',
+        descripcion: 'Tareas manuales repetitivas en ensamble, inspección y empaque de artículos plásticos',
+        fuenteGeneradora: 'Líneas de producción y ensamble manual',
+        actividadAsociada: 'Ensamble, rebabeo, inspección y empaque de productos plásticos',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas por repetitividad',
+        efectosPosibles: 'Síndrome del túnel carpiano, tendinitis, epicondilitis',
+        medidasControl: ['Análisis ergonómico de puestos', 'Rotación de tareas', 'Pausas activas periódicas', 'Herramientas con diseño ergonómico']
+      },
+      {
+        codigo: 'MEC-001',
+        nombre: 'Riesgos en maquinaria de corte y moldeo',
+        categoria: 'Mecánico',
+        descripcion: 'Contacto con partes móviles de maquinaria de corte, troquelado y moldeo',
+        fuenteGeneradora: 'Troqueladoras, cortadoras, prensas y robots industriales',
+        actividadAsociada: 'Troquelado, corte y moldeo de piezas plásticas',
+        riesgoPotencial: 'Cortes, atrapamientos, aplastamiento',
+        efectosPosibles: 'Heridas graves en manos y extremidades',
+        medidasControl: ['Guardas y resguardos en maquinaria', 'Sistema LOTO para mantenimiento', 'Señalización de riesgos mecánicos', 'Capacitación en operación segura']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST', obligatorio: true },
+      { codigo: 'Dec. 1072/2015', norma: 'Decreto 1072 de 2015', descripcion: 'Reglamento único del sector trabajo', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de nitrilo', 'Gafas de seguridad', 'Calzado de seguridad', 'Mascarilla desechable para partículas'],
+    capacitacionesObligatorias: ['Ergonomía en puestos de trabajo', 'Seguridad en operación de maquinaria', 'Prevención de lesiones músculo-esqueléticas']
+  },
+  {
+    codigoCIIU: '2432',
+    descripcionCIIU: 'Fundición de metales no ferrosos',
+    sector: 'Manufactura',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a humos metálicos y gases de fundición',
+        categoria: 'Químico',
+        descripcion: 'Inhalación de humos metálicos tóxicos generados en fusión y colada de aluminio, cobre, zinc y otros metales',
+        fuenteGeneradora: 'Hornos de fusión, cubilotes, crisoles y áreas de colada',
+        actividadAsociada: 'Fusión, colada, moldeo y acabado de metales no ferrosos',
+        riesgoPotencial: 'Fiebre de humos metálicos, intoxicación por plomo o cadmio',
+        efectosPosibles: 'Daño pulmonar, daño renal, intoxicación por metales pesados',
+        medidasControl: ['Extracción localizada de humos', 'Monitoreo de metales en sangre', 'EPP respiratorio con filtros para metales', 'Ventilación forzada en áreas de colada']
+      },
+      {
+        codigo: 'FIS-001',
+        nombre: 'Exposición a calor extremo y metal fundido',
+        categoria: 'Físico',
+        descripcion: 'Exposición a temperaturas superiores a 700°C y proyecciones de metal fundido',
+        fuenteGeneradora: 'Hornos de fundición, crisoles y canales de colada',
+        actividadAsociada: 'Colada, vaciado y desmoldeo de piezas',
+        riesgoPotencial: 'Quemaduras graves, golpe de calor, estrés térmico severo',
+        efectosPosibles: 'Quemaduras de tercer grado, colapso por calor',
+        medidasControl: ['Ropa de protección aluminizada', 'Careta de fundidor', 'Rotación en puestos de alto calor', 'Monitoreo de temperatura corporal']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST para fundición', obligatorio: true },
+      { codigo: 'Res. 2400/1979', norma: 'Resolución 2400 de 1979', descripcion: 'Estatuto de Seguridad Industrial - condiciones de calor', obligatorio: true }
+    ],
+    eppRecomendado: ['Traje aluminizado de fundidor', 'Careta de fundidor con visor térmico', 'Guantes de horno', 'Polainas de cuero', 'Respirador con filtros para humos metálicos'],
+    capacitacionesObligatorias: ['Seguridad en fundición de metales', 'Control de exposición a humos metálicos', 'Manejo de metal fundido y emergencias', 'Estrés térmico en trabajos con calor extremo']
+  },
+  {
+    codigoCIIU: '2513',
+    descripcionCIIU: 'Fabricación de generadores de vapor, excepto calderas de agua caliente',
+    sector: 'Manufactura',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'MEC-001',
+        nombre: 'Riesgos en soldadura y trabajo en calderería',
+        categoria: 'Mecánico',
+        descripcion: 'Riesgos de proyección de chispas, radiaciones y gases en trabajos de soldadura para fabricación de calderas y generadores',
+        fuenteGeneradora: 'Equipos de soldadura, corte con plasma y oxicorte',
+        actividadAsociada: 'Soldadura, corte, ensamble y prueba de equipos a presión',
+        riesgoPotencial: 'Quemaduras, radiación UV, inhalación de humos de soldadura',
+        efectosPosibles: 'Oftalmia por arco eléctrico, siderosis, lesiones por proyecciones',
+        medidasControl: ['Pantallas de soldadura con filtro adecuado', 'Ventilación en área de soldadura', 'EPP completo para soldador', 'Procedimientos de soldadura certificados']
+      },
+      {
+        codigo: 'FIS-001',
+        nombre: 'Riesgo por pruebas hidrostáticas y presión',
+        categoria: 'Físico',
+        descripcion: 'Peligro de ruptura durante pruebas de presión en calderas y generadores fabricados',
+        fuenteGeneradora: 'Equipos sometidos a prueba hidrostática y neumática',
+        actividadAsociada: 'Pruebas de presión, inspección y certificación de equipos',
+        riesgoPotencial: 'Explosión, proyección de fluidos a presión',
+        efectosPosibles: 'Lesiones graves, fatalidades por onda expansiva',
+        medidasControl: ['Protocolos de prueba hidrostática certificados', 'Zona de exclusión durante pruebas', 'Válvulas de seguridad calibradas', 'Inspectores certificados ICONTEC']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST', obligatorio: true },
+      { codigo: 'Dec. 1072/2015', norma: 'Decreto 1072 de 2015', descripcion: 'Reglamento único sector trabajo', obligatorio: true }
+    ],
+    eppRecomendado: ['Careta de soldador auto-oscurecente', 'Guantes de cuero para soldadura', 'Mandil de cuero', 'Respirador para humos de soldadura', 'Botas de seguridad con puntera metálica'],
+    capacitacionesObligatorias: ['Soldadura segura y riesgos asociados', 'Trabajo con equipos a presión', 'Pruebas hidrostáticas - protocolos de seguridad', 'Trabajo en espacios confinados']
+  },
+  {
+    codigoCIIU: '2520',
+    descripcionCIIU: 'Fabricación de armas y municiones',
+    sector: 'Manufactura',
+    nivelRiesgo: 'V',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a plomo y pólvora',
+        categoria: 'Químico',
+        descripcion: 'Contacto e inhalación de polvo de plomo, nitrocelulosa y compuestos explosivos en fabricación de municiones',
+        fuenteGeneradora: 'Fundición de proyectiles, prensado de pólvora y cápsulas de fulminante',
+        actividadAsociada: 'Fabricación de cartuchos, cápsulas, espoletas y cargas propulsoras',
+        riesgoPotencial: 'Saturnismo, intoxicación por nitrocompuestos, explosión accidental',
+        efectosPosibles: 'Daño neurológico por plomo, lesiones graves por explosión',
+        medidasControl: ['Sistemas de captación de polvo de plomo', 'Monitoreo biológico de plombemia', 'Controles antiexplosivos certificados', 'Procedimientos de manejo de explosivos según Indumil']
+      },
+      {
+        codigo: 'EXP-001',
+        nombre: 'Riesgo de explosión en manufactura de municiones',
+        categoria: 'Físico',
+        descripcion: 'Posibilidad de detonación accidental durante cargue de propelentes y fulminantes',
+        fuenteGeneradora: 'Áreas de cargue de pólvora, prensado de fulminantes y ensamble de munición',
+        actividadAsociada: 'Ensamble final, cargue y control de calidad de municiones',
+        riesgoPotencial: 'Explosión masiva, onda expansiva, fragmentación',
+        efectosPosibles: 'Lesiones graves o fatalidades por explosión',
+        medidasControl: ['Edificaciones a prueba de explosión (búnkeres)', 'Protocolos estrictos de manejo de explosivos', 'Límite de personas en zona de riesgo', 'Autorización del INDUMIL y Ejército Nacional']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo V', obligatorio: true },
+      { codigo: 'Dec. 2535/1993', norma: 'Decreto 2535 de 1993', descripcion: 'Requisitos para tenencia y porte de armas', obligatorio: true }
+    ],
+    eppRecomendado: ['Traje antiexplosión', 'Visor facial antifragmentación', 'Guantes especiales para explosivos', 'Respirador con filtros para plomo', 'Calzado antiestático'],
+    capacitacionesObligatorias: ['Manejo seguro de explosivos y municiones', 'Control de exposición a plomo', 'Procedimientos de emergencia en explosiones', 'Normatividad INDUMIL y Ejército Nacional']
+  },
+  {
+    codigoCIIU: '2680',
+    descripcionCIIU: 'Fabricación de medios magnéticos y ópticos para almacenamiento de datos',
+    sector: 'Manufactura',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a solventes en recubrimiento de medios',
+        categoria: 'Químico',
+        descripcion: 'Uso de solventes orgánicos en procesos de recubrimiento magnético y óptico de discos y cintas',
+        fuenteGeneradora: 'Recubridoras, bañeras de solvente y cabinas de secado',
+        actividadAsociada: 'Recubrimiento magnético, metalizado y lacado de medios de almacenamiento',
+        riesgoPotencial: 'Inhalación de vapores de solventes',
+        efectosPosibles: 'Irritación respiratoria, cefalea, mareos',
+        medidasControl: ['Ventilación en cabinas de recubrimiento', 'Uso de solventes de menor toxicidad', 'Monitoreo de COV', 'EPP respiratorio adecuado']
+      },
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo en sala limpia con condiciones especiales',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo en salas limpias con restricciones de movimiento, trajes especiales y alta concentración visual',
+        fuenteGeneradora: 'Salas limpias de producción de medios ópticos y magnéticos',
+        actividadAsociada: 'Manufactura y control de calidad en ambientes controlados',
+        riesgoPotencial: 'Fatiga visual, estrés por condiciones de trabajo restrictivas',
+        efectosPosibles: 'Fatiga ocular, cefalea, tensión muscular',
+        medidasControl: ['Iluminación adecuada en sala limpia', 'Rotación de personal', 'Pausas programadas', 'Evaluación ergonómica del puesto']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Dec. 1072/2015', norma: 'Decreto 1072 de 2015', descripcion: 'Reglamento único del sector trabajo', obligatorio: true }
+    ],
+    eppRecomendado: ['Traje para sala limpia', 'Guantes de látex sin polvo', 'Mascarilla para sala limpia', 'Gafas de protección UV'],
+    capacitacionesObligatorias: ['Procedimientos de sala limpia', 'Manejo de solventes industriales', 'Ergonomía en manufactura de precisión']
+  },
+  {
+    codigoCIIU: '2711',
+    descripcionCIIU: 'Fabricación de motores, generadores y transformadores eléctricos',
+    sector: 'Manufactura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'ELE-001',
+        nombre: 'Riesgo eléctrico en pruebas de equipos',
+        categoria: 'Eléctrico',
+        descripcion: 'Exposición a voltajes elevados durante pruebas eléctricas de motores y transformadores fabricados',
+        fuenteGeneradora: 'Bancos de prueba de alta tensión, generadores de prueba',
+        actividadAsociada: 'Pruebas de rigidez dieléctrica, continuidad y resistencia de aislamiento',
+        riesgoPotencial: 'Electrocución, arco eléctrico, quemaduras eléctricas',
+        efectosPosibles: 'Paro cardíaco, quemaduras graves, lesiones por arco',
+        medidasControl: ['Procedimientos de prueba eléctrica con distancias de seguridad', 'EPP dieléctrico certificado', 'Sistema de bloqueo eléctrico', 'Área de pruebas delimitada y señalizada']
+      },
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a barnices y solventes de impregnación',
+        categoria: 'Químico',
+        descripcion: 'Inhalación y contacto con barnices de impregnación de bobinados y solventes asociados',
+        fuenteGeneradora: 'Hornos de impregnación, bañeras de barniz y áreas de secado',
+        actividadAsociada: 'Bobinado, impregnación y curado de motores y transformadores',
+        riesgoPotencial: 'Sensibilización respiratoria y dérmica por barnices',
+        efectosPosibles: 'Dermatitis de contacto, irritación respiratoria',
+        medidasControl: ['Ventilación en hornos de impregnación', 'Guantes de nitrilo resistentes a solventes', 'Rotación en puestos de impregnación', 'Fichas de seguridad disponibles']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST', obligatorio: true },
+      { codigo: 'RETIE', norma: 'Reglamento Técnico de Instalaciones Eléctricas', descripcion: 'Normas de seguridad eléctrica', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes dieléctricos clase apropiada', 'Careta anti-arco eléctrico', 'Ropa de trabajo retardante a la llama', 'Guantes de nitrilo para barnices', 'Calzado dieléctrico'],
+    capacitacionesObligatorias: ['Seguridad eléctrica y trabajos con alta tensión', 'Manejo seguro de barnices industriales', 'Bloqueo y etiquetado eléctrico (LOTO)', 'Primeros auxilios en accidentes eléctricos']
+  },
+  {
+    codigoCIIU: '2712',
+    descripcionCIIU: 'Fabricación de aparatos de distribución y control de la energía eléctrica',
+    sector: 'Manufactura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'ELE-001',
+        nombre: 'Riesgo eléctrico en ensamble y prueba de tableros',
+        categoria: 'Eléctrico',
+        descripcion: 'Exposición a energía eléctrica durante ensamble y prueba de tableros de distribución y control',
+        fuenteGeneradora: 'Tableros energizados, bancos de prueba, interruptores y contactores',
+        actividadAsociada: 'Ensamble, cableado, prueba y certificación de tableros eléctricos',
+        riesgoPotencial: 'Electrocución, arco eléctrico, cortocircuito',
+        efectosPosibles: 'Paro cardíaco, quemaduras por arco, politraumatismos',
+        medidasControl: ['Trabajo con tensión solo por personal certificado', 'EPP dieléctrico completo', 'Procedimientos de trabajo seguro en tableros', 'Mediciones previas con multímetro']
+      },
+      {
+        codigo: 'ERG-001',
+        nombre: 'Carga física en ensamble de tableros',
+        categoria: 'Ergonómico',
+        descripcion: 'Posturas inadecuadas y esfuerzo físico en ensamble y cableado de tableros eléctricos de gran tamaño',
+        fuenteGeneradora: 'Tableros de gran formato, trabajo sobre plataformas y escaleras',
+        actividadAsociada: 'Montaje de componentes, cableado y ajuste de tableros',
+        riesgoPotencial: 'Lesiones dorsolumbares, caídas desde altura',
+        efectosPosibles: 'Hernias discales, esguinces, fracturas por caída',
+        medidasControl: ['Equipos de elevación para tableros pesados', 'Plataformas ergonómicas de trabajo', 'Cinturón de soporte lumbar', 'Capacitación en manejo manual de cargas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST', obligatorio: true },
+      { codigo: 'RETIE', norma: 'Reglamento Técnico de Instalaciones Eléctricas', descripcion: 'Requisitos de seguridad en fabricación eléctrica', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes dieléctricos', 'Careta anti-arco', 'Ropa retardante a la llama', 'Calzado dieléctrico', 'Cinturón de soporte lumbar'],
+    capacitacionesObligatorias: ['Seguridad en trabajos eléctricos', 'Trabajo seguro en tableros de distribución', 'Ergonomía en ensamble industrial', 'RETIE y normatividad eléctrica colombiana']
+  },
+
+  // ==================== SECCIÓN F - CONSTRUCCIÓN (CÓDIGOS FALTANTES) ====================
+
+  {
+    codigoCIIU: '4112',
+    descripcionCIIU: 'Construcción de edificios no residenciales',
+    sector: 'Construcción',
+    nivelRiesgo: 'V',
+    peligrosIdentificados: [
+      {
+        codigo: 'ALT-001',
+        nombre: 'Trabajo en alturas en estructuras comerciales e industriales',
+        categoria: 'Físico',
+        descripcion: 'Labores en andamios, encofrados y estructuras de edificios no residenciales de gran altura',
+        fuenteGeneradora: 'Andamios tubulares, fachadas, losas y estructuras metálicas en obra',
+        actividadAsociada: 'Estructura, mampostería, instalaciones y acabados en edificios comerciales',
+        riesgoPotencial: 'Caída desde altura, derrumbe de andamios',
+        efectosPosibles: 'Traumatismos graves, fatalidades',
+        medidasControl: ['Arnés de cuerpo completo certificado', 'Líneas de vida horizontales y verticales', 'Inspección diaria de andamios', 'Permiso de trabajo en alturas']
+      },
+      {
+        codigo: 'MEC-001',
+        nombre: 'Operación de maquinaria pesada de construcción',
+        categoria: 'Mecánico',
+        descripcion: 'Riesgos por operación de grúas, montacargas, excavadoras y equipos de elevación en obra',
+        fuenteGeneradora: 'Grúas torre, montacargas de obra, retroexcavadoras y plumas',
+        actividadAsociada: 'Izado de cargas, movimiento de materiales y excavaciones',
+        riesgoPotencial: 'Volcamiento de equipos, caída de objetos, atropellamiento',
+        efectosPosibles: 'Aplastamiento, lesiones graves, fatalidades',
+        medidasControl: ['Operadores de grúa certificados', 'Señalero (rigger) capacitado', 'Zona de exclusión bajo cargas izadas', 'Inspección de equipos de elevación']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 4272/2021', norma: 'Resolución 4272 de 2021', descripcion: 'Requisitos para trabajo seguro en alturas', obligatorio: true },
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST construcción riesgo V', obligatorio: true }
+    ],
+    eppRecomendado: ['Arnés de cuerpo completo', 'Casco de seguridad clase E', 'Botas con puntera metálica', 'Guantes de cuero', 'Gafas de protección', 'Chaleco reflectivo'],
+    capacitacionesObligatorias: ['Trabajo seguro en alturas - certificación', 'Operación segura de maquinaria de construcción', 'Plan de emergencia en obra', 'Investigación de accidentes de trabajo']
+  },
+  {
+    codigoCIIU: '4220',
+    descripcionCIIU: 'Construcción de proyectos de servicio público',
+    sector: 'Construcción',
+    nivelRiesgo: 'V',
+    peligrosIdentificados: [
+      {
+        codigo: 'EXC-001',
+        nombre: 'Excavaciones y zanjas para redes de servicios',
+        categoria: 'Físico',
+        descripcion: 'Trabajo en zanjas profundas para instalación de redes de acueducto, alcantarillado, gas y electricidad',
+        fuenteGeneradora: 'Excavaciones a cielo abierto y trincheras para instalación de redes',
+        actividadAsociada: 'Instalación de tuberías, ductos y cables de redes de servicio público',
+        riesgoPotencial: 'Derrumbe de zanjas, sepultamiento, asfixia en espacios confinados',
+        efectosPosibles: 'Aplastamiento, asfixia, fatalidades',
+        medidasControl: ['Entibado de zanjas según profundidad', 'Monitoreo de gases en zanjas', 'Protección perimetral con cinta y barreras', 'Permiso de trabajo en espacios confinados']
+      },
+      {
+        codigo: 'ELE-001',
+        nombre: 'Riesgo eléctrico por interferencia de redes',
+        categoria: 'Eléctrico',
+        descripcion: 'Contacto accidental con cables eléctricos subterráneos o aéreos durante excavaciones',
+        fuenteGeneradora: 'Redes eléctricas subterráneas, postes y cables aéreos',
+        actividadAsociada: 'Excavación y construcción en zonas con redes de servicios existentes',
+        riesgoPotencial: 'Electrocución por contacto con líneas activas',
+        efectosPosibles: 'Paro cardíaco, quemaduras eléctricas, fatalidad',
+        medidasControl: ['Detección de redes subterráneas antes de excavar', 'Coordinación con empresas de servicios', 'Excavación manual en zonas con redes', 'Señalización y delimitación de redes activas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo V', obligatorio: true },
+      { codigo: 'Res. 4272/2021', norma: 'Resolución 4272 de 2021', descripcion: 'Trabajo seguro en alturas y espacios confinados', obligatorio: true }
+    ],
+    eppRecomendado: ['Casco de seguridad', 'Chaleco reflectivo de alta visibilidad', 'Botas de seguridad con puntera', 'Guantes de trabajo', 'Detector de gases para espacios confinados'],
+    capacitacionesObligatorias: ['Trabajo seguro en excavaciones y zanjas', 'Espacios confinados - entrada y rescate', 'Seguridad vial en obra pública', 'Identificación de redes de servicios públicos']
+  },
+  {
+    codigoCIIU: '4290',
+    descripcionCIIU: 'Construcción de otras obras de ingeniería civil',
+    sector: 'Construcción',
+    nivelRiesgo: 'V',
+    peligrosIdentificados: [
+      {
+        codigo: 'ALT-001',
+        nombre: 'Trabajo en altura en puentes y viaductos',
+        categoria: 'Físico',
+        descripcion: 'Actividades sobre estructuras de puentes, viaductos, represas y obras civiles de gran envergadura',
+        fuenteGeneradora: 'Tableros de puentes, pilas, viaductos y estructuras en altura',
+        actividadAsociada: 'Construcción de puentes, viaductos, túneles y obras hidráulicas',
+        riesgoPotencial: 'Caída desde altura, volcamiento de estructuras temporales',
+        efectosPosibles: 'Traumatismos graves, fatalidades',
+        medidasControl: ['Sistema de protección contra caídas certificado', 'Andamios colgantes inspeccionados', 'Permiso de trabajo en alturas', 'Plan de rescate en altura']
+      },
+      {
+        codigo: 'PSI-001',
+        nombre: 'Factores psicosociales en obras de larga duración',
+        categoria: 'Psicosocial',
+        descripcion: 'Estrés y fatiga por trabajo en condiciones remotas, lejos del núcleo familiar y con jornadas extendidas',
+        fuenteGeneradora: 'Campamentos de obra en zonas alejadas, turnos nocturnos y extendidos',
+        actividadAsociada: 'Trabajo en proyectos de infraestructura de larga duración en zonas remotas',
+        riesgoPotencial: 'Estrés crónico, agotamiento, conductas de riesgo',
+        efectosPosibles: 'Burnout, accidentes por fatiga, problemas de salud mental',
+        medidasControl: ['Programas de bienestar para trabajadores en campamentos', 'Rotación periódica para visita familiar', 'Atención psicológica disponible', 'Jornadas de trabajo reguladas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo V', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true }
+    ],
+    eppRecomendado: ['Arnés de cuerpo completo', 'Casco de seguridad', 'Chaleco reflectivo', 'Botas con puntera y suela antideslizante', 'Guantes de trabajo'],
+    capacitacionesObligatorias: ['Trabajo seguro en alturas - certificación', 'Riesgos psicosociales en trabajo en zonas remotas', 'Plan de emergencia en obras de ingeniería civil', 'Primeros auxilios avanzados']
+  },
+  {
+    codigoCIIU: '4311',
+    descripcionCIIU: 'Demolición',
+    sector: 'Construcción',
+    nivelRiesgo: 'V',
+    peligrosIdentificados: [
+      {
+        codigo: 'DEM-001',
+        nombre: 'Derrumbe y colapso de estructuras en demolición',
+        categoria: 'Físico',
+        descripcion: 'Riesgo de colapso parcial o total de estructuras durante trabajos de demolición controlada o selectiva',
+        fuenteGeneradora: 'Estructuras en demolición, muros portantes, losas y columnas',
+        actividadAsociada: 'Demolición manual, mecánica o con explosivos de edificaciones',
+        riesgoPotencial: 'Aplastamiento por derrumbe, sepultamiento',
+        efectosPosibles: 'Politraumatismos graves, aplastamiento, fatalidades',
+        medidasControl: ['Estudio previo de estabilidad estructural', 'Secuencia de demolición técnicamente aprobada', 'Zona de exclusión amplia', 'Supervisión permanente de ingeniero estructural']
+      },
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a asbesto, plomo y materiales peligrosos',
+        categoria: 'Químico',
+        descripcion: 'Liberación de asbesto, plomo y otros materiales peligrosos durante demolición de edificaciones antiguas',
+        fuenteGeneradora: 'Techos de asbesto-cemento, pinturas con plomo, tuberías de amianto',
+        actividadAsociada: 'Demolición de edificaciones con materiales de construcción históricos peligrosos',
+        riesgoPotencial: 'Mesotelioma, saturnismo, intoxicación por materiales peligrosos',
+        efectosPosibles: 'Enfermedades pulmonares graves, cáncer, daño neurológico',
+        medidasControl: ['Identificación previa de materiales peligrosos', 'Remoción de asbesto por empresa certificada', 'EPP de máximo nivel para materiales peligrosos', 'Vigilancia médica específica']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo V demolición', obligatorio: true },
+      { codigo: 'Res. 4272/2021', norma: 'Resolución 4272 de 2021', descripcion: 'Trabajo seguro en alturas', obligatorio: true }
+    ],
+    eppRecomendado: ['Arnés de cuerpo completo', 'Casco con visera', 'Respirador media cara con filtros P100', 'Traje de protección contra partículas', 'Botas de seguridad reforzadas', 'Guantes anticorte'],
+    capacitacionesObligatorias: ['Técnicas seguras de demolición', 'Identificación y manejo de materiales peligrosos en demolición', 'Trabajo seguro en alturas', 'Plan de emergencia en demolición']
+  },
+  {
+    codigoCIIU: '4312',
+    descripcionCIIU: 'Preparación del terreno',
+    sector: 'Construcción',
+    nivelRiesgo: 'V',
+    peligrosIdentificados: [
+      {
+        codigo: 'MEC-001',
+        nombre: 'Operación de maquinaria de movimiento de tierras',
+        categoria: 'Mecánico',
+        descripcion: 'Riesgos en operación de buldóceres, motoniveladoras, compactadoras y excavadoras en preparación de terrenos',
+        fuenteGeneradora: 'Maquinaria pesada de movimiento de tierras en frentes de obra',
+        actividadAsociada: 'Descapote, explanación, compactación y nivelación de terrenos',
+        riesgoPotencial: 'Volcamiento de maquinaria, atropellamiento de trabajadores',
+        efectosPosibles: 'Aplastamiento, politraumatismos, fatalidades',
+        medidasControl: ['Operadores certificados para cada equipo', 'Vigías y señaleros en frentes de obra', 'Revisión pre-operacional diaria', 'Rutas de circulación definidas en obra']
+      },
+      {
+        codigo: 'PSI-001',
+        nombre: 'Exposición a polvo en excavaciones y movimiento de tierra',
+        categoria: 'Físico',
+        descripcion: 'Generación de polvo con sílice en preparación de terrenos, especialmente en suelos arcillosos y arenosos',
+        fuenteGeneradora: 'Movimiento de tierras, vías internas de obra sin pavimentar',
+        actividadAsociada: 'Explanación, nivelación y compactación de suelos',
+        riesgoPotencial: 'Silicosis por exposición crónica a polvo de sílice',
+        efectosPosibles: 'Silicosis, fibrosis pulmonar, EPOC',
+        medidasControl: ['Riego de vías internas de obra', 'Cabinas cerradas con filtración en maquinaria', 'Monitoreo de polvo en ambiente', 'EPP respiratorio para operadores y peones']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo V', obligatorio: true },
+      { codigo: 'Dec. 1072/2015', norma: 'Decreto 1072 de 2015', descripcion: 'Reglamento único sector trabajo', obligatorio: true }
+    ],
+    eppRecomendado: ['Casco de seguridad', 'Chaleco reflectivo', 'Mascarilla N95 para polvo', 'Protección auditiva', 'Botas de seguridad', 'Guantes de trabajo'],
+    capacitacionesObligatorias: ['Operación segura de maquinaria pesada', 'Riesgos por exposición a polvo y sílice', 'Señalización y seguridad vial en obra', 'Investigación de accidentes']
+  },
+  {
+    codigoCIIU: '4329',
+    descripcionCIIU: 'Otras instalaciones especializadas',
+    sector: 'Construcción',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'ELE-001',
+        nombre: 'Riesgo eléctrico en instalaciones especializadas',
+        categoria: 'Eléctrico',
+        descripcion: 'Trabajos eléctricos, de gas, refrigeración y otros sistemas especializados en edificaciones',
+        fuenteGeneradora: 'Tableros eléctricos, redes de gas, sistemas HVAC y automatización',
+        actividadAsociada: 'Instalación de sistemas eléctricos, HVAC, gas y automatización en edificios',
+        riesgoPotencial: 'Electrocución, explosión de gas, caída desde altura',
+        efectosPosibles: 'Paro cardíaco, quemaduras, lesiones por caída',
+        medidasControl: ['Permisos de trabajo específicos por actividad', 'Coordinación de trabajos simultáneos', 'EPP específico por tipo de instalación', 'Certificación de instaladores']
+      },
+      {
+        codigo: 'ALT-001',
+        nombre: 'Trabajo en alturas para instalaciones en edificios',
+        categoria: 'Físico',
+        descripcion: 'Instalación de sistemas especializados en pisos altos, techos y fachadas de edificaciones',
+        fuenteGeneradora: 'Andamios, plataformas elevadoras y escaleras en instalación',
+        actividadAsociada: 'Instalación de sistemas de climatización, seguridad y automatización en altura',
+        riesgoPotencial: 'Caída desde altura, golpe por objetos',
+        efectosPosibles: 'Traumatismos, fracturas, fatalidades',
+        medidasControl: ['Arnés de cuerpo completo y línea de vida', 'Plataformas elevadoras certificadas', 'Permiso de trabajo en alturas', 'Vigía de seguridad']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo IV', obligatorio: true },
+      { codigo: 'Res. 4272/2021', norma: 'Resolución 4272 de 2021', descripcion: 'Trabajo seguro en alturas', obligatorio: true }
+    ],
+    eppRecomendado: ['Arnés de cuerpo completo', 'Casco de seguridad', 'Guantes dieléctricos', 'Calzado de seguridad', 'Gafas de protección'],
+    capacitacionesObligatorias: ['Trabajo seguro en alturas', 'Seguridad eléctrica básica', 'Instalaciones de gas - riesgos y prevención', 'Coordinación de trabajos simultáneos']
+  },
+  {
+    codigoCIIU: '4330',
+    descripcionCIIU: 'Terminación y acabado de edificios y obras de ingeniería civil',
+    sector: 'Construcción',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a pinturas, solventes y pegantes',
+        categoria: 'Químico',
+        descripcion: 'Inhalación y contacto dérmico con pinturas, barnices, solventes y adhesivos en trabajos de acabado',
+        fuenteGeneradora: 'Pinturas, barnices, solventes de limpieza y adhesivos de instalación',
+        actividadAsociada: 'Pintura, barnizado, enchape, instalación de pisos y carpintería',
+        riesgoPotencial: 'Intoxicación por solventes, sensibilización química',
+        efectosPosibles: 'Daño neurológico, hepatotóxico, dermatitis de contacto',
+        medidasControl: ['Ventilación durante trabajos de pintura', 'Uso de pinturas base agua cuando sea posible', 'EPP respiratorio y dérmico', 'Rotación de personal en tareas con alta exposición']
+      },
+      {
+        codigo: 'ERG-001',
+        nombre: 'Posturas forzadas en trabajos de acabado',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo en posiciones de rodillas, agachado y con brazos elevados en instalación de enchapes, pisos y cielos rasos',
+        fuenteGeneradora: 'Pisos, paredes y cielos rasos en edificaciones',
+        actividadAsociada: 'Instalación de cerámicas, madera, estuco, pintura y elementos de acabado',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas por posturas forzadas',
+        efectosPosibles: 'Lesiones de rodilla, dorsalgia, tendinitis de hombro',
+        medidasControl: ['Rodilleras ergonómicas', 'Herramientas con mango largo', 'Plataformas de trabajo ajustables', 'Pausas activas y rotación de tareas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo IV', obligatorio: true },
+      { codigo: 'GTC-45', norma: 'GTC 45:2012', descripcion: 'Guía para identificación de peligros en construcción', obligatorio: false }
+    ],
+    eppRecomendado: ['Mascarilla con filtro para vapores orgánicos', 'Guantes de nitrilo', 'Rodilleras ergonómicas', 'Gafas de seguridad', 'Calzado de seguridad'],
+    capacitacionesObligatorias: ['Riesgos en trabajos de acabado de construcción', 'Manejo seguro de pinturas y solventes', 'Ergonomía en trabajos de acabado', 'Uso correcto de EPP']
+  },
+  {
+    codigoCIIU: '4390',
+    descripcionCIIU: 'Otras actividades especializadas para la construcción de edificios y obras de ingeniería civil',
+    sector: 'Construcción',
+    nivelRiesgo: 'V',
+    peligrosIdentificados: [
+      {
+        codigo: 'ALT-001',
+        nombre: 'Trabajo en alturas en actividades especializadas',
+        categoria: 'Físico',
+        descripcion: 'Actividades de impermeabilización, aislamiento, montaje de fachadas y trabajos en altura de alta especialización',
+        fuenteGeneradora: 'Andamios colgantes, plataformas elevadoras y sistemas de acceso por cuerda',
+        actividadAsociada: 'Impermeabilización de techos, montaje de fachadas, instalación de vidrios en altura',
+        riesgoPotencial: 'Caída desde altura, golpe por objetos',
+        efectosPosibles: 'Traumatismos graves, politraumatismos, fatalidades',
+        medidasControl: ['Sistema de acceso por cuerda certificado', 'Arnés de cuerpo completo con doble cola', 'Permiso de trabajo en alturas', 'Plan de rescate en altura']
+      },
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a impermeabilizantes y adhesivos especializados',
+        categoria: 'Químico',
+        descripcion: 'Contacto con impermeabilizantes bituminosos, resinas epóxicas y solventes en trabajos de especialidad',
+        fuenteGeneradora: 'Impermeabilizantes calientes, resinas y solventes especiales',
+        actividadAsociada: 'Impermeabilización, aplicación de resinas y tratamientos especiales de superficies',
+        riesgoPotencial: 'Quemaduras por materiales calientes, intoxicación',
+        efectosPosibles: 'Quemaduras dérmicas, irritación respiratoria crónica',
+        medidasControl: ['EPP resistente a altas temperaturas para impermeabilizantes calientes', 'Ventilación en áreas de aplicación', 'Fichas de seguridad accesibles', 'Capacitación específica en materiales de especialidad']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo V', obligatorio: true },
+      { codigo: 'Res. 4272/2021', norma: 'Resolución 4272 de 2021', descripcion: 'Trabajo seguro en alturas - certificación', obligatorio: true }
+    ],
+    eppRecomendado: ['Arnés de cuerpo completo con doble cola de yoyo', 'Casco con barbiquejo', 'Guantes resistentes a calor y químicos', 'Respirador para vapores orgánicos', 'Botas de seguridad'],
+    capacitacionesObligatorias: ['Trabajo seguro en alturas - nivel avanzado', 'Manejo seguro de materiales impermeabilizantes', 'Rescate en altura', 'Primeros auxilios en obra']
+  },
+
+  // ==================== SECCIÓN H - TRANSPORTE Y ALMACENAMIENTO (CÓDIGOS FALTANTES) ====================
+
+  {
+    codigoCIIU: '4911',
+    descripcionCIIU: 'Transporte férreo de pasajeros',
+    sector: 'Transporte',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'VIA-001',
+        nombre: 'Riesgo de accidente ferroviario',
+        categoria: 'Físico',
+        descripcion: 'Colisiones, descarrilamientos y accidentes en operación de trenes y metros de pasajeros',
+        fuenteGeneradora: 'Material rodante, infraestructura ferroviaria y pasos a nivel',
+        actividadAsociada: 'Operación, mantenimiento y control de trenes de pasajeros',
+        riesgoPotencial: 'Descarrilamiento, colisión, atropellamiento',
+        efectosPosibles: 'Lesiones graves, fatalidades masivas',
+        medidasControl: ['Sistema de gestión de seguridad ferroviaria', 'Mantenimiento preventivo de material rodante', 'Control automatizado de tráfico ferroviario', 'Capacitación y certificación de maquinistas']
+      },
+      {
+        codigo: 'ELE-001',
+        nombre: 'Riesgo eléctrico en sistemas de tracción',
+        categoria: 'Eléctrico',
+        descripcion: 'Exposición a alta tensión en sistemas de catenaria, tercer carril y subestaciones eléctricas',
+        fuenteGeneradora: 'Catenaria, tercer carril de alta tensión y subestaciones de tracción',
+        actividadAsociada: 'Mantenimiento de infraestructura eléctrica ferroviaria',
+        riesgoPotencial: 'Electrocución por contacto con sistema de catenaria',
+        efectosPosibles: 'Paro cardíaco, quemaduras eléctricas, fatalidad',
+        medidasControl: ['Enclavamientos eléctricos de seguridad', 'Ventanas de mantenimiento con línea desenergizada', 'EPP dieléctrico de alta tensión', 'Procedimientos de trabajo en catenaria']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST transporte férreo', obligatorio: true },
+      { codigo: 'Dec. 1079/2015', norma: 'Decreto 1079 de 2015', descripcion: 'Reglamento único del sector transporte', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco reflectivo de alta visibilidad', 'Casco de seguridad', 'Guantes dieléctricos', 'Calzado de seguridad', 'Protección auditiva'],
+    capacitacionesObligatorias: ['Seguridad ferroviaria y reglamentación de la vía', 'Trabajo seguro en zonas de alta tensión ferroviaria', 'Procedimientos de emergencia ferroviaria', 'Primeros auxilios en accidentes ferroviarios']
+  },
+  {
+    codigoCIIU: '4912',
+    descripcionCIIU: 'Transporte férreo de carga',
+    sector: 'Transporte',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'VIA-001',
+        nombre: 'Accidentes en operación de trenes de carga',
+        categoria: 'Físico',
+        descripcion: 'Descarrilamientos, colisiones y accidentes en pasos a nivel durante transporte de carga pesada',
+        fuenteGeneradora: 'Material rodante de carga, pasos a nivel y maniobras en patio',
+        actividadAsociada: 'Conducción, maniobras de clasificación y mantenimiento en patio ferroviario',
+        riesgoPotencial: 'Descarrilamiento, aplastamiento en patio, colisión',
+        efectosPosibles: 'Lesiones graves, fatalidades, derrames de mercancías peligrosas',
+        medidasControl: ['Inspección de material rodante y vía', 'Protocolos de maniobras en patio', 'Señalización ferroviaria en buen estado', 'Capacitación de operadores y señaleros']
+      },
+      {
+        codigo: 'MEC-001',
+        nombre: 'Riesgos en cargue y descargue de vagones',
+        categoria: 'Mecánico',
+        descripcion: 'Operación de equipos de cargue, izado y volcado de vagones de tren de carga',
+        fuenteGeneradora: 'Grúas portuarias, cargadores, volcadores de vagones',
+        actividadAsociada: 'Cargue y descargue de mercancías en terminales ferroviarias',
+        riesgoPotencial: 'Caída de carga, aplastamiento, atrapamiento',
+        efectosPosibles: 'Lesiones graves por caída de objetos o aplastamiento',
+        medidasControl: ['Equipos de cargue certificados', 'Vigías durante maniobras', 'Zona de exclusión durante izado', 'Comunicación efectiva entre operadores']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo IV', obligatorio: true },
+      { codigo: 'Dec. 1079/2015', norma: 'Decreto 1079 de 2015', descripcion: 'Reglamento único del sector transporte', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco reflectivo', 'Casco de seguridad', 'Botas con puntera metálica', 'Guantes de trabajo', 'Protección auditiva'],
+    capacitacionesObligatorias: ['Seguridad en operaciones ferroviarias de carga', 'Manejo de mercancías peligrosas en tren', 'Maniobras seguras en patio ferroviario', 'Procedimientos de emergencia']
+  },
+  {
+    codigoCIIU: '4922',
+    descripcionCIIU: 'Transporte mixto',
+    sector: 'Transporte',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'VIA-001',
+        nombre: 'Accidentes de tránsito en transporte mixto',
+        categoria: 'Físico',
+        descripcion: 'Riesgo de accidente de tránsito en vehículos que transportan simultáneamente pasajeros y carga',
+        fuenteGeneradora: 'Vehículos de transporte mixto en vías urbanas, intermunicipales y rurales',
+        actividadAsociada: 'Conducción de vehículos mixtos, cargue y descargue en ruta',
+        riesgoPotencial: 'Colisión, volcamiento, lesión de pasajeros',
+        efectosPosibles: 'Lesiones en pasajeros y conductor, fatalidades',
+        medidasControl: ['Revisión técnico-mecánica al día', 'Velocidades adecuadas según tipo de vía', 'Prohibición de alcohol y psicoactivos', 'Capacitación en conducción segura']
+      },
+      {
+        codigo: 'ERG-001',
+        nombre: 'Fatiga del conductor en rutas mixtas',
+        categoria: 'Ergonómico',
+        descripcion: 'Cansancio y somnolencia por jornadas extensas de conducción en rutas combinadas de pasajeros y carga',
+        fuenteGeneradora: 'Cabina del vehículo, jornadas largas sin descanso adecuado',
+        actividadAsociada: 'Conducción prolongada en rutas intermunicipales con paradas frecuentes',
+        riesgoPotencial: 'Microsueño, pérdida de control del vehículo',
+        efectosPosibles: 'Accidente de tránsito grave, lesiones de pasajeros',
+        medidasControl: ['Descansos obligatorios cada 4 horas de conducción', 'Control de jornada de trabajo', 'Rotación de conductores en rutas largas', 'Test de alcoholemia y sustancias psicoactivas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo IV', obligatorio: true },
+      { codigo: 'Res. 160/2017', norma: 'Resolución 160 de 2017', descripcion: 'Habilitación de empresas de transporte mixto', obligatorio: true }
+    ],
+    eppRecomendado: ['Cinturón de seguridad', 'Chaleco reflectivo para descenso del vehículo', 'Extinguidor en el vehículo', 'Kit de carretera'],
+    capacitacionesObligatorias: ['Conducción segura y defensiva', 'Manejo del tiempo de descanso', 'Primeros auxilios para conductor', 'Normatividad de transporte mixto en Colombia']
+  },
+  {
+    codigoCIIU: '4930',
+    descripcionCIIU: 'Transporte por tuberías',
+    sector: 'Transporte',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a hidrocarburos y gases en ductos',
+        categoria: 'Químico',
+        descripcion: 'Riesgo de escape de petróleo crudo, gas natural u otros fluidos durante operación, inspección y mantenimiento de ductos',
+        fuenteGeneradora: 'Oleoductos, gasoductos, poliductos y estaciones de bombeo',
+        actividadAsociada: 'Operación, inspección en línea y mantenimiento de redes de ductos',
+        riesgoPotencial: 'Intoxicación por gas, incendio por derrame de hidrocarburo',
+        efectosPosibles: 'Intoxicación, quemaduras, explosión, daño ambiental',
+        medidasControl: ['Detectores de gas fijo y portátil', 'Sistemas SCADA de monitoreo continuo', 'Procedimientos de respuesta a emergencias en ductos', 'Bloqueo y purga antes de trabajos en línea']
+      },
+      {
+        codigo: 'EXP-001',
+        nombre: 'Riesgo de explosión e incendio en ductos',
+        categoria: 'Físico',
+        descripcion: 'Acumulación de gases explosivos en ductos y estaciones de bombeo que pueden detonar con fuentes de ignición',
+        fuenteGeneradora: 'Gas natural en gasoductos, vapores de hidrocarburos en oleoductos',
+        actividadAsociada: 'Mantenimiento de estaciones de compresión y bombeo, reparación de ductos',
+        riesgoPotencial: 'Explosión, incendio masivo, BLEVE',
+        efectosPosibles: 'Lesiones graves o fatalidades masivas, daño ambiental catastrófico',
+        medidasControl: ['Clasificación de áreas peligrosas y equipos Ex', 'Control de fuentes de ignición', 'Planes de contingencia ante emergencias en ductos', 'Brigada de emergencia especializada']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo IV transporte ductos', obligatorio: true },
+      { codigo: 'Dec. 321/1999', norma: 'Decreto 321 de 1999', descripcion: 'Plan Nacional de Contingencia para hidrocarburos', obligatorio: true }
+    ],
+    eppRecomendado: ['Detector de gases portátil', 'Traje antiestático', 'Respirador para gases hidrocarburo', 'Calzado antiestático', 'Guantes resistentes a hidrocarburos'],
+    capacitacionesObligatorias: ['Seguridad en ductos de transporte de hidrocarburos', 'Plan de contingencia para derrames', 'Trabajo en espacios confinados en ductos', 'Clasificación de áreas peligrosas (ATEX/NEC)']
+  },
+  {
+    codigoCIIU: '5011',
+    descripcionCIIU: 'Transporte de pasajeros marítimo y de cabotaje',
+    sector: 'Transporte',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'MAR-001',
+        nombre: 'Riesgo de naufragio y accidente marítimo',
+        categoria: 'Físico',
+        descripcion: 'Naufragio, colisión o encallamiento de embarcaciones de pasajeros en mar territorial colombiano',
+        fuenteGeneradora: 'Embarcaciones de pasajeros en mares, bahías y rutas de cabotaje',
+        actividadAsociada: 'Conducción de embarcaciones, atención de pasajeros y mantenimiento a bordo',
+        riesgoPotencial: 'Hundimiento, caída al mar, ahogamiento masivo',
+        efectosPosibles: 'Lesiones graves, ahogamiento, hipotermia, fatalidades masivas',
+        medidasControl: ['Plan de abandono del barco', 'Chalecos salvavidas para todos los pasajeros', 'Botes salvavidas certificados', 'Tripulación entrenada en SOLAS']
+      },
+      {
+        codigo: 'FIS-001',
+        nombre: 'Condiciones climáticas extremas en mar',
+        categoria: 'Físico',
+        descripcion: 'Exposición a tormentas, marejadas y condiciones climáticas adversas durante travesías marítimas',
+        fuenteGeneradora: 'Condiciones meteorológicas adversas en mar Caribe y Pacífico colombiano',
+        actividadAsociada: 'Operación de embarcaciones de pasajeros en condiciones de mar',
+        riesgoPotencial: 'Naufragio, lesiones por golpe de mar, hipotermia',
+        efectosPosibles: 'Lesiones por caídas, ahogamiento, hipotermia',
+        medidasControl: ['Monitoreo meteorológico permanente', 'Suspensión de travesías con alerta de mar', 'Amarres de seguridad para tripulación', 'Equipos de comunicación de emergencia (EPIRB)']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - transporte marítimo', obligatorio: true },
+      { codigo: 'Dec. 804/1969', norma: 'Decreto 804 de 1969', descripcion: 'Código de Comercio Marítimo colombiano', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco salvavidas individual', 'Traje de inmersión para zonas frías', 'Arnés de seguridad a bordo', 'Calzado antideslizante de cubierta', 'Radio portátil de emergencia'],
+    capacitacionesObligatorias: ['Seguridad marítima STCW básico', 'Supervivencia en el mar', 'Lucha contra incendios a bordo', 'Procedimientos de abandono del barco']
+  },
+  {
+    codigoCIIU: '5012',
+    descripcionCIIU: 'Transporte de carga marítimo y de cabotaje',
+    sector: 'Transporte',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'MEC-001',
+        nombre: 'Riesgos en cargue y descargue de buques',
+        categoria: 'Mecánico',
+        descripcion: 'Operación de grúas pórtico, montacargas y equipos de estiba en puertos marítimos',
+        fuenteGeneradora: 'Grúas pórtico, montacargas de muelle, contenedores y bodegas de buque',
+        actividadAsociada: 'Operaciones de carga, descarga y estiba de mercancías en buques de carga',
+        riesgoPotencial: 'Caída de contenedores, aplastamiento, caída al agua',
+        efectosPosibles: 'Aplastamiento, ahogamiento, lesiones graves',
+        medidasControl: ['Sistemas de estiba certificados', 'Grúas con certificación de carga segura', 'EPP completo en zona de operaciones portuarias', 'Procedimientos de seguridad portuaria PBIP']
+      },
+      {
+        codigo: 'QUI-001',
+        nombre: 'Transporte de mercancías peligrosas por mar',
+        categoria: 'Químico',
+        descripcion: 'Riesgo de escape o derrame de sustancias peligrosas durante transporte marítimo de carga IMO',
+        fuenteGeneradora: 'Contenedores con materiales peligrosos, tanqueros con productos químicos',
+        actividadAsociada: 'Transporte y manejo de mercancías peligrosas en buques de carga',
+        riesgoPotencial: 'Derrame, incendio, explosión de carga peligrosa',
+        efectosPosibles: 'Intoxicación, quemaduras, explosión, contaminación marina',
+        medidasControl: ['Declaración y segregación de mercancías peligrosas (IMDG)', 'Planes de contingencia para derrames marítimos', 'Capacitación en manejo de mercancías IMO', 'Equipos de respuesta a emergencias a bordo']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo IV', obligatorio: true },
+      { codigo: 'Dec. 804/1969', norma: 'Decreto 804 de 1969', descripcion: 'Código de Comercio Marítimo', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco salvavidas', 'Casco de seguridad', 'Calzado antideslizante de cubierta', 'Guantes de trabajo', 'Arnés de seguridad para alturas en buque'],
+    capacitacionesObligatorias: ['Seguridad portuaria PBIP', 'Manejo de mercancías peligrosas marítimas IMDG', 'Supervivencia en el mar y abandono del barco', 'Operación segura de equipos portuarios']
+  },
+  {
+    codigoCIIU: '5021',
+    descripcionCIIU: 'Transporte fluvial de pasajeros',
+    sector: 'Transporte',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'MAR-001',
+        nombre: 'Naufragio y accidente en ríos colombianos',
+        categoria: 'Físico',
+        descripcion: 'Volcamiento o hundimiento de embarcaciones fluviales por sobrecarga, fallas mecánicas o condiciones climáticas',
+        fuenteGeneradora: 'Embarcaciones fluviales en ríos Magdalena, Atrato, Meta y otros ríos colombianos',
+        actividadAsociada: 'Conducción de chalupas, lanchas y champanes de pasajeros en ríos',
+        riesgoPotencial: 'Volcamiento, ahogamiento de pasajeros',
+        efectosPosibles: 'Ahogamiento, hipotermia, lesiones por impacto',
+        medidasControl: ['Control de capacidad de carga de embarcaciones', 'Chalecos salvavidas para todos los ocupantes', 'Capacitación de bogas y patrones', 'Inspección periódica de embarcaciones fluviales']
+      },
+      {
+        codigo: 'PSI-001',
+        nombre: 'Condiciones de trabajo en ríos remotos',
+        categoria: 'Psicosocial',
+        descripcion: 'Jornadas extensas en condiciones de aislamiento en ríos de zonas remotas de Colombia',
+        fuenteGeneradora: 'Rutas fluviales en zonas de difícil acceso del Amazonas, Orinoquía y Pacífico',
+        actividadAsociada: 'Operación de rutas fluviales en zonas remotas del país',
+        riesgoPotencial: 'Estrés por aislamiento, fatiga, exposición a vectores de enfermedades tropicales',
+        efectosPosibles: 'Burnout, enfermedades tropicales, accidentes por fatiga',
+        medidasControl: ['Programas de salud para zonas tropicales', 'Vacunación para enfermedades endémicas', 'Rotación periódica de personal', 'Acceso a atención médica en ruta']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo IV', obligatorio: true },
+      { codigo: 'Dec. 1079/2015', norma: 'Decreto 1079 de 2015', descripcion: 'Reglamento único del sector transporte fluvial', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco salvavidas', 'Protector solar de alta protección', 'Repelente de insectos', 'Impermeable', 'Calzado antideslizante'],
+    capacitacionesObligatorias: ['Seguridad en transporte fluvial', 'Técnicas de rescate acuático', 'Prevención de enfermedades tropicales', 'Primeros auxilios básicos']
+  },
+  {
+    codigoCIIU: '5022',
+    descripcionCIIU: 'Transporte fluvial de carga',
+    sector: 'Transporte',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'MEC-001',
+        nombre: 'Riesgos en operaciones de carga fluvial',
+        categoria: 'Mecánico',
+        descripcion: 'Cargue y descargue de mercancías en embarcaderos fluviales con equipos manuales y mecánicos',
+        fuenteGeneradora: 'Embarcaderos fluviales, barcazas y planchones de carga',
+        actividadAsociada: 'Cargue, descargue y estiba de mercancías en transporte fluvial',
+        riesgoPotencial: 'Caída al río, aplastamiento por carga, volcamiento de barcaza',
+        efectosPosibles: 'Ahogamiento, lesiones por aplastamiento, pérdida de carga',
+        medidasControl: ['Chaleco salvavidas obligatorio en operaciones de carga', 'Equipos de cargue con capacidad adecuada', 'Control de peso en barcazas', 'Iluminación adecuada en operaciones nocturnas']
+      },
+      {
+        codigo: 'QUI-001',
+        nombre: 'Transporte de productos agroquímicos y combustibles',
+        categoria: 'Químico',
+        descripcion: 'Riesgo de derrame de agroquímicos, combustibles y otros productos peligrosos en ríos durante transporte',
+        fuenteGeneradora: 'Cisternas fluviales con combustible, carga de agroquímicos en sacos',
+        actividadAsociada: 'Transporte de insumos agrícolas e industriales por vías fluviales',
+        riesgoPotencial: 'Derrame con contaminación de fuentes de agua, incendio',
+        efectosPosibles: 'Daño ambiental, incendio de embarcación, intoxicación',
+        medidasControl: ['Manifiesto de carga peligrosa fluvial', 'Contenedores herméticos para líquidos', 'Kit de atención a derrames a bordo', 'Coordinación con Autoridad Fluvial']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo IV', obligatorio: true },
+      { codigo: 'Dec. 1079/2015', norma: 'Decreto 1079 de 2015', descripcion: 'Regulación transporte fluvial de carga', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco salvavidas', 'Casco de seguridad', 'Botas antideslizantes de cubierta', 'Guantes de trabajo', 'Impermeable'],
+    capacitacionesObligatorias: ['Seguridad en operaciones fluviales de carga', 'Manejo de mercancías peligrosas en transporte fluvial', 'Técnicas de rescate acuático', 'Plan de contingencia para derrames en ríos']
+  },
+  {
+    codigoCIIU: '5112',
+    descripcionCIIU: 'Transporte aéreo de carga',
+    sector: 'Transporte',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'AER-001',
+        nombre: 'Riesgos en rampa aeroportuaria',
+        categoria: 'Mecánico',
+        descripcion: 'Operación en zona de rampa con aeronaves en movimiento, vehículos de apoyo terrestre y carga peligrosa',
+        fuenteGeneradora: 'Aeronaves, vehículos de remolque, montacargas de aeropuerto y bandas transportadoras',
+        actividadAsociada: 'Cargue, descargue y manejo de carga aérea en rampa aeroportuaria',
+        riesgoPotencial: 'Atropellamiento por vehículo de rampa, ingesta por motor de aeronave, caída',
+        efectosPosibles: 'Lesiones graves, amputación, fatalidades',
+        medidasControl: ['Procedimientos de seguridad en rampa SMS', 'Chaleco reflectivo de alta visibilidad', 'Protección auditiva obligatoria', 'Entrenamiento específico en seguridad de rampa']
+      },
+      {
+        codigo: 'QUI-001',
+        nombre: 'Manejo de mercancías peligrosas IATA',
+        categoria: 'Químico',
+        descripcion: 'Aceptación, clasificación y manejo de mercancías peligrosas para transporte aéreo según regulación IATA',
+        fuenteGeneradora: 'Carga peligrosa: inflamables, corrosivos, explosivos, radioactivos en bodega de aeronave',
+        actividadAsociada: 'Recepción, inspección y cargue de mercancías peligrosas en aeronaves de carga',
+        riesgoPotencial: 'Incendio en vuelo, derrame de sustancias peligrosas',
+        efectosPosibles: 'Emergencia de vuelo, intoxicación del personal, daño a aeronave',
+        medidasControl: ['Capacitación IATA en mercancías peligrosas', 'Inspección de declaraciones shipper', 'Segregación correcta en bodega', 'Procedimientos de respuesta a derrames en aeronave']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - transporte aéreo', obligatorio: true },
+      { codigo: 'RAC-Part-8', norma: 'Reglamentos Aeronáuticos de Colombia - Parte 8', descripcion: 'Regulación de mercancías peligrosas por vía aérea', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco reflectivo alta visibilidad', 'Protección auditiva (>85 dB en rampa)', 'Casco de seguridad', 'Calzado de seguridad con puntera', 'Guantes de trabajo'],
+    capacitacionesObligatorias: ['Seguridad operacional en rampa aeroportuaria', 'Mercancías peligrosas IATA - inicial y recurrente', 'SMS aeronáutico', 'Respuesta a emergencias aeronáuticas']
+  },
+  {
+    codigoCIIU: '5121',
+    descripcionCIIU: 'Transporte espacial',
+    sector: 'Transporte',
+    nivelRiesgo: 'V',
+    peligrosIdentificados: [
+      {
+        codigo: 'EXP-001',
+        nombre: 'Riesgo de explosión en propelentes de cohetes',
+        categoria: 'Físico',
+        descripcion: 'Manejo de combustibles de cohetes altamente energéticos e hipergólicos en instalaciones de lanzamiento',
+        fuenteGeneradora: 'Propelentes de cohete (hidrógeno líquido, hidrazina, LOX)',
+        actividadAsociada: 'Carga de propelentes, mantenimiento y lanzamiento de vehículos espaciales',
+        riesgoPotencial: 'Explosión masiva, incendio, intoxicación por propelentes tóxicos',
+        efectosPosibles: 'Fatalidades masivas, destrucción de instalaciones',
+        medidasControl: ['Protocolos de manejo de propelentes de agencia espacial', 'Zonas de exclusión en carga de combustible', 'Equipos de protección especializados', 'Procedimientos de emergencia de instalación de lanzamiento']
+      },
+      {
+        codigo: 'FIS-001',
+        nombre: 'Exposición a condiciones extremas en vuelo espacial',
+        categoria: 'Físico',
+        descripcion: 'Exposición a radiación cósmica, microgravedad y condiciones de vacío en operaciones espaciales tripuladas',
+        fuenteGeneradora: 'Ambiente espacial exterior a la atmósfera terrestre',
+        actividadAsociada: 'Operación de vehículos espaciales tripulados y actividades extravehiculares (EVA)',
+        riesgoPotencial: 'Daño por radiación cósmica, barotrauma, descompresión',
+        efectosPosibles: 'Enfermedades por radiación, daño neurológico, fatalidad',
+        medidasControl: ['Trajes espaciales certificados por agencia espacial', 'Monitoreo médico permanente de astronautas', 'Límites de exposición a radiación cósmica', 'Procedimientos de EVA con double-buddy']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo V', obligatorio: true },
+      { codigo: 'Dec. 1079/2015', norma: 'Decreto 1079 de 2015', descripcion: 'Marco regulatorio de transporte en Colombia', obligatorio: true }
+    ],
+    eppRecomendado: ['Traje espacial presurizado', 'Equipo de respiración autónomo en instalaciones de lanzamiento', 'Traje anticontaminación para propelentes', 'Dosímetro de radiación'],
+    capacitacionesObligatorias: ['Manejo seguro de propelentes espaciales', 'Procedimientos de emergencia en instalaciones de lanzamiento', 'Protección radiológica en operaciones espaciales', 'Medicina aeroespacial básica']
+  },
+  {
+    codigoCIIU: '5221',
+    descripcionCIIU: 'Actividades de estaciones, vías y servicios complementarios para el transporte terrestre',
+    sector: 'Transporte',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'VIA-001',
+        nombre: 'Riesgo de atropellamiento en estaciones y terminales',
+        categoria: 'Físico',
+        descripcion: 'Exposición al tráfico vehicular en zonas de embarque y desembarque, patios de maniobras y vías de acceso',
+        fuenteGeneradora: 'Vehículos de transporte en maniobra dentro de terminales y estaciones',
+        actividadAsociada: 'Control de acceso, orientación de vehículos y atención al usuario en terminales',
+        riesgoPotencial: 'Atropellamiento por vehículo pesado',
+        efectosPosibles: 'Traumatismos graves, fracturas, fatalidades',
+        medidasControl: ['Demarcación de zonas peatonales y vehiculares', 'Chaleco reflectivo para personal de patio', 'Señalización vial interna', 'Velocidades máximas dentro del terminal']
+      },
+      {
+        codigo: 'PSI-001',
+        nombre: 'Carga emocional en atención al usuario',
+        categoria: 'Psicosocial',
+        descripcion: 'Interacción con usuarios en situaciones de tensión, agresividad verbal o conflictos en terminales de transporte',
+        fuenteGeneradora: 'Interacción directa con usuarios en situaciones de estrés (retrasos, cancelaciones)',
+        actividadAsociada: 'Atención al cliente en terminales, despacho de vehículos y resolución de quejas',
+        riesgoPotencial: 'Estrés laboral, agresiones verbales o físicas',
+        efectosPosibles: 'Burnout, ansiedad, trastornos de salud mental',
+        medidasControl: ['Capacitación en manejo de situaciones conflictivas', 'Protocolos de atención al cliente', 'Apoyo psicológico disponible', 'Rotación de personal en picos de atención']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo III', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco reflectivo para personal de patio', 'Calzado cómodo y de seguridad', 'Protección solar para personal exterior'],
+    capacitacionesObligatorias: ['Seguridad vial en terminales de transporte', 'Manejo de riesgo psicosocial y estrés laboral', 'Atención al usuario y resolución de conflictos', 'Primeros auxilios básicos']
+  },
+  {
+    codigoCIIU: '5222',
+    descripcionCIIU: 'Actividades de puertos, canales, esclusas, diques y otras instalaciones portuarias',
+    sector: 'Transporte',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'MEC-001',
+        nombre: 'Riesgos en operación portuaria',
+        categoria: 'Mecánico',
+        descripcion: 'Operación de equipos de carga, grúas pórtico, montacargas y vehículos pesados en zona portuaria',
+        fuenteGeneradora: 'Grúas pórtico, RTG, reach stacker, tracto-camiones en patio de contenedores',
+        actividadAsociada: 'Movimiento de contenedores, carga y descarga de buques en puertos marítimos y fluviales',
+        riesgoPotencial: 'Caída de contenedores, atropellamiento, aplastamiento',
+        efectosPosibles: 'Lesiones graves, aplastamiento, fatalidades',
+        medidasControl: ['Certificación de operadores de equipos portuarios', 'Zonas de exclusión peatonal en patio activo', 'Sistemas de comunicación efectiva en rampa', 'Inspección preoperacional de equipos']
+      },
+      {
+        codigo: 'MAR-001',
+        nombre: 'Riesgo de caída al agua en muelles',
+        categoria: 'Físico',
+        descripcion: 'Caída de trabajadores al mar o río durante operaciones de atraque, maniobras con cabos y trabajos en muelle',
+        fuenteGeneradora: 'Borde de muelles, pasarelas de acceso a buques y operaciones de amarre',
+        actividadAsociada: 'Maniobras de atraque, desamarre y operaciones en el borde del muelle',
+        riesgoPotencial: 'Ahogamiento, hipotermia, lesión por impacto',
+        efectosPosibles: 'Ahogamiento, lesiones por compresión entre buque y muelle',
+        medidasControl: ['Chalecos salvavidas obligatorios en borde de muelle', 'Aros salvavidas en todo el perímetro', 'Equipos de rescate acuático disponibles', 'Redes de seguridad bajo pasarelas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo IV', obligatorio: true },
+      { codigo: 'Dec. 804/1969', norma: 'Decreto 804 de 1969', descripcion: 'Código de Comercio Marítimo - operaciones portuarias', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco salvavidas en borde de muelle', 'Casco de seguridad', 'Chaleco reflectivo', 'Botas de seguridad antideslizantes', 'Guantes de trabajo'],
+    capacitacionesObligatorias: ['Seguridad portuaria PBIP', 'Operación segura de equipos portuarios', 'Rescate acuático en puerto', 'Manejo de mercancías peligrosas portuarias']
+  },
+  {
+    codigoCIIU: '5223',
+    descripcionCIIU: 'Actividades de aeropuertos, de servicios de navegación aérea y de las demás actividades conexas al transporte aéreo',
+    sector: 'Transporte',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'AER-001',
+        nombre: 'Riesgos operacionales en área de movimiento aeroportuario',
+        categoria: 'Mecánico',
+        descripcion: 'Trabajo en zona de pista, calles de rodaje y plataforma con aeronaves en movimiento',
+        fuenteGeneradora: 'Aeronaves en pista y plataforma, vehículos de apoyo terrestre, soplos de motores',
+        actividadAsociada: 'Operación de pista, servicios en tierra, mantenimiento de aeronaves y control de FOD',
+        riesgoPotencial: 'Ingesta por motor, atropellamiento, colisión, caída de objetos',
+        efectosPosibles: 'Lesiones graves, amputación, fatalidades',
+        medidasControl: ['Habilitación aeroportuaria y SMS', 'Identificación de pase de seguridad obligatoria', 'Chaleco reflectivo de alta visibilidad', 'Entrenamiento en seguridad aeroportuaria OACI']
+      },
+      {
+        codigo: 'FIS-001',
+        nombre: 'Exposición a combustible de aviación (Jet-A)',
+        categoria: 'Químico',
+        descripcion: 'Contacto e inhalación de vapores de combustible Jet-A durante abastecimiento y mantenimiento de aeronaves',
+        fuenteGeneradora: 'Camiones cisternas de combustible, hidrantes de abastecimiento',
+        actividadAsociada: 'Abastecimiento de combustible a aeronaves y mantenimiento de sistemas de combustible',
+        riesgoPotencial: 'Intoxicación por vapores, incendio en abastecimiento',
+        efectosPosibles: 'Irritación del sistema nervioso central, incendio',
+        medidasControl: ['Procedimientos de abastecimiento con puesta a tierra', 'EPP para manejo de combustible', 'Prohibición de fumar en zona de abastecimiento', 'Detectores de vapores inflamables']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo IV aeropuertos', obligatorio: true },
+      { codigo: 'RAC-14-15', norma: 'RAC Partes 14 y 15', descripcion: 'Aeropuertos y servicios de navegación aérea Colombia', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco reflectivo alta visibilidad clase 3', 'Protección auditiva', 'Casco de seguridad', 'Calzado de seguridad', 'Guantes para combustible'],
+    capacitacionesObligatorias: ['Seguridad aeroportuaria - instrucción OACI', 'SMS aeroportuario', 'Manejo de combustible de aviación', 'Respuesta a emergencias aeronáuticas']
+  },
+  {
+    codigoCIIU: '5224',
+    descripcionCIIU: 'Manipulación de carga',
+    sector: 'Transporte',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Sobreesfuerzo en manejo manual de carga',
+        categoria: 'Ergonómico',
+        descripcion: 'Levantamiento, transporte y acomodación manual de cargas pesadas en bodegas y centros de distribución',
+        fuenteGeneradora: 'Paquetes, pallets, mercancías de gran peso y volumen',
+        actividadAsociada: 'Cargue y descargue manual, alistamiento de pedidos y almacenamiento',
+        riesgoPotencial: 'Hernias, lesiones dorsolumbares, lesiones en hombros',
+        efectosPosibles: 'Hernia discal, lumbalgia crónica, síndrome de manguito rotador',
+        medidasControl: ['Límite de peso manual (25 kg hombres, 12.5 kg mujeres)', 'Herramientas de asistencia: carros, transpaletas', 'Capacitación en manejo manual de cargas', 'Pausas activas y ejercicios de calentamiento']
+      },
+      {
+        codigo: 'MEC-001',
+        nombre: 'Riesgo en operación de montacargas',
+        categoria: 'Mecánico',
+        descripcion: 'Volcamiento de montacargas, atropellamiento de peatones y caída de carga en operación de equipos elevadores',
+        fuenteGeneradora: 'Montacargas contrabalanceados, apiladores y transpaletas eléctricas',
+        actividadAsociada: 'Movimiento de mercancías paletizadas en bodegas y patios de almacenamiento',
+        riesgoPotencial: 'Volcamiento, atropellamiento, aplastamiento por carga',
+        efectosPosibles: 'Lesiones graves, aplastamiento, fatalidades',
+        medidasControl: ['Licencia de conducción para montacargas', 'Señalización de zonas peatonales y vehiculares', 'Cinturón de seguridad en montacargas', 'Inspección preoperacional diaria']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo IV', obligatorio: true },
+      { codigo: 'GTC-45', norma: 'GTC 45:2012', descripcion: 'Guía para identificación de peligros biomecánicos', obligatorio: false }
+    ],
+    eppRecomendado: ['Faja lumbar de soporte', 'Calzado de seguridad con puntera', 'Guantes de trabajo', 'Chaleco reflectivo en bodegas con montacargas'],
+    capacitacionesObligatorias: ['Manejo manual de cargas - técnica segura', 'Operación segura de montacargas', 'Ergonomía en bodegas y centros de distribución', 'Prevención de lesiones músculo-esqueléticas']
+  },
+  {
+    codigoCIIU: '5229',
+    descripcionCIIU: 'Otras actividades complementarias al transporte',
+    sector: 'Transporte',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés laboral en actividades de coordinación logística',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta demanda de coordinación, presión por tiempos de entrega y gestión de múltiples actores en logística y transporte',
+        fuenteGeneradora: 'Centros de coordinación logística, agencias de aduana y transitarios',
+        actividadAsociada: 'Coordinación de transporte, gestión de documentación y trámites aduaneros',
+        riesgoPotencial: 'Estrés crónico, burnout, errores por fatiga mental',
+        efectosPosibles: 'Ansiedad, depresión, errores que generan accidentes de carga',
+        medidasControl: ['Distribución equitativa de carga laboral', 'Descansos programados', 'Apoyo psicológico disponible', 'Herramientas tecnológicas para gestión eficiente']
+      },
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo prolongado en posición sedente',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo en oficina o call center de coordinación de transporte con exposición prolongada a pantallas',
+        fuenteGeneradora: 'Puestos de trabajo de coordinación, monitoreo y gestión documental',
+        actividadAsociada: 'Gestión documental, seguimiento de cargas y atención a clientes de transporte',
+        riesgoPotencial: 'Fatiga visual, lesiones cervicales y dorsales',
+        efectosPosibles: 'Síndrome visual por computador, cervicalgia, dorsalgia',
+        medidasControl: ['Sillas ergonómicas ajustables', 'Monitoreo en posición correcta', 'Pausas activas cada hora', 'Iluminación adecuada del puesto']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true }
+    ],
+    eppRecomendado: ['Filtro de pantalla antirreflejo', 'Silla ergonómica ajustable'],
+    capacitacionesObligatorias: ['Riesgo psicosocial en coordinación logística', 'Higiene postural en trabajo de oficina', 'Pausas activas y ergonomía en puesto de trabajo']
+  },
+  {
+    codigoCIIU: '5310',
+    descripcionCIIU: 'Actividades postales nacionales',
+    sector: 'Transporte',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'VIA-001',
+        nombre: 'Accidente de tránsito en reparto postal',
+        categoria: 'Físico',
+        descripcion: 'Riesgo de accidente en motocicletas o vehículos de reparto postal en vías urbanas e intermunicipales',
+        fuenteGeneradora: 'Motocicletas, furgones y bicicletas de reparto postal',
+        actividadAsociada: 'Distribución y entrega de correspondencia y paquetes a domicilio',
+        riesgoPotencial: 'Accidente de tránsito, caída de motocicleta',
+        efectosPosibles: 'Traumatismos, fracturas, lesiones graves',
+        medidasControl: ['Capacitación en conducción segura de motocicleta', 'Casco certificado obligatorio', 'Revisión técnico-mecánica periódica', 'Prohibición de uso de celular mientras conduce']
+      },
+      {
+        codigo: 'ERG-001',
+        nombre: 'Carga física en clasificación y reparto',
+        categoria: 'Ergonómico',
+        descripcion: 'Manejo manual de paquetes y correspondencia en centros de clasificación y en ruta de reparto',
+        fuenteGeneradora: 'Paquetes, bolsas postales y equipos de clasificación automática',
+        actividadAsociada: 'Clasificación manual de correspondencia y cargue de rutas de reparto',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas por manejo repetitivo de paquetes',
+        efectosPosibles: 'Lumbalgia, lesiones de hombro, tendinitis',
+        medidasControl: ['Carros de transporte de correspondencia', 'Capacitación en manejo de cargas', 'Rotación en tareas de clasificación', 'Pausas activas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true },
+      { codigo: 'Dec. 1079/2015', norma: 'Decreto 1079 de 2015', descripcion: 'Regulación de servicios postales', obligatorio: true }
+    ],
+    eppRecomendado: ['Casco certificado para motociclista', 'Chaleco reflectivo', 'Guantes para motociclista', 'Calzado de seguridad', 'Rodilleras y coderas para reparto en bicicleta'],
+    capacitacionesObligatorias: ['Conducción segura de motocicleta', 'Normas de tránsito aplicadas al mensajero', 'Manejo manual de cargas postales', 'Primeros auxilios básicos']
+  },
+  {
+    codigoCIIU: '5320',
+    descripcionCIIU: 'Actividades de mensajería',
+    sector: 'Transporte',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'VIA-001',
+        nombre: 'Accidente de tránsito en mensajería urbana',
+        categoria: 'Físico',
+        descripcion: 'Alto riesgo de accidente en motocicletas de mensajería por presión de tiempo y condiciones de tráfico urbano',
+        fuenteGeneradora: 'Motocicletas de mensajería en entornos urbanos congestionados',
+        actividadAsociada: 'Entrega urgente de documentos y paquetes en motocicleta',
+        riesgoPotencial: 'Colisión, caída, atropellamiento',
+        efectosPosibles: 'Politraumatismos, fracturas, lesiones graves, fatalidad',
+        medidasControl: ['Casco de alta protección obligatorio', 'Prohibición de maniobras peligrosas', 'GPS para optimizar rutas y reducir presión temporal', 'Capacitación en conducción defensiva']
+      },
+      {
+        codigo: 'PSI-001',
+        nombre: 'Presión por tiempos de entrega en mensajería',
+        categoria: 'Psicosocial',
+        descripcion: 'Estrés generado por exigencia de entregas inmediatas y penalización por retrasos en servicios de mensajería',
+        fuenteGeneradora: 'Plataformas de mensajería con calificación por tiempo de entrega',
+        actividadAsociada: 'Gestión de rutas de mensajería con múltiples entregas bajo presión temporal',
+        riesgoPotencial: 'Conducción riesgosa por presión de tiempo, estrés crónico',
+        efectosPosibles: 'Accidentes por conducción imprudente, burnout',
+        medidasControl: ['Tiempos de entrega realistas', 'No penalización por incidentes de tráfico', 'Apoyo psicológico para mensajeros', 'Monitoreo del bienestar laboral']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST mensajería riesgo III', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true }
+    ],
+    eppRecomendado: ['Casco certificado', 'Chaleco reflectivo', 'Guantes para motociclista', 'Chaqueta con protecciones', 'Calzado adecuado para conducción'],
+    capacitacionesObligatorias: ['Conducción segura y defensiva en motocicleta', 'Gestión del riesgo psicosocial en mensajería', 'Normas de tránsito - motociclistas', 'Primeros auxilios para motoristas']
+  },
+
+  // ==================== SECCIÓN J - INFORMACIÓN Y COMUNICACIONES ====================
+
+  {
+    codigoCIIU: '5811',
+    descripcionCIIU: 'Edición de libros',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo prolongado en pantallas de visualización',
+        categoria: 'Ergonómico',
+        descripcion: 'Exposición continua a pantallas en edición, corrección y diseño editorial de libros',
+        fuenteGeneradora: 'Computadores de edición, pantallas de alta resolución para diseño',
+        actividadAsociada: 'Edición de textos, diseño editorial y corrección de pruebas',
+        riesgoPotencial: 'Fatiga visual, trastornos músculo-esqueléticos cervicales',
+        efectosPosibles: 'Síndrome visual por computador, cervicalgia, dorsalgia',
+        medidasControl: ['Regla 20-20-20 para descanso visual', 'Silla ergonómica y monitor a altura correcta', 'Pausas activas cada hora', 'Iluminación sin reflejos en pantalla']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Gafas con filtro de luz azul', 'Silla ergonómica ajustable'],
+    capacitacionesObligatorias: ['Ergonomía en puesto de trabajo con pantalla', 'Higiene postural', 'Pausas activas y ejercicios visuales']
+  },
+  {
+    codigoCIIU: '5812',
+    descripcionCIIU: 'Edición de directorios y listas de correo',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo sedentario con pantalla en edición de directorios',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo de oficina prolongado en captura y edición de datos para directorios',
+        fuenteGeneradora: 'Puestos de trabajo de captura y edición de datos',
+        actividadAsociada: 'Digitación, edición y actualización de bases de datos de directorios',
+        riesgoPotencial: 'Lesiones por movimientos repetitivos y fatiga visual',
+        efectosPosibles: 'Síndrome del túnel carpiano, fatiga ocular',
+        medidasControl: ['Teclado y ratón ergonómicos', 'Descansos visuales periódicos', 'Ajuste ergonómico del puesto de trabajo']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Reposamuñecas ergonómico', 'Filtro de pantalla'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo con computador', 'Prevención del síndrome del túnel carpiano']
+  },
+  {
+    codigoCIIU: '5813',
+    descripcionCIIU: 'Edición de periódicos, revistas y otras publicaciones periódicas',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés por cierres de edición y presión de tiempo',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta presión por fechas límite de publicación, cobertura de eventos y gestión de múltiples contenidos simultáneos',
+        fuenteGeneradora: 'Sala de redacción, trabajo de campo periodístico',
+        actividadAsociada: 'Redacción, edición y cierre de ediciones periodísticas',
+        riesgoPotencial: 'Estrés crónico, burnout en periodistas y editores',
+        efectosPosibles: 'Ansiedad, agotamiento, problemas cardiovasculares',
+        medidasControl: ['Gestión de cargas de trabajo equitativa', 'Apoyo psicológico disponible', 'Descansos entre cierres de edición', 'Reconocimiento del trabajo de periodistas']
+      },
+      {
+        codigo: 'ERG-001',
+        nombre: 'Riesgos ergonómicos en trabajo de redacción',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo prolongado en redacción con postura sedente y uso intensivo de pantallas y teclado',
+        fuenteGeneradora: 'Puestos de redacción y edición periodística',
+        actividadAsociada: 'Redacción de noticias, edición de contenidos y diseño de páginas',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas, fatiga visual',
+        efectosPosibles: 'Cervicalgia, lumbalgia, síndrome visual',
+        medidasControl: ['Ergonomía del puesto de redacción', 'Pausas activas', 'Iluminación adecuada en sala de redacción']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial en medios de comunicación', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica', 'Filtro de pantalla antirreflejo', 'Reposamuñecas'],
+    capacitacionesObligatorias: ['Riesgo psicosocial en medios de comunicación', 'Ergonomía en redacción periodística', 'Pausas activas y manejo del estrés']
+  },
+  {
+    codigoCIIU: '5819',
+    descripcionCIIU: 'Otros trabajos de edición',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo en pantalla en actividades editoriales diversas',
+        categoria: 'Ergonómico',
+        descripcion: 'Actividades editoriales como mapas, partituras y otros materiales con alto componente de trabajo visual y digital',
+        fuenteGeneradora: 'Estaciones de trabajo de edición gráfica y digitalización',
+        actividadAsociada: 'Edición de mapas, partituras, cartillas y publicaciones especializadas',
+        riesgoPotencial: 'Fatiga visual y lesiones músculo-esqueléticas',
+        efectosPosibles: 'Fatiga ocular, síndrome del túnel carpiano',
+        medidasControl: ['Pantallas de alta resolución calibradas', 'Pausas activas', 'Análisis ergonómico del puesto']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Gafas con filtro de luz azul', 'Silla ergonómica'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo editorial', 'Higiene postural y pausas activas']
+  },
+  {
+    codigoCIIU: '5820',
+    descripcionCIIU: 'Edición de programas de informática (software)',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo de desarrollo de software con alta demanda visual y cognitiva',
+        categoria: 'Ergonómico',
+        descripcion: 'Programación intensa con uso prolongado de múltiples monitores, teclado y ratón',
+        fuenteGeneradora: 'Estaciones de desarrollo de software con múltiples pantallas',
+        actividadAsociada: 'Programación, depuración de código y pruebas de software',
+        riesgoPotencial: 'Síndrome del túnel carpiano, fatiga visual, cervicalgia',
+        efectosPosibles: 'Lesiones por sobreuso, síndrome visual por computador',
+        medidasControl: ['Configuración ergonómica multimontior', 'Regla 20-20-20 para ojos', 'Teclado y ratón ergonómicos', 'Pausas cada 45-60 minutos']
+      },
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés por plazos de entrega en proyectos de software',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta carga cognitiva y presión por deadlines en proyectos de desarrollo de software',
+        fuenteGeneradora: 'Proyectos de software con metodologías ágiles y sprints',
+        actividadAsociada: 'Desarrollo, integración y entrega de versiones de software',
+        riesgoPotencial: 'Burnout técnico, estrés crónico, errores por fatiga cognitiva',
+        efectosPosibles: 'Agotamiento mental, ansiedad, rotación de personal',
+        medidasControl: ['Planificación realista de sprints', 'Reuniones de bienestar del equipo', 'Flexibilidad horaria', 'Programas de desconexión digital']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true }
+    ],
+    eppRecomendado: ['Gafas con filtro de luz azul', 'Silla ergonómica con soporte lumbar', 'Reposamuñecas'],
+    capacitacionesObligatorias: ['Ergonomía en desarrollo de software', 'Gestión del estrés y bienestar mental en TI', 'Pausas activas y ejercicios de movilidad']
+  },
+  {
+    codigoCIIU: '5911',
+    descripcionCIIU: 'Actividades de producción de películas cinematográficas, videos, programas, anuncios y comerciales de televisión',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'ELE-001',
+        nombre: 'Riesgo eléctrico en sets de grabación y producción',
+        categoria: 'Eléctrico',
+        descripcion: 'Instalación y operación de equipos de iluminación de alta potencia y sonido en sets de producción',
+        fuenteGeneradora: 'Luces de estudio, equipos de generación eléctrica en exteriores, sistemas de audio',
+        actividadAsociada: 'Montaje de sets, instalación de luminarias y grabación en exteriores',
+        riesgoPotencial: 'Electrocución, incendio eléctrico, quemaduras por lámparas calientes',
+        efectosPosibles: 'Paro cardíaco, quemaduras, incendio de set',
+        medidasControl: ['Gaffer certificado para instalaciones eléctricas de set', 'Revisión de instalaciones antes de grabación', 'Protección contra contacto con lámparas calientes', 'Sistema de tierras en generadores']
+      },
+      {
+        codigo: 'ALT-001',
+        nombre: 'Trabajo en alturas en producción audiovisual',
+        categoria: 'Físico',
+        descripcion: 'Trabajo en plataformas, grúas de cámara, rigs y estructuras de iluminación a gran altura en producción',
+        fuenteGeneradora: 'Grúas de cámara, plataformas de iluminación, estructuras de set en estudio y exteriores',
+        actividadAsociada: 'Instalación de cámaras en altura, montaje de iluminación y efectos especiales',
+        riesgoPotencial: 'Caída desde altura, caída de equipo sobre actores o crew',
+        efectosPosibles: 'Traumatismos graves, politraumatismos, fatalidades',
+        medidasControl: ['Arnés de seguridad para trabajo en alturas', 'Inspección de grúas y plataformas', 'Coordinación de seguridad en set (safety coordinator)', 'Zona de exclusión bajo equipos en altura']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true },
+      { codigo: 'Res. 4272/2021', norma: 'Resolución 4272 de 2021', descripcion: 'Trabajo seguro en alturas en producción', obligatorio: true }
+    ],
+    eppRecomendado: ['Arnés de seguridad para alturas en set', 'Casco de seguridad en exteriores', 'Guantes para instalación eléctrica', 'Calzado de seguridad'],
+    capacitacionesObligatorias: ['Seguridad en sets de producción audiovisual', 'Trabajo seguro en alturas', 'Seguridad eléctrica en producción', 'Primeros auxilios en set']
+  },
+  {
+    codigoCIIU: '5912',
+    descripcionCIIU: 'Actividades de postproducción de películas cinematográficas, videos, programas, anuncios y comerciales de televisión',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo prolongado en edición y postproducción audiovisual',
+        categoria: 'Ergonómico',
+        descripcion: 'Edición de video, sonido y efectos visuales con horas extendidas frente a pantallas en salas de postproducción',
+        fuenteGeneradora: 'Estaciones de trabajo de edición no lineal, salas de colorización y mezcla de sonido',
+        actividadAsociada: 'Edición de video, colorización, efectos especiales y mezcla de audio',
+        riesgoPotencial: 'Fatiga visual severa, lesiones cervicales y de muñeca',
+        efectosPosibles: 'Síndrome visual por computador, cervicalgia, síndrome del túnel carpiano',
+        medidasControl: ['Pantallas calibradas de alta calidad', 'Ergonomía específica de postproducción', 'Límite de horas de edición continua', 'Iluminación adecuada en sala de edición']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Gafas con filtro de luz azul', 'Silla ergonómica', 'Reposamuñecas para editor'],
+    capacitacionesObligatorias: ['Ergonomía en postproducción audiovisual', 'Higiene visual para editores', 'Pausas activas y bienestar en trabajo creativo']
+  },
+  {
+    codigoCIIU: '5913',
+    descripcionCIIU: 'Actividades de distribución de películas cinematográficas, videos, programas, anuncios y comerciales de televisión',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés en gestión de distribución de contenidos',
+        categoria: 'Psicosocial',
+        descripcion: 'Presión por licenciamiento, negociación y gestión de derechos de distribución audiovisual en múltiples territorios',
+        fuenteGeneradora: 'Departamentos comerciales y de licenciamiento de contenidos',
+        actividadAsociada: 'Negociación de contratos de distribución, gestión de derechos y ventas internacionales',
+        riesgoPotencial: 'Estrés laboral, carga mental elevada',
+        efectosPosibles: 'Burnout, ansiedad por cumplimiento de metas',
+        medidasControl: ['Distribución equitativa de portafolios', 'Metas realistas', 'Apoyo y mentoría entre pares']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica', 'Filtro de pantalla'],
+    capacitacionesObligatorias: ['Gestión del estrés y riesgo psicosocial', 'Ergonomía en trabajo de oficina']
+  },
+  {
+    codigoCIIU: '5914',
+    descripcionCIIU: 'Actividades de exhibición de películas cinematográficas y videos',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'FIS-001',
+        nombre: 'Riesgo de incendio en salas de cine',
+        categoria: 'Físico',
+        descripcion: 'Riesgo de incendio por equipos de proyección, cableado eléctrico y aglomeración de personas en salas de exhibición',
+        fuenteGeneradora: 'Proyectores de alta potencia, sistemas de audio y cableado eléctrico en salas',
+        actividadAsociada: 'Proyección de películas, atención al público y mantenimiento de equipos',
+        riesgoPotencial: 'Incendio, pánico masivo, lesiones en evacuación',
+        efectosPosibles: 'Quemaduras, asfixia, aplastamiento en evacuación',
+        medidasControl: ['Sistema contra incendio en sala y proyección', 'Señalización de rutas de evacuación', 'Simulacros periódicos', 'Capacidad de sala respetada']
+      },
+      {
+        codigo: 'FIS-002',
+        nombre: 'Exposición a ruido elevado en sala de proyección',
+        categoria: 'Físico',
+        descripcion: 'Exposición crónica a niveles elevados de presión sonora en salas de cine con sistemas Dolby Atmos y similares',
+        fuenteGeneradora: 'Sistemas de sonido envolvente en salas de cine',
+        actividadAsociada: 'Trabajo de operadores y acomodadores en salas de proyección',
+        riesgoPotencial: 'Hipoacusia por exposición crónica a ruido',
+        efectosPosibles: 'Pérdida auditiva, tinnitus',
+        medidasControl: ['Medición de niveles de ruido en salas', 'Protección auditiva para operadores en sala', 'Límite de exposición continua al ruido', 'Audiometría periódica']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true },
+      { codigo: 'Res. 2400/1979', norma: 'Resolución 2400 de 1979', descripcion: 'Estatuto de Seguridad Industrial - ruido y emergencias', obligatorio: true }
+    ],
+    eppRecomendado: ['Protección auditiva para operadores', 'Calzado antideslizante para acomodadores', 'Chaleco identificador para emergencias'],
+    capacitacionesObligatorias: ['Plan de evacuación de instalaciones de espectáculos', 'Control del ruido en salas de cine', 'Atención al cliente en emergencias', 'Primeros auxilios básicos']
+  },
+  {
+    codigoCIIU: '5920',
+    descripcionCIIU: 'Actividades de grabación de sonido y edición de música',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'FIS-001',
+        nombre: 'Exposición a ruido elevado en grabación y producción musical',
+        categoria: 'Físico',
+        descripcion: 'Exposición a niveles elevados de presión sonora durante grabaciones de bandas, orquestas y producción musical',
+        fuenteGeneradora: 'Estudios de grabación, cabinas de mezcla y booths de instrumentos',
+        actividadAsociada: 'Grabación de instrumentos, voces y producción musical',
+        riesgoPotencial: 'Hipoacusia inducida por ruido en músicos e ingenieros de sonido',
+        efectosPosibles: 'Pérdida auditiva, tinnitus, hiperacusia',
+        medidasControl: ['Monitoreo de niveles de presión sonora en estudio', 'In-ears con limitador de volumen para músicos', 'Descansos auditivos entre sesiones', 'Audiometría periódica']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['In-ear monitors con limitador de volumen', 'Protectores auditivos de alta fidelidad para músicos'],
+    capacitacionesObligatorias: ['Conservación de la audición en músicos e ingenieros de sonido', 'Ergonomía en estudios de grabación']
+  },
+  {
+    codigoCIIU: '6010',
+    descripcionCIIU: 'Actividades de radiodifusión (radio)',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ELE-001',
+        nombre: 'Riesgo eléctrico en transmisores y antenas de radio',
+        categoria: 'Eléctrico',
+        descripcion: 'Mantenimiento de transmisores de alta potencia y antenas de radiodifusión',
+        fuenteGeneradora: 'Transmisores de RF de alta potencia, torres de antenas',
+        actividadAsociada: 'Mantenimiento de equipos de transmisión y trabajo en torres de antenas',
+        riesgoPotencial: 'Electrocución, quemaduras por RF, caída desde torre de antena',
+        efectosPosibles: 'Lesiones graves, quemaduras por radiofrecuencia',
+        medidasControl: ['Desenergización antes de trabajos en transmisores', 'EPP dieléctrico', 'Arnés para trabajo en torres', 'Procedimientos de seguridad en RF']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Arnés de cuerpo completo para trabajo en torres', 'Guantes dieléctricos', 'Calzado dieléctrico'],
+    capacitacionesObligatorias: ['Seguridad en trabajo con equipos de radiofrecuencia', 'Trabajo en torres y estructuras metálicas', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '6020',
+    descripcionCIIU: 'Programación y transmisión de televisión',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'ELE-001',
+        nombre: 'Riesgo eléctrico en transmisores y equipos de TV',
+        categoria: 'Eléctrico',
+        descripcion: 'Mantenimiento de equipos de transmisión de televisión de alta potencia, cámaras y sistemas de estudio',
+        fuenteGeneradora: 'Transmisores de TV, sistemas de iluminación de estudio y equipos de control master',
+        actividadAsociada: 'Mantenimiento de equipos de transmisión y operación de estudio de televisión',
+        riesgoPotencial: 'Electrocución, arco eléctrico',
+        efectosPosibles: 'Quemaduras eléctricas, paro cardíaco',
+        medidasControl: ['Mantenimiento con equipos desenergizados', 'Procedimientos LOTO para transmisores', 'Capacitación eléctrica para técnicos de TV']
+      },
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés en transmisión en vivo',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta presión en producción y transmisión en vivo de noticieros, eventos y programas de televisión',
+        fuenteGeneradora: 'Salas de control master, sets de noticias en vivo y unidades móviles',
+        actividadAsociada: 'Producción y transmisión en vivo de contenido televisivo',
+        riesgoPotencial: 'Estrés agudo, burnout en personal de producción',
+        efectosPosibles: 'Ansiedad, agotamiento, errores en transmisión en vivo',
+        medidasControl: ['Ensayos y protocolos de emergencia para fallas técnicas', 'Rotación de personal en cargos de alta tensión', 'Apoyo psicológico disponible']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial en medios', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes dieléctricos', 'Calzado de seguridad', 'Protección auditiva en áreas técnicas'],
+    capacitacionesObligatorias: ['Seguridad eléctrica en broadcasting', 'Manejo del estrés en producción televisiva', 'Ergonomía en control master y producción']
+  },
+  {
+    codigoCIIU: '6120',
+    descripcionCIIU: 'Actividades de telecomunicaciones inalámbricas',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'ALT-001',
+        nombre: 'Trabajo en torres de telecomunicaciones',
+        categoria: 'Físico',
+        descripcion: 'Instalación, mantenimiento y reparación de antenas en torres de telecomunicaciones a gran altura',
+        fuenteGeneradora: 'Torres de telecomunicaciones de 20 a más de 100 metros de altura',
+        actividadAsociada: 'Instalación de antenas, mantenimiento de equipos en torres y rooftops',
+        riesgoPotencial: 'Caída desde altura, caída de objetos, exposición a radiofrecuencia',
+        efectosPosibles: 'Traumatismos graves, lesiones por caída de herramientas',
+        medidasControl: ['Arnés de cuerpo completo con amortiguador de impacto', 'Sistema de ascenso con self-belay', 'Permiso de trabajo en alturas', 'Medición de niveles de RF antes de trabajar']
+      },
+      {
+        codigo: 'ELE-001',
+        nombre: 'Exposición a radiofrecuencia en antenas activas',
+        categoria: 'Físico',
+        descripcion: 'Exposición a campos electromagnéticos de radiofrecuencia emitidos por antenas activas durante trabajos de mantenimiento',
+        fuenteGeneradora: 'Antenas de base celular, microondas y sistemas de transmisión activos',
+        actividadAsociada: 'Mantenimiento en proximidad de antenas activas',
+        riesgoPotencial: 'Efectos térmicos por exposición a RF de alta intensidad',
+        efectosPosibles: 'Quemaduras internas por absorción de energía RF',
+        medidasControl: ['Apagado o reducción de potencia antes de acercarse', 'Medición de RF con dosímetro', 'Distancias de seguridad establecidas', 'Capacitación en seguridad electromagnética']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 4272/2021', norma: 'Resolución 4272 de 2021', descripcion: 'Trabajo seguro en alturas - torres de telecomunicaciones', obligatorio: true },
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['Arnés de cuerpo completo con absorbedor de impacto', 'Casco de seguridad con barbiquejo', 'Guantes anticorte', 'Calzado de seguridad para escalada', 'Bolsa portaherramientas'],
+    capacitacionesObligatorias: ['Trabajo seguro en alturas - torres de telecomunicaciones', 'Seguridad ante campos electromagnéticos de RF', 'Rescate en alturas', 'Primeros auxilios para trabajo en torres']
+  },
+  {
+    codigoCIIU: '6130',
+    descripcionCIIU: 'Actividades de telecomunicaciones satelitales',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'ELE-001',
+        nombre: 'Riesgo eléctrico en estaciones terrenas satelitales',
+        categoria: 'Eléctrico',
+        descripcion: 'Mantenimiento de amplificadores de alta potencia (HPA) y sistemas de alimentación en estaciones satelitales',
+        fuenteGeneradora: 'Amplificadores de alta potencia, sistemas UPS y equipos de seguimiento satelital',
+        actividadAsociada: 'Operación y mantenimiento de estaciones terrenas de telecomunicaciones satelitales',
+        riesgoPotencial: 'Electrocución por alta tensión en HPA, quemaduras por RF',
+        efectosPosibles: 'Lesiones eléctricas graves, quemaduras',
+        medidasControl: ['Procedimientos LOTO para HPA', 'EPP dieléctrico', 'Bloqueo de potencia RF antes de mantenimiento', 'Capacitación en seguridad eléctrica para técnicos satelitales']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes dieléctricos de alta tensión', 'Calzado dieléctrico', 'Gafas de seguridad'],
+    capacitacionesObligatorias: ['Seguridad eléctrica en instalaciones de telecomunicaciones', 'Seguridad ante radiofrecuencia', 'Bloqueo y etiquetado LOTO']
+  },
+  {
+    codigoCIIU: '6190',
+    descripcionCIIU: 'Otras actividades de telecomunicaciones',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'ELE-001',
+        nombre: 'Riesgo eléctrico en instalaciones y mantenimiento de redes',
+        categoria: 'Eléctrico',
+        descripcion: 'Trabajos de instalación y mantenimiento de redes de telecomunicaciones con exposición a energía eléctrica',
+        fuenteGeneradora: 'Equipos de red, armarios de distribución y tendido de cables',
+        actividadAsociada: 'Instalación de cableado estructurado, fibra óptica y equipos de red',
+        riesgoPotencial: 'Electrocución en trabajos sobre equipos activos',
+        efectosPosibles: 'Lesiones eléctricas, interrupción de servicios críticos',
+        medidasControl: ['Procedimientos de trabajo en redes activas', 'Identificación previa de cables activos', 'EPP dieléctrico básico', 'Coordinación con NOC para trabajos en producción']
+      },
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo en espacios confinados para instalación de cableado',
+        categoria: 'Físico',
+        descripcion: 'Trabajo en cuartos de comunicaciones, bajo pisos técnicos y en ductería de edificios para instalación de redes',
+        fuenteGeneradora: 'Cuartos de telecomunicaciones, ductos de cableado y espacios bajo piso técnico',
+        actividadAsociada: 'Tendido de fibra óptica y cobre en instalaciones de edificios y data centers',
+        riesgoPotencial: 'Lesiones por posturas forzadas, calor en cuartos de telecomunicaciones',
+        efectosPosibles: 'Lesiones músculo-esqueléticas, estrés térmico en cuartos calientes',
+        medidasControl: ['Evaluación ergonómica de trabajos en espacios reducidos', 'Control de temperatura en cuartos de comunicaciones', 'Equipos de iluminación portátil', 'Rotación en trabajos en espacios reducidos']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de trabajo', 'Gafas de seguridad', 'Calzado de seguridad', 'Rodilleras para trabajo en suelos', 'Iluminación frontal'],
+    capacitacionesObligatorias: ['Seguridad eléctrica básica en telecomunicaciones', 'Trabajo ergonómico en espacios confinados', 'Instalación segura de fibra óptica']
+  },
+  {
+    codigoCIIU: '6202',
+    descripcionCIIU: 'Actividades de consultoría informática y actividades de administración de instalaciones informáticas',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo sedentario prolongado en consultoría de TI',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo de consultoría con largas jornadas en clientes, viajes y trabajo remoto con configuraciones no ergonómicas',
+        fuenteGeneradora: 'Instalaciones de clientes con puestos de trabajo no ergonómicos, trabajo desde laptop',
+        actividadAsociada: 'Consultoría in-situ, implementación de sistemas y soporte en instalaciones de clientes',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas por configuración inadecuada',
+        efectosPosibles: 'Cervicalgia, lumbalgia, lesiones de muñeca',
+        medidasControl: ['Kit de trabajo remoto ergonómico para consultores', 'Evaluación de puesto en instalaciones de clientes', 'Laptops con teclado y ratón externos', 'Pausas activas en desplazamientos']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Kit ergonómico portátil para consultores (soporte de laptop, teclado y ratón externos)'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo de campo y consultoría', 'Higiene postural para trabajo remoto', 'Gestión del estrés en consultoría']
+  },
+  {
+    codigoCIIU: '6209',
+    descripcionCIIU: 'Otras actividades de tecnología de información y actividades de servicios informáticos',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Riesgos ergonómicos en servicios informáticos',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo de soporte técnico, mantenimiento de equipos y servicios informáticos con combinación de trabajo físico y en pantalla',
+        fuenteGeneradora: 'Centros de soporte técnico, data centers y puestos de trabajo de usuarios',
+        actividadAsociada: 'Soporte técnico, mantenimiento de hardware y servicios de TI',
+        riesgoPotencial: 'Lesiones por manipulación de equipos pesados y posturas inadecuadas',
+        efectosPosibles: 'Hernias, lesiones de muñeca, fatiga visual',
+        medidasControl: ['Técnicas de levantamiento seguro de equipos', 'Ergonomía en puestos de soporte', 'Pausas activas para técnicos de campo', 'Herramientas adecuadas para mantenimiento']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Pulsera antiestática para mantenimiento de hardware', 'Guantes antiestáticos', 'Calzado de seguridad para data center'],
+    capacitacionesObligatorias: ['Manejo seguro de equipos informáticos', 'Ergonomía en soporte técnico', 'Seguridad eléctrica básica']
+  },
+  {
+    codigoCIIU: '6311',
+    descripcionCIIU: 'Procesamiento de datos, alojamiento (hosting) y actividades relacionadas',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'FIS-001',
+        nombre: 'Estrés térmico y ruido en centros de datos',
+        categoria: 'Físico',
+        descripcion: 'Exposición al calor y ruido generado por servidores y sistemas de refrigeración en centros de datos',
+        fuenteGeneradora: 'Racks de servidores, sistemas CRAC/CRAH y UPS en data centers',
+        actividadAsociada: 'Operación y mantenimiento de infraestructura de data center',
+        riesgoPotencial: 'Estrés térmico en pasillos calientes, hipoacusia por ruido continuo',
+        efectosPosibles: 'Incomodidad térmica, pérdida auditiva por exposición crónica al ruido',
+        medidasControl: ['Diseño de pasillo frío/caliente en data center', 'Protección auditiva en áreas de UPS y generadores', 'Monitoreo de temperatura y humedad', 'Rotación en áreas calientes']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Protección auditiva para áreas de generadores y UPS', 'Calzado antiestático', 'Guantes antiestáticos'],
+    capacitacionesObligatorias: ['Seguridad en centros de datos', 'Control de ruido y temperatura en data center', 'Ergonomía en operación de TI']
+  },
+  {
+    codigoCIIU: '6312',
+    descripcionCIIU: 'Portales web',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo digital intensivo en gestión de portales web',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo continuo en pantalla para desarrollo, edición y gestión de contenidos en portales digitales',
+        fuenteGeneradora: 'Puestos de trabajo digital, home office y oficinas de medios digitales',
+        actividadAsociada: 'Desarrollo web, gestión de contenidos, SEO y análisis de datos digitales',
+        riesgoPotencial: 'Fatiga visual, lesiones por sobreuso de manos',
+        efectosPosibles: 'Síndrome visual, síndrome del túnel carpiano',
+        medidasControl: ['Ergonomía del puesto digital', 'Límites de exposición a pantalla', 'Pausas activas programadas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Gafas con filtro de luz azul', 'Silla ergonómica'],
+    capacitacionesObligatorias: ['Ergonomía digital', 'Higiene visual para trabajadores digitales', 'Pausas activas']
+  },
+  {
+    codigoCIIU: '6391',
+    descripcionCIIU: 'Actividades de agencias de noticias',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés traumático secundario en periodistas de agencias',
+        categoria: 'Psicosocial',
+        descripcion: 'Exposición constante a contenidos de alto impacto emocional (guerras, desastres, violencia) en cobertura para agencias de noticias',
+        fuenteGeneradora: 'Trabajo de corresponsales en zonas de conflicto y cobertura de eventos traumáticos',
+        actividadAsociada: 'Cobertura noticiosa en campo de alto riesgo y edición de contenido sensible',
+        riesgoPotencial: 'Estrés traumático secundario (PTSD vicario), burnout',
+        efectosPosibles: 'Trastorno de estrés postraumático, ansiedad, depresión',
+        medidasControl: ['Apoyo psicológico especializado para periodistas de campo', 'Protocolos de cobertura de zonas de conflicto', 'Rotación de corresponsales', 'Capacitación en autocuidado para periodistas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial en periodismo', obligatorio: true },
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco antibalas para corresponsales en zonas de conflicto', 'Kit de emergencia para periodistas de campo'],
+    capacitacionesObligatorias: ['Seguridad para periodistas en zonas hostiles', 'Primeros auxilios psicológicos', 'Gestión del trauma en periodismo de guerra']
+  },
+  {
+    codigoCIIU: '6399',
+    descripcionCIIU: 'Otras actividades de servicio de información n.c.p.',
+    sector: 'Información y Comunicaciones',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Riesgos ergonómicos en servicios de información digitales',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo sedentario y en pantalla en servicios de información, recopilación de datos y análisis',
+        fuenteGeneradora: 'Puestos de trabajo de análisis de información y bases de datos',
+        actividadAsociada: 'Recopilación, análisis y distribución de información a través de plataformas digitales',
+        riesgoPotencial: 'Fatiga visual, lesiones músculo-esqueléticas',
+        efectosPosibles: 'Síndrome visual, cervicalgia, síndrome del túnel carpiano',
+        medidasControl: ['Ergonomía de puesto de trabajo', 'Pausas activas', 'Monitoreo a altura adecuada']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica', 'Filtro de pantalla'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo de oficina', 'Pausas activas y ejercicios visuales']
+  },
+
+  // ==================== SECCIÓN K - ACTIVIDADES FINANCIERAS Y DE SEGUROS ====================
+
+  {
+    codigoCIIU: '6412',
+    descripcionCIIU: 'Bancos comerciales',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Riesgo de atraco y violencia en oficinas bancarias',
+        categoria: 'Psicosocial',
+        descripcion: 'Exposición al riesgo de atraco armado y situaciones de violencia en oficinas bancarias y cajeros automáticos',
+        fuenteGeneradora: 'Oficinas bancarias, cajeros automáticos y vehículos de transporte de valores',
+        actividadAsociada: 'Atención al público en ventanillas, manejo de efectivo y operaciones bancarias',
+        riesgoPotencial: 'Atraco armado, estrés postraumático, agresión física',
+        efectosPosibles: 'Lesiones físicas, trastorno de estrés postraumático, ansiedad',
+        medidasControl: ['Sistemas de seguridad física: cámaras, puertas de retardo, detectores', 'Protocolos de atención a atracos', 'Apoyo psicológico post-incidente', 'Capacitación en seguridad bancaria']
+      },
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo sedentario en oficinas bancarias',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo prolongado en ventanillas, plataforma comercial y back office con uso intensivo de computador',
+        fuenteGeneradora: 'Puestos de cajero, plataforma comercial y operaciones de back office',
+        actividadAsociada: 'Atención al cliente, operaciones bancarias y procesos administrativos',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas por postura sedente prolongada',
+        efectosPosibles: 'Lumbalgia, síndrome del túnel carpiano, síndrome visual',
+        medidasControl: ['Sillas ergonómicas ajustables', 'Pantallas a altura adecuada', 'Pausas activas cada hora', 'Rotación en puestos de ventanilla']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica de ventanilla', 'Filtro de pantalla antirreflejo'],
+    capacitacionesObligatorias: ['Seguridad bancaria y atención a situaciones de crisis', 'Ergonomía en puestos bancarios', 'Manejo del estrés en atención al cliente', 'Primeros auxilios psicológicos post-atraco']
+  },
+  {
+    codigoCIIU: '6421',
+    descripcionCIIU: 'Actividades de las casas de cambio',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Riesgo de atraco en casas de cambio',
+        categoria: 'Psicosocial',
+        descripcion: 'Alto riesgo de asalto por manejo de divisas en efectivo en puntos de cambio de moneda',
+        fuenteGeneradora: 'Puntos de cambio en centros comerciales, aeropuertos y zonas turísticas',
+        actividadAsociada: 'Cambio de divisas, manejo de efectivo en múltiples monedas',
+        riesgoPotencial: 'Atraco armado, estrés por manejo de efectivo de alto valor',
+        efectosPosibles: 'Lesiones físicas, estrés postraumático',
+        medidasControl: ['Cabina de seguridad con vidrio blindado', 'Sistemas de alarma silenciosa', 'Protocolos de manejo de efectivo seguro', 'Vigilancia privada']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true }
+    ],
+    eppRecomendado: ['Alarma personal', 'Puesto de trabajo protegido'],
+    capacitacionesObligatorias: ['Seguridad en manejo de efectivo', 'Protocolo ante atracos', 'Primeros auxilios psicológicos']
+  },
+  {
+    codigoCIIU: '6422',
+    descripcionCIIU: 'Actividades de las corporaciones financieras',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés laboral en actividades financieras corporativas',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta presión por decisiones de inversión, gestión de portafolios y cumplimiento de metas financieras',
+        fuenteGeneradora: 'Salas de inversión, mesas de dinero y departamentos de riesgo financiero',
+        actividadAsociada: 'Gestión de inversiones, análisis financiero y toma de decisiones de alto impacto',
+        riesgoPotencial: 'Estrés crónico, burnout, problemas cardiovasculares',
+        efectosPosibles: 'Agotamiento mental, ansiedad, hipertensión',
+        medidasControl: ['Programas de bienestar corporativo', 'Metas realistas y gestión del desempeño', 'Flexibilidad horaria', 'Apoyo psicológico profesional disponible']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial en sector financiero', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica ejecutiva'],
+    capacitacionesObligatorias: ['Gestión del estrés en sector financiero', 'Bienestar mental en altas responsabilidades', 'Ergonomía en trabajo de oficina']
+  },
+  {
+    codigoCIIU: '6423',
+    descripcionCIIU: 'Actividades de las compañías de financiamiento',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Riesgo psicosocial en cobranza y financiamiento',
+        categoria: 'Psicosocial',
+        descripcion: 'Exposición a conflictos con clientes morosos, presión por metas de cobranza y situaciones tensas en visitas de campo',
+        fuenteGeneradora: 'Centros de contacto de cobranza, visitas domiciliarias a deudores',
+        actividadAsociada: 'Gestión de cobranza, visitas a deudores y aprobación de créditos',
+        riesgoPotencial: 'Agresiones verbales y físicas de clientes, estrés crónico por cobranza',
+        efectosPosibles: 'Ansiedad, burnout, lesiones en visitas de campo',
+        medidasControl: ['Protocolos de seguridad en visitas domiciliarias', 'Trabajo en pareja para cobranza en campo', 'Apoyo psicológico para personal de cobranza', 'Capacitación en desescalada de conflictos']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true }
+    ],
+    eppRecomendado: ['Teléfono con GPS para visitas de campo'],
+    capacitacionesObligatorias: ['Técnicas de cobranza segura', 'Manejo de situaciones conflictivas con clientes', 'Ergonomía en trabajo de oficina y call center']
+  },
+  {
+    codigoCIIU: '6424',
+    descripcionCIIU: 'Actividades de las cooperativas financieras',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés en gestión financiera cooperativa',
+        categoria: 'Psicosocial',
+        descripcion: 'Presión por gestión de captaciones, colocaciones y atención a asociados en cooperativas financieras',
+        fuenteGeneradora: 'Oficinas de cooperativas financieras y puntos de atención a asociados',
+        actividadAsociada: 'Atención a asociados, gestión de ahorros, créditos y recaudo',
+        riesgoPotencial: 'Estrés en atención al cliente, manejo de efectivo',
+        efectosPosibles: 'Burnout, ansiedad en manejo de dinero',
+        medidasControl: ['Programas de bienestar para empleados', 'Rotación en cajas y atención', 'Sistemas seguros de manejo de efectivo']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica de ventanilla'],
+    capacitacionesObligatorias: ['Seguridad en manejo de efectivo', 'Ergonomía en atención al cliente', 'Gestión del estrés laboral']
+  },
+  {
+    codigoCIIU: '6431',
+    descripcionCIIU: 'Fideicomisos, fondos (incluso los de pensiones y cesantías) y entidades financieras similares',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Carga cognitiva en gestión de fondos y fideicomisos',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta responsabilidad en la administración de recursos de terceros en fondos de pensiones y fideicomisos',
+        fuenteGeneradora: 'Departamentos de inversión, cumplimiento y gestión de carteras de fondos',
+        actividadAsociada: 'Gestión de portafolios, cumplimiento regulatorio y atención a beneficiarios',
+        riesgoPotencial: 'Estrés crónico por alta responsabilidad fiduciaria',
+        efectosPosibles: 'Burnout, ansiedad, trastornos de salud mental',
+        medidasControl: ['Distribución adecuada de responsabilidades', 'Apoyo psicológico profesional', 'Programas de bienestar corporativo', 'Balance vida-trabajo']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica ajustable'],
+    capacitacionesObligatorias: ['Gestión del estrés en servicios financieros', 'Ergonomía en puesto de trabajo financiero', 'Bienestar mental en sector de pensiones']
+  },
+  {
+    codigoCIIU: '6432',
+    descripcionCIIU: 'Fondos de cesantías',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo de oficina en administración de cesantías',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo sedentario con pantallas en gestión y administración de fondos de cesantías',
+        fuenteGeneradora: 'Puestos de trabajo administrativos y de atención al afiliado',
+        actividadAsociada: 'Gestión de consignaciones, retiros y traslados de cesantías',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas por trabajo sedentario',
+        efectosPosibles: 'Lumbalgia, síndrome del túnel carpiano',
+        medidasControl: ['Ergonomía del puesto de trabajo', 'Pausas activas', 'Sillas ajustables']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo de oficina', 'Pausas activas']
+  },
+  {
+    codigoCIIU: '6491',
+    descripcionCIIU: 'Leasing financiero (arrendamiento financiero)',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Presión comercial en ventas de productos de leasing',
+        categoria: 'Psicosocial',
+        descripcion: 'Estrés por cumplimiento de metas de colocación de contratos de leasing y visitas a clientes corporativos',
+        fuenteGeneradora: 'Fuerza de ventas de leasing, equipos comerciales B2B',
+        actividadAsociada: 'Asesoría comercial, estructuración y cierre de operaciones de leasing',
+        riesgoPotencial: 'Estrés por metas, accidentes de tránsito en visitas',
+        efectosPosibles: 'Burnout comercial, accidentes en desplazamientos',
+        medidasControl: ['Metas comerciales alcanzables', 'Política de seguridad vial para visitas', 'Apoyo psicológico disponible']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Kit de seguridad vial para conductores comerciales'],
+    capacitacionesObligatorias: ['Manejo defensivo para ejecutivos comerciales', 'Gestión del estrés en ventas', 'Ergonomía en trabajo de oficina y campo']
+  },
+  {
+    codigoCIIU: '6492',
+    descripcionCIIU: 'Actividades de factoring',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo sedentario en operaciones de factoring',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo prolongado en análisis de facturas y gestión de cartera en operaciones de factoring',
+        fuenteGeneradora: 'Puestos de trabajo de análisis de crédito y gestión de cobro',
+        actividadAsociada: 'Análisis de facturas, gestión de cobro y relación con deudores cedidos',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas, fatiga visual',
+        efectosPosibles: 'Cervicalgia, síndrome del túnel carpiano',
+        medidasControl: ['Ergonomía del puesto de trabajo', 'Pausas activas', 'Alternancia entre tareas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica', 'Filtro de pantalla'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo de oficina financiera', 'Pausas activas y bienestar en sector financiero']
+  },
+  {
+    codigoCIIU: '6493',
+    descripcionCIIU: 'Actividades de las inversiones y operaciones entre compañías del grupo empresarial',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés por gestión interempresarial y cumplimiento regulatorio',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta responsabilidad en gestión de inversiones entre empresas del mismo grupo y cumplimiento de normatividad financiera',
+        fuenteGeneradora: 'Departamentos de tesorería corporativa y gestión de inversiones de grupo',
+        actividadAsociada: 'Gestión de flujos intercompañía, inversiones y cumplimiento de regulación DIAN y SFC',
+        riesgoPotencial: 'Estrés por complejidad regulatoria y alta responsabilidad',
+        efectosPosibles: 'Burnout, ansiedad',
+        medidasControl: ['Apoyo jurídico y contable disponible', 'Distribución equitativa de responsabilidades', 'Programas de bienestar']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica ejecutiva'],
+    capacitacionesObligatorias: ['Gestión del estrés en alta dirección financiera', 'Ergonomía en trabajo ejecutivo']
+  },
+  {
+    codigoCIIU: '6494',
+    descripcionCIIU: 'Actividades de los profesionales de compra y venta de divisas',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés en operaciones de divisas y mercado forex',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta presión en operaciones de trading de divisas con exposición a pérdidas y ganancias en tiempo real',
+        fuenteGeneradora: 'Mesas de trading, plataformas electrónicas de divisas',
+        actividadAsociada: 'Compraventa de divisas, gestión de exposiciones cambiarias y cobertura',
+        riesgoPotencial: 'Estrés agudo, burnout en operadores de divisas',
+        efectosPosibles: 'Trastornos de ansiedad, problemas cardiovasculares',
+        medidasControl: ['Límites de posición y stop loss automatizados', 'Rotación de traders', 'Apoyo psicológico', 'Gestión ergonómica de mesas de trading']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica para trader', 'Soporte para múltiples monitores'],
+    capacitacionesObligatorias: ['Gestión del estrés en trading financiero', 'Ergonomía en mesas de operaciones financieras', 'Bienestar mental en alta responsabilidad']
+  },
+  {
+    codigoCIIU: '6495',
+    descripcionCIIU: 'Instituciones especiales oficiales',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés por gestión de recursos públicos y cumplimiento de metas sociales',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta responsabilidad en la administración de recursos del Estado y el impacto social de las decisiones financieras',
+        fuenteGeneradora: 'Entidades como Findeter, Bancóldex, Finagro, FNG y similares',
+        actividadAsociada: 'Gestión de créditos de fomento, evaluación de proyectos y supervisión de recursos públicos',
+        riesgoPotencial: 'Estrés por responsabilidad fiscal, acoso por gestión de recursos públicos',
+        efectosPosibles: 'Burnout, ansiedad, conflictos de interés',
+        medidasControl: ['Programas de bienestar para servidores públicos', 'Apoyo jurídico y psicológico', 'Protocolos de ética y transparencia', 'Balance vida-trabajo']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Dec. 1083/2015', norma: 'Decreto 1083 de 2015', descripcion: 'Reglamento único del sector de función pública', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica'],
+    capacitacionesObligatorias: ['Bienestar en el sector público financiero', 'Ergonomía en trabajo de oficina', 'Manejo del estrés laboral']
+  },
+  {
+    codigoCIIU: '6499',
+    descripcionCIIU: 'Otras actividades de servicio financiero, excepto las de seguros y pensiones n.c.p.',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Riesgos ergonómicos en servicios financieros diversos',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo sedentario y en pantallas en servicios financieros especializados como microseguros, remesas y banca móvil',
+        fuenteGeneradora: 'Oficinas de servicios financieros alternativos y plataformas digitales',
+        actividadAsociada: 'Prestación de servicios financieros alternativos, análisis y atención al cliente',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas por postura sedente',
+        efectosPosibles: 'Cervicalgia, lumbalgia, síndrome del túnel carpiano',
+        medidasControl: ['Ergonomía del puesto de trabajo', 'Pausas activas', 'Variedad de tareas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo financiero', 'Pausas activas y bienestar laboral']
+  },
+  {
+    codigoCIIU: '6511',
+    descripcionCIIU: 'Seguros generales',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés por gestión de siniestros y atención a asegurados afectados',
+        categoria: 'Psicosocial',
+        descripcion: 'Exposición a situaciones traumáticas durante ajuste de siniestros y atención a asegurados en situación de crisis',
+        fuenteGeneradora: 'Departamentos de siniestros, visitas de campo para ajuste y peritos',
+        actividadAsociada: 'Ajuste de siniestros, peritaje de daños, atención a asegurados en emergencias',
+        riesgoPotencial: 'Estrés traumático secundario, burnout en ajustadores',
+        efectosPosibles: 'Fatiga por compasión, trastornos de ansiedad',
+        medidasControl: ['Apoyo psicológico para ajustadores de campo', 'Rotación en tipos de siniestros', 'Protocolos de autocuidado para personal de campo', 'Límite de siniestros catastróficos por ajustador']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial en ajuste de siniestros', obligatorio: true }
+    ],
+    eppRecomendado: ['EPP según tipo de siniestro a inspeccionar (casco, guantes, gafas para siniestros industriales)'],
+    capacitacionesObligatorias: ['Manejo del estrés en ajuste de siniestros', 'Ergonomía en trabajo de oficina y campo', 'Primeros auxilios psicológicos']
+  },
+  {
+    codigoCIIU: '6512',
+    descripcionCIIU: 'Seguros de vida',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés emocional en ventas y gestión de seguros de vida',
+        categoria: 'Psicosocial',
+        descripcion: 'Interacción con beneficiarios en situaciones de duelo y alta carga emocional en tramitación de reclamaciones de vida',
+        fuenteGeneradora: 'Departamentos de reclamaciones de vida, asesores comerciales de seguros de vida',
+        actividadAsociada: 'Atención a beneficiarios, tramitación de reclamaciones y venta de productos de vida',
+        riesgoPotencial: 'Fatiga por compasión, estrés emocional',
+        efectosPosibles: 'Trastornos de ansiedad, burnout emocional',
+        medidasControl: ['Apoyo psicológico para personal de reclamaciones', 'Capacitación en comunicación empática', 'Rotación en tipos de productos', 'Programas de autocuidado']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica'],
+    capacitacionesObligatorias: ['Comunicación empática y gestión de duelo', 'Autocuidado emocional en seguros de vida', 'Ergonomía en trabajo de oficina']
+  },
+  {
+    codigoCIIU: '6513',
+    descripcionCIIU: 'Reaseguros',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés cognitivo en modelación de riesgos complejos',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta demanda cognitiva en análisis de riesgos catastróficos, modelación actuarial y negociación de contratos de reaseguro',
+        fuenteGeneradora: 'Departamentos técnicos de reaseguro y áreas de suscripción especializada',
+        actividadAsociada: 'Análisis de riesgos catastróficos, suscripción de reaseguro y negociación de tratados',
+        riesgoPotencial: 'Sobrecarga cognitiva, estrés en análisis de catástrofes',
+        efectosPosibles: 'Fatiga mental, burnout en especialistas',
+        medidasControl: ['Equipos de trabajo multidisciplinarios', 'Distribución adecuada de análisis complejos', 'Descansos cognitivos programados']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica para trabajo de análisis'],
+    capacitacionesObligatorias: ['Ergonomía cognitiva y mental', 'Gestión del estrés en trabajo técnico especializado']
+  },
+  {
+    codigoCIIU: '6514',
+    descripcionCIIU: 'Capitalización',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo sedentario en administración de títulos de capitalización',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo de oficina en gestión de contratos de capitalización, sorteos y atención al cliente',
+        fuenteGeneradora: 'Puestos administrativos y de atención al cliente de capitalizadoras',
+        actividadAsociada: 'Gestión de contratos, atención a titulares y organización de sorteos',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas por trabajo sedentario',
+        efectosPosibles: 'Lumbalgia, cervicalgia',
+        medidasControl: ['Sillas ergonómicas', 'Pausas activas', 'Rotación de actividades']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo de oficina', 'Pausas activas']
+  },
+  {
+    codigoCIIU: '6521',
+    descripcionCIIU: 'Servicios de seguros sociales de salud',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés en gestión de autorizaciones y atención a usuarios de salud',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta presión por atención a usuarios con necesidades urgentes de salud y gestión de autorizaciones de servicios médicos',
+        fuenteGeneradora: 'Call center de autorizaciones médicas, oficinas de atención al usuario de EPS',
+        actividadAsociada: 'Gestión de autorizaciones, atención a usuarios de salud y coordinación de servicios',
+        riesgoPotencial: 'Estrés por atención de emergencias sanitarias, agresión de usuarios',
+        efectosPosibles: 'Burnout, agresiones verbales o físicas de usuarios',
+        medidasControl: ['Protocolos de atención a usuarios en situación de urgencia', 'Capacitación en comunicación asertiva', 'Seguridad física en puntos de atención', 'Apoyo psicológico para personal de atención']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica para call center'],
+    capacitacionesObligatorias: ['Comunicación asertiva en servicios de salud', 'Manejo del estrés en atención al usuario de salud', 'Ergonomía en call center de salud']
+  },
+  {
+    codigoCIIU: '6522',
+    descripcionCIIU: 'Servicios de seguros sociales de riesgos laborales',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés en gestión de accidentes laborales y atención a accidentados',
+        categoria: 'Psicosocial',
+        descripcion: 'Atención a trabajadores accidentados, gestión de pensiones de invalidez y calificación de enfermedades laborales',
+        fuenteGeneradora: 'Centros de atención de ARL, áreas de calificación de pérdida de capacidad laboral',
+        actividadAsociada: 'Atención médica de urgencias laborales, gestión de prestaciones y rehabilitación',
+        riesgoPotencial: 'Estrés traumático secundario, carga emocional en casos graves',
+        efectosPosibles: 'Fatiga por compasión, burnout en personal de ARL',
+        medidasControl: ['Rotación en tipos de casos', 'Apoyo psicológico para personal', 'Supervisión clínica para equipos de rehabilitación', 'Programas de autocuidado']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Dec. 1295/1994', norma: 'Decreto 1295 de 1994', descripcion: 'Sistema General de Riesgos Laborales', obligatorio: true }
+    ],
+    eppRecomendado: ['EPP según actividad específica (visitas a empresas, trabajo de campo)'],
+    capacitacionesObligatorias: ['Sistema de Riesgos Laborales - aspectos operativos', 'Gestión del estrés en ARL', 'Comunicación empática con trabajadores accidentados']
+  },
+  {
+    codigoCIIU: '6531',
+    descripcionCIIU: 'Actividades de las administradoras de fondos de pensiones y cesantías',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés en atención a afiliados sobre pensiones',
+        categoria: 'Psicosocial',
+        descripcion: 'Manejo de situaciones de alta tensión con afiliados que reclaman pensiones o tienen dificultades en su proceso pensional',
+        fuenteGeneradora: 'Centros de atención de AFP, call centers pensionales y asesores comerciales',
+        actividadAsociada: 'Atención a afiliados, gestión de pensiones y resolución de reclamaciones pensionales',
+        riesgoPotencial: 'Agresión verbal de usuarios, estrés por alta demanda de atención',
+        efectosPosibles: 'Burnout, ansiedad, desgaste emocional',
+        medidasControl: ['Protocolos de atención a situaciones de conflicto con afiliados', 'Apoyo psicológico para personal de atención', 'Rotación en tipos de trámites', 'Capacitación en comunicación asertiva']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica de atención al cliente'],
+    capacitacionesObligatorias: ['Comunicación asertiva en servicios pensionales', 'Ergonomía en atención al cliente', 'Gestión del estrés laboral']
+  },
+  {
+    codigoCIIU: '6532',
+    descripcionCIIU: 'Actividades de las administradoras de riesgos laborales',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Exposición a situaciones de riesgo durante visitas empresariales',
+        categoria: 'Psicosocial',
+        descripcion: 'Visitas a empresas con riesgo V, ambientes industriales peligrosos y exposición indirecta a accidentes laborales',
+        fuenteGeneradora: 'Visitas técnicas a empresas afiliadas de alto riesgo, industria, construcción, minería',
+        actividadAsociada: 'Asesoría SST a empresas, inspección de condiciones de trabajo y promoción de seguridad',
+        riesgoPotencial: 'Accidente durante visitas a empresas de alto riesgo, estrés traumático secundario',
+        efectosPosibles: 'Lesiones en visitas de campo, fatiga por compasión',
+        medidasControl: ['EPP específico para visitas a empresas de cada sector', 'Protocolos de seguridad en visitas de campo', 'Inducción de seguridad antes de cada visita', 'Apoyo psicológico para asesores que atienden accidentes graves']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Dec. 1295/1994', norma: 'Decreto 1295 de 1994', descripcion: 'Sistema General de Riesgos Laborales', obligatorio: true }
+    ],
+    eppRecomendado: ['EPP variable según sector visitado (casco, gafas, guantes, calzado de seguridad)'],
+    capacitacionesObligatorias: ['Seguridad en visitas a empresas de alto riesgo', 'Sistema General de Riesgos Laborales', 'Autocuidado para asesores de ARL', 'Primeros auxilios básicos']
+  },
+  {
+    codigoCIIU: '6611',
+    descripcionCIIU: 'Administración de mercados financieros',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés en supervisión y administración de mercados',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta responsabilidad en la administración, supervisión y operación de infraestructuras de mercados financieros',
+        fuenteGeneradora: 'Entidades como Bolsa de Valores, Deceval, CRCC y otras IFMs',
+        actividadAsociada: 'Operación de sistemas de negociación, compensación y liquidación de valores',
+        riesgoPotencial: 'Estrés por alta responsabilidad sistémica en mercados financieros',
+        efectosPosibles: 'Burnout, errores de alto impacto, problemas cardiovasculares',
+        medidasControl: ['Sistemas de respaldo y continuidad del negocio', 'Distribución de responsabilidades críticas', 'Apoyo psicológico para operadores de sistemas críticos', 'Balance trabajo-vida']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica para operadores de mercado'],
+    capacitacionesObligatorias: ['Gestión del estrés en infraestructuras financieras críticas', 'Ergonomía en sala de operaciones financieras']
+  },
+  {
+    codigoCIIU: '6612',
+    descripcionCIIU: 'Corretaje de valores y de contratos de productos básicos',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés en trading y corretaje de valores',
+        categoria: 'Psicosocial',
+        descripcion: 'Presión extrema en operaciones de compraventa de valores con pérdidas y ganancias en tiempo real y alta volatilidad',
+        fuenteGeneradora: 'Mesas de operaciones de corredores de bolsa y comisionistas',
+        actividadAsociada: 'Ejecución de órdenes de bolsa, manejo de portafolios y asesoría de inversión',
+        riesgoPotencial: 'Estrés agudo, burnout en traders y corredores',
+        efectosPosibles: 'Trastornos cardiovasculares, ansiedad, adicción al trabajo',
+        medidasControl: ['Sistemas de gestión de riesgo automatizados', 'Rotación de traders', 'Programas de bienestar en mesas de dinero', 'Límites de horas de trading continuo']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica de alta prestación para traders'],
+    capacitacionesObligatorias: ['Gestión del estrés en trading', 'Ergonomía en mesas de operaciones financieras', 'Bienestar mental en sector bursátil']
+  },
+  {
+    codigoCIIU: '6613',
+    descripcionCIIU: 'Otras actividades relacionadas con el mercado de valores',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo de análisis bursátil prolongado con pantallas',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo intensivo en análisis técnico y fundamental de mercados de valores con múltiples pantallas',
+        fuenteGeneradora: 'Puestos de análisis bursátil con múltiples monitores',
+        actividadAsociada: 'Análisis de mercados, elaboración de informes bursátiles y gestión de riesgo',
+        riesgoPotencial: 'Fatiga visual, lesiones por trabajo sedentario',
+        efectosPosibles: 'Síndrome visual, cervicalgia',
+        medidasControl: ['Configuración ergonómica de múltiples monitores', 'Pausas visuales programadas', 'Sillas ergonómicas ajustables']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Soporte para monitores ergonómico', 'Gafas con filtro de luz azul'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo con múltiples pantallas', 'Higiene visual para analistas financieros']
+  },
+  {
+    codigoCIIU: '6614',
+    descripcionCIIU: 'Actividades de las casas de cambio y las compañías de financiamiento especializadas en cambio de divisas',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Riesgo de seguridad física en operaciones de divisas',
+        categoria: 'Psicosocial',
+        descripcion: 'Manejo de altos volúmenes de efectivo en diferentes monedas con exposición a riesgo de atraco y manipulación de billetes falsos',
+        fuenteGeneradora: 'Puntos de atención de cambio de divisas y oficinas de remesas',
+        actividadAsociada: 'Recepción y entrega de divisas, verificación de billetes y registro de operaciones',
+        riesgoPotencial: 'Atraco, estrés por manejo de efectivo de alto valor, contacto con billetes contaminados',
+        efectosPosibles: 'Lesiones físicas en atraco, estrés postraumático, enfermedades infecciosas por billetes',
+        medidasControl: ['Cabinas con vidrio blindado', 'Sistemas de alarma', 'Protocolos de higiene en manejo de billetes', 'Capacitación en seguridad']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de nitrilo para manejo de billetes', 'Alarma personal'],
+    capacitacionesObligatorias: ['Seguridad en manejo de efectivo y divisas', 'Protocolo anti-atraco', 'Higiene en manejo de efectivo']
+  },
+  {
+    codigoCIIU: '6615',
+    descripcionCIIU: 'Actividades de los profesionales de seguros',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'VIA-001',
+        nombre: 'Accidentes de tránsito en visitas de agentes de seguros',
+        categoria: 'Físico',
+        descripcion: 'Riesgo de accidentes en desplazamientos a clientes para prospección, venta y gestión de pólizas de seguros',
+        fuenteGeneradora: 'Vehículos propios o de empresa en visitas a clientes',
+        actividadAsociada: 'Visitas comerciales, inspecciones de riesgos y gestión de siniestros en campo',
+        riesgoPotencial: 'Accidentes de tránsito en desplazamientos frecuentes',
+        efectosPosibles: 'Lesiones en accidente de tránsito, fatalidad',
+        medidasControl: ['Política de seguridad vial corporativa', 'Revisión técnico-mecánica de vehículos', 'Conducción defensiva', 'Limitación de horas de conducción']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Kit de seguridad vial en vehículo', 'Cinturón de seguridad'],
+    capacitacionesObligatorias: ['Conducción segura y defensiva', 'Plan estratégico de seguridad vial (PESV)', 'Ergonomía en trabajo de campo']
+  },
+  {
+    codigoCIIU: '6619',
+    descripcionCIIU: 'Otras actividades auxiliares de las actividades de servicios financieros',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Riesgos ergonómicos en servicios financieros auxiliares',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo de oficina en actividades de apoyo al sector financiero: calificadoras, burós de crédito, procesadores de pagos',
+        fuenteGeneradora: 'Puestos de trabajo administrativos y analíticos en servicios financieros de apoyo',
+        actividadAsociada: 'Análisis de crédito, procesamiento de pagos, calificación de deuda y gestión de datos financieros',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas, fatiga visual',
+        efectosPosibles: 'Cervicalgia, síndrome del túnel carpiano',
+        medidasControl: ['Ergonomía del puesto de trabajo', 'Pausas activas', 'Evaluación ergonómica periódica']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica ajustable', 'Reposamuñecas'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo financiero de oficina', 'Pausas activas y bienestar laboral']
+  },
+  {
+    codigoCIIU: '6621',
+    descripcionCIIU: 'Actividades de evaluación de riesgos y daños',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Exposición a riesgos de campo durante evaluación de siniestros',
+        categoria: 'Psicosocial',
+        descripcion: 'Peritos y tasadores expuestos a riesgos específicos del sector evaluado: construcciones en riesgo, accidentes, zonas inundadas',
+        fuenteGeneradora: 'Sitios de siniestro: edificios en colapso, escenas de accidentes, zonas de inundación',
+        actividadAsociada: 'Evaluación de daños en siniestros de todo tipo para compañías de seguros',
+        riesgoPotencial: 'Accidentes durante inspección en zonas de riesgo, estrés traumático secundario',
+        efectosPosibles: 'Lesiones en campo, fatiga por compasión',
+        medidasControl: ['EPP específico según tipo de siniestro a evaluar', 'Evaluación previa de condiciones de seguridad en sitio', 'Apoyo psicológico para peritos', 'Nunca ingresar a zonas inestables sin evaluación estructural']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Casco de seguridad', 'Gafas de protección', 'Calzado de seguridad', 'Chaleco reflectivo', 'Guantes de inspección'],
+    capacitacionesObligatorias: ['Seguridad en inspecciones de campo de siniestros', 'Primeros auxilios básicos', 'Manejo del estrés en evaluación de catástrofes']
+  },
+  {
+    codigoCIIU: '6629',
+    descripcionCIIU: 'Otras actividades auxiliares de seguros y fondos de pensiones',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Riesgos ergonómicos en actividades auxiliares de seguros',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo sedentario en actuaría, gestión de datos, cumplimiento y operaciones auxiliares del sector asegurador',
+        fuenteGeneradora: 'Departamentos actuariales, compliance, gestión de datos y operaciones de aseguradoras',
+        actividadAsociada: 'Análisis actuarial, gestión de bases de datos de seguros y cumplimiento normativo',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas por trabajo sedentario',
+        efectosPosibles: 'Lumbalgia, síndrome del túnel carpiano',
+        medidasControl: ['Ergonomía del puesto de trabajo', 'Pausas activas', 'Variación de actividades']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica', 'Filtro de pantalla'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo actuarial y de seguros', 'Pausas activas y bienestar laboral']
+  },
+  {
+    codigoCIIU: '6630',
+    descripcionCIIU: 'Actividades de gestión de fondos',
+    sector: 'Actividades Financieras',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés por gestión de activos y responsabilidad fiduciaria',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta presión y responsabilidad en gestión de portafolios de fondos de inversión colectiva y fondos de capital privado',
+        fuenteGeneradora: 'Equipos de gestión de portafolios, comités de inversión y áreas de cumplimiento',
+        actividadAsociada: 'Gestión activa de portafolios, reporte a inversionistas y cumplimiento regulatorio',
+        riesgoPotencial: 'Estrés crónico por alta responsabilidad fiduciaria y volatilidad de mercados',
+        efectosPosibles: 'Burnout, problemas de salud mental, errores de gestión',
+        medidasControl: ['Distribución de responsabilidades en comités', 'Apoyo psicológico profesional', 'Balance vida-trabajo', 'Programas de bienestar corporativo']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica para gestión de portafolios'],
+    capacitacionesObligatorias: ['Gestión del estrés en gestión de activos', 'Ergonomía en trabajo financiero', 'Bienestar mental en gestoras de fondos']
+  },
+
+  // ==================== SECCIÓN L - ACTIVIDADES INMOBILIARIAS ====================
+
+  {
+    codigoCIIU: '6810',
+    descripcionCIIU: 'Actividades inmobiliarias realizadas con bienes propios o arrendados',
+    sector: 'Actividades Inmobiliarias',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'VIA-001',
+        nombre: 'Accidente de tránsito en visitas a inmuebles',
+        categoria: 'Físico',
+        descripcion: 'Riesgo de accidente en desplazamientos frecuentes a propiedades para inspección, arrendamiento y venta',
+        fuenteGeneradora: 'Vehículos en visitas a inmuebles urbanos y rurales',
+        actividadAsociada: 'Visitas de inspección, entrega de inmuebles y gestión de contratos de arrendamiento',
+        riesgoPotencial: 'Accidente de tránsito, atraco en inmuebles desocupados',
+        efectosPosibles: 'Lesiones en accidente, lesiones por atraco',
+        medidasControl: ['Política de seguridad vial corporativa', 'Visitas acompañadas a inmuebles en zonas de riesgo', 'Comunicación de ubicación durante visitas', 'Protocolo de seguridad en inmuebles desocupados']
+      },
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo sedentario en gestión inmobiliaria de oficina',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo prolongado en pantalla para gestión de contratos, portales inmobiliarios y atención a clientes',
+        fuenteGeneradora: 'Puestos de trabajo en oficinas inmobiliarias',
+        actividadAsociada: 'Gestión de contratos, publicación de inmuebles y atención a propietarios e inquilinos',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas por trabajo sedentario',
+        efectosPosibles: 'Cervicalgia, lumbalgia, síndrome del túnel carpiano',
+        medidasControl: ['Ergonomía del puesto de trabajo', 'Pausas activas', 'Alternancia entre oficina y campo']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Kit de seguridad vial en vehículo', 'Calzado adecuado para inspección de obra'],
+    capacitacionesObligatorias: ['Conducción segura para visitas inmobiliarias', 'Seguridad en inmuebles desocupados', 'Ergonomía en trabajo de oficina y campo']
+  },
+  {
+    codigoCIIU: '6820',
+    descripcionCIIU: 'Actividades inmobiliarias realizadas a cambio de una retribución o por contrata',
+    sector: 'Actividades Inmobiliarias',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés en intermediación inmobiliaria y cumplimiento de metas',
+        categoria: 'Psicosocial',
+        descripcion: 'Presión por cierre de negocios, manejo de expectativas de clientes y trabajo por comisiones en agencias inmobiliarias',
+        fuenteGeneradora: 'Agencias inmobiliarias con modelo de comisión por ventas o arrendamientos',
+        actividadAsociada: 'Intermediación en compraventa y arrendamiento de inmuebles, avalúos y asesoría',
+        riesgoPotencial: 'Estrés por metas de ventas, inestabilidad de ingresos variables',
+        efectosPosibles: 'Ansiedad, burnout, conflictos con clientes insatisfechos',
+        medidasControl: ['Metas realistas y alcanzables', 'Apoyo psicológico disponible', 'Capacitación en negociación y manejo de clientes', 'Protocolos de atención a situaciones conflictivas']
+      },
+      {
+        codigo: 'VIA-001',
+        nombre: 'Riesgo en desplazamientos para avalúos e inspecciones',
+        categoria: 'Físico',
+        descripcion: 'Exposición a accidentes de tránsito y situaciones de inseguridad en visitas a inmuebles para avalúos comerciales y residenciales',
+        fuenteGeneradora: 'Vehículos en desplazamiento a inmuebles en toda la ciudad o municipios',
+        actividadAsociada: 'Realización de avalúos comerciales, residenciales e industriales in situ',
+        riesgoPotencial: 'Accidente de tránsito, situación de inseguridad en zonas de riesgo',
+        efectosPosibles: 'Lesiones en accidente, agresión en zonas de inseguridad',
+        medidasControl: ['Política de seguridad vial', 'Evaluación de zonas antes de visitar', 'Visitas acompañadas cuando corresponda', 'Comunicación permanente con oficina']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial en intermediación', obligatorio: true }
+    ],
+    eppRecomendado: ['Kit vial en vehículo', 'Calzado resistente para inspección de inmuebles en construcción'],
+    capacitacionesObligatorias: ['Conducción defensiva', 'Seguridad personal en visitas inmobiliarias', 'Manejo del estrés en ventas por comisión', 'Ergonomía en trabajo mixto oficina-campo']
+  },
+
+  // ==================== SECCIÓN N - ACTIVIDADES DE SERVICIOS ADMINISTRATIVOS Y DE APOYO ====================
+
+  {
+    codigoCIIU: '7710',
+    descripcionCIIU: 'Alquiler y arrendamiento de vehículos automotores',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'VIA-001',
+        nombre: 'Riesgo en entrega y recibo de vehículos arrendados',
+        categoria: 'Físico',
+        descripcion: 'Exposición a accidentes durante pruebas de manejo, traslados de vehículos y atención en patios de renta',
+        fuenteGeneradora: 'Vehículos en prueba y traslado, patio de vehículos de renta',
+        actividadAsociada: 'Entrega y recibo de vehículos arrendados, traslados y revisión de daños',
+        riesgoPotencial: 'Accidente de tránsito en pruebas, atropellamiento en patio',
+        efectosPosibles: 'Lesiones en accidente, traumatismos',
+        medidasControl: ['Política de seguridad vial para empleados', 'Señalización de patio de vehículos', 'Velocidades máximas en patio', 'Revisión previa de vehículo antes de entrega']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco reflectivo para personal de patio', 'Calzado de seguridad'],
+    capacitacionesObligatorias: ['Seguridad en patio de vehículos', 'Conducción segura para traslados', 'Primeros auxilios básicos']
+  },
+  {
+    codigoCIIU: '7721',
+    descripcionCIIU: 'Alquiler y arrendamiento de equipos recreativos y deportivos',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'MEC-001',
+        nombre: 'Riesgos en mantenimiento de equipos deportivos y recreativos',
+        categoria: 'Mecánico',
+        descripcion: 'Mantenimiento y revisión de bicicletas, tablas de surf, equipos de camping y otros implementos recreativos',
+        fuenteGeneradora: 'Talleres de mantenimiento de equipos recreativos',
+        actividadAsociada: 'Revisión, reparación y mantenimiento de equipos de alquiler',
+        riesgoPotencial: 'Cortes, golpes y atrapamientos en mantenimiento',
+        efectosPosibles: 'Laceraciones, contusiones, lesiones de mano',
+        medidasControl: ['Herramientas en buen estado', 'EPP para mantenimiento', 'Procedimientos de revisión documentados', 'Capacitación técnica del personal']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de trabajo', 'Gafas de seguridad', 'Calzado de seguridad'],
+    capacitacionesObligatorias: ['Mantenimiento seguro de equipos recreativos', 'Prevención de accidentes en talleres de mantenimiento']
+  },
+  {
+    codigoCIIU: '7722',
+    descripcionCIIU: 'Alquiler de videos y discos',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo repetitivo en atención y organización de inventario',
+        categoria: 'Ergonómico',
+        descripcion: 'Movimientos repetitivos en clasificación, organización y búsqueda de videos y discos en estanterías',
+        fuenteGeneradora: 'Estanterías de almacenamiento, mostradores de atención al cliente',
+        actividadAsociada: 'Atención al cliente, organización de inventario y mantenimiento de catálogo',
+        riesgoPotencial: 'Lesiones por repetitividad y posturas inadecuadas',
+        efectosPosibles: 'Tendinitis, fatiga en miembros superiores',
+        medidasControl: ['Rotación de actividades', 'Organización ergonómica de estanterías', 'Pausas activas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Calzado cómodo antifatiga'],
+    capacitacionesObligatorias: ['Ergonomía en comercio y atención al cliente', 'Pausas activas']
+  },
+  {
+    codigoCIIU: '7729',
+    descripcionCIIU: 'Alquiler y arrendamiento de otros efectos personales y enseres domésticos',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Manejo manual de enseres en arrendamiento',
+        categoria: 'Ergonómico',
+        descripcion: 'Carga y descarga de muebles, electrodomésticos y enseres en operaciones de alquiler y devolución',
+        fuenteGeneradora: 'Bodegas de almacenamiento y unidades de transporte de enseres',
+        actividadAsociada: 'Entrega y recibo de muebles, electrodomésticos y elementos para el hogar en arrendamiento',
+        riesgoPotencial: 'Lesiones dorsolumbares por manejo de cargas pesadas',
+        efectosPosibles: 'Hernias, lumbalgia aguda, lesiones de hombro',
+        medidasControl: ['Equipos de asistencia para carga pesada', 'Técnica correcta de levantamiento', 'Trabajo en equipo para cargas voluminosas', 'Límites de peso individual']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Faja lumbar de soporte', 'Guantes de trabajo', 'Calzado de seguridad con puntera'],
+    capacitacionesObligatorias: ['Manejo manual de cargas', 'Prevención de lesiones dorsolumbares', 'Ergonomía en operaciones de logística']
+  },
+  {
+    codigoCIIU: '7730',
+    descripcionCIIU: 'Alquiler y arrendamiento de maquinaria y equipo',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'MEC-001',
+        nombre: 'Riesgos en mantenimiento y prueba de maquinaria arrendada',
+        categoria: 'Mecánico',
+        descripcion: 'Revisión, prueba y mantenimiento de maquinaria industrial y de construcción antes y después del arrendamiento',
+        fuenteGeneradora: 'Maquinaria de construcción, industrial y agrícola en revisión y mantenimiento',
+        actividadAsociada: 'Mantenimiento preventivo y correctivo de maquinaria de arrendamiento',
+        riesgoPotencial: 'Atrapamiento, aplastamiento, cortes en mantenimiento de maquinaria',
+        efectosPosibles: 'Lesiones graves, amputación, aplastamiento',
+        medidasControl: ['Procedimientos LOTO para mantenimiento', 'EPP específico por tipo de maquinaria', 'Técnicos certificados para cada equipo', 'Inspección preoperacional documentada']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo III', obligatorio: true }
+    ],
+    eppRecomendado: ['Casco de seguridad', 'Guantes de trabajo', 'Calzado de seguridad', 'Gafas de protección', 'Protección auditiva'],
+    capacitacionesObligatorias: ['Mantenimiento seguro de maquinaria industrial', 'Bloqueo y etiquetado LOTO', 'Seguridad en operación de equipos pesados']
+  },
+  {
+    codigoCIIU: '7740',
+    descripcionCIIU: 'Arrendamiento de propiedad intelectual y productos similares, excepto obras protegidas por derechos de autor',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo sedentario en gestión de licencias y propiedad intelectual',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo de oficina en gestión de contratos de licenciamiento, negociación de regalías y administración de PI',
+        fuenteGeneradora: 'Puestos de trabajo de gestión de propiedad intelectual',
+        actividadAsociada: 'Negociación de contratos de licencia, gestión de regalías y registro de PI',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas por trabajo sedentario',
+        efectosPosibles: 'Cervicalgia, lumbalgia',
+        medidasControl: ['Ergonomía del puesto de trabajo', 'Pausas activas', 'Evaluación periódica del puesto']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo de oficina', 'Pausas activas y bienestar laboral']
+  },
+  {
+    codigoCIIU: '7820',
+    descripcionCIIU: 'Actividades de agencias de empleo temporal',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés laboral en gestión de personal temporal',
+        categoria: 'Psicosocial',
+        descripcion: 'Presión por cumplimiento de requisiciones de personal, alta rotación y manejo de quejas entre empresas usuarias y trabajadores',
+        fuenteGeneradora: 'Oficinas de agencias de empleo temporal y puntos de atención',
+        actividadAsociada: 'Reclutamiento, selección, contratación y administración de personal en misión',
+        riesgoPotencial: 'Estrés por alta demanda, conflictos entre partes',
+        efectosPosibles: 'Burnout, ansiedad',
+        medidasControl: ['Distribución de cargas de requisiciones', 'Apoyo psicológico disponible', 'Capacitación en mediación laboral', 'Metas alcanzables de colocación']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica'],
+    capacitacionesObligatorias: ['Gestión del estrés en recursos humanos', 'Ergonomía en trabajo de oficina', 'Marco legal del trabajo en misión']
+  },
+  {
+    codigoCIIU: '7830',
+    descripcionCIIU: 'Otras formas de suministro de recurso humano',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Riesgo psicosocial en gestión de personal subcontratado',
+        categoria: 'Psicosocial',
+        descripcion: 'Gestión de personal en modalidades de outsourcing, BPO y otras formas de tercerización laboral',
+        fuenteGeneradora: 'Centros de coordinación de personal subcontratado',
+        actividadAsociada: 'Coordinación de personal en contratos de outsourcing y gestión de nómina tercerizada',
+        riesgoPotencial: 'Estrés por complejidad en gestión de múltiples contratos y personal disperso',
+        efectosPosibles: 'Burnout, conflictos laborales',
+        medidasControl: ['Sistemas de gestión de personal eficientes', 'Distribución adecuada de responsabilidades', 'Apoyo legal laboral disponible']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo de oficina', 'Marco normativo del outsourcing en Colombia', 'Gestión del estrés laboral']
+  },
+  {
+    codigoCIIU: '7911',
+    descripcionCIIU: 'Actividades de las agencias de viaje',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés en atención a viajeros y manejo de imprevistos',
+        categoria: 'Psicosocial',
+        descripcion: 'Presión por atención a situaciones de emergencia en viajes, quejas de clientes y coordinación de itinerarios complejos',
+        fuenteGeneradora: 'Agencias de viaje y centros de atención telefónica de turismo',
+        actividadAsociada: 'Diseño y venta de paquetes turísticos, atención a viajeros en crisis',
+        riesgoPotencial: 'Estrés por manejo de emergencias de viaje, presión de ventas',
+        efectosPosibles: 'Burnout, ansiedad, conflictos con clientes',
+        medidasControl: ['Protocolos de atención a emergencias de viajeros', 'Apoyo psicológico disponible', 'Rotación en roles de atención', 'Capacitación en manejo de crisis']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica'],
+    capacitacionesObligatorias: ['Gestión del estrés en agencias de viaje', 'Ergonomía en trabajo de call center turístico', 'Protocolo de atención a emergencias de viajeros']
+  },
+  {
+    codigoCIIU: '7912',
+    descripcionCIIU: 'Actividades de operadores turísticos',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'VIA-001',
+        nombre: 'Riesgos en operaciones turísticas de campo',
+        categoria: 'Físico',
+        descripcion: 'Exposición a condiciones naturales adversas en guianza turística, senderismo, rafting y ecoturismo',
+        fuenteGeneradora: 'Entornos naturales: ríos, montañas, selva, zonas costeras',
+        actividadAsociada: 'Guianza turística en naturaleza, operación de actividades de aventura y ecoturismo',
+        riesgoPotencial: 'Accidentes en actividades de aventura, picaduras, clima adverso',
+        efectosPosibles: 'Lesiones en accidente de actividad, hipotermia, picaduras de animales',
+        medidasControl: ['Guías certificados por SENA o universidades turísticas', 'Kits de primeros auxilios en campo', 'Protocolos de seguridad por tipo de actividad', 'Seguros de accidentes para operadores y turistas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['EPP específico por actividad: chaleco salvavidas, casco, arnés para canopy', 'Repelente de insectos', 'Botiquín de primeros auxilios'],
+    capacitacionesObligatorias: ['Seguridad en operaciones turísticas de aventura', 'Primeros auxilios en entornos naturales', 'Manejo de emergencias en turismo de naturaleza']
+  },
+  {
+    codigoCIIU: '7990',
+    descripcionCIIU: 'Otros servicios de reserva y actividades relacionadas',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo en pantalla en reservas y booking digital',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo intensivo en plataformas digitales de reservas para hoteles, vuelos y actividades turísticas',
+        fuenteGeneradora: 'Centros de contacto de reservas, plataformas OTA y oficinas de booking',
+        actividadAsociada: 'Gestión de reservas, atención telefónica y digital a turistas',
+        riesgoPotencial: 'Fatiga visual, lesiones músculo-esqueléticas en call center de turismo',
+        efectosPosibles: 'Síndrome visual, síndrome del túnel carpiano',
+        medidasControl: ['Ergonomía en puestos de call center', 'Pausas auditivas y visuales', 'Rotación de actividades']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Diadema ergonómica para call center', 'Silla ergonómica'],
+    capacitacionesObligatorias: ['Ergonomía en call center turístico', 'Pausas activas y bienestar laboral']
+  },
+  {
+    codigoCIIU: '8020',
+    descripcionCIIU: 'Actividades de servicios de sistemas de seguridad',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Violencia y agresión en prestación de servicios de seguridad',
+        categoria: 'Psicosocial',
+        descripcion: 'Exposición a situaciones de violencia, agresiones físicas y verbales en prestación de servicios de vigilancia y seguridad',
+        fuenteGeneradora: 'Puestos de vigilancia, centros comerciales, bancos, bodegas e industrias',
+        actividadAsociada: 'Vigilancia física de instalaciones, control de acceso y respuesta a emergencias de seguridad',
+        riesgoPotencial: 'Agresión armada, estrés postraumático, lesiones en enfrentamientos',
+        efectosPosibles: 'Heridas por agresión, PTSD, lesiones graves',
+        medidasControl: ['Capacitación en técnicas de manejo de situaciones de alto riesgo', 'Armamento y equipo de protección personal según norma', 'Apoyo psicológico post-incidente', 'Comunicación permanente con central']
+      },
+      {
+        codigo: 'FIS-001',
+        nombre: 'Trabajo nocturno y turnos prolongados en vigilancia',
+        categoria: 'Físico',
+        descripcion: 'Turnos de vigilancia nocturnos de 8 a 12 horas que alteran el ritmo circadiano y generan fatiga crónica',
+        fuenteGeneradora: 'Puestos de vigilancia con turnos nocturnos y rotatorios',
+        actividadAsociada: 'Vigilancia nocturna de instalaciones y rondas de seguridad',
+        riesgoPotencial: 'Fatiga crónica, alteración del sueño, accidentes por somnolencia',
+        efectosPosibles: 'Trastornos del sueño, accidentes por microsueño en ronda',
+        medidasControl: ['Rotación de turnos adecuada', 'Descansos obligatorios entre turnos', 'Evaluación médica periódica de trabajadores nocturnos', 'Iluminación adecuada en puestos de vigilancia']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo III', obligatorio: true },
+      { codigo: 'Dec. 356/1994', norma: 'Decreto 356 de 1994', descripcion: 'Estatuto de Vigilancia y Seguridad Privada', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco antibalas según amenaza', 'Uniforme de vigilancia reglamentario', 'Calzado de seguridad', 'Linterna', 'Radio de comunicación'],
+    capacitacionesObligatorias: ['Vigilancia y seguridad privada - capacitación SuperVigilancia', 'Manejo de armas (si aplica)', 'Primeros auxilios', 'Manejo del estrés postraumático']
+  },
+  {
+    codigoCIIU: '8030',
+    descripcionCIIU: 'Actividades de investigación',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Riesgo a la seguridad personal en investigación privada',
+        categoria: 'Psicosocial',
+        descripcion: 'Exposición a situaciones de peligro personal durante actividades de investigación, vigilancia e inteligencia privada',
+        fuenteGeneradora: 'Trabajo de campo en investigaciones de fraude, infidelidad corporativa y seguimiento de personas',
+        actividadAsociada: 'Investigación encubierta, seguimiento de personas y análisis de fraudes corporativos',
+        riesgoPotencial: 'Agresión por personas investigadas, estrés psicológico por trabajo encubierto',
+        efectosPosibles: 'Lesiones físicas, estrés crónico, PTSD en casos complejos',
+        medidasControl: ['Protocolos de seguridad en trabajo de campo', 'Cobertura de identidad documentada', 'Apoyo psicológico disponible', 'Trabajo en equipo para casos de alto riesgo']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo III', obligatorio: true },
+      { codigo: 'Dec. 356/1994', norma: 'Decreto 356 de 1994', descripcion: 'Estatuto de Vigilancia y Seguridad Privada', obligatorio: true }
+    ],
+    eppRecomendado: ['Dispositivo de comunicación de emergencia', 'Chaleco antibalas en casos de alto riesgo'],
+    capacitacionesObligatorias: ['Seguridad personal en investigación privada', 'Marco legal de la investigación privada en Colombia', 'Manejo del estrés en trabajo de alto riesgo', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '8110',
+    descripcionCIIU: 'Actividades combinadas de apoyo a instalaciones',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a productos de limpieza y desinfección',
+        categoria: 'Químico',
+        descripcion: 'Uso de productos químicos de limpieza, desinfectantes y plaguicidas en servicios de facility management',
+        fuenteGeneradora: 'Productos de limpieza industrial, desinfectantes y plaguicidas para control de plagas',
+        actividadAsociada: 'Limpieza general, desinfección de instalaciones y control de plagas integrado',
+        riesgoPotencial: 'Irritación, quemaduras químicas, sensibilización',
+        efectosPosibles: 'Dermatitis química, irritación respiratoria, asma ocupacional',
+        medidasControl: ['Fichas de datos de seguridad accesibles', 'EPP químico adecuado', 'Dilución correcta de productos', 'Capacitación en manejo de productos de limpieza']
+      },
+      {
+        codigo: 'ALT-001',
+        nombre: 'Trabajo en alturas en mantenimiento de instalaciones',
+        categoria: 'Físico',
+        descripcion: 'Trabajos de limpieza de fachadas, mantenimiento de HVAC y reparaciones en alturas dentro de edificios y exteriores',
+        fuenteGeneradora: 'Escaleras, andamios, plataformas elevadoras y rappel de fachadas',
+        actividadAsociada: 'Limpieza de vidrios en altura, mantenimiento de sistemas en techos y equipos de fachada',
+        riesgoPotencial: 'Caída desde altura, caída de objetos sobre personas',
+        efectosPosibles: 'Traumatismos graves, politraumatismos, fatalidades',
+        medidasControl: ['Sistema de protección contra caídas certificado', 'Permiso de trabajo en alturas', 'Señalización en zonas bajo trabajos en altura', 'EPP para trabajo en altura']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true },
+      { codigo: 'Res. 4272/2021', norma: 'Resolución 4272 de 2021', descripcion: 'Trabajo seguro en alturas', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de nitrilo para limpieza', 'Mascarilla para vapores de limpieza', 'Arnés de cuerpo completo para alturas', 'Calzado antideslizante'],
+    capacitacionesObligatorias: ['Manejo seguro de productos de limpieza', 'Trabajo seguro en alturas', 'Ergonomía en servicios de limpieza', 'Plan de emergencia en facility management']
+  },
+  {
+    codigoCIIU: '8121',
+    descripcionCIIU: 'Limpieza general interior de edificios',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a desinfectantes y productos de limpieza',
+        categoria: 'Químico',
+        descripcion: 'Contacto frecuente con jabones, desinfectantes, lejías y otros productos en servicios de limpieza interior',
+        fuenteGeneradora: 'Productos de limpieza domésticos e industriales en diluciones de trabajo',
+        actividadAsociada: 'Limpieza de pisos, baños, mobiliario y superficies en edificios de oficinas',
+        riesgoPotencial: 'Dermatitis por contacto, irritación de mucosas',
+        efectosPosibles: 'Dermatitis de contacto, eccema, irritación ocular',
+        medidasControl: ['Guantes de nitrilo para limpieza', 'Dilución correcta de productos', 'Rotación de tareas para reducir exposición continua', 'Cremas de barrera en manos']
+      },
+      {
+        codigo: 'ERG-001',
+        nombre: 'Sobreesfuerzo en limpieza interior',
+        categoria: 'Ergonómico',
+        descripcion: 'Posturas forzadas y repetitividad en trapeado, restregado y limpieza de baños y superficies',
+        fuenteGeneradora: 'Mopas, traperos, equipos de limpieza a presión',
+        actividadAsociada: 'Limpieza de pisos, paredes, baños y áreas comunes',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas por repetitividad y posturas forzadas',
+        efectosPosibles: 'Lumbalgia, lesiones de hombro, tendinitis',
+        medidasControl: ['Mopas con mango ajustable en altura', 'Carros de limpieza con buena ergonomía', 'Rotación de áreas de limpieza', 'Pausas activas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de nitrilo', 'Mascarilla desechable', 'Delantal impermeable', 'Calzado antideslizante'],
+    capacitacionesObligatorias: ['Uso seguro de productos de limpieza', 'Ergonomía en servicios de aseo', 'Prevención de caídas en superficies mojadas', 'Pausas activas para personal de limpieza']
+  },
+  {
+    codigoCIIU: '8129',
+    descripcionCIIU: 'Otras actividades de limpieza de edificios e instalaciones industriales',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a químicos industriales en limpieza especializada',
+        categoria: 'Químico',
+        descripcion: 'Uso de productos agresivos para limpieza de industrias: ácidos, bases fuertes, disolventes industriales',
+        fuenteGeneradora: 'Productos de limpieza industrial: ácidos, cáusticos, disolventes clorados',
+        actividadAsociada: 'Limpieza de tanques, reactores, líneas de proceso y superficies industriales',
+        riesgoPotencial: 'Quemaduras químicas graves, intoxicación por inhalación',
+        efectosPosibles: 'Quemaduras dérmicas y oculares, daño respiratorio, intoxicación',
+        medidasControl: ['EPP de máximo nivel para manejo de ácidos y cáusticos', 'Duchas y lavaojos de emergencia', 'Capacitación en manejo de químicos industriales agresivos', 'Ficha de datos de seguridad']
+      },
+      {
+        codigo: 'CONF-001',
+        nombre: 'Trabajo en espacios confinados para limpieza',
+        categoria: 'Físico',
+        descripcion: 'Entrada a tanques, silos, fosos y espacios confinados para limpieza industrial',
+        fuenteGeneradora: 'Tanques de almacenamiento, silos, fosos y cámaras de proceso',
+        actividadAsociada: 'Limpieza interior de tanques, silos y equipos de proceso',
+        riesgoPotencial: 'Asfixia, intoxicación, sepultamiento en espacios confinados',
+        efectosPosibles: 'Asfixia, intoxicación, fatalidades',
+        medidasControl: ['Permiso de trabajo en espacios confinados', 'Monitoreo de atmósfera antes y durante entrada', 'Vigía en exterior', 'Equipo de rescate disponible', 'SCBA para entrada']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo III', obligatorio: true },
+      { codigo: 'Res. 4272/2021', norma: 'Resolución 4272 de 2021', descripcion: 'Espacios confinados y trabajo en alturas', obligatorio: true }
+    ],
+    eppRecomendado: ['Traje de protección química', 'SCBA para espacios confinados', 'Guantes resistentes a ácidos', 'Gafas herméticas de protección química', 'Botas de caucho'],
+    capacitacionesObligatorias: ['Manejo de químicos industriales agresivos', 'Trabajo en espacios confinados - entrada y rescate', 'Primeros auxilios en accidentes químicos']
+  },
+  {
+    codigoCIIU: '8130',
+    descripcionCIIU: 'Actividades de paisajismo y servicios de mantenimiento conexos',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a plaguicidas y fertilizantes en paisajismo',
+        categoria: 'Químico',
+        descripcion: 'Aplicación de herbicidas, insecticidas y fungicidas en áreas verdes urbanas e industriales',
+        fuenteGeneradora: 'Productos fitosanitarios para control de plagas y malezas en jardines y zonas verdes',
+        actividadAsociada: 'Fumigación, fertilización y control de plagas en áreas verdes y jardines',
+        riesgoPotencial: 'Intoxicación por plaguicidas, sensibilización química',
+        efectosPosibles: 'Intoxicación aguda o crónica, efectos cancerígenos en exposición prolongada',
+        medidasControl: ['Uso de plaguicidas de menor toxicidad', 'EPP completo para aplicación', 'Capacitación certificada en uso de plaguicidas', 'Monitoreo biológico de colinesterasa']
+      },
+      {
+        codigo: 'MEC-001',
+        nombre: 'Riesgos en uso de equipos de paisajismo',
+        categoria: 'Mecánico',
+        descripcion: 'Uso de podadoras, guadañadoras, motosierras y sopladores en mantenimiento de zonas verdes',
+        fuenteGeneradora: 'Podadoras de gasolina, guadañadoras, motosierras y equipos de paisajismo',
+        actividadAsociada: 'Corte de césped, poda de árboles, limpieza de áreas verdes',
+        riesgoPotencial: 'Proyección de objetos, cortes con motosierra, vibraciones',
+        efectosPosibles: 'Lesiones graves por proyección, amputación, síndrome de vibración mano-brazo',
+        medidasControl: ['Guardas de seguridad en equipos', 'EPP para uso de motosierra', 'Zona de exclusión durante corte', 'Rotación en uso de equipos vibrantes']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo III', obligatorio: true },
+      { codigo: 'Res. 2400/1979', norma: 'Resolución 2400 de 1979', descripcion: 'Estatuto de Seguridad Industrial', obligatorio: true }
+    ],
+    eppRecomendado: ['Polainas para motosierra', 'Casco forestal con visera y protección auditiva', 'Guantes anticorte nivel 5', 'Protección facial para guadañadora', 'Mascarilla para plaguicidas'],
+    capacitacionesObligatorias: ['Uso seguro de motosierra y guadañadora', 'Manejo seguro de plaguicidas', 'Poda de árboles en altura', 'Primeros auxilios en accidentes con herramientas de corte']
+  },
+  {
+    codigoCIIU: '8211',
+    descripcionCIIU: 'Actividades combinadas de servicios administrativos de oficina',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Riesgos ergonómicos en servicios administrativos de oficina',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo sedentario combinado de digitación, atención al cliente, archivo y gestión documental',
+        fuenteGeneradora: 'Puestos administrativos multifunción, recepciones y centros de servicios compartidos',
+        actividadAsociada: 'Digitación, archivo, atención telefónica, elaboración de documentos y gestión administrativa',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas, fatiga visual',
+        efectosPosibles: 'Cervicalgia, síndrome del túnel carpiano, lumbalgia',
+        medidasControl: ['Evaluación ergonómica de puestos multitarea', 'Sillas ergonómicas ajustables', 'Pausas activas programadas', 'Iluminación adecuada en áreas de trabajo']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica ajustable', 'Reposamuñecas', 'Filtro de pantalla'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo administrativo de oficina', 'Pausas activas y bienestar laboral']
+  },
+  {
+    codigoCIIU: '8219',
+    descripcionCIIU: 'Fotocopiado, preparación de documentos y otras actividades especializadas de apoyo a oficina',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a tóner y ozono en fotocopiado',
+        categoria: 'Químico',
+        descripcion: 'Inhalación de partículas de tóner y ozono generado por equipos de fotocopiado e impresión láser',
+        fuenteGeneradora: 'Fotocopiadoras, impresoras láser y equipos multifunción de alto volumen',
+        actividadAsociada: 'Operación de equipos de fotocopiado masivo, impresión y encuadernación',
+        riesgoPotencial: 'Irritación respiratoria por tóner y ozono',
+        efectosPosibles: 'Irritación de vías respiratorias, dolores de cabeza',
+        medidasControl: ['Ventilación adecuada en salas de fotocopiado', 'Manipulación de tóner con guantes y mascarilla', 'Mantenimiento regular de equipos', 'Pausas en zonas con menor concentración']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de nitrilo para cambio de tóner', 'Mascarilla desechable para mantenimiento de fotocopiadora'],
+    capacitacionesObligatorias: ['Manejo seguro de tóner y consumibles de impresión', 'Ergonomía en trabajo de reprografía']
+  },
+  {
+    codigoCIIU: '8220',
+    descripcionCIIU: 'Actividades de centros de llamadas (call center)',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés laboral en call center por alta demanda emocional',
+        categoria: 'Psicosocial',
+        descripcion: 'Atención continua de llamadas con clientes insatisfechos, metas de productividad estrictas y monitoreo permanente',
+        fuenteGeneradora: 'Plataformas de call center, supervisión en tiempo real, grabación de llamadas',
+        actividadAsociada: 'Recepción y realización de llamadas de atención al cliente, ventas, cobranza y soporte',
+        riesgoPotencial: 'Burnout, estrés crónico, acoso por metas de productividad',
+        efectosPosibles: 'Trastornos de ansiedad, depresión, agotamiento emocional',
+        medidasControl: ['Metas realistas y alcanzables', 'Apoyo psicológico disponible', 'Rotación entre tipos de llamadas', 'Supervisión constructiva no punitiva']
+      },
+      {
+        codigo: 'FIS-001',
+        nombre: 'Exposición a ruido en call center',
+        categoria: 'Físico',
+        descripcion: 'Exposición continua a ruido en salas de call center con múltiples agentes y diademas',
+        fuenteGeneradora: 'Salas de call center con alta densidad de agentes, diademas y equipos telefónicos',
+        actividadAsociada: 'Operación de posiciones de call center durante jornadas de 8 horas',
+        riesgoPotencial: 'Hipoacusia por ruido, tinnitus',
+        efectosPosibles: 'Pérdida auditiva, tinnitus, fatiga auditiva',
+        medidasControl: ['Limitadores de volumen en diademas (85 dB máx)', 'Medición de ruido ambiental en salas', 'Audiometría periódica', 'Zonas de silencio para descanso']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial en call center', obligatorio: true }
+    ],
+    eppRecomendado: ['Diadema con limitador de volumen certificado', 'Silla ergonómica de call center'],
+    capacitacionesObligatorias: ['Gestión del estrés y riesgo psicosocial en call center', 'Conservación auditiva para agentes telefónicos', 'Ergonomía en posición de call center', 'Técnicas de comunicación asertiva con clientes difíciles']
+  },
+  {
+    codigoCIIU: '8230',
+    descripcionCIIU: 'Organización de convenciones y eventos comerciales',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'ELE-001',
+        nombre: 'Riesgo eléctrico en montaje de eventos',
+        categoria: 'Eléctrico',
+        descripcion: 'Instalación de sistemas de iluminación, sonido y electricidad temporal en recintos de eventos',
+        fuenteGeneradora: 'Instalaciones eléctricas temporales, torres de sonido, estructuras de iluminación',
+        actividadAsociada: 'Montaje y desmontaje de tarimas, iluminación, sonido y decoración de eventos',
+        riesgoPotencial: 'Electrocución en instalaciones temporales, caída de estructuras',
+        efectosPosibles: 'Lesiones eléctricas, caída de tarimas, lesiones graves',
+        medidasControl: ['Personal calificado para instalaciones eléctricas de eventos', 'Ingeniería estructural para tarimas', 'Revisión previa al evento', 'Planes de contingencia para mal tiempo']
+      },
+      {
+        codigo: 'ALT-001',
+        nombre: 'Trabajo en alturas en montaje de eventos',
+        categoria: 'Físico',
+        descripcion: 'Instalación de iluminación, pantallas LED y decoración en alturas durante montaje de eventos',
+        fuenteGeneradora: 'Andamios, escaleras y plataformas elevadoras en recintos de eventos',
+        actividadAsociada: 'Montaje de iluminación, pantallas y decoración en altura en salones y auditorios',
+        riesgoPotencial: 'Caída desde altura, caída de objetos sobre asistentes',
+        efectosPosibles: 'Traumatismos graves, lesiones a terceros',
+        medidasControl: ['Arnés de seguridad en trabajos sobre 1.5 m', 'Señalización de zonas de montaje', 'Cronograma de montaje con anticipación al evento', 'EPP completo para equipo técnico']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true },
+      { codigo: 'Res. 4272/2021', norma: 'Resolución 4272 de 2021', descripcion: 'Trabajo seguro en alturas en montaje', obligatorio: true }
+    ],
+    eppRecomendado: ['Arnés de cuerpo completo', 'Casco de seguridad', 'Calzado de seguridad', 'Guantes de trabajo', 'Chaleco reflectivo'],
+    capacitacionesObligatorias: ['Seguridad en montaje de eventos', 'Trabajo seguro en alturas', 'Instalaciones eléctricas temporales seguras', 'Plan de emergencia en eventos masivos']
+  },
+  {
+    codigoCIIU: '8291',
+    descripcionCIIU: 'Actividades de agencias de cobro y oficinas de calificación crediticia',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés emocional en gestión de cobranza',
+        categoria: 'Psicosocial',
+        descripcion: 'Exposición a agresiones verbales de deudores, presión por metas de recaudo y trabajo con casos de alto conflicto',
+        fuenteGeneradora: 'Call center de cobranza, visitas domiciliarias a deudores morosos',
+        actividadAsociada: 'Gestión de cobranza telefónica y en campo, negociación de acuerdos de pago',
+        riesgoPotencial: 'Agresión verbal y física de deudores, estrés crónico',
+        efectosPosibles: 'Burnout, lesiones en visitas de campo, trastornos de ansiedad',
+        medidasControl: ['Protocolos de seguridad en visitas de cobranza de campo', 'Límite de casos de alta conflictividad por asesor', 'Apoyo psicológico', 'Trabajo en pareja en cobranza de campo']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial en cobranza', obligatorio: true }
+    ],
+    eppRecomendado: ['Diadema ergonómica para call center de cobranza', 'Silla ergonómica'],
+    capacitacionesObligatorias: ['Técnicas de cobranza segura', 'Desescalada de conflictos con deudores', 'Gestión del estrés en cobranza', 'Seguridad en visitas de campo']
+  },
+  {
+    codigoCIIU: '8292',
+    descripcionCIIU: 'Actividades de envase y empaque',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Movimientos repetitivos en líneas de empaque',
+        categoria: 'Ergonómico',
+        descripcion: 'Alta repetitividad en operaciones de empaque, etiquetado y paletizado en líneas de producción',
+        fuenteGeneradora: 'Líneas de empaque manual y semiautomático, puestos de etiquetado',
+        actividadAsociada: 'Empaque, etiquetado, sellado y paletizado de productos diversos',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas por alta repetitividad',
+        efectosPosibles: 'Síndrome del túnel carpiano, tendinitis, epicondilitis',
+        medidasControl: ['Rotación de puestos de trabajo', 'Pausas activas cada hora', 'Diseño ergonómico de puestos de empaque', 'Herramientas de asistencia para paletizado']
+      },
+      {
+        codigo: 'MEC-001',
+        nombre: 'Riesgos en maquinaria de empaque',
+        categoria: 'Mecánico',
+        descripcion: 'Contacto con partes móviles de empacadoras, selladoras y paletizadoras automáticas',
+        fuenteGeneradora: 'Empacadoras automáticas, termoselladoras, stretch wrappers y paletizadores',
+        actividadAsociada: 'Operación y alimentación de maquinaria de empaque automatizada',
+        riesgoPotencial: 'Atrapamiento, cortes y aplastamiento en maquinaria',
+        efectosPosibles: 'Lesiones graves en manos y extremidades',
+        medidasControl: ['Guardas de seguridad en todas las partes móviles', 'LOTO para mantenimiento', 'Capacitación en operación segura', 'Señalización de riesgos mecánicos']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true },
+      { codigo: 'GTC-45', norma: 'GTC 45:2012', descripcion: 'Guía para identificación de peligros en empaque', obligatorio: false }
+    ],
+    eppRecomendado: ['Guantes anticorte para empaque', 'Calzado de seguridad', 'Protección auditiva en áreas con maquinaria ruidosa', 'Gafas de seguridad'],
+    capacitacionesObligatorias: ['Ergonomía en líneas de empaque', 'Operación segura de maquinaria de empaque', 'Prevención de lesiones por movimientos repetitivos', 'Bloqueo y etiquetado LOTO']
+  },
+  {
+    codigoCIIU: '8299',
+    descripcionCIIU: 'Otras actividades de servicio de apoyo a las empresas n.c.p.',
+    sector: 'Servicios Administrativos',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Riesgos ergonómicos en servicios de apoyo empresarial diversos',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo de oficina en servicios especializados de apoyo: transcripción, traducción, mensajería, lavandería industrial',
+        fuenteGeneradora: 'Puestos de trabajo multifuncionales en servicios de apoyo empresarial',
+        actividadAsociada: 'Transcripción, traducción, mensajería corporativa y otros servicios de apoyo',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas variables según actividad específica',
+        efectosPosibles: 'Lesiones adaptadas al tipo de servicio prestado',
+        medidasControl: ['Evaluación ergonómica por puesto específico', 'Pausas activas', 'EPP según actividad']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['EPP variable según actividad específica del servicio'],
+    capacitacionesObligatorias: ['Ergonomía adaptada al puesto de trabajo', 'Pausas activas y bienestar laboral', 'Identificación de peligros en el puesto de trabajo']
+  },
+
+  // ==================== SECCIÓN O - ADMINISTRACIÓN PÚBLICA Y DEFENSA ====================
+
+  {
+    codigoCIIU: '8411',
+    descripcionCIIU: 'Actividades legislativas de la administración pública',
+    sector: 'Administración Pública',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés por carga de trabajo legislativa y presión pública',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta exposición pública, presión de grupos de interés y carga de trabajo en actividades legislativas del Congreso, Asambleas y Concejos',
+        fuenteGeneradora: 'Cámaras legislativas, comisiones parlamentarias y espacios de debate público',
+        actividadAsociada: 'Elaboración de leyes, debates legislativos, control político y atención ciudadana',
+        riesgoPotencial: 'Estrés crónico por exposición pública, acoso y amenazas',
+        efectosPosibles: 'Burnout, trastornos de ansiedad, problemas de salud mental',
+        medidasControl: ['Esquemas de seguridad personal para funcionarios electos', 'Apoyo psicológico disponible', 'Gestión de cargas de trabajo legislativa', 'Protocolos de atención a amenazas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Dec. 1083/2015', norma: 'Decreto 1083 de 2015', descripcion: 'Reglamento único del sector función pública', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica para trabajo legislativo'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo legislativo', 'Gestión del estrés en cargos públicos de alta exposición', 'Bienestar mental en servidor público']
+  },
+  {
+    codigoCIIU: '8412',
+    descripcionCIIU: 'Actividades ejecutivas de la administración pública',
+    sector: 'Administración Pública',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Carga de trabajo y estrés en administración ejecutiva pública',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta responsabilidad en dirección de entidades públicas, gestión de recursos del Estado y rendición de cuentas',
+        fuenteGeneradora: 'Ministerios, gobernaciones, alcaldías y entidades del ejecutivo',
+        actividadAsociada: 'Dirección de entidades públicas, formulación de políticas, gestión de presupuesto y atención ciudadana',
+        riesgoPotencial: 'Estrés por responsabilidad fiscal y política, acoso y amenazas',
+        efectosPosibles: 'Burnout ejecutivo, problemas de salud mental',
+        medidasControl: ['Delegación efectiva de funciones', 'Apoyo psicológico para directivos', 'Esquemas de seguridad para funcionarios expuestos', 'Gestión del equilibrio trabajo-vida']
+      },
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo sedentario con alta carga cognitiva en directivos',
+        categoria: 'Ergonómico',
+        descripcion: 'Jornadas extensas de trabajo en oficina con alta demanda cognitiva para directivos del ejecutivo',
+        fuenteGeneradora: 'Despachos y oficinas de alta dirección de entidades públicas',
+        actividadAsociada: 'Reuniones, revisión de documentos, toma de decisiones y representación institucional',
+        riesgoPotencial: 'Sedentarismo, fatiga cognitiva y física',
+        efectosPosibles: 'Problemas cardiovasculares, cervicalgia, agotamiento',
+        medidasControl: ['Silla ergonómica ejecutiva', 'Pausas activas', 'Actividad física regular', 'Exámenes médicos periódicos']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Dec. 1083/2015', norma: 'Decreto 1083 de 2015', descripcion: 'Reglamento único del sector función pública', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica ejecutiva', 'Soporte lumbar'],
+    capacitacionesObligatorias: ['Bienestar ejecutivo en sector público', 'Ergonomía en trabajo directivo', 'Gestión del estrés en alta responsabilidad pública']
+  },
+  {
+    codigoCIIU: '8413',
+    descripcionCIIU: 'Regulación de las actividades de organismos que prestan servicios de salud, educativos, culturales y otros servicios sociales',
+    sector: 'Administración Pública',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés en funciones de inspección y vigilancia',
+        categoria: 'Psicosocial',
+        descripcion: 'Presión por visitas de inspección, decisiones sancionatorias y resistencia de entidades inspeccionadas en superintendencias y ministerios reguladores',
+        fuenteGeneradora: 'Actividades de inspección, vigilancia y control de entidades reguladas',
+        actividadAsociada: 'Inspecciones a hospitales, colegios, guarderías y entidades prestadoras de servicios sociales',
+        riesgoPotencial: 'Estrés por confrontación con entidades inspeccionadas, desplazamientos frecuentes',
+        efectosPosibles: 'Burnout, accidentes en desplazamientos de campo',
+        medidasControl: ['Protocolos de seguridad en visitas de inspección', 'Apoyo jurídico disponible', 'Política de seguridad vial para inspectores', 'Gestión del estrés en funciones regulatorias']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Dec. 1083/2015', norma: 'Decreto 1083 de 2015', descripcion: 'Reglamento único del sector función pública', obligatorio: true }
+    ],
+    eppRecomendado: ['Kit vial para inspectores de campo', 'EPP según tipo de entidad inspeccionada'],
+    capacitacionesObligatorias: ['Seguridad en visitas de inspección y vigilancia', 'Conducción defensiva para inspectores', 'Gestión del estrés en funciones regulatorias']
+  },
+  {
+    codigoCIIU: '8414',
+    descripcionCIIU: 'Actividades reguladoras y facilitadoras de la actividad económica',
+    sector: 'Administración Pública',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés en regulación económica y atención a grupos de presión',
+        categoria: 'Psicosocial',
+        descripcion: 'Presión de grupos empresariales, lobby y alta responsabilidad en decisiones regulatorias que impactan sectores económicos',
+        fuenteGeneradora: 'Comisiones reguladoras, superintendencias económicas y ministerios sectoriales',
+        actividadAsociada: 'Formulación de regulación económica, atención a actores del sector y decisiones tarifarias',
+        riesgoPotencial: 'Estrés por presión de actores económicos, responsabilidad en decisiones de impacto',
+        efectosPosibles: 'Burnout, ansiedad, conflictos de interés',
+        medidasControl: ['Ética pública y protocolo anti-lobby', 'Apoyo psicológico', 'Distribución colegiada de decisiones regulatorias', 'Transparencia en procesos decisorios']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica'],
+    capacitacionesObligatorias: ['Ética pública y gestión del conflicto de interés', 'Bienestar en cargos regulatorios', 'Ergonomía en trabajo de oficina pública']
+  },
+  {
+    codigoCIIU: '8415',
+    descripcionCIIU: 'Actividades de los otros órganos de control',
+    sector: 'Administración Pública',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés y amenazas en ejercicio del control público',
+        categoria: 'Psicosocial',
+        descripcion: 'Exposición a amenazas, presiones indebidas y estrés en funciones de Contraloría, Procuraduría y Defensoría del Pueblo',
+        fuenteGeneradora: 'Funciones disciplinarias, fiscales y de protección de derechos',
+        actividadAsociada: 'Investigaciones disciplinarias, auditorías fiscales y defensa de derechos ciudadanos',
+        riesgoPotencial: 'Amenazas de investigados, estrés por responsabilidad del control',
+        efectosPosibles: 'Riesgo personal, burnout, trastornos de ansiedad',
+        medidasControl: ['Esquemas de protección para funcionarios de control amenazados', 'Apoyo psicológico disponible', 'Trabajo en equipo para casos sensibles', 'Protocolos de denuncia de amenazas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Dec. 1083/2015', norma: 'Decreto 1083 de 2015', descripcion: 'Reglamento único del sector función pública', obligatorio: true }
+    ],
+    eppRecomendado: ['Dispositivo de comunicación de emergencia para funcionarios en campo'],
+    capacitacionesObligatorias: ['Seguridad personal para funcionarios de control', 'Gestión del estrés en funciones disciplinarias', 'Ética y bienestar en órganos de control']
+  },
+  {
+    codigoCIIU: '8421',
+    descripcionCIIU: 'Relaciones exteriores',
+    sector: 'Administración Pública',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés por trabajo diplomático en destinos de riesgo',
+        categoria: 'Psicosocial',
+        descripcion: 'Exposición a contextos de conflicto, inestabilidad política y lejanía familiar en misiones diplomáticas en el exterior',
+        fuenteGeneradora: 'Embajadas y consulados colombianos en países de riesgo o conflicto',
+        actividadAsociada: 'Representación diplomática, atención consular a colombianos y negociación internacional',
+        riesgoPotencial: 'Riesgo personal en zonas de conflicto, estrés por aislamiento',
+        efectosPosibles: 'PTSD, burnout diplomático, problemas de salud mental',
+        medidasControl: ['Evaluación de destinos de riesgo', 'Apoyo psicológico para diplomáticos en destinos difíciles', 'Rotación en destinos de alta tensión', 'Protocolos de seguridad diplomática']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Kit de seguridad para destinos de riesgo'],
+    capacitacionesObligatorias: ['Seguridad para diplomáticos en destinos de riesgo', 'Gestión del estrés en el exterior', 'Ergonomía en trabajo diplomático']
+  },
+  {
+    codigoCIIU: '8422',
+    descripcionCIIU: 'Actividades de defensa',
+    sector: 'Administración Pública',
+    nivelRiesgo: 'V',
+    peligrosIdentificados: [
+      {
+        codigo: 'VIO-001',
+        nombre: 'Riesgo de combate y operaciones militares',
+        categoria: 'Físico',
+        descripcion: 'Exposición directa a situaciones de combate, explosivos, emboscadas y operaciones militares en zonas de conflicto',
+        fuenteGeneradora: 'Zonas de operaciones militares, frentes de combate y operativos de seguridad',
+        actividadAsociada: 'Operaciones militares de combate, patrullajes, operativos contra grupos armados ilegales',
+        riesgoPotencial: 'Heridas de combate, explosiones, emboscadas',
+        efectosPosibles: 'Heridas graves, amputaciones, fatalidades en combate',
+        medidasControl: ['Equipamiento militar de protección balística', 'Doctrina de operaciones segura', 'Inteligencia previa a operaciones', 'Atención médica de emergencia en campo (MEDEVAC)']
+      },
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés postraumático en personal militar',
+        categoria: 'Psicosocial',
+        descripcion: 'Exposición a situaciones de combate, muerte de compañeros y violencia extrema que generan PTSD en militares',
+        fuenteGeneradora: 'Experiencias de combate, operativos de alta tensión y pérdida de compañeros',
+        actividadAsociada: 'Personal militar activo y veteranos con exposición a combate',
+        riesgoPotencial: 'Trastorno de estrés postraumático (PTSD), suicidio militar',
+        efectosPosibles: 'PTSD, depresión grave, suicidio, problemas familiares',
+        medidasControl: ['Programas de salud mental para militares', 'Psicólogos militares especializados en trauma', 'Protocolos de apoyo post-combate', 'Red de apoyo entre pares (peer support)']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo V defensa', obligatorio: true },
+      { codigo: 'Dec. 1512/2000', norma: 'Decreto 1512 de 2000', descripcion: 'Sistema de salud de las Fuerzas Militares', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco balístico', 'Casco balístico', 'Protección auditiva balística', 'Kit de atención TCCC (Tactical Combat Casualty Care)'],
+    capacitacionesObligatorias: ['Primeros auxilios en combate (TCCC)', 'Salud mental militar y manejo del PTSD', 'Doctrina de operaciones seguras', 'Evacuación médica en campo']
+  },
+  {
+    codigoCIIU: '8423',
+    descripcionCIIU: 'Orden público y actividades de seguridad',
+    sector: 'Administración Pública',
+    nivelRiesgo: 'V',
+    peligrosIdentificados: [
+      {
+        codigo: 'VIO-001',
+        nombre: 'Riesgo de agresión en actividades de orden público',
+        categoria: 'Físico',
+        descripcion: 'Exposición a agresiones físicas, armas de fuego, armas contundentes y dispositivos explosivos en operaciones de Policía Nacional',
+        fuenteGeneradora: 'Operativos policiales, control de disturbios, capturas y operaciones contra delincuencia',
+        actividadAsociada: 'Patrullaje, capturas, control de disturbios y operaciones de seguridad pública',
+        riesgoPotencial: 'Heridas por arma de fuego, corte o contundente, exposición a explosivos',
+        efectosPosibles: 'Heridas graves, amputaciones, fatalidades en servicio',
+        medidasControl: ['Chaleco antibalas de nivel adecuado', 'Capacitación en uso de la fuerza proporcional', 'Apoyo inmediato en operativos', 'Atención médica de emergencia policial']
+      },
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés y PTSD en personal de orden público',
+        categoria: 'Psicosocial',
+        descripcion: 'Exposición crónica a situaciones de violencia, muerte y trauma en servicio policial',
+        fuenteGeneradora: 'Servicio policial en zonas de alta criminalidad, atención de emergencias y combate al crimen',
+        actividadAsociada: 'Patrullaje en zonas de riesgo, atención de emergencias y operativos de alto impacto',
+        riesgoPotencial: 'PTSD, burnout policial, conductas de riesgo',
+        efectosPosibles: 'Trastornos mentales, suicidio policial, problemas familiares',
+        medidasControl: ['Psicólogos especializados en trauma policial', 'Programas de bienestar para uniformados', 'Rotación en zonas de alta criminalidad', 'Peer support entre uniformados']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo V orden público', obligatorio: true },
+      { codigo: 'Dec. 1512/2000', norma: 'Decreto 1512 de 2000', descripcion: 'Sistema de salud de las Fuerzas Militares y Policía', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco antibalas', 'Casco antimotines', 'Escudo balístico', 'Guantes de protección', 'Botas de seguridad reforzadas'],
+    capacitacionesObligatorias: ['Uso de la fuerza proporcional', 'Salud mental policial y prevención del suicidio', 'Primeros auxilios para agentes de policía', 'Manejo del estrés operacional']
+  },
+  {
+    codigoCIIU: '8424',
+    descripcionCIIU: 'Administración de justicia',
+    sector: 'Administración Pública',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés y amenazas en administración de justicia',
+        categoria: 'Psicosocial',
+        descripcion: 'Presión extrema, amenazas de partes procesales y exposición a casos de alta violencia en jueces, fiscales y magistrados',
+        fuenteGeneradora: 'Juzgados, tribunales, Fiscalía y Cortes de justicia',
+        actividadAsociada: 'Dirección de audiencias, investigación penal, decisiones judiciales y procesos penales',
+        riesgoPotencial: 'Amenazas de partes procesales, estrés crónico por carga de casos',
+        efectosPosibles: 'Riesgo personal, burnout judicial, PTSD por casos traumáticos',
+        medidasControl: ['Esquemas de protección para funcionarios judiciales amenazados', 'Apoyo psicológico especializado', 'Gestión de carga de trabajo judicial', 'Protocolos de seguridad en sedes judiciales']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Esquemas de seguridad personal para jueces y fiscales amenazados'],
+    capacitacionesObligatorias: ['Seguridad para funcionarios judiciales', 'Bienestar y salud mental en la judicatura', 'Manejo del estrés en altas responsabilidades judiciales']
+  },
+  {
+    codigoCIIU: '8430',
+    descripcionCIIU: 'Actividades de planes de seguridad social de afiliación obligatoria',
+    sector: 'Administración Pública',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés en administración de seguridad social obligatoria',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta presión en gestión de subsidios, pensiones y prestaciones de la seguridad social obligatoria con demanda masiva de ciudadanos',
+        fuenteGeneradora: 'ICBF, COLPENSIONES, SENA y entidades de seguridad social obligatoria',
+        actividadAsociada: 'Atención ciudadana masiva, gestión de subsidios, beneficios y trámites de seguridad social',
+        riesgoPotencial: 'Estrés por alta demanda, agresión de usuarios insatisfechos',
+        efectosPosibles: 'Burnout, agresiones verbales o físicas de usuarios',
+        medidasControl: ['Sistemas de gestión de turnos eficientes', 'Capacitación en atención al ciudadano', 'Seguridad física en puntos de atención', 'Apoyo psicológico para personal de atención masiva']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Dec. 1083/2015', norma: 'Decreto 1083 de 2015', descripcion: 'Reglamento único del sector función pública', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica para atención al ciudadano'],
+    capacitacionesObligatorias: ['Atención al ciudadano en servicios sociales', 'Manejo del estrés en atención masiva', 'Ergonomía en puestos de atención pública', 'Primeros auxilios psicológicos']
+  },
+
+  // ==================== SECCIÓN R - ARTES, ENTRETENIMIENTO Y RECREACIÓN ====================
+
+  {
+    codigoCIIU: '9001',
+    descripcionCIIU: 'Creación literaria',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Trabajo sedentario prolongado en escritura',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo de escritura prolongado con uso intensivo de teclado y pantalla en oficinas o espacios de trabajo propios',
+        fuenteGeneradora: 'Computadores, laptops y escritorios de escritura en hogares y oficinas',
+        actividadAsociada: 'Redacción de novelas, cuentos, poesía, ensayos y obras literarias',
+        riesgoPotencial: 'Lesiones músculo-esqueléticas, fatiga visual',
+        efectosPosibles: 'Síndrome del túnel carpiano, cervicalgia, fatiga ocular',
+        medidasControl: ['Ergonomía del puesto de escritura', 'Pausas activas cada hora', 'Variación de postura entre escritura y actividad física', 'Software con seguimiento de postura']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Silla ergonómica', 'Reposamuñecas', 'Gafas con filtro de luz azul'],
+    capacitacionesObligatorias: ['Ergonomía en trabajo creativo digital', 'Higiene postural para escritores', 'Pausas activas y bienestar']
+  },
+  {
+    codigoCIIU: '9002',
+    descripcionCIIU: 'Creación musical',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'FIS-001',
+        nombre: 'Exposición a ruido en composición y producción musical',
+        categoria: 'Físico',
+        descripcion: 'Exposición a niveles elevados de sonido durante composición, grabación y producción de obras musicales',
+        fuenteGeneradora: 'Estudios de grabación, instrumentos musicales amplificados, monitores de estudio',
+        actividadAsociada: 'Composición con instrumentos, grabación y producción musical digital',
+        riesgoPotencial: 'Hipoacusia inducida por ruido en músicos y productores',
+        efectosPosibles: 'Pérdida auditiva, tinnitus, hiperacusia',
+        medidasControl: ['Monitoreo de niveles sonoros en estudio', 'In-ears con limitador de volumen', 'Descansos auditivos periódicos', 'Audiometría anual']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Protectores auditivos de alta fidelidad para músicos', 'In-ear monitors con limitador'],
+    capacitacionesObligatorias: ['Conservación auditiva para músicos', 'Ergonomía en instrumentistas', 'Pausas activas y bienestar']
+  },
+  {
+    codigoCIIU: '9003',
+    descripcionCIIU: 'Creación teatral',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'ERG-001',
+        nombre: 'Esfuerzo físico y lesiones en ensayos teatrales',
+        categoria: 'Ergonómico',
+        descripcion: 'Movimientos escénicos extremos, acrobacias, lucha coreografiada y esfuerzo vocal en ensayos y presentaciones teatrales',
+        fuenteGeneradora: 'Escenarios, salas de ensayo y espacios de entrenamiento teatral',
+        actividadAsociada: 'Ensayos de obras teatrales, entrenamiento físico de actores y montaje de escenas',
+        riesgoPotencial: 'Lesiones musculares, caídas en escena, disfonía',
+        efectosPosibles: 'Esguinces, desgarros, fracturas, nódulos vocales',
+        medidasControl: ['Calentamiento previo a ensayos y funciones', 'Coreógrafo o coordinador de movimiento', 'Entrenamiento vocal con fonoaudiólogo', 'Superficie de escenario segura y antideslizante']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['Calzado de escena adecuado a cada producción', 'Rodilleras para escenas de caída'],
+    capacitacionesObligatorias: ['Prevención de lesiones en artes escénicas', 'Cuidado vocal para actores', 'Primeros auxilios básicos en producciones']
+  },
+  {
+    codigoCIIU: '9004',
+    descripcionCIIU: 'Creación audiovisual',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'ELE-001',
+        nombre: 'Riesgo eléctrico en sets de producción audiovisual',
+        categoria: 'Eléctrico',
+        descripcion: 'Instalación y operación de sistemas de iluminación de alta potencia en sets de producción audiovisual',
+        fuenteGeneradora: 'Luminarias de estudio, generadores portátiles y cables de extensión en sets',
+        actividadAsociada: 'Grabación y producción de contenido audiovisual en estudios y exteriores',
+        riesgoPotencial: 'Electrocución, incendio eléctrico, quemaduras por lámparas',
+        efectosPosibles: 'Lesiones eléctricas, quemaduras, incendio de set',
+        medidasControl: ['Gaffer certificado en instalaciones de set', 'EPP para trabajo eléctrico en producción', 'Inspección eléctrica previa a grabación', 'Extintor en set de grabación']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes para manejo de luminarias calientes', 'Calzado de seguridad en set'],
+    capacitacionesObligatorias: ['Seguridad eléctrica en producción audiovisual', 'Seguridad en set de grabación', 'Primeros auxilios básicos']
+  },
+  {
+    codigoCIIU: '9005',
+    descripcionCIIU: 'Artes plásticas y visuales',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a pigmentos, solventes y materiales artísticos',
+        categoria: 'Químico',
+        descripcion: 'Contacto con pigmentos que pueden contener metales pesados, solventes para pintura y materiales de escultura',
+        fuenteGeneradora: 'Pinturas al óleo con solventes, pigmentos metálicos, resinas epóxicas y materiales de escultura',
+        actividadAsociada: 'Pintura, escultura, cerámica, grabado y otras técnicas de artes plásticas',
+        riesgoPotencial: 'Intoxicación por solventes, dermatitis por pigmentos',
+        efectosPosibles: 'Irritación dérmica, inhalación de vapores de disolventes',
+        medidasControl: ['Ventilación en talleres de artes plásticas', 'Uso de materiales de menor toxicidad', 'Guantes para manejo de pigmentos', 'Fichas de seguridad de materiales artísticos']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de nitrilo', 'Mascarilla para vapores de solventes', 'Delantal de protección'],
+    capacitacionesObligatorias: ['Uso seguro de materiales artísticos', 'Ergonomía en trabajo de taller artístico', 'Higiene en artes plásticas']
+  },
+  {
+    codigoCIIU: '9006',
+    descripcionCIIU: 'Actividades teatrales',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'ALT-001',
+        nombre: 'Trabajo en alturas en infraestructura teatral',
+        categoria: 'Físico',
+        descripcion: 'Trabajo en tramoya, parrillas de iluminación y cámaras altas de teatros y auditorios',
+        fuenteGeneradora: 'Parrillas de iluminación, escotillones y sistemas de tramoya en teatros',
+        actividadAsociada: 'Operación de tramoya, iluminación y efectos especiales en producciones teatrales',
+        riesgoPotencial: 'Caída desde altura, caída de equipos de iluminación sobre el escenario',
+        efectosPosibles: 'Traumatismos graves, lesiones a actores o público',
+        medidasControl: ['Arnés de seguridad en parrillas de iluminación', 'Inspección de fijaciones de luminarias', 'Zona de exclusión bajo trabajos en parrilla', 'Mantenimiento preventivo de tramoya']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true },
+      { codigo: 'Res. 4272/2021', norma: 'Resolución 4272 de 2021', descripcion: 'Trabajo seguro en alturas en espectáculos', obligatorio: true }
+    ],
+    eppRecomendado: ['Arnés de seguridad para tramoya', 'Casco en áreas de tramoya', 'Calzado antideslizante'],
+    capacitacionesObligatorias: ['Trabajo seguro en alturas en teatros', 'Seguridad en producción teatral', 'Plan de emergencia y evacuación de teatros']
+  },
+  {
+    codigoCIIU: '9007',
+    descripcionCIIU: 'Actividades de espectáculos musicales en vivo',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'FIS-001',
+        nombre: 'Exposición a ruido extremo en conciertos',
+        categoria: 'Físico',
+        descripcion: 'Exposición a niveles de presión sonora superiores a 100 dB en conciertos en vivo para músicos, técnicos y personal de producción',
+        fuenteGeneradora: 'Sistemas de sonido de conciertos, monitores de escena y PA systems',
+        actividadAsociada: 'Actuación en conciertos, operación de sonido y producción de eventos musicales en vivo',
+        riesgoPotencial: 'Hipoacusia severa por exposición a ruido extremo',
+        efectosPosibles: 'Pérdida auditiva irreversible, tinnitus crónico',
+        medidasControl: ['In-ears con limitador de volumen para músicos', 'Protectores auditivos de alta fidelidad para técnicos', 'Medición de SPL en escenario', 'Descansos auditivos entre shows']
+      },
+      {
+        codigo: 'ALT-001',
+        nombre: 'Trabajo en alturas en montaje de escenarios',
+        categoria: 'Físico',
+        descripcion: 'Montaje de estructuras de iluminación, sonido y efectos especiales a gran altura en conciertos al aire libre y en recintos',
+        fuenteGeneradora: 'Torres de sonido, estructuras de iluminación y rigging de escenario',
+        actividadAsociada: 'Montaje y desmontaje de estructuras de producción de conciertos',
+        riesgoPotencial: 'Caída desde altura, colapso de estructuras por viento',
+        efectosPosibles: 'Traumatismos graves, fatalidades',
+        medidasControl: ['Ingeniería certificada para estructuras temporales de concierto', 'Arnés de seguridad para riggers', 'Monitoreo de condiciones climáticas', 'Protocolo de evacuación ante clima extremo']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true },
+      { codigo: 'Res. 4272/2021', norma: 'Resolución 4272 de 2021', descripcion: 'Trabajo seguro en alturas en espectáculos', obligatorio: true }
+    ],
+    eppRecomendado: ['Protectores auditivos de alta fidelidad', 'Arnés de seguridad para riggers', 'Casco en áreas de montaje', 'Calzado de seguridad'],
+    capacitacionesObligatorias: ['Conservación auditiva para músicos y técnicos de sonido', 'Trabajo seguro en alturas - rigging de conciertos', 'Plan de emergencia para eventos masivos', 'Seguridad en estructuras temporales']
+  },
+  {
+    codigoCIIU: '9008',
+    descripcionCIIU: 'Otras actividades de espectáculos en vivo n.c.p.',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'FIS-001',
+        nombre: 'Riesgos físicos en espectáculos de variedades y circo',
+        categoria: 'Físico',
+        descripcion: 'Acrobacias, equilibrismo, malabares y otras actividades de alto riesgo físico en espectáculos de variedades',
+        fuenteGeneradora: 'Pistas de circo, escenarios de variedades y espacios de espectáculos alternativos',
+        actividadAsociada: 'Actuaciones de circo, variedades, magia y espectáculos de habilidades',
+        riesgoPotencial: 'Caídas, lesiones por acrobacias, equipo fallido en altura',
+        efectosPosibles: 'Fracturas, politraumatismos, lesiones de columna',
+        medidasControl: ['Redes de seguridad certificadas', 'Entrenamiento progresivo y supervisado', 'Inspección diaria de equipos de circo', 'Médico disponible en ensayos y funciones']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true },
+      { codigo: 'Res. 4272/2021', norma: 'Resolución 4272 de 2021', descripcion: 'Trabajo seguro en alturas en espectáculos', obligatorio: true }
+    ],
+    eppRecomendado: ['Arnés de seguridad para acrobacias en altura', 'Rodilleras y coderas para entrenamientos', 'Calzado especializado para cada disciplina'],
+    capacitacionesObligatorias: ['Seguridad en artes del circo y variedades', 'Trabajo seguro en alturas para acróbatas', 'Primeros auxilios para lesiones en artes escénicas']
+  },
+  {
+    codigoCIIU: '9101',
+    descripcionCIIU: 'Actividades de bibliotecas y archivos',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'BIO-001',
+        nombre: 'Exposición a polvo de archivo y biocontaminantes',
+        categoria: 'Biológico',
+        descripcion: 'Inhalación de polvo de materiales de archivo, esporas de hongos y ácaros en acervos documentales antiguos',
+        fuenteGeneradora: 'Archivos históricos, depósitos de documentos antiguos y colecciones bibliográficas',
+        actividadAsociada: 'Catalogación, restauración y gestión de archivos históricos y colecciones bibliográficas',
+        riesgoPotencial: 'Alergias respiratorias, asma por exposición a esporas y ácaros',
+        efectosPosibles: 'Rinitis alérgica, asma ocupacional, reacciones alérgicas',
+        medidasControl: ['Mascarilla N95 en trabajo con archivos antiguos', 'Control de humedad en depósitos (45-55% HR)', 'Guantes para manejo de materiales antiguos', 'Ventilación en depósitos de archivos']
+      },
+      {
+        codigo: 'ERG-001',
+        nombre: 'Riesgos ergonómicos en gestión de colecciones',
+        categoria: 'Ergonómico',
+        descripcion: 'Trabajo repetitivo en catalogación, digitalización y manipulación de libros y documentos en posiciones variadas',
+        fuenteGeneradora: 'Estaciones de catalogación, escáneres de digitalización y estanterías de archivos',
+        actividadAsociada: 'Catalogación, digitalización y préstamo de material bibliográfico y documental',
+        riesgoPotencial: 'Lesiones por postura forzada y manejo de libros pesados',
+        efectosPosibles: 'Lumbalgia, síndrome del túnel carpiano',
+        medidasControl: ['Carros de transporte de libros', 'Ergonomía en estaciones de catalogación', 'Rotación de tareas entre depósito y atención']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Mascarilla N95 para archivos históricos', 'Guantes de algodón para documentos antiguos', 'Delantal de trabajo'],
+    capacitacionesObligatorias: ['Higiene en trabajo con archivos históricos', 'Ergonomía en bibliotecas y archivos', 'Prevención de alergias en archivística']
+  },
+  {
+    codigoCIIU: '9102',
+    descripcionCIIU: 'Actividades y funcionamiento de museos, conservación de edificios y sitios históricos',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a productos de conservación y restauración',
+        categoria: 'Químico',
+        descripcion: 'Uso de solventes, consolidantes y biocidas en restauración y conservación de bienes culturales y patrimoniales',
+        fuenteGeneradora: 'Talleres de restauración: solventes, resinas, biocidas y materiales de consolidación',
+        actividadAsociada: 'Restauración de obras de arte, conservación de documentos históricos y mantenimiento de bienes patrimoniales',
+        riesgoPotencial: 'Intoxicación por solventes, sensibilización a resinas',
+        efectosPosibles: 'Daño neurológico, dermatitis, sensibilización química',
+        medidasControl: ['Ventilación en talleres de restauración', 'EPP para restauradores', 'Fichas de seguridad de materiales de conservación', 'Sustitución de solventes por alternativas más seguras']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de nitrilo para restauración', 'Mascarilla con filtros para solventes', 'Delantal de trabajo en taller'],
+    capacitacionesObligatorias: ['Uso seguro de productos de restauración', 'Ergonomía en trabajo de conservación', 'Higiene en museos y centros de restauración']
+  },
+  {
+    codigoCIIU: '9103',
+    descripcionCIIU: 'Actividades de jardines botánicos, zoológicos y reservas naturales',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'BIO-001',
+        nombre: 'Exposición a animales y zoonosis en zoológicos',
+        categoria: 'Biológico',
+        descripcion: 'Contacto con animales silvestres que pueden transmitir zoonosis, morder, arañar o provocar lesiones físicas',
+        fuenteGeneradora: 'Recintos de animales silvestres, áreas de cuarentena veterinaria y jaulas de mantenimiento',
+        actividadAsociada: 'Cuidado, alimentación y manejo de animales silvestres en cautiverio',
+        riesgoPotencial: 'Mordeduras, zoonosis, lesiones por embestida de animales',
+        efectosPosibles: 'Heridas por mordedura, enfermedades zoonóticas, fracturas',
+        medidasControl: ['Protocolos de manejo seguro de animales silvestres', 'Vacunación antirráabica y otras para cuidadores', 'EPP de protección para manejo de animales', 'Procedimientos de seguridad en recintos de animales peligrosos']
+      },
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a plaguicidas en jardines botánicos',
+        categoria: 'Químico',
+        descripcion: 'Aplicación de herbicidas, fungicidas e insecticidas en mantenimiento de colecciones botánicas y jardines',
+        fuenteGeneradora: 'Productos fitosanitarios para mantenimiento de colecciones vegetales',
+        actividadAsociada: 'Mantenimiento de jardines botánicos, control de plagas en colecciones vivas',
+        riesgoPotencial: 'Intoxicación por plaguicidas, sensibilización',
+        efectosPosibles: 'Intoxicación aguda, efectos crónicos de exposición a plaguicidas',
+        medidasControl: ['EPP para aplicación de plaguicidas', 'Uso de plaguicidas de menor toxicidad', 'Rotación de aplicadores', 'Monitoreo biológico']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de cuero grueso para manejo de animales', 'Mascarilla para plaguicidas', 'Botas de seguridad', 'Casco para trabajo cerca de animales grandes'],
+    capacitacionesObligatorias: ['Manejo seguro de animales silvestres', 'Prevención de zoonosis', 'Manejo de plaguicidas en jardines botánicos', 'Primeros auxilios en mordeduras y ataques de animales']
+  },
+  {
+    codigoCIIU: '9200',
+    descripcionCIIU: 'Actividades de juegos de azar y apuestas',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Riesgo de agresión y atraco en establecimientos de juego',
+        categoria: 'Psicosocial',
+        descripcion: 'Exposición a robos, atracos y agresiones de clientes en casinos, bingos y establecimientos de apuestas con manejo de efectivo',
+        fuenteGeneradora: 'Casinos, bingos, terminales de apuestas y establecimientos de juego',
+        actividadAsociada: 'Operación de mesas de juego, atención en caja, vigilancia y servicio al cliente en establecimientos de juego',
+        riesgoPotencial: 'Atraco armado, agresión de clientes insatisfechos, estrés por turnos nocturnos',
+        efectosPosibles: 'Lesiones físicas en atraco, estrés postraumático, fatiga por turnos',
+        medidasControl: ['Sistemas de seguridad electrónica y vigilancia', 'Personal de seguridad capacitado', 'Protocolos de manejo de efectivo', 'Apoyo psicológico post-incidente']
+      },
+      {
+        codigo: 'FIS-001',
+        nombre: 'Trabajo nocturno en casinos y establecimientos de apuestas',
+        categoria: 'Físico',
+        descripcion: 'Turnos nocturnos extendidos en ambientes con humo de cigarrillo, ruido y exposición continua en casinos',
+        fuenteGeneradora: 'Casinos con operación 24/7, humo de cigarrillo y ruido constante',
+        actividadAsociada: 'Operación de mesas, servicio de atención y seguridad en turnos nocturnos de casinos',
+        riesgoPotencial: 'Alteración del ritmo circadiano, exposición a humo de tabaco ambiental',
+        efectosPosibles: 'Trastornos del sueño, problemas respiratorios por humo',
+        medidasControl: ['Zonas de no fumadores o ventilación con renovación de aire', 'Rotación de turnos adecuada', 'Descansos obligatorios entre turnos', 'Exámenes médicos periódicos para trabajadores nocturnos']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true },
+      { codigo: 'Res. 2646/2008', norma: 'Resolución 2646 de 2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true }
+    ],
+    eppRecomendado: ['Calzado antifatiga para personal de pie', 'Silla ergonómica para dealers'],
+    capacitacionesObligatorias: ['Seguridad en establecimientos de juego', 'Manejo del estrés en trabajo nocturno', 'Ergonomía para trabajo de pie prolongado', 'Primeros auxilios básicos']
+  },
+  {
+    codigoCIIU: '9311',
+    descripcionCIIU: 'Gestión de instalaciones deportivas',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'MEC-001',
+        nombre: 'Riesgos en mantenimiento de instalaciones deportivas',
+        categoria: 'Mecánico',
+        descripcion: 'Mantenimiento de canchas, piscinas, gimnasios y equipos deportivos con exposición a riesgos mecánicos y químicos',
+        fuenteGeneradora: 'Equipos de mantenimiento de canchas, piscinas con cloro, maquinaria de césped',
+        actividadAsociada: 'Mantenimiento de canchas, piscinas, gimnasios y equipos deportivos',
+        riesgoPotencial: 'Caídas, cortes, exposición a cloro en piscinas',
+        efectosPosibles: 'Lesiones variadas según actividad de mantenimiento',
+        medidasControl: ['EPP según tipo de mantenimiento', 'Control de químicos en piscinas', 'Procedimientos seguros de mantenimiento', 'Capacitación del personal técnico']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de protección química para manejo de cloro', 'Calzado antideslizante en áreas de piscina', 'Gafas de protección'],
+    capacitacionesObligatorias: ['Manejo seguro de productos para piscinas', 'Ergonomía en mantenimiento deportivo', 'Plan de emergencia en instalaciones deportivas']
+  },
+  {
+    codigoCIIU: '9312',
+    descripcionCIIU: 'Actividades de clubes deportivos',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'FIS-001',
+        nombre: 'Lesiones deportivas en entrenamiento y competencia',
+        categoria: 'Físico',
+        descripcion: 'Riesgo de lesiones musculares, articulares y traumáticas en deportistas y entrenadores de clubes deportivos',
+        fuenteGeneradora: 'Canchas, pistas, piscinas y espacios de entrenamiento y competencia',
+        actividadAsociada: 'Entrenamiento deportivo, preparación física y competencias de clubes deportivos',
+        riesgoPotencial: 'Lesiones musculares, articulares, traumatismos en competencia',
+        efectosPosibles: 'Esguinces, fracturas, lesiones articulares, contusiones',
+        medidasControl: ['Calentamiento y estiramiento previo', 'Supervisión médica deportiva', 'Equipamiento de protección según deporte', 'Protocolos de retorno al juego tras lesión']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['Equipamiento deportivo de protección según disciplina', 'Kit de primeros auxilios en instalaciones'],
+    capacitacionesObligatorias: ['Prevención de lesiones deportivas', 'Primeros auxilios en instalaciones deportivas', 'Protocolos de conmoción cerebral en deportes de contacto']
+  },
+  {
+    codigoCIIU: '9319',
+    descripcionCIIU: 'Otras actividades deportivas',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'FIS-001',
+        nombre: 'Riesgos físicos en deportes extremos y actividades al aire libre',
+        categoria: 'Físico',
+        descripcion: 'Lesiones en deportes de alto riesgo como escalada, parapente, motocross, deportes de combate y actividades extremas',
+        fuenteGeneradora: 'Entornos naturales y artificiales de práctica de deportes extremos',
+        actividadAsociada: 'Instrucción, organización y práctica de deportes no convencionales y extremos',
+        riesgoPotencial: 'Caídas graves, politraumatismos, lesiones en deportes extremos',
+        efectosPosibles: 'Fracturas, traumatismo craneoencefálico, lesiones graves',
+        medidasControl: ['EPP específico y certificado para cada deporte extremo', 'Instrucción certificada', 'Protocolos de seguridad por deporte', 'Evaluación médica previa para participantes']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['EPP específico según deporte (casco, arnés, rodilleras, etc.)', 'Kit de primeros auxilios de campo'],
+    capacitacionesObligatorias: ['Seguridad específica por disciplina deportiva', 'Primeros auxilios en entornos deportivos extremos', 'Evaluación de riesgos en deportes de aventura']
+  },
+  {
+    codigoCIIU: '9321',
+    descripcionCIIU: 'Actividades de parques de atracciones y parques temáticos',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'MEC-001',
+        nombre: 'Riesgos mecánicos en operación de atracciones',
+        categoria: 'Mecánico',
+        descripcion: 'Operación y mantenimiento de atracciones mecánicas: montañas rusas, ruedas de la fortuna, carruseles y atracciones acuáticas',
+        fuenteGeneradora: 'Atracciones mecánicas y estructuras de parques de diversiones',
+        actividadAsociada: 'Operación, inspección y mantenimiento de atracciones en parques temáticos',
+        riesgoPotencial: 'Atrapamiento en mecanismos, caída desde estructuras de atracción',
+        efectosPosibles: 'Lesiones graves, aplastamiento, caídas desde altura',
+        medidasControl: ['Mantenimiento preventivo según estándares ASTM', 'Inspección diaria de atracciones', 'Operadores capacitados y certificados', 'Sistemas de seguridad redundantes en atracciones']
+      },
+      {
+        codigo: 'PSI-001',
+        nombre: 'Carga emocional en atención a público masivo',
+        categoria: 'Psicosocial',
+        descripcion: 'Atención a grandes volúmenes de público con situaciones de emergencia, niños perdidos, accidentes y quejas en parques temáticos',
+        fuenteGeneradora: 'Operación de parques con alta afluencia de visitantes en temporadas pico',
+        actividadAsociada: 'Atención al visitante, operación de atracciones y gestión de emergencias en parques',
+        riesgoPotencial: 'Estrés por atención masiva, incidentes con visitantes',
+        efectosPosibles: 'Burnout en temporada alta, estrés agudo por incidentes',
+        medidasControl: ['Dotación adecuada de personal en temporada alta', 'Rotación de personal en atracciones de alta demanda', 'Apoyo psicológico disponible', 'Protocolos de manejo de emergencias con visitantes']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo III', obligatorio: true }
+    ],
+    eppRecomendado: ['Calzado de seguridad para mantenimiento de atracciones', 'Guantes de trabajo', 'Casco en mantenimiento de estructuras altas'],
+    capacitacionesObligatorias: ['Operación segura de atracciones mecánicas', 'Plan de emergencia en parques de atracciones', 'Primeros auxilios en eventos masivos', 'Atención al cliente en situaciones de crisis']
+  },
+  {
+    codigoCIIU: '9329',
+    descripcionCIIU: 'Otras actividades recreativas y de esparcimiento n.c.p.',
+    sector: 'Artes y Entretenimiento',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'FIS-001',
+        nombre: 'Riesgos físicos en actividades recreativas diversas',
+        categoria: 'Físico',
+        descripcion: 'Exposición a riesgos variados en actividades de esparcimiento: paintball, karting, bolos, billar, juegos de mesa competitivos y similares',
+        fuenteGeneradora: 'Instalaciones de actividades recreativas diversas',
+        actividadAsociada: 'Instrucción, operación y mantenimiento de instalaciones de recreación y esparcimiento',
+        riesgoPotencial: 'Lesiones moderadas según actividad específica',
+        efectosPosibles: 'Contusiones, esguinces, lesiones moderadas',
+        medidasControl: ['EPP según actividad recreativa (gafas en paintball, cascos en karting)', 'Instrucción de seguridad a participantes', 'Mantenimiento de equipos e instalaciones', 'Plan de primeros auxilios disponible']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['EPP específico según actividad recreativa ofrecida', 'Kit de primeros auxilios'],
+    capacitacionesObligatorias: ['Seguridad en actividades recreativas', 'Primeros auxilios para operadores recreativos', 'Atención al cliente en emergencias']
+  },
+
+  // ==================== SECCIÓN T - ACTIVIDADES DE LOS HOGARES ====================
+
+  {
+    codigoCIIU: '9700',
+    descripcionCIIU: 'Actividades de los hogares individuales como empleadores de personal doméstico',
+    sector: 'Hogares como Empleadores',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a productos de limpieza en el hogar',
+        categoria: 'Químico',
+        descripcion: 'Uso frecuente de productos de limpieza, desinfectantes y plaguicidas domésticos por trabajadoras del hogar',
+        fuenteGeneradora: 'Productos domésticos de limpieza: lejía, desengrasantes, limpiapisos y plaguicidas',
+        actividadAsociada: 'Limpieza del hogar, lavado de ropa, preparación de alimentos y cuidado de personas',
+        riesgoPotencial: 'Dermatitis por contacto, irritación respiratoria',
+        efectosPosibles: 'Dermatitis de manos, eczema, asma doméstico',
+        medidasControl: ['Guantes de nitrilo para limpieza', 'Dilución correcta de productos', 'Ventilación durante limpieza', 'Capacitación en uso seguro de productos domésticos']
+      },
+      {
+        codigo: 'ERG-001',
+        nombre: 'Sobreesfuerzo físico en labores domésticas',
+        categoria: 'Ergonómico',
+        descripcion: 'Carga física en limpieza, lavado, planchado, preparación de alimentos y cuidado de personas mayores o niños',
+        fuenteGeneradora: 'Actividades domésticas: fregado, lavado, planchado, cuidado de personas',
+        actividadAsociada: 'Servicios domésticos integrales en hogares particulares',
+        riesgoPotencial: 'Lesiones musculoesqueléticas por sobreesfuerzo',
+        efectosPosibles: 'Lumbalgia, lesiones de rodilla, tendinitis de hombro',
+        medidasControl: ['Herramientas ergonómicas de limpieza', 'Técnicas de levantamiento seguro al cuidar personas', 'Descansos periódicos', 'Apoyo de familiares en labores pesadas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - empleadores domésticos', obligatorio: true },
+      { codigo: 'Dec. 721/2013', norma: 'Decreto 721 de 2013', descripcion: 'Afiliación al sistema de seguridad social del trabajador doméstico', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de nitrilo para limpieza', 'Delantal impermeable', 'Calzado antideslizante'],
+    capacitacionesObligatorias: ['Uso seguro de productos domésticos', 'Manejo manual de cargas en cuidado de personas', 'Derechos laborales del trabajador doméstico']
+  },
+  {
+    codigoCIIU: '9810',
+    descripcionCIIU: 'Actividades no diferenciadas de los hogares individuales como productores de bienes para uso propio',
+    sector: 'Hogares como Productores',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'MEC-001',
+        nombre: 'Riesgos en producción artesanal y manualidades del hogar',
+        categoria: 'Mecánico',
+        descripcion: 'Uso de herramientas manuales y eléctricas en producción de bienes para autoconsumo en hogares',
+        fuenteGeneradora: 'Herramientas del hogar para construcción, carpintería, costura y producción artesanal',
+        actividadAsociada: 'Producción de bienes para uso propio: ropa, muebles, alimentos procesados, artesanías',
+        riesgoPotencial: 'Cortes, quemaduras y lesiones con herramientas de uso doméstico',
+        efectosPosibles: 'Laceraciones, quemaduras, traumatismos',
+        medidasControl: ['Uso correcto de herramientas', 'Almacenamiento seguro de herramientas', 'EPP básico para actividades de mayor riesgo', 'Botiquín de primeros auxilios disponible']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de trabajo para manualidades', 'Gafas de protección para herramientas eléctricas'],
+    capacitacionesObligatorias: ['Uso seguro de herramientas del hogar', 'Primeros auxilios domésticos']
+  },
+  {
+    codigoCIIU: '9820',
+    descripcionCIIU: 'Actividades no diferenciadas de los hogares individuales como productores de servicios para uso propio',
+    sector: 'Hogares como Productores',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'FIS-001',
+        nombre: 'Riesgos en producción de servicios para autoconsumo en el hogar',
+        categoria: 'Físico',
+        descripcion: 'Actividades de mantenimiento del hogar, preparación de alimentos y servicios domésticos para uso propio',
+        fuenteGeneradora: 'Cocina, herramientas de mantenimiento del hogar y espacios domésticos',
+        actividadAsociada: 'Mantenimiento del hogar, preparación de alimentos y servicios para la familia',
+        riesgoPotencial: 'Accidentes domésticos: quemaduras, cortes, caídas',
+        efectosPosibles: 'Quemaduras en cocina, laceraciones, fracturas por caídas',
+        medidasControl: ['Medidas de seguridad doméstica', 'Botiquín de primeros auxilios', 'Supervisión de niños en actividades de riesgo', 'Mantenimiento eléctrico por profesionales']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo II', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes para cocina', 'Calzado antideslizante en el hogar'],
+    capacitacionesObligatorias: ['Seguridad doméstica y prevención de accidentes en el hogar', 'Primeros auxilios básicos familiares']
+  },
+
+  // ==================== SECCIÓN U - ORGANIZACIONES EXTRATERRITORIALES ====================
+
+  {
+    codigoCIIU: '9900',
+    descripcionCIIU: 'Actividades de organizaciones y entidades extraterritoriales',
+    sector: 'Organizaciones Extraterritoriales',
+    nivelRiesgo: 'I',
+    peligrosIdentificados: [
+      {
+        codigo: 'PSI-001',
+        nombre: 'Estrés en trabajo en organizaciones internacionales',
+        categoria: 'Psicosocial',
+        descripcion: 'Alta responsabilidad, trabajo en entornos multiculturales complejos y lejanía familiar en organizaciones extraterritoriales como ONU, OEA, embajadas y organismos multilaterales',
+        fuenteGeneradora: 'Sedes de organizaciones internacionales en Colombia y destinos de misión internacional',
+        actividadAsociada: 'Trabajo en organismos internacionales, misiones diplomáticas y ONGs extraterritoriales',
+        riesgoPotencial: 'Estrés intercultural, burnout por responsabilidades globales',
+        efectosPosibles: 'Agotamiento, trastornos de ansiedad, problemas de adaptación',
+        medidasControl: ['Apoyo psicológico para personal en misión internacional', 'Preparación cultural previa a destinos', 'Redes de apoyo entre colegas internacionales', 'Rotación programada en destinos exigentes']
+      },
+      {
+        codigo: 'VIA-001',
+        nombre: 'Riesgo en desplazamientos a zonas de operación humanitaria',
+        categoria: 'Físico',
+        descripcion: 'Personal de organizaciones internacionales que opera en zonas de conflicto, post-desastre o difícil acceso en Colombia',
+        fuenteGeneradora: 'Zonas de conflicto, áreas post-desastre y territorios de difícil acceso',
+        actividadAsociada: 'Operaciones humanitarias, misiones de paz y cooperación internacional en zonas de riesgo',
+        riesgoPotencial: 'Accidentes en desplazamientos a zonas remotas, exposición a violencia',
+        efectosPosibles: 'Lesiones en accidente, exposición a violencia en zonas de conflicto',
+        medidasControl: ['Evaluación de seguridad previa a misiones de campo', 'Protocolos de seguridad de organizaciones internacionales (UNDSS)', 'Comunicación permanente con oficina central', 'Seguro de vida y médico internacional']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'Res. 0312/2019', norma: 'Resolución 0312 de 2019', descripcion: 'Estándares mínimos SG-SST - riesgo I', obligatorio: true },
+      { codigo: 'Dec. 1072/2015', norma: 'Decreto 1072 de 2015', descripcion: 'Reglamento único del sector trabajo - aplicabilidad en Colombia', obligatorio: true }
+    ],
+    eppRecomendado: ['Kit de seguridad para misiones de campo en zonas de riesgo', 'Botiquín de primeros auxilios de campo'],
+    capacitacionesObligatorias: ['Seguridad en misiones de campo internacionales', 'Gestión del estrés intercultural', 'Primeros auxilios avanzados para contextos humanitarios', 'Protocolos de seguridad de organizaciones internacionales']
   },
 
 ];
