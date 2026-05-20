@@ -9,7 +9,6 @@ interface SubscriptionStatus {
   subscriptionStatus: string;
   blockedReason: string | null;
   daysRemaining: number | null;
-  licenseExpiresAt: string | null;
 }
 
 interface UserWithSubscription {

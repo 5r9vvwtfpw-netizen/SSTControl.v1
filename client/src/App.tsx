@@ -12,7 +12,6 @@
  * CONFIDENCIAL - NO DISTRIBUIR
  */
 
-import { useEffect } from "react";
 import { Switch, Route, Redirect, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -178,7 +177,6 @@ import { ChapterGate } from "@/components/ChapterGate";
 import { TrialAlert } from "@/components/TrialAlert";
 import { SubscriptionBlockedModal } from "@/components/SubscriptionBlockedModal";
 import { useSubscriptionCheck } from "@/hooks/useSubscriptionCheck";
-import { useToast } from "@/hooks/use-toast";
 import AdminVideosAyuda from "@/pages/AdminVideosAyuda";
 import BibliotecaVideos from "@/pages/BibliotecaVideos";
 import HelpVideoButton from "@/components/HelpVideoButton";
@@ -494,42 +492,6 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function LicenseNotificationPopup() {
-  const { user, subscriptionStatus } = useSubscriptionCheck();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    if (!user || !subscriptionStatus) return;
-
-    const exemptRoles = ['superadmin', 'soporte', 'lso', 'lso_externo'];
-    if (exemptRoles.includes(user.role)) return;
-
-    const licenseExpiresAt = subscriptionStatus.licenseExpiresAt;
-    if (!licenseExpiresAt) return;
-
-    const sessionKey = `license_popup_shown_${user.id}`;
-    if (sessionStorage.getItem(sessionKey)) return;
-
-    sessionStorage.setItem(sessionKey, '1');
-
-    const expiryDate = new Date(licenseExpiresAt);
-    const formattedDate = expiryDate.toLocaleDateString('es-CO', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'America/Bogota',
-    });
-
-    toast({
-      title: "Licencia SST Colombia activa",
-      description: `Su licencia tiene validez hasta el ${formattedDate}.`,
-      duration: 8000,
-    });
-  }, [user?.id, subscriptionStatus?.licenseExpiresAt]);
-
-  return null;
-}
-
 function AuthenticatedLayout() {
   const { user, isLoading } = useAuth();
   const [location] = useLocation();
@@ -606,7 +568,6 @@ export default function App() {
         <AuthProvider>
           <DemoWatermark />
           <AuthenticatedLayout />
-          <LicenseNotificationPopup />
           <ConditionalChatBot />
         </AuthProvider>
         <Toaster />

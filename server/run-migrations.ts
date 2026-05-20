@@ -41,7 +41,6 @@ import { fixInvoiceStripeAmount } from './migrations/fix-invoice-stripe-amount';
 import { syncRoadSafetyContentFields } from './migrations/sync-road-safety-content-fields';
 import { syncSstTrainingContentFields } from './migrations/sync-sst-training-content-fields';
 import { createRoadSafetyWorkerAttendees } from './migrations/create-road-safety-worker-attendees';
-import { setHvgLicenseExpiry } from './migrations/set-hvg-license-expiry';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -94,7 +93,6 @@ export async function runMigrations() {
     await syncRoadSafetyContentFields();
     await syncSstTrainingContentFields();
     await createRoadSafetyWorkerAttendees();
-    await setHvgLicenseExpiry();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);
