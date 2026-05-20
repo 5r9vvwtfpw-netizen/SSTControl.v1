@@ -10102,6 +10102,910 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
     capacitacionesObligatorias: ['Manejo seguro de plaguicidas', 'Espacios confinados en alcantarillado', 'Monitoreo biológico de colinesterasa', 'Primeros auxilios - intoxicación por plaguicidas']
   },
 
+
+  // ==================== SECCIÓN A - AGRICULTURA, GANADERÍA, CAZA, SILVICULTURA Y PESCA ====================
+
+  {
+    codigoCIIU: '0112',
+    descripcionCIIU: 'Cultivo de arroz',
+    sector: 'Agricultura',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a plaguicidas y herbicidas',
+        categoria: 'Químico',
+        descripcion: 'Aplicación de herbicidas, fungicidas e insecticidas en cultivos de arroz',
+        fuenteGeneradora: 'Fumigación aérea y manual de cultivos',
+        actividadAsociada: 'Siembra, mantenimiento y cosecha de arroz',
+        riesgoPotencial: 'Intoxicación aguda o crónica por plaguicidas',
+        efectosPosibles: 'Daño neurológico, dérmico y respiratorio',
+        medidasControl: ['Capacitación en manejo seguro de agroquímicos', 'EPP completo para fumigación', 'Rotación de cultivos', 'Control biológico de plagas']
+      },
+      {
+        codigo: 'FIS-003',
+        nombre: 'Estrés térmico en campo abierto',
+        categoria: 'Físico',
+        descripcion: 'Exposición prolongada al sol en cultivos de arroz anegados',
+        fuenteGeneradora: 'Trabajo en campo abierto bajo sol directo',
+        actividadAsociada: 'Trasplante, deshierbe y cosecha manual',
+        riesgoPotencial: 'Golpe de calor, deshidratación',
+        efectosPosibles: 'Agotamiento térmico, insolación, colapso',
+        medidasControl: ['Hidratación cada 20 minutos', 'Descanso en sombra', 'Ropa de trabajo adecuada', 'Jornadas en horas frescas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1843-1991', norma: 'Decreto 1843/1991', descripcion: 'Uso y manejo de plaguicidas', obligatorio: true },
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Sombrero de ala ancha', 'Protector solar factor 50+', 'Guantes de nitrilo', 'Botas de caucho', 'Overol de trabajo', 'Mascarilla N95 para fumigación'],
+    capacitacionesObligatorias: ['Manejo seguro de agroquímicos', 'Prevención de estrés térmico', 'Higiene postural en campo', 'Primeros auxilios agropecuarios']
+  },
+  {
+    codigoCIIU: '0113',
+    descripcionCIIU: 'Cultivo de hortalizas, raíces y tubérculos',
+    sector: 'Agricultura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a agroquímicos',
+        categoria: 'Químico',
+        descripcion: 'Uso de fertilizantes, pesticidas y fungicidas en horticultura',
+        fuenteGeneradora: 'Aplicación manual y mecánica de agroquímicos',
+        actividadAsociada: 'Mantenimiento de cultivos de hortalizas',
+        riesgoPotencial: 'Intoxicación por plaguicidas organofosforados',
+        efectosPosibles: 'Inhibición colinesterasa, toxicidad sistémica',
+        medidasControl: ['EPP para fumigación', 'Monitoreo biológico de colinesterasa', 'Capacitación en MSDS', 'Sustitución de productos más tóxicos']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1843-1991', norma: 'Decreto 1843/1991', descripcion: 'Uso y manejo de plaguicidas', obligatorio: true },
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de nitrilo', 'Botas de caucho', 'Protector solar', 'Mascarilla para agroquímicos', 'Overol', 'Sombrero'],
+    capacitacionesObligatorias: ['Manejo seguro de agroquímicos', 'Higiene postural', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0114',
+    descripcionCIIU: 'Cultivo de tabaco',
+    sector: 'Agricultura',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Absorción percutánea de nicotina (Green Tobacco Sickness)',
+        categoria: 'Químico',
+        descripcion: 'Contacto dérmico con hojas húmedas de tabaco que contienen nicotina',
+        fuenteGeneradora: 'Cosecha manual de hojas de tabaco',
+        actividadAsociada: 'Cosecha y curado de tabaco',
+        riesgoPotencial: 'Intoxicación aguda por nicotina',
+        efectosPosibles: 'Náuseas, vómitos, mareos, taquicardia',
+        medidasControl: ['Guantes impermeables durante cosecha', 'Ropa de manga larga', 'Ducha inmediata si hay contacto', 'No cosechar con hojas mojadas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1843-1991', norma: 'Decreto 1843/1991', descripcion: 'Manejo de sustancias tóxicas', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes impermeables de nitrilo', 'Overol manga larga', 'Botas de caucho', 'Protector solar'],
+    capacitacionesObligatorias: ['Enfermedad del tabaco verde', 'Manejo de agroquímicos', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0115',
+    descripcionCIIU: 'Cultivo de plantas textiles',
+    sector: 'Agricultura',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'BIO-001',
+        nombre: 'Exposición a fibras vegetales y polvos',
+        categoria: 'Biológico',
+        descripcion: 'Inhalación de polvo de plantas textiles (algodón, fique, cáñamo)',
+        fuenteGeneradora: 'Cosecha y procesamiento primario',
+        actividadAsociada: 'Cosecha, secado y enfardado',
+        riesgoPotencial: 'Bisinosis (enfermedad del pulmón de algodón)',
+        efectosPosibles: 'Obstrucción bronquial, bronquitis crónica',
+        medidasControl: ['Mascarilla para polvo orgánico', 'Ventilación adecuada', 'Vigilancia médica respiratoria', 'Control de polvo ambiental']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Mascarilla N95', 'Guantes de tela', 'Gafas de seguridad', 'Overol', 'Protector solar'],
+    capacitacionesObligatorias: ['Riesgos por polvo orgánico', 'Uso de EPP respiratorio', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0119',
+    descripcionCIIU: 'Otros cultivos transitorios n.c.p.',
+    sector: 'Agricultura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a agroquímicos varios',
+        categoria: 'Químico',
+        descripcion: 'Uso de pesticidas y fertilizantes en cultivos transitorios diversos',
+        fuenteGeneradora: 'Aplicación de agroquímicos',
+        actividadAsociada: 'Mantenimiento y protección de cultivos',
+        riesgoPotencial: 'Intoxicación por plaguicidas',
+        efectosPosibles: 'Daño hepático, renal, neurológico',
+        medidasControl: ['EPP completo', 'Capacitación en agroquímicos', 'Rotación de cultivos', 'Monitoreo biológico']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1843-1991', norma: 'Decreto 1843/1991', descripcion: 'Uso y manejo de plaguicidas', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de nitrilo', 'Mascarilla', 'Botas de caucho', 'Protector solar'],
+    capacitacionesObligatorias: ['Manejo de agroquímicos', 'Primeros auxilios agropecuarios']
+  },
+  {
+    codigoCIIU: '0122',
+    descripcionCIIU: 'Cultivo de plátano y banano',
+    sector: 'Agricultura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a nematicidas y fungicidas en platanales',
+        categoria: 'Químico',
+        descripcion: 'Aplicación de productos para control de sigatoka y nematodos',
+        fuenteGeneradora: 'Fumigación aérea y terrestre de cultivos',
+        actividadAsociada: 'Mantenimiento fitosanitario del cultivo',
+        riesgoPotencial: 'Intoxicación crónica por fungicidas sistémicos',
+        efectosPosibles: 'Daño hepático, afectaciones dérmicas, cáncer',
+        medidasControl: ['EPP para fumigación', 'Capacitación en plaguicidas', 'Zonas de exclusión durante fumigación', 'Monitoreo médico periódico']
+      },
+      {
+        codigo: 'SEG-001',
+        nombre: 'Caída de racimos durante cosecha',
+        categoria: 'Condiciones de seguridad',
+        descripcion: 'Riesgo de golpe por caída de racimos durante el corte con machete',
+        fuenteGeneradora: 'Cosecha manual con machete',
+        actividadAsociada: 'Corte y acarreo de racimos',
+        riesgoPotencial: 'Golpe por objeto pesado, cortes',
+        efectosPosibles: 'Traumatismos, fracturas, laceraciones',
+        medidasControl: ['Uso de casco de seguridad', 'Coordinación en corte y recibo', 'Técnica correcta de corte', 'Calzado con punta de acero']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1843-1991', norma: 'Decreto 1843/1991', descripcion: 'Plaguicidas', obligatorio: true },
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Casco', 'Guantes de nitrilo', 'Mascarilla para fumigación', 'Botas de caucho', 'Protector solar', 'Overol'],
+    capacitacionesObligatorias: ['Manejo de agroquímicos', 'Técnicas seguras de cosecha', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0123',
+    descripcionCIIU: 'Cultivo de café',
+    sector: 'Agricultura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'BIO-MEC-001',
+        nombre: 'Esfuerzo postural en recolección manual en ladera',
+        categoria: 'Biomecánico',
+        descripcion: 'Posturas de trabajo en laderas durante la recolección de café',
+        fuenteGeneradora: 'Recolección manual en terreno inclinado',
+        actividadAsociada: 'Cosecha de café',
+        riesgoPotencial: 'Lesiones musculoesqueléticas, caídas en pendiente',
+        efectosPosibles: 'Lumbalgia, golpes, fracturas por caída',
+        medidasControl: ['Calzado antideslizante', 'Capacitación en higiene postural', 'Pausas activas', 'Restricción en pendientes extremas con lluvia']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1843-1991', norma: 'Decreto 1843/1991', descripcion: 'Plaguicidas', obligatorio: true },
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Calzado antideslizante', 'Guantes', 'Mascarilla', 'Sombrero', 'Protector solar', 'Overol'],
+    capacitacionesObligatorias: ['Higiene postural en terreno inclinado', 'Manejo de agroquímicos', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0124',
+    descripcionCIIU: 'Cultivo de caña de azúcar',
+    sector: 'Agricultura',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'FIS-003',
+        nombre: 'Estrés térmico extremo en cañaverales',
+        categoria: 'Físico',
+        descripcion: 'Trabajo en campos de caña bajo sol intenso con alta carga física',
+        fuenteGeneradora: 'Trabajo en campo abierto en valles cálidos',
+        actividadAsociada: 'Corte manual y mecanizado de caña',
+        riesgoPotencial: 'Golpe de calor, enfermedad renal crónica',
+        efectosPosibles: 'Insuficiencia renal, muerte por golpe de calor',
+        medidasControl: ['Hidratación forzada cada 15 minutos', 'Trabajo en horas frescas', 'Descanso en sombra', 'Vigilancia médica renal periódica']
+      },
+      {
+        codigo: 'SEG-001',
+        nombre: 'Riesgos por machete en corte de caña',
+        categoria: 'Condiciones de seguridad',
+        descripcion: 'Uso de machetes y herramientas afiladas en corte de caña',
+        fuenteGeneradora: 'Corte manual de caña',
+        actividadAsociada: 'Zafra (cosecha de caña)',
+        riesgoPotencial: 'Laceraciones y amputaciones',
+        efectosPosibles: 'Heridas profundas, pérdida de dedos',
+        medidasControl: ['Guantes de corte resistentes', 'Técnica segura de corte', 'Mantenimiento de herramientas', 'Capacitación en uso seguro']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'RES-2400-1979', norma: 'Resolución 2400/1979', descripcion: 'Higiene y seguridad en el trabajo', obligatorio: true },
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de corte nivel 5', 'Polainas de cuero', 'Casco', 'Botas punta de acero', 'Ropa de algodón clara', 'Sombrero amplio'],
+    capacitacionesObligatorias: ['Uso seguro de machete', 'Prevención estrés térmico', 'Hidratación en campo', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0125',
+    descripcionCIIU: 'Cultivo de flor de corte',
+    sector: 'Agricultura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición intensiva a plaguicidas en floricultura',
+        categoria: 'Químico',
+        descripcion: 'Alta frecuencia de aplicación de fungicidas e insecticidas en cultivos de flores',
+        fuenteGeneradora: 'Fumigación frecuente en invernaderos',
+        actividadAsociada: 'Mantenimiento fitosanitario de flores',
+        riesgoPotencial: 'Intoxicación crónica, afectaciones reproductivas',
+        efectosPosibles: 'Alteraciones hormonales, cáncer, problemas reproductivos',
+        medidasControl: ['Restricción de ingreso post-fumigación', 'EPP completo', 'Monitoreo biológico', 'Rotación de trabajadoras embarazadas']
+      },
+      {
+        codigo: 'BIO-MEC-001',
+        nombre: 'Movimientos repetitivos en clasificación y empaque de flores',
+        categoria: 'Biomecánico',
+        descripcion: 'Trabajo de pie con movimientos repetitivos en mesas de clasificación',
+        fuenteGeneradora: 'Clasificación y empaque de flores',
+        actividadAsociada: 'Postcosecha de flores',
+        riesgoPotencial: 'Desórdenes musculoesqueléticos de miembros superiores',
+        efectosPosibles: 'Síndrome del túnel carpiano, epicondilitis',
+        medidasControl: ['Rotación de estaciones', 'Reposapiés y asientos ergonómicos', 'Pausas activas', 'Análisis ergonómico de puestos']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1843-1991', norma: 'Decreto 1843/1991', descripcion: 'Plaguicidas', obligatorio: true },
+      { codigo: 'RES-2346-2007', norma: 'Resolución 2346/2007', descripcion: 'Evaluaciones médicas ocupacionales', obligatorio: true }
+    ],
+    eppRecomendado: ['Traje Tyvek para fumigación', 'Respirador con filtro orgánico', 'Guantes de nitrilo', 'Gafas herméticas', 'Botas de caucho'],
+    capacitacionesObligatorias: ['Plaguicidas en floricultura', 'Ergonomía en postcosecha', 'Salud reproductiva y exposición química', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0126',
+    descripcionCIIU: 'Cultivo de palma para aceite (palma africana) y otros frutos oleaginosos',
+    sector: 'Agricultura',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'SEG-001',
+        nombre: 'Caída de racimos y espinas de palma',
+        categoria: 'Condiciones de seguridad',
+        descripcion: 'Peligro por caída de pesados racimos de palma durante cosecha con malayo',
+        fuenteGeneradora: 'Cosecha con malayo (vara larga)',
+        actividadAsociada: 'Cosecha de racimos de fruta fresca',
+        riesgoPotencial: 'Golpe por caída de racimo (20-50 kg)',
+        efectosPosibles: 'Traumatismos severos, fracturas, muerte',
+        medidasControl: ['Casco con barbuquejo', 'Zona de despeje durante corte', 'Técnica correcta de corte', 'Calzado con punta de acero']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1843-1991', norma: 'Decreto 1843/1991', descripcion: 'Plaguicidas', obligatorio: true },
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Casco con visera y barbuquejo', 'Guantes de nitrilo', 'Botas punta de acero', 'Overol', 'Mascarilla para pesticidas'],
+    capacitacionesObligatorias: ['Técnica segura de cosecha de palma', 'Manejo de plaguicidas', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0127',
+    descripcionCIIU: 'Cultivo de plantas con las que se preparan bebidas',
+    sector: 'Agricultura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'FIS-003',
+        nombre: 'Exposición solar en cultivos para bebidas',
+        categoria: 'Físico',
+        descripcion: 'Trabajo prolongado bajo sol en cultivos de cacao, guaraná y similares',
+        fuenteGeneradora: 'Labores agrícolas en campo abierto',
+        actividadAsociada: 'Siembra, mantenimiento y cosecha',
+        riesgoPotencial: 'Estrés térmico, quemaduras solares',
+        efectosPosibles: 'Golpe de calor, cáncer de piel a largo plazo',
+        medidasControl: ['Protector solar', 'Sombrero', 'Hidratación continua', 'Jornadas en horas frescas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Sombrero de ala ancha', 'Protector solar', 'Guantes', 'Botas de caucho', 'Overol'],
+    capacitacionesObligatorias: ['Prevención estrés térmico', 'Manejo de agroquímicos', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0128',
+    descripcionCIIU: 'Cultivo de especias y de plantas aromáticas y medicinales',
+    sector: 'Agricultura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'BIO-001',
+        nombre: 'Reacciones alérgicas a aceites esenciales',
+        categoria: 'Biológico',
+        descripcion: 'Exposición a aceites esenciales y compuestos volátiles de plantas aromáticas',
+        fuenteGeneradora: 'Contacto con plantas aromáticas durante cosecha',
+        actividadAsociada: 'Cosecha y secado de plantas medicinales',
+        riesgoPotencial: 'Dermatitis de contacto, reacciones alérgicas',
+        efectosPosibles: 'Eccema, urticaria, asma ocupacional',
+        medidasControl: ['Guantes de nitrilo', 'Evaluación médica previa', 'Rotación de tareas', 'Ventilación adecuada']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de nitrilo', 'Mascarilla', 'Overol', 'Botas de caucho', 'Protector solar'],
+    capacitacionesObligatorias: ['Riesgos por plantas aromáticas', 'Prevención de alergias ocupacionales', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0129',
+    descripcionCIIU: 'Otros cultivos permanentes n.c.p.',
+    sector: 'Agricultura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a agroquímicos en cultivos permanentes',
+        categoria: 'Químico',
+        descripcion: 'Uso de fertilizantes y pesticidas en cultivos permanentes varios',
+        fuenteGeneradora: 'Aplicación regular de agroquímicos',
+        actividadAsociada: 'Mantenimiento fitosanitario',
+        riesgoPotencial: 'Intoxicación crónica',
+        efectosPosibles: 'Daño orgánico acumulativo',
+        medidasControl: ['EPP para fumigación', 'Capacitación en agroquímicos', 'Manejo integrado de plagas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1843-1991', norma: 'Decreto 1843/1991', descripcion: 'Plaguicidas', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes', 'Mascarilla', 'Overol', 'Botas', 'Protector solar'],
+    capacitacionesObligatorias: ['Manejo de agroquímicos', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0130',
+    descripcionCIIU: 'Propagación de plantas (viveros)',
+    sector: 'Agricultura',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'BIO-001',
+        nombre: 'Exposición a hongos y patógenos del suelo en viveros',
+        categoria: 'Biológico',
+        descripcion: 'Contacto con tierra, sustratos y material vegetal potencialmente contaminado',
+        fuenteGeneradora: 'Manipulación de sustratos y plantas en vivero',
+        actividadAsociada: 'Germinación, repique y mantenimiento de plántulas',
+        riesgoPotencial: 'Infecciones dérmicas por hongos del suelo',
+        efectosPosibles: 'Micosis cutánea, dermatitis',
+        medidasControl: ['Guantes de jardín', 'Lavado frecuente de manos', 'Calzado cerrado', 'Control de humedad']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de jardín', 'Delantal', 'Calzado cerrado antideslizante', 'Protector solar'],
+    capacitacionesObligatorias: ['Manejo higiénico de sustratos', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0141',
+    descripcionCIIU: 'Cría de ganado bovino y bufalino',
+    sector: 'Pecuario',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'BIO-002',
+        nombre: 'Zoonosis en ganadería bovina',
+        categoria: 'Biológico',
+        descripcion: 'Riesgo de brucelosis, leptospirosis, ántrax por contacto con bovinos',
+        fuenteGeneradora: 'Contacto directo con animales y sus fluidos',
+        actividadAsociada: 'Ordeño, partos asistidos, vacunación, manejo de cadáveres',
+        riesgoPotencial: 'Brucelosis, leptospirosis, tuberculosis bovina',
+        efectosPosibles: 'Enfermedad sistémica crónica, fiebres ondulantes',
+        medidasControl: ['Vacunación de trabajadores expuestos', 'Guantes y mascarilla en partos', 'Higiene post-contacto con animales', 'Control sanitario del hato']
+      },
+      {
+        codigo: 'SEG-001',
+        nombre: 'Traumatismos por animales bovinos',
+        categoria: 'Condiciones de seguridad',
+        descripcion: 'Patadas, cornadas y aplastamiento por ganado bovino',
+        fuenteGeneradora: 'Manejo y sujeción de animales',
+        actividadAsociada: 'Manejo en manga, ordeño, vacunación',
+        riesgoPotencial: 'Traumatismos graves, fracturas, aplastamiento',
+        efectosPosibles: 'Fracturas, contusiones severas, muerte',
+        medidasControl: ['Instalaciones adecuadas (manga, cepo)', 'Técnicas de manejo animal', 'Nunca trabajar solo con toros', 'Botas punta de acero']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Botas de caucho punta de acero', 'Guantes de cuero', 'Overol', 'Casco para manejo de toros', 'Mascarilla'],
+    capacitacionesObligatorias: ['Manejo seguro de bovinos', 'Zoonosis y bioseguridad', 'Primeros auxilios agropecuarios']
+  },
+  {
+    codigoCIIU: '0142',
+    descripcionCIIU: 'Cría de caballos y otros equinos',
+    sector: 'Pecuario',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'SEG-001',
+        nombre: 'Traumatismos por equinos',
+        categoria: 'Condiciones de seguridad',
+        descripcion: 'Coces, mordeduras y aplastamiento durante manejo de caballos',
+        fuenteGeneradora: 'Manejo, monta y herraje de equinos',
+        actividadAsociada: 'Manejo diario de caballos y mulas',
+        riesgoPotencial: 'Traumatismos por coz, caída de jinete',
+        efectosPosibles: 'Fracturas, TCE, contusiones graves',
+        medidasControl: ['Casco de equitación', 'Botas de equitación', 'Técnicas de aproximación segura', 'Nunca pararse detrás del animal sin aviso']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Casco de equitación', 'Botas de equitación', 'Guantes de cuero', 'Mascarilla', 'Chaleco protector'],
+    capacitacionesObligatorias: ['Manejo seguro de equinos', 'Zoonosis equinas', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0143',
+    descripcionCIIU: 'Cría de ovejas y cabras',
+    sector: 'Pecuario',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'BIO-002',
+        nombre: 'Zoonosis en ovinos y caprinos',
+        categoria: 'Biológico',
+        descripcion: 'Riesgo de brucelosis, fiebre Q en pequeños rumiantes',
+        fuenteGeneradora: 'Contacto con animales y fluidos durante partos',
+        actividadAsociada: 'Partos asistidos, ordeño, vacunación',
+        riesgoPotencial: 'Brucelosis caprina (B. melitensis)',
+        efectosPosibles: 'Fiebre ondulante, artritis séptica, daño orgánico',
+        medidasControl: ['Guantes en partos', 'Higiene post-contacto', 'Vacunación del rebaño', 'Leche pasteurizada para consumo']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes', 'Overol', 'Botas de caucho', 'Mascarilla'],
+    capacitacionesObligatorias: ['Zoonosis en pequeños rumiantes', 'Bioseguridad ganadera', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0144',
+    descripcionCIIU: 'Cría de ganado porcino',
+    sector: 'Pecuario',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'BIO-002',
+        nombre: 'Zoonosis en porcicultura',
+        categoria: 'Biológico',
+        descripcion: 'Riesgo de leptospirosis, influenza porcina, erisipela en granjas porcinas',
+        fuenteGeneradora: 'Contacto con cerdos y sus secreciones',
+        actividadAsociada: 'Manejo diario, partos, vacunación',
+        riesgoPotencial: 'Influenza zoonótica, leptospirosis',
+        efectosPosibles: 'Enfermedad respiratoria, fiebre, daño renal',
+        medidasControl: ['Mascarilla N95', 'Guantes', 'Higiene estricta', 'Vigilancia epidemiológica']
+      },
+      {
+        codigo: 'QUI-001',
+        nombre: 'Gases tóxicos en pozos de purines',
+        categoria: 'Químico',
+        descripcion: 'Generación de H2S, NH3, CH4 en fosas de purines porcinos',
+        fuenteGeneradora: 'Manejo de residuos y pozos de purines',
+        actividadAsociada: 'Limpieza de corrales y manejo de purines',
+        riesgoPotencial: 'Intoxicación por gases, asfixia',
+        efectosPosibles: 'Pérdida de conciencia, muerte',
+        medidasControl: ['Ventilación forzada antes de entrar', 'Detector de gases', 'Nunca trabajar solo en pozos', 'Plan de emergencia']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
+      { codigo: 'RES-0491-2020', norma: 'Resolución 0491/2020', descripcion: 'Espacios confinados', obligatorio: true }
+    ],
+    eppRecomendado: ['Mascarilla N95', 'Guantes de nitrilo', 'Overol', 'Botas de caucho', 'Detector de gases H2S'],
+    capacitacionesObligatorias: ['Zoonosis porcinas', 'Manejo de gases en granjas', 'Espacios confinados', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0145',
+    descripcionCIIU: 'Cría de aves de corral',
+    sector: 'Pecuario',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'BIO-002',
+        nombre: 'Zoonosis avícola',
+        categoria: 'Biológico',
+        descripcion: 'Riesgo de influenza aviar, Newcastle, salmonelosis en galpones avícolas',
+        fuenteGeneradora: 'Contacto con aves y sus secreciones',
+        actividadAsociada: 'Manejo de ponedoras, pollos de engorde, pavos',
+        riesgoPotencial: 'Influenza aviar H5N1, salmonelosis',
+        efectosPosibles: 'Enfermedad respiratoria grave, gastroenteritis',
+        medidasControl: ['Bioseguridad estricta de galpón', 'Mascarilla N95', 'Guantes', 'Vigilancia epidemiológica activa']
+      },
+      {
+        codigo: 'FIS-004',
+        nombre: 'Polvo orgánico y amoniaco en galpones avícolas',
+        categoria: 'Físico',
+        descripcion: 'Alta concentración de polvo y amoniaco en galpones',
+        fuenteGeneradora: 'Cama de pollos, heces, plumas en suspensión',
+        actividadAsociada: 'Trabajo diario en galpones',
+        riesgoPotencial: 'Enfermedades respiratorias ocupacionales',
+        efectosPosibles: 'Bronquitis crónica, asma ocupacional',
+        medidasControl: ['Mascarilla con filtro orgánico', 'Ventilación adecuada del galpón', 'Humidificación del piso', 'Espirometrías periódicas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Mascarilla N95 o respirador', 'Guantes', 'Overol Tyvek', 'Botas', 'Gafas de protección'],
+    capacitacionesObligatorias: ['Zoonosis avícola', 'Bioseguridad avícola', 'Riesgos por polvo orgánico', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0149',
+    descripcionCIIU: 'Cría de otros animales n.c.p.',
+    sector: 'Pecuario',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'BIO-002',
+        nombre: 'Zoonosis en fauna diversa',
+        categoria: 'Biológico',
+        descripcion: 'Riesgo de transmisión de enfermedades en cría de abejas, camarones, peces, cuyes',
+        fuenteGeneradora: 'Contacto con animales diversos',
+        actividadAsociada: 'Manejo, alimentación y cosecha de animales',
+        riesgoPotencial: 'Zoonosis específicas según especie, picaduras/mordeduras',
+        efectosPosibles: 'Enfermedades infecciosas, reacciones alérgicas',
+        medidasControl: ['EPP específico por especie', 'Capacitación en zoonosis', 'Vigilancia médica', 'Vacunación según exposición']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes', 'Overol', 'Calzado adecuado', 'Mascarilla'],
+    capacitacionesObligatorias: ['Zoonosis y bioseguridad', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0150',
+    descripcionCIIU: 'Explotación mixta (agrícola y pecuaria)',
+    sector: 'Agropecuario',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Múltiples exposiciones químicas y biológicas combinadas',
+        categoria: 'Químico',
+        descripcion: 'Exposición simultánea a agroquímicos y agentes biológicos en fincas mixtas',
+        fuenteGeneradora: 'Actividades agrícolas y pecuarias combinadas',
+        actividadAsociada: 'Labores agropecuarias diversas en la misma unidad',
+        riesgoPotencial: 'Exposición múltiple y sinérgica a tóxicos y patógenos',
+        efectosPosibles: 'Efectos combinados de toxicidad química y biológica',
+        medidasControl: ['Identificación de riesgos por área', 'EPP diferenciado por actividad', 'Higiene al cambiar de actividad', 'SG-SST estructurado']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1843-1991', norma: 'Decreto 1843/1991', descripcion: 'Plaguicidas', obligatorio: true },
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['EPP completo diferenciado por actividad', 'Botas de caucho', 'Guantes', 'Mascarilla'],
+    capacitacionesObligatorias: ['Riesgos agropecuarios combinados', 'Manejo de agroquímicos', 'Zoonosis', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0161',
+    descripcionCIIU: 'Actividades de apoyo a la agricultura',
+    sector: 'Agricultura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a agroquímicos en servicios de fumigación',
+        categoria: 'Químico',
+        descripcion: 'Servicios de fumigación, preparación de suelos y asistencia técnica agropecuaria',
+        fuenteGeneradora: 'Servicios de soporte a agricultores',
+        actividadAsociada: 'Fumigación, análisis de suelos, asistencia técnica',
+        riesgoPotencial: 'Intoxicación por plaguicidas en aplicadores',
+        efectosPosibles: 'Toxicidad aguda y crónica por agroquímicos',
+        medidasControl: ['EPP especializado', 'Certificación de aplicadores', 'Hojas de datos de seguridad', 'Monitoreo biológico']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1843-1991', norma: 'Decreto 1843/1991', descripcion: 'Plaguicidas', obligatorio: true }
+    ],
+    eppRecomendado: ['Traje de fumigación', 'Respirador con filtros', 'Guantes de nitrilo', 'Gafas herméticas', 'Botas impermeables'],
+    capacitacionesObligatorias: ['Aplicación segura de plaguicidas', 'Certificación de fumigadores', 'Primeros auxilios - intoxicación']
+  },
+  {
+    codigoCIIU: '0162',
+    descripcionCIIU: 'Actividades de apoyo a la ganadería',
+    sector: 'Pecuario',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'BIO-002',
+        nombre: 'Zoonosis en servicios veterinarios de campo',
+        categoria: 'Biológico',
+        descripcion: 'Riesgo de zoonosis en herrado, inseminación artificial, sanidad animal',
+        fuenteGeneradora: 'Trabajo directo con animales y fluidos',
+        actividadAsociada: 'Inseminación, palpación, herrado, vacunación',
+        riesgoPotencial: 'Brucelosis, leptospirosis, rabia',
+        efectosPosibles: 'Enfermedades infecciosas crónicas',
+        medidasControl: ['Guantes dobles en maniobras invasivas', 'Vacunación antirrábica', 'Higiene y desinfección de instrumental', 'Vigilancia médica']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes veterinarios', 'Overol impermeable', 'Botas de caucho', 'Mascarilla'],
+    capacitacionesObligatorias: ['Zoonosis en servicios veterinarios', 'Manejo seguro de animales', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0163',
+    descripcionCIIU: 'Actividades posteriores a la cosecha',
+    sector: 'Agricultura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'BIO-MEC-001',
+        nombre: 'Movimientos repetitivos en postcosecha',
+        categoria: 'Biomecánico',
+        descripcion: 'Clasificación, empaque y almacenamiento de productos agrícolas',
+        fuenteGeneradora: 'Líneas de clasificación y empaque manual',
+        actividadAsociada: 'Lavado, clasificación, empaque de frutas y hortalizas',
+        riesgoPotencial: 'Desórdenes musculoesqueléticos',
+        efectosPosibles: 'Síndrome del túnel carpiano, tendinitis',
+        medidasControl: ['Rotación de puestos', 'Herramientas ergonómicas', 'Pausas activas', 'Asientos ergonómicos']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de trabajo', 'Delantal', 'Botas antideslizantes', 'Soporte lumbar'],
+    capacitacionesObligatorias: ['Ergonomía en postcosecha', 'Higiene en manejo de alimentos', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0164',
+    descripcionCIIU: 'Tratamiento de semillas para propagación',
+    sector: 'Agricultura',
+    nivelRiesgo: 'II',
+    peligrosIdentificados: [
+      {
+        codigo: 'QUI-001',
+        nombre: 'Exposición a curasemillas (fungicidas+insecticidas)',
+        categoria: 'Químico',
+        descripcion: 'Tratamiento químico de semillas con curasemillas sistémicos y colorantes tóxicos',
+        fuenteGeneradora: 'Maquinaria de curado de semillas',
+        actividadAsociada: 'Curado y tratamiento de semillas antes de distribución',
+        riesgoPotencial: 'Intoxicación por curasemillas sistémicos',
+        efectosPosibles: 'Toxicidad neurológica, afectaciones dérmicas',
+        medidasControl: ['EPP completo', 'Ventilación en sala de curado', 'Procedimientos escritos', 'Etiquetado correcto de semillas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1843-1991', norma: 'Decreto 1843/1991', descripcion: 'Manejo de plaguicidas', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de nitrilo', 'Respirador con filtro químico', 'Overol', 'Gafas de seguridad'],
+    capacitacionesObligatorias: ['Manejo de curasemillas', 'Primeros auxilios - intoxicación']
+  },
+  {
+    codigoCIIU: '0170',
+    descripcionCIIU: 'Caza ordinaria y mediante trampas y actividades de servicios conexas',
+    sector: 'Caza y fauna',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'SEG-001',
+        nombre: 'Riesgos por uso de armas y trampas',
+        categoria: 'Condiciones de seguridad',
+        descripcion: 'Manejo de armas de fuego, trampas y equipos de captura',
+        fuenteGeneradora: 'Uso de armas y dispositivos de captura',
+        actividadAsociada: 'Caza legal y captura de fauna',
+        riesgoPotencial: 'Accidente por armas, heridas por trampas',
+        efectosPosibles: 'Heridas de bala, amputaciones, traumatismos',
+        medidasControl: ['Capacitación en manejo de armas', 'Permisos legales vigentes', 'Normas de seguridad en campo', 'Nunca apuntar hacia personas']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Botas resistentes', 'Guantes de protección', 'Casco', 'Chaleco de caza'],
+    capacitacionesObligatorias: ['Manejo seguro de armas', 'Normativa de caza', 'Primeros auxilios en campo']
+  },
+  {
+    codigoCIIU: '0210',
+    descripcionCIIU: 'Silvicultura y otras actividades forestales',
+    sector: 'Forestal',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'SEG-001',
+        nombre: 'Caída de árboles y ramas en trabajo forestal',
+        categoria: 'Condiciones de seguridad',
+        descripcion: 'Trabajo en bosques con riesgo de impacto por material forestal',
+        fuenteGeneradora: 'Tala, poda y manejo de bosques',
+        actividadAsociada: 'Plantación, mantenimiento y aprovechamiento forestal',
+        riesgoPotencial: 'Aplastamiento por árbol o rama caída',
+        efectosPosibles: 'Aplastamiento, fractura, muerte',
+        medidasControl: ['Evaluación previa de árboles peligrosos', 'Zonas de exclusión', 'Casco forestal', 'Procedimientos de tala segura']
+      },
+      {
+        codigo: 'NAT-001',
+        nombre: 'Animales peligrosos en bosque',
+        categoria: 'Natural',
+        descripcion: 'Encuentro con serpientes, avispas, arañas en trabajo forestal',
+        fuenteGeneradora: 'Trabajo en áreas forestales',
+        actividadAsociada: 'Labores en bosques naturales y plantaciones',
+        riesgoPotencial: 'Mordedura de serpiente, picadura de insectos',
+        efectosPosibles: 'Envenenamiento, reacción anafiláctica',
+        medidasControl: ['Botas forestales de media caña', 'Suero antiofídico disponible', 'Capacitación en fauna peligrosa', 'Sistema de comunicación en campo']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Casco forestal con visera', 'Botas de cuero media caña', 'Guantes de cuero', 'Pantalón anticorte', 'Overol de alta visibilidad'],
+    capacitacionesObligatorias: ['Tala segura de árboles', 'Fauna peligrosa en bosques', 'Primeros auxilios en campo remoto', 'Uso seguro de motosierra']
+  },
+  {
+    codigoCIIU: '0220',
+    descripcionCIIU: 'Extracción de madera',
+    sector: 'Forestal',
+    nivelRiesgo: 'V',
+    peligrosIdentificados: [
+      {
+        codigo: 'SEG-001',
+        nombre: 'Tala y extracción de madera con motosierra',
+        categoria: 'Condiciones de seguridad',
+        descripcion: 'Peligros múltiples en aprovechamiento forestal: motosierra, caída de árboles, arrastre de trozas',
+        fuenteGeneradora: 'Motosierra, cable de arrastre, maquinaria forestal',
+        actividadAsociada: 'Tala, troceo, extracción y apilado de madera',
+        riesgoPotencial: 'Contacto con motosierra, aplastamiento por trozas',
+        efectosPosibles: 'Amputaciones, aplastamiento, muerte',
+        medidasControl: ['Pantalón anticorte Nivel 2', 'Casco integral forestal', 'Procedimiento escrito de tala', 'Nunca trabajar solo', 'Revisión diaria de motosierra']
+      },
+      {
+        codigo: 'FIS-003',
+        nombre: 'Vibración mano-brazo por motosierra',
+        categoria: 'Físico',
+        descripcion: 'Vibración mano-brazo por uso prolongado de motosierra',
+        fuenteGeneradora: 'Motosierra en operación',
+        actividadAsociada: 'Corte y troceo de madera',
+        riesgoPotencial: 'Síndrome de vibración mano-brazo',
+        efectosPosibles: 'Fenómeno de Raynaud, neuropatía periférica',
+        medidasControl: ['Límite de exposición diaria (2.5 m/s²)', 'Guantes antivibratorios', 'Pausas programadas', 'Vigilancia médica neurológica']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Casco forestal', 'Pantalón anticorte', 'Botas forestales punta de acero', 'Guantes antivibratorios', 'Protección auditiva', 'Gafas de protección'],
+    capacitacionesObligatorias: ['Operación segura de motosierra', 'Técnica de tala dirigida', 'Primeros auxilios en campo', 'Mantenimiento de motosierra']
+  },
+  {
+    codigoCIIU: '0230',
+    descripcionCIIU: 'Recolección de productos forestales diferentes a la madera',
+    sector: 'Forestal',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'NAT-001',
+        nombre: 'Fauna peligrosa en recolección forestal',
+        categoria: 'Natural',
+        descripcion: 'Exposición a serpientes, arañas e insectos durante recolección de resinas y frutos forestales',
+        fuenteGeneradora: 'Trabajo en bosques y selvas',
+        actividadAsociada: 'Recolección de látex, resinas, frutos, semillas y hongos',
+        riesgoPotencial: 'Mordedura de serpiente venenosa, picadura de artrópodos',
+        efectosPosibles: 'Envenenamiento, anafilaxia',
+        medidasControl: ['Botas forestales altas', 'Suero antiofídico disponible', 'Comunicación en campo', 'Capacitación en fauna peligrosa']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Botas forestales altas', 'Guantes de cuero', 'Sombrero', 'Overol de manga larga'],
+    capacitacionesObligatorias: ['Fauna peligrosa', 'Uso de suero antiofídico', 'Primeros auxilios en campo remoto']
+  },
+  {
+    codigoCIIU: '0240',
+    descripcionCIIU: 'Servicios de apoyo a la silvicultura',
+    sector: 'Forestal',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'SEG-001',
+        nombre: 'Riesgos en trabajos forestales de apoyo',
+        categoria: 'Condiciones de seguridad',
+        descripcion: 'Inventarios forestales, control de incendios, podas en bosques',
+        fuenteGeneradora: 'Trabajo con herramientas en campo forestal',
+        actividadAsociada: 'Inventarios, podas, control de incendios forestales',
+        riesgoPotencial: 'Caída en terreno irregular, contacto con herramientas, quemaduras',
+        efectosPosibles: 'Fracturas, laceraciones, quemaduras por incendio forestal',
+        medidasControl: ['EPP según actividad', 'Capacitación en combate de incendios', 'Comunicación constante', 'Plan de emergencia forestal']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Casco forestal', 'Botas forestales', 'Guantes', 'Ropa ignífuga para control de incendios', 'Radio de comunicación'],
+    capacitacionesObligatorias: ['Seguridad forestal', 'Control de incendios forestales', 'Primeros auxilios']
+  },
+  {
+    codigoCIIU: '0312',
+    descripcionCIIU: 'Pesca de agua dulce',
+    sector: 'Pesca',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'SEG-001',
+        nombre: 'Ahogamiento en ríos y lagos',
+        categoria: 'Condiciones de seguridad',
+        descripcion: 'Riesgo de caída al agua en embarcaciones fluviales durante actividades de pesca',
+        fuenteGeneradora: 'Embarcaciones fluviales en ríos y embalses',
+        actividadAsociada: 'Pesca artesanal e industrial en agua dulce',
+        riesgoPotencial: 'Ahogamiento, hipotermia',
+        efectosPosibles: 'Muerte por ahogamiento',
+        medidasControl: ['Chaleco salvavidas obligatorio', 'No trabajar solo en embarcación', 'Capacitación en seguridad acuática', 'Embarcaciones con capacidad adecuada']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco salvavidas certificado', 'Botas de caucho', 'Guantes de trabajo', 'Sombrero'],
+    capacitacionesObligatorias: ['Seguridad acuática y nado', 'Manejo de embarcaciones', 'Primeros auxilios acuáticos']
+  },
+  {
+    codigoCIIU: '0321',
+    descripcionCIIU: 'Acuicultura marítima',
+    sector: 'Acuicultura',
+    nivelRiesgo: 'IV',
+    peligrosIdentificados: [
+      {
+        codigo: 'SEG-001',
+        nombre: 'Trabajo en mar abierto en acuicultura',
+        categoria: 'Condiciones de seguridad',
+        descripcion: 'Riesgos de ahogamiento y condiciones climáticas adversas en cultivos marinos',
+        fuenteGeneradora: 'Jaulas y cultivos en mar abierto',
+        actividadAsociada: 'Mantenimiento de jaulas, alimentación de peces marinos',
+        riesgoPotencial: 'Ahogamiento, hipotermia, accidente en embarcación',
+        efectosPosibles: 'Muerte por ahogamiento, traumatismos',
+        medidasControl: ['Chaleco salvavidas', 'Traje de agua fría', 'Plan de emergencia marítima', 'Formación en supervivencia marítima']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Chaleco salvavidas', 'Traje impermeable', 'Botas impermeables', 'Guantes impermeables'],
+    capacitacionesObligatorias: ['Seguridad marítima', 'Supervivencia en agua', 'Primeros auxilios acuáticos']
+  },
+  {
+    codigoCIIU: '0322',
+    descripcionCIIU: 'Acuicultura de agua dulce',
+    sector: 'Acuicultura',
+    nivelRiesgo: 'III',
+    peligrosIdentificados: [
+      {
+        codigo: 'BIO-001',
+        nombre: 'Patógenos acuáticos en estanques piscícolas',
+        categoria: 'Biológico',
+        descripcion: 'Contacto con agua y peces en estanques con posibles patógenos',
+        fuenteGeneradora: 'Manejo de estanques y peces en acuicultura',
+        actividadAsociada: 'Alimentación, cosecha y mantenimiento de estanques',
+        riesgoPotencial: 'Leptospirosis, dermatitis por agua',
+        efectosPosibles: 'Infecciones cutáneas, leptospirosis',
+        medidasControl: ['Botas de caucho altas', 'Guantes impermeables', 'Higiene post-exposición al agua', 'Vacunación contra leptospirosis']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
+    ],
+    eppRecomendado: ['Botas de caucho altas', 'Guantes impermeables', 'Overol impermeable'],
+    capacitacionesObligatorias: ['Leptospirosis y enfermedades acuáticas', 'Seguridad en estanques', 'Primeros auxilios']
+  },
+
 ];
 
 // ==================== FUNCIONES DE BÚSQUEDA ====================
