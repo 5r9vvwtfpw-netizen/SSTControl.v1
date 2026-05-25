@@ -368,7 +368,7 @@ import type {
   HelpVideo,
   InsertHelpVideo,
 } from "@shared/schema";
-import { eq, ne, desc, asc, and, or, lt, lte, gte, sql, inArray, isNotNull, isNull, count } from "drizzle-orm";
+import { eq, ne, desc, asc, and, or, lt, lte, gt, gte, sql, inArray, isNotNull, isNull, count } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import ws from "ws";
@@ -1496,6 +1496,7 @@ export interface IStorage {
   // Trial Subscriptions (Bloque 4 - Tarea 6)
   createTrialSubscription(companyId: string, planId: string, trialDays: number): Promise<Subscription>;
   getExpiredTrials(): Promise<Subscription[]>;
+  getTrialsExpiringSoon(hoursAhead: number): Promise<Subscription[]>;
   hasDefaultPaymentSource(companyId: string): Promise<boolean>;
   transitionSubscriptionStatus(id: string, newStatus: 'active' | 'past_due' | 'suspended' | 'canceled' | 'expired', metadata?: { suspendedAt?: Date; canceledAt?: Date }): Promise<Subscription | undefined>;
   getActiveOrTrialSubscriptionByCompany(companyId: string): Promise<Subscription | undefined>;
@@ -12446,6 +12447,23 @@ export class DbStorage implements IStorage {
           ),
           // Past_due subscriptions in grace period (for suspension check)
           eq(schema.subscriptions.status, 'past_due')
+        )
+      );
+  }
+
+  async getTrialsExpiringSoon(hoursAhead: number): Promise<Subscription[]> {
+    const now = new Date();
+    const cutoff = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000);
+    return await db
+      .select()
+      .from(schema.subscriptions)
+      .where(
+        and(
+          eq(schema.subscriptions.status, 'trial'),
+          // trialEnd is after now (not yet expired)
+          gt(schema.subscriptions.trialEnd, now),
+          // trialEnd is within the next hoursAhead hours
+          lt(schema.subscriptions.trialEnd, cutoff)
         )
       );
   }

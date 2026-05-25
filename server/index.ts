@@ -26,6 +26,7 @@ import logger from "./lib/logger";
 import { db } from "./db";
 import { requestLoggerMiddleware } from "./lib/request-logger-middleware";
 import { startTrialConversionJob } from "./jobs/trial-conversion";
+import { startTrialExpiryWarningJob } from "./jobs/trial-expiry-warning";
 import { startMonthlyBillingJob } from "./jobs/monthly-billing";
 import { startMedicalExamRemindersCron } from "./jobs/medical-exam-reminders";
 import { startIndicadoresSchedulerCron } from "./jobs/indicadores-scheduler";
@@ -937,6 +938,13 @@ app.use(requestLoggerMiddleware);
       startTrialConversionJob();
     } catch (error) {
       logger.error({ err: error }, "⚠️ Trial conversion job initialization failed");
+    }
+
+    // Initialize trial expiry warning cron job (24h before trial ends, weekend-aware)
+    try {
+      startTrialExpiryWarningJob();
+    } catch (error) {
+      logger.error({ err: error }, "⚠️ Trial expiry warning job initialization failed");
     }
     
     // Initialize monthly billing cron job (Bloque 4 - Tarea 17)

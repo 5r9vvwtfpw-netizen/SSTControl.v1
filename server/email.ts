@@ -2214,3 +2214,281 @@ export async function sendLsoPortalAccessEmail(
     return { success: false, error: error.message };
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TRIAL LIFECYCLE EMAILS
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ADMIN_CC = 'admin@sst-colombia.com';
+
+function formatDateCO(date: Date): string {
+  return date.toLocaleDateString('es-CO', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'America/Bogota',
+  });
+}
+
+/**
+ * Email: Trial expira en ~24 horas
+ */
+export async function sendTrialExpiringEmail(params: {
+  to: string;
+  companyName: string;
+  trialEndDate: Date;
+}): Promise<{ success: boolean; error?: string }> {
+  const { to, companyName, trialEndDate } = params;
+  const fechaVencimiento = formatDateCO(trialEndDate);
+
+  const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Su período de prueba vence pronto</title>
+</head>
+<body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#f3f4f6;">
+  <table role="presentation" style="width:100%;border-collapse:collapse;">
+    <tr>
+      <td align="center" style="padding:40px 0;">
+        <table role="presentation" style="width:600px;max-width:100%;background:#ffffff;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#166534 0%,#15803d 100%);padding:30px;text-align:center;border-radius:8px 8px 0 0;">
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:600;">SST Colombia</h1>
+              <p style="margin:8px 0 0 0;color:#dcfce7;font-size:14px;">Sistema de Salud y Seguridad en el Trabajo</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#f59e0b;padding:12px 30px;text-align:center;">
+              <p style="margin:0;color:#ffffff;font-size:16px;font-weight:600;">⏰ SU PERÍODO DE PRUEBA VENCE PRONTO</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 30px;">
+              <h2 style="margin:0 0 20px 0;color:#166534;font-size:20px;">Estimado administrador de <strong>${companyName}</strong>,</h2>
+              <p style="color:#374151;font-size:16px;line-height:1.6;">
+                Le informamos que su período de prueba gratuita en <strong>SST Colombia</strong> vencerá el:
+              </p>
+              <div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;padding:20px;margin:24px 0;text-align:center;">
+                <p style="margin:0;color:#92400e;font-size:18px;font-weight:700;">${fechaVencimiento}</p>
+              </div>
+              <p style="color:#374151;font-size:16px;line-height:1.6;">
+                Para continuar usando el sistema sin interrupciones y mantener el acceso a toda la información de su empresa, active su suscripción antes de la fecha indicada.
+              </p>
+              <center style="margin:30px 0;">
+                <a href="${process.env.VITE_APP_URL || 'https://sst-colombia.com'}/planes-suscripcion"
+                   style="display:inline-block;background:#166534;color:white;padding:14px 36px;text-decoration:none;border-radius:6px;font-size:16px;font-weight:600;">
+                  Activar Suscripción Ahora
+                </a>
+              </center>
+              <p style="color:#6b7280;font-size:14px;line-height:1.6;">
+                Si tiene preguntas o necesita ayuda, no dude en escribirnos a
+                <a href="mailto:soporte@sst-colombia.com" style="color:#166534;">soporte@sst-colombia.com</a>.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;padding:24px 30px;border-radius:0 0 8px 8px;border-top:1px solid #e5e7eb;text-align:center;">
+              <p style="margin:0;color:#6b7280;font-size:12px;">SST Colombia · Sistema Integral de Gestión SST · soporte@sst-colombia.com</p>
+              <p style="margin:6px 0 0 0;color:#9ca3af;font-size:11px;">Este es un correo automático, por favor no responder directamente.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    const result = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to,
+      cc: [ADMIN_CC],
+      subject: `⏰ Su período de prueba en SST Colombia vence el ${fechaVencimiento}`,
+      html,
+    });
+    if (result.error) return { success: false, error: result.error.message };
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Email: Trial venció sin pago → estado past_due
+ */
+export async function sendTrialPastDueEmail(params: {
+  to: string;
+  companyName: string;
+  trialEndDate: Date;
+  gracePeriodDays: number;
+}): Promise<{ success: boolean; error?: string }> {
+  const { to, companyName, trialEndDate, gracePeriodDays } = params;
+  const fechaVencimiento = formatDateCO(trialEndDate);
+  const suspensionDate = new Date(trialEndDate);
+  suspensionDate.setDate(suspensionDate.getDate() + gracePeriodDays);
+  const fechaSuspension = formatDateCO(suspensionDate);
+
+  const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Período de prueba vencido - Pago requerido</title>
+</head>
+<body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#f3f4f6;">
+  <table role="presentation" style="width:100%;border-collapse:collapse;">
+    <tr>
+      <td align="center" style="padding:40px 0;">
+        <table role="presentation" style="width:600px;max-width:100%;background:#ffffff;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#166534 0%,#15803d 100%);padding:30px;text-align:center;border-radius:8px 8px 0 0;">
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:600;">SST Colombia</h1>
+              <p style="margin:8px 0 0 0;color:#dcfce7;font-size:14px;">Sistema de Salud y Seguridad en el Trabajo</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#dc2626;padding:12px 30px;text-align:center;">
+              <p style="margin:0;color:#ffffff;font-size:16px;font-weight:600;">🔔 PAGO REQUERIDO — PERÍODO DE PRUEBA VENCIDO</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 30px;">
+              <h2 style="margin:0 0 20px 0;color:#166534;font-size:20px;">Estimado administrador de <strong>${companyName}</strong>,</h2>
+              <p style="color:#374151;font-size:16px;line-height:1.6;">
+                Su período de prueba gratuita venció el <strong>${fechaVencimiento}</strong> y aún no hemos recibido el pago de su suscripción.
+              </p>
+              <div style="background:#fef2f2;border:2px solid #dc2626;border-radius:8px;padding:20px;margin:24px 0;">
+                <p style="margin:0 0 8px 0;color:#991b1b;font-size:15px;font-weight:600;">⚠️ Su acceso será suspendido definitivamente el:</p>
+                <p style="margin:0;color:#7f1d1d;font-size:18px;font-weight:700;text-align:center;">${fechaSuspension}</p>
+              </div>
+              <p style="color:#374151;font-size:16px;line-height:1.6;">
+                Tiene <strong>${gracePeriodDays} días de período de gracia</strong>. Active su suscripción ahora para mantener el acceso a toda la información registrada en el sistema.
+              </p>
+              <center style="margin:30px 0;">
+                <a href="${process.env.VITE_APP_URL || 'https://sst-colombia.com'}/planes-suscripcion"
+                   style="display:inline-block;background:#dc2626;color:white;padding:14px 36px;text-decoration:none;border-radius:6px;font-size:16px;font-weight:600;">
+                  Activar Suscripción Ahora
+                </a>
+              </center>
+              <p style="color:#6b7280;font-size:14px;line-height:1.6;">
+                ¿Necesita ayuda? Contáctenos en
+                <a href="mailto:soporte@sst-colombia.com" style="color:#166534;">soporte@sst-colombia.com</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;padding:24px 30px;border-radius:0 0 8px 8px;border-top:1px solid #e5e7eb;text-align:center;">
+              <p style="margin:0;color:#6b7280;font-size:12px;">SST Colombia · Sistema Integral de Gestión SST · soporte@sst-colombia.com</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    const result = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to,
+      cc: [ADMIN_CC],
+      subject: `🔔 Su período de prueba en SST Colombia ha vencido — Active su suscripción`,
+      html,
+    });
+    if (result.error) return { success: false, error: result.error.message };
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Email: Cuenta suspendida por falta de pago
+ */
+export async function sendTrialSuspendedEmail(params: {
+  to: string;
+  companyName: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const { to, companyName } = params;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuenta suspendida</title>
+</head>
+<body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#f3f4f6;">
+  <table role="presentation" style="width:100%;border-collapse:collapse;">
+    <tr>
+      <td align="center" style="padding:40px 0;">
+        <table role="presentation" style="width:600px;max-width:100%;background:#ffffff;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#166534 0%,#15803d 100%);padding:30px;text-align:center;border-radius:8px 8px 0 0;">
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:600;">SST Colombia</h1>
+              <p style="margin:8px 0 0 0;color:#dcfce7;font-size:14px;">Sistema de Salud y Seguridad en el Trabajo</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#6b7280;padding:12px 30px;text-align:center;">
+              <p style="margin:0;color:#ffffff;font-size:16px;font-weight:600;">🚫 CUENTA SUSPENDIDA</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 30px;">
+              <h2 style="margin:0 0 20px 0;color:#374151;font-size:20px;">Estimado administrador de <strong>${companyName}</strong>,</h2>
+              <p style="color:#374151;font-size:16px;line-height:1.6;">
+                Lamentamos informarle que su cuenta en <strong>SST Colombia</strong> ha sido <strong>suspendida</strong> por falta de pago una vez vencido el período de gracia.
+              </p>
+              <div style="background:#f3f4f6;border:2px solid #9ca3af;border-radius:8px;padding:20px;margin:24px 0;text-align:center;">
+                <p style="margin:0;color:#374151;font-size:15px;">Su información está segura y conservada. Puede reactivar su cuenta en cualquier momento activando una suscripción.</p>
+              </div>
+              <p style="color:#374151;font-size:16px;line-height:1.6;">
+                Para recuperar el acceso completo al sistema, active su suscripción:
+              </p>
+              <center style="margin:30px 0;">
+                <a href="${process.env.VITE_APP_URL || 'https://sst-colombia.com'}/planes-suscripcion"
+                   style="display:inline-block;background:#166534;color:white;padding:14px 36px;text-decoration:none;border-radius:6px;font-size:16px;font-weight:600;">
+                  Reactivar Mi Cuenta
+                </a>
+              </center>
+              <p style="color:#6b7280;font-size:14px;line-height:1.6;">
+                ¿Tiene preguntas? Escríbanos a
+                <a href="mailto:soporte@sst-colombia.com" style="color:#166534;">soporte@sst-colombia.com</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;padding:24px 30px;border-radius:0 0 8px 8px;border-top:1px solid #e5e7eb;text-align:center;">
+              <p style="margin:0;color:#6b7280;font-size:12px;">SST Colombia · Sistema Integral de Gestión SST · soporte@sst-colombia.com</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    const result = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to,
+      cc: [ADMIN_CC],
+      subject: `🚫 Su cuenta en SST Colombia ha sido suspendida`,
+      html,
+    });
+    if (result.error) return { success: false, error: result.error.message };
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
