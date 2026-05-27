@@ -2939,6 +2939,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Extender/fijar manualmente la fecha de vencimiento de licencia de una empresa (superadmin)
+  // Activación manual de suscripción por transferencia bancaria u otro medio fuera de Stripe
+  app.post("/api/admin/companies/:id/activate-manual", requireRole(['superadmin']), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { months = 1, notes = "" } = req.body;
+
+      const monthsNum = parseInt(months, 10);
+      if (isNaN(monthsNum) || monthsNum < 1 || monthsNum > 24) {
+        return res.status(400).json({ error: "Meses inválido (1-24)" });
+      }
+
+      const company = await storage.getCompany(id);
+      if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
+
+      const now = new Date();
+      const periodEnd = new Date(now);
+      periodEnd.setMonth(periodEnd.getMonth() + monthsNum);
+
+      const updated = await db.update(schema.subscriptions)
+        .set({
+          status: 'active' as any,
+          currentPeriodStart: now,
+          currentPeriodEnd: periodEnd,
+          nextPaymentDate: periodEnd,
+          cancelAtPeriodEnd: 0,
+          updatedAt: now,
+        })
+        .where(eq(schema.subscriptions.companyId, id))
+        .returning();
+
+      if (!updated.length) {
+        return res.status(404).json({ error: "No se encontró suscripción para esta empresa" });
+      }
+
+      const adminUser = req.user!.username;
+      console.log(`[MANUAL-ACTIVATION] Empresa: ${company.name} (${id}) | Activada por: ${adminUser} | Meses: ${monthsNum} | Vence: ${periodEnd.toISOString()} | Notas: ${notes || 'ninguna'}`);
+
+      res.json({ success: true, subscription: updated[0], periodEnd });
+    } catch (error: any) {
+      console.error('[MANUAL-ACTIVATION] Error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.patch("/api/admin/companies/:id/extend-license", requireRole(['superadmin']), async (req, res) => {
     try {
       const { id } = req.params;

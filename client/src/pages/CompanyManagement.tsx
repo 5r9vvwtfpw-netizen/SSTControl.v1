@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search, Unlock, Mail, Send, CalendarCheck } from "lucide-react";
+import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search, Unlock, Mail, Send, CalendarCheck, Banknote } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -134,6 +134,12 @@ export default function CompanyManagement() {
   const [licenseDialogOpen, setLicenseDialogOpen] = useState(false);
   const [companyForLicense, setCompanyForLicense] = useState<Company | null>(null);
   const [licenseDate, setLicenseDate] = useState("2026-12-31");
+
+  // Activación manual de suscripción (transferencia bancaria)
+  const [activateSubDialogOpen, setActivateSubDialogOpen] = useState(false);
+  const [companyForActivation, setCompanyForActivation] = useState<Company | null>(null);
+  const [activateMonths, setActivateMonths] = useState("1");
+  const [activateNotes, setActivateNotes] = useState("");
   
   const [livePrice, setLivePrice] = useState<{ base: number; current: number } | null>(null);
   const livePriceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -412,6 +418,30 @@ export default function CompanyManagement() {
       toast({ title: "Licencia actualizada", description: `La suscripción de ${companyForLicense?.name} está activa hasta el ${dateLabel}.` });
       setLicenseDialogOpen(false);
       setCompanyForLicense(null);
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const activateSubscriptionMutation = useMutation({
+    mutationFn: async ({ companyId, months, notes }: { companyId: string; months: string; notes: string }) => {
+      const res = await apiRequest("POST", `/api/admin/companies/${companyId}/activate-manual`, { months: parseInt(months), notes });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Error al activar la suscripción");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies/stats/all"] });
+      const vence = new Date(data.periodEnd).toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" });
+      toast({ title: "Suscripción activada", description: `${companyForActivation?.name} está activa hasta el ${vence}.` });
+      setActivateSubDialogOpen(false);
+      setCompanyForActivation(null);
+      setActivateMonths("1");
+      setActivateNotes("");
     },
     onError: (err: Error) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -1368,6 +1398,33 @@ export default function CompanyManagement() {
                             </TooltipContent>
                           </Tooltip>
                         )}
+                        {user?.role === 'superadmin' && (() => {
+                          const sub = getCompanySubscription(company.id);
+                          const isActive = sub?.status === 'active';
+                          if (isActive) return null;
+                          return (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setCompanyForActivation(company);
+                                    setActivateMonths("1");
+                                    setActivateNotes("");
+                                    setActivateSubDialogOpen(true);
+                                  }}
+                                  data-testid={`button-activate-sub-${company.id}`}
+                                >
+                                  <Banknote className="h-4 w-4 text-emerald-600" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Activar suscripción manualmente (pago por transferencia)</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        })()}
                         {user?.role === 'superadmin' && (
                           <Button
                             variant="ghost"
@@ -1790,6 +1847,86 @@ export default function CompanyManagement() {
       </Dialog>
 
       {/* ── Dialog: Extender licencia / fijar fecha de vencimiento ───── */}
+      {/* Diálogo: Activación manual de suscripción (transferencia bancaria) */}
+      <Dialog open={activateSubDialogOpen} onOpenChange={(open) => {
+        setActivateSubDialogOpen(open);
+        if (!open) { setCompanyForActivation(null); setActivateNotes(""); }
+      }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Banknote className="h-5 w-5 text-emerald-600" />
+              Activar Suscripción Manual
+            </DialogTitle>
+            <DialogDescription>
+              Active la cuenta de <strong>{companyForActivation?.name}</strong> tras recibir su pago por transferencia bancaria u otro medio externo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="activate-months">Meses a activar</Label>
+              <Select value={activateMonths} onValueChange={setActivateMonths}>
+                <SelectTrigger id="activate-months" data-testid="select-activate-months">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1,2,3,6,12].map(m => (
+                    <SelectItem key={m} value={String(m)}>
+                      {m} {m === 1 ? "mes" : "meses"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                La suscripción vencerá el{" "}
+                <span className="font-semibold text-foreground">
+                  {(() => {
+                    const d = new Date();
+                    d.setMonth(d.getMonth() + parseInt(activateMonths || "1"));
+                    return d.toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" });
+                  })()}
+                </span>
+              </p>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="activate-notes">Notas (opcional)</Label>
+              <Input
+                id="activate-notes"
+                placeholder="Ej: Transferencia Bancolombia #12345"
+                value={activateNotes}
+                onChange={(e) => setActivateNotes(e.target.value)}
+                data-testid="input-activate-notes"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setActivateSubDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (companyForActivation) {
+                  activateSubscriptionMutation.mutate({
+                    companyId: companyForActivation.id,
+                    months: activateMonths,
+                    notes: activateNotes,
+                  });
+                }
+              }}
+              disabled={activateSubscriptionMutation.isPending}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              data-testid="button-confirm-activate-sub"
+            >
+              {activateSubscriptionMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Activando...</>
+              ) : (
+                <><Banknote className="h-4 w-4 mr-2" /> Activar Suscripción</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={licenseDialogOpen} onOpenChange={(open) => {
         setLicenseDialogOpen(open);
         if (!open) setCompanyForLicense(null);
