@@ -1401,7 +1401,8 @@ export default function CompanyManagement() {
                         {user?.role === 'superadmin' && (() => {
                           const sub = getCompanySubscription(company.id);
                           const isActive = sub?.status === 'active';
-                          if (isActive) return null;
+                          // Only show for companies that HAVE a subscription record but it's not active
+                          if (!sub || isActive) return null;
                           return (
                             <Tooltip>
                               <TooltipTrigger asChild>
