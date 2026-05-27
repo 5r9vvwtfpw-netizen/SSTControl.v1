@@ -2973,6 +2973,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "No se encontró suscripción para esta empresa" });
       }
 
+      // Sync pricing_plugin_subscriptions (source of truth for access blocking)
+      await storage.ensurePricingPluginSync(id, 'active', null);
+
       const adminUser = req.user!.username;
       console.log(`[MANUAL-ACTIVATION] Empresa: ${company.name} (${id}) | Activada por: ${adminUser} | Meses: ${monthsNum} | Vence: ${periodEnd.toISOString()} | Notas: ${notes || 'ninguna'}`);
 
