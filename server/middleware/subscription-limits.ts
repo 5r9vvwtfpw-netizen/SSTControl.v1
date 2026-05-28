@@ -304,15 +304,11 @@ export function checkWorkerLimit() {
         w.status === 'activo' || w.status === 'inactivo'
       );
 
-      // Verificar si se excedería el límite al agregar un nuevo trabajador
+      // Si supera el límite: permitir con flag de overage (cobro adicional en próxima factura)
       if (activeWorkers.length >= workerLimit) {
-        return res.status(403).json({
-          error: "Límite de trabajadores alcanzado",
-          message: `Tu suscripción permite hasta ${workerLimit} ${workerLimit === 1 ? 'trabajador' : 'trabajadores'}. Para registrar más trabajadores, actualiza tu plan o aumenta la cantidad de licencias.`,
-          currentCount: activeWorkers.length,
-          limit: workerLimit,
-          upgradeRequired: true
-        });
+        (req as any).workerOverage = true;
+        (req as any).workerOverageCompanyId = targetCompanyId;
+        (req as any).workerOverageNewLimit = workerLimit + 1;
       }
 
       next();

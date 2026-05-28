@@ -472,7 +472,7 @@ export default function Trabajadores() {
       
       return createdWorker;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/contracts"] });
       setDialogOpen(false);
@@ -495,11 +495,20 @@ export default function Trabajadores() {
         educationLevel: "",
         civilStatus: "",
       });
-      toast({
-        title: "Trabajador creado",
-        description: "El trabajador y su consentimiento se han registrado exitosamente",
-        className: "bg-yellow-50 border-yellow-200",
-      });
+      if (data?.overageWarning) {
+        toast({
+          title: "Trabajador registrado",
+          description: "Este trabajador adicional se reflejará como cobro extra en tu próxima factura.",
+          className: "bg-orange-50 border-orange-200",
+          duration: 7000,
+        });
+      } else {
+        toast({
+          title: "Trabajador creado",
+          description: "El trabajador y su consentimiento se han registrado exitosamente",
+          className: "bg-yellow-50 border-yellow-200",
+        });
+      }
     },
     onError: (error: Error) => {
       // Mantener el dialog abierto para permitir retry

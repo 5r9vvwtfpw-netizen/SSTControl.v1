@@ -3734,6 +3734,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const worker = await storage.createWorker(validatedData, companyId, userId, auditContext);
 
+      const workerOverage = (req as any).workerOverage || false;
+      const overageNewLimit = (req as any).workerOverageNewLimit;
+
       // Auto-create contract + affiliation in parallel (non-blocking for response)
       const contractTypeMap: Record<string, string> = {
         'indefinido': 'indefinido',
@@ -3744,7 +3747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Respond immediately — run side effects in background
-      res.status(201).json(worker);
+      res.status(201).json({ ...worker, overageWarning: workerOverage });
 
       // Run contract and affiliation creation in parallel after responding
       Promise.all([
@@ -3774,6 +3777,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return storage.createAfiliacionSsss(afiliacionData, companyId);
         }).catch((e: any) => console.warn(`[Create Worker] Affiliation failed: ${e.message}`)),
       ]).catch(() => {});
+
+      // Overage: incrementar workersPurchased en la suscripción (cobro reflejado en próxima factura)
+      if (workerOverage && overageNewLimit) {
+        db.update(schema.subscriptions)
+          .set({ workersPurchased: overageNewLimit, updatedAt: new Date() })
+          .where(eq(schema.subscriptions.companyId, companyId))
+          .catch((e: any) => console.warn(`[Create Worker] Overage workersPurchased update failed: ${e.message}`));
+        console.log(`[WORKER-OVERAGE] Empresa ${companyId}: workersPurchased incrementado a ${overageNewLimit}`);
+      }
 
     } catch (error: any) {
       res.status(400).send(error.message);
