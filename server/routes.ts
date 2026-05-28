@@ -3018,6 +3018,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "No se encontró suscripción para esta empresa" });
       }
 
+      // Sync pricing_plugin_subscriptions (source of truth for access blocking)
+      await storage.ensurePricingPluginSync(id, 'active', null);
+
       console.log(`[EXTEND-LICENSE] Empresa ${company.name} (${id}) licencia extendida hasta ${expiresAt} por superadmin ${req.user!.username}`);
       res.json({ success: true, subscription: updated[0] });
     } catch (error: any) {
