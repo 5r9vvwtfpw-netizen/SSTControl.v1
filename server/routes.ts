@@ -2957,6 +2957,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const periodEnd = new Date(now);
       periodEnd.setMonth(periodEnd.getMonth() + monthsNum);
 
+      const workersPurchased = (company as any).numberOfWorkers || (company as any).number_of_workers || 2;
+
       const updated = await db.update(schema.subscriptions)
         .set({
           status: 'active' as any,
@@ -2964,6 +2966,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currentPeriodEnd: periodEnd,
           nextPaymentDate: periodEnd,
           cancelAtPeriodEnd: 0,
+          workersPurchased,
           updatedAt: now,
         })
         .where(eq(schema.subscriptions.companyId, id))
@@ -3003,12 +3006,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const company = await storage.getCompany(id);
       if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
 
+      const workersPurchased = (company as any).numberOfWorkers || (company as any).number_of_workers || 2;
+
       const updated = await db.update(schema.subscriptions)
         .set({
           currentPeriodEnd: newDate,
           nextPaymentDate: newDate,
           status: 'active' as any,
           cancelAtPeriodEnd: 0,
+          workersPurchased,
           updatedAt: new Date(),
         })
         .where(eq(schema.subscriptions.companyId, id))
