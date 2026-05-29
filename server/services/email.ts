@@ -1038,26 +1038,10 @@ export class EmailService {
       <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Sistema de Gestión SG-SST</p>
     </div>
     <div style="padding:36px 32px;">
-      <h2 style="margin:0 0 16px;color:#1a1a1a;font-size:18px;">¡Bienvenido, ${companyName}!</h2>
-      <p style="margin:0 0 20px;color:#444;font-size:14px;line-height:1.7;">
-        Tu cuenta en <strong>SST Colombia</strong> ha sido creada exitosamente. Ya puedes 
-        ingresar a la plataforma y comenzar a gestionar tu Sistema de Gestión de Seguridad 
-        y Salud en el Trabajo.
-      </p>
-      <p style="margin:0 0 20px;color:#444;font-size:14px;line-height:1.7;">
-        Para recibir una <strong>inducción o capacitación</strong> sobre el uso del software, 
-        comunícate con nosotros al siguiente correo:
-      </p>
-      <div style="text-align:center;margin:28px 0;">
-        <a href="mailto:admin@sst-colombia.com"
-           style="display:inline-block;background:#1e7e34;color:white;text-decoration:none;
-                  padding:14px 32px;border-radius:6px;font-size:15px;font-weight:600;
-                  letter-spacing:0.2px;">
-          admin@sst-colombia.com
-        </a>
-      </div>
-      <p style="margin:0;color:#777;font-size:13px;">
-        Estamos disponibles para acompañarte en el proceso de implementación del SG-SST.
+      <p style="margin:0;color:#333;font-size:15px;line-height:1.8;">
+        Bienvenido <strong>${companyName}</strong>, comunícate con nosotros para recibir 
+        inducción o capacitación del software al correo 
+        <a href="mailto:admin@sst-colombia.com" style="color:#1e7e34;font-weight:600;">admin@sst-colombia.com</a>.
       </p>
     </div>
     <div style="background:#f9f9f9;padding:16px 32px;border-top:1px solid #eee;text-align:center;">
