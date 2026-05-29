@@ -528,7 +528,7 @@ export function registerBillingRoutes(app: Express) {
           : 'http://localhost:5000');
       
       let amountInCOP: number;
-      let productDescription = `Plan ${plan.displayName || plan.name} - Primer mes`;
+      let productDescription = `Suscripción mensual`;
       let quoteSource = 'none';
 
       let isFullDiscount = false;
@@ -670,7 +670,7 @@ export function registerBillingRoutes(app: Express) {
         console.log('[Billing] Using agreed quote price from companies table:', { base: companyQuoteBase, current: companyQuoteCurrent, coupon: couponCode, amount: amountInCOP });
         
         if (couponCode && companyQuoteCurrent != null && companyQuoteCurrent < companyQuoteBase) {
-          productDescription = `Plan ${plan.displayName || plan.name} - Primer mes (Cupón ${couponCode})`;
+          productDescription = `Suscripción mensual`;
         }
       } else {
         console.warn('[Billing] No quote price found and auto-quote failed. Company must get a quote from the landing page.');
@@ -734,8 +734,9 @@ export function registerBillingRoutes(app: Express) {
               price_data: {
                 currency: 'cop',
                 product_data: {
-                  name: `Suscripción ${plan.displayName || plan.name}`,
+                  name: `Suscripción mensual`,
                   description: productDescription,
+                  images: ['https://sst.sagisas.co/sst-colombia-logo.png'],
                 },
                 unit_amount: stripeUnitAmount,
               },
