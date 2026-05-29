@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search, Unlock, Mail, Send, CalendarCheck, Banknote } from "lucide-react";
+import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search, Unlock, Mail, Send, CalendarCheck, Banknote, Link2, Copy, Check } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -140,6 +140,12 @@ export default function CompanyManagement() {
   const [companyForActivation, setCompanyForActivation] = useState<Company | null>(null);
   const [activateMonths, setActivateMonths] = useState("1");
   const [activateNotes, setActivateNotes] = useState("");
+
+  const [stripeLinkDialogOpen, setStripeLinkDialogOpen] = useState(false);
+  const [companyForStripeLink, setCompanyForStripeLink] = useState<Company | null>(null);
+  const [stripeLinkPrice, setStripeLinkPrice] = useState("");
+  const [generatedStripeUrl, setGeneratedStripeUrl] = useState<string | null>(null);
+  const [copiedStripeUrl, setCopiedStripeUrl] = useState(false);
   
   const [livePrice, setLivePrice] = useState<{ base: number; current: number } | null>(null);
   const livePriceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -442,6 +448,23 @@ export default function CompanyManagement() {
       setCompanyForActivation(null);
       setActivateMonths("1");
       setActivateNotes("");
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const generateStripeLinkMutation = useMutation({
+    mutationFn: async ({ companyId, monthlyPriceCop }: { companyId: string; monthlyPriceCop: string }) => {
+      const res = await apiRequest("POST", `/api/admin/companies/${companyId}/generate-stripe-link`, { monthlyPriceCop: parseInt(monthlyPriceCop) });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Error al generar el enlace");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setGeneratedStripeUrl(data.url);
     },
     onError: (err: Error) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -1427,6 +1450,29 @@ export default function CompanyManagement() {
                           );
                         })()}
                         {user?.role === 'superadmin' && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setCompanyForStripeLink(company);
+                                  setStripeLinkPrice("");
+                                  setGeneratedStripeUrl(null);
+                                  setCopiedStripeUrl(false);
+                                  setStripeLinkDialogOpen(true);
+                                }}
+                                data-testid={`button-stripe-link-${company.id}`}
+                              >
+                                <Link2 className="h-4 w-4 text-violet-600" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Generar enlace de pago Stripe</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                        {user?.role === 'superadmin' && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1924,6 +1970,105 @@ export default function CompanyManagement() {
                 <><Banknote className="h-4 w-4 mr-2" /> Activar Suscripción</>
               )}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Dialog: Generar enlace de pago Stripe ───── */}
+      <Dialog open={stripeLinkDialogOpen} onOpenChange={(open) => {
+        setStripeLinkDialogOpen(open);
+        if (!open) { setCompanyForStripeLink(null); setGeneratedStripeUrl(null); setStripeLinkPrice(""); setCopiedStripeUrl(false); }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="h-5 w-5 text-violet-600" />
+              Generar Enlace de Pago Stripe
+            </DialogTitle>
+            <DialogDescription>
+              Crea un link de pago mensual recurrente para <strong>{companyForStripeLink?.name}</strong>. Envíaselo al cliente para que pague con tarjeta.
+            </DialogDescription>
+          </DialogHeader>
+
+          {!generatedStripeUrl ? (
+            <div className="space-y-4 py-2">
+              <div className="space-y-1">
+                <Label htmlFor="stripe-price">Precio mensual (COP)</Label>
+                <Input
+                  id="stripe-price"
+                  type="number"
+                  placeholder="Ej: 150000"
+                  value={stripeLinkPrice}
+                  onChange={(e) => setStripeLinkPrice(e.target.value)}
+                  min={5000}
+                  data-testid="input-stripe-price"
+                />
+                {stripeLinkPrice && parseInt(stripeLinkPrice) >= 5000 && (
+                  <p className="text-xs text-muted-foreground">
+                    El cliente pagará <span className="font-semibold text-foreground">
+                      ${parseInt(stripeLinkPrice).toLocaleString("es-CO")} COP
+                    </span> cada mes de forma recurrente.
+                  </p>
+                )}
+              </div>
+              <div className="rounded-md bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 p-3 text-xs text-violet-800 dark:text-violet-300 space-y-1">
+                <p className="font-semibold">¿Qué pasa cuando el cliente paga?</p>
+                <p>Stripe activa la suscripción automáticamente vía webhook y el sistema registra el pago correctamente.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 py-2">
+              <div className="rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-3 text-sm text-green-800 dark:text-green-300">
+                Enlace generado. Cópialo y envíaselo al cliente.
+              </div>
+              <div className="space-y-1">
+                <Label>Enlace de pago</Label>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    value={generatedStripeUrl}
+                    className="text-xs font-mono"
+                    data-testid="input-generated-stripe-url"
+                  />
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedStripeUrl);
+                      setCopiedStripeUrl(true);
+                      setTimeout(() => setCopiedStripeUrl(false), 2000);
+                    }}
+                    data-testid="button-copy-stripe-url"
+                  >
+                    {copiedStripeUrl ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStripeLinkDialogOpen(false)}>
+              {generatedStripeUrl ? "Cerrar" : "Cancelar"}
+            </Button>
+            {!generatedStripeUrl && (
+              <Button
+                onClick={() => {
+                  if (companyForStripeLink && stripeLinkPrice) {
+                    generateStripeLinkMutation.mutate({ companyId: companyForStripeLink.id, monthlyPriceCop: stripeLinkPrice });
+                  }
+                }}
+                disabled={!stripeLinkPrice || parseInt(stripeLinkPrice) < 5000 || generateStripeLinkMutation.isPending}
+                className="bg-violet-600 hover:bg-violet-700 text-white"
+                data-testid="button-confirm-stripe-link"
+              >
+                {generateStripeLinkMutation.isPending ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generando...</>
+                ) : (
+                  <><Link2 className="h-4 w-4 mr-2" /> Generar Enlace</>
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
