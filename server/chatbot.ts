@@ -20,7 +20,7 @@ const APP_KNOWLEDGE_BASE = `
 === BASE DE CONOCIMIENTO: PLATAFORMA SST COLOMBIA ===
 
 ## NAVEGACIÓN PRINCIPAL
-La plataforma usa navegación por pestañas horizontales siguiendo el ciclo PHVA (Planear-Hacer-Verificar-Actuar). En la barra superior hay pestañas: Configuración (engranaje), Planear, Hacer, Verificar, Actuar, y PESV (si la empresa tiene vehículos). Al hacer clic en cada pestaña se despliega un menú con las opciones disponibles.
+La plataforma usa navegación por pestañas horizontales siguiendo el ciclo PHVA (Planear-Hacer-Verificar-Actuar). En la barra superior hay pestañas: **Administración Global**, Planear, Hacer, Verificar, Actuar, y PESV (si la empresa tiene vehículos). Al hacer clic en cada pestaña se despliega un menú con las opciones disponibles. IMPORTANTE: No existe ninguna pestaña ni menú llamado "Configuración" — siempre di "Administración Global" cuando te refieras a ese menú.
 
 ## ROLES DE USUARIO
 La plataforma tiene 11 roles con diferentes niveles de acceso:
@@ -295,7 +295,7 @@ Los trabajadores acceden al portal con sus credenciales y pueden:
 ## VISIBILIDAD POR ROL (Qué ve cada usuario)
 
 ### Superadmin / Admin / Superusuario / Responsable SST
-Acceso completo: Ven TODAS las pestañas PHVA (Configuración, Planear, Hacer, Verificar, Actuar) y PESV. Pueden crear, editar y eliminar en todos los módulos. El Superadmin puede además ver todas las empresas y el panel de facturación global. El Superusuario puede gestionar la suscripción de su empresa.
+Acceso completo: Ven TODAS las pestañas PHVA (Administración Global, Planear, Hacer, Verificar, Actuar) y PESV. Pueden crear, editar y eliminar en todos los módulos. El Superadmin puede además ver todas las empresas y el panel de facturación global. El Superusuario puede gestionar la suscripción de su empresa.
 
 ### Coordinador SST
 Ve: Dashboard, Planear (trabajadores, evaluaciones, planes, COPASST, políticas, IPERC, plan emergencias), Hacer (capacitaciones, inspecciones, EPP, accidentes, medidas), Verificar (indicadores, estándares, informes), Actuar (mejora continua). Puede crear y editar en la mayoría de módulos. También tiene acceso a PESV si la empresa tiene vehículos.
@@ -397,7 +397,7 @@ La Evaluación Inicial es el centro de gestión de todo el SG-SST. Desde aquí s
 
 ### Trabajadores (ÚNICO módulo fuera de la Evaluación Inicial)
 Los trabajadores se registran desde el menú Planear > Trabajadores. Es el primer paso antes de trabajar con la Evaluación Inicial.
-- **Cómo registrar un trabajador**: Vaya al menú Planear > Trabajadores y haga clic en 'Nuevo Trabajador'. Complete datos personales, cargo, tipo de contrato y afiliaciones. Este es el primer paso antes de trabajar con la Evaluación Inicial. Si aparece un error de límite, verifique su plan en Configuración > Mi Suscripción.
+- **Cómo registrar un trabajador**: Vaya al menú Planear > Trabajadores y haga clic en 'Nuevo Trabajador'. Complete datos personales, cargo, tipo de contrato y afiliaciones. Este es el primer paso antes de trabajar con la Evaluación Inicial. Si aparece un error de límite, verifique su plan en Administración Global > Mi Cuenta.
 - **Importar trabajadores masivamente**: Vaya a Planear > Trabajadores y use el botón 'Importar Excel'. Descargue la plantilla oficial, llénela y súbala. El sistema acepta variaciones en los nombres de campos.
 - **No encuentra un trabajador**: Vaya a Planear > Trabajadores y use la barra de búsqueda por nombre o documento.
 
@@ -459,9 +459,9 @@ Los trabajadores se registran desde el menú Planear > Trabajadores. Es el prime
 - **Qué comunicaciones registrar**: Abra su Evaluación Inicial y busque el estándar 2.8.1. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo donde puede registrar comunicaciones sobre políticas, cambios, alertas y convocatorias de SST.
 
 ### Mi Cuenta / Suscripción
-- **Cómo cambiar de plan**: Vaya a Configuración > Mi Suscripción. Al cambiar datos como número de trabajadores o vehículos, el precio se recalcula automáticamente.
-- **Cómo ver facturas**: En Configuración > Mi Suscripción encontrará el historial de facturas y método de pago.
-- **Cómo agregar usuarios**: Vaya a Configuración > Usuarios > 'Nuevo Usuario'. Cada rol administrativo incluye un usuario sin costo adicional.
+- **Cómo cambiar de plan**: Vaya a Administración Global > Mi Cuenta. Al cambiar datos como número de trabajadores o vehículos, el precio se recalcula automáticamente.
+- **Cómo ver facturas**: En Administración Global > Mi Cuenta encontrará el historial de facturas y método de pago.
+- **Cómo agregar usuarios**: Vaya a Administración Global > Usuarios > 'Nuevo Usuario'. Cada rol administrativo incluye un usuario sin costo adicional.
 
 ## RESPUESTAS POR ESTÁNDAR (Resolución 0312/2019)
 Cuando un usuario pregunte por un estándar específico, usa esta referencia. NUNCA expliques cómo llegar a la Evaluación Inicial; asume que el usuario ya está ahí. Ve directo al estándar y cómo diligenciarlo.
@@ -615,8 +615,8 @@ Cuando un usuario pregunte por un estándar específico, usa esta referencia. NU
 - **7.1.4** Plan de mejoramiento (2.5 puntos): Para diligenciar, buscar el **Estándar 7.1.4** en la Evaluación Inicial → en /plan-mejoramiento se consolidan todas las acciones correctivas, preventivas y de mejora del SG-SST (provenientes de auditorías, investigación de accidentes, revisión por la dirección e inspecciones) → completar el estado de avance y fecha de cierre de cada acción → Guardar. La plataforma genera automáticamente el informe del plan de mejoramiento.
 
 ## CONSEJOS GENERALES DE USO DE LA PLATAFORMA
-- **No aparece un módulo en el menú**: Puede ser restricción de su plan de suscripción o de su rol. Si es por plan, vaya a Configuración > Mi Suscripción para verificar. Si es por rol, consulte con el administrador de su empresa.
-- **La empresa no ve el módulo PESV**: El módulo PESV se activa cuando la empresa registra al menos un vehículo. Vaya a Configuración > Datos de la Empresa y actualice el campo 'Número de Vehículos'.
+- **No aparece un módulo en el menú**: Puede ser restricción de su plan de suscripción o de su rol. Si es por plan, vaya a Administración Global > Mi Cuenta para verificar. Si es por rol, consulte con el administrador de su empresa.
+- **La empresa no ve el módulo PESV**: El módulo PESV se activa cuando la empresa registra al menos un vehículo. Vaya a Administración Global > Empresas, edite su empresa y actualice el campo 'Número de Vehículos'.
 - **Error al importar Excel de trabajadores**: Use la plantilla oficial (botón 'Descargar Plantilla'). No modifique los encabezados. Guarde como .xlsx.
 `;
 
