@@ -36,8 +36,8 @@ La plataforma tiene 11 roles con diferentes niveles de acceso:
 - **LSO Externo (lso_externo)**: Profesional licenciado en salud ocupacional externo
 - **Asistente SST (asistente_sst)**: Asistente del área de SST
 
-## PESTAÑA CONFIGURACIÓN (Engranaje)
-Acceso desde el ícono de engranaje en la barra superior.
+## ADMINISTRACIÓN GLOBAL
+Acceso desde la pestaña "Administración Global" en la barra de navegación superior (NO se llama "Configuración" — ese nombre no existe en la plataforma).
 
 ### Gestión General
 - **Empresas** → /empresas: Lista todas las empresas registradas. Desde aquí puedes ver detalles, editar datos, ver trabajadores de cada empresa. El botón "Crear Empresa" inicia un asistente de 2 pasos.
@@ -82,7 +82,8 @@ Corresponde a la fase de Planificación del ciclo PHVA.
 - **Matriz Legal** → /matriz-legal: Identificación de requisitos legales aplicables (requiere suscripción).
 - **Objetivos SST** → /objetivos-sst: Definición de objetivos e indicadores SST (requiere suscripción).
 - **Conservación de Documentos** → /conservacion-documentos: Gestión documental del SG-SST.
-- **Perfil Sociodemográfico** → /perfil-sociodemografico: Estadísticas sociodemográficas de los trabajadores.
+- **Perfil Sociodemográfico** → /perfil-sociodemografico: Estadísticas sociodemográficas de los trabajadores. Cumple el requisito de la Resolución 2646/2008 Art. 8.
+- **Organigrama SST** → /organigrama-sst: Visualización jerárquica de la estructura organizacional del SST. Muestra automáticamente: representante legal (de los datos de la empresa), integrantes del COPASST o Vigía SST (del período vigente), brigadas de emergencia. Soporta impresión del organigrama. Cumple el Decreto 1072/2015 Art. 2.2.4.6.8. NOTA: El organigrama se genera automáticamente con los datos ya registrados en la plataforma — no requiere ingresar información adicional.
 
 ## PESTAÑA HACER (H)
 Corresponde a la fase de Implementación del ciclo PHVA.
@@ -186,7 +187,10 @@ El PESV tiene **24 pasos** organizados en el ciclo PHVA: Planear (P01-P08), Hace
 **Fase HACER (H01-H11):**
 - **H01 - Factor Humano / Conductores** → botón abre '/pesv/evaluacion/:id/conductores' — Registro de conductores: datos personales, categoría de licencia, fecha de vencimiento, exámenes médicos de aptitud para conducción, historial de infracciones
 - **H02 - Capacitación en Seguridad Vial** → botón abre '/pesv/evaluacion/:id/capacitaciones' — Registro de capacitaciones de seguridad vial. IMPORTANTE: este módulo es DIFERENTE al módulo SST de Capacitaciones (Estándares 1.2.1/1.2.2); el H02 es exclusivo del PESV y se accede desde la Evaluación PESV, NO desde la Evaluación Inicial. El módulo tiene **plantillas pre-llenadas** para los temas más comunes (manejo defensivo, normativa de tránsito, primeros auxilios viales, seguridad para peatones y ciclistas, etc.) — al seleccionar una plantilla se auto-completan todos los campos. Campos a diligenciar: Título, Descripción, Instructor, Fecha, Hora Inicio, Hora Fin, Ubicación, Temas, Asistentes Esperados (número total de participantes), Estado (programada / en-curso / completada / cancelada). Al guardar queda el registro de la capacitación. **Conexión Portal de Empleados**: Los trabajadores pueden ver las capacitaciones PESV programadas y realizadas en Portal → PESV → "Capacitaciones PESV".
-- **H03 - Documentación y Comparendos de Conductores** → ruta: '/pesv/conductores' (o desde evaluación: '/pesv/evaluacion/:id/conductores') — Seguimiento de vencimientos de licencias, certificaciones y exámenes. El sistema genera alertas automáticas cuando están próximos a vencer. **COMPARENDOS (infracciones de tránsito)**: en la tabla de conductores, cada fila tiene un botón de triángulo naranja (⚠) en la columna Acciones. Al hacer clic se abre el panel de comparendos de ese conductor con todo su historial de infracciones. Pasos exactos para registrar un comparendo: (1) Menú lateral → PESV → tab "Hacer (H)" → H03 Conductores, (2) en la fila del conductor, clic en el ícono de triángulo naranja, (3) en el formulario seleccionar el vehículo/placa del desplegable (carga automático de la flota), (4) seleccionar la fecha, tipo de infracción (12 categorías predefinidas), estado (Pendiente/Pagado/Recurrido/Prescrito), opcionalmente el número de comparendo y valor en COP, (5) clic en "Registrar comparendo". El conductor se vincula automáticamente — no se digita su nombre. Requiere que existan vehículos registrados en H02 para usar el selector de placa.
+- **H03 - Documentación y Comparendos de Conductores** → ruta: '/pesv/conductores' (o desde evaluación: '/pesv/evaluacion/:id/conductores') — Este módulo tiene tres funciones principales:
+  **1. REGISTRAR UN CONDUCTOR**: Clic en "+ Nuevo Conductor" → en el campo "Trabajador" seleccionar el trabajador del listado (el sistema auto-completa nombre y cédula desde el módulo SST de Trabajadores — el trabajador DEBE existir previamente en Planear → Trabajadores antes de poder registrarlo como conductor PESV) → completar datos de licencia (número, categoría A1/A2/B1/B2/B3/C1/C2/C3, fecha de vencimiento) → opcionalmente tipo de sangre, contacto de emergencia, vencimiento del examen médico → Guardar.
+  **2. SEGUIMIENTO DE LICENCIAS**: La tabla muestra vencimientos de licencias y exámenes médicos. El sistema genera alertas automáticas cuando están próximos a vencer.
+  **3. COMPARENDOS (infracciones de tránsito)**: en la tabla de conductores, cada fila tiene un botón de triángulo naranja (⚠) en la columna Acciones. Al hacer clic se abre el panel de comparendos de ese conductor con todo su historial de infracciones. Pasos exactos para registrar un comparendo: (1) en la fila del conductor, clic en el ícono de triángulo naranja, (2) en el formulario seleccionar el vehículo/placa del desplegable (carga automático de la flota registrada en H04), (3) seleccionar la fecha, tipo de infracción (12 categorías predefinidas: exceso de velocidad, semáforo en rojo, uso de celular, alcohol, licencia vencida, etc.), estado (Pendiente/Pagado/Recurrido/Prescrito), opcionalmente el número de comparendo y valor en COP, (4) clic en "Registrar comparendo". El conductor se vincula automáticamente — no se digita su nombre. REQUISITO: para usar el selector de placa deben existir vehículos registrados en H04 (Vehículos Seguros).
 - **H04 - Vehículos Seguros** → botón abre '/pesv/evaluacion/:id/vehiculos' — Inventario de vehículos: placa, marca, modelo, año, tipo, SOAT (vencimiento), revisión tecnomecánica (vencimiento), tarjeta de operación. El sistema alerta vencimientos
 - **H05 - Mantenimiento Vehicular** → botón abre '/pesv/evaluacion/:id/mantenimiento' — Planes de mantenimiento preventivo (por kilometraje o tiempo) y registro de mantenimientos correctivos. Registrar: vehículo, tipo, descripción, fecha, kilometraje, taller, costo
 - **H06 - Inspecciones Preoperacionales** → botón abre '/pesv/evaluacion/:id/inspecciones' — Lista de chequeo diaria de 16 ítems en 4 grupos: Exterior (llantas ⚠️crítico, luces, espejos, carrocería), Interior (cinturones, pito, parabrisas, instrumentos), Mecánica (frenos ⚠️crítico, dirección, suspensión, fluidos), Equipos de seguridad (extintor ⚠️crítico, botiquín, triángulos, chaleco). El resultado se calcula automáticamente: Apto / Apto con observaciones / No Apto. Dos flujos: (A) Admin crea manualmente desde el módulo, o (B) **Conductor desde Portal de Empleados** → Portal → PESV → "Inspección Vehículo" — selecciona su vehículo de la flota asignada, marca los 16 ítems y envía; el registro aparece instantáneamente en el módulo del admin. El detalle de cada inspección muestra todos los ítems con colores (verde=OK, rojo/ámbar=falla) al hacer clic en el ícono de ojo. **Conexión Portal de Empleados**: conductores usan Portal → PESV → "Inspección Vehículo".
@@ -258,12 +262,12 @@ El flujo correcto para cumplir cada estándar es (asume que el usuario ya tiene 
 3. Las actividades del plan están vinculadas a los estándares de la evaluación
 4. Se puede hacer seguimiento del avance mes a mes desde el cronograma
 
-### Paso 6: Verificar el Cumplimiento
+### Paso 5: Verificar el Cumplimiento
 1. La Evaluación Inicial calcula automáticamente el porcentaje de cumplimiento
 2. Los indicadores (ILI, Frecuencia, Severidad, Mortalidad, etc.) se calculan automáticamente basado en los datos registrados
 3. Se pueden ver desde Verificar → Indicadores de Accidentalidad
 
-### Paso 7: Actuar (Mejora Continua)
+### Paso 6: Actuar (Mejora Continua)
 1. Las no conformidades detectadas generan acciones correctivas
 2. Se pueden crear planes de mejoramiento desde la Evaluación
 3. Las revisiones por la dirección evalúan el desempeño general del SG-SST
@@ -280,12 +284,7 @@ El porcentaje de cumplimiento se calcula automáticamente en la Evaluación Inic
 - Algunos módulos requieren suscripción activa (marcados con "Requiere suscripción")
 
 ### Portal de Empleados
-Los trabajadores acceden al portal con sus credenciales y pueden:
-- Ver su información personal
-- Consultar capacitaciones asignadas
-- Ver historial de entrega de EPP
-- Acceder a la inducción virtual
-- Enviar solicitudes ARCO (derechos de datos personales)
+Los trabajadores acceden al portal con sus credenciales desde /portal-empleados. El portal tiene 6 secciones: Mi Cuenta (contrato, perfil, foto de carnet, cambio de contraseña), Formación (capacitaciones SST, mis inducciones, inducciones virtuales), Comunicación (comunicados SST, reportar peligros/sugerencias, mis reportes), Participación (elecciones COPASST, elecciones Comité de Convivencia), Salud (mis exámenes médicos, mis audiometrías), PESV (comité de seguridad vial, capacitaciones PESV, encuesta diaria y inspección vehículo — estas últimas solo para conductores). Ver detalles completos en la sección del rol "Trabajador" de la base de conocimiento.
 
 ### Soporte
 - **Tickets de Soporte** → /tickets-soporte: Crear tickets para reportar problemas
@@ -348,9 +347,11 @@ Solo ve el **Portal de Empleados** → /portal-empleados. El portal tiene 6 secc
 - **Mis Exámenes Médicos**: Ver exámenes médicos programados (pendientes de realizar) e historial de realizados con su concepto de aptitud. Puede confirmar lectura del resultado
 - **Mis Audiometrías**: Ver audiometrías programadas e historial de realizadas con clasificación auditiva
 
-**PESV:**
+**PESV** (solo visible para usuarios con rol "conductor"):
 - **Comité de Seguridad Vial**: Ver información sobre el Comité de Seguridad Vial de la empresa y sus actividades
 - **Capacitaciones PESV**: Ver capacitaciones de seguridad vial pendientes e historial
+- **Encuesta Diaria**: Completar el auto-reporte de aptitud antes de cada jornada (Art. 18, Res. 40595/2022). Campos: horas de sueño, estado físico, estado emocional, medicamentos que afectan conducción, consumo de alcohol, enfermedades o molestias. El resultado (Apto / No Apto) se calcula automáticamente y queda visible en el módulo H06-ENC del admin.
+- **Inspección Vehículo**: Completar la lista de chequeo preoperacional de 16 ítems (Exterior, Interior, Mecánica, Equipos de seguridad). El resultado (Apto / Apto con observaciones / No Apto) queda visible en el módulo H06 del admin instantáneamente.
 
 NO ve las pestañas PHVA ni ningún módulo de gestión administrativo.
 
