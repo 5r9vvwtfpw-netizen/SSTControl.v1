@@ -9767,6 +9767,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Disparar manualmente el cron de vencimiento de suscripciones (superadmin)
+  app.post("/api/admin/trigger-subscription-expiry", requireRole(["superadmin"]), async (req, res) => {
+    try {
+      const { runManualSubscriptionExpiryNow } = await import("./cron/manual-subscription-expiry");
+      await runManualSubscriptionExpiryNow();
+      res.json({ success: true, message: "Verificación de vencimientos ejecutada. Revisa los logs para el resultado." });
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error triggering subscription expiry check");
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   // S3 connectivity diagnostic (superadmin only)
   app.get("/api/admin/test-s3", requireRole(["superadmin"]), async (req, res) => {
     const config = {

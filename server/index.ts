@@ -34,6 +34,7 @@ import { startNotificationsCron } from "./jobs/notifications";
 import { startComplianceAlertsCron } from "./jobs/compliance-alerts";
 import { scheduleWeeklyBackup } from "./jobs/weekly-backup";
 import { startSubscriptionIntegrityCheck } from "./cron/subscription-integrity";
+import { startManualSubscriptionExpiryJob } from "./cron/manual-subscription-expiry";
 import { getUncachableStripeClient, getStripeSecretKey } from "./stripeClient";
 import { storage } from "./storage";
 import { initializeLicense, requireValidLicense } from "./middleware/license";
@@ -989,6 +990,12 @@ app.use(requestLoggerMiddleware);
       startSubscriptionIntegrityCheck();
     } catch (error) {
       logger.error({ err: error }, "⚠️ Subscription integrity check initialization failed");
+    }
+
+    try {
+      startManualSubscriptionExpiryJob();
+    } catch (error) {
+      logger.error({ err: error }, "⚠️ Manual subscription expiry job initialization failed");
     }
   } else {
     logger.info('⏭️ Skipping Stripe verification and cron jobs (Autoscale mode)');
