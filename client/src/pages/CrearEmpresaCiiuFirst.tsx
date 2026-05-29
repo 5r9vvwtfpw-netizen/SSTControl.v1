@@ -560,7 +560,7 @@ export default function CrearEmpresaCiiuFirst() {
                         <div className="text-xs text-green-800 dark:text-green-400 space-y-1">
                           <p>✓ <strong>Sugerido por SAGDI</strong> — no es una imposición. Eres libre de contratar al profesional de tu preferencia.</p>
                           <p>✓ <strong>Dos pagos independientes:</strong> la suscripción a la plataforma se paga a SAGDI; los honorarios profesionales, directamente al Profesional SST.</p>
-                          <p>✓ El profesional que gestione el software debe tener 5 años de carrera profesional en SST.</p>
+                          <p>✓ El profesional que gestione el software debe tener 5 años de carrera profesional certificada en SST, y licencia vigente.</p>
                         </div>
                       </div>
                     )}
