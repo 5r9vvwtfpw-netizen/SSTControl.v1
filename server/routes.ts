@@ -2989,63 +2989,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generar link de pago Stripe para migrar empresa manual → pago recurrente
-  app.post("/api/admin/companies/:id/generate-stripe-link", requireRole(['superadmin']), async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { monthlyPriceCop } = req.body;
-
-      const price = parseInt(monthlyPriceCop, 10);
-      if (!price || isNaN(price) || price < 5000) {
-        return res.status(400).json({ error: "Precio inválido. Mínimo 5,000 COP." });
-      }
-
-      const company = await storage.getCompany(id);
-      if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
-
-      // Obtener o crear cliente Stripe usando el admin o primer usuario de la empresa
-      const [companyUsers] = await Promise.all([storage.getUsers()]);
-      const adminUser = companyUsers.find((u: any) => u.companyId === id && ['admin', 'coordinador'].includes(u.role));
-
-      const { stripeService } = await import("./services/stripe");
-      const customer = await stripeService.findOrCreateCustomer({
-        email: adminUser?.email || `empresa-${id}@sst-colombia.com`,
-        name: company.name,
-        companyId: id,
-      });
-
-      const replitDomains = process.env.REPLIT_DOMAINS;
-      const baseUrl = process.env.APP_URL || (replitDomains
-        ? `https://${replitDomains.split(',')[0]}`
-        : 'http://localhost:5000');
-
-      const session = await stripeService.createDynamicCheckoutSession({
-        customerId: customer.id,
-        currency: 'cop',
-        productName: `SST Colombia - ${company.name}`,
-        productDescription: `Suscripción mensual SG-SST | ${(company as any).numberOfWorkers || 1} trabajadores`,
-        unitAmount: price,
-        successUrl: `${baseUrl}/dashboard?stripe_success=1`,
-        cancelUrl: `${baseUrl}/`,
-        metadata: {
-          companyId: id,
-          source: 'superadmin_manual_migration',
-          generatedBy: req.user!.username,
-        },
-        subscriptionMetadata: {
-          companyId: id,
-        },
-      });
-
-      console.log(`[STRIPE-LINK] Generado para ${company.name} (${id}) por ${req.user!.username} | Precio: ${price} COP/mes | Session: ${session.sessionId}`);
-
-      res.json({ success: true, url: session.url, sessionId: session.sessionId });
-    } catch (error: any) {
-      console.error('[STRIPE-LINK] Error:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   app.patch("/api/admin/companies/:id/extend-license", requireRole(['superadmin']), async (req, res) => {
     try {
       const { id } = req.params;
