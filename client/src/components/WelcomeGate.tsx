@@ -96,25 +96,7 @@ export function WelcomeGate({ children }: WelcomeGateProps) {
                 </span>{" "}
                 disponible en todo momento para responder tus preguntas.
               </p>
-              <p>
-                Si prefieres una sesión personalizada con nuestro equipo, escríbenos al correo.
-              </p>
             </div>
-
-            <button
-              className="w-full flex items-center justify-center gap-2 text-sm font-medium text-white rounded-md py-2 px-3 transition-opacity hover:opacity-90"
-              style={{ background: "#357947" }}
-              onClick={() =>
-                window.open(
-                  `mailto:${INDUCTION_EMAIL}?subject=Solicitud%20de%20sesión%20de%20inducción&body=Hola,%20me%20gustaría%20agendar%20una%20sesión%20de%20inducción%20personalizada%20para%20comenzar%20a%20operar%20el%20sistema.`,
-                  "_blank"
-                )
-              }
-              data-testid="button-request-induction"
-            >
-              <Mail className="h-4 w-4" />
-              Solicitar inducción personalizada
-            </button>
 
             <p className="text-[11px] text-center" style={{ color: "#4a7a5a" }}>
               {INDUCTION_EMAIL}
