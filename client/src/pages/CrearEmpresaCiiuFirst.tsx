@@ -560,7 +560,6 @@ export default function CrearEmpresaCiiuFirst() {
                         <div className="text-xs text-green-800 dark:text-green-400 space-y-1">
                           <p>✓ <strong>Sugerido por SAGDI</strong> — no es una imposición. Eres libre de contratar al profesional de tu preferencia.</p>
                           <p>✓ <strong>Dos pagos independientes:</strong> la suscripción a la plataforma se paga a SAGDI; los honorarios profesionales, directamente al Profesional SST.</p>
-                          <p>✓ Si ya cuentas con tu propio Profesional SST, simplemente ignora esta sección.</p>
                         </div>
                       </div>
                     )}
