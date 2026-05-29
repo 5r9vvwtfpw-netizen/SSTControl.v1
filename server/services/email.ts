@@ -1024,13 +1024,6 @@ export class EmailService {
   }) {
     const { companyName, contactEmail } = params;
 
-    const calendarUrl =
-      "https://calendar.google.com/calendar/r/eventedit" +
-      "?text=Introducción+SG-SST+Colombia" +
-      "&details=Sesión+de+introducción+al+sistema+de+gestión+SG-SST+Colombia+(30+min)." +
-      "&add=admin@sst-colombia.com" +
-      "&dur=30";
-
     const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1045,29 +1038,26 @@ export class EmailService {
       <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Sistema de Gestión SG-SST</p>
     </div>
     <div style="padding:36px 32px;">
-      <h2 style="margin:0 0 12px;color:#1a1a1a;font-size:18px;">¡Bienvenido, ${companyName}!</h2>
+      <h2 style="margin:0 0 16px;color:#1a1a1a;font-size:18px;">¡Bienvenido, ${companyName}!</h2>
       <p style="margin:0 0 20px;color:#444;font-size:14px;line-height:1.7;">
-        Tu cuenta ha sido creada exitosamente. El siguiente paso es agendar una 
-        <strong>sesión de introducción de 30 minutos</strong> con nuestro equipo — una vez 
-        completada, activaremos tu acceso completo a la plataforma.
+        Tu cuenta en <strong>SST Colombia</strong> ha sido creada exitosamente. Ya puedes 
+        ingresar a la plataforma y comenzar a gestionar tu Sistema de Gestión de Seguridad 
+        y Salud en el Trabajo.
+      </p>
+      <p style="margin:0 0 20px;color:#444;font-size:14px;line-height:1.7;">
+        Para recibir una <strong>inducción o capacitación</strong> sobre el uso del software, 
+        comunícate con nosotros al siguiente correo:
       </p>
       <div style="text-align:center;margin:28px 0;">
-        <a href="${calendarUrl}"
+        <a href="mailto:admin@sst-colombia.com"
            style="display:inline-block;background:#1e7e34;color:white;text-decoration:none;
                   padding:14px 32px;border-radius:6px;font-size:15px;font-weight:600;
                   letter-spacing:0.2px;">
-          Agendar mi sesión de 30 minutos
+          admin@sst-colombia.com
         </a>
       </div>
-      <p style="margin:0 0 8px;color:#555;font-size:13px;font-weight:600;">En esta sesión te ayudaremos a:</p>
-      <ul style="margin:0 0 24px;padding-left:20px;color:#555;font-size:13px;line-height:1.8;">
-        <li>Configurar tu perfil de empresa y trabajadores</li>
-        <li>Realizar la evaluación inicial Resolución 0312/2019</li>
-        <li>Entender los módulos principales del sistema</li>
-      </ul>
       <p style="margin:0;color:#777;font-size:13px;">
-        ¿Tienes preguntas? Escríbenos a 
-        <a href="mailto:admin@sst-colombia.com" style="color:#1e7e34;font-weight:600;">admin@sst-colombia.com</a>
+        Estamos disponibles para acompañarte en el proceso de implementación del SG-SST.
       </p>
     </div>
     <div style="background:#f9f9f9;padding:16px 32px;border-top:1px solid #eee;text-align:center;">
@@ -1083,7 +1073,7 @@ export class EmailService {
       await resend.emails.send({
         from: FROM_EMAIL,
         to: contactEmail,
-        subject: `¡Bienvenido a SST Colombia! — Agenda tu sesión de introducción`,
+        subject: `¡Bienvenido a SST Colombia!`,
         html,
       });
       console.log(`[WELCOME-EMAIL] Sent to ${contactEmail} for company: ${companyName}`);
