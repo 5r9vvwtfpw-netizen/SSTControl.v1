@@ -75,6 +75,7 @@ Corresponde a la fase de Planificación del ciclo PHVA.
 - **Asignación de Recursos** → /asignacion-recursos: Presupuesto y recursos asignados al SG-SST.
 - **Designación de Responsable** → /designacion-responsable: Documentar quién es el responsable del SG-SST. Importante: primero debe asignar un LSO en el Directorio de Profesionales Licenciados. Luego, al crear una nueva designación desde el estándar 1.1.1, el sistema llena automáticamente todos los datos del LSO (nombre, cédula, licencia, vigencia, formación, curso 50h, ciudad).
 - **Asignar LSO Externo** → /asignar-lso-externo: Asignar un profesional licenciado externo a su empresa. Este es el paso previo obligatorio antes de crear la designación del responsable del SG-SST.
+- **Conductores PESV (H03)** → /pesv-conductores: Gestión de conductores y sus infracciones de tránsito. Cada conductor tiene un botón de triángulo naranja (Comparendos) en la columna Acciones. Al hacer clic se abre el panel de comparendos donde se pueden registrar, editar y eliminar infracciones de tránsito. Campos: fecha, tipo de infracción (lista desplegable con 12 categorías), número de comparendo, valor en COP, estado (Pendiente/Pagado/Recurrido/Prescrito) y observaciones.
 - **Políticas SST** → /politicas-sst: Redactar y gestionar las políticas de SST de la empresa.
 - **Partes Interesadas** → /partes-interesadas: Identificación de partes interesadas del SG-SST.
 - **Análisis de Contexto** → /analisis-contexto: Análisis del contexto organizacional para SST.

@@ -7,10 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Pencil, Trash2, ArrowLeft, FileDown } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ArrowLeft, FileDown, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Driver, Company, Worker, insertDriverSchema } from "@shared/schema";
+import { Badge } from "@/components/ui/badge";
+import { Driver, Company, Worker, DriverComparendo, insertDriverSchema, insertDriverComparendoSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +30,22 @@ export default function PesvConductores() {
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deletingDriverId, setDeletingDriverId] = useState<string | null>(null);
+
+  // Comparendos state
+  const [comparendoDriverId, setComparendoDriverId] = useState<string | null>(null);
+  const [comparendoDriverName, setComparendoDriverName] = useState("");
+  const [comparendoDialogOpen, setComparendoDialogOpen] = useState(false);
+  const [editingComparendo, setEditingComparendo] = useState<DriverComparendo | null>(null);
+  const [deleteComparendoId, setDeleteComparendoId] = useState<string | null>(null);
+  const [comparendoForm, setComparendoForm] = useState({
+    fechaComparendo: "",
+    numeroComparendo: "",
+    tipoInfraccion: "",
+    descripcion: "",
+    valorComparendo: "",
+    estado: "pendiente" as "pendiente" | "pagado" | "recurrido" | "prescrito",
+    observaciones: "",
+  });
   const [formData, setFormData] = useState<{
     workerId: string;
     name: string;
@@ -60,6 +77,100 @@ export default function PesvConductores() {
   const { data: drivers = [], isLoading: driversLoading } = useQuery<Driver[]>({
     queryKey: ["/api/drivers"],
   });
+
+  const { data: comparendos = [], isLoading: comparendosLoading } = useQuery<DriverComparendo[]>({
+    queryKey: ["/api/drivers", comparendoDriverId, "comparendos"],
+    enabled: !!comparendoDriverId,
+  });
+
+  const createComparendoMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof insertDriverComparendoSchema>) => {
+      const res = await apiRequest("POST", `/api/drivers/${comparendoDriverId}/comparendos`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/drivers", comparendoDriverId, "comparendos"] });
+      resetComparendoForm();
+      toast({ title: "Comparendo registrado", description: "El comparendo se guardó exitosamente." });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const updateComparendoMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<z.infer<typeof insertDriverComparendoSchema>> }) => {
+      const res = await apiRequest("PATCH", `/api/drivers/${comparendoDriverId}/comparendos/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/drivers", comparendoDriverId, "comparendos"] });
+      resetComparendoForm();
+      toast({ title: "Comparendo actualizado" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteComparendoMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/drivers/${comparendoDriverId}/comparendos/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/drivers", comparendoDriverId, "comparendos"] });
+      setDeleteComparendoId(null);
+      toast({ title: "Comparendo eliminado" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const resetComparendoForm = () => {
+    setEditingComparendo(null);
+    setComparendoForm({ fechaComparendo: "", numeroComparendo: "", tipoInfraccion: "", descripcion: "", valorComparendo: "", estado: "pendiente", observaciones: "" });
+  };
+
+  const handleOpenComparendos = (driver: Driver) => {
+    setComparendoDriverId(driver.id);
+    setComparendoDriverName(driver.name);
+    setComparendoDialogOpen(true);
+    resetComparendoForm();
+  };
+
+  const handleEditComparendo = (c: DriverComparendo) => {
+    setEditingComparendo(c);
+    setComparendoForm({
+      fechaComparendo: c.fechaComparendo,
+      numeroComparendo: c.numeroComparendo || "",
+      tipoInfraccion: c.tipoInfraccion,
+      descripcion: c.descripcion || "",
+      valorComparendo: c.valorComparendo?.toString() || "",
+      estado: c.estado,
+      observaciones: c.observaciones || "",
+    });
+  };
+
+  const handleSubmitComparendo = (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      driverId: comparendoDriverId!,
+      fechaComparendo: comparendoForm.fechaComparendo,
+      tipoInfraccion: comparendoForm.tipoInfraccion,
+      estado: comparendoForm.estado,
+      numeroComparendo: comparendoForm.numeroComparendo || undefined,
+      descripcion: comparendoForm.descripcion || undefined,
+      valorComparendo: comparendoForm.valorComparendo ? parseInt(comparendoForm.valorComparendo) : undefined,
+      observaciones: comparendoForm.observaciones || undefined,
+    };
+    if (editingComparendo) {
+      updateComparendoMutation.mutate({ id: editingComparendo.id, data: payload });
+    } else {
+      createComparendoMutation.mutate(payload);
+    }
+  };
+
+  const estadoLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    pendiente: { label: "Pendiente", variant: "destructive" },
+    pagado: { label: "Pagado", variant: "default" },
+    recurrido: { label: "Recurrido", variant: "secondary" },
+    prescrito: { label: "Prescrito", variant: "outline" },
+  };
 
   // Query para obtener la empresa del usuario (modelo single-company por suscripción)
   const { data: userCompany } = useQuery<Company>({
@@ -511,7 +622,7 @@ export default function PesvConductores() {
               <TableHead data-testid="header-license">Licencia</TableHead>
               <TableHead data-testid="header-license-type">Tipo Licencia</TableHead>
               <TableHead data-testid="header-status">Estado</TableHead>
-              {user?.role && hasCompanyAdminAccess(user.role) && <TableHead data-testid="header-actions">Acciones</TableHead>}
+              <TableHead data-testid="header-actions">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -535,29 +646,40 @@ export default function PesvConductores() {
                   <TableCell data-testid={`text-license-${driver.id}`}>{driver.licenseNumber}</TableCell>
                   <TableCell data-testid={`text-license-type-${driver.id}`}>{driver.licenseType}</TableCell>
                   <TableCell data-testid={`text-status-${driver.id}`}>{getStatusLabel(driver.status)}</TableCell>
-                  {user?.role && hasCompanyAdminAccess(user.role) && (
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(driver)}
-                          data-testid={`button-edit-${driver.id}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(driver.id)}
-                          disabled={deletingDriverId === driver.id}
-                          data-testid={`button-delete-${driver.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleOpenComparendos(driver)}
+                        title="Ver comparendos"
+                        data-testid={`button-comparendos-${driver.id}`}
+                      >
+                        <AlertTriangle className="h-4 w-4 text-orange-500" />
+                      </Button>
+                      {user?.role && hasCompanyAdminAccess(user.role) && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(driver)}
+                            data-testid={`button-edit-${driver.id}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(driver.id)}
+                            disabled={deletingDriverId === driver.id}
+                            data-testid={`button-delete-${driver.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -576,11 +698,148 @@ export default function PesvConductores() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground"
               onClick={() => { if (deleteConfirmId) { setDeletingDriverId(deleteConfirmId); deleteDriverMutation.mutate(deleteConfirmId); } setDeleteConfirmId(null); }}
             >
               Eliminar
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Comparendos Dialog ─────────────────────────────────── */}
+      <Dialog open={comparendoDialogOpen} onOpenChange={(open) => { setComparendoDialogOpen(open); if (!open) { setComparendoDriverId(null); resetComparendoForm(); } }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              Comparendos — {comparendoDriverName}
+            </DialogTitle>
+            <DialogDescription>Infracciones de tránsito registradas para este conductor</DialogDescription>
+          </DialogHeader>
+
+          {/* Form */}
+          {isAdmin && (
+            <form onSubmit={handleSubmitComparendo} className="border rounded-lg p-4 space-y-4 bg-muted/30">
+              <h4 className="font-medium text-sm">{editingComparendo ? "Editar comparendo" : "Registrar nuevo comparendo"}</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="comp-fecha">Fecha del comparendo *</Label>
+                  <Input id="comp-fecha" type="date" value={comparendoForm.fechaComparendo} onChange={e => setComparendoForm(f => ({ ...f, fechaComparendo: e.target.value }))} required data-testid="input-comp-fecha" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="comp-numero">N° comparendo</Label>
+                  <Input id="comp-numero" placeholder="Ej. C-2024-001234" value={comparendoForm.numeroComparendo} onChange={e => setComparendoForm(f => ({ ...f, numeroComparendo: e.target.value }))} data-testid="input-comp-numero" />
+                </div>
+                <div className="col-span-2 space-y-1">
+                  <Label htmlFor="comp-tipo">Tipo de infracción *</Label>
+                  <Select value={comparendoForm.tipoInfraccion} onValueChange={v => setComparendoForm(f => ({ ...f, tipoInfraccion: v }))}>
+                    <SelectTrigger id="comp-tipo" data-testid="select-comp-tipo"><SelectValue placeholder="Seleccionar infracción..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Exceso de velocidad">Exceso de velocidad</SelectItem>
+                      <SelectItem value="Semáforo en rojo">Semáforo en rojo</SelectItem>
+                      <SelectItem value="No usar cinturón de seguridad">No usar cinturón de seguridad</SelectItem>
+                      <SelectItem value="Uso de celular conduciendo">Uso de celular conduciendo</SelectItem>
+                      <SelectItem value="Conducción bajo el efecto del alcohol">Conducción bajo el efecto del alcohol</SelectItem>
+                      <SelectItem value="Conducción bajo el efecto de sustancias psicoactivas">Conducción bajo el efecto de sustancias psicoactivas</SelectItem>
+                      <SelectItem value="Licencia de conducción vencida">Licencia de conducción vencida</SelectItem>
+                      <SelectItem value="No portar documentos del vehículo">No portar documentos del vehículo</SelectItem>
+                      <SelectItem value="Estacionamiento indebido">Estacionamiento indebido</SelectItem>
+                      <SelectItem value="Adelantamiento indebido">Adelantamiento indebido</SelectItem>
+                      <SelectItem value="Giro prohibido">Giro prohibido</SelectItem>
+                      <SelectItem value="Otra infracción">Otra infracción</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="comp-valor">Valor (COP)</Label>
+                  <Input id="comp-valor" type="number" placeholder="Ej. 547200" value={comparendoForm.valorComparendo} onChange={e => setComparendoForm(f => ({ ...f, valorComparendo: e.target.value }))} data-testid="input-comp-valor" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="comp-estado">Estado *</Label>
+                  <Select value={comparendoForm.estado} onValueChange={v => setComparendoForm(f => ({ ...f, estado: v as any }))}>
+                    <SelectTrigger id="comp-estado" data-testid="select-comp-estado"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pendiente">Pendiente</SelectItem>
+                      <SelectItem value="pagado">Pagado</SelectItem>
+                      <SelectItem value="recurrido">Recurrido</SelectItem>
+                      <SelectItem value="prescrito">Prescrito</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2 space-y-1">
+                  <Label htmlFor="comp-obs">Observaciones</Label>
+                  <Textarea id="comp-obs" rows={2} placeholder="Notas adicionales..." value={comparendoForm.observaciones} onChange={e => setComparendoForm(f => ({ ...f, observaciones: e.target.value }))} data-testid="input-comp-obs" />
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end">
+                {editingComparendo && (
+                  <Button type="button" variant="outline" onClick={resetComparendoForm} data-testid="button-cancel-comp">Cancelar</Button>
+                )}
+                <Button type="submit" disabled={createComparendoMutation.isPending || updateComparendoMutation.isPending} data-testid="button-save-comp">
+                  {editingComparendo ? "Guardar cambios" : "Registrar comparendo"}
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* List */}
+          <div className="space-y-2">
+            {comparendosLoading ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Cargando...</p>
+            ) : comparendos.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No hay comparendos registrados para este conductor.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Infracción</TableHead>
+                    <TableHead>N° Comparendo</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Estado</TableHead>
+                    {isAdmin && <TableHead>Acciones</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {comparendos.map(c => (
+                    <TableRow key={c.id} data-testid={`row-comparendo-${c.id}`}>
+                      <TableCell className="text-sm">{c.fechaComparendo}</TableCell>
+                      <TableCell className="text-sm">{c.tipoInfraccion}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{c.numeroComparendo || "—"}</TableCell>
+                      <TableCell className="text-sm">{c.valorComparendo ? `$${c.valorComparendo.toLocaleString("es-CO")}` : "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant={estadoLabels[c.estado]?.variant ?? "secondary"} data-testid={`badge-estado-${c.id}`}>
+                          {estadoLabels[c.estado]?.label ?? c.estado}
+                        </Badge>
+                      </TableCell>
+                      {isAdmin && (
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button size="icon" variant="ghost" onClick={() => handleEditComparendo(c)} data-testid={`button-edit-comp-${c.id}`}><Pencil className="h-3 w-3" /></Button>
+                            <Button size="icon" variant="ghost" onClick={() => setDeleteComparendoId(c.id)} data-testid={`button-delete-comp-${c.id}`}><Trash2 className="h-3 w-3" /></Button>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete comparendo confirm */}
+      <AlertDialog open={!!deleteComparendoId} onOpenChange={(open) => { if (!open) setDeleteComparendoId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar comparendo?</AlertDialogTitle>
+            <AlertDialogDescription>Esta acción no se puede deshacer.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => { if (deleteComparendoId) deleteComparendoMutation.mutate(deleteComparendoId); }}>Eliminar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

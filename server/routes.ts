@@ -66,6 +66,7 @@ import {
   insertSstEvidenceSchema,
   insertVehicleSchema,
   insertDriverSchema,
+  insertDriverComparendoSchema,
   insertVehicleInspectionSchema,
   insertRoadIncidentSchema,
   insertRoadSafetyTrainingSchema,
@@ -8847,6 +8848,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error deleting driver:", error);
       res.status(500).json({ error: error.message || "Error al eliminar el conductor" });
+    }
+  });
+
+  // ── Driver Comparendos ──────────────────────────────────────────────────────
+  app.get("/api/drivers/:driverId/comparendos", requireAuth, async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const { driverId } = req.params;
+      const companyId = isAdmin
+        ? (await storage.getDriverById(driverId))?.companyId
+        : userCompanyId;
+      if (!companyId) return res.status(404).send("Conductor no encontrado");
+      const comparendos = await storage.getDriverComparendos(driverId, companyId);
+      res.json(comparendos);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/drivers/:driverId/comparendos", requirePermission("drivers:edit"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const { driverId } = req.params;
+      const companyId = isAdmin
+        ? (await storage.getDriverById(driverId))?.companyId
+        : userCompanyId;
+      if (!companyId) return res.status(404).send("Conductor no encontrado");
+      const validated = insertDriverComparendoSchema.parse({ ...req.body, driverId });
+      const comparendo = await storage.createDriverComparendo(validated, companyId);
+      res.status(201).json(comparendo);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/drivers/:driverId/comparendos/:id", requirePermission("drivers:edit"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const { driverId, id } = req.params;
+      const companyId = isAdmin
+        ? (await storage.getDriverById(driverId))?.companyId
+        : userCompanyId;
+      if (!companyId) return res.status(404).send("Conductor no encontrado");
+      const validated = insertDriverComparendoSchema.partial().parse(req.body);
+      const updated = await storage.updateDriverComparendo(id, validated, companyId);
+      if (!updated) return res.status(404).send("Comparendo no encontrado");
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/drivers/:driverId/comparendos/:id", requirePermission("drivers:edit"), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const { driverId, id } = req.params;
+      const companyId = isAdmin
+        ? (await storage.getDriverById(driverId))?.companyId
+        : userCompanyId;
+      if (!companyId) return res.status(404).send("Conductor no encontrado");
+      await storage.deleteDriverComparendo(id, companyId);
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 

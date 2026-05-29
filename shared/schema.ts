@@ -1176,6 +1176,35 @@ export const insertDriverSchema = createInsertSchema(drivers)
 export type InsertDriver = z.infer<typeof insertDriverSchema>;
 export type Driver = typeof drivers.$inferSelect;
 
+// Comparendo status enum
+export const comparendoStatusEnum = pgEnum("comparendo_status", ["pendiente", "pagado", "recurrido", "prescrito"]);
+
+// Driver Comparendos table - Traffic violations per driver
+export const driverComparendos = pgTable("driver_comparendos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  driverId: varchar("driver_id").notNull().references(() => drivers.id, { onDelete: "cascade" }),
+  fechaComparendo: date("fecha_comparendo").notNull(),
+  numeroComparendo: text("numero_comparendo"),
+  tipoInfraccion: text("tipo_infraccion").notNull(),
+  descripcion: text("descripcion"),
+  valorComparendo: integer("valor_comparendo"),
+  estado: comparendoStatusEnum("estado").notNull().default("pendiente"),
+  observaciones: text("observaciones"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const insertDriverComparendoSchema = createInsertSchema(driverComparendos)
+  .omit({ id: true, createdAt: true, companyId: true })
+  .extend({
+    numeroComparendo: z.string().optional(),
+    descripcion: z.string().optional(),
+    valorComparendo: z.number().int().positive().optional(),
+    observaciones: z.string().optional(),
+  });
+export type InsertDriverComparendo = z.infer<typeof insertDriverComparendoSchema>;
+export type DriverComparendo = typeof driverComparendos.$inferSelect;
+
 // Modelo single-company: omitimos companyId porque el backend lo agrega desde la sesión del usuario
 export const insertVehicleInspectionSchema = createInsertSchema(vehicleInspections)
   .omit({ id: true, createdAt: true, companyId: true })

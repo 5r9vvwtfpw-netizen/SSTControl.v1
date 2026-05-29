@@ -44,6 +44,8 @@ import type {
   InsertVehicle,
   Driver,
   InsertDriver,
+  DriverComparendo,
+  InsertDriverComparendo,
   VehicleInspection,
   InsertVehicleInspection,
   RoadIncident,
@@ -591,6 +593,12 @@ export interface IStorage {
   createDriver(driver: InsertDriver, companyId: string): Promise<Driver>;
   updateDriver(id: string, driver: Partial<InsertDriver>, companyId: string): Promise<Driver | undefined>;
   deleteDriver(id: string, companyId: string): Promise<void>;
+
+  // PESV - Driver Comparendos methods
+  getDriverComparendos(driverId: string, companyId: string): Promise<DriverComparendo[]>;
+  createDriverComparendo(comparendo: InsertDriverComparendo, companyId: string): Promise<DriverComparendo>;
+  updateDriverComparendo(id: string, comparendo: Partial<InsertDriverComparendo>, companyId: string): Promise<DriverComparendo | undefined>;
+  deleteDriverComparendo(id: string, companyId: string): Promise<void>;
 
   // PESV - Vehicle Inspection methods (company-scoped)
   getVehicleInspections(companyId: string): Promise<VehicleInspection[]>;
@@ -4362,6 +4370,43 @@ export class DbStorage implements IStorage {
       .where(and(
         eq(schema.drivers.id, id),
         eq(schema.drivers.companyId, companyId)
+      ));
+  }
+
+  // Driver Comparendos methods
+  async getDriverComparendos(driverId: string, companyId: string): Promise<DriverComparendo[]> {
+    return await db.select().from(schema.driverComparendos)
+      .where(and(
+        eq(schema.driverComparendos.driverId, driverId),
+        eq(schema.driverComparendos.companyId, companyId)
+      ))
+      .orderBy(desc(schema.driverComparendos.fechaComparendo));
+  }
+
+  async createDriverComparendo(comparendo: InsertDriverComparendo, companyId: string): Promise<DriverComparendo> {
+    const [created] = await db.insert(schema.driverComparendos).values({
+      ...comparendo,
+      companyId,
+    }).returning();
+    return created;
+  }
+
+  async updateDriverComparendo(id: string, comparendo: Partial<InsertDriverComparendo>, companyId: string): Promise<DriverComparendo | undefined> {
+    const [updated] = await db.update(schema.driverComparendos)
+      .set(comparendo)
+      .where(and(
+        eq(schema.driverComparendos.id, id),
+        eq(schema.driverComparendos.companyId, companyId)
+      ))
+      .returning();
+    return updated;
+  }
+
+  async deleteDriverComparendo(id: string, companyId: string): Promise<void> {
+    await db.delete(schema.driverComparendos)
+      .where(and(
+        eq(schema.driverComparendos.id, id),
+        eq(schema.driverComparendos.companyId, companyId)
       ));
   }
 
