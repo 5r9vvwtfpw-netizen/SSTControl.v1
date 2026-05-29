@@ -1184,6 +1184,7 @@ export const driverComparendos = pgTable("driver_comparendos", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
   driverId: varchar("driver_id").notNull().references(() => drivers.id, { onDelete: "cascade" }),
+  placaVehiculo: text("placa_vehiculo"),
   fechaComparendo: date("fecha_comparendo").notNull(),
   numeroComparendo: text("numero_comparendo"),
   tipoInfraccion: text("tipo_infraccion").notNull(),
@@ -1197,6 +1198,7 @@ export const driverComparendos = pgTable("driver_comparendos", {
 export const insertDriverComparendoSchema = createInsertSchema(driverComparendos)
   .omit({ id: true, createdAt: true, companyId: true })
   .extend({
+    placaVehiculo: z.string().optional(),
     numeroComparendo: z.string().optional(),
     descripcion: z.string().optional(),
     valorComparendo: z.number().int().positive().optional(),

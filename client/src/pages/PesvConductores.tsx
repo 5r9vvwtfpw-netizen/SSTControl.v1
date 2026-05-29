@@ -38,6 +38,7 @@ export default function PesvConductores() {
   const [editingComparendo, setEditingComparendo] = useState<DriverComparendo | null>(null);
   const [deleteComparendoId, setDeleteComparendoId] = useState<string | null>(null);
   const [comparendoForm, setComparendoForm] = useState({
+    placaVehiculo: "",
     fechaComparendo: "",
     numeroComparendo: "",
     tipoInfraccion: "",
@@ -83,6 +84,10 @@ export default function PesvConductores() {
     enabled: !!comparendoDriverId,
   });
 
+  const { data: vehicles = [] } = useQuery<{ id: string; plate: string; brand: string; model: string }[]>({
+    queryKey: ["/api/vehicles"],
+  });
+
   const createComparendoMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertDriverComparendoSchema>) => {
       const res = await apiRequest("POST", `/api/drivers/${comparendoDriverId}/comparendos`, data);
@@ -123,7 +128,7 @@ export default function PesvConductores() {
 
   const resetComparendoForm = () => {
     setEditingComparendo(null);
-    setComparendoForm({ fechaComparendo: "", numeroComparendo: "", tipoInfraccion: "", descripcion: "", valorComparendo: "", estado: "pendiente", observaciones: "" });
+    setComparendoForm({ placaVehiculo: "", fechaComparendo: "", numeroComparendo: "", tipoInfraccion: "", descripcion: "", valorComparendo: "", estado: "pendiente", observaciones: "" });
   };
 
   const handleOpenComparendos = (driver: Driver) => {
@@ -136,6 +141,7 @@ export default function PesvConductores() {
   const handleEditComparendo = (c: DriverComparendo) => {
     setEditingComparendo(c);
     setComparendoForm({
+      placaVehiculo: c.placaVehiculo || "",
       fechaComparendo: c.fechaComparendo,
       numeroComparendo: c.numeroComparendo || "",
       tipoInfraccion: c.tipoInfraccion,
@@ -150,6 +156,7 @@ export default function PesvConductores() {
     e.preventDefault();
     const payload = {
       driverId: comparendoDriverId!,
+      placaVehiculo: comparendoForm.placaVehiculo || undefined,
       fechaComparendo: comparendoForm.fechaComparendo,
       tipoInfraccion: comparendoForm.tipoInfraccion,
       estado: comparendoForm.estado,
@@ -724,6 +731,18 @@ export default function PesvConductores() {
               <h4 className="font-medium text-sm">{editingComparendo ? "Editar comparendo" : "Registrar nuevo comparendo"}</h4>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
+                  <Label htmlFor="comp-placa">Vehículo (placa)</Label>
+                  <Select value={comparendoForm.placaVehiculo || "__none__"} onValueChange={v => setComparendoForm(f => ({ ...f, placaVehiculo: v === "__none__" ? "" : v }))}>
+                    <SelectTrigger id="comp-placa" data-testid="select-comp-placa"><SelectValue placeholder="Seleccionar vehículo..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— Sin especificar —</SelectItem>
+                      {vehicles.map(v => (
+                        <SelectItem key={v.id} value={v.plate}>{v.plate} — {v.brand} {v.model}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
                   <Label htmlFor="comp-fecha">Fecha del comparendo *</Label>
                   <Input id="comp-fecha" type="date" value={comparendoForm.fechaComparendo} onChange={e => setComparendoForm(f => ({ ...f, fechaComparendo: e.target.value }))} required data-testid="input-comp-fecha" />
                 </div>
@@ -794,6 +813,7 @@ export default function PesvConductores() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Fecha</TableHead>
+                    <TableHead>Placa</TableHead>
                     <TableHead>Infracción</TableHead>
                     <TableHead>N° Comparendo</TableHead>
                     <TableHead>Valor</TableHead>
@@ -805,6 +825,7 @@ export default function PesvConductores() {
                   {comparendos.map(c => (
                     <TableRow key={c.id} data-testid={`row-comparendo-${c.id}`}>
                       <TableCell className="text-sm">{c.fechaComparendo}</TableCell>
+                      <TableCell className="text-sm font-mono">{c.placaVehiculo || "—"}</TableCell>
                       <TableCell className="text-sm">{c.tipoInfraccion}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{c.numeroComparendo || "—"}</TableCell>
                       <TableCell className="text-sm">{c.valorComparendo ? `$${c.valorComparendo.toLocaleString("es-CO")}` : "—"}</TableCell>
