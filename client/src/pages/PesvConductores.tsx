@@ -720,7 +720,9 @@ export default function PesvConductores() {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-black" />
+              <span className="inline-flex items-center justify-center bg-orange-500 rounded p-1">
+                <AlertTriangle className="h-4 w-4 text-black" />
+              </span>
               Comparendos — {comparendoDriverName}
             </DialogTitle>
             <DialogDescription>Infracciones de tránsito registradas para este conductor</DialogDescription>
