@@ -461,7 +461,26 @@ export default function CompanyManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    // Validar NIT colombiano
+    const cleanedNit = (formData.nit || "").replace(/[\s.\-]/g, "").trim();
+    if (!cleanedNit) {
+      toast({ title: "NIT obligatorio", description: "Por favor ingrese el NIT de la empresa.", variant: "destructive" });
+      return;
+    }
+    if (!/^\d+$/.test(cleanedNit)) {
+      toast({ title: "NIT inválido", description: "El NIT solo debe contener números (y opcionalmente guión antes del dígito verificador).", variant: "destructive" });
+      return;
+    }
+    if (cleanedNit.length < 8) {
+      toast({ title: "NIT inválido", description: "El NIT debe tener mínimo 8 dígitos.", variant: "destructive" });
+      return;
+    }
+    if (cleanedNit.length > 10) {
+      toast({ title: "NIT inválido", description: "El NIT colombiano tiene máximo 10 dígitos. Verifique el número ingresado.", variant: "destructive" });
+      return;
+    }
+
     if (editingCompany) {
       const pricingChanges = detectPricingChanges();
       if (pricingChanges.length > 0) {
@@ -833,8 +852,10 @@ export default function CompanyManagement() {
                     onChange={(e) => setFormData({ ...formData, nit: e.target.value })}
                     required
                     placeholder="900123456-7"
+                    maxLength={11}
                     data-testid="input-nit"
                   />
+                  <p className="text-xs text-muted-foreground">8 a 10 dígitos · Formato: 900123456-7</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="city">Ciudad *</Label>

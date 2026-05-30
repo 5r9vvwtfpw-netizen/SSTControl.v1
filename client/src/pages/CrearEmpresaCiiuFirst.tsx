@@ -80,7 +80,7 @@ const colombianCities = [
 
 const createCompanySchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
-  nit: z.string().transform(v => v.replace(/[\s.\-]/g, '')).pipe(z.string().min(9, "El NIT debe tener al menos 9 caracteres").max(15, "El NIT no puede tener más de 15 caracteres")),
+  nit: z.string().transform(v => v.replace(/[\s.\-]/g, '')).pipe(z.string().min(8, "El NIT debe tener mínimo 8 dígitos").max(10, "El NIT colombiano tiene máximo 10 dígitos").regex(/^\d+$/, "El NIT solo debe contener números")),
   city: z.string().min(1, "La ciudad es obligatoria"),
   ciiuCode: z.string().min(1, "El código CIIU es obligatorio"),
   address: z.string().min(5, "La dirección debe tener al menos 5 caracteres"),
