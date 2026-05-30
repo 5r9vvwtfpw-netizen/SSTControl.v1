@@ -1692,7 +1692,6 @@ export default function Trabajadores() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="ninguno">Ninguno</SelectItem>
-                                <SelectItem value="primaria">Primaria</SelectItem>
                                 <SelectItem value="secundaria">Secundaria</SelectItem>
                                 <SelectItem value="tecnico">Técnico</SelectItem>
                                 <SelectItem value="tecnologo">Tecnólogo</SelectItem>
@@ -2414,7 +2413,6 @@ export default function Trabajadores() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="ninguno">Ninguno</SelectItem>
-                          <SelectItem value="primaria">Primaria</SelectItem>
                           <SelectItem value="secundaria">Secundaria</SelectItem>
                           <SelectItem value="tecnico">Técnico</SelectItem>
                           <SelectItem value="tecnologo">Tecnólogo</SelectItem>
