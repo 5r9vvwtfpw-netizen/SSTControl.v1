@@ -696,6 +696,38 @@ export default function Trabajadores() {
       });
       return;
     }
+
+    // Validar longitud según tipo de documento
+    const isNumericOnly = /^\d+$/.test(cleanedCedula);
+    if (isNumericOnly) {
+      // Cédula de Ciudadanía colombiana: 6 a 10 dígitos
+      if (cleanedCedula.length < 6) {
+        toast({
+          title: "Documento inválido",
+          description: "La Cédula de Ciudadanía debe tener mínimo 6 dígitos",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (cleanedCedula.length > 10) {
+        toast({
+          title: "Documento inválido",
+          description: "La Cédula de Ciudadanía colombiana tiene máximo 10 dígitos. Verifique el número ingresado.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      // Pasaporte o Cédula de Extranjería: máximo 15 caracteres alfanuméricos
+      if (cleanedCedula.length > 15) {
+        toast({
+          title: "Documento inválido",
+          description: "El pasaporte o cédula de extranjería no puede superar 15 caracteres",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     
     const cleanedFormData = {
       ...formData,
@@ -1405,12 +1437,13 @@ export default function Trabajadores() {
                           id="identificationNumber"
                           value={formData.identificationNumber}
                           onChange={(e) => setFormData({ ...formData, identificationNumber: e.target.value })}
-                          placeholder="Ej: 1234567890, AA123456 o 1.234.567.890"
+                          placeholder="Ej: 1234567890, AA123456"
                           required
+                          maxLength={15}
                           data-testid="input-identification-number"
                         />
                         <p className="text-xs text-muted-foreground">
-                          Acepta cédula de ciudadanía, pasaporte o cédula de extranjería (números y letras)
+                          CC: 6 a 10 dígitos · Pasaporte o Cédula de Extranjería: alfanumérico, máx. 15 caracteres
                         </p>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
@@ -2124,12 +2157,13 @@ export default function Trabajadores() {
                     id="identificationNumber"
                     value={formData.identificationNumber}
                     onChange={(e) => setFormData({ ...formData, identificationNumber: e.target.value })}
-                    placeholder="Ej: 1234567890, AA123456 o 1.234.567.890"
+                    placeholder="Ej: 1234567890, AA123456"
                     required
+                    maxLength={15}
                     data-testid="input-identification-number"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Acepta cédula de ciudadanía, pasaporte o cédula de extranjería (números y letras)
+                    CC: 6 a 10 dígitos · Pasaporte o Cédula de Extranjería: alfanumérico, máx. 15 caracteres
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
