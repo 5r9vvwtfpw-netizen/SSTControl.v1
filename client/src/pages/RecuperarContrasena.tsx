@@ -13,9 +13,16 @@ export default function RecuperarContrasena() {
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
 
+  const urlParams = new URLSearchParams(window.location.search);
+  const portal = urlParams.get("portal");
+  const isLso = portal === "lso";
+
+  const backHref = isLso ? "/auth" : "/auth";
+  const backLabel = isLso ? "Volver al Portal de Licenciados" : "Volver al inicio de sesión";
+
   const requestResetMutation = useMutation({
     mutationFn: async (email: string) => {
-      return apiRequest("POST", "/api/auth/request-password-reset", { email });
+      return apiRequest("POST", "/api/auth/request-password-reset", { email, portal: portal ?? undefined });
     },
     onSuccess: () => {
       setEmailSent(true);
@@ -38,9 +45,11 @@ export default function RecuperarContrasena() {
           </div>
           <CardTitle className="text-2xl">Recuperar Contraseña</CardTitle>
           <CardDescription>
-            {emailSent 
+            {emailSent
               ? "Revisa tu correo electrónico"
-              : "Ingresa tu correo para recibir un enlace de recuperación"
+              : isLso
+                ? "Ingresa el correo de tu cuenta de profesional licenciado"
+                : "Ingresa tu correo para recibir un enlace de recuperación"
             }
           </CardDescription>
         </CardHeader>
@@ -76,7 +85,7 @@ export default function RecuperarContrasena() {
                   />
                 </div>
               </div>
-              
+
               {requestResetMutation.isError && (
                 <Alert variant="destructive">
                   <AlertDescription>
@@ -85,9 +94,9 @@ export default function RecuperarContrasena() {
                 </Alert>
               )}
 
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={requestResetMutation.isPending || !email}
                 data-testid="button-send-recovery"
               >
@@ -108,9 +117,9 @@ export default function RecuperarContrasena() {
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button asChild variant="ghost" className="w-full">
-            <Link href="/" data-testid="link-back-to-login">
+            <Link href={backHref} data-testid="link-back-to-login">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Volver al inicio de sesión
+              {backLabel}
             </Link>
           </Button>
         </CardFooter>

@@ -11,7 +11,7 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "./email";
 import { db } from "./db";
 import * as schema from "@shared/schema";
 import { users } from "@shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 import { z } from "zod";
 import { loginRateLimiter, passwordResetRateLimiter, registrationRateLimiter } from "./middleware/rate-limit";
 import logger from "./lib/logger";
@@ -544,14 +544,21 @@ export function setupAuth(app: Express) {
   // Password reset request - sends email with reset link
   app.post("/api/auth/request-password-reset", passwordResetRateLimiter, async (req, res) => {
     try {
-      const { email } = req.body;
+      const { email, portal } = req.body;
       
       if (!email || typeof email !== "string") {
         return res.status(400).json({ error: "Correo electrónico requerido" });
       }
 
-      // Find user by email
-      const user = await storage.getUserByEmail(email);
+      // Find user by email — if portal=lso, search specifically for lso role account
+      let user;
+      if (portal === "lso") {
+        const [lsoUser] = await db.select().from(users)
+          .where(and(eq(users.email, email), eq(users.role, "lso")));
+        user = lsoUser;
+      } else {
+        user = await storage.getUserByEmail(email);
+      }
       
       // Always return success to prevent email enumeration attacks
       if (!user) {
@@ -573,10 +580,11 @@ export function setupAuth(app: Express) {
         })
         .where(eq(users.id, user.id));
 
-      // Build reset URL - use request origin for correct domain in any environment
+      // Build reset URL - include portal param so frontend knows which login to redirect to
       const baseUrl = process.env.VITE_APP_URL
         || `${req.protocol}://${req.get('host')}`;
-      const resetUrl = `${baseUrl}/restablecer-contrasena?token=${resetToken}`;
+      const portalParam = portal === "lso" ? "&portal=lso" : "";
+      const resetUrl = `${baseUrl}/restablecer-contrasena?token=${resetToken}${portalParam}`;
 
       // Send reset email
       const emailResult = await sendPasswordResetEmail(user.email!, {

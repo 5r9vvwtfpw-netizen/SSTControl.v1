@@ -12,6 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 export default function RestablecerContrasena() {
   const [, navigate] = useLocation();
   const [token, setToken] = useState<string | null>(null);
+  const [portal, setPortal] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [resetSuccess, setResetSuccess] = useState(false);
@@ -22,8 +23,14 @@ export default function RestablecerContrasena() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tokenParam = urlParams.get("token");
+    const portalParam = urlParams.get("portal");
     setToken(tokenParam);
+    setPortal(portalParam);
   }, []);
+
+  const isLso = portal === "lso";
+  const loginHref = "/auth";
+  const recoveryHref = isLso ? "/recuperar-contrasena?portal=lso" : "/recuperar-contrasena";
 
   const resetPasswordMutation = useMutation({
     mutationFn: async (data: { token: string; newPassword: string }) => {
@@ -82,14 +89,14 @@ export default function RestablecerContrasena() {
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
             <Button asChild variant="default" className="w-full">
-              <Link href="/recuperar-contrasena">
+              <Link href={recoveryHref}>
                 Solicitar nuevo enlace
               </Link>
             </Button>
             <Button asChild variant="ghost" className="w-full">
-              <Link href="/">
+              <Link href={loginHref}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Volver al inicio
+                Volver al inicio de sesión
               </Link>
             </Button>
           </CardFooter>
@@ -127,11 +134,16 @@ export default function RestablecerContrasena() {
                 </AlertTitle>
                 <AlertDescription className="text-green-700 dark:text-green-300">
                   Tu contraseña ha sido restablecida correctamente. Ya puedes iniciar sesión con tu nueva contraseña.
+                  {isLso && (
+                    <div className="mt-2 text-sm font-medium">
+                      Ingresa al Portal de Profesionales Licenciados con tus nuevas credenciales.
+                    </div>
+                  )}
                 </AlertDescription>
               </Alert>
               <Button asChild className="w-full">
-                <Link href="/" data-testid="link-go-to-login">
-                  Ir a iniciar sesión
+                <Link href={loginHref} data-testid="link-go-to-login">
+                  {isLso ? "Ir al Portal de Licenciados" : "Ir a iniciar sesión"}
                 </Link>
               </Button>
             </>
@@ -230,7 +242,7 @@ export default function RestablecerContrasena() {
         {!resetSuccess && (
           <CardFooter className="flex flex-col gap-3">
             <Button asChild variant="ghost" className="w-full">
-              <Link href="/" data-testid="link-back-to-login">
+              <Link href={loginHref} data-testid="link-back-to-login">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Volver al inicio de sesión
               </Link>
