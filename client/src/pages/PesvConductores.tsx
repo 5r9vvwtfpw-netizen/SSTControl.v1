@@ -665,6 +665,15 @@ export default function PesvConductores() {
                       >
                         <AlertTriangle className="h-5 w-5 text-black" />
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDownloadPdf(`/api/pesv/conductores/${driver.id}/pdf`, `conductor-${driver.identificationNumber}.pdf`)}
+                        title="Descargar PDF individual"
+                        data-testid={`button-pdf-${driver.id}`}
+                      >
+                        <FileDown className="h-4 w-4" />
+                      </Button>
                       {user?.role && hasCompanyAdminAccess(user.role) && (
                         <>
                           <Button

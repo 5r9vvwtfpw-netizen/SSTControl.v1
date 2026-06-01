@@ -680,6 +680,121 @@ export function registerPesvPdfRoutes(app: Express) {
     }
   });
 
+  // 10b. GET /api/pesv/conductores/:id/pdf — PDF individual de un conductor
+  app.get('/api/pesv/conductores/:id/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+      const { id } = req.params;
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const [conductor] = await db.select().from(schema.drivers)
+        .where(and(eq(schema.drivers.id, id), eq(schema.drivers.companyId, companyId)))
+        .limit(1);
+      if (!conductor) return res.status(404).send('Conductor no encontrado');
+
+      const comparendos = await db.select().from(schema.driverComparendos)
+        .where(eq(schema.driverComparendos.driverId, id))
+        .orderBy(desc(schema.driverComparendos.fechaComparendo));
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: PDF_CONFIG.MARGIN, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      const safeName = conductor.name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="conductor-${safeName}.pdf"`);
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company,
+        documentTitle: 'FICHA DEL CONDUCTOR - PESV',
+        documentCode: 'PESV-COND-IND',
+        logoBuffer,
+      });
+
+      y = addParagraph(doc, 'Resolución 40595/2022 — Gestión de conductores y licencias de conducción.', { y, fontSize: 8 });
+      y += 6;
+
+      // ── Datos personales ─────────────────────────────────────────────────
+      y = addSectionBar(doc, '1. Datos del Conductor', y);
+      y = addLabeledField(doc, 'Nombre completo', conductor.name, { y });
+      y = addLabeledField(doc, 'Número de Cédula', conductor.identificationNumber, { y });
+      y = addLabeledField(doc, 'Empresa', company.name, { y });
+      y = addLabeledField(doc, 'Estado', conductor.status === 'activo' ? 'Activo' : conductor.status === 'inactivo' ? 'Inactivo' : conductor.status === 'suspendido' ? 'Suspendido' : 'Retirado', { y });
+
+      // ── Licencia ─────────────────────────────────────────────────────────
+      y = addSectionBar(doc, '2. Información de Licencia', y);
+      y = addLabeledField(doc, 'Número de Licencia', conductor.licenseNumber, { y });
+      y = addLabeledField(doc, 'Categoría', conductor.licenseType, { y });
+      y = addLabeledField(doc, 'Vencimiento', formatDate(conductor.licenseExpiry), { y });
+
+      // ── Datos médicos y emergencia ────────────────────────────────────────
+      y = addSectionBar(doc, '3. Datos Médicos y Contacto de Emergencia', y);
+      y = addLabeledField(doc, 'Grupo Sanguíneo', conductor.bloodType || 'No registrado', { y });
+      y = addLabeledField(doc, 'Venc. Examen Médico', conductor.medicalExamExpiry ? formatDate(conductor.medicalExamExpiry) : 'No registrado', { y });
+      y = addLabeledField(doc, 'Contacto de Emergencia', conductor.emergencyContact || 'No registrado', { y });
+      y = addLabeledField(doc, 'Teléfono Emergencia', conductor.emergencyPhone || 'No registrado', { y });
+
+      if (conductor.observations) {
+        y = addSectionBar(doc, '4. Observaciones', y);
+        y = addParagraph(doc, conductor.observations, { y });
+      }
+
+      // ── Historial de comparendos ──────────────────────────────────────────
+      const secNum = conductor.observations ? '5' : '4';
+      y += 4;
+      y = addSectionBar(doc, `${secNum}. Historial de Comparendos (${comparendos.length})`, y);
+
+      if (comparendos.length === 0) {
+        y = addParagraph(doc, 'Sin comparendos registrados para este conductor.', { y });
+      } else {
+        const estadoLabel = (e: string) =>
+          e === 'pendiente' ? 'Pendiente' :
+          e === 'pagado' ? 'Pagado' :
+          e === 'recurrido' ? 'Recurrido' :
+          e === 'prescrito' ? 'Prescrito' : (e || 'N/A');
+
+        const compRows = comparendos.map(comp => [
+          formatDate(comp.fechaComparendo),
+          comp.numeroComparendo || '—',
+          comp.tipoInfraccion,
+          comp.placaVehiculo || '—',
+          comp.valorComparendo ? `$${comp.valorComparendo.toLocaleString('es-CO')}` : '—',
+          estadoLabel(comp.estado),
+        ]);
+        y = addSimpleTable(
+          doc,
+          ['Fecha', 'No. Comparendo', 'Infracción', 'Placa', 'Valor', 'Estado'],
+          compRows,
+          { y, columnWidths: [65, 90, 150, 55, 65, 65] }
+        );
+
+        for (const comp of comparendos) {
+          if (comp.descripcion || comp.observaciones) {
+            y = addParagraph(doc,
+              `• ${comp.tipoInfraccion}${comp.descripcion ? ': ' + comp.descripcion : ''}${comp.observaciones ? ' — Obs: ' + comp.observaciones : ''}`,
+              { y, fontSize: 8 }
+            );
+          }
+        }
+      }
+
+      await addSignatureFooter(doc, signers, true, { startY: y + 24 });
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-conductor-individual');
+    }
+  });
+
   // 11. GET /api/pesv/vehiculos/pdf
   app.get('/api/pesv/vehiculos/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
     try {
