@@ -155,3 +155,9 @@ id = "Q0TNrUXzJ8afIYz2EKAw2"
 uri = "file://folleto-sst-colombia.pdf"
 type = "pdf"
 title = "Folleto Comercial — SST Colombia"
+
+[[outputs]]
+id = "ZtrIXnUaD4cdSL8f1MnpZ"
+uri = "file://guia-llamadas-sst-colombia.pdf"
+type = "pdf"
+title = "Guía de Llamadas con Árbol de Decisiones — SST Colombia"
