@@ -2927,6 +2927,26 @@ export class DbStorage implements IStorage {
       .orderBy(schema.workers.name);
   }
 
+  /**
+   * Sincroniza company.numberOfWorkers con el conteo real de trabajadores en BD.
+   * Se llama automáticamente al crear o eliminar trabajadores.
+   */
+  private async syncWorkerCount(companyId: string): Promise<void> {
+    try {
+      const [result] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(schema.workers)
+        .where(eq(schema.workers.companyId, companyId));
+      const actualCount = result?.count ?? 0;
+      await db.update(schema.companies)
+        .set({ numberOfWorkers: actualCount })
+        .where(eq(schema.companies.id, companyId));
+      logger.info({ companyId, actualCount }, '[WorkerSync] company.numberOfWorkers actualizado');
+    } catch (e) {
+      logger.warn({ err: e, companyId }, '[WorkerSync] No se pudo sincronizar numberOfWorkers');
+    }
+  }
+
   async createWorker(worker: InsertWorker, companyId: string, userId?: string, auditContext?: AuditContext): Promise<Worker> {
     // VALIDATION: Check for duplicate identification number (unique globally to prevent duplicates)
     if (worker.identificationNumber) {
