@@ -930,18 +930,34 @@ export const ARL_COLOMBIA = [
 // =====================================================
 
 export const EPS_COLOMBIA = [
-  { codigo: 'SURA', nombre: 'EPS Sura', nit: '800088702-2' },
-  { codigo: 'SANITAS', nombre: 'EPS Sanitas', nit: '800251440-6' },
-  { codigo: 'NUEVAEPS', nombre: 'Nueva EPS', nit: '900156264-2' },
-  { codigo: 'COMPENSAR', nombre: 'Compensar EPS', nit: '860066942-7' },
-  { codigo: 'FAMISANAR', nombre: 'Famisanar EPS', nit: '830003564-7' },
-  { codigo: 'COOMEVA', nombre: 'Coomeva EPS', nit: '805000427-1' },
-  { codigo: 'SALUDTOTAL', nombre: 'Salud Total EPS', nit: '800130907-4' },
-  { codigo: 'MEDIMAS', nombre: 'Medimás EPS', nit: '901097473-5' },
+  // ── Régimen Contributivo ──
+  { codigo: 'SURA', nombre: 'EPS Sura (Suramericana de Salud)', nit: '800088702-2' },
+  { codigo: 'SANITAS', nombre: 'EPS Sanitas S.A.', nit: '800251440-6' },
+  { codigo: 'NUEVAEPS', nombre: 'Nueva EPS S.A.', nit: '900156264-2' },
+  { codigo: 'SALUDTOTAL', nombre: 'Salud Total EPS S.A.', nit: '800130907-0' },
+  { codigo: 'FAMISANAR', nombre: 'Famisanar S.A.S. (Cafam - Colsubsidio)', nit: '830003564-0' },
+  { codigo: 'SOS', nombre: 'Servicio Occidental de Salud EPS S.A. (SOS)', nit: '805000427-8' },
+  { codigo: 'COMPENSAR', nombre: 'Compensar EPS', nit: '860066942-3' },
+  { codigo: 'COMFENALCOVALLE', nombre: 'Comfenalco Valle EPS', nit: '890303093-1' },
+  { codigo: 'COOSALUD', nombre: 'Coosalud EPS S.A.S.', nit: '900226729-6' },
+  { codigo: 'MEDIMAS', nombre: 'Medimás EPS S.A.S.', nit: '901000808-5' },
+  { codigo: 'EPSFAMILIAR', nombre: 'EPS Familiar de Colombia', nit: '901276891-0' },
+  // ── Régimen Subsidiado ──
+  { codigo: 'EMSSANAR', nombre: 'Emssanar E.S.S.', nit: '891180084-2' },
+  { codigo: 'ASMET', nombre: 'Asmet Salud ESS', nit: '901376460-3' },
+  { codigo: 'SAVIA', nombre: 'Savia Salud EPS (Alianza Medellín Antioquia)', nit: '900604350-0' },
+  { codigo: 'COMFAORIENTEEPS', nombre: 'Comfaoriente EPS', nit: '890206904-4' },
+  { codigo: 'CAPRESOCA', nombre: 'Capresoca EPS', nit: '891856000-3' },
+  { codigo: 'MUTUALSER', nombre: 'Mutual Ser EPS', nit: '800149384-1' },
+  { codigo: 'CAJACOPI', nombre: 'Cajacopi EPS Atlántico', nit: '890102922-3' },
+  { codigo: 'ECOOPSOS', nombre: 'Ecoopsos ESS', nit: '890803605-3' },
   { codigo: 'ALIANSALUD', nombre: 'Aliansalud EPS', nit: '830113831-0' },
-  { codigo: 'COOSALUD', nombre: 'Coosalud EPS', nit: '900226715-5' },
-  { codigo: 'SAVIA', nombre: 'Savia Salud EPS', nit: '900604350-0' },
-  { codigo: 'MUTUAL', nombre: 'Mutual Ser EPS', nit: '806008394-6' }
+  // ── EPS Indígenas (EPSI) ──
+  { codigo: 'AIC', nombre: 'AIC - Asociación Indígena del Cauca EPSI', nit: '891500084-5' },
+  { codigo: 'MALLAMAS', nombre: 'Mallamas EPSI', nit: '814001330-5' },
+  { codigo: 'DUSAKAWI', nombre: 'Dusakawi EPSI', nit: '824000426-3' },
+  { codigo: 'PIJAOS', nombre: 'Pijaos Salud EPSI', nit: '800149384-2' },
+  { codigo: 'ANASWAYUU', nombre: 'Anas Wayuu EPSI', nit: '812003739-9' },
 ];
 
 // =====================================================
@@ -961,13 +977,73 @@ export const AFP_COLOMBIA = [
 // =====================================================
 
 export const CCF_COLOMBIA = [
-  { codigo: 'COMPENSAR', nombre: 'Compensar', nit: '860066942-7' },
-  { codigo: 'CAFAM', nombre: 'Caja de Compensación Familiar CAFAM', nit: '860013570-3' },
-  { codigo: 'COLSUBSIDIO', nombre: 'Colsubsidio', nit: '860007336-1' },
-  { codigo: 'COMFAMA', nombre: 'Comfama', nit: '890900842-6' },
-  { codigo: 'COMFANDI', nombre: 'Comfandi', nit: '890303093-8' },
-  { codigo: 'COMFENALCO', nombre: 'Comfenalco', nit: '890900343-5' },
-  { codigo: 'COMFAMILIAR', nombre: 'Comfamiliar', nit: '891800213-1' }
+  // ── Bogotá D.C. ──
+  { codigo: 'COLSUBSIDIO', nombre: 'Colsubsidio - Caja Colombiana de Subsidio Familiar', nit: '860007336-1' },
+  { codigo: 'COMPENSAR', nombre: 'Compensar', nit: '860045904-7' },
+  { codigo: 'CAFAM', nombre: 'CAFAM - Caja de Compensación Familiar', nit: '860013570-3' },
+  // ── Antioquia ──
+  { codigo: 'COMFAMA', nombre: 'Comfama - Caja de Compensación Familiar de Antioquia', nit: '890903939-1' },
+  { codigo: 'COMFENALCO_ANT', nombre: 'Comfenalco Antioquia', nit: '890904741-1' },
+  // ── Valle del Cauca ──
+  { codigo: 'COMFANDI', nombre: 'Comfandi - Caja de Compensación Familiar del Valle', nit: '890303093-8' },
+  { codigo: 'COMFENALCO_VALLE', nombre: 'Comfenalco Valle', nit: '890900343-5' },
+  // ── Cundinamarca ──
+  { codigo: 'COMFACUNDI', nombre: 'Comfacundi - Caja de Compensación Familiar de Cundinamarca', nit: '860045823-4' },
+  // ── Santander ──
+  { codigo: 'CAJASAN', nombre: 'Cajasan - Caja de Compensación Familiar de Santander', nit: '890200273-2' },
+  { codigo: 'COMFENALCO_SAN', nombre: 'Comfenalco Santander', nit: '890200349-3' },
+  { codigo: 'CAFABA', nombre: 'Cafaba - Caja de Compensación Familiar de Barrancabermeja', nit: '890204895-1' },
+  // ── Norte de Santander ──
+  { codigo: 'COMFAORIENTE', nombre: 'Comfaoriente - Caja de Compensación Familiar del Oriente Colombiano', nit: '890500675-6' },
+  { codigo: 'COMFANORTE', nombre: 'Comfanorte - Caja de Compensación Familiar del Norte de Santander', nit: '890500516-3' },
+  // ── Atlántico ──
+  { codigo: 'CAJACOPI', nombre: 'Cajacopi Atlántico', nit: '890102044-1' },
+  { codigo: 'COMFAMILIAR_ATL', nombre: 'Comfamiliar Atlántico', nit: '890102779-1' },
+  // ── Caldas ──
+  { codigo: 'CONFA', nombre: 'Confa - Caja de Compensación Familiar de Caldas', nit: '890805751-4' },
+  // ── Risaralda ──
+  { codigo: 'COMFAMILIAR_RIS', nombre: 'Comfamiliar Risaralda', nit: '891480014-7' },
+  // ── Quindío ──
+  { codigo: 'COMFENALCO_QUI', nombre: 'Comfenalco Quindío', nit: '890001139-6' },
+  // ── Tolima ──
+  { codigo: 'COMFATOLIMA', nombre: 'Comfatolima - Caja de Compensación Familiar del Tolima', nit: '890703059-2' },
+  { codigo: 'COMFENALCO_TOL', nombre: 'Comfenalco Tolima', nit: '890702771-2' },
+  // ── Boyacá ──
+  { codigo: 'COMFABOY', nombre: 'Comfaboy - Caja de Compensación Familiar de Boyacá', nit: '891800570-4' },
+  // ── Meta ──
+  { codigo: 'COFREM', nombre: 'Cofrem - Caja de Compensación Familiar Regional del Meta', nit: '892000146-3' },
+  // ── Córdoba ──
+  { codigo: 'COMFACOR', nombre: 'Comfacor - Caja de Compensación Familiar de Córdoba', nit: '891080012-5' },
+  // ── Cesar ──
+  { codigo: 'COMFACESAR', nombre: 'Comfacesar - Caja de Compensación Familiar del Cesar', nit: '891080005-1' },
+  // ── Magdalena ──
+  { codigo: 'CAJAMAG', nombre: 'Cajamag - Caja de Compensación Familiar del Magdalena', nit: '891780093-3' },
+  // ── La Guajira ──
+  { codigo: 'COMFAGUAJIRA', nombre: 'Comfaguajira - Caja de Compensación Familiar de La Guajira', nit: '892115006-5' },
+  // ── Sucre ──
+  { codigo: 'COMFASUCRE', nombre: 'Comfasucre - Caja de Compensación Familiar de Sucre', nit: '890400693-2' },
+  // ── Huila ──
+  { codigo: 'COMFAMILIAR_HUI', nombre: 'Comfamiliar Huila', nit: '891180008-2' },
+  // ── Nariño ──
+  { codigo: 'COMFAMILIAR_NAR', nombre: 'Comfamiliar Nariño', nit: '891280008-1' },
+  // ── Cauca ──
+  { codigo: 'COMFACAUCA', nombre: 'Comfacauca - Caja de Compensación Familiar del Cauca', nit: '891500084-5' },
+  // ── Chocó ──
+  { codigo: 'COMFACHO', nombre: 'Comfachocó - Caja de Compensación Familiar del Chocó', nit: '891600091-8' },
+  // ── Caquetá ──
+  { codigo: 'COMFACA', nombre: 'Comfaca - Caja de Compensación Familiar del Caquetá', nit: '891200641-4' },
+  // ── Casanare ──
+  { codigo: 'COMFACASANARE', nombre: 'Comfacasanare - Caja de Compensación Familiar del Casanare', nit: '892115170-5' },
+  // ── Arauca ──
+  { codigo: 'COMFIAR', nombre: 'Comfiar - Caja de Compensación Familiar de Arauca', nit: '891900845-2' },
+  // ── Putumayo ──
+  { codigo: 'COMFAPUTUMAYO', nombre: 'Comfaputumayo - Caja de Compensación Familiar del Putumayo', nit: '891901745-1' },
+  // ── San Andrés y Providencia ──
+  { codigo: 'CAJASAI', nombre: 'Cajasai - Caja de Compensación Familiar de San Andrés y Providencia', nit: '800016315-2' },
+  // ── Amazonas ──
+  { codigo: 'CAFAMAZ', nombre: 'Cafamaz - Caja de Compensación Familiar del Amazonas', nit: '832001271-3' },
+  // ── Nacional (Campesina) ──
+  { codigo: 'COMCAJA', nombre: 'Comcaja - Caja de Compensación Familiar Campesina', nit: '899999027-3' },
 ];
 
 // =====================================================
