@@ -231,29 +231,28 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ ok: false, error: "El profesional LSO debe tener un email registrado para crear la asignación" });
     }
 
-    const existingUser = await storage.getUserByEmail(lso.email);
+    // Buscar específicamente un usuario con ese email Y rol lso
+    const [existingLsoUser] = await db.select().from(schema.users).where(
+      and(eq(schema.users.email, lso.email), eq(schema.users.role, 'lso'))
+    );
 
-    if (existingUser) {
-      if (existingUser.role === 'lso') {
-        lsoUserId = existingUser.id;
-        logger.info({ email: lso.email, userId: existingUser.id }, "[LSO-AUTO] Usuario LSO existente encontrado, no se generan nuevas credenciales");
+    if (existingLsoUser) {
+      lsoUserId = existingLsoUser.id;
+      logger.info({ email: lso.email, userId: existingLsoUser.id }, "[LSO-AUTO] Usuario LSO existente encontrado, no se generan nuevas credenciales");
 
-        const baseUrl = process.env.VITE_APP_URL || 'https://sst-colombia.com';
+      const baseUrl = process.env.VITE_APP_URL || 'https://sst-colombia.com';
 
-        try {
-          await sendLsoNewAssignmentEmail(lso.email, {
-            lsoName: existingUser.fullName || lso.fullName || 'Profesional LSO',
-            companyName: company.name || 'Empresa',
-            companyNit: company.nit || undefined,
-            loginUrl: `${baseUrl}/portal-licenciado`,
-            companyEmail: company.contactEmail || undefined,
-          });
-          logger.info({ email: lso.email }, "[LSO-AUTO] Notificación de nueva asignación enviada (sin credenciales)");
-        } catch (emailError: any) {
-          logger.error({ error: emailError.message }, "[LSO-AUTO] Error enviando email de nueva asignación");
-        }
-      } else {
-        logger.info({ email: lso.email, existingRole: existingUser.role }, "[LSO-AUTO] Email ya existe con otro rol, asignación procede sin cuenta de portal");
+      try {
+        await sendLsoNewAssignmentEmail(lso.email, {
+          lsoName: existingLsoUser.fullName || lso.fullName || 'Profesional LSO',
+          companyName: company.name || 'Empresa',
+          companyNit: company.nit || undefined,
+          loginUrl: `${baseUrl}/portal-licenciado`,
+          companyEmail: company.contactEmail || undefined,
+        });
+        logger.info({ email: lso.email }, "[LSO-AUTO] Notificación de nueva asignación enviada (sin credenciales)");
+      } catch (emailError: any) {
+        logger.error({ error: emailError.message }, "[LSO-AUTO] Error enviando email de nueva asignación");
       }
     } else {
         const nameParts = (lso.fullName || 'lso').toLowerCase()
