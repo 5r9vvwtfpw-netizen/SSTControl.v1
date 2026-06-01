@@ -475,6 +475,7 @@ export default function Trabajadores() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
       setDialogOpen(false);
       setEditingWorker(null);
       setHasConsent(false);
@@ -567,6 +568,7 @@ export default function Trabajadores() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
       toast({
         title: "Trabajador eliminado",
         description: "El trabajador se ha eliminado exitosamente",
@@ -628,6 +630,7 @@ export default function Trabajadores() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
       setBulkDeleteResults(data);
       setBulkDeleteConfirmCode("");
       setBulkDeleteCompanyName("");
@@ -1034,6 +1037,7 @@ export default function Trabajadores() {
     onSuccess: (data) => {
       setImportResults(data);
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
       
       if (data.failed === 0) {
         toast({
@@ -1382,7 +1386,21 @@ export default function Trabajadores() {
                 <DialogTitle>{editingWorker ? "Editar Trabajador" : "Registrar Nuevo Trabajador"}</DialogTitle>
                 <DialogDescription>Complete los datos del trabajador</DialogDescription>
               </DialogHeader>
-              
+
+              {/* Aviso de impacto en facturación — solo al crear, solo para usuarios de empresa */}
+              {!editingWorker && !hasGlobalCompanyAccess && (() => {
+                const currentCompany = companies.find(c => c.id === effectiveCompanyId);
+                const currentCount = currentCompany?.numberOfWorkers ?? 0;
+                return (
+                  <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800">
+                    <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <AlertDescription className="text-blue-800 dark:text-blue-300 text-sm">
+                      Su empresa tiene actualmente <strong>{currentCount} trabajador{currentCount !== 1 ? "es" : ""}</strong>. Al registrar este nuevo trabajador pasará a <strong>{currentCount + 1}</strong>, y la próxima factura se calculará con ese número.
+                    </AlertDescription>
+                  </Alert>
+                );
+              })()}
+
               {editingWorker ? (
                 <Tabs value={activeDialogTab} onValueChange={setActiveDialogTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
