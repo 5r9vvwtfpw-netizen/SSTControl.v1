@@ -915,16 +915,14 @@ export const TIPOS_COMUNICACION_SST: TipoComunicacion[] = [
 // =====================================================
 
 export const ARL_COLOMBIA = [
-  { codigo: 'SURA', nombre: 'Seguros de Riesgos Laborales SURA', nit: '890903790-7' },
-  { codigo: 'POSITIVA', nombre: 'Positiva Compañía de Seguros S.A.', nit: '860011153-6' },
-  { codigo: 'COLMENA', nombre: 'Colmena Seguros S.A.', nit: '860002183-7' },
-  { codigo: 'AXA', nombre: 'AXA Colpatria S.A.', nit: '860034313-7' },
-  { codigo: 'BOLIVAR', nombre: 'Seguros Bolívar S.A.', nit: '860002503-7' },
-  { codigo: 'LIBERTY', nombre: 'Liberty Seguros S.A.', nit: '860029924-5' },
-  { codigo: 'EQUIDAD', nombre: 'La Equidad Seguros O.C.', nit: '860024414-7' },
-  { codigo: 'MAPFRE', nombre: 'Mapfre Seguros Generales de Colombia S.A.', nit: '860522315-6' },
-  { codigo: 'ALFA', nombre: 'Alfa S.A.', nit: '860025674-2' },
-  { codigo: 'AURORA', nombre: 'Aurora S.A.', nit: '860032776-5' }
+  { codigo: 'SURA', nombre: 'ARL SURA - Seguros de Riesgos Laborales', nit: '800088702-2' },
+  { codigo: 'POSITIVA', nombre: 'Positiva Compañía de Seguros S.A.', nit: '900422614-0' },
+  { codigo: 'COLMENA', nombre: 'Colmena Seguros S.A. (Berkley International)', nit: '860058565-5' },
+  { codigo: 'AXA', nombre: 'AXA Colpatria S.A.', nit: '860034594-7' },
+  { codigo: 'BOLIVAR', nombre: 'Seguros Bolívar S.A.', nit: '860040087-4' },
+  { codigo: 'LIBERTY', nombre: 'Liberty Seguros S.A.', nit: '860076794-5' },
+  { codigo: 'EQUIDAD', nombre: 'La Equidad Seguros O.C.', nit: '860007738-6' },
+  { codigo: 'MAPFRE', nombre: 'Mapfre Seguros Generales de Colombia S.A.', nit: '900157914-2' },
 ];
 
 // =====================================================
