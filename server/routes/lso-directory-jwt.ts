@@ -475,7 +475,7 @@ router.get("/current-assignment", requireAuth, async (req: Request, res: Respons
 
     // Si es asignación externa, devolver datos externos + estado del usuario LSO
     if (assignment.externalLsoId) {
-      let portalAccess: { hasAccount: boolean; username?: string; userId?: string } = { hasAccount: false };
+      let portalAccess: { hasAccount: boolean; username?: string; userId?: string; role?: string } = { hasAccount: false };
       let professionType: string | null = null;
       let identificationNumber: string | null = null;
       let course50Hours: boolean = false;
@@ -487,8 +487,9 @@ router.get("/current-assignment", requireAuth, async (req: Request, res: Respons
 
       if (assignment.externalLsoEmail) {
         const lsoUser = await storage.getUserByEmail(assignment.externalLsoEmail);
-        if (lsoUser && lsoUser.role === 'lso') {
-          portalAccess = { hasAccount: true, username: lsoUser.username, userId: lsoUser.id };
+        const elevatedRoles = ['lso', 'superusuario', 'admin', 'soporte'];
+        if (lsoUser && elevatedRoles.includes(lsoUser.role)) {
+          portalAccess = { hasAccount: true, username: lsoUser.username, userId: lsoUser.id, role: lsoUser.role };
           professionType = lsoUser.sstProfessionType || null;
           course50Hours = lsoUser.sstCourse50Hours || false;
           course50HoursDate = lsoUser.sstCourse50HoursDate || null;

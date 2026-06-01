@@ -108,6 +108,7 @@ interface LsoAssignment {
     hasAccount: boolean;
     username?: string;
     userId?: string;
+    role?: string;
   };
 }
 
@@ -467,10 +468,14 @@ export default function AsignarLsoExterno() {
                     <ShieldCheck className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-green-700 dark:text-green-400">
-                        Portal del Profesional SST: Acceso activo
+                        {['superusuario', 'admin', 'soporte'].includes(assignmentData.data.portalAccess.role || '')
+                          ? 'Portal del Profesional SST: Acceso completo como administrador'
+                          : 'Portal del Profesional SST: Acceso activo'}
                       </p>
                       <p className="text-xs text-green-600 dark:text-green-500">
-                        Usuario: {assignmentData.data.portalAccess.username} — Las credenciales fueron enviadas por email al profesional.
+                        {['superusuario', 'admin', 'soporte'].includes(assignmentData.data.portalAccess.role || '')
+                          ? `El profesional ya tiene cuenta en el sistema con rol "${assignmentData.data.portalAccess.role}" (usuario: ${assignmentData.data.portalAccess.username}). Puede acceder directamente a sst.sagisas.co.`
+                          : `Usuario: ${assignmentData.data.portalAccess.username} — Las credenciales fueron enviadas por email al profesional.`}
                       </p>
                     </div>
                   </>
