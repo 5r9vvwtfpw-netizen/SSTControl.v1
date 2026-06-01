@@ -3044,6 +3044,8 @@ export class DbStorage implements IStorage {
           }
         }
         
+        // Sincronizar numberOfWorkers de la empresa con el conteo real
+        await this.syncWorkerCount(companyId);
         return newWorker;
       } catch (error: any) {
         // Si es un error de unique constraint y no es el último intento, reintentar
@@ -3451,6 +3453,8 @@ export class DbStorage implements IStorage {
       }
     }
 
+    // Sincronizar numberOfWorkers de la empresa con el conteo real
+    await this.syncWorkerCount(companyId);
     logger.info({ workerId: id, companyId, deletedRecords }, 'Worker deleted with cascade');
     return { deletedRecords };
   }

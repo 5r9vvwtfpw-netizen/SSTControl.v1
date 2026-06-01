@@ -44,6 +44,7 @@ import { createRoadSafetyWorkerAttendees } from './migrations/create-road-safety
 import { extendHvgLicense2026 } from './migrations/extend-hvg-license-2026';
 import { createDriverComparendosTable } from './migrations/create-driver-comparendos-table';
 import { addPlacaToComparendos } from './migrations/add-placa-to-comparendos';
+import { syncWorkerCountBackfill } from './migrations/sync-worker-count-backfill';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -99,6 +100,7 @@ export async function runMigrations() {
     await extendHvgLicense2026();
     await createDriverComparendosTable();
     await addPlacaToComparendos();
+    await syncWorkerCountBackfill();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);
