@@ -13,16 +13,15 @@ import { sql } from 'drizzle-orm';
  */
 export async function syncWorkerCountBackfill(): Promise<void> {
   try {
+    // Subquery correlacionado: cubre TODAS las empresas, incluyendo las que tienen 0 trabajadores
     const result = await db.execute(sql`
-      UPDATE companies c
-      SET number_of_workers = sub.real_count
-      FROM (
-        SELECT company_id, COUNT(*)::int AS real_count
-        FROM workers
-        GROUP BY company_id
-      ) sub
-      WHERE c.id = sub.company_id
-        AND c.number_of_workers IS DISTINCT FROM sub.real_count
+      UPDATE companies
+      SET number_of_workers = (
+        SELECT COUNT(*)::int FROM workers WHERE company_id = companies.id
+      )
+      WHERE number_of_workers IS DISTINCT FROM (
+        SELECT COUNT(*)::int FROM workers WHERE company_id = companies.id
+      )
     `);
 
     const updated = (result as any).rowCount ?? 0;
