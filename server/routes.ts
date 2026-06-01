@@ -1495,8 +1495,8 @@ function getEffectiveCompanyId(req: Request): string | null {
   const user = req.user;
   if (!user) return null;
   
-  // For superadmins, check for X-Company-Id header first
-  if (user.role === 'superadmin') {
+  // For superadmins and LSO professionals, check for X-Company-Id header first
+  if (user.role === 'superadmin' || user.role === 'lso') {
     const headerCompanyId = req.headers['x-company-id'];
     if (headerCompanyId && typeof headerCompanyId === 'string') {
       return headerCompanyId;
@@ -5117,12 +5117,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[POST /api/accidents] User:', req.user!.username, 'role:', req.user!.role, 'companyId:', req.user!.companyId);
       const userCompanyId = req.user!.companyId;
       const isAdmin = hasGlobalAccess(req.user!.role);
+      const isLso = req.user!.role === 'lso';
       
       let companyId: string;
-      if (isAdmin) {
-        companyId = req.body.companyId;
+      if (isAdmin || isLso) {
+        // LSO uses X-Company-Id header to specify which company they are working on
+        const headerCompanyId = req.headers['x-company-id'] as string;
+        companyId = headerCompanyId || req.body.companyId;
         if (!companyId) {
-          return res.status(400).send("Admin debe especificar companyId");
+          return res.status(400).send(isLso ? "El profesional LSO debe seleccionar una empresa desde su portal antes de registrar accidentes" : "Admin debe especificar companyId");
         }
         const company = await storage.getCompany(companyId);
         if (!company) {

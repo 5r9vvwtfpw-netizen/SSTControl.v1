@@ -39,6 +39,7 @@ const COPASST_ROLES = [
   { value: "suplente_empleador", label: "Suplente Empleador" },
 ];
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -254,11 +255,21 @@ function calculateSlaStatus(dueDate: string): { status: string; daysRemaining: n
   return { status: "en_tiempo", daysRemaining };
 }
 
+function getLsoCompanyContext(): { companyId: string; companyName: string; companyNit: string } | null {
+  try {
+    const raw = localStorage.getItem("lso_company_context");
+    if (raw) return JSON.parse(raw);
+  } catch { /* ignore */ }
+  return null;
+}
+
 export default function InvestigacionAccidentes() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { selectedCompany } = useCompanyContext();
-  const companyId = selectedCompany?.id || user?.companyId;
+  const isLso = user?.role === 'lso';
+  const lsoContext = isLso ? getLsoCompanyContext() : null;
+  const companyId = lsoContext?.companyId || selectedCompany?.id || user?.companyId;
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [slaFilter, setSlaFilter] = useState<string>("todos");
@@ -802,6 +813,27 @@ export default function InvestigacionAccidentes() {
         <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
+
+      {isLso && lsoContext && (
+        <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800" data-testid="alert-lso-context-inv">
+          <AlertDescription className="flex items-center justify-between gap-4 flex-wrap">
+            <span className="text-blue-800 dark:text-blue-300 text-sm">
+              Viendo módulo de <strong>{lsoContext.companyName}</strong> (NIT: {lsoContext.companyNit}) desde su portal profesional.
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              data-testid="button-back-to-lso-portal-inv"
+              onClick={() => {
+                localStorage.removeItem("lso_company_context");
+                window.location.href = "/portal-licenciado";
+              }}
+            >
+              Volver al portal
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
       
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>

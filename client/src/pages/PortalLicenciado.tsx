@@ -1540,6 +1540,52 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
 
       <PHVADashboardPanel companyId={vault.companyId} />
 
+      <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <FolderOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <CardTitle className="text-base text-blue-800 dark:text-blue-300">Acceder a módulos de la empresa</CardTitle>
+          </div>
+          <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
+            Ingrese directamente al módulo para elaborar y gestionar registros de {vault.companyName}.
+          </p>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2 pt-0">
+          <Button
+            size="sm"
+            variant="outline"
+            data-testid={`button-go-accidents-${vault.companyId}`}
+            onClick={() => {
+              localStorage.setItem("lso_company_context", JSON.stringify({
+                companyId: vault.companyId,
+                companyName: vault.companyName,
+                companyNit: vault.companyNit,
+              }));
+              window.location.href = "/accidentes";
+            }}
+          >
+            <AlertTriangle className="h-4 w-4 mr-1" />
+            Accidentes e Incidentes
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            data-testid={`button-go-investigations-${vault.companyId}`}
+            onClick={() => {
+              localStorage.setItem("lso_company_context", JSON.stringify({
+                companyId: vault.companyId,
+                companyName: vault.companyName,
+                companyNit: vault.companyNit,
+              }));
+              window.location.href = "/investigacion-accidentes";
+            }}
+          >
+            <FileBarChart className="h-4 w-4 mr-1" />
+            Investigación de Accidentes
+          </Button>
+        </CardContent>
+      </Card>
+
       {vault.designaciones.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">

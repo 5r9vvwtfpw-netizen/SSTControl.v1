@@ -201,14 +201,25 @@ import { Accident, Worker, Company, AccidentStatistics, insertAccidentSchema } f
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
+
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
+
+function getLsoCompanyContext(): { companyId: string; companyName: string; companyNit: string } | null {
+  try {
+    const raw = localStorage.getItem("lso_company_context");
+    if (raw) return JSON.parse(raw);
+  } catch { /* ignore */ }
+  return null;
+}
 
 const normativaAccidentes = [
   {
@@ -752,9 +763,13 @@ function EstadisticasATELTab({ accidents, workers }: { accidents: Accident[]; wo
 export default function Accidentes() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const searchString = useSearch();
   const searchParams = new URLSearchParams(searchString);
   const tabFromUrl = searchParams.get("tab");
+
+  const isLso = user?.role === 'lso';
+  const lsoContext = isLso ? getLsoCompanyContext() : null;
 
   const validTabs = ["registro", "estadisticas", "investigaciones"];
   const initialTab = tabFromUrl && validTabs.includes(tabFromUrl) ? tabFromUrl : "registro";
@@ -808,8 +823,10 @@ export default function Accidentes() {
 
   const createAccidentMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertAccidentSchema>) => {
-      const payload = isGlobalAdmin && formData.companyId 
+      const payload = (isGlobalAdmin && formData.companyId)
         ? { ...data, companyId: formData.companyId }
+        : isLso && lsoContext?.companyId
+        ? { ...data, companyId: lsoContext.companyId }
         : data;
       const res = await apiRequest("POST", "/api/accidents", payload);
       return res.json();
@@ -957,6 +974,28 @@ export default function Accidentes() {
         <BackToCronogramaButton />
         <BackToPesvEvaluationButton />
       </div>
+
+      {isLso && lsoContext && (
+        <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800" data-testid="alert-lso-context">
+          <AlertDescription className="flex items-center justify-between gap-4 flex-wrap">
+            <span className="text-blue-800 dark:text-blue-300 text-sm">
+              Viendo módulo de <strong>{lsoContext.companyName}</strong> (NIT: {lsoContext.companyNit}) desde su portal profesional.
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              data-testid="button-back-to-lso-portal"
+              onClick={() => {
+                localStorage.removeItem("lso_company_context");
+                navigate("/portal-licenciado");
+              }}
+            >
+              Volver al portal
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Accidentes e Incidentes</h1>
@@ -978,7 +1017,7 @@ export default function Accidentes() {
 
         <TabsContent value="registro" className="space-y-6 mt-4">
       <div className="flex flex-wrap items-center justify-end gap-4">
-        {user?.role && hasCompanyAdminAccess(user.role) && (
+        {user?.role && (hasCompanyAdminAccess(user.role) || (isLso && !!lsoContext)) && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button data-testid="button-add-accident">

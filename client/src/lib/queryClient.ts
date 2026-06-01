@@ -73,13 +73,22 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-// Helper to get the selected company ID from localStorage (for superadmin)
+// Helper to get the selected company ID from localStorage (for superadmin or LSO)
 function getSelectedCompanyId(): string | null {
   try {
     const session = localStorage.getItem("superadmin_access_session");
     if (session) {
       const parsed = JSON.parse(session);
-      return parsed.companyId || null;
+      if (parsed.companyId) return parsed.companyId;
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  try {
+    const lsoContext = localStorage.getItem("lso_company_context");
+    if (lsoContext) {
+      const parsed = JSON.parse(lsoContext);
+      if (parsed.companyId) return parsed.companyId;
     }
   } catch {
     // Ignore parse errors
