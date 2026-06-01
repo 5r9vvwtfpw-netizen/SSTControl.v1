@@ -3,307 +3,419 @@ const fs = require('fs');
 const path = require('path');
 
 const doc = new PDFDocument({ size: 'A4', margin: 0 });
-const outPath = path.join(__dirname, '..', 'guia-llamadas-sst-colombia.pdf');
-doc.pipe(fs.createWriteStream(outPath));
+const out = path.join(__dirname, '..', 'guia-llamadas-sst-colombia.pdf');
+doc.pipe(fs.createWriteStream(out));
 
 const W = 595.28;
 const H = 841.89;
 
-// ── COLORS ──────────────────────────────────────────────────────────────────
-const C = {
-  dark:    '#0D2B1F',
-  green:   '#1B4332',
-  mid:     '#2D6A4F',
-  accent:  '#40916C',
-  light:   '#D8F3DC',
-  white:   '#FFFFFF',
-  gray:    '#F4F4F4',
-  txt:     '#1a1a1a',
-  sub:     '#444444',
-  red:     '#B91C1C',
-  amber:   '#B45309',
-  blue:    '#1D4ED8',
-  purple:  '#6D28D9',
+// ── Paleta ────────────────────────────────────────────────────────────────────
+const G = {
+  dark:   '#0B2218',
+  green:  '#1A4232',
+  mid:    '#2D6A4F',
+  light:  '#52B788',
+  pale:   '#D8F3DC',
+  white:  '#FFFFFF',
+  bg:     '#F7FAFA',
+  line:   '#B7E4C7',
+  txt:    '#17291F',
+  sub:    '#3A5A47',
+  muted:  '#6B8F77',
+  red:    '#C0392B',
+  blue:   '#154360',
+  amber:  '#7D4A00',
+  purple: '#4A235A',
+  rlight: '#FDECEA',
+  blight: '#EAF2F8',
+  alight: '#FEF5E7',
+  plight: '#F5EEF8',
 };
 
-// ── HELPERS ──────────────────────────────────────────────────────────────────
-function band(y, h, color) {
-  doc.rect(0, y, W, h).fill(color);
+// ── Primitivos ────────────────────────────────────────────────────────────────
+const fill  = (c) => doc.fillColor(c);
+const font  = (f, s) => doc.font(f).fontSize(s);
+const t     = (str, x, y, opts, col, fnt, sz) => {
+  doc.font(fnt || 'Helvetica').fontSize(sz || 8).fillColor(col || G.txt)
+     .text(str, x, y, opts || {});
+};
+const b = (str, x, y, opts, col, sz) =>
+  doc.font('Helvetica-Bold').fontSize(sz || 8).fillColor(col || G.txt)
+     .text(str, x, y, opts || {});
+const rect = (x, y, w, h, c) => doc.rect(x, y, w, h).fill(c);
+const line = (x1, y1, x2, y2, c, lw, dash) => {
+  if (dash) doc.dash(dash[0], { space: dash[1] });
+  doc.moveTo(x1, y1).lineTo(x2, y2).lineWidth(lw || 1).strokeColor(c || G.light).stroke();
+  if (dash) doc.undash();
+};
+
+// Arrow down
+const arrowD = (cx, y1, y2, c) => {
+  line(cx, y1, cx, y2 - 5, c, 1.5);
+  doc.moveTo(cx - 5, y2 - 5).lineTo(cx, y2).lineTo(cx + 5, y2 - 5)
+     .lineWidth(1.5).strokeColor(c || G.light).stroke();
+};
+const arrowR = (x1, x2, cy, c) => {
+  line(x1, cy, x2 - 5, cy, c, 1.5);
+  doc.moveTo(x2 - 5, cy - 4).lineTo(x2, cy).lineTo(x2 - 5, cy + 4)
+     .lineWidth(1.5).strokeColor(c || G.light).stroke();
+};
+
+// Rounded rect
+const rrect = (x, y, w, h, r, c) => doc.roundedRect(x, y, w, h, r).fill(c);
+
+// Diamond
+function diamond(cx, cy, hw, hh, fc, label, lc, sz) {
+  doc.moveTo(cx, cy - hh).lineTo(cx + hw, cy)
+     .lineTo(cx, cy + hh).lineTo(cx - hw, cy).closePath().fill(fc);
+  doc.font('Helvetica-Bold').fontSize(sz || 7.5).fillColor(lc || G.white)
+     .text(label, cx - hw + 6, cy - 5, { width: hw * 2 - 12, align: 'center', lineBreak: false });
 }
 
-function boxed(x, y, w, h, fill, stroke) {
-  doc.rect(x, y, w, h).fill(fill);
-  if (stroke) { doc.rect(x, y, w, h).stroke(stroke); }
+// Step number badge
+function stepBadge(num, label, bx, by, bw, bh, bgColor) {
+  rrect(bx, by, bw, bh, 4, bgColor);
+  // Circle number
+  doc.circle(bx + 18, by + bh / 2, 11).fill(G.white);
+  b(String(num), bx + 14.5, by + bh / 2 - 5, { lineBreak: false }, bgColor, 10);
+  b(label, bx + 34, by + bh / 2 - 5.5, { width: bw - 40, lineBreak: false }, G.white, 8.5);
 }
 
-function txt(text, x, y, opts, color, font, size) {
-  doc.font(font || 'Helvetica').fontSize(size || 8)
-     .fillColor(color || C.txt)
-     .text(text, x, y, opts || {});
+// Script box (italic quote with left accent bar)
+function scriptBox(text, x, y, bw, bh, accent) {
+  rrect(x, y, bw, bh, 4, G.white);
+  rect(x, y, 4, bh, accent);
+  doc.roundedRect(x, y, bw, bh, 4).lineWidth(0.5).strokeColor(accent).stroke();
+  doc.font('Helvetica-Oblique').fontSize(7.8).fillColor(G.dark)
+     .text('\u201c' + text + '\u201d', x + 10, y + 7, { width: bw - 16, align: 'justify' });
 }
 
-function bold(text, x, y, opts, color, size) {
-  txt(text, x, y, opts, color, 'Helvetica-Bold', size || 8);
+// Tag pill
+function pill(text, x, y, bg, tc, sz) {
+  const pw = doc.font('Helvetica-Bold').fontSize(sz || 6.5).widthOfString(text) + 12;
+  rrect(x, y, pw, 13, 6, bg);
+  doc.font('Helvetica-Bold').fontSize(sz || 6.5).fillColor(tc || G.white)
+     .text(text, x + 6, y + 3, { lineBreak: false });
+  return pw;
 }
 
-function step(num, label, x, y, w, color) {
-  doc.rect(x, y, w, 15).fill(color);
-  doc.circle(x + 10, y + 7.5, 6.5).fill(C.white);
-  bold(num, x + 7, y + 3, { lineBreak: false }, color, 7.5);
-  bold(label.toUpperCase(), x + 20, y + 4, { width: w - 22, lineBreak: false }, C.white, 7.5);
-  return y + 15;
-}
+// ══════════════════════════════════════════════════════════════════════════════
+//  PÁGINA 1: Introducción + Paso 1
+// ══════════════════════════════════════════════════════════════════════════════
 
-// Arrow between steps
-function arrow(x, y) {
-  doc.moveTo(x, y).lineTo(x, y + 8)
-     .moveTo(x - 4, y + 5).lineTo(x, y + 9).lineTo(x + 4, y + 5)
-     .lineWidth(1.2).strokeColor(C.accent).stroke();
-}
+// Background
+rect(0, 0, W, H, G.bg);
+
+// Header
+rect(0, 0, W, 80, G.dark);
+rect(0, 80, W, 3, G.light);
+
+b('GUÍA DE LLAMADAS TELEFÓNICAS', 28, 16, {}, G.white, 20);
+t('SST COLOMBIA™  ·  Árbol de decisiones para gestión comercial', 28, 42, {}, '#A8D8B9', 'Helvetica', 9);
+t('Objetivo: Agendar demostración de 10 minutos  o  enviar folleto PDF técnico', 28, 57, {}, G.light, 'Helvetica', 8);
+
+// Badges top-right
+let px = W - 20;
+['PESV · Res. 40595/2022', 'Res. 0312/2019', 'ISO 45001:2018'].forEach(lb => {
+  const pw = doc.font('Helvetica-Bold').fontSize(6.5).widthOfString(lb) + 12;
+  px -= pw + 6;
+  rrect(px, 16, pw, 14, 6, G.mid);
+  b(lb, px + 6, 19.5, { lineBreak: false }, G.white, 6.5);
+});
+
+// Pre-call bar
+rect(0, 83, W, 22, '#EAF7EE');
+b('Antes de marcar — tenga listo: ', 22, 91, { continued: true }, G.green, 7.5);
+t('nombre del gerente  ·  correo confirmado  ·  nombre empresa  ·  sector (transporte / industria / manufactura)', 22, 91, {}, G.mid, 'Helvetica', 7.5);
+
+// ── PASO 1 ────────────────────────────────────────────────────────────────────
+let y = 116;
+stepBadge(1, 'EL FILTRO — SECRETARIA / RECEPCIONISTA', 22, y, W - 44, 28, G.green);
+y += 36;
+
+b('Guión de apertura:', 22, y, {}, G.mid, 7.5);
+y += 12;
+scriptBox(
+  'Buenos días, mi nombre es [Nombre] de parte de Adriana Díaz, CEO de SST Colombia. ' +
+  '¿Me comunica con el señor/señora [Nombre del Gerente], por favor?',
+  22, y, W - 44, 44, G.green
+);
+y += 52;
+
+// "If they ask..."
+rrect(22, y, W - 44, 52, 4, '#F0FBF4');
+doc.roundedRect(22, y, W - 44, 52, 4).lineWidth(0.5).strokeColor(G.pale).stroke();
+b('Si le preguntan "¿Para qué es?" o "¿De qué empresa llama?":', 30, y + 8, {}, G.green, 7.5);
+doc.font('Helvetica-Oblique').fontSize(7.8).fillColor(G.dark)
+   .text(
+     '\u201cLlamamos de SST Colombia. Es para confirmarle un asunto técnico urgente sobre la documentación ' +
+     'de cumplimiento legal — los informes que su empresa debe tener listos para el Ministerio del Trabajo ' +
+     'y la Superintendencia de Transporte. Es muy breve.\u201d',
+     30, y + 20, { width: W - 68, align: 'justify' }
+   );
+y += 60;
 
 // Decision diamond
-function diamond(cx, cy, hw, hh, fill, label, labelColor) {
-  doc.moveTo(cx, cy - hh)
-     .lineTo(cx + hw, cy)
-     .lineTo(cx, cy + hh)
-     .lineTo(cx - hw, cy)
-     .closePath()
-     .fill(fill);
-  doc.font('Helvetica-Bold').fontSize(7).fillColor(labelColor || C.white)
-     .text(label, cx - hw + 6, cy - 4.5, { width: hw * 2 - 12, align: 'center', lineBreak: false });
-}
+const d1X = W / 2;
+const d1Y = y + 22;
+arrowD(d1X, y, d1Y - 14, G.light);
+diamond(d1X, d1Y, 86, 18, G.mid, '¿Lo comunican con el gerente?', G.white, 8);
+y = d1Y + 18;
 
-// Script bubble
-function script(text, x, y, w, accent) {
-  const bx = x + 4;
-  doc.rect(x, y, 3, 0).fill(accent);  // left border trick — use polygon
-  doc.moveTo(x, y).lineTo(x + 3, y).lineTo(x + 3, y + 28).lineTo(x, y + 28).fill(accent);
-  doc.rect(x + 3, y, w - 3, 28).fill('#F8FFF9');
-  doc.font('Helvetica-Oblique').fontSize(7.5).fillColor('#0D3320')
-     .text('"' + text + '"', x + 8, y + 4, { width: w - 14, lineBreak: true });
-}
+// YES branch (right)
+const yesX = d1X + 86;
+const yesTargetX = d1X + 86;
+line(yesX, d1Y, W - 22, d1Y, G.light, 1.5);
+arrowD(W - 22, d1Y, d1Y + 28, G.light);
 
-// ══════════════════════════════════════════════════════════════════════════════
-// PAGE 1
-// ══════════════════════════════════════════════════════════════════════════════
+rrect(W - 22 - 100, d1Y - 10, 98, 12, 6, G.mid);
+b('SÍ  →  VER PÁGINA 2', W - 22 - 94, d1Y - 7, { lineBreak: false }, G.white, 7);
 
-// HEADER
-band(0, 60, C.dark);
-band(60, 4, C.accent);
+// NO branch (left)
+const noX = 22;
+line(d1X - 86, d1Y, noX + 150, d1Y, G.red, 1.5);
+arrowD(noX + 150, d1Y, d1Y + 28, G.red);
 
-bold('GUÍA DE LLAMADAS TELEFÓNICAS', 22, 10, {}, C.white, 16);
-txt('SST COLOMBIA™  ·  Árbol de decisiones para gestión comercial', 22, 31, {}, '#A8D8B9', 'Helvetica', 8.5);
-txt('Objetivo: Agendar demo de 10 min o enviar el folleto PDF técnico', 22, 44, {}, '#6BCB8B', 'Helvetica', 7.5);
+rrect(noX, d1Y - 10, 148, 12, 6, '#C0392B');
+b('NO  →  NIVEL 1 · Dejar mensaje', noX + 6, d1Y - 7, { lineBreak: false }, G.white, 7);
 
-// PRE-CALL REMINDER BOX
-band(64, 26, C.light);
-bold('Antes de marcar — tenga listo: ', 12, 69, { continued: true }, C.green, 7);
-txt('nombre del gerente  ·  correo confirmado  ·  nombre de la empresa  ·  sector (transporte / industria)', 12, 69,
-  { lineBreak: false }, C.mid, 'Helvetica', 7);
+y = d1Y + 28;
 
-// ── PASO 1: EL FILTRO ─────────────────────────────────────────────────────────
-let y = 92;
-y = step('1', 'El filtro — Secretaria / Recepcionista', 12, y, W - 24, C.green);
-y += 4;
+// NO block
+const noBlockW = 242;
+rrect(22, y, noBlockW, 130, 6, G.white);
+rect(22, y, 5, 130, G.red);
+doc.roundedRect(22, y, noBlockW, 130, 6).lineWidth(0.5).strokeColor('#F1948A').stroke();
 
-txt('Guión de apertura:', 12, y, {}, C.sub, 'Helvetica-Bold', 7);
-y += 10;
-script(
-  '«Buenos días, mi nombre es [Nombre] de parte de Adriana Díaz, CEO de SST Colombia. ' +
-  '¿Me comunica con el señor/señora [Nombre del Gerente], por favor?»',
-  12, y, W - 24, C.accent
-);
-y += 32;
+b('NIVEL 1 — Dejar mensaje y capturar datos', 34, y + 8, { width: noBlockW - 18 }, G.red, 7.5);
+t('Si no puede pasar la llamada o el gerente no está:', 34, y + 22, { width: noBlockW - 18 }, G.sub, 'Helvetica', 7);
 
-txt('Si preguntan "¿Para qué es?":', 12, y, {}, C.sub, 'Helvetica-Bold', 7);
-y += 10;
-script(
-  '«Es para confirmarle un asunto técnico sobre la automatización de informes para el Ministerio de Trabajo ' +
-  'y la Superintendencia de Transporte. Es breve.»',
-  12, y, W - 24, C.accent
-);
-y += 34;
+doc.font('Helvetica-Oblique').fontSize(7.8).fillColor(G.dark)
+   .text(
+     '\u201cPerfecto, le entiendo. ¿Me podría dar su correo directo o su extensión? ' +
+     'Es para reenviarle la nota técnica de una sola página sobre los informes de cumplimiento para el Ministerio del Trabajo.\u201d',
+     34, y + 34, { width: noBlockW - 18 }
+   );
 
-// DECISION 1
-const d1cx = W / 2;
-diamond(d1cx, y + 12, 90, 14, C.mid, '¿Lo pasan?', C.white);
-y += 28;
+b('Si le dan correo / extensión:', 34, y + 72, { width: noBlockW - 18 }, G.red, 7);
+t('Anotar. Enviar correo personalizado. Programar rellamada en 48h.', 34, y + 82, { width: noBlockW - 18 }, G.sub, 'Helvetica', 7);
 
-// YES → PASO 2
-doc.moveTo(d1cx + 90, y - 16).lineTo(d1cx + 90 + 30, y - 16).lineTo(d1cx + 90 + 30, y + 80)
-   .lineWidth(1).strokeColor(C.accent).dash(3, { space: 2 }).stroke();
-doc.undash();
+b('Si NO dan datos:', 34, y + 96, { width: noBlockW - 18 }, G.red, 7);
+t('\u201c¿A qué hora le recomiendan marcar para encontrarle directo?\u201d  — Anotar y cerrar cordialmente.', 34, y + 106, { width: noBlockW - 18 }, G.sub, 'Helvetica', 7);
 
-// NO → Nivel 1
-const noX = 12;
-doc.moveTo(d1cx - 90, y - 16).lineTo(noX + 100, y - 16)
-   .lineWidth(1).strokeColor(C.red).stroke();
+// YES block
+const yesW = 270;
+const yesBlockX = W - 22 - yesW;
+rrect(yesBlockX, y, yesW, 130, 6, '#EAF7EE');
+rect(yesBlockX, y, 5, 130, G.green);
+doc.roundedRect(yesBlockX, y, yesW, 130, 6).lineWidth(0.5).strokeColor(G.pale).stroke();
 
-// NO label
-bold('NO está / no puede pasar', noX, y - 24, {}, C.red, 6.5);
-boxed(noX, y - 14, 180, 42, '#FFF1F1', C.red);
-bold('NIVEL 1 — Dejar mensaje y capturar datos', noX + 5, y - 10, {}, C.red, 6.5);
-txt('«Perfecto. ¿Me podría dar su correo directo o extensión? Es para reenviarle ' +
-    'el resumen técnico de 1 página sobre los informes para el Ministerio y la Supertransporte.»', noX + 5, y - 0,
-    { width: 170 }, C.txt, 'Helvetica', 6.5);
+b('¡Lo pasaron! — Continúe con calma y confianza', yesBlockX + 12, y + 8, { width: yesW - 18 }, G.green, 7.5);
 
-// SÍ label
-const siX = d1cx - 30;
-bold('SÍ → PASO 2', siX, y - 22, {}, C.green, 7);
-arrow(d1cx, y - 2);
-
-y += 6;
-
-// ── PASO 2: TOMADOR DE DECISIÓN ────────────────────────────────────────────────
-y = step('2', 'El tomador de decisión — Gerente / Representante Legal', 12, y, W - 24, C.mid);
-y += 4;
-
-txt('Guión de apertura:', 12, y, {}, C.sub, 'Helvetica-Bold', 7);
-y += 10;
-script(
-  '«Señor/Señora [Nombre], buenos días. Le habla [Asistente] de parte de Adriana Díaz. Muy breve: ' +
-  'le escribimos hace unos días sobre cómo estamos ayudando a empresas de su sector a tener ' +
-  'listos automáticamente los informes del Ministerio de Trabajo y la Supertransporte, ' +
-  'sin papeles y con firma digital. ¿Pudo ver el mensaje?»',
-  12, y, W - 24, C.mid
-);
-y += 40;
-
-// DECISION 2
-diamond(d1cx, y + 12, 110, 14, C.green, '¿Cuál es la respuesta?', C.white);
-y += 30;
-
-// 4 branches
-const bw = 124;
-const gap = 10;
-const bxs = [12, 12 + bw + gap, 12 + (bw + gap) * 2, 12 + (bw + gap) * 3];
-const bcolors = [C.green, C.blue, C.amber, C.purple];
-const blabels = ['A  "Sí lo vi"', 'B  "No lo vi"', 'C  "Estoy ocupado"', 'D  "No me interesa"'];
-
-bxs.forEach((bx, i) => {
-  boxed(bx, y, bw, 11, bcolors[i]);
-  bold(blabels[i], bx + 4, y + 2, { lineBreak: false }, C.white, 6.5);
-});
-y += 11;
-
-// Content per branch
-const bh = 128;
-bxs.forEach((bx, i) => {
-  doc.rect(bx, y, bw, bh).fill(i % 2 === 0 ? C.gray : '#F0F4FF');
+const tips = [
+  'Respire y baje el ritmo antes de hablar.',
+  'Use el nombre del gerente al inicio de cada idea.',
+  'Escuche más de lo que habla. Si interrumpe, deje terminar.',
+  'Su único objetivo ahora: llegar al Paso 2 (página 2).',
+];
+tips.forEach((tip, i) => {
+  doc.circle(yesBlockX + 16, y + 28 + i * 22 + 4, 3).fill(G.light);
+  t(tip, yesBlockX + 24, y + 28 + i * 22, { width: yesW - 34 }, G.txt, 'Helvetica', 7.5);
 });
 
-// Branch A
-let ay = y + 5;
-const ax = bxs[0];
-bold('«¡Excelente! Lo llamamos para ofrecerle', ax + 4, ay, { width: bw - 8 }, bcolors[0], 6.5);
-ay += 18;
-txt('enviarle el folleto de 1 página donde ve visualmente cómo conductores y trabajadores ' +
-    'registran todo desde el celular y el sistema genera solo los informes para el Ministerio y la Supertransporte.»',
-    ax + 4, ay, { width: bw - 8 }, C.txt, 'Helvetica-Oblique', 6.5);
-ay += 44;
-bold('→ Si acepta el PDF:', ax + 4, ay, { width: bw - 8 }, bcolors[0], 6.5);
-ay += 10;
-txt('«¿Me confirma el celular para avisarle por WhatsApp en cuanto lo envíe?»', ax + 4, ay, { width: bw - 8 }, C.txt, 'Helvetica', 6.5);
-ay += 16;
-bold('→ Si muestra interés:', ax + 4, ay, { width: bw - 8 }, bcolors[0], 6.5);
-ay += 10;
-txt('«¿Le queda bien una sesión virtual de 10 min el martes a las 9 am o el miércoles en la tarde?»', ax + 4, ay, { width: bw - 8 }, C.txt, 'Helvetica', 6.5);
+y += 140;
 
-// Branch B
-let by2 = y + 5;
-const bx2 = bxs[1];
-bold('«No se preocupe. En 20 segundos le cuento:', bx2 + 4, by2, { width: bw - 8 }, bcolors[1], 6.5);
-by2 += 18;
-txt('Ayudamos a empresas como la suya a que el control de inspecciones, ' +
-    'comités y entrega de dotaciones deje de ser papeles y genere automáticamente ' +
-    'los informes para el Ministerio del Trabajo y la Supertransporte.»',
-    bx2 + 4, by2, { width: bw - 8 }, C.txt, 'Helvetica-Oblique', 6.5);
-by2 += 46;
-bold('→ Solicitar correo:', bx2 + 4, by2, { width: bw - 8 }, bcolors[1], 6.5);
-by2 += 10;
-txt('«¿Me confirma su correo directo para enviarle el resumen de 1 página?»', bx2 + 4, by2, { width: bw - 8 }, C.txt, 'Helvetica', 6.5);
-by2 += 16;
-bold('→ Valide bien el correo', bx2 + 4, by2, { width: bw - 8 }, bcolors[1], 6.5);
-by2 += 10;
-txt('y prometa el envío inmediato. Registrar en base de datos.', bx2 + 4, by2, { width: bw - 8 }, C.txt, 'Helvetica', 6.5);
+// Footer p1
+rect(0, H - 24, W, 24, G.dark);
+b('SST COLOMBIA™  ·  sst.sagisas.co  ·  Adriana Díaz, CEO  ·  SAGISAS SAS', 22, H - 16, {}, '#A8D8B9', 7);
+b('Página 1 de 2  —  Uso interno · Equipo Comercial', W - 160, H - 16, {}, G.light, 7);
 
-// Branch C
-let cy2 = y + 5;
-const cx2 = bxs[2];
-bold('«Le entiendo perfectamente.', cx2 + 4, cy2, { width: bw - 8 }, bcolors[2], 6.5);
-cy2 += 14;
-txt('Le reenvío ahora mismo el resumen técnico de 1 página. No le quita ni un minuto revisarlo cuando tenga calma.»',
-    cx2 + 4, cy2, { width: bw - 8 }, C.txt, 'Helvetica-Oblique', 6.5);
-cy2 += 34;
-bold('→ Acordar momento exacto:', cx2 + 4, cy2, { width: bw - 8 }, bcolors[2], 6.5);
-cy2 += 10;
-txt('«¿Le marco el [día] a las [hora] para encontrarle directo?»', cx2 + 4, cy2, { width: bw - 8 }, C.txt, 'Helvetica', 6.5);
-cy2 += 16;
-bold('Registrar: fecha/hora y nombre de quien confirma.', cx2 + 4, cy2, { width: bw - 8 }, bcolors[2], 6.5);
+// ══════════════════════════════════════════════════════════════════════════════
+//  PÁGINA 2: Paso 2 + 4 ramas + Argumentos clave
+// ══════════════════════════════════════════════════════════════════════════════
+doc.addPage();
+rect(0, 0, W, H, G.bg);
 
-// Branch D
-let dy2 = y + 5;
-const dx = bxs[3];
-bold('«Le comprendo, y qué bueno que ya tienen eso cubierto.', dx + 4, dy2, { width: bw - 8 }, bcolors[3], 6.5);
-dy2 += 18;
-txt('Lo valioso es que no competimos con su ARL ni su asesor: automatizamos lo que ellos no hacen — ' +
-    'las firmas digitales, los comités en app y los informes listos para el Ministerio y la Supertransporte.»',
-    dx + 4, dy2, { width: bw - 8 }, C.txt, 'Helvetica-Oblique', 6.5);
-dy2 += 48;
-bold('→ Si acepta ver el PDF:', dx + 4, dy2, { width: bw - 8 }, bcolors[3], 6.5);
-dy2 += 10;
-txt('Enviar de inmediato. Anotar correo.', dx + 4, dy2, { width: bw - 8 }, C.txt, 'Helvetica', 6.5);
-dy2 += 12;
-bold('→ Si insiste en no:', dx + 4, dy2, { width: bw - 8 }, bcolors[3], 6.5);
-dy2 += 10;
-txt('«Muchas gracias por su tiempo, que tenga un excelente día.»', dx + 4, dy2, { width: bw - 8 }, C.txt, 'Helvetica', 6.5);
+// Header slim
+rect(0, 0, W, 44, G.dark);
+rect(0, 44, W, 3, G.light);
+b('GUÍA DE LLAMADAS TELEFÓNICAS  ·  SST COLOMBIA™', 22, 8, {}, G.white, 11);
+t('Página 2 de 2  —  Paso 2: El Tomador de Decisión', 22, 25, {}, '#A8D8B9', 'Helvetica', 8);
 
-y += bh + 10;
+y = 58;
 
-// ── REGISTRO ──────────────────────────────────────────────────────────────────
-band(y, 12, C.green);
-bold('REGISTRO OBLIGATORIO POR CADA LLAMADA', 14, y + 2.5, {}, C.white, 7);
+// ── PASO 2 ────────────────────────────────────────────────────────────────────
+stepBadge(2, 'EL TOMADOR DE DECISIÓN — GERENTE / REPRESENTANTE LEGAL', 22, y, W - 44, 28, G.mid);
+y += 36;
+
+b('Guión de apertura (máximo 30 segundos):', 22, y, {}, G.mid, 7.5);
 y += 12;
+scriptBox(
+  'Señor/Señora [Nombre], buenos días. Le habla [Nombre del Asistente] de parte de Adriana Díaz. ' +
+  'Muy breve: llevamos años ayudando a empresas del sector a tener listos automáticamente — con firma digital — ' +
+  'los informes que pide el Ministerio del Trabajo y la Superintendencia de Transporte. ' +
+  'Le enviamos un mensaje hace unos días. ¿Pudo verlo?',
+  22, y, W - 44, 60, G.mid
+);
+y += 68;
 
-band(y, 28, C.light);
-const fields = ['Empresa:', 'Nombre del gerente:', 'Cargo:', 'Correo confirmado:', 'Celular/WhatsApp:', 'Resultado:', 'Próxima acción:'];
-let fx = 14;
-fields.forEach((f, i) => {
-  if (i === 4) { fx = 14; y += 14; }
-  bold(f, fx, y + 2, { lineBreak: false }, C.green, 6.5);
-  doc.moveTo(fx + doc.widthOfString(f, { fontSize: 6.5 }) + 2, y + 11)
-     .lineTo(fx + 70, y + 11).lineWidth(0.5).strokeColor('#AAAAAA').stroke();
-  fx += 78;
-});
-y += 14;
+// Decision 2
+const d2X = W / 2;
+const d2Y = y + 20;
+arrowD(d2X, y, d2Y - 14, G.light);
+diamond(d2X, d2Y, 110, 18, G.green, '¿Cuál es su respuesta?', G.white, 8.5);
+y = d2Y + 18;
 
-// ── ARGUMENTOS CLAVE ──────────────────────────────────────────────────────────
-y += 4;
-band(y, 12, C.dark);
-bold('ARGUMENTOS CLAVE SI PREGUNTA MÁS', 14, y + 2.5, {}, C.white, 7);
-y += 14;
-
-const args = [
-  ['Ministerio del Trabajo', 'Generamos el informe Res. 0312/2019 con "Hilo Dorado": cada hallazgo trazable a su acción y su evidencia. FURAT automático listo para radicar.'],
-  ['Supertransporte / PESV', 'Evaluación de 24 pasos (Res. 40595/2022), informes de siniestralidad, reporte de conductores con licencias y comparendos, actas de comité firmadas.'],
-  ['Portal móvil del trabajador', 'El operario firma, hace inspecciones pre-operacionales y responde encuestas diarias de aptitud desde el celular. Cero papel, 100% trazable.'],
-  ['Firma digital del LSO',       'Documentos firmados con número de licencia del profesional SST: validez legal plena ante cualquier visita de inspección.'],
+// Branches
+const BR = [
+  { letter: 'A', label: '"Sí lo vi"',      bg: G.green,  txt: G.white, lt: '#EBF8F0' },
+  { letter: 'B', label: '"No lo vi"',       bg: G.blue,   txt: G.white, lt: '#EBF4FB' },
+  { letter: 'C', label: '"Estoy ocupado"',  bg: G.amber,  txt: G.white, lt: '#FEF9EF' },
+  { letter: 'D', label: '"No me interesa"', bg: G.purple, txt: G.white, lt: '#F5EEF8' },
 ];
 
-args.forEach(([label, body], i) => {
-  const ax2 = i < 2 ? 12 : W / 2 + 4;
-  const aY  = i < 2 ? y + (i * 22) : y + ((i - 2) * 22);
-  doc.rect(ax2, aY, 4, 18).fill(C.accent);
-  bold(label, ax2 + 8, aY + 1, { lineBreak: false }, C.green, 7);
-  txt(body, ax2 + 8, aY + 10, { width: W / 2 - 24 }, C.sub, 'Helvetica', 6.5);
+const bw4 = (W - 44 - 9) / 4;  // 4 cols with 3 gaps of 3
+const bx0 = 22;
+const gap4 = 3;
+const headerH = 26;
+const bodyH = 172;
+
+BR.forEach((br, i) => {
+  const bx = bx0 + i * (bw4 + gap4);
+  // Arrow from diamond to column
+  const cx = bx + bw4 / 2;
+  line(d2X, d2Y, cx, d2Y, G.light, 0.8, [3, 2]);
+  arrowD(cx, d2Y, y + 2, G.light);
+  // Header
+  rrect(bx, y, bw4, headerH, 4, br.bg);
+  b(br.letter + '  ' + br.label, bx + 8, y + 9, { width: bw4 - 12, lineBreak: false }, br.txt, 8);
 });
 
-y += 46;
+y += headerH;
 
-// ── FOOTER ─────────────────────────────────────────────────────────────────────
-band(H - 26, 26, C.dark);
-bold('SST COLOMBIA™  ·  sst.sagisas.co  ·  Adriana Díaz, CEO  ·  SAGISAS SAS', 14, H - 19, {}, '#A8D8B9', 7);
-txt('Uso interno — Equipo Comercial', W - 120, H - 19, {}, '#6BCB8B', 'Helvetica', 6.5);
+const SCRIPTS = [
+  // A
+  [
+    { type: 'body', text: '«¡Excelente! Lo llamamos para ofrecerle enviarle el folleto técnico de 1 página donde ve en imágenes cómo los trabajadores y conductores registran todo desde el celular — y el sistema genera solo los informes para el Ministerio y la Supertransporte.»' },
+    { type: 'if',   text: '→ Si acepta el PDF:', sub: '«¿Me confirma su celular para avisarle por WhatsApp en cuanto lo envíe?»' },
+    { type: 'if',   text: '→ Si muestra interés:', sub: '«¿Le queda bien una sesión virtual de 10 min este martes a las 9 am o el miércoles en la tarde?»' },
+  ],
+  // B
+  [
+    { type: 'body', text: '«No se preocupe, es muy comprensible con el día a día. En 20 segundos: ayudamos a empresas como la suya a que comités, inspecciones y entregas de dotaciones dejen de ser papeles y generen solos los informes para el Ministerio del Trabajo.»' },
+    { type: 'if',   text: '→ Solicitar correo directo:', sub: '«¿Me confirma su correo para enviarle el resumen de 1 página ahora mismo?»' },
+    { type: 'note', text: 'Validar bien el correo letra por letra. Prometer envío inmediato. Registrar y dar seguimiento.' },
+  ],
+  // C
+  [
+    { type: 'body', text: '«Le entiendo perfectamente, no le quito ni un segundo. Le reenvío el documento técnico de 1 página a su correo ahora mismo para que lo tenga a la mano cuando tenga calma.»' },
+    { type: 'if',   text: '→ Acordar momento exacto:', sub: '«¿Le marco el [día] a las [hora] para encontrarle directo? ¿Le funciona mejor en la mañana o en la tarde?»' },
+    { type: 'note', text: 'Anotar día, hora y nombre de quien confirma. Cerrar amablemente y cumplir la rellamada puntual.' },
+  ],
+  // D
+  [
+    { type: 'body', text: '«Le comprendo, señor [Nombre], y qué bueno que ya tienen eso cubierto. Lo valioso es que no competimos con su ARL ni con su asesor: automatizamos lo que ellos no hacen — las firmas digitales, los comités en app y los informes listos para el Ministerio y la Supertransporte, sin papeles.»' },
+    { type: 'if',   text: '→ Si acepta ver el PDF:', sub: 'Enviar de inmediato. Anotar correo.' },
+    { type: 'if',   text: '→ Si insiste en no:', sub: '«Muchas gracias por su tiempo — que tenga un excelente día.» Cerrar con calidad.' },
+  ],
+];
+
+BR.forEach((br, i) => {
+  const bx = bx0 + i * (bw4 + gap4);
+  rrect(bx, y, bw4, bodyH, 0, br.lt);
+  // bottom-left/right rounding
+  doc.roundedRect(bx, y + bodyH - 4, bw4, 8, 4).fill(br.lt);
+
+  let ty = y + 8;
+  SCRIPTS[i].forEach(item => {
+    if (item.type === 'body') {
+      doc.font('Helvetica-Oblique').fontSize(7.4).fillColor(G.dark)
+         .text(item.text, bx + 7, ty, { width: bw4 - 14, align: 'justify' });
+      ty = doc.y + 6;
+    } else if (item.type === 'if') {
+      doc.font('Helvetica-Bold').fontSize(7).fillColor(br.bg)
+         .text(item.text, bx + 7, ty, { width: bw4 - 14 });
+      ty = doc.y + 2;
+      doc.font('Helvetica').fontSize(7.2).fillColor(G.txt)
+         .text(item.sub, bx + 7, ty, { width: bw4 - 14 });
+      ty = doc.y + 6;
+    } else if (item.type === 'note') {
+      rrect(bx + 6, ty, bw4 - 12, 22, 3, br.bg + '22');
+      doc.font('Helvetica').fontSize(6.8).fillColor(br.bg)
+         .text(item.text, bx + 10, ty + 4, { width: bw4 - 20 });
+      ty += 28;
+    }
+  });
+});
+
+y += bodyH + 14;
+
+// ── ARGUMENTOS CLAVE ──────────────────────────────────────────────────────────
+rect(0, y, W, 14, G.dark);
+b('ARGUMENTOS CLAVE — Si pregunta más detalles durante la llamada', 22, y + 3.5, {}, G.white, 8);
+y += 14;
+
+const ARGS = [
+  {
+    icon: 'MinTrab', label: 'Ministerio del Trabajo — Res. 0312/2019',
+    body: 'El sistema genera el informe de cumplimiento con "Hilo Dorado": cada estándar enlazado ' +
+          'a su evidencia y su acción de mejora. FURAT automático listo para radicar ante la ARL. ' +
+          'Actas de COPASST firmadas digitalmente. Estadísticas de accidentalidad al instante.',
+    bg: '#E8F5F0', accent: G.green,
+  },
+  {
+    icon: 'STrans', label: 'Superintendencia de Transporte — PESV · Res. 40595/2022',
+    body: 'Evaluación de 24 pasos PHVA, % de cumplimiento por fase. Gestión de conductores ' +
+          'con licencias, vencimientos y comparendos. Flota vehicular, inspecciones pre-operacionales ' +
+          'desde celular, control de alcohol/fatiga. Evidencias exportables en PDF para auditoría.',
+    bg: '#E8EEF8', accent: G.blue,
+  },
+  {
+    icon: 'Móvil', label: 'Portal móvil del trabajador y el conductor',
+    body: 'El operario firma recibos de EPP, asiste a capacitaciones y hace inspecciones ' +
+          'desde su celular. El conductor registra su encuesta diaria de aptitud y checklist del ' +
+          'vehículo. Cero papel, 100% trazable, disponible las 24h.',
+    bg: '#F0FBF4', accent: G.light,
+  },
+  {
+    icon: 'LSO', label: 'Firma digital del Licenciado SST (LSO)',
+    body: 'Cinco tipos de documentos firmados con número de licencia vigente del profesional SST. ' +
+          'Validez legal plena ante cualquier visita de inspección del Ministerio. ' +
+          'El Licenciado gestiona todas sus empresas desde un portal unificado.',
+    bg: '#F8F0FB', accent: G.purple,
+  },
+];
+
+const aw = (W - 44 - 9) / 4;
+ARGS.forEach((arg, i) => {
+  const ax = 22 + i * (aw + 3);
+  rrect(ax, y + 6, aw, 116, 5, arg.bg);
+  rect(ax, y + 6, 4, 116, arg.accent);
+  b(arg.label, ax + 10, y + 12, { width: aw - 14 }, arg.accent, 7);
+  t(arg.body, ax + 10, y + 26, { width: aw - 16, align: 'justify' }, G.sub, 'Helvetica', 7);
+});
+
+y += 130;
+
+// Cierre llamada
+rect(0, y, W, 13, G.mid);
+b('CIERRE PROFESIONAL — aplica en todos los escenarios', 22, y + 2.5, {}, G.white, 7.5);
+y += 13;
+
+rrect(22, y, W - 44, 44, 4, '#EAF7EE');
+doc.font('Helvetica-Oblique').fontSize(8).fillColor(G.dark)
+   .text(
+     '\u201cMuchas gracias por su tiempo, [Nombre]. Le confirmo el envío del documento por correo ' +
+     'y si tiene alguna pregunta, con mucho gusto la atendemos. ¡Que tenga un excelente día!\u201d',
+     32, y + 8, { width: W - 68, align: 'center' }
+   );
+
+y += 52;
+
+// Footer p2
+rect(0, H - 24, W, 24, G.dark);
+b('SST COLOMBIA™  ·  sst.sagisas.co  ·  Adriana Díaz, CEO  ·  SAGISAS SAS', 22, H - 16, {}, '#A8D8B9', 7);
+b('Página 2 de 2  —  Uso interno · Equipo Comercial', W - 160, H - 16, {}, G.light, 7);
 
 doc.end();
-console.log('PDF generado en:', outPath);
+console.log('PDF generado:', out);
