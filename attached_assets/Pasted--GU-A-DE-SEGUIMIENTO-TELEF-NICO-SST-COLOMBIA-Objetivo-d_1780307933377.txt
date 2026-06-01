@@ -1,0 +1,50 @@
+📞 GUÍA DE SEGUIMIENTO TELEFÓNICO: SST-COLOMBIA™
+Objetivo de la llamada: Validar si recibieron el correo y asegurar el envío del folleto de 1 página (PDF) o agendar la cita virtual de 10 minutos.
+
+🛑 PASO 1: El Filtro (Secretaria / Recepcionista)
+Guión de inicio: "Buenos días, mi nombre es [Nombre del Asistente] de SST-COLOMBIA. Por favor, ¿me comunica con el señor/señora [Nombre del Gerente], de parte de Adriana Díaz?"
+
+SI TE PREGUNTAN: "¿De qué empresa llama o para qué es?" Respuesta: "Llamamos de SST-COLOMBIA. Es para confirmar un asunto pendiente sobre el control documental de riesgos y los soportes obligatorios para el Ministerio y la Supertransporte de la operación." (Usar tono corporativo y seguro, sin sonar a ventas).
+
+SI EL GERENTE NO ESTÁ O NO PUEDE PASAR LA LLAMADA: Acción: Ir a [Nivel 1: Dejar Mensaje].
+
+SI TE PASAN AL GERENTE: Acción: Ir a [PASO 2: El Tomador de Decisión].
+
+📁 Nivel 1: Dejar Mensaje / Capturar Datos
+"Perfecto, le entiendo. Como es un tema prioritario sobre la simplificación de firmas y comités, ¿me podría confirmar el correo directo de él/ella para reenviarle la nota técnica, o su extensión directa?"
+
+Si te dan el correo/extensión: Apuntar los datos, agradecer y colgar.
+
+Acción inmediata: Enviar el correo personalizado usando el nombre del gerente y registrar en la base de datos para volver a llamar en 2 días.
+
+Si no te dan datos: "No hay problema, ¿a qué hora me recomienda marcar para encontrarle directo? Muchas gracias."
+
+🤝 PASO 2: El Tomador de Decisión (Gerente / Rep. Legal)
+Guión de inicio: "Señor/Señora [Nombre del Gerente], buenos días. Le habla [Nombre del Asistente] de parte de Adriana Díaz, CEO de SST-COLOMBIA. El motivo de mi llamada es muy corto: le enviamos un correo hace un par de días respecto a cómo estamos ayudando a empresas de su sector a unificar digitalmente todo el ciclo PHVA, el control de la matriz GTC-45 y el PESV, reduciendo el papeleo. ¿Pudo revisar el mensaje?"
+
+🧭 Escenario A: "Sí, vi el correo" o "Me suena"
+"¡Excelente! Como sabemos que su agenda es exigente, lo llamaba para saber si nos da la autorización de enviarle un folleto técnico de una sola página en PDF. Allí se resume visualmente cómo los operarios y conductores registran todo desde el celular y cómo el sistema les deja listos los informes para el Ministerio del Trabajo y la Supertransporte."
+
+Si dice "Sí, envíelo": "Perfecto, se lo despacho de inmediato a su correo. ¿Cuál es su línea directa o celular para confirmarle por WhatsApp apenas se lo envíe?" (Asegurar el celular es clave).
+
+Si muestra interés inmediato y pregunta más: "Señor [Nombre], para mostrarle exactamente cómo funciona aplicado a su operación, ¿le queda bien una breve sesión virtual de 10 minutos este martes a las 9:00 am o el miércoles en la tarde?"
+
+🧭 Escenario B: "No lo he visto" o "No me ha llegado"
+"No se preocupe, es totalmente comprensible por el día a día. Se lo resumo muy fácil: ayudamos a organizaciones como la suya a que el control de firmas, comités y entrega de dotaciones deje de ser un desgaste de papeles y se maneje digitalmente, dejando las evidencias listas para el Ministerio del Trabajo." "Para no quitarle tiempo, ¿me confirma su correo directo para despacharle un folleto de una sola página en PDF y que lo revise con calma?"
+
+Si confirma el correo: Validar que esté bien escrito, prometer el envío inmediato y despedirse cordialmente.
+
+🧭 Escenario C: "Estoy ocupado(a) / Llámeme luego"
+"Le entiendo perfectamente. No le quito ni un segundo. Le reenvío el documento técnico de una página a su correo ahora mismo para que lo tenga a la mano, y le marco el [Día de la semana] a primera hora de la mañana. Que tenga un excelente día."
+
+🧭 Escenario D: "No estoy interesado" / "Ya tenemos un software o una ARL"
+"Le comprendo, señor [Nombre], y qué bueno que ya tengan esa parte cubierta. De hecho, las empresas que nos atienden ya cuentan con un sistema o asesor técnico. Lo valioso de nuestra herramienta es que no compite con lo que ya tiene, sino que automatiza el trabajo pesado que la ARL no hace: las firmas digitales del personal, las actas y las inspecciones en tiempo real." "Precisamente por eso, ¿me permitiría dejarle el folleto de una página en su correo para que lo conozca como una alternativa de optimización a futuro?"
+
+Si acepta: Enviar el PDF.
+
+Si insiste en que no: Agradecer amablemente por su tiempo y cerrar la llamada.
+
+📝 Consejos clave para tu asistente:
+Tono de Aliado, no de Vendedor: No está ofreciendo "un producto", está llamando para "confirmar la entrega de un documento técnico de cumplimiento legal".
+
+Registro estricto: Anotar al lado de cada una de las 26 empresas: quién contestó, qué correo confirmaron, si pidió que llamaran otro día o si se logró el envío del PDF.

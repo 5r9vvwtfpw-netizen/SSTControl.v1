@@ -149,3 +149,9 @@ id = "De5gkbN84eOizNcRDZV-o"
 uri = "file://attached_assets/pdfs_capacitacion/pesv-eval-texto.pdf"
 type = "pdf"
 title = "PESV — Fatiga y Somnolencia al Volante (desde admin)"
+
+[[outputs]]
+id = "Q0TNrUXzJ8afIYz2EKAw2"
+uri = "file://folleto-sst-colombia.pdf"
+type = "pdf"
+title = "Folleto Comercial — SST Colombia"
