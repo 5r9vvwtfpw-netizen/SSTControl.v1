@@ -67,6 +67,7 @@ export function ProtectedRoute({
     "/mensajes-internos",
     "/configuracion-notificaciones",
     "/investigacion-accidentes",
+    "/accidentes",
   ];
   const isLsoAllowedPath = lsoAllowedPaths.some(allowed => 
     path === allowed || path.startsWith(allowed + "/")
