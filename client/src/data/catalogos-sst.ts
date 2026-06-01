@@ -918,6 +918,7 @@ export const ARL_COLOMBIA = [
   { codigo: 'SURA', nombre: 'Seguros de Riesgos Laborales SURA', nit: '890903790-7' },
   { codigo: 'POSITIVA', nombre: 'Positiva Compañía de Seguros S.A.', nit: '860011153-6' },
   { codigo: 'COLMENA', nombre: 'Colmena Seguros S.A.', nit: '860002183-7' },
+  { codigo: 'AXA', nombre: 'AXA Colpatria S.A.', nit: '860034313-7' },
   { codigo: 'BOLIVAR', nombre: 'Seguros Bolívar S.A.', nit: '860002503-7' },
   { codigo: 'LIBERTY', nombre: 'Liberty Seguros S.A.', nit: '860029924-5' },
   { codigo: 'EQUIDAD', nombre: 'La Equidad Seguros O.C.', nit: '860024414-7' },
