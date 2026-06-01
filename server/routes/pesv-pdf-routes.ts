@@ -1,6 +1,6 @@
 import { Express, Request, Response } from 'express';
 import { db } from '../db';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, inArray } from 'drizzle-orm';
 import * as schema from '@shared/schema';
 import {
   addStandardHeader, addSectionBar, addSignatureFooter, addSimpleTable,
@@ -542,7 +542,26 @@ export function registerPesvPdfRoutes(app: Express) {
       const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
       if (!company) return res.status(404).send('Empresa no encontrada');
 
-      const conductores = await db.select().from(schema.drivers).where(eq(schema.drivers.companyId, companyId));
+      const conductores = await db.select().from(schema.drivers)
+        .where(eq(schema.drivers.companyId, companyId))
+        .orderBy(schema.drivers.name);
+
+      // Cargar todos los comparendos de la empresa en una sola consulta
+      const driverIds = conductores.map(c => c.id);
+      const todosComparendos = driverIds.length > 0
+        ? await db.select().from(schema.driverComparendos)
+            .where(inArray(schema.driverComparendos.driverId, driverIds))
+            .orderBy(desc(schema.driverComparendos.fechaComparendo))
+        : [];
+
+      // Agrupar comparendos por conductor
+      const comparendosPorConductor = new Map<string, typeof todosComparendos>();
+      for (const comp of todosComparendos) {
+        if (!comparendosPorConductor.has(comp.driverId)) {
+          comparendosPorConductor.set(comp.driverId, []);
+        }
+        comparendosPorConductor.get(comp.driverId)!.push(comp);
+      }
 
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
@@ -559,22 +578,100 @@ export function registerPesvPdfRoutes(app: Express) {
       const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
-        doc, company, documentTitle: 'LISTADO DE CONDUCTORES - PESV',
+        doc, company, documentTitle: 'REGISTRO DE CONDUCTORES - PESV',
         documentCode: 'PESV-COND', logoBuffer
       });
 
-      const rows = conductores.map(c => [
-        c.name,
-        c.identificationNumber,
-        c.licenseNumber,
-        c.licenseType,
-        formatDate(c.licenseExpiry),
-        c.status
-      ]);
-      y = addSimpleTable(doc, ['Nombre', 'Cédula', 'No. Licencia', 'Categoría', 'Vencimiento', 'Estado'], rows, {
-        y,
-        columnWidths: [140, 80, 100, 65, 85, 72]
-      });
+      y = addParagraph(doc, 'Resolución 40595/2022 — Gestión de conductores y licencias de conducción.', { y, fontSize: 8 });
+      y += 6;
+
+      if (conductores.length === 0) {
+        y = addParagraph(doc, 'No se han registrado conductores para esta empresa.', { y });
+      } else {
+        // ── Tabla resumen ────────────────────────────────────────────────────
+        y = addSectionBar(doc, 'Resumen de Conductores', y);
+        const resumenRows = conductores.map(c => [
+          c.name,
+          c.identificationNumber,
+          c.licenseNumber,
+          c.licenseType,
+          formatDate(c.licenseExpiry),
+          c.status === 'activo' ? 'Activo' : c.status === 'inactivo' ? 'Inactivo' : (c.status || 'N/A'),
+        ]);
+        y = addSimpleTable(doc, ['Nombre', 'Cédula', 'No. Licencia', 'Categoría', 'Vencimiento', 'Estado'], resumenRows, {
+          y,
+          columnWidths: [135, 80, 95, 60, 80, 65],
+        });
+
+        // ── Ficha detallada por conductor ────────────────────────────────────
+        for (const c of conductores) {
+          y = checkPageBreak(doc, 180, y);
+          y += 10;
+
+          // Encabezado del conductor con fondo diferenciado
+          const margin = PDF_CONFIG.MARGIN;
+          const pageWidth = doc.page.width - margin * 2;
+          const headerH = 26;
+          const safeY = checkPageBreak(doc, headerH + 4, y);
+          doc.rect(margin, safeY, pageWidth, headerH).fill(PDF_COLORS.PRIMARY || '#1a6b3c');
+          doc.fontSize(11).font('Helvetica-Bold').fillColor('#FFFFFF')
+            .text(`CONDUCTOR: ${c.name.toUpperCase()}`, margin + 8, safeY + 8, { width: pageWidth - 16 });
+          doc.fillColor(PDF_COLORS.BLACK || '#000000');
+          y = safeY + headerH + 8;
+
+          // Datos del conductor
+          y = addLabeledField(doc, 'Cédula', c.identificationNumber, { y });
+          y = addLabeledField(doc, 'No. Licencia', c.licenseNumber, { y });
+          y = addLabeledField(doc, 'Categoría Licencia', c.licenseType, { y });
+          y = addLabeledField(doc, 'Vencimiento Licencia', formatDate(c.licenseExpiry), { y });
+          if (c.bloodType) y = addLabeledField(doc, 'Grupo Sanguíneo', c.bloodType, { y });
+          if (c.medicalExamExpiry) y = addLabeledField(doc, 'Venc. Examen Médico', formatDate(c.medicalExamExpiry), { y });
+          if (c.emergencyContact) y = addLabeledField(doc, 'Contacto de Emergencia', c.emergencyContact, { y });
+          if (c.emergencyPhone) y = addLabeledField(doc, 'Teléfono Emergencia', c.emergencyPhone, { y });
+          y = addLabeledField(doc, 'Estado', c.status === 'activo' ? 'Activo' : c.status === 'inactivo' ? 'Inactivo' : (c.status || 'N/A'), { y });
+          if (c.observations) y = addLabeledField(doc, 'Observaciones', c.observations, { y });
+
+          // Historial de comparendos
+          const comparendos = comparendosPorConductor.get(c.id) || [];
+          y += 6;
+          y = addSectionBar(doc, `Historial de Comparendos (${comparendos.length})`, y);
+
+          if (comparendos.length === 0) {
+            y = addParagraph(doc, 'Sin comparendos registrados.', { y, fontSize: 9 });
+          } else {
+            const estadoLabel = (e: string) =>
+              e === 'pendiente' ? 'Pendiente' :
+              e === 'pagado' ? 'Pagado' :
+              e === 'recurrido' ? 'Recurrido' :
+              e === 'prescrito' ? 'Prescrito' : (e || 'N/A');
+
+            const compRows = comparendos.map(comp => [
+              formatDate(comp.fechaComparendo),
+              comp.numeroComparendo || '—',
+              comp.tipoInfraccion,
+              comp.placaVehiculo || '—',
+              comp.valorComparendo ? `$${comp.valorComparendo.toLocaleString('es-CO')}` : '—',
+              estadoLabel(comp.estado),
+            ]);
+            y = addSimpleTable(
+              doc,
+              ['Fecha', 'No. Comparendo', 'Infracción', 'Placa', 'Valor', 'Estado'],
+              compRows,
+              { y, columnWidths: [65, 90, 150, 55, 65, 65] }
+            );
+
+            // Descripción y observaciones (si las hay)
+            for (const comp of comparendos) {
+              if (comp.descripcion || comp.observaciones) {
+                y = addParagraph(doc,
+                  `• ${comp.tipoInfraccion}${comp.descripcion ? ': ' + comp.descripcion : ''}${comp.observaciones ? ' — Obs: ' + comp.observaciones : ''}`,
+                  { y, fontSize: 8 }
+                );
+              }
+            }
+          }
+        }
+      }
 
       await addSignatureFooter(doc, signers, true);
       doc.end();
