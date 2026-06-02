@@ -1780,6 +1780,10 @@ export const programasCapacitacion = pgTable("programas_capacitacion", {
   titulo: text("titulo").notNull(),
   archivoUrl: text("archivo_url"),
   archivoNombre: text("archivo_nombre"),
+  lsoSignatureName: text("lso_signature_name"),
+  lsoSignatureLicense: text("lso_signature_license"),
+  lsoSignatureUrl: text("lso_signature_url"),
+  lsoSignedAt: timestamp("lso_signed_at"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
@@ -3274,6 +3278,11 @@ export const objetivosSst = pgTable("objetivos_sst", {
   // Campo agregado para tracking de progreso sin modificar estado
   porcentajeAvance: integer("porcentaje_avance").default(0), // 0-100%
   
+  lsoSignatureName: text("lso_signature_name"),
+  lsoSignatureLicense: text("lso_signature_license"),
+  lsoSignatureUrl: text("lso_signature_url"),
+  lsoSignedAt: timestamp("lso_signed_at"),
+
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });

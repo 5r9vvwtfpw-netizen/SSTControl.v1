@@ -12,6 +12,8 @@ const TABLES = [
   'evaluaciones_sst',
   'planes_trabajo_anual',
   'matrices_iperc',
+  'programas_capacitacion',
+  'objetivos_sst',
 ];
 
 export async function syncLsoSignatureColumns() {

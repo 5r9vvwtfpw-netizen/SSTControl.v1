@@ -197,6 +197,35 @@ interface AllDocuments {
     lsoSignatureName: string | null;
     createdAt: string;
   }>;
+  programasCapacitacion: Array<{
+    id: string;
+    companyId: string;
+    companyName: string;
+    companyNit: string;
+    titulo: string;
+    fecha: string;
+    archivoNombre: string | null;
+    archivoUrl: string | null;
+    lsoSignatureName: string | null;
+    lsoSignatureUrl: string | null;
+    lsoSignedAt: string | null;
+    createdAt: string;
+  }>;
+  objetivosSst: Array<{
+    id: string;
+    companyId: string;
+    companyName: string;
+    companyNit: string;
+    nombre: string;
+    meta: string;
+    anio: number;
+    estado: string;
+    porcentajeAvance: number | null;
+    lsoSignatureName: string | null;
+    lsoSignatureUrl: string | null;
+    lsoSignedAt: string | null;
+    createdAt: string;
+  }>;
 }
 
 const SST_PROFESSION_LABELS: Record<string, string> = {
@@ -1228,6 +1257,8 @@ interface CompanyVault {
   planesTrabajoAnual: AllDocuments['planesTrabajoAnual'];
   matricesIperc: AllDocuments['matricesIperc'];
   designaciones: AllDocuments['designaciones'];
+  programasCapacitacion: AllDocuments['programasCapacitacion'];
+  objetivosSst: AllDocuments['objetivosSst'];
 }
 
 function buildCompanyVaults(docs: AllDocuments): CompanyVault[] {
@@ -1239,6 +1270,7 @@ function buildCompanyVaults(docs: AllDocuments): CompanyVault[] {
         companyId, companyName, companyNit,
         totalDocs: 0, pendingDocs: 0, signedDocs: 0,
         investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [], designaciones: [],
+        programasCapacitacion: [], objetivosSst: [],
       });
     }
     return vaultMap.get(companyId)!;
@@ -1273,6 +1305,18 @@ function buildCompanyVaults(docs: AllDocuments): CompanyVault[] {
     v.designaciones.push(des);
     v.totalDocs++;
     if (des.lsoSignatureName) v.signedDocs++; else v.pendingDocs++;
+  }
+  for (const prog of (docs.programasCapacitacion || [])) {
+    const v = getOrCreate(prog.companyId, prog.companyName, prog.companyNit);
+    v.programasCapacitacion.push(prog);
+    v.totalDocs++;
+    if (prog.lsoSignatureName) v.signedDocs++; else v.pendingDocs++;
+  }
+  for (const obj of (docs.objetivosSst || [])) {
+    const v = getOrCreate(obj.companyId, obj.companyName, obj.companyNit);
+    v.objetivosSst.push(obj);
+    v.totalDocs++;
+    if (obj.lsoSignatureName) v.signedDocs++; else v.pendingDocs++;
   }
 
   return Array.from(vaultMap.values()).sort((a, b) => b.pendingDocs - a.pendingDocs);
@@ -1650,6 +1694,152 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                             size="sm"
                             data-testid={`button-sign-des-${des.id}`}
                             onClick={() => onSign('designacion', des.id, `Acta Designación - ${vault.companyName}`)}
+                            disabled={isSigning}
+                          >
+                            <FileCheck className="h-4 w-4 mr-1" />
+                            Firmar
+                          </Button>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Requiere firma digital
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {vault.programasCapacitacion.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <div>
+              <CardTitle className="text-base">Programas de Capacitación</CardTitle>
+              <CardDescription>Estándar 2.11.1 - Res. 0312/2019 - Programa de capacitación anual</CardDescription>
+            </div>
+            <Badge variant="outline">{vault.programasCapacitacion.length}</Badge>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Título</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Archivo</TableHead>
+                  <TableHead>Firma LSO</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vault.programasCapacitacion.map((prog) => (
+                  <TableRow key={prog.id} data-testid={`row-prog-${prog.id}`}>
+                    <TableCell className="font-medium">{prog.titulo}</TableCell>
+                    <TableCell>{prog.fecha ? format(new Date(prog.fecha), "dd MMM yyyy", { locale: es }) : '—'}</TableCell>
+                    <TableCell>
+                      {prog.archivoNombre ? (
+                        <span className="text-xs text-muted-foreground">{prog.archivoNombre}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Sin archivo</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {prog.lsoSignatureName ? (
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Firmada
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">Pendiente</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {prog.lsoSignatureName ? (
+                          <Badge className="bg-green-600 text-white">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            {prog.lsoSignatureName}
+                          </Badge>
+                        ) : hasValidSignature ? (
+                          <Button
+                            size="sm"
+                            data-testid={`button-sign-prog-${prog.id}`}
+                            onClick={() => onSign('programa', prog.id, `Programa: ${prog.titulo}`)}
+                            disabled={isSigning}
+                          >
+                            <FileCheck className="h-4 w-4 mr-1" />
+                            Firmar
+                          </Button>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Requiere firma digital
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {vault.objetivosSst.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <div>
+              <CardTitle className="text-base">Objetivos del SG-SST</CardTitle>
+              <CardDescription>Estándar 3.1.1 - Res. 0312/2019 - Objetivos del Sistema de Gestión</CardDescription>
+            </div>
+            <Badge variant="outline">{vault.objetivosSst.length}</Badge>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Meta</TableHead>
+                  <TableHead>Año</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Firma LSO</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vault.objetivosSst.map((obj) => (
+                  <TableRow key={obj.id} data-testid={`row-obj-${obj.id}`}>
+                    <TableCell className="font-medium">{obj.nombre}</TableCell>
+                    <TableCell className="max-w-[160px] truncate text-sm text-muted-foreground">{obj.meta}</TableCell>
+                    <TableCell>{obj.anio}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{obj.estado}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {obj.lsoSignatureName ? (
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Firmada
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">Pendiente</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {obj.lsoSignatureName ? (
+                          <Badge className="bg-green-600 text-white">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            {obj.lsoSignatureName}
+                          </Badge>
+                        ) : hasValidSignature ? (
+                          <Button
+                            size="sm"
+                            data-testid={`button-sign-obj-${obj.id}`}
+                            onClick={() => onSign('objetivo', obj.id, `Objetivo: ${obj.nombre}`)}
                             disabled={isSigning}
                           >
                             <FileCheck className="h-4 w-4 mr-1" />
@@ -2153,6 +2343,34 @@ function DocumentosTab() {
     },
   });
 
+  const signProgramaMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("PATCH", `/api/portal-licenciado/programa-capacitacion/${id}/firmar`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Programa de capacitación firmado exitosamente" });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal-licenciado/documentos-todos"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error al firmar", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const signObjetivoMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("PATCH", `/api/portal-licenciado/objetivo-sst/${id}/firmar`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Objetivo SST firmado exitosamente" });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal-licenciado/documentos-todos"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error al firmar", description: err.message, variant: "destructive" });
+    },
+  });
+
   const [confirmSign, setConfirmSign] = useState<{ type: string; id: string; name: string } | null>(null);
 
   const { data: empresasData = [] } = useQuery<AssignedCompany[]>({
@@ -2198,10 +2416,12 @@ function DocumentosTab() {
     else if (confirmSign.type === 'plan') signPlanMutation.mutate(confirmSign.id);
     else if (confirmSign.type === 'matriz') signMatrizMutation.mutate(confirmSign.id);
     else if (confirmSign.type === 'designacion') signDesignacionMutation.mutate(confirmSign.id);
+    else if (confirmSign.type === 'programa') signProgramaMutation.mutate(confirmSign.id);
+    else if (confirmSign.type === 'objetivo') signObjetivoMutation.mutate(confirmSign.id);
     setConfirmSign(null);
   };
 
-  const isSigning = signEvaluacionMutation.isPending || signPlanMutation.isPending || signMatrizMutation.isPending || signDesignacionMutation.isPending;
+  const isSigning = signEvaluacionMutation.isPending || signPlanMutation.isPending || signMatrizMutation.isPending || signDesignacionMutation.isPending || signProgramaMutation.isPending || signObjetivoMutation.isPending;
   const signingId = confirmSign?.id || null;
 
   if (isError) {
@@ -2232,7 +2452,7 @@ function DocumentosTab() {
     );
   }
 
-  const docs = allDocs || { investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [], designaciones: [] };
+  const docs = allDocs || { investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [], designaciones: [], programasCapacitacion: [], objetivosSst: [] };
   const vaults = buildCompanyVaults(docs);
   const totalDocs = vaults.reduce((s, v) => s + v.totalDocs, 0);
   const totalPending = vaults.reduce((s, v) => s + v.pendingDocs, 0);
@@ -2483,6 +2703,16 @@ function DocumentosTab() {
                 {vault.designaciones.length > 0 && (
                   <span className="text-xs text-muted-foreground">
                     {vault.designaciones.length} designación{vault.designaciones.length !== 1 ? 'es' : ''}
+                  </span>
+                )}
+                {vault.programasCapacitacion.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {vault.programasCapacitacion.length} programa{vault.programasCapacitacion.length !== 1 ? 's' : ''}
+                  </span>
+                )}
+                {vault.objetivosSst.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {vault.objetivosSst.length} objetivo{vault.objetivosSst.length !== 1 ? 's' : ''}
                   </span>
                 )}
               </div>

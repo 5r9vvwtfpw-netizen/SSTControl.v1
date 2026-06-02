@@ -1573,7 +1573,7 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         }
       }
       if (companyIds.length === 0) {
-        return res.json({ investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [], designaciones: [] });
+        return res.json({ investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [], designaciones: [], programasCapacitacion: [], objetivosSst: [] });
       }
 
       const pendingInvestigations = await db.select({
@@ -1684,12 +1684,53 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       ))
       .orderBy(desc(schema.responsibleDesignations.createdAt));
 
+      const pendingProgramas = await db.select({
+        id: schema.programasCapacitacion.id,
+        companyId: schema.programasCapacitacion.companyId,
+        companyName: schema.companies.name,
+        companyNit: schema.companies.nit,
+        titulo: schema.programasCapacitacion.titulo,
+        fecha: schema.programasCapacitacion.fecha,
+        archivoNombre: schema.programasCapacitacion.archivoNombre,
+        archivoUrl: schema.programasCapacitacion.archivoUrl,
+        lsoSignatureName: schema.programasCapacitacion.lsoSignatureName,
+        lsoSignatureUrl: schema.programasCapacitacion.lsoSignatureUrl,
+        lsoSignedAt: schema.programasCapacitacion.lsoSignedAt,
+        createdAt: schema.programasCapacitacion.createdAt,
+      })
+      .from(schema.programasCapacitacion)
+      .innerJoin(schema.companies, eq(schema.programasCapacitacion.companyId, schema.companies.id))
+      .where(sql`${schema.programasCapacitacion.companyId} IN ${companyIds}`)
+      .orderBy(desc(schema.programasCapacitacion.createdAt));
+
+      const pendingObjetivos = await db.select({
+        id: schema.objetivosSst.id,
+        companyId: schema.objetivosSst.companyId,
+        companyName: schema.companies.name,
+        companyNit: schema.companies.nit,
+        nombre: schema.objetivosSst.nombre,
+        meta: schema.objetivosSst.meta,
+        anio: schema.objetivosSst.anio,
+        estado: schema.objetivosSst.estado,
+        porcentajeAvance: schema.objetivosSst.porcentajeAvance,
+        lsoSignatureName: schema.objetivosSst.lsoSignatureName,
+        lsoSignatureUrl: schema.objetivosSst.lsoSignatureUrl,
+        lsoSignedAt: schema.objetivosSst.lsoSignedAt,
+        createdAt: schema.objetivosSst.createdAt,
+      })
+      .from(schema.objetivosSst)
+      .innerJoin(schema.companies, eq(schema.objetivosSst.companyId, schema.companies.id))
+      .where(sql`${schema.objetivosSst.companyId} IN ${companyIds}`)
+      .orderBy(desc(schema.objetivosSst.anio), desc(schema.objetivosSst.createdAt));
+
       res.json({
         investigaciones: pendingInvestigations,
         evaluaciones: pendingEvaluaciones,
         planesTrabajoAnual: pendingPlanes,
         matricesIperc: pendingMatrices,
         designaciones: pendingDesignaciones,
+        programasCapacitacion: pendingProgramas,
+        objetivosSst: pendingObjetivos,
       });
     } catch (error: any) {
       console.error('[GET /api/portal-licenciado/documentos-todos] Error:', error.message);
@@ -1868,6 +1909,119 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     } catch (error: any) {
       console.error('[PATCH /api/portal-licenciado/matriz-iperc/:id/firmar] Error:', error.message);
       res.status(500).json({ message: "Error signing risk matrix", error: error.message });
+    }
+  });
+
+  // PATCH /api/portal-licenciado/programa-capacitacion/:id/firmar - Sign training program
+  app.patch("/api/portal-licenciado/programa-capacitacion/:id/firmar", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const { id } = req.params;
+
+      const [programa] = await db.select()
+        .from(schema.programasCapacitacion)
+        .where(eq(schema.programasCapacitacion.id, id));
+
+      if (!programa) {
+        return res.status(404).json({ message: "Programa de capacitación no encontrado" });
+      }
+
+      const [assignment] = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.companyId, programa.companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+
+      const hasDirectAccess = user.companyId === programa.companyId;
+      if (!assignment && !hasDirectAccess) {
+        return res.status(403).json({ message: "No tiene acceso a firmar este programa" });
+      }
+
+      const signatureUrl = user.sstSignatureUrl || assignment?.externalLsoSignatureUrl || null;
+
+      if (!signatureUrl) {
+        return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
+      }
+
+      const sigAccessible = await isSignatureAccessible(signatureUrl);
+      if (!sigAccessible) {
+        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma desde 'Mi Licencia'." });
+      }
+
+      const [updated] = await db.update(schema.programasCapacitacion)
+        .set({
+          lsoSignatureName: user.fullName || user.username,
+          lsoSignatureLicense: user.sstLicenseNumber || '',
+          lsoSignatureUrl: signatureUrl,
+          lsoSignedAt: new Date(),
+        })
+        .where(eq(schema.programasCapacitacion.id, id))
+        .returning();
+
+      console.log(`[LSO-FIRMA] Programa capacitación ${id} signed by ${user.username}`);
+      res.json({ message: "Programa de capacitación firmado exitosamente", programa: updated });
+    } catch (error: any) {
+      console.error('[PATCH /api/portal-licenciado/programa-capacitacion/:id/firmar] Error:', error.message);
+      res.status(500).json({ message: "Error signing training program", error: error.message });
+    }
+  });
+
+  // PATCH /api/portal-licenciado/objetivo-sst/:id/firmar - Sign SST objective
+  app.patch("/api/portal-licenciado/objetivo-sst/:id/firmar", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const { id } = req.params;
+
+      const [objetivo] = await db.select()
+        .from(schema.objetivosSst)
+        .where(eq(schema.objetivosSst.id, id));
+
+      if (!objetivo) {
+        return res.status(404).json({ message: "Objetivo SST no encontrado" });
+      }
+
+      const [assignment] = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.companyId, objetivo.companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+
+      const hasDirectAccess = user.companyId === objetivo.companyId;
+      if (!assignment && !hasDirectAccess) {
+        return res.status(403).json({ message: "No tiene acceso a firmar este objetivo" });
+      }
+
+      const signatureUrl = user.sstSignatureUrl || assignment?.externalLsoSignatureUrl || null;
+
+      if (!signatureUrl) {
+        return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
+      }
+
+      const sigAccessible = await isSignatureAccessible(signatureUrl);
+      if (!sigAccessible) {
+        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma desde 'Mi Licencia'." });
+      }
+
+      const [updated] = await db.update(schema.objetivosSst)
+        .set({
+          lsoSignatureName: user.fullName || user.username,
+          lsoSignatureLicense: user.sstLicenseNumber || '',
+          lsoSignatureUrl: signatureUrl,
+          lsoSignedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.objetivosSst.id, id))
+        .returning();
+
+      console.log(`[LSO-FIRMA] Objetivo SST ${id} signed by ${user.username}`);
+      res.json({ message: "Objetivo SST firmado exitosamente", objetivo: updated });
+    } catch (error: any) {
+      console.error('[PATCH /api/portal-licenciado/objetivo-sst/:id/firmar] Error:', error.message);
+      res.status(500).json({ message: "Error signing SST objective", error: error.message });
     }
   });
 
