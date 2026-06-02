@@ -1188,13 +1188,26 @@ export async function seedSstCatalog() {
     }
     console.log(`✅ ${estandaresSst.length} estándares SST insertados/verificados`);
     
-    await db.update(schema.estandaresSst)
-      .set({ puntajeTipo1: 2 })
-      .where(eq(schema.estandaresSst.numeroEstandar, "1.2.2"));
-    await db.update(schema.estandaresSst)
-      .set({ puntajeTipo1: 1 })
-      .where(eq(schema.estandaresSst.numeroEstandar, "2.8.1"));
-    console.log("✅ Estándares 1.2.2 y 2.8.1 liberados para tipo 1");
+    // Actualizar puntajeTipo1 explícitamente para todos los estándares que aplican a tipo1
+    // Necesario porque onConflictDoNothing impide actualizar estándares ya existentes en prod
+    const tipo1Updates: { numeroEstandar: string; puntajeTipo1: number }[] = [
+      { numeroEstandar: "1.1.1", puntajeTipo1: 5 },
+      { numeroEstandar: "1.1.4", puntajeTipo1: 5 },
+      { numeroEstandar: "1.2.1", puntajeTipo1: 15 },
+      { numeroEstandar: "1.2.2", puntajeTipo1: 2 },
+      { numeroEstandar: "2.4.1", puntajeTipo1: 10 },
+      { numeroEstandar: "2.8.1", puntajeTipo1: 1 },
+      { numeroEstandar: "3.1.4", puntajeTipo1: 15 },
+      { numeroEstandar: "4.1.1", puntajeTipo1: 30 },
+      { numeroEstandar: "4.2.1", puntajeTipo1: 20 },
+      { numeroEstandar: "7.1.4", puntajeTipo1: 2 },
+    ];
+    for (const { numeroEstandar, puntajeTipo1 } of tipo1Updates) {
+      await db.update(schema.estandaresSst)
+        .set({ puntajeTipo1 })
+        .where(eq(schema.estandaresSst.numeroEstandar, numeroEstandar));
+    }
+    console.log(`✅ ${tipo1Updates.length} estándares tipo1 sincronizados con puntajes correctos`);
     
     console.log("🎉 Seed de datos maestros SST completado exitosamente");
     

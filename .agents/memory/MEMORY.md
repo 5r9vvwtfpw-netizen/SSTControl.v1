@@ -1,1 +1,1 @@
-- [Logo upload WebP bug](logo-upload-webp.md) — browser-image-compression v2 produces image/webp on Chrome; old multer filter rejected it causing silent logo upload failures.
+- [Seed onConflictDoNothing pattern](seed-onconflict-pattern.md) — onConflictDoNothing leaves stale puntajeTipo1=null in prod; fixed with explicit UPDATE loop in sst-seed.ts for all 10 tipo1 standards.
