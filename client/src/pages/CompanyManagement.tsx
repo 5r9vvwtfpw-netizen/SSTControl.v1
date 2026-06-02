@@ -667,7 +667,10 @@ export default function CompanyManagement() {
       numberOfVehicles: company.numberOfVehicles || quoteVehicles || 0,
       riskLevel: company.riskLevel,
     });
-    setLogoPreview(company.logoUrl || null);
+    // Solo mostrar preview si la URL es válida (empieza con /objects/ o http)
+    // URLs con formato antiguo (solo UUID) no se pueden mostrar como imagen
+    const isValidLogoUrl = company.logoUrl && (company.logoUrl.startsWith('/objects/') || company.logoUrl.startsWith('http'));
+    setLogoPreview(isValidLogoUrl ? company.logoUrl : null);
     setSignaturePreview(company.legalRepSignatureUrl || null);
     setDialogOpen(true);
   };
@@ -990,12 +993,12 @@ export default function CompanyManagement() {
                       <Input
                         id="logo"
                         type="file"
-                        accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+                        accept="image/*"
                         onChange={handleLogoChange}
                         data-testid="input-logo"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Formatos: JPG, PNG, SVG. Máximo 5MB
+                        Cualquier formato de imagen (JPG, PNG, WebP, SVG). Máximo 5MB
                       </p>
                     </div>
                     {logoPreview && (

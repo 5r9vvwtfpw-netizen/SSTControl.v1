@@ -932,6 +932,15 @@ export async function loadCompanyLogo(logoUrl: string | null | undefined): Promi
       normalizedPath = parts.join('/');
     }
     
+    // Detectar URLs con formato antiguo (solo UUID sin prefijo de ruta válido).
+    // Un UUID tiene exactamente 36 caracteres: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    // Si la URL no empieza con '/' ni 'http', es un UUID antiguo inválido → ignorar.
+    const isValidPath = normalizedPath.startsWith('/') || normalizedPath.startsWith('http');
+    if (!isValidPath) {
+      console.log("[PdfStandardizer] logoUrl con formato antiguo detectado, ignorando:", normalizedPath);
+      return null;
+    }
+    
     const buffer = await objectStorageService.getObjectBuffer(normalizedPath);
     console.log("[PdfStandardizer] Logo loaded:", buffer ? `Buffer(${buffer.length} bytes)` : "null");
     return buffer;

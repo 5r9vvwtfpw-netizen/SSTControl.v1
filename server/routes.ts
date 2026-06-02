@@ -758,11 +758,14 @@ async function loadCompanyLogoBuffer(logoUrl: string | null | undefined): Promis
       return buffer;
     }
     
-    // Fallback to filesystem for legacy logos
-    const logoPath = logoUrl.startsWith("/")
-      ? path.join(process.cwd(), "public", logoUrl)
-      : path.join(process.cwd(), "public", logoUrl);
+    // URL con formato antiguo (solo UUID sin prefijo válido) — ignorar para evitar llamadas S3 inválidas
+    if (!logoUrl.startsWith("/") && !logoUrl.startsWith("http")) {
+      console.log("[PDF Logo] logoUrl con formato antiguo detectado, ignorando:", logoUrl);
+      return null;
+    }
     
+    // Fallback to filesystem for legacy logos
+    const logoPath = path.join(process.cwd(), "public", logoUrl);
     if (fs.existsSync(logoPath)) {
       return fs.readFileSync(logoPath);
     }
