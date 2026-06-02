@@ -182,6 +182,17 @@ export default function Trabajadores() {
     queryKey: ["/api/company-sedes"],
   });
 
+  // Suscripción: solo para usuarios de empresa (no globales). Necesario para mostrar límite de trabajadores.
+  const { data: subscriptionData } = useQuery<{
+    subscription: { workersPurchased: number | null; status: string };
+    plan: { maxWorkers: number } | null;
+  }>({
+    queryKey: ["/api/billing/my-subscription"],
+    enabled: !hasGlobalCompanyAccess,
+    retry: false,
+    staleTime: 60_000,
+  });
+
   const companyMap = useMemo(() => {
     const map: Record<string, string> = {};
     companies.forEach((c) => { map[c.id] = c.name; });
@@ -1389,13 +1400,44 @@ export default function Trabajadores() {
 
               {/* Aviso de impacto en facturación — solo al crear, solo para usuarios de empresa */}
               {!editingWorker && !hasGlobalCompanyAccess && (() => {
-                const currentCompany = companies.find(c => c.id === effectiveCompanyId);
-                const currentCount = currentCompany?.numberOfWorkers ?? 0;
+                // Usar el conteo real de la lista de trabajadores ya cargada (no company.numberOfWorkers
+                // que puede estar desactualizado por syncWorkerCount).
+                const activeWorkerCount = workers.filter(
+                  w => w.companyId === effectiveCompanyId && (w.status === 'activo' || w.status === 'inactivo')
+                ).length;
+                const workersPurchased = subscriptionData?.subscription?.workersPurchased ?? null;
+                const newTotal = activeWorkerCount + 1;
+                const isWithinLimit = workersPurchased !== null && newTotal <= workersPurchased;
+                const isOverLimit = workersPurchased !== null && activeWorkerCount >= workersPurchased;
+
+                if (isOverLimit) {
+                  return (
+                    <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-800">
+                      <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                      <AlertDescription className="text-orange-800 dark:text-orange-300 text-sm">
+                        Su plan incluye <strong>{workersPurchased} trabajador{workersPurchased !== 1 ? "es" : ""}</strong> y ya tiene <strong>{activeWorkerCount}</strong> registrados. Este trabajador adicional generará un cobro extra en su próxima factura.
+                      </AlertDescription>
+                    </Alert>
+                  );
+                }
+
+                if (isWithinLimit) {
+                  return (
+                    <Alert className="border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800">
+                      <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <AlertDescription className="text-green-800 dark:text-green-300 text-sm">
+                        Tiene <strong>{activeWorkerCount}</strong> de <strong>{workersPurchased}</strong> trabajadores registrados en su plan. Este trabajador está incluido — <strong>sin costo adicional</strong>.
+                      </AlertDescription>
+                    </Alert>
+                  );
+                }
+
+                // Fallback sin datos de suscripción
                 return (
                   <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800">
                     <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     <AlertDescription className="text-blue-800 dark:text-blue-300 text-sm">
-                      Su empresa tiene actualmente <strong>{currentCount} trabajador{currentCount !== 1 ? "es" : ""}</strong>. Al registrar este nuevo trabajador pasará a <strong>{currentCount + 1}</strong>, y la próxima factura se calculará con ese número.
+                      Su empresa tiene actualmente <strong>{activeWorkerCount} trabajador{activeWorkerCount !== 1 ? "es" : ""}</strong>. Al registrar este nuevo trabajador pasará a <strong>{newTotal}</strong>.
                     </AlertDescription>
                   </Alert>
                 );
