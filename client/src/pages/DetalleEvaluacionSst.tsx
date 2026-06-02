@@ -1248,7 +1248,7 @@ export default function DetalleEvaluacionSst() {
               <Button
                 variant="outline"
                 onClick={() => generarPlanMutation.mutate()}
-                disabled={generarPlanMutation.isPending || respuestas.length === 0}
+                disabled={generarPlanMutation.isPending || !evaluacion}
                 data-testid="button-generate-plan"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
@@ -1398,7 +1398,7 @@ export default function DetalleEvaluacionSst() {
             return acciones.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p>No hay acciones de mejora registradas.</p>
-                <p className="text-sm mt-2">Use "Generar Plan Automático" para crear acciones basadas en estándares no cumplidos, o cree una acción manual.</p>
+                <p className="text-sm mt-2">Use "Generar Plan Automático" para crear acciones sobre todos los estándares pendientes (sin marcar o no cumplidos), o cree una acción manual.</p>
               </div>
             ) : (
               <div className="space-y-2">
