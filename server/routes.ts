@@ -358,22 +358,11 @@ const uploadLogo = multer({
     fileSize: 5 * 1024 * 1024, // 5MB limit for logos
   },
   fileFilter: (req, file, cb) => {
-    // Only allow image formats for logos
-    const allowedMimeTypes = [
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/svg+xml'
-    ];
-    
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.svg'];
-    const extname = path.extname(file.originalname).toLowerCase();
-    
-    if (allowedMimeTypes.includes(file.mimetype) && allowedExtensions.includes(extname)) {
+    // Accept any image MIME type (browser-image-compression may produce webp on modern browsers)
+    if (file.mimetype.startsWith('image/')) {
       return cb(null, true);
-    } else {
-      cb(new Error('Tipo de archivo no permitido para logos. Solo se permiten: JPG, PNG, SVG'));
     }
+    cb(new Error('Tipo de archivo no permitido para logos. Solo se permiten imágenes (JPG, PNG, WebP, SVG)'));
   }
 });
 
@@ -384,21 +373,12 @@ const uploadSignature = multer({
     fileSize: 2 * 1024 * 1024, // 2MB limit for signatures
   },
   fileFilter: (req, file, cb) => {
-    // Only allow image formats for signatures
-    const allowedMimeTypes = [
-      'image/jpeg',
-      'image/jpg',
-      'image/png'
-    ];
-    
-    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
-    const extname = path.extname(file.originalname).toLowerCase();
-    
-    if (allowedMimeTypes.includes(file.mimetype) && allowedExtensions.includes(extname)) {
+    // Accept raster image MIME types (browser-image-compression may produce webp on modern browsers)
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (allowedMimeTypes.includes(file.mimetype)) {
       return cb(null, true);
-    } else {
-      cb(new Error('Tipo de archivo no permitido para firmas. Solo se permiten: JPG, PNG'));
     }
+    cb(new Error('Tipo de archivo no permitido para firmas. Solo se permiten: JPG, PNG, WebP'));
   }
 });
 
@@ -3323,7 +3303,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const storageService = new ObjectStorageService();
-      const ext = path.extname(req.file.originalname) || '.png';
+      // Derive extension from actual MIME type (browser-image-compression may change format)
+      const mimeToExt: Record<string, string> = {
+        'image/jpeg': '.jpg', 'image/jpg': '.jpg', 'image/png': '.png',
+        'image/webp': '.webp', 'image/gif': '.gif', 'image/svg+xml': '.svg',
+      };
+      const ext = mimeToExt[req.file.mimetype] || path.extname(req.file.originalname) || '.png';
       const uniqueId = crypto.randomUUID();
       const objectPath = `logos/${uniqueId}${ext}`;
 

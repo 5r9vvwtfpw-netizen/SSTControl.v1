@@ -529,24 +529,28 @@ export default function CompanyManagement() {
         const updateResult = await updateCompanyMutation.mutateAsync({ id: editingCompany.id, data: formData });
         
         // Upload logo if a new file was selected (optional - don't fail if upload fails)
+        let logoErrorMessage = '';
         if (logoFile) {
           try {
             const compressedLogo = await compressLogoImage(logoFile);
             await uploadLogoMutation.mutateAsync({ id: editingCompany.id, file: compressedLogo });
-          } catch (logoError) {
-            console.warn('Logo upload failed, but company was updated successfully:', logoError);
+          } catch (logoError: any) {
+            console.error('Logo upload failed:', logoError);
             logoUploadFailed = true;
+            logoErrorMessage = logoError?.message || 'Error desconocido al subir el logo';
           }
         }
         
         // Upload signature if a new file was selected
+        let signatureErrorMessage = '';
         if (signatureFile) {
           try {
             const compressedSignature = await compressSignatureImage(signatureFile);
             await uploadSignatureMutation.mutateAsync({ id: editingCompany.id, file: compressedSignature });
-          } catch (sigError) {
-            console.warn('Signature upload failed:', sigError);
+          } catch (sigError: any) {
+            console.error('Signature upload failed:', sigError);
             signatureUploadFailed = true;
+            signatureErrorMessage = sigError?.message || 'Error desconocido al subir la firma';
           }
         }
         
@@ -554,10 +558,13 @@ export default function CompanyManagement() {
         setDialogOpen(false);
         resetForm();
         if (logoUploadFailed || signatureUploadFailed) {
+          const parts: string[] = [];
+          if (logoUploadFailed) parts.push(`Logo: ${logoErrorMessage}`);
+          if (signatureUploadFailed) parts.push(`Firma: ${signatureErrorMessage}`);
           toast({
             title: "Empresa actualizada (con advertencias)",
-            description: `La empresa se actualizó exitosamente pero ${logoUploadFailed ? 'no se pudo subir el logo' : ''}${logoUploadFailed && signatureUploadFailed ? ' ni ' : ''}${signatureUploadFailed ? 'no se pudo subir la firma' : ''}.`,
-            className: "bg-yellow-50 border-yellow-200",
+            description: `La empresa se actualizó pero hubo errores en los archivos: ${parts.join(' | ')}`,
+            variant: "destructive",
           });
         } else {
           toast({
@@ -590,24 +597,28 @@ export default function CompanyManagement() {
         const newCompany = await createCompanyMutation.mutateAsync(formData);
         
         // Upload logo if a file was selected (optional - don't fail if upload fails)
+        let createLogoErrorMessage = '';
         if (logoFile && newCompany) {
           try {
             const compressedLogo = await compressLogoImage(logoFile);
             await uploadLogoMutation.mutateAsync({ id: newCompany.id, file: compressedLogo });
-          } catch (logoError) {
-            console.warn('Logo upload failed, but company was created successfully:', logoError);
+          } catch (logoError: any) {
+            console.error('Logo upload failed:', logoError);
             logoUploadFailed = true;
+            createLogoErrorMessage = logoError?.message || 'Error desconocido al subir el logo';
           }
         }
         
         // Upload signature if a file was selected
+        let createSigErrorMessage = '';
         if (signatureFile && newCompany) {
           try {
             const compressedSignature = await compressSignatureImage(signatureFile);
             await uploadSignatureMutation.mutateAsync({ id: newCompany.id, file: compressedSignature });
-          } catch (sigError) {
-            console.warn('Signature upload failed:', sigError);
+          } catch (sigError: any) {
+            console.error('Signature upload failed:', sigError);
             signatureUploadFailed = true;
+            createSigErrorMessage = sigError?.message || 'Error desconocido al subir la firma';
           }
         }
         
@@ -615,16 +626,18 @@ export default function CompanyManagement() {
         setDialogOpen(false);
         resetForm();
         if (logoUploadFailed || signatureUploadFailed) {
+          const parts: string[] = [];
+          if (logoUploadFailed) parts.push(`Logo: ${createLogoErrorMessage}`);
+          if (signatureUploadFailed) parts.push(`Firma: ${createSigErrorMessage}`);
           toast({
             title: "Empresa creada (con advertencias)",
-            description: `La empresa se creó exitosamente pero ${logoUploadFailed ? 'no se pudo subir el logo' : ''}${logoUploadFailed && signatureUploadFailed ? ' ni ' : ''}${signatureUploadFailed ? 'no se pudo subir la firma' : ''}.`,
-            className: "bg-yellow-50 border-yellow-200",
+            description: `La empresa se creó pero hubo errores en los archivos: ${parts.join(' | ')}`,
+            variant: "destructive",
           });
         } else {
           toast({
             title: "Empresa creada",
             description: "La empresa se ha registrado exitosamente",
-            className: "bg-yellow-50 border-yellow-200",
           });
         }
       }

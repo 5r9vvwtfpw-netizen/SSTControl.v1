@@ -1,0 +1,1 @@
+- [Logo upload WebP bug](logo-upload-webp.md) — browser-image-compression v2 produces image/webp on Chrome; old multer filter rejected it causing silent logo upload failures.

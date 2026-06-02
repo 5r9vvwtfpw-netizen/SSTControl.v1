@@ -21,6 +21,11 @@ export async function compressImage(
   if (!file.type.startsWith('image/')) {
     return file;
   }
+
+  // SVG is a vector format — cannot be compressed or rendered by PDFKit; return as-is
+  if (file.type === 'image/svg+xml') {
+    return file;
+  }
   
   const fileSizeMB = file.size / 1024 / 1024;
   if (fileSizeMB <= (mergedOptions.maxSizeMB || 1)) {
@@ -28,14 +33,16 @@ export async function compressImage(
   }
   
   try {
+    // Pass fileType to force the same output format as input (prevents WebP output on Chrome)
     const compressedFile = await imageCompression(file, {
       maxSizeMB: mergedOptions.maxSizeMB,
       maxWidthOrHeight: mergedOptions.maxWidthOrHeight,
       useWebWorker: mergedOptions.useWebWorker,
+      fileType: file.type,
     });
     
     return new File([compressedFile], file.name, {
-      type: compressedFile.type,
+      type: file.type,
       lastModified: Date.now(),
     });
   } catch (error) {
