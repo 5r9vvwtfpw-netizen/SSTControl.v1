@@ -11716,7 +11716,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Responsible Designation routes - PLANEAR/Recursos (Permission-based)
   app.get("/api/responsible-designations", requirePermission("companies:view"), async (req, res) => {
-    const companyId = req.user!.companyId;
+    let companyId = req.user!.companyId;
+    // LSO externo: puede no tener companyId en users, usa query param con verificación de asignación
+    if (!companyId && req.user!.role === 'lso' && req.query.companyId) {
+      const qcid = req.query.companyId as string;
+      const [asgn] = await db.select().from(schema.licensedProfessionalAssignments)
+        .where(and(eq(schema.licensedProfessionalAssignments.companyId, qcid), eq(schema.licensedProfessionalAssignments.userId, req.user!.id), eq(schema.licensedProfessionalAssignments.isActive, true)))
+        .limit(1);
+      if (asgn) companyId = qcid;
+    }
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -11725,7 +11733,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/responsible-designations/:id", requirePermission("companies:view"), async (req, res) => {
-    const companyId = req.user!.companyId;
+    let companyId = req.user!.companyId;
+    // LSO externo: puede no tener companyId en users, usa query param con verificación de asignación
+    if (!companyId && req.user!.role === 'lso' && req.query.companyId) {
+      const qcid = req.query.companyId as string;
+      const [asgn] = await db.select().from(schema.licensedProfessionalAssignments)
+        .where(and(eq(schema.licensedProfessionalAssignments.companyId, qcid), eq(schema.licensedProfessionalAssignments.userId, req.user!.id), eq(schema.licensedProfessionalAssignments.isActive, true)))
+        .limit(1);
+      if (asgn) companyId = qcid;
+    }
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -12104,6 +12120,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isAdmin) {
         // For external LSO, get companyId from designation; for worker, from worker record
         companyId = worker?.companyId || designation.companyId;
+      } else if (req.user!.role === 'lso' && !req.user!.companyId) {
+        // LSO externo sin companyId directo: usar el companyId de la designación
+        // y verificar que el LSO tenga asignación activa para esa empresa
+        const designationCompanyId = worker?.companyId || designation.companyId;
+        const [lsoAsgn] = await db.select().from(schema.licensedProfessionalAssignments)
+          .where(and(
+            eq(schema.licensedProfessionalAssignments.companyId, designationCompanyId),
+            eq(schema.licensedProfessionalAssignments.userId, req.user!.id),
+            eq(schema.licensedProfessionalAssignments.isActive, true)
+          ))
+          .limit(1);
+        if (!lsoAsgn) {
+          return res.status(403).send("No tiene acceso a esta empresa");
+        }
+        companyId = designationCompanyId;
       } else {
         companyId = req.user!.companyId || "";
         if (!companyId) {
