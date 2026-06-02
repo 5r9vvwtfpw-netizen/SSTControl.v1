@@ -12399,9 +12399,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let lsoSigBuffer: Buffer | null = null;
       if (designation.lsoSignatureUrl) {
         try {
-          const { ObjectStorageService } = await import('./replit_integrations/object_storage');
-          const osService = new ObjectStorageService();
-          lsoSigBuffer = await osService.getObjectBuffer(designation.lsoSignatureUrl);
+          const sigUrl = designation.lsoSignatureUrl as string;
+          if (sigUrl.startsWith('/replit-objstore-')) {
+            // Replit Object Storage (GCS via sidecar)
+            const { objectStorageClient } = await import('./replit_integrations/object_storage');
+            const parts = sigUrl.split('/').filter(Boolean);
+            const bucketName = parts[0];
+            const objectName = parts.slice(1).join('/');
+            const bucket = objectStorageClient.bucket(bucketName);
+            const file = bucket.file(objectName);
+            const [data] = await file.download();
+            lsoSigBuffer = data as Buffer;
+          } else {
+            lsoSigBuffer = await objectStorageService.getObjectBuffer(sigUrl);
+          }
         } catch (sigErr: any) {
           console.error('[PDF-Designacion] Error loading LSO signature image:', sigErr.message);
         }

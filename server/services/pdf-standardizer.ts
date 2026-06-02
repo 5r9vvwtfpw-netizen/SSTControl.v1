@@ -438,6 +438,16 @@ export async function addSignatureFooter(
       } else if (sigUrl.startsWith('http')) {
         const response = await fetch(sigUrl);
         if (response.ok) return Buffer.from(await response.arrayBuffer());
+      } else if (sigUrl.startsWith('/replit-objstore-')) {
+        // Replit Object Storage (GCS via sidecar)
+        const { objectStorageClient } = await import('../replit_integrations/object_storage');
+        const parts = sigUrl.split('/').filter(Boolean);
+        const bucketName = parts[0];
+        const objectName = parts.slice(1).join('/');
+        const bucket = objectStorageClient.bucket(bucketName);
+        const file = bucket.file(objectName);
+        const [data] = await file.download();
+        return data as Buffer;
       } else {
         // /objects/logos/... o /objects/signatures/... — S3 vía objectStorageService
         return await objectStorageService.getObjectBuffer(sigUrl);
