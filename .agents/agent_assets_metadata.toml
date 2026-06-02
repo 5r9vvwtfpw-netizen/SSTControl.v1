@@ -161,3 +161,9 @@ id = "ZtrIXnUaD4cdSL8f1MnpZ"
 uri = "file://guia-llamadas-sst-colombia.pdf"
 type = "pdf"
 title = "Guía de Llamadas — 2 páginas exactas — SST Colombia"
+
+[[outputs]]
+id = "FHWFBHiCEUkCYaiZWw_Fp"
+uri = "file://attached_assets/Portafolio_SST_Colombia.pdf"
+type = "pdf"
+title = "Portafolio SST Colombia — $10.000 COP/trabajador"
