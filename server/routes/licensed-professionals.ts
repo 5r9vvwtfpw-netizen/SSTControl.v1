@@ -10,7 +10,8 @@ import fs from "fs";
 import path from "path";
 import { storage } from "../storage";
 import { sendLsoRemovalNotificationEmail } from "../email";
-import { objectStorageClient, ObjectStorageService } from "../replit_integrations/object_storage";
+import { objectStorageClient } from "../replit_integrations/object_storage";
+import { ObjectStorageService, objectStorageService as s3Service } from "../objectStorage";
 import { notifyNewMessage } from "../websocket";
 
 async function shouldIncludeFallbackCompany(userId: string, companyId: string): Promise<boolean> {
@@ -88,29 +89,13 @@ const uploadLsoSignature = multer({
   }
 });
 
-function getObjectStorageBucketName(): string {
-  return process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || 
-    process.env.OBJECT_STORAGE_BUCKET_ID || 
-    `replit-objstore-${process.env.REPL_ID || 'default'}`;
-}
-
 async function uploadSignatureToObjectStorage(fileBuffer: Buffer, originalName: string, mimeType: string): Promise<string> {
   const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
   const ext = path.extname(originalName) || '.png';
-  const privateDir = (process.env.PRIVATE_OBJECT_DIR || '/sst-evidences').replace(/^\//, '');
-  const objectName = `${privateDir}/lso-signatures/lso-signature-${uniqueSuffix}${ext}`;
-
-  const bucketName = getObjectStorageBucketName();
-  console.log(`[Signature Upload] Uploading to bucket: ${bucketName}, object: ${objectName}`);
-  const bucket = objectStorageClient.bucket(bucketName);
-  const file = bucket.file(objectName);
-
-  await file.save(fileBuffer, {
-    metadata: { contentType: mimeType },
-    resumable: false,
-  });
-
-  return `/${bucketName}/${objectName}`;
+  const objectPath = `lso-signatures/lso-signature-${uniqueSuffix}${ext}`;
+  console.log(`[S3-LSO-Sig] Uploading to S3. Bucket: ${process.env.AWS_S3_BUCKET_NAME}, Key: uploads/${objectPath}`);
+  await s3Service.uploadObject(objectPath, fileBuffer, mimeType);
+  return `/objects/${objectPath}`;
 }
 
 async function isSignatureAccessible(signatureUrl: string): Promise<boolean> {
@@ -121,6 +106,16 @@ async function isSignatureAccessible(signatureUrl: string): Promise<boolean> {
     return fs.existsSync(localPath);
   }
 
+  // S3 path
+  if (signatureUrl.startsWith('/objects/')) {
+    try {
+      return await s3Service.objectExists(signatureUrl);
+    } catch {
+      return false;
+    }
+  }
+
+  // Legacy GCS path — check via GCS client for backward compat
   try {
     const { bucketName, objectName } = parseObjectPathHelper(signatureUrl);
     const bucket = objectStorageClient.bucket(bucketName);
@@ -143,6 +138,16 @@ async function getSignatureBuffer(signatureUrl: string): Promise<Buffer | null> 
     return null;
   }
 
+  // S3 path
+  if (signatureUrl.startsWith('/objects/')) {
+    try {
+      return await s3Service.getObjectBuffer(signatureUrl);
+    } catch {
+      return null;
+    }
+  }
+
+  // Legacy GCS path — backward compat for old signatures
   try {
     const { bucketName, objectName } = parseObjectPathHelper(signatureUrl);
     const bucket = objectStorageClient.bucket(bucketName);

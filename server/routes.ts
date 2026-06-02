@@ -352,18 +352,8 @@ const upload = multer({
 });
 
 // Multer configuration for company logos
-const logoStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'public/uploads/logos');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'logo-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
 const uploadLogo = multer({ 
-  storage: logoStorage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit for logos
   },
@@ -388,22 +378,8 @@ const uploadLogo = multer({
 });
 
 // Multer configuration for legal representative signatures
-const signatureStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = 'public/uploads/signatures';
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'signature-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
 const uploadSignature = multer({ 
-  storage: signatureStorage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 2 * 1024 * 1024, // 2MB limit for signatures
   },
@@ -780,13 +756,25 @@ async function loadCompanyLogoBuffer(logoUrl: string | null | undefined): Promis
   console.log("[PDF Logo] Attempting to load logo from:", logoUrl);
   
   try {
-    // Check if logo is stored in Object Storage
+    // Replit Object Storage (GCS via sidecar) — /replit-objstore-{id}/...
+    if (logoUrl.startsWith('/replit-objstore-')) {
+      const { objectStorageClient: gcsClient } = await import('./replit_integrations/object_storage');
+      const parts = logoUrl.split('/').filter(Boolean);
+      const bucketName = parts[0];
+      const objectName = parts.slice(1).join('/');
+      const bucket = gcsClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      const [data] = await file.download();
+      console.log("[PDF Logo] Replit Object Storage result: Buffer(" + data.length + " bytes)");
+      return data as Buffer;
+    }
+
+    // AWS S3 via objectStorageService — /objects/...
     if (logoUrl.startsWith("/objects/")) {
-      // Normalize the path to handle /objects/uploads/... format correctly
       const normalizedPath = objectStorageService.normalizeObjectEntityPath(logoUrl);
-      console.log("[PDF Logo] Normalized path:", normalizedPath);
+      console.log("[PDF Logo] Normalized S3 path:", normalizedPath);
       const buffer = await objectStorageService.getObjectBuffer(normalizedPath);
-      console.log("[PDF Logo] Object Storage result:", buffer ? `Buffer(${buffer.length} bytes)` : "null");
+      console.log("[PDF Logo] S3 result:", buffer ? `Buffer(${buffer.length} bytes)` : "null");
       return buffer;
     }
     
@@ -3335,19 +3323,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const storageService = new ObjectStorageService();
-      const fileBuffer = fs.readFileSync(req.file.path);
-      const ext = path.extname(req.file.originalname);
+      const ext = path.extname(req.file.originalname) || '.png';
       const uniqueId = crypto.randomUUID();
-      // Correct path without duplicate "uploads/" prefix
       const objectPath = `logos/${uniqueId}${ext}`;
-      
-      console.log(`[S3-LOGO] Uploading to S3. Bucket: ${process.env.AWS_S3_BUCKET_NAME}, Region: ${process.env.AWS_REGION}, Key: uploads/${objectPath}`);
-      
-      await storageService.uploadObject(objectPath, fileBuffer, req.file.mimetype);
-      
-      // Clean up local file
-      try { fs.unlinkSync(req.file.path); } catch {}
-      
+
+      console.log(`[S3-LOGO] Uploading to S3. Bucket: ${process.env.AWS_S3_BUCKET_NAME}, Key: uploads/${objectPath}`);
+
+      await storageService.uploadObject(objectPath, req.file.buffer, req.file.mimetype);
+
       const logoUrl = `/objects/${objectPath}`;
 
       const company = await storage.updateCompany(companyId, { logoUrl });
@@ -3355,7 +3338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send("Empresa no encontrada");
       }
 
-      console.log(`[S3-LOGO] ✅ Logo uploaded successfully for company ${companyId}: ${logoUrl}`);
+      console.log(`[S3-LOGO] ✅ Logo uploaded for company ${companyId}: ${logoUrl}`);
       res.json({ logoUrl: company.logoUrl });
     } catch (error: any) {
       console.error('[S3-LOGO] ❌ Error uploading logo:', {
@@ -3368,7 +3351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
         hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
       });
-      res.status(400).send(`Error S3: ${error.message} (code: ${error.Code || error.code || error.name})`);
+      res.status(500).send(`Error al subir el logo: ${error.message}`);
     }
   });
 
@@ -3387,18 +3370,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const storageService = new ObjectStorageService();
-      const fileBuffer = fs.readFileSync(req.file.path);
-      const ext = path.extname(req.file.originalname);
+      const ext = path.extname(req.file.originalname) || '.png';
       const uniqueId = crypto.randomUUID();
-      // Correct path without duplicate "uploads/" prefix
       const objectPath = `signatures/${companyId}/${uniqueId}${ext}`;
       
       console.log(`[S3-SIGNATURE] Uploading to S3. Bucket: ${process.env.AWS_S3_BUCKET_NAME}, Region: ${process.env.AWS_REGION}, Key: uploads/${objectPath}`);
       
-      await storageService.uploadObject(objectPath, fileBuffer, req.file.mimetype);
-      
-      // Clean up local file
-      try { fs.unlinkSync(req.file.path); } catch {}
+      await storageService.uploadObject(objectPath, req.file.buffer, req.file.mimetype);
       
       const legalRepSignatureUrl = `/objects/${objectPath}`;
 
@@ -12394,31 +12372,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const signatureWidth = (contentWidth - 40) / 2;
       const sigImgHeight = 50;
+
+      // Helper to load a signature buffer from any storage backend
+      const loadSigBuf = async (sigUrl: string): Promise<Buffer | null> => {
+        try {
+          if (sigUrl.startsWith('/replit-objstore-')) {
+            const { objectStorageClient: gcs } = await import('./replit_integrations/object_storage');
+            const parts = sigUrl.split('/').filter(Boolean);
+            const [data] = await gcs.bucket(parts[0]).file(parts.slice(1).join('/')).download();
+            return data as Buffer;
+          } else if (sigUrl.startsWith('/objects/')) {
+            return await objectStorageService.getObjectBuffer(sigUrl);
+          } else if (sigUrl.startsWith('http')) {
+            const r = await fetch(sigUrl);
+            if (r.ok) return Buffer.from(await r.arrayBuffer());
+          }
+        } catch (e: any) {
+          console.error('[PDF-Designacion] Error loading sig buffer:', e.message);
+        }
+        return null;
+      };
       
       // Load LSO digital signature image if signed
       let lsoSigBuffer: Buffer | null = null;
       if (designation.lsoSignatureUrl) {
-        try {
-          const sigUrl = designation.lsoSignatureUrl as string;
-          if (sigUrl.startsWith('/replit-objstore-')) {
-            // Replit Object Storage (GCS via sidecar)
-            const { objectStorageClient } = await import('./replit_integrations/object_storage');
-            const parts = sigUrl.split('/').filter(Boolean);
-            const bucketName = parts[0];
-            const objectName = parts.slice(1).join('/');
-            const bucket = objectStorageClient.bucket(bucketName);
-            const file = bucket.file(objectName);
-            const [data] = await file.download();
-            lsoSigBuffer = data as Buffer;
-          } else {
-            lsoSigBuffer = await objectStorageService.getObjectBuffer(sigUrl);
-          }
-        } catch (sigErr: any) {
-          console.error('[PDF-Designacion] Error loading LSO signature image:', sigErr.message);
-        }
+        lsoSigBuffer = await loadSigBuf(designation.lsoSignatureUrl as string);
+      }
+
+      // Load legal representative signature image
+      let legalRepSigBuffer: Buffer | null = null;
+      if (company.legalRepSignatureUrl) {
+        legalRepSigBuffer = await loadSigBuf(company.legalRepSignatureUrl as string);
       }
 
       // Draw signature images
+      if (legalRepSigBuffer) {
+        try {
+          doc.image(legalRepSigBuffer, margin, currentY, { fit: [120, sigImgHeight], align: 'center' });
+        } catch (imgErr: any) {
+          console.error('[PDF-Designacion] Error rendering legal rep signature:', imgErr.message);
+        }
+      }
       if (lsoSigBuffer) {
         try {
           doc.image(lsoSigBuffer, margin + signatureWidth + 40, currentY, { fit: [120, sigImgHeight], align: 'center' });
