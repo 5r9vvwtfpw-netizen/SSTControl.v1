@@ -6929,28 +6929,43 @@ export class DbStorage implements IStorage {
     const evaluacion = await this.getEvaluacionSst(evaluacionId, companyId);
     if (!evaluacion) return [];
     
-    // Obtener respuestas que no cumplen
+    // Obtener todos los estándares aplicables al tipo de empresa
+    const todosEstandares = await this.getEstandaresByTipoEmpresa(evaluacion.tipoEmpresa);
+
+    // Obtener respuestas existentes indexadas por estandarId
     const respuestas = await this.getRespuestasEstandares(evaluacionId, companyId);
-    const respuestasNoCumplen = respuestas.filter(r => r.cumple === 0 && r.noAplica === 0);
-    
+    const respuestasPorEstandar = new Map(respuestas.map(r => [r.estandarId, r]));
+
+    // Incluir estándares pendientes: sin marcar, o marcados como "no cumple"
+    // Excluir: cumple=1 (sí cumple) o noAplica=1 (no aplica)
+    const estandaresPendientes = todosEstandares.filter(e => {
+      const r = respuestasPorEstandar.get(e.id);
+      if (!r) return true;           // Sin marcar → pendiente
+      if (r.noAplica === 1) return false; // No aplica → excluir
+      if (r.cumple === 1) return false;   // Cumple → excluir
+      return true;                   // cumple=0 → no cumple → incluir
+    });
+
     // Obtener acciones existentes para evitar duplicados
     const accionesExistentes = await this.getAccionesMejora(evaluacionId, companyId);
+    // Dedup por respuestaEstandarId (estándares ya evaluados con acción)
     const respuestasConAccion = new Set(
-      accionesExistentes
-        .filter(a => a.respuestaEstandarId)
-        .map(a => a.respuestaEstandarId)
+      accionesExistentes.filter(a => a.respuestaEstandarId).map(a => a.respuestaEstandarId)
+    );
+    // Dedup por descripción para estándares sin respuesta registrada aún
+    const descripcionesConAccion = new Set(
+      accionesExistentes.map(a => a.descripcionAccion)
     );
     
     const accionesCreadas: schema.AccionMejora[] = [];
     
-    for (const respuesta of respuestasNoCumplen) {
-      // Verificar si ya existe una acción para este estándar (evitar duplicados)
-      if (respuestasConAccion.has(respuesta.id)) {
-        continue; // Saltar, ya existe una acción para este estándar
-      }
+    for (const estandar of estandaresPendientes) {
+      const respuesta = respuestasPorEstandar.get(estandar.id);
       
-      const estandar = await this.getEstandarSst(respuesta.estandarId);
-      if (!estandar) continue;
+      // Evitar duplicados: si ya hay acción para esta respuesta o descripción igual
+      if (respuesta && respuestasConAccion.has(respuesta.id)) continue;
+      const descripcion = `Implementar: ${estandar.nombre}`;
+      if (descripcionesConAccion.has(descripcion)) continue;
       
       // Determinar prioridad basada en el componente
       let prioridad: 'baja' | 'media' | 'alta' | 'critica' = 'media';
@@ -6958,11 +6973,8 @@ export class DbStorage implements IStorage {
         .where(eq(schema.componentesSst.id, estandar.componenteId))
         .limit(1);
       
-      if (componente[0]) {
-        // Componentes críticos: Gestión de Peligros (30%), Gestión de Salud (20%)
-        if (componente[0].pesoTotal >= 20) {
-          prioridad = 'alta';
-        }
+      if (componente[0]?.pesoTotal >= 20) {
+        prioridad = 'alta';
       }
       
       // Si el nivel de cumplimiento general es crítico, aumentar prioridad
@@ -6970,20 +6982,18 @@ export class DbStorage implements IStorage {
         prioridad = prioridad === 'alta' ? 'critica' : 'alta';
       }
       
-      // Fecha de compromiso: 6 meses para nivel crítico o moderado
+      // Fecha de compromiso según nivel de cumplimiento
       const fechaCompromiso = new Date();
-      if (evaluacion.nivelCumplimiento === 'critico') {
-        fechaCompromiso.setMonth(fechaCompromiso.getMonth() + 3);
-      } else {
-        fechaCompromiso.setMonth(fechaCompromiso.getMonth() + 6);
-      }
+      fechaCompromiso.setMonth(
+        fechaCompromiso.getMonth() + (evaluacion.nivelCumplimiento === 'critico' ? 3 : 6)
+      );
       
       const accion: schema.InsertAccionMejora = {
         evaluacionId,
-        respuestaEstandarId: respuesta.id,
-        descripcionAccion: `Implementar: ${estandar.nombre}`,
+        respuestaEstandarId: respuesta?.id ?? null,
+        descripcionAccion: descripcion,
         objetivo: `Dar cumplimiento al estándar ${estandar.numeroEstandar}: ${estandar.nombre}`,
-        tipoAccion: 'correctiva',
+        tipoAccion: respuesta ? 'correctiva' : 'preventiva',
         prioridad,
         responsable: evaluacion.responsableNombre,
         areaResponsable: 'SST',
@@ -6998,6 +7008,8 @@ export class DbStorage implements IStorage {
       
       const nuevaAccion = await this.createAccionMejora(accion, companyId);
       accionesCreadas.push(nuevaAccion);
+      // Registrar en dedup local para esta ejecución
+      descripcionesConAccion.add(descripcion);
     }
     
     return accionesCreadas;
