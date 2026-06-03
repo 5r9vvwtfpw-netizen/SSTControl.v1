@@ -48678,6 +48678,82 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // POST /api/evaluaciones-pesv/:id/generar-plan - Genera plan de mejora automático desde esta evaluación PESV
+  app.post('/api/evaluaciones-pesv/:id/generar-plan', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+
+      const [evaluacion] = await db.select().from(evaluacionesPesv).where(eq(evaluacionesPesv.id, req.params.id));
+      if (!evaluacion) return res.status(404).json({ error: "Evaluación PESV no encontrada" });
+      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) return res.status(403).json({ error: "Sin acceso" });
+
+      const companyId = evaluacion.companyId;
+
+      // Pasos PESV aplicables según nivel de la evaluación
+      const pasosAplicables = PASOS_PESV.filter(paso => {
+        switch (evaluacion.nivel) {
+          case 'basico': return paso.aplicaBasico;
+          case 'estandar': return paso.aplicaEstandar;
+          case 'avanzado': return paso.aplicaAvanzado;
+          default: return true;
+        }
+      });
+
+      // Respuestas de esta evaluación
+      const respuestas = await db.select().from(respuestasPasosPesv).where(eq(respuestasPasosPesv.evaluacionId, req.params.id));
+      const respuestasMap = new Map(respuestas.map(r => [r.pasoId, r]));
+
+      // Acciones existentes para dedup
+      const accionesExistentes = await db.select({ accion: accionesMejoraContexto.accion })
+        .from(accionesMejoraContexto).where(eq(accionesMejoraContexto.companyId, companyId));
+      const accionesSet = new Set(accionesExistentes.map(a => a.accion));
+
+      const fechaLimite = new Date();
+      fechaLimite.setMonth(fechaLimite.getMonth() + 6);
+
+      const creadas: typeof accionesMejoraContexto.$inferSelect[] = [];
+      let omitidas = 0;
+
+      for (const paso of pasosAplicables) {
+        const resp = respuestasMap.get(paso.codigo);
+        if (resp?.noAplica === 1) continue;
+        if (resp?.cumple === 1) continue;
+
+        const textoAccion = `Implementar paso PESV ${paso.codigo}: ${paso.nombre}`;
+        if (accionesSet.has(textoAccion)) { omitidas++; continue; }
+
+        const hallazgo = resp?.hallazgo
+          ? resp.hallazgo
+          : `Paso ${paso.codigo} — ${paso.nombre} pendiente según Resolución 40595/2022`;
+
+        const prioridad: 'alta' | 'media' = ['P01','P02','P03','P04','H01','H02','H03','H04','H07','H09','H10','H11'].includes(paso.codigo) ? 'alta' : 'media';
+
+        const [nueva] = await db.insert(accionesMejoraContexto).values({
+          companyId,
+          accion: textoAccion,
+          descripcion: `Dar cumplimiento al paso ${paso.codigo} del PESV: ${paso.nombre}. Fase: ${paso.fase}.`,
+          origenHallazgo: 'evaluacion_pesv',
+          hallazgoDescripcion: hallazgo,
+          tipoFoda: 'debilidad',
+          prioridad,
+          estado: 'pendiente',
+          porcentajeAvance: 0,
+          fechaIdentificacion: new Date(),
+          fechaLimite,
+        }).returning();
+
+        creadas.push(nueva);
+        accionesSet.add(textoAccion);
+      }
+
+      res.status(201).json({ created: creadas.length, skipped: omitidas, acciones: creadas });
+    } catch (error: any) {
+      console.error('[POST /api/evaluaciones-pesv/:id/generar-plan] Error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // POST /api/evaluaciones-pesv/:id/heredar - Crea nueva evaluación PESV heredando de una anterior
   // Soporta la arquitectura centrada en evaluación anual según Resolución 40595/2022
   app.post('/api/evaluaciones-pesv/:id/heredar', requireAuth, requirePermission('sst_management:create'), async (req, res) => {

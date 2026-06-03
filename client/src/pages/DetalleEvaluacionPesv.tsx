@@ -1004,6 +1004,33 @@ function DetalleEvaluacionPesvInner() {
     },
   });
 
+  const generarPlanPesvMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/evaluaciones-pesv/${id}/generar-plan`, {});
+      return res.json();
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/acciones-mejora-contexto"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/plan-mejoramiento-consolidado"] });
+      if (result.created === 0) {
+        toast({
+          title: "Sin acciones nuevas",
+          description: `Todos los pasos aplicables ya tienen acciones registradas (${result.skipped} omitidas por duplicado).`,
+          className: "bg-blue-50 border-blue-200",
+        });
+      } else {
+        toast({
+          title: "Plan generado",
+          description: `Se crearon ${result.created} acciones de mejora en el Plan de Mejoramiento.${result.skipped > 0 ? ` (${result.skipped} ya existían)` : ""}`,
+          className: "bg-green-50 border-green-200",
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const finalizarEvaluacionMutation = useMutation({
     mutationFn: async (nuevoEstado: string) => {
       const res = await apiRequest("PATCH", `/api/evaluaciones-pesv/${id}`, { estado: nuevoEstado });
@@ -1206,6 +1233,15 @@ function DetalleEvaluacionPesvInner() {
           >
             <RefreshCcw className={`h-4 w-4 mr-2 ${recalcularMutation.isPending ? 'animate-spin' : ''}`} />
             Recalcular Puntajes
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => generarPlanPesvMutation.mutate()}
+            disabled={generarPlanPesvMutation.isPending}
+            data-testid="button-generar-plan-pesv"
+          >
+            <Wand2 className="h-4 w-4 mr-2" />
+            {generarPlanPesvMutation.isPending ? "Generando..." : "Generar Plan Automático"}
           </Button>
           <Button
             onClick={handleDownloadIso39001Report}
