@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import {
   Plus, Search, FileText, Edit2, Trash2, AlertCircle, Clock,
-  CheckCircle2, Target, TrendingUp, Filter, Download, CalendarIcon, ArrowLeft, Zap, Lightbulb, AlertTriangle
+  CheckCircle2, Target, TrendingUp, Filter, Download, CalendarIcon, ArrowLeft, Zap, Lightbulb, AlertTriangle, Wand2
 } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { format } from "date-fns";
@@ -106,6 +106,7 @@ export default function PlanMejoramientoContexto() {
   const [editingAccion, setEditingAccion] = useState<AccionMejoraContexto | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [autoFillSources, setAutoFillSources] = useState<AutoFillSource[]>([]);
+  const [generandoAuto, setGenerandoAuto] = useState(false);
 
   const form = useForm<AccionFormData>({
     resolver: zodResolver(accionFormSchema),
@@ -394,6 +395,39 @@ export default function PlanMejoramientoContexto() {
   const estadisticas = planConsolidado?.estadisticas || { pendientes: 0, enProgreso: 0, completadas: 0 };
   const totalAcciones = acciones.length;
 
+  const handleGenerarAutomatico = async () => {
+    setGenerandoAuto(true);
+    try {
+      const res = await apiRequest("POST", "/api/acciones-mejora-contexto/generar-automatico", {});
+      const result = await res.json();
+      queryClient.invalidateQueries({ queryKey: ["/api/acciones-mejora-contexto"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/plan-mejoramiento-consolidado"] });
+      if (result.created === 0) {
+        toast({
+          title: "Sin acciones nuevas",
+          description: result.sinEvaluacion
+            ? "No se encontró evaluación PESV activa. Inicia una evaluación primero, o crea acciones manualmente."
+            : `Todos los pasos PESV pendientes ya tienen acciones registradas (${result.skipped} omitidas por duplicado).`,
+          className: "bg-blue-50 border-blue-200",
+        });
+      } else {
+        toast({
+          title: "Plan generado",
+          description: `Se crearon ${result.created} acciones de mejora para los pasos PESV que no cumplen.${result.skipped > 0 ? ` (${result.skipped} omitidas por duplicado)` : ""}`,
+          className: "bg-green-50 border-green-200",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo generar el plan automático.",
+        variant: "destructive",
+      });
+    } finally {
+      setGenerandoAuto(false);
+    }
+  };
+
   const handleExportPdf = async () => {
     try {
       const response = await fetch("/api/acciones-mejora-contexto/pdf", {
@@ -462,6 +496,15 @@ export default function PlanMejoramientoContexto() {
           <Button variant="outline" onClick={handleExportPdf} data-testid="button-export-pdf">
             <Download className="h-4 w-4 mr-2" />
             Exportar PDF
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleGenerarAutomatico}
+            disabled={generandoAuto}
+            data-testid="button-generar-automatico-pesv"
+          >
+            <Wand2 className="h-4 w-4 mr-2" />
+            {generandoAuto ? "Generando..." : "Generar Plan Automático"}
           </Button>
           <Button onClick={() => handleOpenDialog()} data-testid="button-new-action">
             <Plus className="h-4 w-4 mr-2" />

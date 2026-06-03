@@ -47860,6 +47860,123 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // POST /api/acciones-mejora-contexto/generar-automatico
+  // Genera acciones de mejora automáticamente para los pasos PESV que no cumplen en la evaluación activa.
+  app.post("/api/acciones-mejora-contexto/generar-automatico", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.activeCompanyId || req.user!.companyId;
+      if (!companyId) return res.status(403).json({ error: "Usuario no asociado a empresa" });
+
+      // Mapa estático de los 24 pasos PESV (Res. 40595/2022)
+      const PASOS_MAP: { codigo: string; nombre: string; fase: string; prioridad: 'alta' | 'media' }[] = [
+        { codigo: 'P01', nombre: 'Conformación del equipo de trabajo', fase: 'Planear', prioridad: 'alta' },
+        { codigo: 'P02', nombre: 'Política de seguridad vial', fase: 'Planear', prioridad: 'alta' },
+        { codigo: 'P03', nombre: 'Diagnóstico de la organización', fase: 'Planear', prioridad: 'alta' },
+        { codigo: 'P04', nombre: 'Caracterización y evaluación del riesgo vial', fase: 'Planear', prioridad: 'alta' },
+        { codigo: 'P05', nombre: 'Objetivos y metas del PESV', fase: 'Planear', prioridad: 'media' },
+        { codigo: 'P06', nombre: 'Programas y planes de acción', fase: 'Planear', prioridad: 'media' },
+        { codigo: 'P07', nombre: 'Roles y responsabilidades', fase: 'Planear', prioridad: 'media' },
+        { codigo: 'P08', nombre: 'Recursos para el PESV', fase: 'Planear', prioridad: 'media' },
+        { codigo: 'H01', nombre: 'Fortalecimiento institucional - Factor Humano', fase: 'Hacer', prioridad: 'alta' },
+        { codigo: 'H02', nombre: 'Capacitación en seguridad vial', fase: 'Hacer', prioridad: 'alta' },
+        { codigo: 'H03', nombre: 'Control de documentación de conductores', fase: 'Hacer', prioridad: 'alta' },
+        { codigo: 'H04', nombre: 'Gestión de vehículos seguros', fase: 'Hacer', prioridad: 'alta' },
+        { codigo: 'H05', nombre: 'Plan de mantenimiento de vehículos', fase: 'Hacer', prioridad: 'media' },
+        { codigo: 'H06', nombre: 'Inspecciones preoperacionales', fase: 'Hacer', prioridad: 'media' },
+        { codigo: 'H07', nombre: 'Gestión de la velocidad', fase: 'Hacer', prioridad: 'alta' },
+        { codigo: 'H08', nombre: 'Gestión de rutas seguras', fase: 'Hacer', prioridad: 'media' },
+        { codigo: 'H09', nombre: 'Gestión de fatiga y somnolencia', fase: 'Hacer', prioridad: 'alta' },
+        { codigo: 'H10', nombre: 'Gestión de alcohol y sustancias psicoactivas', fase: 'Hacer', prioridad: 'alta' },
+        { codigo: 'H11', nombre: 'Atención a víctimas de siniestros viales', fase: 'Hacer', prioridad: 'alta' },
+        { codigo: 'V01', nombre: 'Indicadores de gestión del PESV', fase: 'Verificar', prioridad: 'media' },
+        { codigo: 'V02', nombre: 'Registro y análisis de siniestros viales', fase: 'Verificar', prioridad: 'media' },
+        { codigo: 'V03', nombre: 'Auditoría del PESV', fase: 'Verificar', prioridad: 'media' },
+        { codigo: 'A01', nombre: 'Acciones de mejora continua', fase: 'Actuar', prioridad: 'media' },
+        { codigo: 'A02', nombre: 'Revisión por la alta dirección', fase: 'Actuar', prioridad: 'media' },
+      ];
+
+      // Buscar evaluación PESV activa de la empresa (en-progreso o la más reciente)
+      const evaluaciones = await db.select()
+        .from(evaluacionesPesv)
+        .where(eq(evaluacionesPesv.companyId, companyId))
+        .orderBy(desc(evaluacionesPesv.createdAt))
+        .limit(5);
+
+      const evaluacionActiva = evaluaciones.find(e => e.estado === 'en-progreso') || evaluaciones[0];
+
+      let respuestasMap = new Map<string, { cumple: number | null; noAplica: number | null; hallazgo: string | null }>();
+
+      if (evaluacionActiva) {
+        const respuestas = await db.select()
+          .from(respuestasPasosPesv)
+          .where(eq(respuestasPasosPesv.evaluacionId, evaluacionActiva.id));
+        for (const r of respuestas) {
+          respuestasMap.set(r.pasoId, { cumple: r.cumple, noAplica: r.noAplica, hallazgo: r.hallazgo });
+        }
+      }
+
+      // Obtener acciones existentes para dedup por texto
+      const accionesExistentes = await db.select({ accion: accionesMejoraContexto.accion })
+        .from(accionesMejoraContexto)
+        .where(eq(accionesMejoraContexto.companyId, companyId));
+      const accionesExistentesSet = new Set(accionesExistentes.map(a => a.accion));
+
+      const fechaLimite = new Date();
+      fechaLimite.setMonth(fechaLimite.getMonth() + 6);
+
+      const creadas: typeof accionesMejoraContexto.$inferSelect[] = [];
+      let omitidas = 0;
+
+      for (const paso of PASOS_MAP) {
+        const resp = respuestasMap.get(paso.codigo);
+
+        // Excluir pasos que cumplen o no aplican
+        if (resp) {
+          if (resp.noAplica === 1) continue;
+          if (resp.cumple === 1) continue;
+        }
+
+        const textoAccion = `Implementar paso PESV ${paso.codigo}: ${paso.nombre}`;
+
+        // Dedup: no crear si ya existe con el mismo texto
+        if (accionesExistentesSet.has(textoAccion)) {
+          omitidas++;
+          continue;
+        }
+
+        const hallazgoDesc = resp?.hallazgo
+          ? resp.hallazgo
+          : `Paso ${paso.codigo} — ${paso.nombre} (${paso.fase}) pendiente de implementación según Resolución 40595/2022`;
+
+        const [nueva] = await db.insert(accionesMejoraContexto).values({
+          companyId,
+          accion: textoAccion,
+          descripcion: `Dar cumplimiento al paso ${paso.codigo} del PESV: ${paso.nombre}. Fase: ${paso.fase}.`,
+          origenHallazgo: 'evaluacion_pesv',
+          hallazgoDescripcion: hallazgoDesc,
+          tipoFoda: 'debilidad',
+          prioridad: paso.prioridad,
+          estado: 'pendiente',
+          porcentajeAvance: 0,
+          fechaIdentificacion: new Date(),
+          fechaLimite,
+        }).returning();
+
+        creadas.push(nueva);
+        accionesExistentesSet.add(textoAccion); // dedup within this run
+      }
+
+      res.status(201).json({
+        created: creadas.length,
+        skipped: omitidas,
+        acciones: creadas,
+        sinEvaluacion: !evaluacionActiva,
+      });
+    } catch (error: any) {
+      console.error("[POST /api/acciones-mejora-contexto/generar-automatico] Error:", error.message);
+      res.status(500).json({ error: "Error al generar plan automático: " + error.message });
+    }
+  });
 
   // Vista consolidada: Plan de mejoramiento (automático + contexto)
   app.get("/api/plan-mejoramiento-consolidado", requireAuth, async (req, res) => {
