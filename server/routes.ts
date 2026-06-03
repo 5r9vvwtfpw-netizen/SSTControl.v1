@@ -48762,16 +48762,41 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const logo = await loadCompanyLogo(company?.logoUrl);
       const signers = await getSignersForCompany(companyId, true);
 
-      const esReporteSupertransporte = req.query.tipo === 'supertransporte';
-      const pdfMetaTitle = esReporteSupertransporte
-        ? 'Informe de Autoevaluación PESV — Supertransporte'
-        : 'Acta de Evaluación PESV';
-      const pdfVisualTitle = esReporteSupertransporte
-        ? 'INFORME DE AUTOEVALUACIÓN PESV — SUPERTRANSPORTE'
-        : 'ACTA DE EVALUACIÓN PESV';
-      const pdfFilename = esReporteSupertransporte
-        ? `reporte-supertransporte-pesv-${evaluacion.anio}.pdf`
-        : `evaluacion-pesv-${evaluacion.anio}.pdf`;
+      // Destinatario dinámico: ansv (default) | arl | supertransporte | mintransporte | interno | custom
+      const destinatarioPesv = (req.query.destinatario as string) || (req.query.tipo === 'supertransporte' ? 'supertransporte' : 'ansv');
+      const customTextPesv = (req.query.customText as string) || '';
+      let pdfMetaTitle: string;
+      let pdfVisualTitle: string;
+      let pdfFilename: string;
+      if (destinatarioPesv === 'supertransporte') {
+        pdfMetaTitle = 'Informe de Autoevaluación PESV — Supertransporte';
+        pdfVisualTitle = 'INFORME DE AUTOEVALUACIÓN PESV — SUPERTRANSPORTE';
+        pdfFilename = `reporte-supertransporte-pesv-${evaluacion.anio}.pdf`;
+      } else if (destinatarioPesv === 'arl') {
+        const arlName = (company.arl || 'ARL').toUpperCase();
+        pdfMetaTitle = `Informe PESV — ${arlName}`;
+        pdfVisualTitle = `INFORME PESV — ${arlName}`;
+        pdfFilename = `reporte-arl-pesv-${evaluacion.anio}.pdf`;
+      } else if (destinatarioPesv === 'mintransporte') {
+        pdfMetaTitle = 'Informe PESV — Ministerio de Transporte';
+        pdfVisualTitle = 'INFORME PESV — MINISTERIO DE TRANSPORTE';
+        pdfFilename = `reporte-mintransporte-pesv-${evaluacion.anio}.pdf`;
+      } else if (destinatarioPesv === 'interno') {
+        pdfMetaTitle = 'Informe PESV — Uso Interno';
+        pdfVisualTitle = 'INFORME PESV — USO INTERNO';
+        pdfFilename = `reporte-interno-pesv-${evaluacion.anio}.pdf`;
+      } else if (destinatarioPesv === 'custom' && customTextPesv.trim()) {
+        const safeText = customTextPesv.trim().toUpperCase().replace(/[^A-Z0-9 ÁÉÍÓÚÑÜ\-]/gi, '').substring(0, 60);
+        pdfMetaTitle = `Informe PESV — ${safeText}`;
+        pdfVisualTitle = `INFORME PESV — ${safeText}`;
+        const slugText = customTextPesv.trim().replace(/[^a-zA-Z0-9]/g, '-').substring(0, 30);
+        pdfFilename = `reporte-${slugText}-pesv-${evaluacion.anio}.pdf`;
+      } else {
+        // Default: ANSV
+        pdfMetaTitle = 'Acta de Evaluación PESV — ANSV';
+        pdfVisualTitle = 'ACTA DE EVALUACIÓN PESV — ANSV';
+        pdfFilename = `evaluacion-pesv-ansv-${evaluacion.anio}.pdf`;
+      }
 
       // Create PDF
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', info: { Title: pdfMetaTitle, Author: 'SST Colombia - SADGI S.A.S.', Subject: 'Plan Estratégico de Seguridad Vial' } });

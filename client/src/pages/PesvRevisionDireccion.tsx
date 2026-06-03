@@ -91,6 +91,9 @@ export default function PesvRevisionDireccion() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedRevision, setSelectedRevision] = useState<RevisionDireccionPesv | null>(null);
   const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [destinatarioPesvOpen, setDestinatarioPesvOpen] = useState(false);
+  const [selectedDestinatarioPesv, setSelectedDestinatarioPesv] = useState<'ansv' | 'arl' | 'supertransporte' | 'mintransporte' | 'interno' | 'custom'>('ansv');
+  const [customDestinatarioPesv, setCustomDestinatarioPesv] = useState('');
 
   const { data: evaluacion, isLoading: evaluacionLoading } = useQuery<EvaluacionPesv>({
     queryKey: ["/api/evaluaciones-pesv", evaluacionId],
