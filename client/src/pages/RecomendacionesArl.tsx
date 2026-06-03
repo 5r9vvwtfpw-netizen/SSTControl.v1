@@ -24,7 +24,9 @@ import {
   Pencil, 
   Trash2,
   ListChecks,
-  ClipboardList
+  ClipboardList,
+  Wand2,
+  Download
 } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -248,6 +250,36 @@ export default function RecomendacionesArl() {
     },
   });
 
+  const generarPlanMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/recomendaciones-arl/generar-plan", {});
+      return res.json();
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/acciones-mejora-contexto"] });
+      if (result.created === 0) {
+        toast({
+          title: "Sin acciones nuevas",
+          description: `Todas las recomendaciones ya tienen acciones registradas (${result.skipped} omitidas).`,
+          className: "bg-blue-50 border-blue-200",
+        });
+      } else {
+        toast({
+          title: "Plan generado",
+          description: `Se crearon ${result.created} acciones en el Plan de Mejoramiento.${result.skipped > 0 ? ` (${result.skipped} ya existían)` : ""}`,
+          className: "bg-green-50 border-green-200",
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleDescargarPdfConPlan = () => {
+    window.open("/api/recomendaciones-arl/pdf-con-plan", "_blank");
+  };
+
   const handleEdit = (record: RecomendacionArlAutoridad) => {
     setEditingRecord(record);
     form.reset({
@@ -397,7 +429,25 @@ export default function RecomendacionesArl() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Recomendaciones ARL y Autoridades</h1>
           <p className="text-muted-foreground">Estándar 7.1.4 - Resolución 0312/2019</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => generarPlanMutation.mutate()}
+            disabled={generarPlanMutation.isPending}
+            data-testid="button-generar-plan-arl"
+          >
+            <Wand2 className="h-4 w-4 mr-2" />
+            {generarPlanMutation.isPending ? "Generando..." : "Generar Plan Automático"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleDescargarPdfConPlan}
+            data-testid="button-pdf-con-plan"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Exportar Informe Completo
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
           <DialogTrigger asChild>
             <Button data-testid="button-new-recomendacion">
               <Plus className="h-4 w-4 mr-2" />
@@ -954,6 +1004,7 @@ export default function RecomendacionesArl() {
             </Form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-4">

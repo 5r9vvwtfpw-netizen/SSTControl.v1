@@ -7596,6 +7596,259 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendStatus(204);
   });
 
+  // POST /api/recomendaciones-arl/generar-plan - Genera acciones de mejora automáticamente desde recomendaciones pendientes
+  app.post("/api/recomendaciones-arl/generar-plan", requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+    try {
+      const companyId = req.user!.activeCompanyId || req.user!.companyId;
+      if (!companyId) return res.status(403).json({ error: "Usuario no asociado a empresa" });
+
+      // Obtener recomendaciones pendientes / en progreso
+      const recomendaciones = await storage.getRecomendacionesArl(companyId);
+      const pendientes = recomendaciones.filter(r => r.estado !== 'cumplida' && r.estado !== 'archivada');
+
+      // Acciones existentes para dedup
+      const accionesExistentes = await db.select({ accion: accionesMejoraContexto.accion })
+        .from(accionesMejoraContexto).where(eq(accionesMejoraContexto.companyId, companyId));
+      const accionesSet = new Set(accionesExistentes.map(a => a.accion));
+
+      const fechaLimite = new Date();
+      fechaLimite.setMonth(fechaLimite.getMonth() + 6);
+
+      const creadas: typeof accionesMejoraContexto.$inferSelect[] = [];
+      let omitidas = 0;
+
+      for (const rec of pendientes) {
+        const textoAccion = `Implementar recomendación ${rec.codigo || rec.id.substring(0, 8)}: ${rec.descripcion?.substring(0, 80) || rec.tipoRecomendacion}`;
+        if (accionesSet.has(textoAccion)) { omitidas++; continue; }
+
+        const prioridad: 'alta' | 'media' | 'baja' = rec.tipoRecomendacion === 'sancion' || rec.tipoRecomendacion === 'correctiva' ? 'alta'
+          : rec.tipoRecomendacion === 'preventiva' ? 'media' : 'baja';
+
+        const [nueva] = await db.insert(accionesMejoraContexto).values({
+          companyId,
+          accion: textoAccion,
+          descripcion: rec.descripcion || '',
+          origenHallazgo: 'arl_autoridad',
+          hallazgoDescripcion: `Recomendación ${rec.tipoRecomendacion} de ${rec.nombreEntidad || rec.origen} — ${rec.codigo || ''}. ${rec.fundamentoLegal ? 'Base legal: ' + rec.fundamentoLegal : ''}`.trim(),
+          tipoFoda: 'debilidad',
+          prioridad,
+          estado: 'pendiente',
+          porcentajeAvance: 0,
+          fechaIdentificacion: rec.fechaRecepcion ? new Date(rec.fechaRecepcion) : new Date(),
+          fechaLimite: rec.fechaLimite ? new Date(rec.fechaLimite) : fechaLimite,
+        }).returning();
+
+        creadas.push(nueva);
+        accionesSet.add(textoAccion);
+      }
+
+      res.status(201).json({ created: creadas.length, skipped: omitidas, acciones: creadas });
+    } catch (error: any) {
+      console.error('[POST /api/recomendaciones-arl/generar-plan] Error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/recomendaciones-arl/pdf-con-plan - PDF unificado: recomendaciones ARL + Plan de Mejoramiento
+  app.get("/api/recomendaciones-arl/pdf-con-plan", requireAuth, async (req, res) => {
+    try {
+      const companyId = req.user!.activeCompanyId || req.user!.companyId;
+      if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
+
+      const [company] = await db.select().from(schema.companies).where(eq(companies.id, companyId));
+      const logoBuffer = await loadCompanyLogo(companyId);
+      const signers = await getSignersForCompany(companyId, true);
+
+      // Datos
+      const recomendaciones = await storage.getRecomendacionesArl(companyId);
+      const acciones = await db.select()
+        .from(accionesMejoraContexto)
+        .where(eq(accionesMejoraContexto.companyId, companyId))
+        .orderBy(desc(accionesMejoraContexto.createdAt));
+
+      // Suscripción para watermark
+      const subRec = await storage.getSubscriptionByCompany(companyId);
+      const trialRec = getTrialStatus(subRec?.status || 'trial', subRec?.trialEnd || null, true, true);
+
+      const doc = new PDFDocument({ size: 'LETTER', margin: 40, info: {
+        Title: 'Informe Unificado — Recomendaciones ARL y Plan de Mejoramiento',
+        Author: 'SST Colombia',
+        Subject: 'Estándar 7.1.4 — Resolución 0312/2019',
+      }});
+      setupTrialWatermarkOnAllPages(doc, trialRec.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="recomendaciones-arl-plan-mejora-${new Date().getFullYear()}.pdf"`);
+      doc.pipe(res);
+
+      const margin = 40;
+      const pageWidth = doc.page.width;
+      const contentWidth = pageWidth - margin * 2;
+
+      // ── SECCIÓN 1: Recomendaciones ARL y Autoridades ──────────────────────
+      let currentY = await addStandardHeader({
+        doc,
+        company: { id: companyId, name: company?.name || 'N/A', nit: company?.nit || 'N/A' },
+        documentTitle: 'RECOMENDACIONES ARL Y AUTORIDADES',
+        documentCode: `SST-714-${new Date().getFullYear()}`,
+        version: '1.0',
+        date: new Date(),
+        logoBuffer,
+      });
+      doc.y = currentY + 8;
+
+      // Subtítulo normativo
+      doc.fontSize(8).font('Helvetica').fillColor('#555555')
+        .text('Estándar 7.1.4 — Resolución 0312/2019 | Seguimiento a recomendaciones de ARL y autoridades competentes', margin, doc.y, { width: contentWidth, align: 'center' });
+      doc.moveDown(0.8);
+
+      // Resumen estadístico
+      const pendRec = recomendaciones.filter(r => r.estado === 'pendiente').length;
+      const progrRec = recomendaciones.filter(r => r.estado === 'en_progreso').length;
+      const cumpRec = recomendaciones.filter(r => r.estado === 'cumplida').length;
+
+      const statsY = doc.y;
+      const statW = contentWidth / 4;
+      const statsData = [
+        { label: 'Total', value: recomendaciones.length.toString(), color: '#1e3a5f' },
+        { label: 'Pendientes', value: pendRec.toString(), color: '#dc2626' },
+        { label: 'En Progreso', value: progrRec.toString(), color: '#d97706' },
+        { label: 'Cumplidas', value: cumpRec.toString(), color: '#16a34a' },
+      ];
+      statsData.forEach((s, i) => {
+        const x = margin + statW * i;
+        doc.rect(x, statsY, statW - 4, 36).fillAndStroke('#f8fafc', s.color);
+        doc.fontSize(18).font('Helvetica-Bold').fillColor(s.color).text(s.value, x, statsY + 4, { width: statW - 4, align: 'center' });
+        doc.fontSize(7).font('Helvetica').fillColor('#374151').text(s.label, x, statsY + 24, { width: statW - 4, align: 'center' });
+      });
+      doc.y = statsY + 44;
+      doc.moveDown(0.5);
+
+      // Tabla de recomendaciones
+      if (recomendaciones.length > 0) {
+        const colW = [60, 100, 80, 80, 80, contentWidth - 400];
+        const colX = [margin, margin+60, margin+160, margin+240, margin+320, margin+400];
+        const headers = ['Código', 'Entidad', 'Tipo', 'Fecha Rec.', 'Estado', 'Descripción'];
+
+        // Header row
+        doc.rect(margin, doc.y, contentWidth, 16).fillAndStroke('#1e3a5f', '#1e3a5f');
+        headers.forEach((h, i) => {
+          doc.fontSize(7).font('Helvetica-Bold').fillColor('#ffffff')
+            .text(h, colX[i] + 2, doc.y - 13, { width: colW[i] - 4 });
+        });
+        doc.moveDown(0.3);
+        doc.fillColor('#000000');
+
+        let rowY = doc.y;
+        recomendaciones.forEach((rec, idx) => {
+          if (rowY > 680) { doc.addPage(); rowY = margin + 10; }
+          const rowH = 20;
+          doc.rect(margin, rowY, contentWidth, rowH).fillAndStroke(idx % 2 === 0 ? '#f9fafb' : '#ffffff', '#e5e7eb');
+          const estadoColor = rec.estado === 'cumplida' ? '#16a34a' : rec.estado === 'en_progreso' ? '#d97706' : '#dc2626';
+          doc.fontSize(7).font('Helvetica').fillColor('#111827');
+          doc.text(rec.codigo || '—', colX[0] + 2, rowY + 4, { width: colW[0] - 4 });
+          doc.text((rec.nombreEntidad || rec.origen || '—').substring(0, 18), colX[1] + 2, rowY + 4, { width: colW[1] - 4 });
+          doc.text(rec.tipoRecomendacion || '—', colX[2] + 2, rowY + 4, { width: colW[2] - 4 });
+          doc.text(rec.fechaRecepcion ? new Date(rec.fechaRecepcion).toLocaleDateString('es-CO') : '—', colX[3] + 2, rowY + 4, { width: colW[3] - 4 });
+          doc.fillColor(estadoColor).text(rec.estado || '—', colX[4] + 2, rowY + 4, { width: colW[4] - 4 });
+          doc.fillColor('#111827').text((rec.descripcion || '—').substring(0, 50), colX[5] + 2, rowY + 4, { width: colW[5] - 4 });
+          rowY += rowH;
+        });
+        doc.y = rowY + 6;
+      } else {
+        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#6b7280')
+          .text('No se han registrado recomendaciones ARL o de autoridades.', margin, doc.y, { width: contentWidth, align: 'center' });
+        doc.moveDown();
+      }
+
+      // ── SECCIÓN 2: Plan de Mejoramiento ──────────────────────────────────
+      doc.addPage();
+      currentY = await addStandardHeader({
+        doc,
+        company: { id: companyId, name: company?.name || 'N/A', nit: company?.nit || 'N/A' },
+        documentTitle: 'PLAN DE MEJORAMIENTO — ANÁLISIS DE CONTEXTO',
+        documentCode: `SST-PMC-${new Date().getFullYear()}`,
+        version: '1.0',
+        date: new Date(),
+        logoBuffer,
+      });
+      doc.y = currentY + 8;
+
+      doc.fontSize(8).font('Helvetica').fillColor('#555555')
+        .text('Acciones de mejora trazadas desde el análisis organizacional, evaluaciones SST/PESV y recomendaciones externas', margin, doc.y, { width: contentWidth, align: 'center' });
+      doc.moveDown(0.8);
+
+      // Estadísticas plan
+      const pendAcc = acciones.filter(a => a.estado === 'pendiente').length;
+      const progrAcc = acciones.filter(a => a.estado === 'en_progreso').length;
+      const compAcc = acciones.filter(a => a.estado === 'completada').length;
+      const altaAcc = acciones.filter(a => a.prioridad === 'alta').length;
+
+      const statsY2 = doc.y;
+      const statsData2 = [
+        { label: 'Total acciones', value: acciones.length.toString(), color: '#1e3a5f' },
+        { label: 'Pendientes', value: pendAcc.toString(), color: '#dc2626' },
+        { label: 'En Progreso', value: progrAcc.toString(), color: '#d97706' },
+        { label: 'Completadas', value: compAcc.toString(), color: '#16a34a' },
+      ];
+      statsData2.forEach((s, i) => {
+        const x = margin + statW * i;
+        doc.rect(x, statsY2, statW - 4, 36).fillAndStroke('#f8fafc', s.color);
+        doc.fontSize(18).font('Helvetica-Bold').fillColor(s.color).text(s.value, x, statsY2 + 4, { width: statW - 4, align: 'center' });
+        doc.fontSize(7).font('Helvetica').fillColor('#374151').text(s.label, x, statsY2 + 24, { width: statW - 4, align: 'center' });
+      });
+      doc.y = statsY2 + 48;
+
+      if (altaAcc > 0) {
+        doc.fontSize(8).font('Helvetica-Bold').fillColor('#dc2626')
+          .text(`⚠ ${altaAcc} acciones de prioridad ALTA requieren atención inmediata`, margin, doc.y, { width: contentWidth, align: 'center' });
+        doc.moveDown(0.5);
+      }
+
+      // Tabla de acciones
+      if (acciones.length > 0) {
+        const aColW = [contentWidth - 280, 80, 70, 70, 60];
+        const aColX = [margin, margin + contentWidth - 280, margin + contentWidth - 200, margin + contentWidth - 130, margin + contentWidth - 60];
+        const aHeaders = ['Acción', 'Origen', 'Prioridad', 'Fecha Límite', 'Estado'];
+
+        doc.rect(margin, doc.y, contentWidth, 16).fillAndStroke('#1e3a5f', '#1e3a5f');
+        aHeaders.forEach((h, i) => {
+          doc.fontSize(7).font('Helvetica-Bold').fillColor('#ffffff')
+            .text(h, aColX[i] + 2, doc.y - 13, { width: aColW[i] - 4 });
+        });
+        doc.moveDown(0.3);
+        doc.fillColor('#000000');
+
+        let aRowY = doc.y;
+        acciones.forEach((acc, idx) => {
+          if (aRowY > 680) { doc.addPage(); aRowY = margin + 10; }
+          const rowH = 22;
+          doc.rect(margin, aRowY, contentWidth, rowH).fillAndStroke(idx % 2 === 0 ? '#f9fafb' : '#ffffff', '#e5e7eb');
+          const prioColor = acc.prioridad === 'alta' ? '#dc2626' : acc.prioridad === 'media' ? '#d97706' : '#16a34a';
+          const estColor = acc.estado === 'completada' ? '#16a34a' : acc.estado === 'en_progreso' ? '#d97706' : '#6b7280';
+          doc.fontSize(7).font('Helvetica').fillColor('#111827');
+          doc.text((acc.accion || '—').substring(0, 70), aColX[0] + 2, aRowY + 4, { width: aColW[0] - 4 });
+          doc.text((acc.origenHallazgo || acc.tipoFoda || '—').replace('_', ' '), aColX[1] + 2, aRowY + 4, { width: aColW[1] - 4 });
+          doc.fillColor(prioColor).text(acc.prioridad || 'media', aColX[2] + 2, aRowY + 4, { width: aColW[2] - 4 });
+          doc.fillColor('#111827').text(acc.fechaLimite ? new Date(acc.fechaLimite).toLocaleDateString('es-CO') : '—', aColX[3] + 2, aRowY + 4, { width: aColW[3] - 4 });
+          doc.fillColor(estColor).text(acc.estado || 'pendiente', aColX[4] + 2, aRowY + 4, { width: aColW[4] - 4 });
+          aRowY += rowH;
+        });
+        doc.y = aRowY + 6;
+      } else {
+        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#6b7280')
+          .text('No se han registrado acciones de mejora.', margin, doc.y, { width: contentWidth, align: 'center' });
+        doc.moveDown();
+      }
+
+      // Footer con firmantes (estandarizado)
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error: any) {
+      handlePdfError(error, res, 'recomendaciones-arl-pdf-con-plan');
+    }
+  });
+
   app.get("/api/recomendaciones-arl/:id/seguimientos", requireAuth, async (req, res) => {
     const companyId = req.user!.companyId;
     if (!companyId) {
