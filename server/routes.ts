@@ -3292,38 +3292,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Upload company logo
-  app.post("/api/companies/:id/logo", requirePermission("companies:edit"), uploadLogo.single('logo'), async (req, res) => {
+  // Logo upload via JSON/base64 (avoids multipart/form-data blocking in some proxy configs)
+  app.post("/api/companies/:id/logo", requirePermission("companies:edit"), async (req, res) => {
     try {
-      if (!req.file) {
-        return res.status(400).send("No se proporcionó ningún archivo");
+      const { data, mimeType, fileName } = req.body as { data?: string; mimeType?: string; fileName?: string };
+
+      if (!data || !mimeType) {
+        return res.status(400).json({ error: "No se proporcionó datos de imagen (data, mimeType requeridos)" });
+      }
+
+      if (!mimeType.startsWith('image/')) {
+        return res.status(400).json({ error: "Tipo de archivo no permitido. Solo se permiten imágenes." });
       }
 
       const companyId = req.params.id;
       const userCompanyId = req.user!.companyId;
-      
+
       if (userCompanyId && userCompanyId !== companyId) {
-        return res.status(403).send("No tiene permiso para modificar esta empresa");
+        return res.status(403).json({ error: "No tiene permiso para modificar esta empresa" });
+      }
+
+      // Decode base64 → Buffer
+      const base64Data = data.includes(',') ? data.split(',')[1] : data;
+      const fileBuffer = Buffer.from(base64Data, 'base64');
+
+      // Validate size (5MB max)
+      if (fileBuffer.length > 5 * 1024 * 1024) {
+        return res.status(400).json({ error: "El archivo es demasiado grande. Máximo 5MB." });
       }
 
       const storageService = new ObjectStorageService();
-      // Derive extension from actual MIME type (browser-image-compression may change format)
       const mimeToExt: Record<string, string> = {
         'image/jpeg': '.jpg', 'image/jpg': '.jpg', 'image/png': '.png',
         'image/webp': '.webp', 'image/gif': '.gif', 'image/svg+xml': '.svg',
       };
-      const ext = mimeToExt[req.file.mimetype] || path.extname(req.file.originalname) || '.png';
+      const ext = mimeToExt[mimeType] || (fileName ? path.extname(fileName) : '') || '.png';
       const uniqueId = crypto.randomUUID();
       const objectPath = `logos/${uniqueId}${ext}`;
 
-      console.log(`[S3-LOGO] Uploading to S3. Bucket: ${process.env.AWS_S3_BUCKET_NAME}, Key: uploads/${objectPath}`);
+      console.log(`[S3-LOGO] Uploading via JSON/base64. Size: ${fileBuffer.length} bytes, Type: ${mimeType}`);
 
-      await storageService.uploadObject(objectPath, req.file.buffer, req.file.mimetype);
+      await storageService.uploadObject(objectPath, fileBuffer, mimeType);
 
       const logoUrl = `/objects/${objectPath}`;
-
       const company = await storage.updateCompany(companyId, { logoUrl });
       if (!company) {
-        return res.status(404).send("Empresa no encontrada");
+        return res.status(404).json({ error: "Empresa no encontrada" });
       }
 
       console.log(`[S3-LOGO] ✅ Logo uploaded for company ${companyId}: ${logoUrl}`);
@@ -3331,15 +3345,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('[S3-LOGO] ❌ Error uploading logo:', {
         message: error.message,
-        name: error.name,
         code: error.Code || error.code,
         statusCode: error.$metadata?.httpStatusCode,
-        bucket: process.env.AWS_S3_BUCKET_NAME,
-        region: process.env.AWS_REGION,
-        hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
-        hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
       });
-      res.status(500).send(`Error al subir el logo: ${error.message}`);
+      res.status(500).json({ error: `Error al subir el logo: ${error.message}` });
     }
   });
 

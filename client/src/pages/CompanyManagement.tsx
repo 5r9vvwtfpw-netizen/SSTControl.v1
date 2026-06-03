@@ -339,20 +339,26 @@ export default function CompanyManagement() {
 
   const uploadLogoMutation = useMutation({
     mutationFn: async ({ id, file }: { id: string; file: File }) => {
-      const formData = new FormData();
-      formData.append('logo', file);
-      
+      // Convert file to base64 to avoid multipart/form-data proxy issues
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
       const res = await fetch(`/api/companies/${id}/logo`, {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        body: JSON.stringify({ data: base64, mimeType: file.type, fileName: file.name }),
       });
-      
+
       if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || 'Error al subir el logo');
+        const body = await res.json().catch(() => ({ error: 'Error al subir el logo' }));
+        throw new Error(body.error || 'Error al subir el logo');
       }
-      
+
       return res.json();
     },
     onSuccess: () => {
