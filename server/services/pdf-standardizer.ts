@@ -149,6 +149,7 @@ export async function getSignersForCompany(companyId: string, requiresLSO: boole
         licenseIssuer: formalDesignation.licenciaSstVigencia 
           ? `Vigencia: ${formatDate(formalDesignation.licenciaSstVigencia)}`
           : 'Secretaría de Salud',
+        signatureUrl: formalDesignation.lsoSignatureUrl || undefined,
       };
     }
 
