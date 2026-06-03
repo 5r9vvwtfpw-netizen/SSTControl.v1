@@ -221,7 +221,11 @@ export default function PesvRevisionDireccion() {
         <HelpVideoButton customRoute="/pesv/revision-direccion" testId="button-help-video-pesv-revision" />
         <Button
           variant="outline"
-          onClick={() => handleDownloadPdf(`/api/evaluaciones-pesv/${evaluacionId}/pdf`, `evaluacion-pesv-${evaluacionId}.pdf`)}
+          onClick={() => {
+            setSelectedDestinatarioPesv('ansv');
+            setCustomDestinatarioPesv('');
+            setDestinatarioPesvOpen(true);
+          }}
           data-testid="button-download-evaluation-pdf"
         >
           <FileDown className="h-4 w-4 mr-2" />
@@ -633,6 +637,80 @@ export default function PesvRevisionDireccion() {
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de selección de destinatario del reporte PESV */}
+      <Dialog open={destinatarioPesvOpen} onOpenChange={setDestinatarioPesvOpen}>
+        <DialogContent className="max-w-md" data-testid="dialog-destinatario-pesv">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileDown className="h-5 w-5 text-green-700" />
+              ¿A quién va dirigido el reporte PESV?
+            </DialogTitle>
+            <DialogDescription>
+              Seleccione el destinatario para ajustar el título del PDF según la norma.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            {[
+              { value: 'ansv', label: 'ANSV', desc: 'Agencia Nacional de Seguridad Vial — reporte anual de autogestión (ansv.gov.co)' },
+              { value: 'arl', label: 'ARL', desc: 'Para la Administradora de Riesgos Laborales — integración PESV-SG-SST' },
+              { value: 'supertransporte', label: 'Supertransporte', desc: 'Superintendencia de Puertos y Transporte (empresas de transporte público)' },
+              { value: 'mintransporte', label: 'Ministerio de Transporte', desc: 'Entidad rectora — Resolución 40595/2022' },
+              { value: 'interno', label: 'Uso Interno', desc: 'Para archivo interno, auditorías o comité PESV' },
+              { value: 'custom', label: 'Otro destinatario', desc: 'Especifique el nombre' },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setSelectedDestinatarioPesv(opt.value as any)}
+                className={`text-left rounded-md border px-4 py-3 transition-colors ${
+                  selectedDestinatarioPesv === opt.value
+                    ? 'border-green-700 bg-green-50 dark:bg-green-950'
+                    : 'border-border hover-elevate'
+                }`}
+                data-testid={`option-destinatario-pesv-${opt.value}`}
+              >
+                <div className="font-medium text-sm">{opt.label}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{opt.desc}</div>
+              </button>
+            ))}
+            {selectedDestinatarioPesv === 'custom' && (
+              <Input
+                placeholder="Ej: Junta Directiva, Comité PESV..."
+                value={customDestinatarioPesv}
+                onChange={(e) => setCustomDestinatarioPesv(e.target.value)}
+                maxLength={60}
+                className="mt-1"
+                data-testid="input-custom-destinatario-pesv"
+                autoFocus
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDestinatarioPesvOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                const params = new URLSearchParams({ destinatario: selectedDestinatarioPesv });
+                if (selectedDestinatarioPesv === 'custom' && customDestinatarioPesv.trim()) {
+                  params.set('customText', customDestinatarioPesv.trim());
+                }
+                handleDownloadPdf(
+                  `/api/evaluaciones-pesv/${evaluacionId}/pdf?${params.toString()}`,
+                  `evaluacion-pesv-${evaluacionId}.pdf`
+                );
+                setDestinatarioPesvOpen(false);
+              }}
+              className="bg-green-700 hover:bg-green-800"
+              disabled={selectedDestinatarioPesv === 'custom' && !customDestinatarioPesv.trim()}
+              data-testid="button-confirm-destinatario-pesv"
+            >
+              Descargar PDF
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
