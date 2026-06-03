@@ -1532,6 +1532,29 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
   onMessage?: () => void;
   hasValidSignature: boolean;
 }) {
+  const { toast } = useToast();
+  const [destinatarioOpen, setDestinatarioOpen] = useState(false);
+  const [pendingEvalId, setPendingEvalId] = useState<string | null>(null);
+  const [selectedDestinatario, setSelectedDestinatario] = useState<'ministerio' | 'arl' | 'interno' | 'custom'>('ministerio');
+  const [customDestinatario, setCustomDestinatario] = useState('');
+
+  const openDestinatarioDialog = (evalId: string) => {
+    setPendingEvalId(evalId);
+    setSelectedDestinatario('ministerio');
+    setCustomDestinatario('');
+    setDestinatarioOpen(true);
+  };
+
+  const handleDownloadPdf = () => {
+    if (!pendingEvalId) return;
+    const params = new URLSearchParams({ destinatario: selectedDestinatario });
+    if (selectedDestinatario === 'custom' && customDestinatario.trim()) {
+      params.set('customText', customDestinatario.trim());
+    }
+    window.open(`/api/evaluaciones-sst/${pendingEvalId}/pdf-ministerio?${params.toString()}`, '_blank');
+    setDestinatarioOpen(false);
+  };
+
   return (
     <div className="space-y-4">
       <Card className="border-l-0 border-r-0 border-t-0 rounded-none bg-muted/50">
@@ -2062,9 +2085,7 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                           size="sm"
                           variant="outline"
                           data-testid={`button-view-pdf-ministerio-${ev.id}`}
-                          onClick={() => {
-                            window.open(`/api/evaluaciones-sst/${ev.id}/pdf-ministerio`, '_blank');
-                          }}
+                          onClick={() => openDestinatarioDialog(ev.id)}
                         >
                           <FileBarChart className="h-4 w-4 mr-1" />
                           Ver PDF Ministerio
@@ -2263,6 +2284,68 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
           </CardContent>
         </Card>
       )}
+
+      {/* Diálogo de selección de destinatario del reporte */}
+      <Dialog open={destinatarioOpen} onOpenChange={setDestinatarioOpen}>
+        <DialogContent className="max-w-md" data-testid="dialog-destinatario-portal">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileBarChart className="h-5 w-5 text-green-600" />
+              ¿A quién va dirigido el reporte?
+            </DialogTitle>
+            <DialogDescription>
+              Seleccione el destinatario para que el título del PDF sea el correcto.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            {[
+              { value: 'ministerio', label: 'Ministerio del Trabajo', desc: 'Para subir a sgrl.mintrabajo.gov.co' },
+              { value: 'arl', label: 'ARL', desc: 'Para enviar a la Administradora de Riesgos Laborales' },
+              { value: 'interno', label: 'Uso Interno', desc: 'Para archivo interno de la empresa' },
+              { value: 'custom', label: 'Otro destinatario', desc: 'Especifique el nombre' },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setSelectedDestinatario(opt.value as any)}
+                className={`text-left rounded-md border px-4 py-3 transition-colors ${
+                  selectedDestinatario === opt.value
+                    ? 'border-green-600 bg-green-50 dark:bg-green-950'
+                    : 'border-border hover-elevate'
+                }`}
+                data-testid={`option-destinatario-portal-${opt.value}`}
+              >
+                <div className="font-medium text-sm">{opt.label}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{opt.desc}</div>
+              </button>
+            ))}
+            {selectedDestinatario === 'custom' && (
+              <Input
+                placeholder="Ej: Junta Directiva, Auditoría Interna..."
+                value={customDestinatario}
+                onChange={(e) => setCustomDestinatario(e.target.value)}
+                maxLength={60}
+                className="mt-1"
+                data-testid="input-custom-destinatario-portal"
+                autoFocus
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDestinatarioOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleDownloadPdf}
+              className="bg-green-600 hover:bg-green-700"
+              disabled={selectedDestinatario === 'custom' && !customDestinatario.trim()}
+              data-testid="button-confirm-destinatario-portal"
+            >
+              Generar PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -56,6 +56,9 @@ export default function DetalleEvaluacionSst() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [licenciadoDialogOpen, setLicenciadoDialogOpen] = useState(false);
   const [finalizarDialogOpen, setFinalizarDialogOpen] = useState(false);
+  const [destinatarioDialogOpen, setDestinatarioDialogOpen] = useState(false);
+  const [selectedDestinatario, setSelectedDestinatario] = useState<'ministerio' | 'arl' | 'interno' | 'custom'>('ministerio');
+  const [customDestinatario, setCustomDestinatario] = useState('');
 
   // Verificar si el usuario es superadmin para permitir edición del tipo de empresa (solo superadmin)
   const isSuperAdmin = user?.role === "superadmin";
@@ -565,6 +568,11 @@ export default function DetalleEvaluacionSst() {
   };
 
   const handleDownloadMinisterioReport = () => {
+    setDestinatarioDialogOpen(true);
+  };
+
+  const onConfirmDestinatario = () => {
+    setDestinatarioDialogOpen(false);
     setLicenciadoDialogOpen(true);
   };
 
@@ -606,7 +614,11 @@ export default function DetalleEvaluacionSst() {
 
   const confirmDownloadMinisterioReport = async () => {
     try {
-      const response = await fetch(`/api/evaluaciones-sst/${id}/pdf-ministerio`, {
+      const params = new URLSearchParams({ destinatario: selectedDestinatario });
+      if (selectedDestinatario === 'custom' && customDestinatario.trim()) {
+        params.set('customText', customDestinatario.trim());
+      }
+      const response = await fetch(`/api/evaluaciones-sst/${id}/pdf-ministerio?${params.toString()}`, {
         credentials: 'include'
       });
       
@@ -989,6 +1001,68 @@ export default function DetalleEvaluacionSst() {
       {/* Calendario del Ministerio de Trabajo */}
       <MinisterioFechasCard compact />
       <ComplianceAlertPopup />
+
+      {/* Diálogo de selección de destinatario del reporte */}
+      <Dialog open={destinatarioDialogOpen} onOpenChange={setDestinatarioDialogOpen}>
+        <DialogContent className="max-w-md" data-testid="dialog-destinatario-reporte">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-green-600" />
+              ¿A quién va dirigido el reporte?
+            </DialogTitle>
+            <DialogDescription>
+              Seleccione el destinatario para que el título del PDF sea el correcto.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            {[
+              { value: 'ministerio', label: 'Ministerio del Trabajo', desc: 'Para subir a sgrl.mintrabajo.gov.co' },
+              { value: 'arl', label: 'ARL', desc: 'Para enviar a la Administradora de Riesgos Laborales' },
+              { value: 'interno', label: 'Uso Interno', desc: 'Para archivo interno de la empresa' },
+              { value: 'custom', label: 'Otro destinatario', desc: 'Especifique el nombre' },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setSelectedDestinatario(opt.value as any)}
+                className={`text-left rounded-md border px-4 py-3 transition-colors ${
+                  selectedDestinatario === opt.value
+                    ? 'border-green-600 bg-green-50 dark:bg-green-950'
+                    : 'border-border hover-elevate'
+                }`}
+                data-testid={`option-destinatario-${opt.value}`}
+              >
+                <div className="font-medium text-sm">{opt.label}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{opt.desc}</div>
+              </button>
+            ))}
+            {selectedDestinatario === 'custom' && (
+              <Input
+                placeholder="Ej: Junta Directiva, Auditoría Interna..."
+                value={customDestinatario}
+                onChange={(e) => setCustomDestinatario(e.target.value)}
+                maxLength={60}
+                className="mt-1"
+                data-testid="input-custom-destinatario"
+                autoFocus
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDestinatarioDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={onConfirmDestinatario}
+              className="bg-green-600 hover:bg-green-700"
+              disabled={selectedDestinatario === 'custom' && !customDestinatario.trim()}
+              data-testid="button-confirm-destinatario"
+            >
+              Continuar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Diálogo de advertencia sobre licenciado de salud ocupacional */}
       <AlertDialog open={licenciadoDialogOpen} onOpenChange={setLicenciadoDialogOpen}>

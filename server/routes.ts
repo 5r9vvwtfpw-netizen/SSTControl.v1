@@ -27000,15 +27000,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - 2 * margin;
       
+      // Destinatario dinámico: ministerio (default) | arl | interno | custom
+      const destinatario = (req.query.destinatario as string) || 'ministerio';
+      const customText = (req.query.customText as string) || '';
+      let documentTitle: string;
+      let filenameSlug: string;
+      if (destinatario === 'arl') {
+        const arlName = (company.arl || 'ARL').toUpperCase();
+        documentTitle = `REPORTE ${arlName} - EVALUACIÓN SG-SST`;
+        filenameSlug = `Reporte-ARL-SST-${evaluacion.anio}`;
+      } else if (destinatario === 'interno') {
+        documentTitle = 'REPORTE INTERNO - EVALUACIÓN SG-SST';
+        filenameSlug = `Reporte-Interno-SST-${evaluacion.anio}`;
+      } else if (destinatario === 'custom' && customText.trim()) {
+        const safeText = customText.trim().toUpperCase().replace(/[^A-Z0-9 ÁÉÍÓÚÑÜ\-]/gi, '').substring(0, 60);
+        documentTitle = `REPORTE ${safeText} - EVALUACIÓN SG-SST`;
+        const slugText = customText.trim().replace(/[^a-zA-Z0-9]/g, '-').substring(0, 30);
+        filenameSlug = `Reporte-${slugText}-SST-${evaluacion.anio}`;
+      } else {
+        documentTitle = 'REPORTE MINISTERIO DEL TRABAJO - EVALUACIÓN SG-SST';
+        filenameSlug = `Reporte-Ministerio-SST-${evaluacion.anio}`;
+      }
+
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="Reporte-Ministerio-SST-${evaluacion.anio}.pdf"`);
+      res.setHeader('Content-Disposition', `attachment; filename="${filenameSlug}.pdf"`);
       doc.pipe(res);
 
       // Standard Header using centralized PDF Standardizer
       let currentY = await addStandardHeader({
         doc,
         company: { id: companyId, name: company.name, nit: company.nit || '', logoUrl: company.logoUrl },
-        documentTitle: 'REPORTE MINISTERIO DEL TRABAJO - EVALUACIÓN SG-SST',
+        documentTitle,
         documentCode: `SST-MIN-${evaluacion.anio}`,
         version: '1.0',
         date: new Date(evaluacion.anio, (evaluacion.mes || 12) - 1, 1),
