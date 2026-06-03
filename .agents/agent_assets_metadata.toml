@@ -167,3 +167,9 @@ id = "FHWFBHiCEUkCYaiZWw_Fp"
 uri = "file://attached_assets/Portafolio_SST_Colombia.pdf"
 type = "pdf"
 title = "Portafolio SST Colombia — Verde corporativo"
+
+[[outputs]]
+id = "-TyD-oFL93zKU-RfgdRng"
+uri = "file://attached_assets/plan-mejoramiento-demo.pdf"
+type = "pdf"
+title = "Informe Unificado — Recomendaciones ARL y Plan de Mejoramiento"
