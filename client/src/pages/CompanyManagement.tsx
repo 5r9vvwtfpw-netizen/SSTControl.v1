@@ -514,14 +514,15 @@ export default function CompanyManagement() {
               });
             }
           } catch (recalcError: any) {
+            // El recálculo de precio falló, pero continuamos guardando los datos de la empresa.
+            // El precio se actualizará en el próximo ciclo de facturación.
+            console.warn('[Quote-Recalculate] Fallo al recalcular precio, continuando con actualización de empresa:', recalcError?.message);
             toast({
-              title: "No se pudo actualizar la empresa",
-              description: "No fue posible obtener el nuevo precio desde la landing page. Intente de nuevo más tarde o contacte soporte.",
+              title: "Aviso: precio no recalculado",
+              description: "No fue posible actualizar el precio desde el servicio externo, pero los datos de la empresa sí se guardarán.",
               variant: "destructive",
-              duration: 10000,
+              duration: 7000,
             });
-            setPendingPricingUpdate(null);
-            return;
           }
           setPendingPricingUpdate(null);
         }
@@ -663,7 +664,7 @@ export default function CompanyManagement() {
       legalRepName: company.legalRepName || "",
       legalRepId: company.legalRepId || "",
       legalRepPosition: company.legalRepPosition || "",
-      numberOfWorkers: company.numberOfWorkers,
+      numberOfWorkers: company.numberOfWorkers || 1,
       numberOfVehicles: company.numberOfVehicles || quoteVehicles || 0,
       riskLevel: company.riskLevel,
     });
