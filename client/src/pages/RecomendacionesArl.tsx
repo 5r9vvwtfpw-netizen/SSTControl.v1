@@ -276,8 +276,42 @@ export default function RecomendacionesArl() {
     },
   });
 
-  const handleDescargarPdfConPlan = () => {
-    window.open("/api/recomendaciones-arl/pdf-con-plan", "_blank");
+  const handleDescargarPdfConPlan = async () => {
+    try {
+      const headers: Record<string, string> = {};
+      try {
+        const session = localStorage.getItem("superadmin_access_session");
+        if (session) {
+          const parsed = JSON.parse(session);
+          if (parsed.companyId) headers["X-Company-Id"] = parsed.companyId;
+        }
+        const lsoCtx = localStorage.getItem("lso_company_context");
+        if (!headers["X-Company-Id"] && lsoCtx) {
+          const parsed = JSON.parse(lsoCtx);
+          if (parsed.companyId) headers["X-Company-Id"] = parsed.companyId;
+        }
+      } catch {}
+
+      const response = await fetch("/api/recomendaciones-arl/pdf-con-plan", {
+        credentials: "include",
+        headers,
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `Error ${response.status}`);
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `recomendaciones-arl-plan-mejora-${new Date().getFullYear()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      toast({ title: "Error al exportar PDF", description: error.message, variant: "destructive" });
+    }
   };
 
   const handleEdit = (record: RecomendacionArlAutoridad) => {

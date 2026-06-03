@@ -7536,7 +7536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Recomendaciones ARL y Autoridades - Estándar 7.1.4
   app.get("/api/recomendaciones-arl", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -7544,8 +7544,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(recomendaciones);
   });
 
-  app.get("/api/recomendaciones-arl/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+  app.get("/api/recomendaciones-arl/:id", requireAuth, async (req, res, next) => {
+    // Pass through to static routes registered after this one
+    if (req.params.id === 'pdf-con-plan') return next();
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -7558,7 +7560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/recomendaciones-arl", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -7572,7 +7574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/recomendaciones-arl/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -7588,7 +7590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/recomendaciones-arl/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -7599,7 +7601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/recomendaciones-arl/generar-plan - Genera acciones de mejora automáticamente desde recomendaciones pendientes
   app.post("/api/recomendaciones-arl/generar-plan", requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      const companyId = req.user!.activeCompanyId || req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).json({ error: "Usuario no asociado a empresa" });
 
       // Obtener recomendaciones pendientes / en progreso
@@ -7652,7 +7654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/recomendaciones-arl/pdf-con-plan - PDF unificado: recomendaciones ARL + Plan de Mejoramiento
   app.get("/api/recomendaciones-arl/pdf-con-plan", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.activeCompanyId || req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
 
       const [company] = await db.select().from(schema.companies).where(eq(companies.id, companyId));
