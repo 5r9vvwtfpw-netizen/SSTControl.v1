@@ -7661,34 +7661,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const logoBuffer = await loadCompanyLogo(companyId);
       const signers = await getSignersForCompany(companyId, true);
 
-      // Datos
       const recomendaciones = await storage.getRecomendacionesArl(companyId);
       const acciones = await db.select()
         .from(accionesMejoraContexto)
         .where(eq(accionesMejoraContexto.companyId, companyId))
         .orderBy(desc(accionesMejoraContexto.createdAt));
 
-      // Suscripción para watermark
       const subRec = await storage.getSubscriptionByCompany(companyId);
       const trialRec = getTrialStatus(subRec?.status || 'trial', subRec?.trialEnd || null, true, true);
 
-      const doc = new PDFDocument({ size: 'LETTER', margin: 40, info: {
-        Title: 'Informe Unificado — Recomendaciones ARL y Plan de Mejoramiento',
-        Author: 'SST Colombia',
-        Subject: 'Estándar 7.1.4 — Resolución 0312/2019',
-      }});
+      const doc = new PDFDocument({
+        size: 'LETTER',
+        margin: PDF_CONFIG.MARGIN,
+        info: {
+          Title: 'Recomendaciones ARL y Plan de Mejoramiento',
+          Author: 'SST Colombia',
+          Subject: 'Estándar 7.1.4 — Resolución 0312/2019',
+        },
+      });
       setupTrialWatermarkOnAllPages(doc, trialRec.requiresWatermark);
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="recomendaciones-arl-plan-mejora-${new Date().getFullYear()}.pdf"`);
       doc.pipe(res);
 
-      const margin = 40;
+      const margin = PDF_CONFIG.MARGIN;
       const pageWidth = doc.page.width;
       const contentWidth = pageWidth - margin * 2;
 
-      // ── SECCIÓN 1: Recomendaciones ARL y Autoridades ──────────────────────
-      let currentY = await addStandardHeader({
+      const fmtDate = (d: string | Date | null | undefined) =>
+        d ? new Date(d).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+      const labelEstado: Record<string, string> = {
+        pendiente: 'Pendiente', en_progreso: 'En Progreso', cumplida: 'Cumplida',
+        completada: 'Completada', cancelada: 'Cancelada',
+      };
+      const labelTipo: Record<string, string> = {
+        arl: 'ARL', autoridad_competente: 'Autoridad', ministerio_trabajo: 'Min. Trabajo',
+        inspector: 'Inspector', otro: 'Otro',
+      };
+      const labelOrigen: Record<string, string> = {
+        arl_autoridad: 'ARL/Autoridad', investigacion_accidente: 'Inv. Accidente',
+        auditoria: 'Auditoría', analisis_contexto: 'Análisis Contexto',
+        copasst: 'COPASST', brigada: 'Brigada', otro: 'Otro',
+      };
+      const labelPrioridad: Record<string, string> = { alta: 'Alta', media: 'Media', baja: 'Baja' };
+
+      // ════════════════════════════════════════════════════════════════
+      // PÁGINA 1 — RECOMENDACIONES ARL Y AUTORIDADES
+      // ════════════════════════════════════════════════════════════════
+      let y = await addStandardHeader({
         doc,
         company: { id: companyId, name: company?.name || 'N/A', nit: company?.nit || 'N/A' },
         documentTitle: 'RECOMENDACIONES ARL Y AUTORIDADES',
@@ -7697,153 +7718,178 @@ export async function registerRoutes(app: Express): Promise<Server> {
         date: new Date(),
         logoBuffer,
       });
-      doc.y = currentY + 8;
+      doc.moveTo(margin, y + 4).lineTo(pageWidth - margin, y + 4).stroke('#cccccc');
+      doc.y = y + 14;
 
-      // Subtítulo normativo
-      doc.fontSize(8).font('Helvetica').fillColor('#555555')
-        .text('Estándar 7.1.4 — Resolución 0312/2019 | Seguimiento a recomendaciones de ARL y autoridades competentes', margin, doc.y, { width: contentWidth, align: 'center' });
-      doc.moveDown(0.8);
-
-      // Resumen estadístico
-      const pendRec = recomendaciones.filter(r => r.estado === 'pendiente').length;
+      // ── 1. Resumen ────────────────────────────────────────────────
+      const pendRec  = recomendaciones.filter(r => r.estado === 'pendiente').length;
       const progrRec = recomendaciones.filter(r => r.estado === 'en_progreso').length;
-      const cumpRec = recomendaciones.filter(r => r.estado === 'cumplida').length;
+      const cumpRec  = recomendaciones.filter(r => r.estado === 'cumplida').length;
 
-      const statsY = doc.y;
-      const statW = contentWidth / 4;
-      const statsData = [
-        { label: 'Total', value: recomendaciones.length.toString(), color: '#1e3a5f' },
-        { label: 'Pendientes', value: pendRec.toString(), color: '#dc2626' },
-        { label: 'En Progreso', value: progrRec.toString(), color: '#d97706' },
-        { label: 'Cumplidas', value: cumpRec.toString(), color: '#16a34a' },
-      ];
-      statsData.forEach((s, i) => {
-        const x = margin + statW * i;
-        doc.rect(x, statsY, statW - 4, 36).fillAndStroke('#f8fafc', s.color);
-        doc.fontSize(18).font('Helvetica-Bold').fillColor(s.color).text(s.value, x, statsY + 4, { width: statW - 4, align: 'center' });
-        doc.fontSize(7).font('Helvetica').fillColor('#374151').text(s.label, x, statsY + 24, { width: statW - 4, align: 'center' });
-      });
-      doc.y = statsY + 44;
-      doc.moveDown(0.5);
+      y = addSectionBar(doc, '1. RESUMEN — ESTÁNDAR 7.1.4 (RESOLUCIÓN 0312/2019)', doc.y);
+      doc.y = y + 4;
+      addSimpleTable(
+        doc,
+        ['Indicador', 'Cantidad'],
+        [
+          ['Total recomendaciones registradas', recomendaciones.length.toString()],
+          ['Recomendaciones pendientes',         pendRec.toString()],
+          ['Recomendaciones en progreso',        progrRec.toString()],
+          ['Recomendaciones cumplidas',          cumpRec.toString()],
+        ],
+        { y: doc.y, columnWidths: [contentWidth * 0.70, contentWidth * 0.30] }
+      );
+      doc.y += 14;
 
-      // Tabla de recomendaciones
+      // ── 2. Detalle de Recomendaciones ─────────────────────────────
+      y = addSectionBar(doc, '2. DETALLE DE RECOMENDACIONES', doc.y);
+      doc.y = y + 4;
       if (recomendaciones.length > 0) {
-        const colW = [60, 100, 80, 80, 80, contentWidth - 400];
-        const colX = [margin, margin+60, margin+160, margin+240, margin+320, margin+400];
-        const headers = ['Código', 'Entidad', 'Tipo', 'Fecha Rec.', 'Estado', 'Descripción'];
-
-        // Header row
-        doc.rect(margin, doc.y, contentWidth, 16).fillAndStroke('#1e3a5f', '#1e3a5f');
-        headers.forEach((h, i) => {
-          doc.fontSize(7).font('Helvetica-Bold').fillColor('#ffffff')
-            .text(h, colX[i] + 2, doc.y - 13, { width: colW[i] - 4 });
-        });
-        doc.moveDown(0.3);
-        doc.fillColor('#000000');
-
-        let rowY = doc.y;
-        recomendaciones.forEach((rec, idx) => {
-          if (rowY > 680) { doc.addPage(); rowY = margin + 10; }
-          const rowH = 20;
-          doc.rect(margin, rowY, contentWidth, rowH).fillAndStroke(idx % 2 === 0 ? '#f9fafb' : '#ffffff', '#e5e7eb');
-          const estadoColor = rec.estado === 'cumplida' ? '#16a34a' : rec.estado === 'en_progreso' ? '#d97706' : '#dc2626';
-          doc.fontSize(7).font('Helvetica').fillColor('#111827');
-          doc.text(rec.codigo || '—', colX[0] + 2, rowY + 4, { width: colW[0] - 4 });
-          doc.text((rec.nombreEntidad || rec.origen || '—').substring(0, 18), colX[1] + 2, rowY + 4, { width: colW[1] - 4 });
-          doc.text(rec.tipoRecomendacion || '—', colX[2] + 2, rowY + 4, { width: colW[2] - 4 });
-          doc.text(rec.fechaRecepcion ? new Date(rec.fechaRecepcion).toLocaleDateString('es-CO') : '—', colX[3] + 2, rowY + 4, { width: colW[3] - 4 });
-          doc.fillColor(estadoColor).text(rec.estado || '—', colX[4] + 2, rowY + 4, { width: colW[4] - 4 });
-          doc.fillColor('#111827').text((rec.descripcion || '—').substring(0, 50), colX[5] + 2, rowY + 4, { width: colW[5] - 4 });
-          rowY += rowH;
-        });
-        doc.y = rowY + 6;
+        const cw = [
+          contentWidth * 0.09, contentWidth * 0.18, contentWidth * 0.12,
+          contentWidth * 0.11, contentWidth * 0.12, contentWidth * 0.38,
+        ];
+        addSimpleTable(
+          doc,
+          ['Código', 'Entidad', 'Tipo', 'Fecha Rec.', 'Estado', 'Descripción'],
+          recomendaciones.map(r => [
+            r.codigo || '—',
+            (r.nombreEntidad || r.origen || '—').substring(0, 22),
+            labelTipo[r.tipoRecomendacion || ''] || (r.tipoRecomendacion || '—'),
+            fmtDate(r.fechaRecepcion),
+            labelEstado[r.estado || ''] || (r.estado || '—'),
+            (r.descripcion || '—').substring(0, 120),
+          ]),
+          { y: doc.y, columnWidths: cw }
+        );
       } else {
-        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#6b7280')
-          .text('No se han registrado recomendaciones ARL o de autoridades.', margin, doc.y, { width: contentWidth, align: 'center' });
-        doc.moveDown();
+        doc.y += 6;
+        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#666666')
+          .text('No se han registrado recomendaciones para esta empresa.', margin, doc.y, { width: contentWidth, align: 'center' });
+        doc.y += 18;
+      }
+      doc.fillColor(PDF_COLORS.BLACK);
+      doc.y += 8;
+
+      // ── 3. Próximas a vencer ──────────────────────────────────────
+      const hoy = new Date();
+      const porVencer = recomendaciones.filter(r => {
+        if (r.estado === 'cumplida') return false;
+        if (!r.fechaLimite) return false;
+        const diff = (new Date(r.fechaLimite).getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24);
+        return diff <= 30;
+      });
+      if (porVencer.length > 0) {
+        y = addSectionBar(doc, '3. RECOMENDACIONES PRÓXIMAS A VENCER (≤ 30 DÍAS)', doc.y);
+        doc.y = y + 4;
+        addSimpleTable(
+          doc,
+          ['Código', 'Entidad', 'Fecha Límite', 'Días Restantes', 'Estado'],
+          porVencer.map(r => {
+            const dias = Math.ceil((new Date(r.fechaLimite!).getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+            return [
+              r.codigo || '—',
+              (r.nombreEntidad || '—').substring(0, 28),
+              fmtDate(r.fechaLimite),
+              dias <= 0 ? 'VENCIDA' : `${dias} días`,
+              labelEstado[r.estado || ''] || '—',
+            ];
+          }),
+          {
+            y: doc.y,
+            columnWidths: [
+              contentWidth * 0.12, contentWidth * 0.30,
+              contentWidth * 0.18, contentWidth * 0.18, contentWidth * 0.22,
+            ],
+          }
+        );
+        doc.fillColor(PDF_COLORS.BLACK);
+        doc.y += 14;
       }
 
-      // ── SECCIÓN 2: Plan de Mejoramiento ──────────────────────────────────
+      // ════════════════════════════════════════════════════════════════
+      // PÁGINA 2 — PLAN DE MEJORAMIENTO
+      // ════════════════════════════════════════════════════════════════
       doc.addPage();
-      currentY = await addStandardHeader({
+      y = await addStandardHeader({
         doc,
         company: { id: companyId, name: company?.name || 'N/A', nit: company?.nit || 'N/A' },
-        documentTitle: 'PLAN DE MEJORAMIENTO — ANÁLISIS DE CONTEXTO',
-        documentCode: `SST-PMC-${new Date().getFullYear()}`,
+        documentTitle: 'PLAN DE MEJORAMIENTO',
+        documentCode: `SST-PM-${new Date().getFullYear()}`,
         version: '1.0',
         date: new Date(),
         logoBuffer,
       });
-      doc.y = currentY + 8;
+      doc.moveTo(margin, y + 4).lineTo(pageWidth - margin, y + 4).stroke('#cccccc');
+      doc.y = y + 14;
 
-      doc.fontSize(8).font('Helvetica').fillColor('#555555')
-        .text('Acciones de mejora trazadas desde el análisis organizacional, evaluaciones SST/PESV y recomendaciones externas', margin, doc.y, { width: contentWidth, align: 'center' });
-      doc.moveDown(0.8);
-
-      // Estadísticas plan
-      const pendAcc = acciones.filter(a => a.estado === 'pendiente').length;
+      // ── 1. Resumen acciones ───────────────────────────────────────
+      const pendAcc  = acciones.filter(a => a.estado === 'pendiente').length;
       const progrAcc = acciones.filter(a => a.estado === 'en_progreso').length;
-      const compAcc = acciones.filter(a => a.estado === 'completada').length;
-      const altaAcc = acciones.filter(a => a.prioridad === 'alta').length;
+      const compAcc  = acciones.filter(a => a.estado === 'completada').length;
+      const altaAcc  = acciones.filter(a => a.prioridad === 'alta').length;
 
-      const statsY2 = doc.y;
-      const statsData2 = [
-        { label: 'Total acciones', value: acciones.length.toString(), color: '#1e3a5f' },
-        { label: 'Pendientes', value: pendAcc.toString(), color: '#dc2626' },
-        { label: 'En Progreso', value: progrAcc.toString(), color: '#d97706' },
-        { label: 'Completadas', value: compAcc.toString(), color: '#16a34a' },
-      ];
-      statsData2.forEach((s, i) => {
-        const x = margin + statW * i;
-        doc.rect(x, statsY2, statW - 4, 36).fillAndStroke('#f8fafc', s.color);
-        doc.fontSize(18).font('Helvetica-Bold').fillColor(s.color).text(s.value, x, statsY2 + 4, { width: statW - 4, align: 'center' });
-        doc.fontSize(7).font('Helvetica').fillColor('#374151').text(s.label, x, statsY2 + 24, { width: statW - 4, align: 'center' });
-      });
-      doc.y = statsY2 + 48;
+      y = addSectionBar(doc, '1. RESUMEN DEL PLAN DE MEJORAMIENTO', doc.y);
+      doc.y = y + 4;
+      addSimpleTable(
+        doc,
+        ['Indicador', 'Cantidad'],
+        [
+          ['Total acciones de mejora registradas', acciones.length.toString()],
+          ['Acciones pendientes',                  pendAcc.toString()],
+          ['Acciones en progreso',                 progrAcc.toString()],
+          ['Acciones completadas',                 compAcc.toString()],
+          ['Acciones de prioridad alta',           altaAcc.toString()],
+        ],
+        { y: doc.y, columnWidths: [contentWidth * 0.70, contentWidth * 0.30] }
+      );
+      doc.y += 14;
 
-      if (altaAcc > 0) {
-        doc.fontSize(8).font('Helvetica-Bold').fillColor('#dc2626')
-          .text(`⚠ ${altaAcc} acciones de prioridad ALTA requieren atención inmediata`, margin, doc.y, { width: contentWidth, align: 'center' });
-        doc.moveDown(0.5);
-      }
-
-      // Tabla de acciones
+      // ── 2. Detalle de acciones ────────────────────────────────────
+      y = addSectionBar(doc, '2. DETALLE DE ACCIONES DE MEJORA', doc.y);
+      doc.y = y + 4;
       if (acciones.length > 0) {
-        const aColW = [contentWidth - 280, 80, 70, 70, 60];
-        const aColX = [margin, margin + contentWidth - 280, margin + contentWidth - 200, margin + contentWidth - 130, margin + contentWidth - 60];
-        const aHeaders = ['Acción', 'Origen', 'Prioridad', 'Fecha Límite', 'Estado'];
-
-        doc.rect(margin, doc.y, contentWidth, 16).fillAndStroke('#1e3a5f', '#1e3a5f');
-        aHeaders.forEach((h, i) => {
-          doc.fontSize(7).font('Helvetica-Bold').fillColor('#ffffff')
-            .text(h, aColX[i] + 2, doc.y - 13, { width: aColW[i] - 4 });
-        });
-        doc.moveDown(0.3);
-        doc.fillColor('#000000');
-
-        let aRowY = doc.y;
-        acciones.forEach((acc, idx) => {
-          if (aRowY > 680) { doc.addPage(); aRowY = margin + 10; }
-          const rowH = 22;
-          doc.rect(margin, aRowY, contentWidth, rowH).fillAndStroke(idx % 2 === 0 ? '#f9fafb' : '#ffffff', '#e5e7eb');
-          const prioColor = acc.prioridad === 'alta' ? '#dc2626' : acc.prioridad === 'media' ? '#d97706' : '#16a34a';
-          const estColor = acc.estado === 'completada' ? '#16a34a' : acc.estado === 'en_progreso' ? '#d97706' : '#6b7280';
-          doc.fontSize(7).font('Helvetica').fillColor('#111827');
-          doc.text((acc.accion || '—').substring(0, 70), aColX[0] + 2, aRowY + 4, { width: aColW[0] - 4 });
-          doc.text((acc.origenHallazgo || acc.tipoFoda || '—').replace('_', ' '), aColX[1] + 2, aRowY + 4, { width: aColW[1] - 4 });
-          doc.fillColor(prioColor).text(acc.prioridad || 'media', aColX[2] + 2, aRowY + 4, { width: aColW[2] - 4 });
-          doc.fillColor('#111827').text(acc.fechaLimite ? new Date(acc.fechaLimite).toLocaleDateString('es-CO') : '—', aColX[3] + 2, aRowY + 4, { width: aColW[3] - 4 });
-          doc.fillColor(estColor).text(acc.estado || 'pendiente', aColX[4] + 2, aRowY + 4, { width: aColW[4] - 4 });
-          aRowY += rowH;
-        });
-        doc.y = aRowY + 6;
+        const aw = [
+          contentWidth * 0.34, contentWidth * 0.18,
+          contentWidth * 0.12, contentWidth * 0.18, contentWidth * 0.18,
+        ];
+        addSimpleTable(
+          doc,
+          ['Acción', 'Origen', 'Prioridad', 'Fecha Límite', 'Estado'],
+          acciones.map(a => [
+            (a.accion || '—').substring(0, 90),
+            labelOrigen[a.origenHallazgo || ''] || (a.origenHallazgo || a.tipoFoda || '—'),
+            labelPrioridad[a.prioridad || ''] || (a.prioridad || '—'),
+            fmtDate(a.fechaLimite),
+            labelEstado[a.estado || ''] || (a.estado || '—'),
+          ]),
+          { y: doc.y, columnWidths: aw }
+        );
       } else {
-        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#6b7280')
-          .text('No se han registrado acciones de mejora.', margin, doc.y, { width: contentWidth, align: 'center' });
-        doc.moveDown();
+        doc.y += 6;
+        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#666666')
+          .text('No se han registrado acciones de mejora para esta empresa.', margin, doc.y, { width: contentWidth, align: 'center' });
+        doc.y += 18;
       }
+      doc.fillColor(PDF_COLORS.BLACK);
+      doc.y += 14;
 
-      // Footer con firmantes (estandarizado)
+      // ── 3. Referencia normativa ───────────────────────────────────
+      y = addSectionBar(doc, '3. REFERENCIA NORMATIVA Y COMPROMISO', doc.y);
+      doc.y = y + 8;
+      doc.fontSize(8).font('Helvetica').fillColor('#333333')
+        .text(
+          'Este documento es parte integral del Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST) ' +
+          'y da cumplimiento al Estándar 7.1.4 de la Resolución 0312 de 2019, el cual exige el seguimiento y ' +
+          'cierre de las recomendaciones emitidas por la ARL, el Ministerio de Trabajo, inspectores de trabajo ' +
+          'y demás autoridades competentes. El Plan de Mejoramiento consolida las acciones correctivas, ' +
+          'preventivas y de mejora continua derivadas de estos hallazgos conforme a los requisitos del ' +
+          'numeral 10.2 de la norma ISO 45001:2018.',
+          margin, doc.y, { width: contentWidth, align: 'justify', lineGap: 2 }
+        );
+      doc.fillColor(PDF_COLORS.BLACK);
+      doc.y += 14;
+
       await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
