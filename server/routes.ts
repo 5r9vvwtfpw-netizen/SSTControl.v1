@@ -47995,114 +47995,278 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/acciones-mejora-contexto/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.activeCompanyId || req.user!.companyId;
-      
-      // Obtener datos de empresa
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
+
       const [company] = await db.select().from(schema.companies).where(eq(companies.id, companyId));
-      
-      // Obtener acciones de mejora
-      const acciones = await db.select()
+      const logoBuffer = await loadCompanyLogo(companyId);
+      const signers = await getSignersForCompany(companyId, true);
+
+      // ── Fuente 1: Acciones FODA / Contexto Organizacional ────────────────
+      const accionesContexto = await db.select()
         .from(accionesMejoraContexto)
         .where(eq(accionesMejoraContexto.companyId, companyId))
         .orderBy(desc(accionesMejoraContexto.createdAt));
-      
-      // Cargar logo y obtener firmantes
-      const logoBuffer = await loadCompanyLogo(companyId);
-      const signers = await getSignersForCompany(companyId, true);
-      
-      // Crear PDF
-      const doc = new PDFDocument({ size: 'LETTER', margin: 40 });
-      
-      // Add trial watermark if subscription is in trial period
-      const pdf40263_subscription = await storage.getSubscriptionByCompany(companyId);
-      const pdf40263_trialStatus = getTrialStatus(pdf40263_subscription?.status || 'trial', pdf40263_subscription?.trialEnd || null, true, true);
-      setupTrialWatermarkOnAllPages(doc, pdf40263_trialStatus.requiresWatermark);
-      
+
+      // ── Fuente 2: Acciones de Mejora SST (de evaluaciones SST) ───────────
+      const evaluacionesSstComp = await db.select({ id: schema.evaluacionesSst.id })
+        .from(schema.evaluacionesSst)
+        .where(eq(schema.evaluacionesSst.companyId, companyId));
+      const evalIds = evaluacionesSstComp.map(e => e.id);
+      const accionesSst = evalIds.length > 0
+        ? await db.select().from(schema.accionesMejora)
+            .where(inArray(schema.accionesMejora.evaluacionId, evalIds))
+            .orderBy(desc(schema.accionesMejora.createdAt))
+        : [];
+
+      // ── Fuente 3: Acciones de Mejora PESV ────────────────────────────────
+      const accionesPesv = await db.select()
+        .from(accionesMejoraPesv)
+        .where(eq(accionesMejoraPesv.companyId, companyId))
+        .orderBy(desc(accionesMejoraPesv.createdAt));
+
+      const subRec = await storage.getSubscriptionByCompany(companyId);
+      const trialRec = getTrialStatus(subRec?.status || 'trial', subRec?.trialEnd || null, true, true);
+
+      const doc = new PDFDocument({
+        size: 'LETTER',
+        margin: PDF_CONFIG.MARGIN,
+        info: {
+          Title: 'Plan de Mejoramiento Consolidado',
+          Author: 'SST Colombia',
+          Subject: 'Resolución 0312/2019 — ISO 45001:2018 — Resolución 40595/2022',
+        },
+      });
+      setupTrialWatermarkOnAllPages(doc, trialRec.requiresWatermark);
+
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'attachment; filename=plan-mejoramiento-contexto.pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="plan-mejoramiento-consolidado-${new Date().getFullYear()}.pdf"`);
       doc.pipe(res);
-      
-      // Encabezado estandarizado
-      let currentY = await addStandardHeader({
+
+      const margin = PDF_CONFIG.MARGIN;
+      const pageWidth = doc.page.width;
+      const contentWidth = pageWidth - margin * 2;
+
+      const fmtDate = (d: string | Date | null | undefined) =>
+        d ? new Date(d).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+      const lblPrio: Record<string, string> = { alta: 'Alta', media: 'Media', baja: 'Baja', critica: 'Crítica' };
+      const lblEst: Record<string, string> = {
+        pendiente: 'Pendiente', en_progreso: 'En Progreso', completada: 'Completada',
+        cancelada: 'Cancelada', 'en-proceso': 'En Proceso', vencida: 'Vencida',
+      };
+
+      // ════════════════════════════════════════════════════════════════════
+      // PÁGINA 1 — RESUMEN CONSOLIDADO
+      // ════════════════════════════════════════════════════════════════════
+      let y = await addStandardHeader({
         doc,
         company: { id: companyId, name: company?.name || 'N/A', nit: company?.nit || 'N/A' },
-        documentTitle: 'PLAN DE MEJORAMIENTO - CONTEXTO ORGANIZACIONAL',
+        documentTitle: 'PLAN DE MEJORAMIENTO CONSOLIDADO',
+        documentCode: `SST-PM-${new Date().getFullYear()}`,
+        version: '1.0',
+        date: new Date(),
+        logoBuffer,
+      });
+      doc.moveTo(margin, y + 4).lineTo(pageWidth - margin, y + 4).stroke('#cccccc');
+      doc.y = y + 14;
+
+      // ── Resumen consolidado ───────────────────────────────────────────────
+      const totalGeneral = accionesContexto.length + accionesSst.length + accionesPesv.length;
+      const pendTotal = [
+        ...accionesContexto.filter(a => a.estado === 'pendiente'),
+        ...accionesSst.filter(a => a.estado === 'pendiente'),
+        ...accionesPesv.filter(a => a.estado === 'pendiente'),
+      ].length;
+      const progrTotal = [
+        ...accionesContexto.filter(a => a.estado === 'en_progreso'),
+        ...accionesSst.filter(a => ['en-proceso', 'en_progreso'].includes(a.estado || '')),
+        ...accionesPesv.filter(a => a.estado === 'en_progreso'),
+      ].length;
+      const compTotal = [
+        ...accionesContexto.filter(a => a.estado === 'completada'),
+        ...accionesSst.filter(a => a.estado === 'completada'),
+        ...accionesPesv.filter(a => a.estado === 'completada'),
+      ].length;
+
+      y = addSectionBar(doc, '1. RESUMEN EJECUTIVO DEL PLAN DE MEJORAMIENTO', doc.y);
+      doc.y = y + 4;
+      addSimpleTable(doc,
+        ['Fuente', 'Total', 'Pendientes', 'En Progreso', 'Completadas'],
+        [
+          [
+            'Análisis de Contexto (FODA)',
+            accionesContexto.length.toString(),
+            accionesContexto.filter(a => a.estado === 'pendiente').length.toString(),
+            accionesContexto.filter(a => a.estado === 'en_progreso').length.toString(),
+            accionesContexto.filter(a => a.estado === 'completada').length.toString(),
+          ],
+          [
+            'Evaluación SST (Res. 0312/2019)',
+            accionesSst.length.toString(),
+            accionesSst.filter(a => a.estado === 'pendiente').length.toString(),
+            accionesSst.filter(a => ['en-proceso', 'en_progreso'].includes(a.estado || '')).length.toString(),
+            accionesSst.filter(a => a.estado === 'completada').length.toString(),
+          ],
+          [
+            'Plan de Seguridad Vial — PESV',
+            accionesPesv.length.toString(),
+            accionesPesv.filter(a => a.estado === 'pendiente').length.toString(),
+            accionesPesv.filter(a => a.estado === 'en_progreso').length.toString(),
+            accionesPesv.filter(a => a.estado === 'completada').length.toString(),
+          ],
+          [`TOTAL CONSOLIDADO`, totalGeneral.toString(), pendTotal.toString(), progrTotal.toString(), compTotal.toString()],
+        ],
+        {
+          y: doc.y,
+          columnWidths: [contentWidth * 0.40, contentWidth * 0.15, contentWidth * 0.15, contentWidth * 0.15, contentWidth * 0.15],
+        }
+      );
+      doc.fillColor(PDF_COLORS.BLACK);
+      doc.y += 14;
+
+      // ════════════════════════════════════════════════════════════════════
+      // PÁGINA 2 — ACCIONES DE CONTEXTO / FODA
+      // ════════════════════════════════════════════════════════════════════
+      doc.addPage();
+      y = await addStandardHeader({
+        doc,
+        company: { id: companyId, name: company?.name || 'N/A', nit: company?.nit || 'N/A' },
+        documentTitle: 'PLAN DE MEJORAMIENTO — ANÁLISIS DE CONTEXTO (FODA)',
         documentCode: `SST-PMC-${new Date().getFullYear()}`,
         version: '1.0',
         date: new Date(),
         logoBuffer,
       });
-      
-      doc.y = currentY + 10;
-      
-      // Línea separadora
-      doc.moveTo(40, doc.y).lineTo(572, doc.y).stroke();
-      doc.moveDown();
-      
-      // Estadísticas
-      const pendientes = acciones.filter(a => a.estado === 'pendiente').length;
-      const enProgreso = acciones.filter(a => a.estado === 'en_progreso').length;
-      const completadas = acciones.filter(a => a.estado === 'completada').length;
-      
-      doc.fontSize(11).font('Helvetica-Bold').text('Resumen:');
-      doc.fontSize(10).font('Helvetica')
-         .text(`Total acciones: ${acciones.length}`)
-         .text(`Pendientes: ${pendientes}`)
-         .text(`En progreso: ${enProgreso}`)
-         .text(`Completadas: ${completadas}`);
-      doc.moveDown();
-      
-      // Tabla de acciones
-      doc.fontSize(11).font('Helvetica-Bold').text('Detalle de Acciones:');
-      doc.moveDown(0.5);
-      
-      // Headers de tabla
-      const tableTop = doc.y;
-      const col1 = 40, col2 = 250, col3 = 350, col4 = 450, col5 = 530;
-      
-      doc.fontSize(9).font('Helvetica-Bold');
-      doc.text('Acción', col1, tableTop);
-      doc.text('Origen', col2, tableTop);
-      doc.text('Prioridad', col3, tableTop);
-      doc.text('Fecha Límite', col4, tableTop);
-      doc.text('Estado', col5, tableTop);
-      
-      doc.moveTo(40, doc.y + 5).lineTo(572, doc.y + 5).stroke();
-      doc.moveDown();
-      
-      // Filas de datos
-      doc.font('Helvetica').fontSize(8);
-      for (const accion of acciones) {
-        if (doc.y > 700) {
-          doc.addPage();
-          // Reset font after page break to maintain consistent text size
-          doc.font('Helvetica').fontSize(7).fillColor('#000000');
-        }
-        
-        const y = doc.y;
-        doc.text(accion.accion?.substring(0, 40) + (accion.accion?.length > 40 ? '...' : ''), col1, y, { width: 200 });
-        doc.text(accion.tipoFoda || 'N/A', col2, y);
-        doc.text(accion.prioridad || 'media', col3, y);
-        doc.text(accion.fechaLimite ? new Date(accion.fechaLimite).toLocaleDateString('es-CO') : 'N/A', col4, y);
-        doc.text(accion.estado || 'pendiente', col5, y);
-        doc.moveDown(0.7);
+      doc.moveTo(margin, y + 4).lineTo(pageWidth - margin, y + 4).stroke('#cccccc');
+      doc.y = y + 14;
+
+      y = addSectionBar(doc, '2. ACCIONES DERIVADAS DEL ANÁLISIS DE CONTEXTO ORGANIZACIONAL', doc.y);
+      doc.y = y + 4;
+      if (accionesContexto.length > 0) {
+        const cw = [contentWidth * 0.38, contentWidth * 0.14, contentWidth * 0.12, contentWidth * 0.18, contentWidth * 0.18];
+        addSimpleTable(doc,
+          ['Acción', 'Tipo FODA', 'Prioridad', 'Fecha Límite', 'Estado'],
+          accionesContexto.map(a => [
+            (a.accion || '—').substring(0, 85),
+            (a.tipoFoda || '—').replace('_', ' '),
+            lblPrio[a.prioridad || ''] || (a.prioridad || '—'),
+            fmtDate(a.fechaLimite),
+            lblEst[a.estado || ''] || (a.estado || '—'),
+          ]),
+          { y: doc.y, columnWidths: cw }
+        );
+      } else {
+        doc.y += 6;
+        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#666666')
+          .text('No se han registrado acciones de mejora en el análisis de contexto.', margin, doc.y, { width: contentWidth, align: 'center' });
+        doc.y += 18;
       }
-      
-      // Pie de página
-      doc.fontSize(8).text(
-        'Documento generado automáticamente - SST Colombia',
-        40, 750,
-        { align: 'center' }
-      );
-      
-      // Footer con firmantes
+      doc.fillColor(PDF_COLORS.BLACK);
+      doc.y += 14;
+
+      // ════════════════════════════════════════════════════════════════════
+      // PÁGINA 3 — ACCIONES SST
+      // ════════════════════════════════════════════════════════════════════
+      doc.addPage();
+      y = await addStandardHeader({
+        doc,
+        company: { id: companyId, name: company?.name || 'N/A', nit: company?.nit || 'N/A' },
+        documentTitle: 'PLAN DE MEJORAMIENTO — SG-SST (RES. 0312/2019)',
+        documentCode: `SST-PMS-${new Date().getFullYear()}`,
+        version: '1.0',
+        date: new Date(),
+        logoBuffer,
+      });
+      doc.moveTo(margin, y + 4).lineTo(pageWidth - margin, y + 4).stroke('#cccccc');
+      doc.y = y + 14;
+
+      y = addSectionBar(doc, '3. ACCIONES CORRECTIVAS Y PREVENTIVAS — EVALUACIÓN SG-SST', doc.y);
+      doc.y = y + 4;
+      if (accionesSst.length > 0) {
+        const sw = [contentWidth * 0.32, contentWidth * 0.12, contentWidth * 0.12, contentWidth * 0.12, contentWidth * 0.16, contentWidth * 0.16];
+        addSimpleTable(doc,
+          ['Descripción', 'Tipo', 'Prioridad', 'Responsable', 'Fecha Comp.', 'Estado'],
+          accionesSst.map(a => [
+            (a.descripcionAccion || '—').substring(0, 75),
+            (a.tipoAccion || '—').replace('_', ' '),
+            lblPrio[a.prioridad || ''] || (a.prioridad || '—'),
+            (a.responsable || '—').substring(0, 20),
+            fmtDate(a.fechaCompromiso),
+            lblEst[a.estado || ''] || (a.estado || '—'),
+          ]),
+          { y: doc.y, columnWidths: sw }
+        );
+      } else {
+        doc.y += 6;
+        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#666666')
+          .text('No se han registrado acciones de mejora en las evaluaciones SG-SST.', margin, doc.y, { width: contentWidth, align: 'center' });
+        doc.y += 18;
+      }
+      doc.fillColor(PDF_COLORS.BLACK);
+      doc.y += 14;
+
+      // ════════════════════════════════════════════════════════════════════
+      // PÁGINA 4 — ACCIONES PESV
+      // ════════════════════════════════════════════════════════════════════
+      doc.addPage();
+      y = await addStandardHeader({
+        doc,
+        company: { id: companyId, name: company?.name || 'N/A', nit: company?.nit || 'N/A' },
+        documentTitle: 'PLAN DE MEJORAMIENTO — PESV (RES. 40595/2022)',
+        documentCode: `SST-PMP-${new Date().getFullYear()}`,
+        version: '1.0',
+        date: new Date(),
+        logoBuffer,
+      });
+      doc.moveTo(margin, y + 4).lineTo(pageWidth - margin, y + 4).stroke('#cccccc');
+      doc.y = y + 14;
+
+      y = addSectionBar(doc, '4. ACCIONES DE MEJORA — PLAN ESTRATÉGICO DE SEGURIDAD VIAL (PESV)', doc.y);
+      doc.y = y + 4;
+      if (accionesPesv.length > 0) {
+        const pw = [contentWidth * 0.34, contentWidth * 0.12, contentWidth * 0.12, contentWidth * 0.12, contentWidth * 0.15, contentWidth * 0.15];
+        addSimpleTable(doc,
+          ['Descripción', 'Paso', 'Prioridad', 'Responsable', 'Fecha Límite', 'Estado'],
+          accionesPesv.map(a => [
+            (a.descripcion || '—').substring(0, 80),
+            (a.pasoId || '—'),
+            lblPrio[a.prioridad || ''] || (a.prioridad || '—'),
+            (a.responsable || '—').substring(0, 20),
+            fmtDate(a.fechaLimite),
+            lblEst[a.estado || ''] || (a.estado || '—'),
+          ]),
+          { y: doc.y, columnWidths: pw }
+        );
+      } else {
+        doc.y += 6;
+        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#666666')
+          .text('No se han registrado acciones de mejora en las evaluaciones PESV.', margin, doc.y, { width: contentWidth, align: 'center' });
+        doc.y += 18;
+      }
+      doc.fillColor(PDF_COLORS.BLACK);
+      doc.y += 14;
+
+      // ── Referencia normativa ──────────────────────────────────────────────
+      y = addSectionBar(doc, '5. REFERENCIA NORMATIVA Y COMPROMISO INSTITUCIONAL', doc.y);
+      doc.y = y + 8;
+      doc.fontSize(8).font('Helvetica').fillColor('#333333')
+        .text(
+          'Este Plan de Mejoramiento Consolidado integra las acciones correctivas, preventivas y de mejora ' +
+          'continua provenientes de (1) el análisis DOFA del contexto organizacional, (2) la evaluación de ' +
+          'Estándares Mínimos del SG-SST según Resolución 0312 de 2019 y (3) la evaluación del Plan ' +
+          'Estratégico de Seguridad Vial conforme a la Resolución 40595 de 2022. Su implementación es ' +
+          'obligatoria para el cierre de no conformidades y el cumplimiento del ciclo PHVA, en consonancia ' +
+          'con los numerales 10.1 y 10.2 de la norma ISO 45001:2018.',
+          margin, doc.y, { width: contentWidth, align: 'justify', lineGap: 2 }
+        );
+      doc.fillColor(PDF_COLORS.BLACK);
+      doc.y += 14;
+
       await addSignatureFooter(doc, signers, true);
-      
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'acciones-mejora-contexto-pdf');
     }
-
   });
   app.get("/api/acciones-mejora-contexto/:id", requireAuth, async (req, res) => {
     try {
