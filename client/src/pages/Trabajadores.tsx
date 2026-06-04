@@ -639,6 +639,7 @@ export default function Trabajadores() {
         title: "Credenciales reenviadas",
         description: data.message || "Se han reenviado las credenciales al correo del trabajador.",
         className: "bg-green-50 border-green-200",
+        duration: 8000,
       });
     },
     onError: (error: Error) => {
