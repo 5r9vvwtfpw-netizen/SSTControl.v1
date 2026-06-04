@@ -4226,6 +4226,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reenviar credenciales del portal a un trabajador que ya tiene cuenta
+  // Útil cuando el email fue corregido o las credenciales no llegaron
+  app.post("/api/workers/:id/resend-portal-credentials", requirePermission("users:create"), async (req, res) => {
+    const workerId = req.params.id;
+    const userRole = req.user!.role;
+    const isAdmin = hasGlobalAccess(userRole);
+    const userCompanyId = req.user!.companyId;
+
+    try {
+      const worker = await storage.getWorkerById(workerId);
+      if (!worker) return res.status(404).json({ error: "Trabajador no encontrado" });
+
+      if (!isAdmin && worker.companyId !== userCompanyId) {
+        return res.status(403).json({ error: "No tiene permisos para este trabajador" });
+      }
+
+      if (!worker.email) {
+        return res.status(400).json({ error: "El trabajador no tiene email registrado. Por favor, actualice su información primero." });
+      }
+
+      // Buscar cuenta de usuario vinculada al trabajador
+      const existingUser = await storage.getUserByWorkerId(workerId);
+      if (!existingUser) {
+        return res.status(400).json({ error: "Este trabajador no tiene cuenta de portal. Use 'Crear acceso al portal' primero." });
+      }
+
+      // Generar nueva contraseña temporal
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+      let temporaryPassword = '';
+      const bytes = randomBytes(16);
+      for (let i = 0; i < 16; i++) {
+        temporaryPassword += chars[bytes[i] % chars.length];
+      }
+      const hashedPassword = await hashPassword(temporaryPassword);
+
+      // Actualizar contraseña Y email del usuario (por si el email del trabajador cambió)
+      await db.update(schema.users)
+        .set({ password: hashedPassword, email: worker.email })
+        .where(eq(schema.users.id, existingUser.id));
+
+      const company = await storage.getCompany(worker.companyId);
+      const companyName = company?.name || "Tu Empresa";
+      const baseUrl = process.env.VITE_APP_URL || `${req.protocol}://${req.get('host')}`;
+
+      const emailResult = await sendPortalAccessEmail(worker.email, {
+        workerName: worker.name,
+        username: existingUser.username,
+        temporaryPassword,
+        companyName,
+        loginUrl: `${baseUrl}/portal-empleados`,
+        companyEmail: company?.contactEmail || undefined,
+      });
+
+      if (!emailResult.success) {
+        return res.status(207).json({
+          success: true,
+          partialSuccess: true,
+          message: "Contraseña restablecida, pero falló el envío del email. Entregue las credenciales manualmente.",
+          credentials: { username: existingUser.username, temporaryPassword },
+          emailSent: false,
+          emailError: emailResult.error,
+        });
+      }
+
+      res.json({
+        success: true,
+        message: `Credenciales reenviadas exitosamente a ${worker.email}.`,
+        emailSent: true,
+      });
+    } catch (error: any) {
+      console.error("Error resending portal credentials:", error);
+      res.status(500).json({ error: "Error al reenviar credenciales: " + error.message });
+    }
+  });
+
   app.post("/api/workers/bulk-create-portal-access", requirePermission("users:create"), async (req, res) => {
     const userRole = req.user!.role;
     const isAdmin = hasGlobalAccess(userRole);

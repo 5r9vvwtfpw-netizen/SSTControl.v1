@@ -629,6 +629,31 @@ export default function Trabajadores() {
     },
   });
 
+  const resendPortalCredentialsMutation = useMutation({
+    mutationFn: async (workerId: string) => {
+      const res = await apiRequest("POST", `/api/workers/${workerId}/resend-portal-credentials`);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Credenciales reenviadas",
+        description: data.message || "Se han reenviado las credenciales al correo del trabajador.",
+        className: "bg-green-50 border-green-200",
+      });
+    },
+    onError: (error: Error) => {
+      let message = error.message;
+      if (message.startsWith("400:") || message.startsWith("403:") || message.startsWith("404:")) {
+        message = message.substring(message.indexOf(":") + 1).trim();
+      }
+      toast({
+        title: "Error al reenviar credenciales",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Mutación para eliminación masiva de trabajadores
   const bulkDeleteMutation = useMutation({
     mutationFn: async ({ companyId, confirmationCode, confirmCompanyName }: { companyId: string; confirmationCode: string; confirmCompanyName: string }) => {
@@ -2781,6 +2806,7 @@ export default function Trabajadores() {
                       onEdit={user?.role && hasCompanyAdminAccess(user.role) ? () => handleEdit(worker) : undefined}
                       onDelete={user?.role && hasCompanyAdminAccess(user.role) ? () => handleDelete(worker.id) : undefined}
                       onCreatePortalAccess={user?.role && hasCompanyAdminAccess(user.role) && worker.email && !worker.userId ? () => createPortalAccessMutation.mutate(worker.id) : undefined}
+                      onResendPortalCredentials={user?.role && hasCompanyAdminAccess(user.role) && worker.email && !!worker.userId ? () => resendPortalCredentialsMutation.mutate(worker.id) : undefined}
                     />
                   ))}
                 </div>

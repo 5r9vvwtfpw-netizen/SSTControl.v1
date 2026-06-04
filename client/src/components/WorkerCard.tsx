@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Briefcase, Calendar, Pencil, Trash2, UserPlus, Mail, FileText, MapPin } from "lucide-react";
+import { Briefcase, Calendar, Pencil, Trash2, UserPlus, Mail, FileText, MapPin, RefreshCw } from "lucide-react";
 
 interface WorkerCardProps {
   id: string;
@@ -21,9 +21,10 @@ interface WorkerCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onCreatePortalAccess?: () => void;
+  onResendPortalCredentials?: () => void;
 }
 
-export function WorkerCard({ id, name, position, department, contract, startDate, status, email, photoUrl, hasUserAccount, contractStatus, sedeName, onEdit, onDelete, onCreatePortalAccess }: WorkerCardProps) {
+export function WorkerCard({ id, name, position, department, contract, startDate, status, email, photoUrl, hasUserAccount, contractStatus, sedeName, onEdit, onDelete, onCreatePortalAccess, onResendPortalCredentials }: WorkerCardProps) {
   const initials = name
     .split(" ")
     .map((n) => n[0])
@@ -52,6 +53,7 @@ export function WorkerCard({ id, name, position, department, contract, startDate
             <p className="text-xs text-muted-foreground mt-0.5 truncate">{position}</p>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0 flex-wrap">
+            {/* Sin cuenta de portal — botón para crear acceso */}
             {onCreatePortalAccess && !hasUserAccount && email && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -65,22 +67,42 @@ export function WorkerCard({ id, name, position, department, contract, startDate
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Crear acceso al portal</p>
+                  <p>Crear acceso al portal de empleados</p>
                 </TooltipContent>
               </Tooltip>
             )}
+            {/* Con cuenta de portal — badge informativo + botón reenviar */}
             {hasUserAccount && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge variant="outline" className="text-xs" data-testid={`badge-has-portal-${id}`}>
-                    <Mail className="h-3 w-3 mr-1" />
-                    Portal
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Tiene acceso al portal de empleados</p>
-                </TooltipContent>
-              </Tooltip>
+              <div className="flex items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="text-xs" data-testid={`badge-has-portal-${id}`}>
+                      <Mail className="h-3 w-3 mr-1" />
+                      Portal
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Tiene acceso al portal de empleados</p>
+                  </TooltipContent>
+                </Tooltip>
+                {onResendPortalCredentials && email && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={onResendPortalCredentials}
+                        data-testid={`button-resend-portal-${id}`}
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Reenviar credenciales del portal</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
             )}
             {onEdit && (
               <Button
