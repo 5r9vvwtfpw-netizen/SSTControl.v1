@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Check, Loader2, AlertCircle, CheckCircle, CreditCard, Shield, ArrowLeft, Scale, Users, Car, Hash, Building2 } from 'lucide-react';
+import { Check, Loader2, AlertCircle, CheckCircle, CreditCard, Shield, ArrowLeft, Scale, Users, Car, Hash, Building2, Landmark } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { ContratoServiciosSaas, ContractAcceptanceData } from '@/components/ContratoServiciosSaas';
@@ -29,6 +29,11 @@ interface CompanyData {
   quoteCouponCode: string | null;
 }
 
+interface WompiEstado {
+  configured: boolean;
+  sandbox: boolean;
+}
+
 const riskLevelLabels: Record<RiskLevel, string> = {
   I: "Clase I - Minimo",
   II: "Clase II - Bajo",
@@ -36,6 +41,8 @@ const riskLevelLabels: Record<RiskLevel, string> = {
   IV: "Clase IV - Alto",
   V: "Clase V - Maximo",
 };
+
+type PaymentMethod = 'stripe' | 'pse';
 
 export default function Checkout() {
   const [, navigate] = useLocation();
@@ -50,6 +57,7 @@ export default function Checkout() {
   const [showContract, setShowContract] = useState(false);
   const [contractAccepted, setContractAccepted] = useState(false);
   const [contractAcceptanceData, setContractAcceptanceData] = useState<ContractAcceptanceData | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('stripe');
 
   const { data: company, isLoading: loadingCompany } = useQuery<CompanyData>({
     queryKey: ['/api/company/current'],
@@ -61,7 +69,13 @@ export default function Checkout() {
     enabled: !!user?.companyId,
   });
 
+  const { data: wompiEstado } = useQuery<WompiEstado>({
+    queryKey: ['/api/wompi/estado'],
+    enabled: !!user?.companyId && !success && !canceled,
+  });
+
   const isUpgradeFromFree = !currentSubscription || currentSubscription.status === 'trial' || currentSubscription.status === 'expired';
+  const isPseAvailable = !!wompiEstado?.configured;
 
   const createCheckoutV2Mutation = useMutation({
     mutationFn: async (acceptanceData?: ContractAcceptanceData) => {
@@ -113,6 +127,12 @@ export default function Checkout() {
   }, [success, sessionId]);
 
   const handleCheckout = () => {
+    if (selectedMethod === 'pse') {
+      navigate('/pago-pse');
+      return;
+    }
+
+    // Flujo Stripe
     if (isUpgradeFromFree && !contractAccepted) {
       setShowContract(true);
     } else if (contractAcceptanceData) {
@@ -386,7 +406,76 @@ export default function Checkout() {
         </div>
 
         <div className="space-y-6">
-          {isUpgradeFromFree && (
+          {/* Selector de método de pago */}
+          <Card data-testid="card-payment-method">
+            <CardHeader>
+              <CardTitle className="text-base">Método de pago</CardTitle>
+              <CardDescription>
+                Seleccione cómo desea pagar su suscripción
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Opción: Tarjeta (Stripe) */}
+              <button
+                type="button"
+                onClick={() => setSelectedMethod('stripe')}
+                data-testid="button-select-stripe"
+                className={`w-full flex items-center gap-3 p-3 rounded-md border text-left transition-colors ${
+                  selectedMethod === 'stripe'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover-elevate'
+                }`}
+              >
+                <div className={`h-4 w-4 rounded-full border-2 flex-shrink-0 ${
+                  selectedMethod === 'stripe'
+                    ? 'border-primary bg-primary'
+                    : 'border-muted-foreground'
+                }`} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="font-medium text-sm">Tarjeta de crédito / débito</span>
+                    <Badge variant="outline" className="text-xs">7 días gratis</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Visa, Mastercard, Amex — procesado por Stripe
+                  </p>
+                </div>
+              </button>
+
+              {/* Opción: PSE */}
+              {isPseAvailable && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedMethod('pse')}
+                  data-testid="button-select-pse"
+                  className={`w-full flex items-center gap-3 p-3 rounded-md border text-left transition-colors ${
+                    selectedMethod === 'pse'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover-elevate'
+                  }`}
+                >
+                  <div className={`h-4 w-4 rounded-full border-2 flex-shrink-0 ${
+                    selectedMethod === 'pse'
+                      ? 'border-primary bg-primary'
+                      : 'border-muted-foreground'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Landmark className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="font-medium text-sm">PSE — Transferencia bancaria</span>
+                      <Badge variant="outline" className="text-xs">Sin tarjeta</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Débito directo desde su cuenta bancaria colombiana (ACH Colombia)
+                    </p>
+                  </div>
+                </button>
+              )}
+            </CardContent>
+          </Card>
+
+          {isUpgradeFromFree && selectedMethod === 'stripe' && (
             <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20" data-testid="card-contract-notice">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -424,44 +513,61 @@ export default function Checkout() {
           )}
 
           <Card data-testid="card-payment">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Pago Seguro
-              </CardTitle>
-              <CardDescription>
-                Seras redirigido a Stripe para completar tu pago de forma segura. Incluye 7 dias de prueba gratis.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <Shield className="h-4 w-4 text-green-600" />
-                  <span>Conexion encriptada SSL/TLS</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600" />
-                  <span>Proteccion contra fraude</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600" />
-                  <span>Cumplimiento PCI DSS</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600" />
-                  <span>7 dias de prueba gratis incluidos</span>
-                </div>
-              </div>
+            <CardContent className="pt-6 space-y-4">
+              {selectedMethod === 'stripe' ? (
+                <>
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Shield className="h-4 w-4 text-green-600" />
+                      <span>Conexion encriptada SSL/TLS</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <span>Proteccion contra fraude</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <span>Cumplimiento PCI DSS</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <span>7 dias de prueba gratis incluidos</span>
+                    </div>
+                  </div>
 
-              <div className="bg-primary/5 rounded-lg p-4 text-center">
-                <p className="text-sm text-muted-foreground">Se cobrara mensualmente</p>
-                <p className="text-2xl font-bold text-primary" data-testid="text-checkout-total">
-                  {formatCurrency(quotePrice)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Primer cobro despues de 7 dias de prueba
-                </p>
-              </div>
+                  <div className="bg-primary/5 rounded-lg p-4 text-center">
+                    <p className="text-sm text-muted-foreground">Se cobrara mensualmente</p>
+                    <p className="text-2xl font-bold text-primary" data-testid="text-checkout-total">
+                      {formatCurrency(quotePrice)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Primer cobro despues de 7 dias de prueba
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-lg p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Landmark className="h-4 w-4 text-blue-600" />
+                    <span className="font-medium">Pago PSE — Transferencia Bancaria</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Check className="h-4 w-4 text-green-600" />
+                    <span>Procesado por Red ACH Colombia</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Check className="h-4 w-4 text-green-600" />
+                    <span>Débito directo de su cuenta bancaria</span>
+                  </div>
+                  <div className="bg-primary/5 rounded-md p-3 text-center mt-3">
+                    <p className="text-sm text-muted-foreground">Primer pago</p>
+                    <p className="text-2xl font-bold text-primary">
+                      {formatCurrency(quotePrice)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Sin período de prueba</p>
+                  </div>
+                </div>
+              )}
 
               <Button
                 className="w-full"
@@ -474,6 +580,11 @@ export default function Checkout() {
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Procesando...
+                  </>
+                ) : selectedMethod === 'pse' ? (
+                  <>
+                    <Landmark className="h-4 w-4 mr-2" />
+                    Continuar con PSE
                   </>
                 ) : isUpgradeFromFree && !contractAccepted ? (
                   <>
@@ -489,7 +600,9 @@ export default function Checkout() {
               </Button>
 
               <p className="text-xs text-center text-muted-foreground">
-                {isUpgradeFromFree
+                {selectedMethod === 'pse'
+                  ? 'Será redirigido al portal seguro de su banco para autorizar el pago.'
+                  : isUpgradeFromFree
                   ? 'Al continuar, deberas aceptar el contrato de servicios. Tu suscripcion se renovara automaticamente.'
                   : 'Al continuar, aceptas nuestros terminos de servicio. Tu suscripcion se renovara automaticamente.'
                 }
@@ -498,7 +611,11 @@ export default function Checkout() {
           </Card>
 
           <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-            <span>Procesado por Stripe</span>
+            {selectedMethod === 'stripe' ? (
+              <span>Procesado por Stripe</span>
+            ) : (
+              <span>Procesado por Wompi — Red PSE ACH Colombia</span>
+            )}
           </div>
         </div>
       </div>

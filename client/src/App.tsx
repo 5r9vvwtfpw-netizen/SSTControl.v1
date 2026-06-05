@@ -125,6 +125,8 @@ import AcuerdoProcesamientoDatos from "@/pages/AcuerdoProcesamientoDatos";
 import SolicitudesArco from "@/pages/SolicitudesArco";
 import PlanesSuscripcion from "@/pages/PlanesSuscripcion";
 import Checkout from "@/pages/Checkout";
+import PagoPSE from "@/pages/PagoPSE";
+import PagoPSERetorno from "@/pages/PagoPSERetorno";
 import DashboardFacturacion from "@/pages/DashboardFacturacion";
 import MiCuenta from "@/pages/MiCuenta";
 import MiSuscripcion from "@/pages/MiSuscripcion";
@@ -316,6 +318,8 @@ function Router() {
       <ProtectedRoute path="/mensajes-internos" component={MensajesInternos} />
       <ProtectedRoute path="/planes-suscripcion" component={PlanesSuscripcion} />
       <ProtectedRoute path="/checkout" component={Checkout} />
+      <ProtectedRoute path="/pago-pse" component={PagoPSE} />
+      <ProtectedRoute path="/pago-pse/retorno" component={PagoPSERetorno} />
       <ProtectedRoute path="/dashboard-facturacion" component={DashboardFacturacion} />
       <ProtectedRoute path="/mi-suscripcion" component={MiSuscripcion} />
       <SubscriptionProtectedRoute path="/pesv" component={Pesv} feature="hasPESV" featureName="Módulo PESV - Seguridad Vial" />

@@ -27,6 +27,7 @@ import { users } from "@shared/schema";
 import { getAuditContext } from "./lib/audit-logger";
 import { registerBillingRoutes } from "./routes/billing";
 import { registerStripeRoutes } from "./routes/stripe";
+import { registerWompiRoutes } from "./routes/wompi";
 import { registerDbDiagnosticRoutes } from "./routes/db-diagnostic";
 import companyCreationDiagnosticRoutes from "./routes/company-creation-diagnostic";
 import writeTestDiagnosticRoutes from "./routes/write-test-diagnostic";
@@ -48637,8 +48638,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // Inducción Virtual routes
   registerInduccionVirtualRoutes(app);
   
-  // Stripe payment routes (new payment provider)
+  // Stripe payment routes (tarjeta crédito/débito)
   registerStripeRoutes(app);
+
+  // Wompi PSE routes (transferencia bancaria Colombia)
+  registerWompiRoutes(app);
 
   // Chatbot AI routes
   registerChatbotRoutes(app, requireAuth);
