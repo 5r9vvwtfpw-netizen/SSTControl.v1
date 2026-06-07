@@ -80,8 +80,12 @@ export function ProtectedRoute({
     );
   }
 
+  // Rutas de pago/suscripción: siempre accesibles para cualquier usuario autenticado
+  const paymentPaths = ["/checkout", "/pago-pse", "/planes-suscripcion", "/mi-suscripcion", "/dashboard-facturacion"];
+  const isPaymentPath = paymentPaths.some(p => path === p || path.startsWith(p + "/"));
+
   // Si no tiene acceso a la ruta, redirigir a la página principal
-  if (!hasAccess) {
+  if (!hasAccess && !isPaymentPath) {
     return (
       <Route path={path}>
         <Redirect to="/" />
