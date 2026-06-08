@@ -543,20 +543,10 @@ export default function Checkout() {
                     <Landmark className="h-4 w-4 text-blue-600" />
                     <span className="font-medium">Pago PSE — Transferencia Bancaria</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Check className="h-4 w-4 text-green-600" />
-                    <span>Procesado por Red ACH Colombia</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Check className="h-4 w-4 text-green-600" />
-                    <span>Débito directo de su cuenta bancaria</span>
-                  </div>
                   <div className="bg-primary/5 rounded-md p-3 text-center mt-3">
-                    <p className="text-sm text-muted-foreground">Primer pago</p>
                     <p className="text-2xl font-bold text-primary">
                       {formatCurrency(quotePrice)}
                     </p>
-                    <p className="text-xs text-muted-foreground">Sin período de prueba</p>
                   </div>
                 </div>
               )}
@@ -591,24 +581,9 @@ export default function Checkout() {
                 )}
               </Button>
 
-              <p className="text-xs text-center text-muted-foreground">
-                {selectedMethod === 'pse'
-                  ? 'Será redirigido al portal seguro de su banco para autorizar el pago.'
-                  : isUpgradeFromFree
-                  ? 'Al continuar, deberas aceptar el contrato de servicios. Tu suscripcion se renovara automaticamente.'
-                  : 'Al continuar, aceptas nuestros terminos de servicio. Tu suscripcion se renovara automaticamente.'
-                }
-              </p>
             </CardContent>
           </Card>
 
-          <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-            {selectedMethod === 'stripe' ? (
-              <span>Procesado por Stripe</span>
-            ) : (
-              <span>Procesado por Wompi — Red PSE ACH Colombia</span>
-            )}
-          </div>
         </div>
       </div>
 

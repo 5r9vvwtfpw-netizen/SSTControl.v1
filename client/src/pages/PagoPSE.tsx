@@ -21,11 +21,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import {
-  ArrowLeft, Loader2, Building2, Landmark, AlertCircle, Shield,
-  CheckCircle, ExternalLink,
+  ArrowLeft, Loader2, Building2, Landmark, AlertCircle, ExternalLink,
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -218,9 +216,6 @@ export default function PagoPSE() {
             Pago PSE — Transferencia Bancaria
           </h1>
         </div>
-        <p className="text-muted-foreground">
-          Pague directamente desde su cuenta bancaria colombiana. Sin tarjeta de crédito.
-        </p>
         {wompiEstado.sandbox && (
           <Badge variant="outline" className="mt-2 text-amber-600 border-amber-400">
             Modo Sandbox — Solo para pruebas
@@ -247,8 +242,6 @@ export default function PagoPSE() {
                     {formatCurrency(quotePrice)}
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground">/ mes · se cobra mensualmente</p>
-
                 {company.quoteCurrentPeriodPrice != null &&
                   company.quoteBaseMonthlyPrice != null &&
                   company.quoteCurrentPeriodPrice < company.quoteBaseMonthlyPrice && (
@@ -259,44 +252,10 @@ export default function PagoPSE() {
                     </div>
                   )}
 
-                <Separator />
-
-                <div className="space-y-1.5 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
-                    <span>Sin tarjeta de crédito requerida</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
-                    <span>Débito directo de su cuenta bancaria</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
-                    <span>Procesado por ACH Colombia — Red PSE</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
-                    <span>Cifrado SSL / TLS bancario</span>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           )}
 
-          <Card className="bg-muted/30">
-            <CardContent className="pt-4 space-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2 font-medium text-foreground">
-                <Shield className="h-4 w-4 text-blue-600" />
-                ¿Cómo funciona PSE?
-              </div>
-              <ol className="space-y-1 pl-4 list-decimal text-xs">
-                <li>Complete el formulario con sus datos bancarios</li>
-                <li>Será redirigido al portal seguro de su banco</li>
-                <li>Autorice el débito desde su cuenta</li>
-                <li>Regrese automáticamente para confirmar el pago</li>
-              </ol>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Panel derecho: formulario PSE */}
@@ -307,9 +266,6 @@ export default function PagoPSE() {
                 <Landmark className="h-5 w-5" />
                 Datos para PSE
               </CardTitle>
-              <CardDescription>
-                Estos datos son requeridos por la red bancaria colombiana (ACH Colombia)
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               {/* Banco */}
