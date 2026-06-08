@@ -435,7 +435,6 @@ export default function Checkout() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="font-medium text-sm">Tarjeta de crédito / débito</span>
-                    <Badge variant="outline" className="text-xs">7 días gratis</Badge>
                   </div>
                 </div>
               </button>
