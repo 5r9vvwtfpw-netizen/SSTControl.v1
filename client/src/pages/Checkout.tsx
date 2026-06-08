@@ -464,11 +464,7 @@ export default function Checkout() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <Landmark className="h-4 w-4 text-muted-foreground shrink-0" />
                       <span className="font-medium text-sm">PSE — Transferencia bancaria</span>
-                      <Badge variant="outline" className="text-xs">Sin tarjeta</Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Débito directo desde su cuenta bancaria colombiana (ACH Colombia)
-                    </p>
                   </div>
                 </button>
               )}
