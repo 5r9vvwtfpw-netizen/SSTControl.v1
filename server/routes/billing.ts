@@ -71,6 +71,69 @@ export function registerBillingRoutes(app: Express) {
     });
   });
 
+  /**
+   * POST /api/billing/accounting-integration/test
+   * Envía una factura ficticia a Cloud Books y retorna la respuesta completa.
+   * Solo superadmin. Úsese para verificar conectividad y llave antes de pagos reales.
+   */
+  app.post("/api/billing/accounting-integration/test", requireAuth, requireSuperadmin, async (req, res) => {
+    const now = new Date();
+    const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const dueDate = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
+
+    const granTotal = 3432000;
+    const subtotal = Math.round(granTotal / 1.19);
+    const taxAmount = granTotal - subtotal;
+
+    const testPayload = {
+      invoiceId: `TEST-${Date.now()}`,
+      invoiceNumber: `TEST-FACTURA-${Date.now()}`,
+      companyId: 'test-company-id',
+      customerName: 'Empresa Prueba SST Colombia S.A.S.',
+      customerNit: '900123456-1',
+      customerEmail: 'prueba@empresa.co',
+      customerAddress: 'Calle 123 #45-67, Bogotá',
+      customerPhone: '3001234567',
+      customerCity: 'Bogotá D.C.',
+      subtotal,
+      taxAmount,
+      total: granTotal,
+      currency: 'COP',
+      periodStart,
+      periodEnd,
+      issueDate: now,
+      dueDate,
+      paidDate: now,
+      status: 'paid',
+      lineItems: [{
+        description: 'Suscripción mensual Software SST Colombia (PRUEBA)',
+        quantity: 1,
+        unitPrice: subtotal,
+        total: subtotal,
+      }],
+      snapshotCiiuCode: '0111',
+      snapshotNumberOfWorkers: 4,
+      snapshotNumberOfVehicles: 0,
+      stripePaymentId: 'pi_test_PRUEBA_CONECTIVIDAD',
+    };
+
+    const result = await accountingService.sendInvoiceToAccounting(testPayload);
+
+    res.json({
+      testMode: true,
+      timestamp: new Date().toISOString(),
+      sentPayload: {
+        invoiceNumber: testPayload.invoiceNumber,
+        customerNit: testPayload.customerNit,
+        granTotal,
+        subtotal,
+        taxAmount,
+      },
+      cloudBooksResponse: result,
+    });
+  });
+
   
   // ============================================================================
   // SUBSCRIPTION PLANS - Planes de Suscripción

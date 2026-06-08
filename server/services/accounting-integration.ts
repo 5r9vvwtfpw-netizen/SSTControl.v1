@@ -134,7 +134,7 @@ class AccountingIntegrationService {
         direccion: data.customerAddress || '',
         departamento: data.customerCity || '',   // best approximation we have
         municipio: data.customerCity || '',
-        codigoMunicipio: '',                      // not stored; Cloud Books should handle blank
+        codigoMunicipio: data.customerCity || 'Bogotá D.C.',
         telefono: data.customerPhone || '',
       },
       factura: {
