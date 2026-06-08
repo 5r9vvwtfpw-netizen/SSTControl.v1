@@ -4,7 +4,8 @@ const ACCOUNTING_API_URL = process.env.ACCOUNTING_API_URL || '';
 const ACCOUNTING_API_KEY = process.env.ACCOUNTING_API_KEY || '';
 const ACCOUNTING_ENABLED = process.env.ACCOUNTING_INTEGRATION_ENABLED === 'true';
 
-const IVA_RATE = 19; // Colombia: 19% IVA
+// CIIU 6311 — Procesamiento y alojamiento de datos: EXCLUIDO de IVA (Art. 476 E.T.)
+const IVA_RATE = 0;
 
 interface AccountingInvoiceData {
   invoiceId: string;
@@ -113,13 +114,11 @@ class AccountingIntegrationService {
 
     const { numero: nitNumero, digito: nitDigito } = parseNit(data.customerNit);
 
-    // granTotal is what Stripe actually charged (IVA-inclusive).
-    // subtotal and taxAmount were already computed by the caller as:
-    //   subtotal = Math.round(granTotal / 1.19)
-    //   taxAmount = granTotal - subtotal
+    // CIIU 6311 — servicio excluido de IVA. subtotal = granTotal, totalIva = 0.
+    // Se ignoran data.subtotal y data.taxAmount para evitar datos heredados incorrectos.
     const granTotal = data.total;
-    const subtotal = data.subtotal;
-    const totalIva = data.taxAmount;
+    const subtotal = granTotal;
+    const totalIva = 0;
 
     // Build Cloud Books payload following their exact spec
     const payload = {

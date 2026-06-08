@@ -82,9 +82,10 @@ export function registerBillingRoutes(app: Express) {
     const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     const dueDate = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
 
+    // CIIU 6311: excluido de IVA — subtotal = granTotal, taxAmount = 0
     const granTotal = 3432000;
-    const subtotal = Math.round(granTotal / 1.19);
-    const taxAmount = granTotal - subtotal;
+    const subtotal = granTotal;
+    const taxAmount = 0;
 
     const testPayload = {
       invoiceId: `TEST-${Date.now()}`,
@@ -1362,9 +1363,9 @@ export function registerBillingRoutes(app: Express) {
         return res.status(404).json({ error: "Factura no encontrada" });
       }
 
-      const taxRate = 0.19;
-      const newSubtotal = Math.round(correctAmountCOP / (1 + taxRate));
-      const newTaxAmount = correctAmountCOP - newSubtotal;
+      // CIIU 6311: excluido de IVA — subtotal = total, taxAmount = 0
+      const newSubtotal = correctAmountCOP;
+      const newTaxAmount = 0;
 
       await storage.updateInvoice(invoiceId, {
         total: correctAmountCOP,
