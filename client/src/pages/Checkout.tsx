@@ -437,9 +437,6 @@ export default function Checkout() {
                     <span className="font-medium text-sm">Tarjeta de crédito / débito</span>
                     <Badge variant="outline" className="text-xs">7 días gratis</Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Visa, Mastercard, Amex — procesado por Stripe
-                  </p>
                 </div>
               </button>
 
