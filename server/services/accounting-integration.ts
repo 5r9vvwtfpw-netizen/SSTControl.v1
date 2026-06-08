@@ -159,7 +159,7 @@ class AccountingIntegrationService {
               tarifaIva: IVA_RATE,
             }],
       },
-      enviarDian: true,
+      enviarDian: false, // Deshabilitado — facturación electrónica DIAN manejada por Siigo
       // Reference fields so Cloud Books can trace back to SST Colombia
       referencia: {
         origen: 'sst-colombia',

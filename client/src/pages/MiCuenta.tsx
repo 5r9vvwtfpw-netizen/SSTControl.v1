@@ -722,11 +722,6 @@ export default function MiCuenta() {
                                 Pagada: {formatDate(invoice.paidDate)}
                               </p>
                             )}
-                            {invoice.dianCufe && (
-                              <p className="text-xs text-muted-foreground mt-1 font-mono truncate max-w-[280px]" data-testid={`text-cufe-${invoice.id}`}>
-                                CUFE: {invoice.dianCufe.substring(0, 20)}...
-                              </p>
-                            )}
                           </div>
                         </div>
                         <div className="text-right">
@@ -746,19 +741,6 @@ export default function MiCuenta() {
                           <Download className="h-4 w-4 mr-1.5" />
                           Comprobante SST
                         </Button>
-                        {invoice.dianPdfUrl && (
-                          <a href={invoice.dianPdfUrl} target="_blank" rel="noopener noreferrer">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              data-testid={`button-dian-pdf-${invoice.id}`}
-                            >
-                              <FileText className="h-4 w-4 mr-1.5" />
-                              Factura Electrónica
-                              <ExternalLink className="h-3 w-3 ml-1" />
-                            </Button>
-                          </a>
-                        )}
                         {invoice.receiptUrl && (
                           <a href={invoice.receiptUrl} target="_blank" rel="noopener noreferrer">
                             <Button
@@ -771,11 +753,6 @@ export default function MiCuenta() {
                               <ExternalLink className="h-3 w-3 ml-1" />
                             </Button>
                           </a>
-                        )}
-                        {!invoice.dianPdfUrl && !invoice.receiptUrl && invoice.dianCufe && (
-                          <span className="text-xs text-muted-foreground">
-                            Factura electrónica emitida (CUFE disponible)
-                          </span>
                         )}
                       </div>
                     </div>
