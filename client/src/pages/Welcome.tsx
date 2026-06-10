@@ -130,9 +130,7 @@ export default function Welcome() {
                   <span className="text-white font-bold text-xl">Certificable</span>
                   <div className="flex flex-col items-center gap-0.5">
                     <span className="text-white/70 text-xs">ISO 45001:2018 · Seguridad y Salud</span>
-                    <span className="text-white/70 text-xs">ISO 9001:2015 · Calidad</span>
-                    <span className="text-white/70 text-xs">ISO 14001:2015 · Medio Ambiente</span>
-                    <span className="text-white/70 text-xs">ISO 31000:2018 · Riesgos</span>
+                    <span className="text-white/70 text-xs">ISO 31000:2018 · Gestión de Riesgos</span>
                     <span className="text-white/70 text-xs">ISO 39001:2012 · Seguridad Vial</span>
                   </div>
                 </div>
