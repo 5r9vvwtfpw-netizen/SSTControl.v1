@@ -116,11 +116,11 @@ export default function Welcome() {
                 </div>
                 <div className="flex items-center gap-3 text-white/90">
                   <CheckCircle className="w-5 h-5 text-white flex-shrink-0" />
-                  <span className="text-left"><strong>Portal de empleados</strong></span>
+                  <span className="text-left"><strong>Ley 1581 de 2012</strong> <span className="text-white/70">(Habeas Data) y GDPR</span></span>
                 </div>
                 <div className="flex items-center gap-3 text-white/90">
                   <CheckCircle className="w-5 h-5 text-white flex-shrink-0" />
-                  <span className="text-left"><strong>Ley 1581 de 2012</strong> <span className="text-white/70">(Habeas Data) y GDPR</span></span>
+                  <span className="text-left"><strong>Portal de empleados</strong></span>
                 </div>
                 <div className="flex items-center gap-3 text-white/90">
                   <CheckCircle className="w-5 h-5 text-white flex-shrink-0" />
