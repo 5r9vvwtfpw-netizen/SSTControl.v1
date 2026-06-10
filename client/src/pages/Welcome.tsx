@@ -52,6 +52,11 @@ const features = [
     icon: UserCircle,
     title: "Portal de empleados",
     description: "Acceso para trabajadores a sus capacitaciones, documentos y reportes personales."
+  },
+  {
+    icon: FileCheck,
+    title: "Informes automáticos para Ministerios",
+    description: "Generación automática de informes oficiales para el Ministerio de Trabajo y el Ministerio de Transporte."
   }
 ];
 
