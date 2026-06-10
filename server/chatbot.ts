@@ -823,7 +823,7 @@ export function registerChatbotRoutes(app: Express, requireAuth?: RequestHandler
         model: "gpt-4o-mini",
         messages,
         stream: true,
-        max_tokens: 1000,
+        max_completion_tokens: 1000,
         temperature: 0.3,
       });
 
