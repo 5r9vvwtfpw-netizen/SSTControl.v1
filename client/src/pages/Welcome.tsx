@@ -89,7 +89,7 @@ export default function Welcome() {
                 className="text-xl md:text-2xl text-white/90 mb-10 max-w-3xl mx-auto"
                 data-testid="text-hero-subtitle"
               >
-                Plataforma diseñada para la gestión del Sistema de Seguridad y Salud en el Trabajo (SG-SST) en empresas colombianas
+                Plataforma diseñada para la gestión del Sistema de Seguridad y Salud en el Trabajo (SG-SST)
               </p>
 
               <div className="inline-flex flex-col items-start gap-3 mb-10">
@@ -107,7 +107,11 @@ export default function Welcome() {
                 </div>
                 <div className="flex items-center gap-3 text-white/90">
                   <CheckCircle className="w-5 h-5 text-white flex-shrink-0" />
-                  <span className="text-left"><strong>Clasificación de empresas</strong> <span className="text-white/70">según número de trabajadores</span></span>
+                  <span className="text-left"><strong>Resolución 40595 de 2022 — PESV</strong> <span className="text-white/70">(Plan Estratégico de Seguridad Vial)</span></span>
+                </div>
+                <div className="flex items-center gap-3 text-white/90">
+                  <CheckCircle className="w-5 h-5 text-white flex-shrink-0" />
+                  <span className="text-left"><strong>Portal de empleados</strong> <span className="text-white/70">sin costo adicional</span></span>
                 </div>
                 <div className="flex items-center gap-3 text-white/90">
                   <CheckCircle className="w-5 h-5 text-white flex-shrink-0" />
