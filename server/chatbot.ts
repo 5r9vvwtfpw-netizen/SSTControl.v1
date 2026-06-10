@@ -820,7 +820,7 @@ export function registerChatbotRoutes(app: Express, requireAuth?: RequestHandler
       res.setHeader("X-Accel-Buffering", "no");
 
       const stream = await openai.chat.completions.create({
-        model: "gpt-5-mini",
+        model: "gpt-4o-mini",
         messages,
         stream: true,
         max_tokens: 1000,
