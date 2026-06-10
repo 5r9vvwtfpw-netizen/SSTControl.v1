@@ -1,1 +1,2 @@
 - [Seed onConflictDoNothing pattern](seed-onconflict-pattern.md) — onConflictDoNothing leaves stale puntajeTipo1=null in prod; fixed with explicit UPDATE loop in sst-seed.ts for all 10 tipo1 standards.
+- [ISO 9001 e ISO 14001 roadmap](iso-9001-14001-roadmap.md) — pendiente de implementar; documentado en docs/ROADMAP_ISO_9001_14001.md con módulos, estimaciones y orden sugerido.
