@@ -128,7 +128,13 @@ export default function Welcome() {
                 <div className="flex flex-col items-center gap-2">
                   <ShieldCheck className="w-10 h-10 text-white/80" />
                   <span className="text-white font-bold text-xl">Certificable</span>
-                  <span className="text-white/70 text-sm">ISO 45001:2018</span>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-white/70 text-xs">ISO 45001:2018 · Seguridad y Salud</span>
+                    <span className="text-white/70 text-xs">ISO 9001:2015 · Calidad</span>
+                    <span className="text-white/70 text-xs">ISO 14001:2015 · Medio Ambiente</span>
+                    <span className="text-white/70 text-xs">ISO 31000:2018 · Riesgos</span>
+                    <span className="text-white/70 text-xs">ISO 39001:2012 · Seguridad Vial</span>
+                  </div>
                 </div>
               </div>
 
