@@ -122,6 +122,10 @@ export default function Welcome() {
                   <CheckCircle className="w-5 h-5 text-white flex-shrink-0" />
                   <span className="text-left"><strong>Ley 1581 de 2012</strong> <span className="text-white/70">(Habeas Data) y GDPR</span></span>
                 </div>
+                <div className="flex items-center gap-3 text-white/90">
+                  <CheckCircle className="w-5 h-5 text-white flex-shrink-0" />
+                  <span className="text-left"><strong>Informes automáticos</strong> <span className="text-white/70">Ministerio de Trabajo y Ministerio de Transporte</span></span>
+                </div>
               </div>
 
               <div className="flex flex-wrap justify-center gap-12 mb-10">
