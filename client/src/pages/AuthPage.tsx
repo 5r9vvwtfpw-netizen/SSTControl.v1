@@ -223,7 +223,8 @@ export default function AuthPage() {
   useEffect(() => {
     const mode = searchParams.get("mode");
     const tab = searchParams.get("tab");
-    if (mode === "register" || tab === "register") {
+    const isRegistroPath = window.location.pathname === "/registro";
+    if (mode === "register" || tab === "register" || isRegistroPath) {
       setActiveTab("register");
     }
     if (urlPlan || urlWorkers || urlQuote) {

@@ -383,6 +383,7 @@ function Router() {
       <Route path="/demo/verify" component={DemoVerify} />
       <Route path="/verificar-demo" component={DemoVerify} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/registro" component={AuthPage} />
       <Route path="/login" component={LoginEmpresa} />
       <Route path="/soporte/login" component={LoginSoporte} />
       <Route path="/soporte/:rest*">{() => { window.location.href = "/soporte/login"; return null; }}</Route>
