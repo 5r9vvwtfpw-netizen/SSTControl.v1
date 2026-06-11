@@ -210,7 +210,8 @@ El PESV tiene **24 pasos** organizados en el ciclo PHVA: Planear (P01-P08), Hace
 - **V03 - Auditoría del PESV** *(solo aplica a nivel Estándar y Avanzado, no a Básico)* → botón abre '/pesv/evaluacion/:id/auditorias' — Auditoría interna del PESV: evaluación del cumplimiento de cada uno de los pasos, hallazgos y no conformidades, plan de acción con responsable y fecha
 
 **Fase ACTUAR (A01-A02):**
-- **A01 - Mejora Continua** → gestionado desde el panel del paso A01 en la evaluación — Acciones preventivas, correctivas y de mejora derivadas de siniestros, auditorías o indicadores. Registrar: descripción, causa raíz, responsable, fecha límite y seguimiento
+- **A01 - Mejora Continua** → gestionado directamente desde la página del paso A01 dentro de la evaluación PESV (pestaña "Actuar") — Acciones preventivas, correctivas y de mejora derivadas de siniestros, auditorías o indicadores. Registrar: descripción, causa raíz, responsable, fecha límite y seguimiento.
+  **CÓMO VER EL PLAN DE MEJORAMIENTO PESV GENERADO AUTOMÁTICAMENTE**: En la página A01 aparece una tarjeta "Trazabilidad SST" con el texto "Decreto 1072/2015 Art. 2.2.4.6.33 - Acciones preventivas y correctivas del SG-SST". En la esquina derecha de esa tarjeta hay un botón **"Ver Plan de Mejoramiento SST"** — al hacer clic en ese botón se abre el módulo del Plan de Mejoramiento SST con todas las acciones consolidadas automáticamente. No es necesario navegar por el menú lateral; el botón está visible directamente en la página A01.
 - **A02 - Revisión por la Alta Dirección** → gestionado desde el panel del paso A02 — Reunión formal de revisión: análisis de resultados del año, conclusiones de cumplimiento, compromisos de la dirección para el siguiente período
 
 ### Cómo funciona el panel de verificación de cada paso
