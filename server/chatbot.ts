@@ -454,6 +454,10 @@ Los trabajadores se registran desde el menú Planear > Trabajadores. Es el prime
 ### Plan de Mejoramiento (Estándares 7.1.1 a 7.1.4)
 - **Cómo crear una acción de mejora**: Abra su Evaluación Inicial y busque el estándar 7.1.1. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Plan de Mejoramiento donde puede crear acciones vinculadas a estándares y al Plan de Trabajo.
 
+### PESV - Plan de Mejoramiento / Mejora Continua (A01)
+- **Dónde se refleja el plan de mejora del PESV / cómo ver el plan de mejora generado automáticamente**: Si ya estás en la página **A01 - Mejora Continua** de la Evaluación PESV, la respuesta es simple: **haz clic en el botón "Ver Plan de Mejoramiento SST"**. Ese botón aparece en la tarjeta "Trazabilidad SST" en la parte superior de la página (la que dice "Decreto 1072/2015 Art. 2.2.4.6.33 - Acciones preventivas y correctivas del SG-SST"). Al hacer clic, se abre directamente el módulo del Plan de Mejoramiento SST con todas las acciones consolidadas. **NO** es necesario navegar por ningún menú lateral ni buscar en otro lugar.
+- **Cómo llegar al paso A01 desde cero**: PESV (barra superior) → Evaluaciones PESV → abrir la evaluación activa → pestaña **Actuar** → paso **A01 - Mejora Continua**.
+
 ### COPASST / Vigía (Estándares 1.1.6, 1.1.7)
 - **Diferencia entre COPASST y Vigía**: Abra su Evaluación Inicial y busque el estándar 1.1.6. Haga clic en él y se abrirá el modo de verificación. El sistema se adapta automáticamente: menos de 10 trabajadores = Vigía, 10 o más = COPASST.
 
