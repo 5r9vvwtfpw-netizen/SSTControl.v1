@@ -207,7 +207,7 @@ export default function Trabajadores() {
 
   const companyVaults = useMemo(() => {
     if (!hasGlobalCompanyAccess || workers.length === 0) return [];
-    const grouped: Record<string, { companyId: string; companyName: string; total: number; activos: number; inactivos: number; departments: Set<string> }> = {};
+    const grouped: Record<string, { companyId: string; companyName: string; total: number; activos: number; inactivos: number; retirados: number; departments: Set<string> }> = {};
     workers.forEach((w) => {
       if (!w.companyId) return;
       if (!grouped[w.companyId]) {
@@ -217,12 +217,14 @@ export default function Trabajadores() {
           total: 0,
           activos: 0,
           inactivos: 0,
+          retirados: 0,
           departments: new Set(),
         };
       }
       grouped[w.companyId].total++;
       if (w.status === "activo") grouped[w.companyId].activos++;
-      else grouped[w.companyId].inactivos++;
+      else if (w.status === "inactivo") grouped[w.companyId].inactivos++;
+      else if (w.status === "retirado") grouped[w.companyId].retirados++;
       if (w.department) grouped[w.companyId].departments.add(w.department);
     });
     return Object.values(grouped).sort((a, b) => b.total - a.total);
@@ -2729,6 +2731,11 @@ export default function Trabajadores() {
                           {vault.inactivos > 0 && (
                             <Badge variant="secondary" data-testid={`vault-inactivos-${vault.companyId}`}>
                               {vault.inactivos} inactivo{vault.inactivos !== 1 ? "s" : ""}
+                            </Badge>
+                          )}
+                          {vault.retirados > 0 && (
+                            <Badge variant="outline" data-testid={`vault-retirados-${vault.companyId}`}>
+                              {vault.retirados} retirado{vault.retirados !== 1 ? "s" : ""}
                             </Badge>
                           )}
                         </div>

@@ -3814,6 +3814,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!worker) {
         return res.status(404).send("Trabajador no encontrado");
       }
+
+      // WORKER-DOWNGRADE: Si el trabajador pasa a 'retirado', reducir workersPurchased si aplica
+      if (updateData.status === 'retirado' && existingWorker.status !== 'retirado') {
+        try {
+          const activeWorkers = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(schema.workers)
+            .where(and(
+              eq(schema.workers.companyId, companyId),
+              ne(schema.workers.status, 'retirado')
+            ));
+          const remainingCount = Number(activeWorkers[0]?.count || 0);
+
+          const subscription = await db
+            .select()
+            .from(schema.subscriptions)
+            .where(eq(schema.subscriptions.companyId, companyId))
+            .limit(1);
+
+          if (subscription.length > 0) {
+            const currentPurchased = subscription[0].workersPurchased || 0;
+            if (remainingCount < currentPurchased) {
+              await db
+                .update(schema.subscriptions)
+                .set({ workersPurchased: remainingCount, updatedAt: new Date() })
+                .where(eq(schema.subscriptions.companyId, companyId))
+                .catch((e: any) => console.warn(`[WORKER-DOWNGRADE] workersPurchased update failed: ${e.message}`));
+              console.log(`[WORKER-DOWNGRADE] Empresa ${companyId}: workersPurchased reducido de ${currentPurchased} a ${remainingCount}`);
+            }
+          }
+        } catch (e: any) {
+          console.warn(`[WORKER-DOWNGRADE] Error al recalcular workersPurchased: ${e.message}`);
+        }
+      }
+
       res.json(worker);
     } catch (error: any) {
       console.error("Error updating worker:", error);
