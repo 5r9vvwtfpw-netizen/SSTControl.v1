@@ -36,7 +36,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Headset, Plus, Trash2, UserPlus, Shield, Copy, Check, Eye, EyeOff, Tags, Edit2 } from "lucide-react";
+import { Headset, Plus, Trash2, UserPlus, Shield, Copy, Check, Eye, EyeOff, Tags, Edit2, Pencil } from "lucide-react";
 import { Redirect } from "wouter";
 import type { User } from "@shared/schema";
 
@@ -60,6 +60,14 @@ export default function AdminUsuariosSoporte() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [editingSpecialties, setEditingSpecialties] = useState<string | null>(null);
   const [tempSpecialties, setTempSpecialties] = useState<string[]>([]);
+  const [editingUser, setEditingUser] = useState<SupportUser | null>(null);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [editData, setEditData] = useState({
+    username: "",
+    fullName: "",
+    email: "",
+    newPassword: "",
+  });
   const [newUserData, setNewUserData] = useState({
     username: "",
     password: "",
@@ -159,6 +167,51 @@ export default function AdminUsuariosSoporte() {
       });
     },
   });
+
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ userId, data }: { userId: string; data: typeof editData }) => {
+      const res = await apiRequest("PATCH", `/api/admin/support-users/${userId}`, data);
+      if (!res.ok) {
+        const error = await res.text();
+        throw new Error(error);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/support-users"] });
+      setEditingUser(null);
+      setEditData({ username: "", fullName: "", email: "", newPassword: "" });
+      setShowNewPassword(false);
+      toast({ title: "Usuario actualizado", description: "Los datos han sido guardados correctamente" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const openEditDialog = (su: SupportUser) => {
+    setEditingUser(su);
+    setEditData({ username: su.username, fullName: su.fullName || "", email: su.email || "", newPassword: "" });
+    setShowNewPassword(false);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    if (!editData.username.trim()) {
+      toast({ title: "Error", description: "El nombre de usuario es obligatorio", variant: "destructive" });
+      return;
+    }
+    if (!/^[a-zA-Z0-9]+$/.test(editData.username)) {
+      toast({ title: "Error", description: "El usuario solo puede contener letras y números", variant: "destructive" });
+      return;
+    }
+    if (!editData.email.trim()) {
+      toast({ title: "Error", description: "El email es obligatorio", variant: "destructive" });
+      return;
+    }
+    updateUserMutation.mutate({ userId: editingUser.id, data: editData });
+  };
 
   const generatePassword = () => {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
@@ -651,15 +704,25 @@ export default function AdminUsuariosSoporte() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => setDeleteUserId(supportUser.id)}
-                        data-testid={`button-delete-support-${supportUser.id}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditDialog(supportUser)}
+                          data-testid={`button-edit-support-${supportUser.id}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => setDeleteUserId(supportUser.id)}
+                          data-testid={`button-delete-support-${supportUser.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -690,6 +753,80 @@ export default function AdminUsuariosSoporte() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit support user dialog */}
+      <Dialog open={!!editingUser} onOpenChange={(open) => { if (!open) { setEditingUser(null); setEditData({ username: "", fullName: "", email: "", newPassword: "" }); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Usuario de Soporte</DialogTitle>
+            <DialogDescription>
+              Actualiza los datos de <strong>{editingUser?.username}</strong>. Deja la nueva contraseña en blanco para no cambiarla.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-username">Usuario *</Label>
+              <Input
+                id="edit-username"
+                value={editData.username}
+                onChange={(e) => setEditData({ ...editData, username: e.target.value })}
+                maxLength={30}
+                required
+                data-testid="input-edit-username"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-fullname">Nombre Completo</Label>
+              <Input
+                id="edit-fullname"
+                value={editData.fullName}
+                onChange={(e) => setEditData({ ...editData, fullName: e.target.value })}
+                placeholder="ej: María García"
+                data-testid="input-edit-fullname"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email *</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editData.email}
+                onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                required
+                data-testid="input-edit-email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-newpassword">Nueva Contraseña <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+              <div className="flex gap-2">
+                <Input
+                  id="edit-newpassword"
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="Dejar en blanco para no cambiar"
+                  value={editData.newPassword}
+                  onChange={(e) => setEditData({ ...editData, newPassword: e.target.value })}
+                  maxLength={30}
+                  data-testid="input-edit-newpassword"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                >
+                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditingUser(null)}>Cancelar</Button>
+              <Button type="submit" disabled={updateUserMutation.isPending} data-testid="button-save-edit-support">
+                {updateUserMutation.isPending ? "Guardando..." : "Guardar cambios"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
         <AlertDialogContent>

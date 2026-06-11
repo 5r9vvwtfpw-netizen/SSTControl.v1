@@ -8302,6 +8302,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Superadmin-only: Edit support staff user profile (name, email, username, optional password)
+  app.patch("/api/admin/support-users/:id", requireRole(["superadmin"]), async (req, res) => {
+    try {
+      const user = await storage.getUser(req.params.id);
+      if (!user) return res.status(404).send("Usuario no encontrado");
+      if (user.role !== "soporte") return res.status(400).send("Solo se pueden modificar usuarios de soporte");
+
+      const { fullName, email, username, newPassword } = req.body;
+
+      const updates: Record<string, any> = {};
+      if (fullName !== undefined) updates.fullName = fullName || null;
+      if (email !== undefined) updates.email = email || null;
+
+      if (username && username !== user.username) {
+        const existing = await storage.getUserByUsername(username);
+        if (existing && existing.id !== user.id) {
+          return res.status(400).send("El nombre de usuario ya está en uso");
+        }
+        updates.username = username;
+      }
+
+      if (newPassword && newPassword.trim()) {
+        const { scrypt, randomBytes } = await import("crypto");
+        const { promisify } = await import("util");
+        const scryptAsync = promisify(scrypt);
+        const salt = randomBytes(16).toString("hex");
+        const buf = (await scryptAsync(newPassword, salt, 64)) as Buffer;
+        updates.password = `${buf.toString("hex")}.${salt}`;
+      }
+
+      await db.update(schema.users).set(updates).where(eq(schema.users.id, req.params.id));
+      const updated = await storage.getUser(req.params.id);
+      res.json(stripPassword(updated!));
+    } catch (error: any) {
+      console.error("Error updating support user:", error);
+      res.status(500).send("Error al actualizar usuario de soporte");
+    }
+  });
+
   // Superadmin-only: Update support staff user specialties
   app.patch("/api/admin/support-users/:id/specialties", requireRole(["superadmin"]), async (req, res) => {
     try {
