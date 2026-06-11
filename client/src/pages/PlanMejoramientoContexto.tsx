@@ -125,6 +125,15 @@ export default function PlanMejoramientoContexto() {
     },
   });
 
+  const watchedEstado = form.watch("estado");
+  useEffect(() => {
+    if (watchedEstado === "pendiente") {
+      form.setValue("porcentajeAvance", 0, { shouldDirty: true });
+    } else if (watchedEstado === "completada") {
+      form.setValue("porcentajeAvance", 100, { shouldDirty: true });
+    }
+  }, [watchedEstado, form]);
+
   const getAutoFillBadge = useCallback((field: string) => {
     const src = autoFillSources.find((s) => s.field === field);
     if (!src) return null;
@@ -1037,23 +1046,42 @@ export default function PlanMejoramientoContexto() {
               <FormField
                 control={form.control}
                 name="porcentajeAvance"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Porcentaje de Avance: {field.value || 0}%</FormLabel>
-                    <FormControl>
-                      <Slider
-                        min={0}
-                        max={100}
-                        step={5}
-                        value={[field.value || 0]}
-                        onValueChange={([value]) => field.onChange(value)}
-                        className="py-4"
-                        data-testid="slider-porcentaje"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const isAutoControlled = watchedEstado === "pendiente" || watchedEstado === "completada";
+                  const hintText = watchedEstado === "pendiente"
+                    ? "Se fija en 0% automáticamente mientras la acción esté Pendiente."
+                    : watchedEstado === "completada"
+                    ? "Se fija en 100% automáticamente al marcar como Completada."
+                    : null;
+                  return (
+                    <FormItem>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <FormLabel>Porcentaje de Avance: {field.value || 0}%</FormLabel>
+                        {isAutoControlled && (
+                          <Badge variant="secondary" className="text-xs">Auto</Badge>
+                        )}
+                      </div>
+                      <FormControl>
+                        <Slider
+                          min={0}
+                          max={100}
+                          step={5}
+                          value={[field.value || 0]}
+                          onValueChange={([value]) => {
+                            if (!isAutoControlled) field.onChange(value);
+                          }}
+                          disabled={isAutoControlled}
+                          className={`py-4 ${isAutoControlled ? "opacity-50 cursor-not-allowed" : ""}`}
+                          data-testid="slider-porcentaje"
+                        />
+                      </FormControl>
+                      {hintText && (
+                        <p className="text-xs text-muted-foreground">{hintText}</p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField
