@@ -27466,7 +27466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let documentTitle: string;
       let filenameSlug: string;
       if (destinatario === 'arl') {
-        const arlName = (company.arl || 'ARL').toUpperCase();
+        const arlName = (company.arlNombreEmpresa || 'ARL').toUpperCase();
         documentTitle = `REPORTE ${arlName} - EVALUACIÓN SG-SST`;
         filenameSlug = `Reporte-ARL-SST-${evaluacion.anio}`;
       } else if (destinatario === 'interno') {
@@ -27531,7 +27531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY += 16;
 
       doc.font('Helvetica-Bold').text('ARL:', labelX, currentY);
-      doc.font('Helvetica').text(company.arl || 'No registrada', valueX, currentY);
+      doc.font('Helvetica').text(company.arlNombreEmpresa || 'No registrada', valueX, currentY);
       currentY += 30;
 
       // Cuadro de información de la evaluación
