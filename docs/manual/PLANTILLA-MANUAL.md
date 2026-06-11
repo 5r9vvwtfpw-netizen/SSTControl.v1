@@ -1,6 +1,6 @@
 # Manual de Usuario — SST Colombia
-**Versión:** 4.0.0  
-**Fecha:** Junio 2026  
+**Versión:** 4.0.0
+**Fecha:** 11 de junio de 2026
 **Conforme a:** Resolución 0312/2019, Decreto 1072/2015, ISO 45001:2018, Resolución 40595/2022
 
 ---
@@ -1020,6 +1020,98 @@ Sí. En el proceso de pago o en Administración Global → Mi Cuenta puede ingre
 | **Vigía SST** | Figura equivalente al COPASST para empresas con menos de 10 trabajadores |
 
 ---
+
+<!-- INICIO-CHANGELOG -->
+
+## 16. Historial de Versiones
+
+> Esta sección se genera automáticamente desde `docs/changelog.json`.
+> Para agregar cambios, edita ese archivo y ejecuta `npx tsx scripts/generate-manual.ts`.
+
+### v4.0.0 — 11 de junio de 2026
+
+#### Nueva funcionalidad
+
+**PESV P01 — Comité PESV** — Sugerencia automática de LSO como Líder PESV
+Al seleccionar el rol 'Líder PESV' en el formulario de integrantes del comité PESV, el sistema detecta automáticamente el LSO designado en el SG-SST y lo sugiere mediante un banner azul. El usuario puede aceptar (auto-rellena nombre y cargo) o ingresar datos manualmente.
+*Ruta:* `/pesv/evaluacion/:id/comite`
+*Fase:* PESV - Planear
+
+**Organigrama SST** — Módulo de Organigrama SST visual
+Visualización jerárquica automática de la estructura SST de la empresa. Muestra representante legal, integrantes del COPASST/Vigía y brigadas de emergencia. Generado automáticamente desde los datos ya existentes. Incluye soporte de impresión.
+*Ruta:* `/organigrama-sst`
+*Fase:* Planear
+
+**Perfil Sociodemográfico** — Módulo de Perfil Sociodemográfico
+Estadísticas sociodemográficas de la fuerza laboral. Cumple Resolución 2646/2008 Art. 8. Incluye distribución por edad, género, escolaridad, estado civil y antigüedad.
+*Ruta:* `/perfil-sociodemografico`
+*Fase:* Planear
+
+#### Mejora
+
+**Matriz Legal** — Tres nuevas normas sincronizadas automáticamente
+Se agregaron automáticamente a la Matriz Legal de todas las empresas: Resolución 2346/2007 Art. 4-5 (Profesiograma), Decreto 1072/2015 Art. 2.2.4.6.8 (Organigrama SST), Resolución 2646/2008 Art. 8 (Perfil Sociodemográfico).
+*Ruta:* `/matriz-legal`
+*Fase:* Planear
+
+**Chatbot / Asistente Virtual** — Base de conocimiento actualizada con instrucciones de LSO → Líder PESV
+El asistente ahora responde correctamente cómo asignar el LSO del SG-SST como Líder PESV, incluyendo el flujo del banner azul y los requisitos previos.
+*Fase:* Global
+
+**Manual de Usuario** — Manual actualizado a v4.0.0
+Reescritura completa del manual: 11 roles, 24 pasos PESV, navegación correcta (Administración Global), Portal de Empleados con 6 secciones, Portal del Licenciado, Onboarding Gate, sistema de alertas de cumplimiento, organigrama SST y todos los módulos actuales.
+*Fase:* Documentación
+
+---
+
+### v3.9.0 — 1 de mayo de 2026
+
+#### Nueva funcionalidad
+
+**Alertas de Cumplimiento** — Sistema automático de alertas de cumplimiento SST
+Cron jobs automáticos que generan 4 tipos de alertas: estándares 0312 incompletos (lunes), evaluación anual pendiente (mensual), acciones del plan vencidas (diario), empresas sin evaluación iniciada (lunes). Cada alerta crea notificación COPASST y envía email al admin. Trigger manual disponible para superadmin.
+*Ruta:* `POST /api/admin/trigger-compliance-alerts`
+*Fase:* Global
+
+**Chat Interno de Soporte** — Rediseño del chat interno con tema dark Slack-style
+Chat de coordinación interna para el equipo de soporte rediseñado con fondo slate-800, canal activo resaltado en azul, soporte de @menciones, indicadores de no leído y carga de archivos/imágenes.
+*Fase:* Soporte
+
+**PESV Evaluaciones — Company Vault** — Patrón Company Vault en la página de Evaluaciones PESV
+Para superadmin, la página de evaluaciones PESV ahora muestra una cuadrícula de tarjetas por empresa con el último puntaje de cumplimiento y nivel PESV. Clic en una empresa despliega sus evaluaciones con filtro por año. Los usuarios no-superadmin siguen viendo solo sus propias evaluaciones.
+*Ruta:* `/pesv/evaluaciones`
+*Fase:* PESV
+
+#### Mejora
+
+**Stripe / Facturación** — Corrección de montos en notificaciones de pago y renovaciones
+Corregido el monto que aparecía en los webhooks de Stripe (dividir entre 100 para convertir de centavos a pesos). Agregadas notificaciones de renovación en eventos invoice.paid de tipo subscription_cycle.
+*Fase:* Facturación
+
+---
+
+### v3.8.0 — 1 de abril de 2026
+
+#### Nueva funcionalidad
+
+**Onboarding Gate** — Sistema de bloqueo de onboarding para empresas nuevas
+Las empresas nuevas ven una pantalla completa de bienvenida (WelcomeGate) bloqueando el acceso hasta que el superadmin marque la inducción como completada. Los roles superadmin, soporte, lso y lso_externo bypass la puerta automáticamente.
+*Ruta:* `PATCH /api/companies/:id/complete-onboarding`
+*Fase:* Global
+
+**Portal del Licenciado (LSO)** — Portal especializado para LSO externos con Company Vault
+Los profesionales LSO externos acceden a un portal dedicado con navegación de dos niveles: lista de empresas asignadas → detalle de empresa. Panel PHVA consolidado. Firma digital en 5 tipos de documentos. Creación de tickets de soporte desde el portal.
+*Ruta:* `/portal-licenciado`
+*Fase:* Portal LSO
+
+**Portal de Empleados** — Sección PESV para conductores en Portal de Empleados
+Los usuarios con rol conductor tienen una sección PESV en su portal: comité de seguridad vial, capacitaciones PESV, encuesta diaria de aptitud (Art. 18 Res. 40595/2022) e inspección preoperacional de 16 ítems. Los registros aparecen en tiempo real en el panel del admin.
+*Ruta:* `/portal-empleados`
+*Fase:* Portal Empleados
+
+---
+
+<!-- FIN-CHANGELOG -->
 
 *© 2026 SST Colombia — Sistema de Gestión de Seguridad y Salud en el Trabajo*  
 *Versión 4.0.0 — Actualizado: Junio 2026*  

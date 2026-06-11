@@ -1,0 +1,126 @@
+{
+  "entries": [
+    {
+      "version": "4.0.0",
+      "date": "2026-06-11",
+      "changes": [
+        {
+          "type": "nueva-funcionalidad",
+          "modulo": "PESV P01 — Comité PESV",
+          "titulo": "Sugerencia automática de LSO como Líder PESV",
+          "descripcion": "Al seleccionar el rol 'Líder PESV' en el formulario de integrantes del comité PESV, el sistema detecta automáticamente el LSO designado en el SG-SST y lo sugiere mediante un banner azul. El usuario puede aceptar (auto-rellena nombre y cargo) o ingresar datos manualmente.",
+          "ruta": "/pesv/evaluacion/:id/comite",
+          "fase": "PESV - Planear"
+        },
+        {
+          "type": "nueva-funcionalidad",
+          "modulo": "Organigrama SST",
+          "titulo": "Módulo de Organigrama SST visual",
+          "descripcion": "Visualización jerárquica automática de la estructura SST de la empresa. Muestra representante legal, integrantes del COPASST/Vigía y brigadas de emergencia. Generado automáticamente desde los datos ya existentes. Incluye soporte de impresión.",
+          "ruta": "/organigrama-sst",
+          "fase": "Planear"
+        },
+        {
+          "type": "nueva-funcionalidad",
+          "modulo": "Perfil Sociodemográfico",
+          "titulo": "Módulo de Perfil Sociodemográfico",
+          "descripcion": "Estadísticas sociodemográficas de la fuerza laboral. Cumple Resolución 2646/2008 Art. 8. Incluye distribución por edad, género, escolaridad, estado civil y antigüedad.",
+          "ruta": "/perfil-sociodemografico",
+          "fase": "Planear"
+        },
+        {
+          "type": "mejora",
+          "modulo": "Matriz Legal",
+          "titulo": "Tres nuevas normas sincronizadas automáticamente",
+          "descripcion": "Se agregaron automáticamente a la Matriz Legal de todas las empresas: Resolución 2346/2007 Art. 4-5 (Profesiograma), Decreto 1072/2015 Art. 2.2.4.6.8 (Organigrama SST), Resolución 2646/2008 Art. 8 (Perfil Sociodemográfico).",
+          "ruta": "/matriz-legal",
+          "fase": "Planear"
+        },
+        {
+          "type": "mejora",
+          "modulo": "Chatbot / Asistente Virtual",
+          "titulo": "Base de conocimiento actualizada con instrucciones de LSO → Líder PESV",
+          "descripcion": "El asistente ahora responde correctamente cómo asignar el LSO del SG-SST como Líder PESV, incluyendo el flujo del banner azul y los requisitos previos.",
+          "ruta": null,
+          "fase": "Global"
+        },
+        {
+          "type": "mejora",
+          "modulo": "Manual de Usuario",
+          "titulo": "Manual actualizado a v4.0.0",
+          "descripcion": "Reescritura completa del manual: 11 roles, 24 pasos PESV, navegación correcta (Administración Global), Portal de Empleados con 6 secciones, Portal del Licenciado, Onboarding Gate, sistema de alertas de cumplimiento, organigrama SST y todos los módulos actuales.",
+          "ruta": null,
+          "fase": "Documentación"
+        }
+      ]
+    },
+    {
+      "version": "3.9.0",
+      "date": "2026-05-01",
+      "changes": [
+        {
+          "type": "nueva-funcionalidad",
+          "modulo": "Alertas de Cumplimiento",
+          "titulo": "Sistema automático de alertas de cumplimiento SST",
+          "descripcion": "Cron jobs automáticos que generan 4 tipos de alertas: estándares 0312 incompletos (lunes), evaluación anual pendiente (mensual), acciones del plan vencidas (diario), empresas sin evaluación iniciada (lunes). Cada alerta crea notificación COPASST y envía email al admin. Trigger manual disponible para superadmin.",
+          "ruta": "POST /api/admin/trigger-compliance-alerts",
+          "fase": "Global"
+        },
+        {
+          "type": "nueva-funcionalidad",
+          "modulo": "Chat Interno de Soporte",
+          "titulo": "Rediseño del chat interno con tema dark Slack-style",
+          "descripcion": "Chat de coordinación interna para el equipo de soporte rediseñado con fondo slate-800, canal activo resaltado en azul, soporte de @menciones, indicadores de no leído y carga de archivos/imágenes.",
+          "ruta": null,
+          "fase": "Soporte"
+        },
+        {
+          "type": "mejora",
+          "modulo": "Stripe / Facturación",
+          "titulo": "Corrección de montos en notificaciones de pago y renovaciones",
+          "descripcion": "Corregido el monto que aparecía en los webhooks de Stripe (dividir entre 100 para convertir de centavos a pesos). Agregadas notificaciones de renovación en eventos invoice.paid de tipo subscription_cycle.",
+          "ruta": null,
+          "fase": "Facturación"
+        },
+        {
+          "type": "nueva-funcionalidad",
+          "modulo": "PESV Evaluaciones — Company Vault",
+          "titulo": "Patrón Company Vault en la página de Evaluaciones PESV",
+          "descripcion": "Para superadmin, la página de evaluaciones PESV ahora muestra una cuadrícula de tarjetas por empresa con el último puntaje de cumplimiento y nivel PESV. Clic en una empresa despliega sus evaluaciones con filtro por año. Los usuarios no-superadmin siguen viendo solo sus propias evaluaciones.",
+          "ruta": "/pesv/evaluaciones",
+          "fase": "PESV"
+        }
+      ]
+    },
+    {
+      "version": "3.8.0",
+      "date": "2026-04-01",
+      "changes": [
+        {
+          "type": "nueva-funcionalidad",
+          "modulo": "Onboarding Gate",
+          "titulo": "Sistema de bloqueo de onboarding para empresas nuevas",
+          "descripcion": "Las empresas nuevas ven una pantalla completa de bienvenida (WelcomeGate) bloqueando el acceso hasta que el superadmin marque la inducción como completada. Los roles superadmin, soporte, lso y lso_externo bypass la puerta automáticamente.",
+          "ruta": "PATCH /api/companies/:id/complete-onboarding",
+          "fase": "Global"
+        },
+        {
+          "type": "nueva-funcionalidad",
+          "modulo": "Portal del Licenciado (LSO)",
+          "titulo": "Portal especializado para LSO externos con Company Vault",
+          "descripcion": "Los profesionales LSO externos acceden a un portal dedicado con navegación de dos niveles: lista de empresas asignadas → detalle de empresa. Panel PHVA consolidado. Firma digital en 5 tipos de documentos. Creación de tickets de soporte desde el portal.",
+          "ruta": "/portal-licenciado",
+          "fase": "Portal LSO"
+        },
+        {
+          "type": "nueva-funcionalidad",
+          "modulo": "Portal de Empleados",
+          "titulo": "Sección PESV para conductores en Portal de Empleados",
+          "descripcion": "Los usuarios con rol conductor tienen una sección PESV en su portal: comité de seguridad vial, capacitaciones PESV, encuesta diaria de aptitud (Art. 18 Res. 40595/2022) e inspección preoperacional de 16 ítems. Los registros aparecen en tiempo real en el panel del admin.",
+          "ruta": "/portal-empleados",
+          "fase": "Portal Empleados"
+        }
+      ]
+    }
+  ]
+}
