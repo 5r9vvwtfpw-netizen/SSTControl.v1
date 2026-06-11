@@ -13,7 +13,7 @@ import { Plus, Pencil, Trash2, ArrowLeft, Users, FileText, FileDown, Stamp, Cale
 import { useState } from "react";
 import { getTodayDateString } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ComiteIntegrantePesv, ActaComitePesv, Worker, ActoAdministrativoPesv, CronogramaReunionPesv } from "@shared/schema";
+import { ComiteIntegrantePesv, ActaComitePesv, Worker, ActoAdministrativoPesv, CronogramaReunionPesv, ResponsibleDesignation } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -168,6 +168,7 @@ export default function PesvComite() {
 function IntegrantesTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ComiteIntegrantePesv | null>(null);
+  const [showLsoSuggestion, setShowLsoSuggestion] = useState(false);
   const [form, setForm] = useState({
     nombre: "", cargo: "", rol: "otro" as RolComite, funcionesResponsabilidades: "",
     email: "", telefono: "", fechaIngreso: getTodayDateString(),
@@ -182,8 +183,34 @@ function IntegrantesTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
     queryKey: ["/api/workers"],
   });
 
+  const { data: designaciones = [] } = useQuery<ResponsibleDesignation[]>({
+    queryKey: ["/api/responsible-designations"],
+  });
+
+  // Deriva el LSO activo de la designación SST (externo tiene prioridad, luego interno)
+  const lsoSugerido = (() => {
+    const activa = designaciones.find(d => d.status === "activo");
+    if (!activa) return null;
+    if (activa.isExternalLso && activa.externalLsoName) {
+      return {
+        nombre: activa.externalLsoName,
+        cargo: activa.position,
+        licencia: activa.licenciaSstNumero || null,
+        cedula: activa.externalLsoIdentificationNumber || null,
+        email: "",
+        workerId: "",
+      };
+    }
+    if (activa.workerId) {
+      const w = workers.find(w => w.id === activa.workerId);
+      if (w) return { nombre: w.name, cargo: activa.position, licencia: activa.licenciaSstNumero || null, cedula: null, email: w.email || "", workerId: w.id };
+    }
+    return null;
+  })();
+
   const resetForm = () => {
     setEditing(null);
+    setShowLsoSuggestion(false);
     setForm({ nombre: "", cargo: "", rol: "otro", funcionesResponsabilidades: "", email: "", telefono: "", fechaIngreso: getTodayDateString(), workerId: "", observaciones: "" });
   };
 
@@ -199,6 +226,24 @@ function IntegrantesTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   const handleRolChange = (rol: RolComite) => {
     const funciones = FUNCIONES_POR_ROL[rol] || "";
     setForm(prev => ({ ...prev, rol, funcionesResponsabilidades: funciones }));
+    // Muestra sugerencia LSO solo cuando se selecciona Líder PESV y hay LSO asignado
+    if (rol === "lider_pesv" && lsoSugerido && !editing) {
+      setShowLsoSuggestion(true);
+    } else {
+      setShowLsoSuggestion(false);
+    }
+  };
+
+  const aplicarLsoSugerido = () => {
+    if (!lsoSugerido) return;
+    setForm(prev => ({
+      ...prev,
+      nombre: lsoSugerido.nombre,
+      cargo: lsoSugerido.cargo,
+      email: lsoSugerido.email,
+      workerId: lsoSugerido.workerId,
+    }));
+    setShowLsoSuggestion(false);
   };
 
   const createMutation = useMutation({
@@ -299,6 +344,47 @@ function IntegrantesTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {/* Banner sugerencia LSO cuando se selecciona Líder PESV */}
+                    {showLsoSuggestion && lsoSugerido && (
+                      <div className="col-span-2 rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 p-3 space-y-2" data-testid="banner-lso-sugerido">
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                              LSO asignado al SG-SST detectado
+                            </p>
+                            <p className="text-sm text-blue-700 dark:text-blue-300 mt-0.5">
+                              <strong>{lsoSugerido.nombre}</strong>
+                              {lsoSugerido.licencia && <span> · Lic. {lsoSugerido.licencia}</span>}
+                              {lsoSugerido.cargo && <span> · {lsoSugerido.cargo}</span>}
+                            </p>
+                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                              ¿Desea vincularlo como Líder PESV?
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={aplicarLsoSugerido}
+                            data-testid="button-usar-lso-sugerido"
+                          >
+                            Sí, usar LSO asignado
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setShowLsoSuggestion(false)}
+                            data-testid="button-ignorar-lso-sugerido"
+                          >
+                            No, ingresar manualmente
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="space-y-2">
                       <Label>Email</Label>
                       <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} data-testid="input-email" />
