@@ -5048,7 +5048,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/health-conditions", requireAuth, async (req, res) => {
+  app.post("/api/health-conditions", requirePermission("diseases:create"), async (req, res) => {
     try {
       const companyId = req.user!.companyId;
       if (!companyId) {
@@ -5069,7 +5069,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/health-conditions/:id", requireAuth, async (req, res) => {
+  app.patch("/api/health-conditions/:id", requirePermission("diseases:edit"), async (req, res) => {
     try {
       const condition = await storage.updateHealthCondition(req.params.id, req.body);
       if (!condition) {
@@ -5081,7 +5081,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/health-conditions/:id", requireAuth, async (req, res) => {
+  app.delete("/api/health-conditions/:id", requirePermission("diseases:delete"), async (req, res) => {
     try {
       await storage.deleteHealthCondition(req.params.id);
       res.sendStatus(204);
@@ -5117,7 +5117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/sociodemographic-diagnosis", requireAuth, async (req, res) => {
+  app.post("/api/sociodemographic-diagnosis", requirePermission("diseases:create"), async (req, res) => {
     try {
       const companyId = req.user!.companyId;
       if (!companyId) {
@@ -5141,7 +5141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/sociodemographic-diagnosis/:id/close", requireAuth, async (req, res) => {
+  app.post("/api/sociodemographic-diagnosis/:id/close", requirePermission("diseases:edit"), async (req, res) => {
     try {
       const companyId = req.user!.companyId;
       const userId = req.user!.id;
@@ -5197,7 +5197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(403).send("Usuario no asociado a una empresa");
   });
 
-  app.post("/api/accidents", requireAuth, async (req, res) => {
+  app.post("/api/accidents", requirePermission("accidents:create"), async (req, res) => {
     try {
       console.log('[POST /api/accidents] Body:', JSON.stringify(req.body, null, 2));
       console.log('[POST /api/accidents] User:', req.user!.username, 'role:', req.user!.role, 'companyId:', req.user!.companyId);
@@ -6677,7 +6677,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // POST /api/absences - Create absence (auto-link to accident if accidentId provided)
-  app.post("/api/absences", requireAuth, async (req, res) => {
+  app.post("/api/absences", requirePermission("accidents:create"), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
       
@@ -6753,7 +6753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // PATCH /api/absences/:id - Update absence
-  app.patch("/api/absences/:id", requireAuth, async (req, res) => {
+  app.patch("/api/absences/:id", requirePermission("accidents:edit"), async (req, res) => {
     try {
       const effectiveCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
@@ -9427,7 +9427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/vehicle-inspections", requireAuth, async (req, res) => {
+  app.post("/api/vehicle-inspections", requirePermission("vehicle_inspections:create"), async (req, res) => {
     try {
       const userCompanyId = req.user!.companyId;
       const isAdmin = hasGlobalAccess(req.user!.role);
@@ -9585,7 +9585,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/road-incidents", requireAuth, async (req, res) => {
+  app.post("/api/road-incidents", requirePermission("road_incidents:create"), async (req, res) => {
     try {
       const userCompanyId = req.user!.companyId;
       const isAdmin = hasGlobalAccess(req.user!.role);
