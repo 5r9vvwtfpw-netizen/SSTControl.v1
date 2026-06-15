@@ -24,7 +24,8 @@ export default function PesvMantenimientoVehicular() {
   const { user } = useAuth();
   const { selectedCompany: currentCompany } = useCompanyContext();
   const { toast } = useToast();
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  // tecnico_mecanico tiene acceso completo a este módulo (crear/editar/eliminar)
+  const isAdmin = user?.role ? (hasCompanyAdminAccess(user.role) || user.role === 'tecnico_mecanico') : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMaintenance, setEditingMaintenance] = useState<VehicleMaintenance | null>(null);
@@ -278,7 +279,7 @@ export default function PesvMantenimientoVehicular() {
       <TrazabilidadPesvBanner codigoPaso="H09" compacto />
       
       <div className="flex flex-wrap items-center justify-between gap-4">
-        {user?.role && hasCompanyAdminAccess(user.role) && (
+        {isAdmin && (
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);
             if (!open) resetForm();
@@ -494,7 +495,7 @@ export default function PesvMantenimientoVehicular() {
               <TableHead data-testid="header-date">Fecha</TableHead>
               <TableHead data-testid="header-cost">Costo</TableHead>
               <TableHead data-testid="header-next-maintenance">Próximo Mant.</TableHead>
-              {user?.role && hasCompanyAdminAccess(user.role) && <TableHead data-testid="header-actions">Acciones</TableHead>}
+              {isAdmin && <TableHead data-testid="header-actions">Acciones</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -518,7 +519,7 @@ export default function PesvMantenimientoVehicular() {
                   <TableCell data-testid={`text-date-${maintenance.id}`}>{formatDate(maintenance.maintenanceDate)}</TableCell>
                   <TableCell data-testid={`text-cost-${maintenance.id}`}>{formatCurrency(maintenance.cost)}</TableCell>
                   <TableCell data-testid={`text-next-maintenance-${maintenance.id}`}>{formatDate(maintenance.nextMaintenanceDate)}</TableCell>
-                  {user?.role && hasCompanyAdminAccess(user.role) && (
+                  {isAdmin && (
                     <TableCell>
                       <div className="flex gap-2">
                         <Button
