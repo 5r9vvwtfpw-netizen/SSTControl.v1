@@ -354,7 +354,7 @@ export function setupAuth(app: Express) {
       }
 
       // Block login if email is not verified (except system/auto-provisioned accounts)
-      const autoVerifiedRoles = ['admin', 'superadmin', 'lso', 'trabajador', 'soporte'];
+      const autoVerifiedRoles = ['admin', 'superadmin', 'lso', 'trabajador', 'soporte', 'tecnico_mecanico'];
       if (!user.emailVerifiedAt && !autoVerifiedRoles.includes(user.role)) {
         logger.warn({ username: user.username }, "Login blocked - email not verified");
         return res.status(403).json({ 
