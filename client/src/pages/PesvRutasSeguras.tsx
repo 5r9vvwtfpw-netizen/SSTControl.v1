@@ -19,7 +19,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
@@ -797,7 +797,7 @@ export default function PesvRutasSeguras() {
   const { user } = useAuth();
   const { selectedCompany: currentCompany } = useCompanyContext();
   const { toast } = useToast();
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'road_incidents') : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRoute, setEditingRoute] = useState<SafeRoute | null>(null);
@@ -1127,7 +1127,7 @@ export default function PesvRutasSeguras() {
       <TrazabilidadPesvBanner codigoPaso="H06" compacto />
       
       <div className="flex flex-wrap items-center gap-4">
-        {user?.role && hasCompanyAdminAccess(user.role) && (
+        {isAdmin && (
           <>
             <Dialog open={dialogOpen} onOpenChange={(open) => {
               setDialogOpen(open);
@@ -1394,7 +1394,7 @@ export default function PesvRutasSeguras() {
               <TableHead data-testid="header-type">Tipo</TableHead>
               <TableHead data-testid="header-risk-level">Nivel Riesgo</TableHead>
               <TableHead data-testid="header-status">Estado</TableHead>
-              {user?.role && hasCompanyAdminAccess(user.role) && <TableHead data-testid="header-actions">Acciones</TableHead>}
+              {isAdmin && <TableHead data-testid="header-actions">Acciones</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1424,7 +1424,7 @@ export default function PesvRutasSeguras() {
                   <TableCell data-testid={`text-type-${route.id}`}>{getRouteTypeLabel(route.routeType)}</TableCell>
                   <TableCell data-testid={`text-risk-level-${route.id}`}>{getRiskLevelBadge(route.riskLevel)}</TableCell>
                   <TableCell data-testid={`text-status-${route.id}`}>{getStatusLabel(route.isActive)}</TableCell>
-                  {user?.role && hasCompanyAdminAccess(user.role) && (
+                  {isAdmin && (
                     <TableCell>
                       <div className="flex gap-2">
                         <Button size="icon" variant="ghost" onClick={() => handleEdit(route)} data-testid={`button-edit-${route.id}`}>

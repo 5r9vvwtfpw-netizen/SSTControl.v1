@@ -31,7 +31,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import {
   TIPOS_PLANES_EMERGENCIA, TIPOS_BRIGADAS, CATEGORIAS_AMENAZAS, TIPOS_AMENAZAS,
@@ -122,7 +122,7 @@ export default function PlanEmergencias() {
   const searchString = useSearch();
   const searchParams = new URLSearchParams(searchString);
   const tabFromUrl = searchParams.get("tab");
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'emergency_plans') : false;
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   
   const validTabs = ["planes", "brigadas", "analisis", "recursos", "simulacros", "evacuacion"];

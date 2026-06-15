@@ -26,7 +26,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { capacitacionesSstPredefinidas, getCapacitacionByCodigo, categoriaLabels } from "@/data/capacitaciones-sst-predefinidas";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
@@ -79,7 +79,7 @@ export default function Capacitaciones() {
   const [selectedPredefCapacitacion, setSelectedPredefCapacitacion] = useState<string>("");
   const [asistentesDialogOpen, setAsistentesDialogOpen] = useState(false);
   const [selectedTraining, setSelectedTraining] = useState<Training | null>(null);
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'trainings') : false;
 
   const [formData, setFormData] = useState({
     companyId: "",
@@ -414,7 +414,7 @@ export default function Capacitaciones() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Capacitaciones</h1>
           <p className="text-muted-foreground">Gestión de entrenamientos y formación SST</p>
         </div>
-        {user?.role && hasCompanyAdminAccess(user.role) && (
+        {isAdmin && (
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);
             if (!open) {
@@ -884,8 +884,8 @@ export default function Capacitaciones() {
               status={training.status as "programada" | "completada" | "en-curso" | "cancelada"}
               onEdit={handleEditClick}
               onManageAttendees={handleManageAttendeesClick}
-              canEdit={user?.role ? hasCompanyAdminAccess(user.role) : false}
-              canPrint={user?.role ? hasCompanyAdminAccess(user.role) : false}
+              canEdit={isAdmin}
+              canPrint={isAdmin}
             />
           ))}
         </div>

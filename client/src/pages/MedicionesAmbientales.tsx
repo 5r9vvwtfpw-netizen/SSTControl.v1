@@ -14,7 +14,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
@@ -70,7 +70,7 @@ const measurementTypeLabels: Record<string, string> = {
 export default function MedicionesAmbientales() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'sst_management') : false;
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("todas");

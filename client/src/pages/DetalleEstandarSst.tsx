@@ -6,10 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import { SstStandard, SstItem } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation, useRoute } from "wouter";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 
 export default function DetalleEstandarSst() {
   const { user } = useAuth();
+  const isAdmin = user?.role ? canWrite(user.role, 'sst_items') : false;
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/estandares-sst/:id");
   const standardId = params?.id;
@@ -109,7 +110,7 @@ export default function DetalleEstandarSst() {
               Criterios específicos para evaluar este estándar
             </CardDescription>
           </div>
-          {user?.role && hasCompanyAdminAccess(user.role) && (
+          {isAdmin && (
             <Button size="sm" data-testid="button-add-item">
               <Plus className="h-4 w-4 mr-2" />
               Agregar Ítem
@@ -125,7 +126,7 @@ export default function DetalleEstandarSst() {
             <div className="text-center py-12">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">No hay ítems de evaluación registrados</p>
-              {user?.role && hasCompanyAdminAccess(user.role) && (
+              {isAdmin && (
                 <p className="text-sm text-muted-foreground mt-2">
                   Los ítems se agregarán según la Resolución 1111 de 2017
                 </p>

@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
@@ -25,7 +25,7 @@ export default function PesvVehiculos() {
   const { user } = useAuth();
   const { selectedCompany: currentCompany } = useCompanyContext();
   const { toast } = useToast();
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'vehicles') : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
@@ -277,7 +277,7 @@ export default function PesvVehiculos() {
       <TrazabilidadPesvBanner codigoPaso="H08" compacto />
       
       <div className="flex flex-wrap items-center justify-between gap-4">
-        {user?.role && hasCompanyAdminAccess(user.role) && (
+        {isAdmin && (
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);
             if (!open) resetForm();
@@ -546,7 +546,7 @@ export default function PesvVehiculos() {
               <TableHead data-testid="header-model">Modelo</TableHead>
               <TableHead data-testid="header-type">Tipo</TableHead>
               <TableHead data-testid="header-status">Estado</TableHead>
-              {user?.role && hasCompanyAdminAccess(user.role) && <TableHead data-testid="header-actions">Acciones</TableHead>}
+              {isAdmin && <TableHead data-testid="header-actions">Acciones</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -570,7 +570,7 @@ export default function PesvVehiculos() {
                   <TableCell data-testid={`text-model-${vehicle.id}`}>{vehicle.model}</TableCell>
                   <TableCell data-testid={`text-type-${vehicle.id}`}>{getVehicleTypeLabel(vehicle.type)}</TableCell>
                   <TableCell data-testid={`text-status-${vehicle.id}`}>{getStatusLabel(vehicle.status)}</TableCell>
-                  {user?.role && hasCompanyAdminAccess(user.role) && (
+                  {isAdmin && (
                     <TableCell>
                       <div className="flex gap-2">
                         <Button

@@ -9,7 +9,7 @@ import { insertJobProfileSchema } from "@shared/schema";
 import { getArlRate, examFrequencyByRisk } from "@shared/arl-rates";
 import { PREDEFINED_PROFILES } from "@/data/perfiles-cargo-predefinidos";
 import { ArrayInput } from "@/components/shared/ArrayInput";
-import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permissions";
 import type { z } from "zod";
 import {
   Dialog,
@@ -50,7 +50,7 @@ export default function PerfilesCargo() {
   const [searchTerm, setSearchTerm] = useState("");
 
   // For admin: company selection filter
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'job_profiles') : false;
   // hasGlobalAccess = true only for superadmin/soporte (can see all companies)
   const hasGlobalCompanyAccess = user?.role ? hasGlobalAccess(user.role) : false;
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("all");

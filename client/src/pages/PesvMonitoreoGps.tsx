@@ -21,7 +21,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { useParams, Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
@@ -43,7 +43,7 @@ export default function PesvMonitoreoGps() {
 
   const effectiveCompanyId = currentCompany?.id ?? user?.companyId ?? evaluacion?.companyId ?? null;
   const { toast } = useToast();
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'vehicles') : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMapVehicleId, setSelectedMapVehicleId] = useState<string>("");
@@ -800,7 +800,7 @@ export default function PesvMonitoreoGps() {
           />
         </div>
         
-        {user?.role && hasCompanyAdminAccess(user.role) && (
+        {isAdmin && (
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);
             if (!open) resetForm();
@@ -1128,7 +1128,7 @@ export default function PesvMonitoreoGps() {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    {user?.role && hasCompanyAdminAccess(user.role) && (
+                    {isAdmin && (
                       <Button
                         variant="ghost"
                         size="icon"

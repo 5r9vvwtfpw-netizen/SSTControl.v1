@@ -27,7 +27,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { indicadoresSstPredefinidos, getIndicadorByCodigo, formulasSugeridas } from "@/data/indicadores-sst-predefinidos";
 import { OBJETIVOS_SST_PREDEFINIDOS, OBJETIVOS_POR_CATEGORIA, ObjetivoSst as ObjetivoPredefinido } from "@/data/objetivos-sst-predefinidos";
-import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permissions";
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
@@ -140,7 +140,7 @@ function ObjetivosTab() {
   const [formCompanyId, setFormCompanyId] = useState<string>("");
   const [selectedPredefinido, setSelectedPredefinido] = useState<string>("");
   
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'sst_management') : false;
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
 
   const { data: companies = [] } = useQuery<Company[]>({

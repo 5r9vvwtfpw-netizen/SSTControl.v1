@@ -66,7 +66,7 @@ const HORARIOS_PREDEFINIDOS = [
   { value: "hibrido", label: "Híbrido Presencial + Remoto (44h semanales)" },
 ];
 import { format } from "date-fns";
-import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permissions";
 import {
   Dialog,
   DialogContent,
@@ -140,7 +140,7 @@ export default function Contratos() {
   });
 
   // For admin: company filter for workers
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'contracts') : false;
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
 

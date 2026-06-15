@@ -24,7 +24,7 @@ import { PREDEFINED_PROFILES } from "@/data/perfiles-cargo-predefinidos";
 import { Link } from "wouter";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatDateShort, formatCurrency, getTodayDateString } from "@/lib/utils/formatters";
-import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
@@ -83,7 +83,7 @@ export default function Trabajadores() {
   const [hasConsent, setHasConsent] = useState(false);
 
   // For admin: company selection filter
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'workers') : false;
   // hasGlobalAccess = true only for superadmin/soporte (can see all companies)
   const hasGlobalCompanyAccess = user?.role ? hasGlobalAccess(user.role) : false;
   // isSuperadmin = true only for superadmin/soporte (can select any company when creating workers)
@@ -1140,7 +1140,7 @@ export default function Trabajadores() {
           normativaAplicable={normativaTrabajadores}
           compact={true}
         />
-        {user?.role && hasCompanyAdminAccess(user.role) && (
+        {isAdmin && (
           <div className="flex flex-wrap gap-2">
             <Button onClick={handleDownloadTemplate} variant="outline" data-testid="button-download-template">
               <Download className="h-4 w-4 mr-2" />
@@ -2811,10 +2811,10 @@ export default function Trabajadores() {
                       hasUserAccount={!!worker.userId}
                       contractStatus={getContractStatus(worker.id)}
                       sedeName={worker.sedeId ? sedeMap[worker.sedeId] : undefined}
-                      onEdit={user?.role && hasCompanyAdminAccess(user.role) ? () => handleEdit(worker) : undefined}
-                      onDelete={user?.role && hasCompanyAdminAccess(user.role) ? () => handleDelete(worker.id) : undefined}
-                      onCreatePortalAccess={user?.role && hasCompanyAdminAccess(user.role) && worker.email && !worker.userId ? () => createPortalAccessMutation.mutate(worker.id) : undefined}
-                      onResendPortalCredentials={user?.role && hasCompanyAdminAccess(user.role) && worker.email && !!worker.userId ? () => resendPortalCredentialsMutation.mutate(worker.id) : undefined}
+                      onEdit={isAdmin ? () => handleEdit(worker) : undefined}
+                      onDelete={isAdmin ? () => handleDelete(worker.id) : undefined}
+                      onCreatePortalAccess={isAdmin && worker.email && !worker.userId ? () => createPortalAccessMutation.mutate(worker.id) : undefined}
+                      onResendPortalCredentials={isAdmin && worker.email && !!worker.userId ? () => resendPortalCredentialsMutation.mutate(worker.id) : undefined}
                     />
                   ))}
                 </div>

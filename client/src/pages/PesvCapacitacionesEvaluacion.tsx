@@ -18,7 +18,7 @@ import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextH
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 import type { EvaluacionPesv, RoadSafetyTraining, Worker } from "@shared/schema";
 
 interface PlantillaCapacitacion {
@@ -337,7 +337,7 @@ export default function PesvCapacitacionesEvaluacion() {
   const { evaluacionId } = useParams<{ evaluacionId: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'road_safety_trainings') : false;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("todas");

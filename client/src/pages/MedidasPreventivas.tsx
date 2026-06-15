@@ -12,7 +12,7 @@ import { PreventiveMeasure } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
@@ -50,6 +50,7 @@ const normativaMedidasPreventivas = [
 export default function MedidasPreventivas() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isAdmin = user?.role ? canWrite(user.role, 'measures') : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -249,7 +250,7 @@ export default function MedidasPreventivas() {
           normativaAplicable={normativaMedidasPreventivas}
           compact={true}
         />
-        {user?.role && hasCompanyAdminAccess(user.role) && (
+        {isAdmin && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button data-testid="button-add-measure">
@@ -325,7 +326,7 @@ export default function MedidasPreventivas() {
               onPrint={handlePrint}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              showActions={user?.role ? hasCompanyAdminAccess(user.role) : false}
+              showActions={isAdmin}
             />
           ))}
         </div>

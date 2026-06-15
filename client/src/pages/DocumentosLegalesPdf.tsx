@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 import type { CertificacionProfesional } from "@shared/schema";
 import { 
   FileText, 
@@ -40,7 +40,7 @@ export default function DocumentosLegalesPdf() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [downloading, setDownloading] = useState<string | null>(null);
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'documents') : false;
 
   const { data: certificaciones = [], isLoading: loadingCerts } = useQuery<CertificacionProfesional[]>({
     queryKey: ["/api/certificaciones-profesionales"],

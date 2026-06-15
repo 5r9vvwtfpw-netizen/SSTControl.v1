@@ -256,10 +256,22 @@ export function PHVANavigation() {
   }, [userPermissions, companyChapter, companyHasVehicles]);
 
   // Filtrar tabs PHVA (no mostrar tabs sin items)
+  // Roles que pueden ver la pestaña "Administración Global"
+  const adminTabRoles = ['superadmin', 'superusuario', 'admin', 'soporte'];
+
   const visiblePhvaTabs = useMemo(() => {
     return phvaTabs.filter(tab => {
-      if (tab.key === 'configuracion' && user?.role === 'tecnico_mecanico') return false;
-      return filteredPhvaMenus[tab.key].length > 0;
+      // Ocultar "Administración Global" para todos los roles operativos
+      if (tab.key === 'configuracion') {
+        return user?.role ? adminTabRoles.includes(user.role) : false;
+      }
+      // Para tecnico_mecanico no mostrar ningún tab PHVA (tiene su propia navegación)
+      if (user?.role === 'tecnico_mecanico') return false;
+      // Mostrar el tab solo si tiene items accesibles (sin contar hidden)
+      const hasVisibleItems = filteredPhvaMenus[tab.key].some(group =>
+        group.items.some(item => !item.hidden)
+      );
+      return filteredPhvaMenus[tab.key].length > 0 && hasVisibleItems;
     });
   }, [filteredPhvaMenus, user?.role]);
 

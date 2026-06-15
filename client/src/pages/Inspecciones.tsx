@@ -14,7 +14,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
@@ -52,7 +52,7 @@ const normativaInspecciones = [
 export default function Inspecciones() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'inspections') : false;
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todas");
@@ -296,7 +296,7 @@ export default function Inspecciones() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Inspecciones de Seguridad</h1>
           <p className="text-muted-foreground">Auditorías y verificaciones de cumplimiento</p>
         </div>
-        {user?.role && hasCompanyAdminAccess(user.role) && (
+        {isAdmin && (
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             if (open) {
               setFormData({

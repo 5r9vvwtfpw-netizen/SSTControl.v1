@@ -16,7 +16,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permissions";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
@@ -74,7 +74,7 @@ export default function PesvInspecciones() {
   const { user } = useAuth();
   const { selectedCompany: currentCompany } = useCompanyContext();
   const { toast } = useToast();
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'vehicle_inspections') : false;
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -541,7 +541,7 @@ export default function PesvInspecciones() {
                       >
                         <FileDown className="h-4 w-4 text-blue-600" />
                       </Button>
-                      {user?.role && hasCompanyAdminAccess(user.role) && (
+                      {isAdmin && (
                         <Button
                           variant="ghost"
                           size="icon"

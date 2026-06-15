@@ -17,7 +17,7 @@ import { ComiteIntegrantePesv, ActaComitePesv, Worker, ActoAdministrativoPesv, C
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
@@ -105,7 +105,7 @@ function VerificacionP01Banner() {
 export default function PesvComite() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'sst_management') : false;
   const [activeTab, setActiveTab] = useState("integrantes");
 
   return (

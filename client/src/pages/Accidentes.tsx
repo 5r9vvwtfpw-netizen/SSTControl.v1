@@ -206,7 +206,7 @@ import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permissions";
 
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
@@ -288,7 +288,7 @@ function IndicadorCard({ titulo, valor, formula, icono: Icono, color, descripcio
 function EstadisticasATELTab({ accidents, workers }: { accidents: Accident[]; workers: Worker[] }) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'accidents') : false;
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
@@ -779,7 +779,7 @@ export default function Accidentes() {
   const [severityFilter, setSeverityFilter] = useState<string>("todos");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedWitnesses, setSelectedWitnesses] = useState<string[]>([]);
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'accidents') : false;
   const isGlobalAdmin = user?.role ? hasGlobalAccess(user.role) : false;
 
   const [formData, setFormData] = useState({
@@ -1017,7 +1017,7 @@ export default function Accidentes() {
 
         <TabsContent value="registro" className="space-y-6 mt-4">
       <div className="flex flex-wrap items-center justify-end gap-4">
-        {user?.role && (hasCompanyAdminAccess(user.role) || (isLso && !!lsoContext)) && (
+        {(isAdmin || (isLso && !!lsoContext)) && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button data-testid="button-add-accident">

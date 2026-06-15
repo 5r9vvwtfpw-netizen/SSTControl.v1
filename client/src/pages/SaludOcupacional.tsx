@@ -15,7 +15,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
@@ -29,6 +29,7 @@ const formSchema = insertOccupationalDiseaseSchema.extend({
 export default function SaludOcupacional() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isAdmin = user?.role ? canWrite(user.role, 'diseases') : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -119,7 +120,7 @@ export default function SaludOcupacional() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Salud Ocupacional</h1>
           <p className="text-muted-foreground">Registro de enfermedades ocupacionales</p>
         </div>
-        {user?.role && hasCompanyAdminAccess(user.role) && (
+        {isAdmin && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button data-testid="button-add-disease">

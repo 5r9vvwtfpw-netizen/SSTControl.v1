@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import type { InsertArcoRequest, ArcoRequest } from "@shared/schema";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 
 export default function SolicitudesArco() {
   const { user } = useAuth();
@@ -49,7 +49,7 @@ export default function SolicitudesArco() {
     requestDescription: "",
   });
 
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'workers') : false;
 
   // Fetch ARCO requests
   const { data: arcoRequests = [], isLoading } = useQuery<ArcoRequest[]>({

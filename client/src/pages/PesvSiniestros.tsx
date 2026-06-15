@@ -18,7 +18,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permissions";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
@@ -27,7 +27,7 @@ export default function PesvSiniestros() {
   const { user } = useAuth();
   const { selectedCompany: currentCompany } = useCompanyContext();
   const { toast } = useToast();
-  const isAdmin = user?.role ? hasCompanyAdminAccess(user.role) : false;
+  const isAdmin = user?.role ? canWrite(user.role, 'road_incidents') : false;
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -271,7 +271,7 @@ export default function PesvSiniestros() {
       <TrazabilidadPesvBanner codigoPaso="V02" compacto />
       
       <div className="flex flex-wrap items-center justify-between gap-4">
-        {user?.role && hasCompanyAdminAccess(user.role) && (
+        {isAdmin && (
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);
             if (!open) resetForm();
@@ -693,7 +693,7 @@ export default function PesvSiniestros() {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      {user?.role && hasCompanyAdminAccess(user.role) && (
+                      {isAdmin && (
                         <Button
                           variant="ghost"
                           size="icon"

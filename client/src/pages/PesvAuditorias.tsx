@@ -17,7 +17,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { hasCompanyAdminAccess } from "@shared/permissions";
+import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
@@ -111,6 +111,7 @@ const initialFormData: AuditFormData = {
 export default function PesvAuditorias() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isAdmin = user?.role ? canWrite(user.role, 'pesv_audits') : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -444,7 +445,7 @@ export default function PesvAuditorias() {
       <TrazabilidadPesvBanner codigoPaso="V03" compacto />
       
       <div className="flex flex-wrap items-center justify-between gap-4">
-        {user?.role && hasCompanyAdminAccess(user.role) && (
+        {isAdmin && (
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);
             if (!open) resetForm();
@@ -790,7 +791,7 @@ export default function PesvAuditorias() {
                       >
                         <FileDown className="h-4 w-4" />
                       </Button>
-                      {user?.role && hasCompanyAdminAccess(user.role) && (
+                      {isAdmin && (
                         <>
                           <Button
                             variant="ghost"

@@ -1197,7 +1197,7 @@ export function hasGlobalAccess(role: UserRole): boolean {
  * @returns true si el usuario es administrador de su empresa
  */
 export function hasCompanyAdminAccess(role: UserRole): boolean {
-  return role === 'superadmin' || role === 'superusuario' || role === 'admin';
+  return role === 'superadmin' || role === 'superusuario' || role === 'admin' || role === 'responsable_sst';
 }
 
 /**
