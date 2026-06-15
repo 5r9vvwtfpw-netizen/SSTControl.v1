@@ -37,6 +37,7 @@ export const userRoleEnum = pgEnum("user_role", [
   "supervisor",         // Supervisor - Inspecciones y medidas en su área
   "vigia_sst",          // Vigía SST - Para empresas <10 trabajadores (Decreto 1072/2015, Res. 2013/1986)
   "auditor_interno",    // Auditor Interno SG-SST - Auditorías ISO 45001, Decreto 1072/2015
+  "tecnico_mecanico",   // Técnico Mecánico - Registro y gestión de mantenimientos vehiculares (PESV H05)
   "trabajador"          // Trabajador - Solo su información
 ]);
 

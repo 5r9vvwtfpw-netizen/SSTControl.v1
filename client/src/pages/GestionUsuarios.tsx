@@ -695,7 +695,12 @@ export default function GestionUsuarios() {
                           <SelectItem value="supervisor">
                             {roleLabels.supervisor}
                           </SelectItem>
-                          
+
+                          {/* Rol PESV */}
+                          <SelectItem value="tecnico_mecanico">
+                            {roleLabels.tecnico_mecanico}
+                          </SelectItem>
+
                           {/* Rol básico */}
                           <SelectItem value="trabajador">
                             {roleLabels.trabajador}

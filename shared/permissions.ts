@@ -1079,6 +1079,15 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "sst_evaluations:edit",
   ],
 
+  // Técnico Mecánico - Solo mantenimiento vehicular PESV (H05)
+  tecnico_mecanico: [
+    "vehicles:view",
+    "vehicles:create",
+    "vehicles:edit",
+    "vehicles:delete",
+    "dashboard:view",
+  ],
+
   // Trabajador - Solo consulta su información personal (no puede crear/editar/eliminar en Planear/Hacer)
   trabajador: [
     "workers:view_self",
@@ -1148,6 +1157,7 @@ export const roleLabels: Record<UserRole, string> = {
   supervisor: "Supervisor",
   vigia_sst: "Vigía SST",
   auditor_interno: "Auditor Interno SG-SST",
+  tecnico_mecanico: "Técnico Mecánico",
   trabajador: "Trabajador",
 };
 
@@ -1166,6 +1176,7 @@ export const roleDescriptions: Record<UserRole, string> = {
   supervisor: "Inspecciones y medidas preventivas en su área de trabajo",
   vigia_sst: "Vigía de SST para empresas con menos de 10 trabajadores (Decreto 1072/2015, Res. 2013/1986)",
   auditor_interno: "Auditorías internas del SG-SST según ISO 45001 y Decreto 1072/2015",
+  tecnico_mecanico: "Registro y gestión de mantenimientos vehiculares PESV (H05). Sin acceso a datos SST.",
   trabajador: "Consulta de capacitaciones e información personal",
 };
 
