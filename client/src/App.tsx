@@ -211,6 +211,11 @@ function HomeGateway() {
     );
   }
   
+  // Técnico Mecánico va directo al módulo de mantenimiento vehicular
+  if (user?.role === 'tecnico_mecanico') {
+    return <Redirect to="/pesv/mantenimiento" />;
+  }
+
   // Si está logueado -> siempre al Dashboard
   if (user) {
     return <Dashboard />;

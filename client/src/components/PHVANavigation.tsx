@@ -271,8 +271,11 @@ export function PHVANavigation() {
   }, [user, companyHasVehicles, userPermissions]);
 
   const filteredPesvNavItems = useMemo(() => {
-    return pesvNavMenuItems.filter(item => canAccessRoute(userPermissions, item.path));
-  }, [userPermissions]);
+    return pesvNavMenuItems.filter(item => {
+      if (user?.role === 'tecnico_mecanico' && item.path === '/pesv') return false;
+      return canAccessRoute(userPermissions, item.path);
+    });
+  }, [userPermissions, user?.role]);
 
   const isPesvActive = location === "/pesv" || location.startsWith("/pesv/");
 
