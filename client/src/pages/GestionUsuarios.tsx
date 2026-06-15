@@ -906,7 +906,7 @@ export default function GestionUsuarios() {
               const hasRoleLimit = [
                 'superusuario', 'responsable_sst', 'coordinador_sst',
                 'coordinador_rrhh', 'coordinador_salud', 'jefe_personal',
-                'supervisor', 'vigia_sst', 'auditor_interno', 'lso'
+                'supervisor', 'vigia_sst', 'auditor_interno', 'lso', 'tecnico_mecanico'
               ].includes(role);
               const limitPerRole = 1;
               
