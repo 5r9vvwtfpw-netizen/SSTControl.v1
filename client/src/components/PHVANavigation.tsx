@@ -625,7 +625,21 @@ export function PHVANavigation() {
               })}
 
               {/* Tab PESV separado - Resolución 40595/2022 */}
-              {showPesvTab && filteredPesvNavItems.length > 0 && (
+              {/* Técnico Mecánico: acceso directo a mantenimiento, sin menú */}
+              {user?.role === 'tecnico_mecanico' && (
+                <Link href="/pesv/mantenimiento">
+                  <Button
+                    variant={isPesvActive ? "secondary" : "ghost"}
+                    size="default"
+                    className={isPesvActive ? "font-semibold text-primary" : "text-white"}
+                    data-testid="tab-mantenimiento"
+                  >
+                    <Car className="mr-2 h-4 w-4" />
+                    Mantenimiento
+                  </Button>
+                </Link>
+              )}
+              {user?.role !== 'tecnico_mecanico' && showPesvTab && filteredPesvNavItems.length > 0 && (
                 <DropdownMenu
                   open={pesvDropdownOpen}
                   onOpenChange={(open) => setPesvDropdownOpen(open)}
