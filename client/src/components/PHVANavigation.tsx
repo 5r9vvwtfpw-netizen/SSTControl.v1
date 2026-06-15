@@ -257,10 +257,11 @@ export function PHVANavigation() {
 
   // Filtrar tabs PHVA (no mostrar tabs sin items)
   const visiblePhvaTabs = useMemo(() => {
-    return phvaTabs.filter(tab => 
-      filteredPhvaMenus[tab.key].length > 0
-    );
-  }, [filteredPhvaMenus]);
+    return phvaTabs.filter(tab => {
+      if (tab.key === 'configuracion' && user?.role === 'tecnico_mecanico') return false;
+      return filteredPhvaMenus[tab.key].length > 0;
+    });
+  }, [filteredPhvaMenus, user?.role]);
 
   const showPesvTab = useMemo(() => {
     if (!user) return false;
