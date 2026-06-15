@@ -344,7 +344,8 @@ const ADMIN_ROLES_WITH_LIMIT = [
   'jefe_personal',
   'supervisor',
   'vigia_sst',
-  'auditor_interno'
+  'auditor_interno',
+  'tecnico_mecanico'
 ];
 
 /**
