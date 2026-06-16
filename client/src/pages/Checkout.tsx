@@ -75,7 +75,8 @@ export default function Checkout() {
   });
 
   const isUpgradeFromFree = !currentSubscription || currentSubscription.status === 'trial' || currentSubscription.status === 'expired';
-  const isPseAvailable = !!wompiEstado?.configured && !!wompiEstado?.sandbox;
+  // PSE oculto hasta que Wompi apruebe la cuenta en producción
+  const isPseAvailable = false;
 
   const createCheckoutV2Mutation = useMutation({
     mutationFn: async (acceptanceData?: ContractAcceptanceData) => {
