@@ -75,7 +75,7 @@ export default function Checkout() {
   });
 
   const isUpgradeFromFree = !currentSubscription || currentSubscription.status === 'trial' || currentSubscription.status === 'expired';
-  const isPseAvailable = !!wompiEstado?.configured;
+  const isPseAvailable = !!wompiEstado?.configured && !!wompiEstado?.sandbox;
 
   const createCheckoutV2Mutation = useMutation({
     mutationFn: async (acceptanceData?: ContractAcceptanceData) => {
