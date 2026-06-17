@@ -566,9 +566,7 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
      .text(contactName, rightCardX, cardTopY + 32, { width: cardW, align: 'center' });
   doc.fontSize(9).font('Helvetica').fillColor(C.GRAY_TEXT)
      .text(`Tel. ${whatsapp}`, rightCardX, cardTopY + 50, { width: cardW, align: 'center' });
-  doc.text(email, rightCardX, cardTopY + 64, { width: cardW, align: 'center' });
-  doc.fontSize(9).font('Helvetica-Bold').fillColor(C.GREEN_MID)
-     .text(web, rightCardX, cardTopY + 80, { width: cardW, align: 'center' });
+  doc.text(email, rightCardX, cardTopY + 66, { width: cardW, align: 'center' });
 
   // Footer
   doc.rect(0, P.h - 28, P.w, 28).fill(C.GREEN_DARK);
