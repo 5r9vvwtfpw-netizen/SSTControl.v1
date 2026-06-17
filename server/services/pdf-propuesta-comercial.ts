@@ -267,6 +267,213 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
        width: W - M * 2, align: 'center',
      });
 
+  // ── PÁGINA 2: MUESTRA EVALUACIÓN INICIAL 0312/2019 ─────────────────────────
+  doc.addPage({ size: 'LETTER', margin: 0 });
+  const P = { w: doc.page.width, h: doc.page.height, m: 40 };
+
+  doc.rect(0, 0, P.w, 55).fill(C.GREEN_DARK);
+  doc.rect(0, 52, P.w, 3).fill(C.GOLD);
+  doc.fontSize(8).font('Helvetica').fillColor(C.GOLD)
+     .text('MUESTRA - DOCUMENTO DE EJEMPLO', P.m, 10, { width: P.w - P.m * 2, align: 'center' });
+  doc.fontSize(14).font('Helvetica-Bold').fillColor(C.WHITE)
+     .text('Informe Evaluacion Inicial - Res. 0312/2019', P.m, 24, { width: P.w - P.m * 2, align: 'center' });
+
+  let py = 68;
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(C.GREEN_DARK).text('EMPRESA:', P.m, py);
+  doc.font('Helvetica').fillColor(C.GRAY_TEXT).text('Empresa Ejemplo S.A.S. · NIT 900.123.456-7 · Bogota D.C.', P.m + 68, py);
+  py += 14;
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(C.GREEN_DARK).text('ACTIVIDAD:', P.m, py);
+  doc.font('Helvetica').fillColor(C.GRAY_TEXT).text('Manufactura · CIIU 1011 · ARL Riesgo II', P.m + 68, py);
+  py += 14;
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(C.GREEN_DARK).text('FECHA:', P.m, py);
+  doc.font('Helvetica').fillColor(C.GRAY_TEXT).text('17 de Junio de 2026 · Codigo: EV-0312-2026-001', P.m + 68, py);
+
+  py += 24;
+  doc.rect(P.m, py, P.w - P.m * 2, 52).fill('#f0f7f2');
+  doc.rect(P.m, py, 4, 52).fill(C.GREEN_ACCENT);
+  doc.fontSize(34).font('Helvetica-Bold').fillColor(C.GREEN_DARK).text('78.5', P.m + 18, py + 7, { lineBreak: false });
+  doc.fontSize(13).font('Helvetica').fillColor(C.GRAY_TEXT).text('/ 100 puntos', P.m + 80, py + 20, { lineBreak: false });
+  doc.roundedRect(P.m + 196, py + 13, 88, 24, 5).fill(C.GREEN_ACCENT);
+  doc.fontSize(10).font('Helvetica-Bold').fillColor(C.WHITE).text('ACEPTABLE', P.m + 196, py + 19, { width: 88, align: 'center' });
+  doc.fontSize(8.5).font('Helvetica').fillColor(C.GRAY_TEXT)
+     .text('Puntaje global segun Res. 0312/2019\n62 estandares minimos evaluados', P.m + 300, py + 12, { width: P.w - P.m - 308 });
+
+  py += 66;
+  const p2ColXs = [P.m, P.m + 110, P.m + 175, P.m + 245, P.m + 315, P.m + 385];
+  const p2ColWs = [108, 63, 68, 68, 68, 80];
+  const phvaRows = [
+    { ciclo: 'PLANEAR', items: 6,  obtenido: 23.0, maximo: 25.0, color: '#1a5276' },
+    { ciclo: 'HACER',   items: 40, obtenido: 35.0, maximo: 60.0, color: C.GREEN_MID },
+    { ciclo: 'VERIFICAR', items: 10, obtenido: 12.5, maximo: 15.0, color: C.GOLD },
+    { ciclo: 'ACTUAR',  items: 6,  obtenido: 8.0,  maximo: 10.0, color: '#e74c3c' },
+  ];
+  const p2Hdrs = ['Ciclo PHVA', 'Estandares', 'Obtenido', 'Maximo', 'Porcentaje', 'Valoracion'];
+  doc.rect(P.m, py, P.w - P.m * 2, 20).fill(C.GREEN_DARK);
+  p2Hdrs.forEach((h, i) => {
+    doc.fontSize(8).font('Helvetica-Bold').fillColor(C.WHITE).text(h, p2ColXs[i] + 4, py + 6, { width: p2ColWs[i] - 8 });
+  });
+  py += 20;
+  for (const row of phvaRows) {
+    const pct = Math.round((row.obtenido / row.maximo) * 100);
+    const val = pct >= 86 ? 'Aceptable' : pct >= 61 ? 'Moderado' : 'Critico';
+    const bg  = pct >= 86 ? '#d4edda' : pct >= 61 ? '#fff3cd' : '#f8d7da';
+    doc.rect(P.m, py, P.w - P.m * 2, 22).fill(bg);
+    doc.rect(P.m, py, 4, 22).fill(row.color);
+    doc.fontSize(8.5).font('Helvetica-Bold').fillColor(C.BLACK).text(row.ciclo, p2ColXs[0] + 8, py + 7);
+    doc.font('Helvetica').fillColor(C.GRAY_TEXT);
+    doc.text(String(row.items),              p2ColXs[1] + 4, py + 7, { width: p2ColWs[1] - 8 });
+    doc.text(row.obtenido.toFixed(1),        p2ColXs[2] + 4, py + 7, { width: p2ColWs[2] - 8 });
+    doc.text(row.maximo.toFixed(1),          p2ColXs[3] + 4, py + 7, { width: p2ColWs[3] - 8 });
+    doc.text(`${pct}%`,                      p2ColXs[4] + 4, py + 7, { width: p2ColWs[4] - 8 });
+    doc.font('Helvetica-Bold').fillColor(pct >= 86 ? '#1a5276' : pct >= 61 ? '#856404' : '#721c24')
+       .text(val, p2ColXs[5] + 4, py + 7, { width: p2ColWs[5] - 8 });
+    py += 22;
+  }
+
+  py += 16;
+  doc.fontSize(11).font('Helvetica-Bold').fillColor(C.GREEN_DARK).text('Detalle de Estandares (Muestra)', P.m, py);
+  py += 14;
+
+  const stds = [
+    { cod: '1.1.1', desc: 'Responsable del SG-SST',            ciclo: 'P', obt: 0.5, max: 0.5, est: 'Cumple' },
+    { cod: '1.1.2', desc: 'Responsabilidades en el SGSST',     ciclo: 'P', obt: 0.5, max: 0.5, est: 'Cumple' },
+    { cod: '1.2.1', desc: 'Programa de Capacitacion',          ciclo: 'P', obt: 2.0, max: 2.0, est: 'Cumple' },
+    { cod: '2.1.1', desc: 'Politica del SGSST firmada',        ciclo: 'P', obt: 1.0, max: 1.0, est: 'Cumple' },
+    { cod: '3.1.1', desc: 'Evaluacion Medica Ocupacional',     ciclo: 'H', obt: 0.0, max: 1.0, est: 'No Cumple' },
+    { cod: '4.1.1', desc: 'Indicadores de estructura',         ciclo: 'V', obt: 1.25, max: 1.25, est: 'Cumple' },
+    { cod: '4.2.1', desc: 'Indicadores de proceso',            ciclo: 'V', obt: 1.0, max: 1.25, est: 'Parcial' },
+    { cod: '5.1.1', desc: 'Acciones preventivas/correctivas',  ciclo: 'A', obt: 2.5, max: 2.5, est: 'Cumple' },
+  ];
+  const sColXs = [P.m, P.m + 50, P.m + 250, P.m + 300, P.m + 355, P.m + 410];
+  const sColWs = [48, 198, 48, 53, 53, 75];
+  const sHdrs = ['Codigo', 'Estandar Minimo', 'Ciclo', 'Obtenido', 'Maximo', 'Estado'];
+  doc.rect(P.m, py, P.w - P.m * 2, 18).fill(C.GREEN_DARK);
+  sHdrs.forEach((h, i) => {
+    doc.fontSize(7.5).font('Helvetica-Bold').fillColor(C.WHITE).text(h, sColXs[i] + 3, py + 5, { width: sColWs[i] - 6 });
+  });
+  py += 18;
+  for (let i = 0; i < stds.length; i++) {
+    const s = stds[i];
+    doc.rect(P.m, py, P.w - P.m * 2, 18).fill(i % 2 === 0 ? '#f9f9f9' : '#ffffff');
+    doc.fontSize(7.5).font('Helvetica').fillColor(C.GRAY_TEXT);
+    doc.text(s.cod, sColXs[0] + 3, py + 5);
+    doc.text(s.desc, sColXs[1] + 3, py + 5, { width: sColWs[1] - 6 });
+    doc.text(s.ciclo, sColXs[2] + 3, py + 5, { width: sColWs[2] - 6, align: 'center' });
+    doc.text(s.obt.toFixed(2), sColXs[3] + 3, py + 5, { width: sColWs[3] - 6, align: 'center' });
+    doc.text(s.max.toFixed(2), sColXs[4] + 3, py + 5, { width: sColWs[4] - 6, align: 'center' });
+    const ec = s.est === 'Cumple' ? '#28a745' : s.est === 'Parcial' ? '#fd7e14' : '#dc3545';
+    doc.roundedRect(sColXs[5] + 3, py + 3, sColWs[5] - 6, 12, 3).fill(ec);
+    doc.fontSize(7).font('Helvetica-Bold').fillColor(C.WHITE).text(s.est, sColXs[5] + 3, py + 5, { width: sColWs[5] - 6, align: 'center' });
+    py += 18;
+  }
+
+  py += 10;
+  doc.fontSize(7.5).font('Helvetica').fillColor('#888888')
+     .text('* Documento de muestra. El informe real incluye los 62 estandares minimos completos con valoracion critico/aceptable, trazabilidad al ciclo PHVA y firma digital del Licenciado SST.', P.m, py, { width: P.w - P.m * 2 });
+  doc.rect(0, P.h - 28, P.w, 28).fill(C.GREEN_DARK);
+  doc.fontSize(7.5).font('Helvetica').fillColor(C.GOLD)
+     .text('MUESTRA · SG-SST Automatizado · https://sst.sagisas.co/', 0, P.h - 17, { width: P.w, align: 'center' });
+
+  // ── PÁGINA 3: MUESTRA AUTOEVALUACIÓN PESV ───────────────────────────────────
+  doc.addPage({ size: 'LETTER', margin: 0 });
+
+  doc.rect(0, 0, P.w, 55).fill(C.GREEN_DARK);
+  doc.rect(0, 52, P.w, 3).fill(C.GOLD);
+  doc.fontSize(8).font('Helvetica').fillColor(C.GOLD)
+     .text('MUESTRA - DOCUMENTO DE EJEMPLO', P.m, 10, { width: P.w - P.m * 2, align: 'center' });
+  doc.fontSize(14).font('Helvetica-Bold').fillColor(C.WHITE)
+     .text('Autoevaluacion PESV - Res. 40595/2022', P.m, 24, { width: P.w - P.m * 2, align: 'center' });
+
+  py = 68;
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(C.GREEN_DARK).text('EMPRESA:', P.m, py);
+  doc.font('Helvetica').fillColor(C.GRAY_TEXT).text('Empresa Ejemplo S.A.S. · NIT 900.123.456-7', P.m + 68, py);
+  py += 14;
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(C.GREEN_DARK).text('NIVEL:', P.m, py);
+  doc.font('Helvetica').fillColor(C.GRAY_TEXT).text('Basico (hasta 10 vehiculos) · Ano 2026', P.m + 68, py);
+  py += 14;
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(C.GREEN_DARK).text('CODIGO:', P.m, py);
+  doc.font('Helvetica').fillColor(C.GRAY_TEXT).text('PESV-EVAL-2026-001 · Superintendencia de Transporte', P.m + 68, py);
+
+  py += 24;
+  doc.rect(P.m, py, P.w - P.m * 2, 52).fill('#f0f7f2');
+  doc.rect(P.m, py, 4, 52).fill(C.GOLD);
+  doc.fontSize(34).font('Helvetica-Bold').fillColor(C.GREEN_DARK).text('68%', P.m + 18, py + 7, { lineBreak: false });
+  doc.fontSize(13).font('Helvetica').fillColor(C.GRAY_TEXT).text('Cumplimiento Global PESV', P.m + 85, py + 10, { lineBreak: false });
+  doc.roundedRect(P.m + 85, py + 28, 148, 16, 4).fill('#fff3cd');
+  doc.fontSize(8).font('Helvetica-Bold').fillColor('#856404')
+     .text('EN PROCESO DE IMPLEMENTACION', P.m + 85, py + 31, { width: 148, align: 'center' });
+  doc.fontSize(8.5).font('Helvetica').fillColor(C.GRAY_TEXT)
+     .text('24 pasos evaluados\nP01-P08, H01-H11, V01-V03, A01-A02', P.m + 255, py + 10, { width: P.w - P.m - 263 });
+
+  py += 64;
+  doc.fontSize(11).font('Helvetica-Bold').fillColor(C.GREEN_DARK).text('Avance por Fase PHVA', P.m, py);
+  py += 16;
+
+  const phases = [
+    { name: 'PLANEAR (P01-P08)',    pct: 85, color: C.GREEN_DARK, count: '7/8 criterios' },
+    { name: 'HACER   (H01-H11)',    pct: 55, color: C.GREEN_MID,  count: '6/11 criterios' },
+    { name: 'VERIFICAR (V01-V03)',  pct: 67, color: C.GOLD,       count: '2/3 criterios' },
+    { name: 'ACTUAR  (A01-A02)',    pct: 50, color: '#e67e22',    count: '1/2 criterios' },
+  ];
+  const barW = P.w - P.m * 2 - 188;
+  for (const ph of phases) {
+    doc.fontSize(8.5).font('Helvetica-Bold').fillColor(C.BLACK).text(ph.name, P.m, py + 3, { width: 162 });
+    doc.rect(P.m + 166, py, barW, 16).fill('#e0e0e0');
+    const filled = Math.floor(barW * ph.pct / 100);
+    doc.rect(P.m + 166, py, filled, 16).fill(ph.color);
+    if (filled > 30) {
+      doc.fontSize(8).font('Helvetica-Bold').fillColor(C.WHITE)
+         .text(`${ph.pct}%`, P.m + 166 + filled - 30, py + 4, { width: 28, align: 'center' });
+    }
+    doc.fontSize(7.5).font('Helvetica').fillColor(C.GRAY_TEXT).text(ph.count, P.m + 166 + barW + 8, py + 4);
+    py += 26;
+  }
+
+  py += 10;
+  doc.fontSize(11).font('Helvetica-Bold').fillColor(C.GREEN_DARK).text('Detalle de Criterios PESV (Muestra)', P.m, py);
+  py += 14;
+
+  const criterios = [
+    { paso: 'P01', desc: 'Conformacion del Comite de Seguridad Vial', fase: 'Planear',    est: 'Cumple',     obs: 'Acta vigente' },
+    { paso: 'P02', desc: 'Diagnostico inicial de seguridad vial',      fase: 'Planear',    est: 'Cumple',     obs: 'Informe diagnostico 2026' },
+    { paso: 'P03', desc: 'Politica de Seguridad Vial firmada',         fase: 'Planear',    est: 'Cumple',     obs: 'Publicada en carteleras' },
+    { paso: 'H01', desc: 'Comportamiento humano - inducciones',        fase: 'Hacer',      est: 'En proceso', obs: '60% de conductores capacitados' },
+    { paso: 'H05', desc: 'Mantenimiento preventivo vehicular',         fase: 'Hacer',      est: 'No cumple',  obs: 'Falta cronograma 2026' },
+    { paso: 'H09', desc: 'Control de velocidades y distancias',        fase: 'Hacer',      est: 'Cumple',     obs: 'Registros GPS activos' },
+    { paso: 'V01', desc: 'Indicadores de gestion vial',                fase: 'Verificar',  est: 'Cumple',     obs: 'Dashboard actualizado' },
+    { paso: 'A01', desc: 'Plan de mejora y acciones correctivas',      fase: 'Actuar',     est: 'En proceso', obs: 'Acciones pendientes Q3-2026' },
+  ];
+  const cColXs3 = [P.m, P.m + 42, P.m + 232, P.m + 300, P.m + 370, P.m + 440]; // removed last col
+  const cColWs3 = [40, 188, 66, 68, 68, P.w - P.m - 440];
+  const cHdrs3  = ['Paso', 'Criterio PESV', 'Fase', 'Estado', 'Observacion'];
+  doc.rect(P.m, py, P.w - P.m * 2, 18).fill(C.GREEN_DARK);
+  ['Paso', 'Criterio PESV', 'Fase', 'Estado', 'Observacion'].forEach((h, i) => {
+    doc.fontSize(7.5).font('Helvetica-Bold').fillColor(C.WHITE)
+       .text(h, cColXs3[i] + 3, py + 5, { width: cColWs3[i] - 6 });
+  });
+  py += 18;
+  for (let i = 0; i < criterios.length; i++) {
+    const c = criterios[i];
+    const rowH = 22;
+    doc.rect(P.m, py, P.w - P.m * 2, rowH).fill(i % 2 === 0 ? '#f9f9f9' : '#ffffff');
+    doc.fontSize(8).font('Helvetica-Bold').fillColor(C.GREEN_DARK).text(c.paso, cColXs3[0] + 3, py + 7, { width: cColWs3[0] - 6 });
+    doc.font('Helvetica').fillColor(C.GRAY_TEXT);
+    doc.text(c.desc, cColXs3[1] + 3, py + 7, { width: cColWs3[1] - 6 });
+    doc.text(c.fase, cColXs3[2] + 3, py + 7, { width: cColWs3[2] - 6 });
+    const ec = c.est === 'Cumple' ? '#28a745' : c.est === 'En proceso' ? '#fd7e14' : '#dc3545';
+    doc.roundedRect(cColXs3[3] + 3, py + 5, cColWs3[3] - 6, 13, 3).fill(ec);
+    doc.fontSize(7).font('Helvetica-Bold').fillColor(C.WHITE).text(c.est, cColXs3[3] + 3, py + 7, { width: cColWs3[3] - 6, align: 'center' });
+    doc.fontSize(7.5).font('Helvetica').fillColor(C.GRAY_TEXT).text(c.obs, cColXs3[4] + 3, py + 7, { width: cColWs3[4] - 6 });
+    py += rowH;
+  }
+
+  py += 10;
+  doc.fontSize(7.5).font('Helvetica').fillColor('#888888')
+     .text('* Documento de muestra. El informe real incluye los 24 pasos completos del PESV con trazabilidad bidireccional, carga de evidencias, nivel de complejidad automatico y PDF oficial para la Superintendencia de Transporte.', P.m, py, { width: P.w - P.m * 2 });
+  doc.rect(0, P.h - 28, P.w, 28).fill(C.GREEN_DARK);
+  doc.fontSize(7.5).font('Helvetica').fillColor(C.GOLD)
+     .text('MUESTRA · SG-SST Automatizado · https://sst.sagisas.co/', 0, P.h - 17, { width: P.w, align: 'center' });
+
   doc.flushPages();
   doc.end();
 
