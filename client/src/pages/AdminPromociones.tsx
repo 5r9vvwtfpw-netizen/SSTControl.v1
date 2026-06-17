@@ -61,6 +61,7 @@ import {
   TrendingUp,
   Gift,
   Eye,
+  Download,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -273,24 +274,34 @@ export default function AdminPromociones() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Promociones y Referidos</h1>
           <p className="text-muted-foreground">Gestión del plugin de promociones (Lobby Digital)</p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={() => {
-            refetchStats();
-            refetchCoupons();
-            refetchReferrals();
-            refetchContracts();
-          }}
-          data-testid="button-refresh-all"
-        >
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Actualizar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => window.open('/api/propuesta-comercial/pdf', '_blank')}
+            data-testid="button-download-propuesta"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Propuesta Comercial PDF
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              refetchStats();
+              refetchCoupons();
+              refetchReferrals();
+              refetchContracts();
+            }}
+            data-testid="button-refresh-all"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Actualizar
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
