@@ -179,3 +179,9 @@ id = "bW1qv2v13KNxJ1_HusatG"
 uri = "file://client/public/plan-mejoramiento-v2.pdf"
 type = "pdf"
 title = "Plan de Mejoramiento Consolidado — Vista previa"
+
+[[outputs]]
+id = "dhbJ6ZPyQmX24lfbg0JRc"
+uri = "file://propuesta-comercial.pdf"
+type = "pdf"
+title = "Propuesta Comercial SST Colombia"
