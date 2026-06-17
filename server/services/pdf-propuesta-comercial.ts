@@ -189,7 +189,7 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
     'Brigadas de emergencia',
     'Licenciado SST con firma digital',
     'Informes automaticos en PDF',
-    'Multi-empresa y multi-sede',
+    'Plan anual de trabajo automatizado',
     'Control de mantenimiento vehicular',
     'Objetivos e indicadores SST',
   ];
