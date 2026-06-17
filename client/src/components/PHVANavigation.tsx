@@ -73,6 +73,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
       title: "Administración Proveedor",
       items: [
         { label: "Panel de Facturación", path: "/dashboard-facturacion" },
+        { label: "Propuesta Comercial", path: "/propuesta-comercial" },
         { label: "Promociones", path: "/admin-promociones" },
         { label: "Admin Portales", path: "/admin-portales" },
         { label: "Actividad Login", path: "/admin-login-activity" },

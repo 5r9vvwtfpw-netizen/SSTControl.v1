@@ -147,6 +147,7 @@ import TicketsSoporte from "@/pages/TicketsSoporte";
 import AdminTicketsSoporte from "@/pages/AdminTicketsSoporte";
 import AdminUsuariosSoporte from "@/pages/AdminUsuariosSoporte";
 import AdminPromociones from "@/pages/AdminPromociones";
+import PropuestaComercial from "@/pages/PropuestaComercial";
 import AdminPortales from "@/pages/AdminPortales";
 import AdminLoginActivity from "@/pages/AdminLoginActivity";
 import CompanySedes from "@/pages/CompanySedes";
@@ -315,6 +316,7 @@ function Router() {
       <ProtectedRoute path="/admin-tickets" component={AdminTicketsSoporte} />
       <ProtectedRoute path="/admin-usuarios-soporte" component={AdminUsuariosSoporte} />
       <ProtectedRoute path="/admin-promociones" component={AdminPromociones} />
+      <ProtectedRoute path="/propuesta-comercial" component={PropuestaComercial} />
       <ProtectedRoute path="/admin-portales" component={AdminPortales} />
       <ProtectedRoute path="/admin-login-activity" component={AdminLoginActivity} />
       <ProtectedRoute path="/sedes" component={CompanySedes} />
