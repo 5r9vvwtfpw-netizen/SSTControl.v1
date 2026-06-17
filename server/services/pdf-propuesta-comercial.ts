@@ -33,13 +33,13 @@ export interface PropuestaParams {
 }
 
 export async function generatePropuestaComercialPdf(params: PropuestaParams = {}): Promise<Buffer> {
-  const web            = params.web            || 'www.sst-colombia.com.co';
+  const web            = params.web            || 'https://sst.sagisas.co/';
   const email          = params.email          || 'admin@sst-colombia.com';
   const whatsapp       = params.whatsapp       || '3115552054';
   const tagline        = params.tagline        || 'Sin papeles, sin carpetas, sin hojas de cálculo. Todo automatizado y con trazabilidad completa.';
   const empresa        = params.empresa        || '';
   const nit            = params.nit            || '';
-  const ciudad         = params.ciudad         || 'Bogotá D.C., Colombia';
+  const ciudad         = params.ciudad         || 'Medellín, Colombia';
   const nombreProveedor = params.nombreProveedor || 'SADGI S.A.S.';
   const nitProveedor   = params.nitProveedor   || '902.036.337-4';
 
