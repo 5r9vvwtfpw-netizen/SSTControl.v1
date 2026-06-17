@@ -69,12 +69,22 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
   doc.rect(0, 0, W, headerH).fill(C.GREEN_DARK);
   doc.rect(0, headerH - 4, W, 4).fill(C.GOLD);
 
-  // Badge
+  // Badge con bandera de Colombia dibujada
   const badgeW = 200;
   const badgeX = (W - badgeW) / 2;
   doc.roundedRect(badgeX, 18, badgeW, 22, 11).fill('rgba(255,255,255,0.12)');
+
+  // Bandera Colombia: franjas horizontales (amarillo 50%, azul 25%, rojo 25%)
+  const flagX = badgeX + 14;
+  const flagY = 23;
+  const flagW = 20;
+  const flagH = 12;
+  doc.rect(flagX, flagY, flagW, flagH * 0.5).fill('#FCD116');          // Amarillo
+  doc.rect(flagX, flagY + flagH * 0.5, flagW, flagH * 0.25).fill('#003087'); // Azul
+  doc.rect(flagX, flagY + flagH * 0.75, flagW, flagH * 0.25).fill('#CE1126'); // Rojo
+
   doc.fontSize(8).font('Helvetica').fillColor(C.WHITE)
-     .text('🇨🇴  Sistema Inteligente SST', badgeX, 24, { width: badgeW, align: 'center' });
+     .text('Sistema Inteligente SST', badgeX + 38, 24, { width: badgeW - 42 });
 
   // Título
   doc.fontSize(28).font('Helvetica-Bold').fillColor(C.WHITE)
@@ -83,7 +93,7 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
      .text('SG-SST Automatizado', M, 82, { width: W - M * 2, align: 'center' });
 
   doc.fontSize(9.5).font('Helvetica').fillColor('#b8d4c0')
-     .text('Plataforma colombiana de cumplimiento normativo en Seguridad y Salud en el Trabajo', M, 118, {
+     .text('Plataforma de cumplimiento normativo en Seguridad y Salud en el Trabajo', M, 118, {
        width: W - M * 2, align: 'center',
      });
 
