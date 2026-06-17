@@ -128,21 +128,21 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
   const colW = (W - M * 2 - 24) / 3;
   const cols = [
     {
-      icon: '📋',
+      label: 'MIN',
       title: 'Informe Ministerio\nde Trabajo',
-      body: 'Autoevaluación SG-SST según Res. 0312/2019 con puntaje PHVA, valoración crítico/aceptable y detalle de los 62 estándares mínimos. Generado en PDF listo para presentar.',
+      body: 'Autoevaluacion SG-SST segun Res. 0312/2019 con puntaje PHVA, valoracion critico/aceptable y detalle de los 62 estandares minimos. Generado en PDF listo para presentar.',
       color: C.GREEN_DARK,
     },
     {
-      icon: '🚗',
+      label: 'PESV',
       title: 'Informe\nSupertransporte PESV',
-      body: 'Plan Estratégico de Seguridad Vial (Res. 40595/2022) con 24 pasos P-H-V-A, cumplimiento por fase y trazabilidad bidireccional. PDF oficial para la Superintendencia.',
+      body: 'Plan Estrategico de Seguridad Vial (Res. 40595/2022) con 24 pasos P-H-V-A, cumplimiento por fase y trazabilidad bidireccional. PDF oficial para la Superintendencia.',
       color: C.GREEN_MID,
     },
     {
-      icon: '👥',
+      label: 'EMP',
       title: 'Portal del\nEmpleado',
-      body: 'Los trabajadores consultan sus exámenes médicos, EPP, capacitaciones y reportan incidentes desde cualquier dispositivo, sin necesidad de instalar nada.',
+      body: 'Los trabajadores consultan sus examenes medicos, EPP, capacitaciones y reportan incidentes desde cualquier dispositivo, sin necesidad de instalar nada.',
       color: C.GOLD,
     },
   ];
@@ -152,10 +152,17 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
     const cardH = 148;
     doc.roundedRect(cx, colY, colW, cardH, 7).fill(C.GRAY_LIGHT);
     doc.rect(cx, colY, colW, 5).fill(col.color);
-    doc.fontSize(20).fillColor(col.color)
-       .text(col.icon, cx + 10, colY + 14, { width: colW - 20, align: 'center', lineBreak: false });
+
+    // Icono circular con iniciales
+    const circR = 16;
+    const circX = cx + colW / 2;
+    const circY = colY + 22;
+    doc.circle(circX, circY, circR).fill(col.color);
+    doc.fontSize(8).font('Helvetica-Bold').fillColor(C.WHITE)
+       .text(col.label, circX - circR, circY - 5, { width: circR * 2, align: 'center' });
+
     doc.fontSize(9.5).font('Helvetica-Bold').fillColor(C.BLACK)
-       .text(col.title, cx + 8, colY + 38, { width: colW - 16, align: 'center' });
+       .text(col.title, cx + 8, colY + 44, { width: colW - 16, align: 'center' });
     const textY = doc.y + 6;
     doc.fontSize(8).font('Helvetica').fillColor(C.GRAY_TEXT)
        .text(col.body, cx + 10, textY, { width: colW - 20, align: 'justify' });
@@ -173,18 +180,18 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
      .text(tagline, M, featY + 38, { width: W - M * 2, align: 'center' });
 
   const features = [
-    { icon: '✅', label: 'Ciclo PHVA completo' },
-    { icon: '✅', label: 'Matriz de peligros e inspecciones' },
-    { icon: '✅', label: 'Accidentalidad e incidentes' },
-    { icon: '✅', label: 'Exámenes médicos ocupacionales' },
-    { icon: '✅', label: 'Capacitaciones y cronograma anual' },
-    { icon: '✅', label: 'COPASST y Comité de Convivencia' },
-    { icon: '✅', label: 'Brigadas de emergencia' },
-    { icon: '✅', label: 'Licenciado SST con firma digital' },
-    { icon: '✅', label: 'Informes automáticos en PDF' },
-    { icon: '✅', label: 'Multi-empresa y multi-sede' },
-    { icon: '✅', label: 'Control de mantenimiento vehicular' },
-    { icon: '✅', label: 'Objetivos e indicadores SST' },
+    'Ciclo PHVA completo',
+    'Matriz de peligros e inspecciones',
+    'Accidentalidad e incidentes',
+    'Examenes medicos ocupacionales',
+    'Capacitaciones y cronograma anual',
+    'COPASST y Comite de Convivencia',
+    'Brigadas de emergencia',
+    'Licenciado SST con firma digital',
+    'Informes automaticos en PDF',
+    'Multi-empresa y multi-sede',
+    'Control de mantenimiento vehicular',
+    'Objetivos e indicadores SST',
   ];
 
   const fColW = (W - M * 2) / 3;
@@ -195,10 +202,10 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
     const col2 = fi % 3;
     const fy = fStartY + row * 22;
     const fx = M + col2 * fColW;
-    doc.fontSize(8).font('Helvetica').fillColor(C.GREEN_ACCENT)
-       .text(f.icon, fx, fy, { width: 14, lineBreak: false });
-    doc.fillColor(C.WHITE)
-       .text(f.label, fx + 16, fy, { width: fColW - 20, lineBreak: false });
+    // Punto verde como marcador
+    doc.circle(fx + 4, fy + 4, 3).fill(C.GREEN_ACCENT);
+    doc.fontSize(8).font('Helvetica').fillColor(C.WHITE)
+       .text(f, fx + 12, fy, { width: fColW - 16, lineBreak: false });
     fi++;
   }
 
