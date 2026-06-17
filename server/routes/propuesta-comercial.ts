@@ -5,7 +5,7 @@ export function registerPropuestaComercialRoutes(app: Express) {
   app.get(
     "/api/propuesta-comercial/pdf",
     requireAuth,
-    requireRole(["superadmin"]),
+    requireSuperadmin,
     async (_req, res) => {
       try {
         const { generatePropuestaComercialPdf } = await import(
