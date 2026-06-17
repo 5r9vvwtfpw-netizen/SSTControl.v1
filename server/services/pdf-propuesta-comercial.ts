@@ -34,8 +34,8 @@ export interface PropuestaParams {
 
 export async function generatePropuestaComercialPdf(params: PropuestaParams = {}): Promise<Buffer> {
   const web            = params.web            || 'www.sst-colombia.com.co';
-  const email          = params.email          || 'contacto@sst-colombia.com.co';
-  const whatsapp       = params.whatsapp       || '+57 300 000 0000';
+  const email          = params.email          || 'admin@sst-colombia.com';
+  const whatsapp       = params.whatsapp       || '3115552054';
   const tagline        = params.tagline        || 'Sin papeles, sin carpetas, sin hojas de cálculo. Todo automatizado y con trazabilidad completa.';
   const empresa        = params.empresa        || '';
   const nit            = params.nit            || '';
