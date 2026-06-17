@@ -30,6 +30,8 @@ export interface PropuestaParams {
   ciudad?: string;
   nombreProveedor?: string;
   nitProveedor?: string;
+  contactName?: string;
+  precioPorTrabajador?: string;
 }
 
 export async function generatePropuestaComercialPdf(params: PropuestaParams = {}): Promise<Buffer> {
@@ -40,8 +42,10 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
   const empresa        = params.empresa        || '';
   const nit            = params.nit            || '';
   const ciudad         = params.ciudad         || 'Medellín, Colombia';
-  const nombreProveedor = params.nombreProveedor || 'SADGI S.A.S.';
-  const nitProveedor   = params.nitProveedor   || '902.036.337-4';
+  const nombreProveedor    = params.nombreProveedor    || 'SADGI S.A.S.';
+  const nitProveedor       = params.nitProveedor       || '902.036.337-4';
+  const contactName        = params.contactName        || 'Adriana Diaz';
+  const precioPorTrabajador = params.precioPorTrabajador || '$10.000';
 
   const doc = new PDFDocument({
     size: 'A4',
@@ -473,6 +477,103 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
   doc.rect(0, P.h - 28, P.w, 28).fill(C.GREEN_DARK);
   doc.fontSize(7.5).font('Helvetica').fillColor(C.GOLD)
      .text('MUESTRA · SG-SST Automatizado · https://sst.sagisas.co/', 0, P.h - 17, { width: P.w, align: 'center' });
+
+  // ── PÁGINA 4: PRECIO DE SUSCRIPCIÓN ─────────────────────────────────────────
+  doc.addPage({ size: 'LETTER', margin: 0 });
+
+  // Bloque hero de precio
+  const priceHeroH = 210;
+  doc.rect(0, 0, P.w, priceHeroH).fill(C.GREEN_DARK);
+  doc.rect(0, priceHeroH - 4, P.w, 4).fill(C.GOLD);
+
+  doc.fontSize(11).font('Helvetica-Bold').fillColor('#b8d4c0')
+     .text('PRECIO DE SUSCRIPCION', 0, 28, { width: P.w, align: 'center' });
+  doc.fontSize(64).font('Helvetica-Bold').fillColor(C.WHITE)
+     .text(precioPorTrabajador, 0, 48, { width: P.w, align: 'center', lineBreak: false });
+  doc.fontSize(22).font('Helvetica-Bold').fillColor(C.WHITE)
+     .text('COP por trabajador / mes', 0, 124, { width: P.w, align: 'center' });
+  doc.fontSize(9).font('Helvetica').fillColor('#b8d4c0')
+     .text('El precio se ajusta automaticamente al numero real de trabajadores activos registrados en el sistema', P.m, 158, { width: P.w - P.m * 2, align: 'center' });
+
+  // Barra "TODO INCLUIDO"
+  const barY = priceHeroH;
+  doc.rect(0, barY, P.w, 28).fill(C.GREEN_MID);
+  doc.fontSize(10).font('Helvetica-Bold').fillColor(C.WHITE)
+     .text('TODO INCLUIDO EN UN SOLO PRECIO POR TRABAJADOR', P.m, barY + 9, { width: P.w - P.m * 2 });
+
+  // Columnas de beneficios
+  const benefY = barY + 42;
+  const halfW  = (P.w - P.m * 2) / 2 - 10;
+  const leftX  = P.m;
+  const rightX = P.m + halfW + 20;
+
+  const leftBenef = [
+    'Acceso completo a todos los modulos SST (PHVA + 62 estandares Res. 0312/2019)',
+    'Portal del empleado GRATIS e ilimitado para todos los trabajadores',
+    'Actualizaciones normativas automaticas ante cambios de regulacion',
+    'Soporte tecnico dedicado con chat en tiempo real',
+  ];
+  const rightBenef = [
+    'Modulo PESV completo (Res. 40595/2022) con gestion vehicular y GPS',
+    'Portal del Profesional SST/LSO incluido sin costo adicional',
+    'Almacenamiento ilimitado de documentos en la nube (AWS S3)',
+    'Infraestructura AWS | Cifrado AES-256 | Respaldos automaticos | Alta disponibilidad',
+  ];
+
+  let bly = benefY;
+  for (const b of leftBenef) {
+    doc.circle(leftX + 5, bly + 5, 3).fill(C.GREEN_ACCENT);
+    const before = doc.y;
+    doc.fontSize(8.5).font('Helvetica').fillColor(C.GRAY_TEXT)
+       .text(b, leftX + 14, bly, { width: halfW - 16 });
+    bly = doc.y + 6;
+  }
+
+  let bry = benefY;
+  for (const b of rightBenef) {
+    doc.circle(rightX + 5, bry + 5, 3).fill(C.GREEN_ACCENT);
+    doc.fontSize(8.5).font('Helvetica').fillColor(C.GRAY_TEXT)
+       .text(b, rightX + 14, bry, { width: halfW - 16 });
+    bry = doc.y + 6;
+  }
+
+  // Dos tarjetas inferiores
+  const cardTopY = Math.max(bly, bry) + 20;
+  const cardW    = (P.w - P.m * 2 - 16) / 2;
+  const cardH    = 110;
+
+  // Tarjeta izquierda: Prueba gratuita
+  doc.rect(leftX, cardTopY, cardW, cardH).fill('#f0f7f2');
+  doc.rect(leftX, cardTopY, cardW, 3).fill(C.GREEN_ACCENT);
+  doc.fontSize(10).font('Helvetica-Bold').fillColor(C.GREEN_DARK)
+     .text('PRUEBA GRATUITA 7 DIAS', leftX, cardTopY + 14, { width: cardW, align: 'center' });
+  const trialItems = ['Sin tarjeta de credito', 'Sin compromiso de permanencia', 'Acceso completo a todos los modulos'];
+  let ty = cardTopY + 32;
+  for (const t of trialItems) {
+    doc.fontSize(8.5).font('Helvetica').fillColor(C.GRAY_TEXT).text(t, leftX, ty, { width: cardW, align: 'center' });
+    ty += 14;
+  }
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(C.GREEN_MID)
+     .text(web, leftX, ty + 4, { width: cardW, align: 'center' });
+
+  // Tarjeta derecha: Contáctenos
+  const rightCardX = leftX + cardW + 16;
+  doc.rect(rightCardX, cardTopY, cardW, cardH).fill('#f0f7f2');
+  doc.rect(rightCardX, cardTopY, cardW, 3).fill(C.GOLD);
+  doc.fontSize(10).font('Helvetica-Bold').fillColor(C.GREEN_DARK)
+     .text('CONTACTENOS HOY', rightCardX, cardTopY + 14, { width: cardW, align: 'center' });
+  doc.fontSize(11).font('Helvetica-Bold').fillColor(C.BLACK)
+     .text(contactName, rightCardX, cardTopY + 32, { width: cardW, align: 'center' });
+  doc.fontSize(9).font('Helvetica').fillColor(C.GRAY_TEXT)
+     .text(`Tel. ${whatsapp}`, rightCardX, cardTopY + 50, { width: cardW, align: 'center' });
+  doc.text(email, rightCardX, cardTopY + 64, { width: cardW, align: 'center' });
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(C.GREEN_MID)
+     .text(web, rightCardX, cardTopY + 80, { width: cardW, align: 'center' });
+
+  // Footer
+  doc.rect(0, P.h - 28, P.w, 28).fill(C.GREEN_DARK);
+  doc.fontSize(7.5).font('Helvetica').fillColor(C.GOLD)
+     .text(`${nombreProveedor} · NIT ${nitProveedor} · ${ciudad}`, 0, P.h - 17, { width: P.w, align: 'center' });
 
   doc.flushPages();
   doc.end();
