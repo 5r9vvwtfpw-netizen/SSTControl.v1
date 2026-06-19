@@ -26678,6 +26678,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userRole = req.user!.role;
       const isAdmin = hasGlobalAccess(userRole);
+      const isLso = userRole === 'lso';
       
       let companyId: string;
       if (isAdmin) {
@@ -26686,6 +26687,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
         companyId = requestedCompanyId as string;
+      } else if (isLso) {
+        // LSO: look up companyId from the evaluacion linked to this respuesta (no company filter needed)
+        const [rawRespuesta] = await db.select().from(schema.respuestasEstandares)
+          .where(eq(schema.respuestasEstandares.id, req.params.id));
+        if (!rawRespuesta) {
+          return res.status(404).send("Respuesta no encontrada");
+        }
+        const evaluacion = await storage.getEvaluacionSstById(rawRespuesta.evaluacionId);
+        if (!evaluacion) {
+          return res.status(404).send("Evaluación no encontrada");
+        }
+        companyId = evaluacion.companyId;
       } else {
         if (!req.user!.companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
