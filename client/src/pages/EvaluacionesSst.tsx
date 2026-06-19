@@ -136,8 +136,12 @@ export default function EvaluacionesSst() {
     },
   });
 
+  const evaluacionesQueryUrl = isLso && lsoPreselectedCompanyId
+    ? `/api/evaluaciones-sst?companyId=${lsoPreselectedCompanyId}`
+    : "/api/evaluaciones-sst";
+
   const { data: evaluaciones = [], isLoading } = useQuery<EvaluacionSst[]>({
-    queryKey: ["/api/evaluaciones-sst"],
+    queryKey: [evaluacionesQueryUrl],
   });
 
   const { data: companies = [], isLoading: companiesLoading, error: companiesError } = useQuery<any[]>({
@@ -241,6 +245,9 @@ export default function EvaluacionesSst() {
       }
 
       queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-sst"] });
+      if (isLso && lsoPreselectedCompanyId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/evaluaciones-sst?companyId=${lsoPreselectedCompanyId}`] });
+      }
       setDialogOpen(false);
       form.reset();
       setImportarAnterior(true);
@@ -320,7 +327,7 @@ export default function EvaluacionesSst() {
   }, [companies]);
 
   const companyVaults = useMemo(() => {
-    if (!isSuperAdmin) return [];
+    if (!isSuperAdmin && !isLso) return [];
     const grouped: Record<string, { companyId: string; companyName: string; evaluaciones: EvaluacionSst[]; latestScore: number; latestStatus: string; years: number[] }> = {};
     for (const ev of evaluaciones) {
       const cId = ev.companyId;
