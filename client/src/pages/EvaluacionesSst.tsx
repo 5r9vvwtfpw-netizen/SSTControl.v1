@@ -94,14 +94,29 @@ export default function EvaluacionesSst() {
   const [yearFilter, setYearFilter] = useState<string>("todos");
 
   const isSuperAdmin = user?.role === "superadmin";
-  
+  const isLso = user?.role === "lso";
+
+  // Leer empresa preseleccionada desde URL (cuando LSO entra desde su portal)
+  const lsoPreselectedCompanyId = useMemo(() => {
+    if (!isLso) return null;
+    return new URLSearchParams(window.location.search).get("empresa");
+  }, [isLso]);
+
+  // Auto-seleccionar empresa en vault cuando LSO entra desde el portal
+  useEffect(() => {
+    if (isLso && lsoPreselectedCompanyId) {
+      setSelectedVaultCompanyId(lsoPreselectedCompanyId);
+    }
+  }, [isLso, lsoPreselectedCompanyId]);
+
   // Estado para panel de diagnóstico de estándares (solo superadmin)
   const [diagnosticoOpen, setDiagnosticoOpen] = useState(false);
   const [diagnosticoData, setDiagnosticoData] = useState<any>(null);
   const [corrigiendo, setCorrigiendo] = useState(false);
   // SECURITY: Solo superadmin tiene acceso global para seleccionar empresas
-  // admin es rol de empresa, no global
-  const isAdmin = isSuperAdmin;
+  // LSO también puede gestionar evaluaciones de sus empresas asignadas
+  const isAdmin = isSuperAdmin || isLso;
+  const isVaultMode = isSuperAdmin || isLso;
   const formSchema = createFormSchema(isAdmin);
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -150,9 +165,14 @@ export default function EvaluacionesSst() {
   const targetCompany = useMemo(() => {
     if (!companies.length) return null;
     
-    // Para admin, usar la empresa seleccionada en el formulario
+    // Para admin (superadmin/LSO), usar la empresa seleccionada en el formulario
     if (isAdmin && selectedCompanyId) {
       return companies.find((c: any) => c.id === selectedCompanyId);
+    }
+    
+    // Para LSO con empresa preseleccionada desde el portal
+    if (isLso && selectedVaultCompanyId) {
+      return companies.find((c: any) => c.id === selectedVaultCompanyId);
     }
     
     // Para no-admin, usar la empresa del usuario
@@ -161,7 +181,7 @@ export default function EvaluacionesSst() {
     }
     
     return null;
-  }, [companies, isAdmin, selectedCompanyId, user?.companyId]);
+  }, [companies, isAdmin, isLso, selectedCompanyId, selectedVaultCompanyId, user?.companyId]);
 
   // Calcular el tipo de empresa basado EXCLUSIVAMENTE en numberOfWorkers y riskLevel
   // IMPORTANTE: El plan de suscripción NO afecta el capítulo - solo afecta facturación
@@ -185,16 +205,20 @@ export default function EvaluacionesSst() {
 
   // Para usuarios no-superadmin, establecer automáticamente su companyId
   useEffect(() => {
-    if (!isSuperAdmin && user?.companyId && dialogOpen) {
+    if (!isSuperAdmin && !isLso && user?.companyId && dialogOpen) {
       form.setValue("companyId", user.companyId);
     }
-  }, [isSuperAdmin, user?.companyId, dialogOpen, form]);
+    // Para LSO, usar la empresa del vault preseleccionada
+    if (isLso && selectedVaultCompanyId && dialogOpen) {
+      form.setValue("companyId", selectedVaultCompanyId);
+    }
+  }, [isSuperAdmin, isLso, user?.companyId, selectedVaultCompanyId, dialogOpen, form]);
 
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
-      // SECURITY: Solo superadmin tiene acceso global para crear evaluaciones en otras empresas
-      const isSuperadmin = user?.role === 'superadmin';
-      const payload = isSuperadmin && data.companyId 
+      // SECURITY: Superadmin y LSO pueden crear evaluaciones en empresas asignadas
+      const canSelectCompany = user?.role === 'superadmin' || user?.role === 'lso';
+      const payload = canSelectCompany && data.companyId 
         ? { ...data, companyId: data.companyId }
         : data;
       const res = await apiRequest("POST", "/api/evaluaciones-sst", payload);
@@ -728,14 +752,14 @@ export default function EvaluacionesSst() {
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder={isSuperAdmin && !selectedVaultCompanyId ? "Buscar empresa..." : "Buscar por año, responsable..."}
+            placeholder={isVaultMode && !selectedVaultCompanyId ? "Buscar empresa..." : "Buscar por año, responsable..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
             data-testid="input-search"
           />
         </div>
-        {isSuperAdmin && selectedVaultCompanyId && selectedVault && (
+        {isVaultMode && selectedVaultCompanyId && selectedVault && (
           <Select value={yearFilter} onValueChange={setYearFilter}>
             <SelectTrigger className="w-[140px]" data-testid="select-year-filter">
               <Calendar className="h-4 w-4 mr-2" />
@@ -755,7 +779,7 @@ export default function EvaluacionesSst() {
         <div className="flex items-center justify-center py-12">
           <p className="text-muted-foreground">Cargando evaluaciones...</p>
         </div>
-      ) : isSuperAdmin && !selectedVaultCompanyId ? (
+      ) : isSuperAdmin && !selectedVaultCompanyId && !lsoPreselectedCompanyId ? (
         <>
           {filteredVaults.length === 0 ? (
             <Card>
@@ -836,21 +860,25 @@ export default function EvaluacionesSst() {
             </>
           )}
         </>
-      ) : isSuperAdmin && selectedVaultCompanyId && selectedVault ? (
+      ) : isVaultMode && selectedVaultCompanyId && selectedVault ? (
         <>
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
-                setSelectedVaultCompanyId(null);
-                setSearchTerm("");
-                setYearFilter("todos");
+                if (isLso && lsoPreselectedCompanyId) {
+                  setLocation("/portal-licenciado");
+                } else {
+                  setSelectedVaultCompanyId(null);
+                  setSearchTerm("");
+                  setYearFilter("todos");
+                }
               }}
               data-testid="button-back-to-vaults"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
+              {isLso && lsoPreselectedCompanyId ? "Volver al Portal" : "Volver"}
             </Button>
             <div className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-muted-foreground" />

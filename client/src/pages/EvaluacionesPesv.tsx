@@ -56,7 +56,22 @@ export default function EvaluacionesPesv() {
   const [yearFilter, setYearFilter] = useState<string>("todos");
 
   const isSuperAdmin = user?.role === "superadmin";
-  const isAdmin = isSuperAdmin;
+  const isLso = user?.role === "lso";
+
+  // Leer empresa preseleccionada desde URL (cuando LSO entra desde su portal)
+  const lsoPreselectedCompanyId = useMemo(() => {
+    if (!isLso) return null;
+    return new URLSearchParams(window.location.search).get("empresa");
+  }, [isLso]);
+
+  useEffect(() => {
+    if (isLso && lsoPreselectedCompanyId) {
+      setSelectedVaultCompanyId(lsoPreselectedCompanyId);
+    }
+  }, [isLso, lsoPreselectedCompanyId]);
+
+  const isAdmin = isSuperAdmin || isLso;
+  const isVaultMode = isSuperAdmin || isLso;
   const formSchema = createFormSchema(isAdmin);
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -95,7 +110,7 @@ export default function EvaluacionesPesv() {
   };
 
   useEffect(() => {
-    if (!isSuperAdmin && user?.companyId && dialogOpen) {
+    if (!isSuperAdmin && !isLso && user?.companyId && dialogOpen) {
       form.setValue("companyId", user.companyId);
       if (currentCompany?.numberOfVehicles != null) {
         const vehiculos = currentCompany.numberOfVehicles;
@@ -105,7 +120,19 @@ export default function EvaluacionesPesv() {
         form.setValue("nivel", nivel);
       }
     }
-  }, [isSuperAdmin, user?.companyId, dialogOpen, form, currentCompany]);
+    // Para LSO, usar la empresa del vault preseleccionada
+    if (isLso && selectedVaultCompanyId && dialogOpen) {
+      form.setValue("companyId", selectedVaultCompanyId);
+      const company = companies.find((c: any) => c.id === selectedVaultCompanyId);
+      if (company?.numberOfVehicles != null) {
+        const vehiculos = company.numberOfVehicles;
+        const nivel = calcularNivelPesv(vehiculos);
+        form.setValue("numeroVehiculos", vehiculos);
+        form.setValue("numeroConductores", vehiculos);
+        form.setValue("nivel", nivel);
+      }
+    }
+  }, [isSuperAdmin, isLso, user?.companyId, selectedVaultCompanyId, dialogOpen, form, currentCompany, companies]);
 
   useEffect(() => {
     if (isSuperAdmin && dialogOpen) {
@@ -125,8 +152,8 @@ export default function EvaluacionesPesv() {
 
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
-      const isSuperadmin = user?.role === 'superadmin';
-      const payload = isSuperadmin && data.companyId 
+      const canSelectCompany = user?.role === 'superadmin' || user?.role === 'lso';
+      const payload = canSelectCompany && data.companyId 
         ? { ...data, companyId: data.companyId }
         : data;
       const res = await apiRequest("POST", "/api/evaluaciones-pesv", payload);
@@ -593,14 +620,14 @@ export default function EvaluacionesPesv() {
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder={isSuperAdmin && !selectedVaultCompanyId ? "Buscar empresa..." : "Buscar por año, responsable..."}
+            placeholder={isVaultMode && !selectedVaultCompanyId ? "Buscar empresa..." : "Buscar por año, responsable..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
             data-testid="input-search"
           />
         </div>
-        {isSuperAdmin && selectedVaultCompanyId && selectedVault && (
+        {isVaultMode && selectedVaultCompanyId && selectedVault && (
           <Select value={yearFilter} onValueChange={setYearFilter}>
             <SelectTrigger className="w-[140px]" data-testid="select-year-filter">
               <Calendar className="h-4 w-4 mr-2" />
@@ -628,7 +655,7 @@ export default function EvaluacionesPesv() {
             </Card>
           ))}
         </div>
-      ) : isSuperAdmin && !selectedVaultCompanyId ? (
+      ) : isSuperAdmin && !selectedVaultCompanyId && !lsoPreselectedCompanyId ? (
         <>
           {filteredVaults.length === 0 ? (
             <Card>
@@ -708,17 +735,25 @@ export default function EvaluacionesPesv() {
             </>
           )}
         </>
-      ) : isSuperAdmin && selectedVaultCompanyId && selectedVault ? (
+      ) : isVaultMode && selectedVaultCompanyId && selectedVault ? (
         <>
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { setSelectedVaultCompanyId(null); setSearchTerm(""); setYearFilter("todos"); }}
+              onClick={() => {
+                if (isLso && lsoPreselectedCompanyId) {
+                  setLocation("/portal-licenciado");
+                } else {
+                  setSelectedVaultCompanyId(null);
+                  setSearchTerm("");
+                  setYearFilter("todos");
+                }
+              }}
               data-testid="button-back-to-vaults"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
+              {isLso && lsoPreselectedCompanyId ? "Volver al Portal" : "Volver"}
             </Button>
             <div className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-muted-foreground" />

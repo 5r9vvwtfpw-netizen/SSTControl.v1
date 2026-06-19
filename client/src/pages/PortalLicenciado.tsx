@@ -66,7 +66,7 @@ import {
   CircleDot,
   FileBarChart
 } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import HelpVideoButton from "@/components/HelpVideoButton";
 import { useToast } from "@/hooks/use-toast";
@@ -889,6 +889,7 @@ interface HistorialEmpresa {
 
 function EmpresasTab() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const { data: empresas = [], isLoading, isError, error } = useQuery<AssignedCompany[]>({
     queryKey: ["/api/portal-licenciado/empresas"],
   });
@@ -1064,23 +1065,45 @@ function EmpresasTab() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          data-testid={`button-message-${empresa.id}`}
-                          onClick={() => {
-                            if (!empresa.adminUserId) {
-                              toast({ title: "Sin destinatario", description: "Esta empresa no tiene un administrador registrado para enviar mensajes.", variant: "destructive" });
-                              return;
-                            }
-                            setMessageTarget(empresa);
-                            setMsgSubject("");
-                            setMsgContent("");
-                            setMsgPriority("normal");
-                          }}
-                        >
-                          <MessageSquare className="h-4 w-4 mr-1" />
-                          Mensaje
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            data-testid={`button-sst-${empresa.id}`}
+                            onClick={() => setLocation(`/evaluaciones-sst?empresa=${empresa.id}`)}
+                          >
+                            <FileCheck className="h-4 w-4 mr-1" />
+                            Eval. SST
+                          </Button>
+                          {(empresa.numberOfVehicles ?? 0) > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              data-testid={`button-pesv-${empresa.id}`}
+                              onClick={() => setLocation(`/pesv/evaluaciones?empresa=${empresa.id}`)}
+                            >
+                              <Car className="h-4 w-4 mr-1" />
+                              PESV
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            data-testid={`button-message-${empresa.id}`}
+                            onClick={() => {
+                              if (!empresa.adminUserId) {
+                                toast({ title: "Sin destinatario", description: "Esta empresa no tiene un administrador registrado para enviar mensajes.", variant: "destructive" });
+                                return;
+                              }
+                              setMessageTarget(empresa);
+                              setMsgSubject("");
+                              setMsgContent("");
+                              setMsgPriority("normal");
+                            }}
+                          >
+                            <MessageSquare className="h-4 w-4 mr-1" />
+                            Mensaje
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
