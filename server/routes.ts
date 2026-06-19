@@ -26299,11 +26299,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/evaluaciones-sst/:id', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       let evaluacion;
       if (isAdmin) {
-        // Admin: get evaluation by ID without company filter
+        // Admin/LSO: get evaluation by ID without company filter
         evaluacion = await storage.getEvaluacionSstById(req.params.id);
       } else {
         // Non-admin: get evaluation with company filter
@@ -26331,7 +26331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { companyId } = req.params;
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       // Validar acceso a la empresa - non-admin users can only see their own company
       if (!isAdmin && req.user!.companyId !== companyId) {
@@ -26386,7 +26386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertEvaluacionSstSchema.parse(req.body);
       
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       let companyId: string;
       if (isAdmin) {
@@ -26455,11 +26455,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertEvaluacionSstSchema.partial().parse(req.body);
       
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       let companyId: string;
       if (isAdmin) {
-        // Admin: get companyId from existing evaluacion
+        // Admin/LSO: get companyId from existing evaluacion
         const existing = await storage.getEvaluacionSstById(req.params.id);
         if (!existing) {
           return res.status(404).send("Evaluación no encontrada");
@@ -26512,11 +26512,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/evaluaciones-sst/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       let companyId: string;
       if (isAdmin) {
-        // Admin: get companyId from existing evaluacion
+        // Admin/LSO: get companyId from existing evaluacion
         const existing = await storage.getEvaluacionSstById(req.params.id);
         if (!existing) {
           return res.status(404).send("Evaluación no encontrada");
@@ -26542,7 +26542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/evaluaciones-sst/:id/respuestas', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       let companyId: string;
       if (isAdmin) {
@@ -26638,7 +26638,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/evaluaciones-sst/:id/respuestas', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       let companyId: string;
       if (isAdmin) {
@@ -26733,7 +26733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/evaluaciones-sst/:id/acciones', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       let companyId: string;
       if (isAdmin) {
@@ -26761,7 +26761,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/evaluaciones-sst/:id/acciones', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       let companyId: string;
       if (isAdmin) {
@@ -26794,7 +26794,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/evaluaciones-sst/:id/generar-plan', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       let companyId: string;
       if (isAdmin) {
@@ -26822,7 +26822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/evaluaciones-sst/:id/recalcular', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       let companyId: string;
       if (isAdmin) {
@@ -26853,7 +26853,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/evaluaciones-sst/:id/importar-anterior', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       // Obtener la evaluación nueva (destino)
       const evaluacionNueva = await storage.getEvaluacionSstById(req.params.id);
@@ -26965,7 +26965,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/evaluaciones-sst/:id/corregir-tipo', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       // Obtener la evaluación existente
       const evaluacion = await storage.getEvaluacionSstById(req.params.id);
@@ -27089,7 +27089,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/evaluaciones-sst/:id/pdf', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       let companyId: string;
       let evaluacion;
@@ -27299,7 +27299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/evaluaciones-sst/:id/pdf-ministerio', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       let companyId: string;
       let evaluacion;
@@ -27920,7 +27920,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/evaluaciones-sst/:id/pdf-iso45001', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
 
       let companyId: string;
       let evaluacion: any;
@@ -28214,7 +28214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/evaluaciones-sst/:id/informe-verificacion-sistema', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       let companyId: string;
       let evaluacion;
