@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Lock, ArrowUpCircle } from "lucide-react";
 import { Link } from "wouter";
 
-const GLOBAL_ACCESS_ROLES = ["superadmin", "admin", "soporte"];
+const GLOBAL_ACCESS_ROLES = ["superadmin", "admin", "soporte", "lso"];
 
 interface SubscriptionGateProps {
   feature: keyof SubscriptionFeatures;
