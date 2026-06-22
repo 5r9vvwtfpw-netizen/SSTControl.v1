@@ -1458,6 +1458,21 @@ function hasGlobalAccess(role: UserRole): boolean {
 }
 
 /**
+ * Verifica que un LSO tenga asignación activa a la empresa indicada.
+ * Úsase en todos los endpoints donde userRole === 'lso' actúa como admin.
+ */
+async function assertLsoAssignedToCompany(userId: string, companyId: string): Promise<boolean> {
+  const [asgn] = await db.select({ id: schema.licensedProfessionalAssignments.id })
+    .from(schema.licensedProfessionalAssignments)
+    .where(and(
+      eq(schema.licensedProfessionalAssignments.userId, userId),
+      eq(schema.licensedProfessionalAssignments.companyId, companyId),
+      eq(schema.licensedProfessionalAssignments.isActive, true)
+    ));
+  return !!asgn;
+}
+
+/**
  * Helper function to get the effective company ID for a request
  * For superadmins, this reads the X-Company-Id header to determine which company context to use
  * For regular users, this returns their assigned companyId
@@ -26278,6 +26293,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!companyId) {
           return res.json([]);
         }
+        const lsoChk1 = await assertLsoAssignedToCompany(req.user!.id, companyId);
+        if (!lsoChk1) return res.status(403).send("No tienes acceso a esta empresa");
         evaluaciones = await storage.getEvaluacionesSst(companyId);
       } else {
         // Non-admin: get only their company's evaluaciones
@@ -26317,7 +26334,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!evaluacion) {
         return res.status(404).send('Evaluación no encontrada');
       }
-      
+      if (userRole === 'lso') {
+        const lsoChk2 = await assertLsoAssignedToCompany(req.user!.id, evaluacion.companyId);
+        if (!lsoChk2) return res.status(403).send("No tienes acceso a esta empresa");
+      }
       res.json(evaluacion);
     } catch (error: any) {
       console.error('Error fetching evaluación SST:', error);
@@ -26395,6 +26415,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).send("Administrador debe especificar la empresa para crear la evaluación");
         }
         companyId = requestedCompanyId as string;
+        if (userRole === 'lso') {
+          const lsoChkCreate = await assertLsoAssignedToCompany(req.user!.id, companyId);
+          if (!lsoChkCreate) return res.status(403).send("No tienes acceso a esta empresa");
+        }
       } else {
         companyId = req.user!.companyId || "";
         if (!companyId) {
@@ -26699,6 +26723,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).send("Evaluación no encontrada");
         }
         companyId = evaluacion.companyId;
+        const lsoChkRespuesta = await assertLsoAssignedToCompany(req.user!.id, companyId);
+        if (!lsoChkRespuesta) return res.status(403).send("No tienes acceso a esta empresa");
       } else {
         if (!req.user!.companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
@@ -48829,6 +48855,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           return res.json(allEvaluaciones);
         }
         companyId = requestedCompanyId;
+        if (userRole === 'lso') {
+          const lsoChk5 = await assertLsoAssignedToCompany(req.user!.id, companyId);
+          if (!lsoChk5) return res.status(403).send("No tienes acceso a esta empresa");
+        }
       } else {
         companyId = req.user!.companyId || "";
         if (!companyId) {
@@ -48863,8 +48893,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       // Verificar acceso a la empresa
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
-        return res.status(403).send("No tienes acceso a esta evaluación");
+      if (!isAdmin) {
+        if (req.user!.companyId !== evaluacion.companyId) {
+          return res.status(403).send("No tienes acceso a esta evaluación");
+        }
+      } else if (userRole === 'lso') {
+        const lsoChk6 = await assertLsoAssignedToCompany(req.user!.id, evaluacion.companyId);
+        if (!lsoChk6) return res.status(403).send("No tienes acceso a esta empresa");
       }
       
       res.json(evaluacion);
@@ -48889,6 +48924,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           return res.status(400).send("Administrador debe especificar la empresa para crear la evaluación");
         }
         companyId = requestedCompanyId as string;
+        if (userRole === 'lso') {
+          const lsoChk7 = await assertLsoAssignedToCompany(req.user!.id, companyId);
+          if (!lsoChk7) return res.status(403).send("No tienes acceso a esta empresa");
+        }
       } else {
         companyId = req.user!.companyId || "";
         if (!companyId) {
@@ -48948,8 +48987,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Evaluación PESV no encontrada");
       }
       
-      if (!isAdmin && req.user!.companyId !== existing.companyId) {
-        return res.status(403).send("No tienes acceso a esta evaluación");
+      if (!isAdmin) {
+        if (req.user!.companyId !== existing.companyId) {
+          return res.status(403).send("No tienes acceso a esta evaluación");
+        }
+      } else if (userRole === 'lso') {
+        const lsoChk8 = await assertLsoAssignedToCompany(req.user!.id, existing.companyId);
+        if (!lsoChk8) return res.status(403).send("No tienes acceso a esta empresa");
       }
       
       const [evaluacion] = await db.update(evaluacionesPesv)
@@ -49033,8 +49077,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Evaluación PESV no encontrada");
       }
       
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
-        return res.status(403).send("No tienes acceso a esta evaluación");
+      if (!isAdmin) {
+        if (req.user!.companyId !== evaluacion.companyId) {
+          return res.status(403).send("No tienes acceso a esta evaluación");
+        }
+      } else if (userRole === 'lso') {
+        const lsoChk6 = await assertLsoAssignedToCompany(req.user!.id, evaluacion.companyId);
+        if (!lsoChk6) return res.status(403).send("No tienes acceso a esta empresa");
       }
       
       const respuestas = await db.select()
@@ -49063,8 +49112,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Evaluación PESV no encontrada");
       }
       
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
-        return res.status(403).send("No tienes acceso a esta evaluación");
+      if (!isAdmin) {
+        if (req.user!.companyId !== evaluacion.companyId) {
+          return res.status(403).send("No tienes acceso a esta evaluación");
+        }
+      } else if (userRole === 'lso') {
+        const lsoChk6 = await assertLsoAssignedToCompany(req.user!.id, evaluacion.companyId);
+        if (!lsoChk6) return res.status(403).send("No tienes acceso a esta empresa");
       }
       
       const validatedData = insertRespuestaPasoPesvSchema.parse({
@@ -49168,8 +49222,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Evaluación PESV no encontrada");
       }
       
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
-        return res.status(403).send("No tienes acceso a esta evaluación");
+      if (!isAdmin) {
+        if (req.user!.companyId !== evaluacion.companyId) {
+          return res.status(403).send("No tienes acceso a esta evaluación");
+        }
+      } else if (userRole === 'lso') {
+        const lsoChk6 = await assertLsoAssignedToCompany(req.user!.id, evaluacion.companyId);
+        if (!lsoChk6) return res.status(403).send("No tienes acceso a esta empresa");
       }
       
       const acciones = await db.select()
@@ -49199,8 +49258,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Evaluación PESV no encontrada");
       }
       
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
-        return res.status(403).send("No tienes acceso a esta evaluación");
+      if (!isAdmin) {
+        if (req.user!.companyId !== evaluacion.companyId) {
+          return res.status(403).send("No tienes acceso a esta evaluación");
+        }
+      } else if (userRole === 'lso') {
+        const lsoChk6 = await assertLsoAssignedToCompany(req.user!.id, evaluacion.companyId);
+        if (!lsoChk6) return res.status(403).send("No tienes acceso a esta empresa");
       }
       
       const validatedData = insertAccionMejoraPesvSchema.parse({
@@ -49234,8 +49298,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Evaluación PESV no encontrada");
       }
       
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
-        return res.status(403).send("No tienes acceso a esta evaluación");
+      if (!isAdmin) {
+        if (req.user!.companyId !== evaluacion.companyId) {
+          return res.status(403).send("No tienes acceso a esta evaluación");
+        }
+      } else if (userRole === 'lso') {
+        const lsoChk6 = await assertLsoAssignedToCompany(req.user!.id, evaluacion.companyId);
+        if (!lsoChk6) return res.status(403).send("No tienes acceso a esta empresa");
       }
       
       // Obtener todas las respuestas de la evaluación
@@ -53503,8 +53572,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Evaluación PESV no encontrada");
       }
       
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
-        return res.status(403).send("No tienes acceso a esta evaluación");
+      if (!isAdmin) {
+        if (req.user!.companyId !== evaluacion.companyId) {
+          return res.status(403).send("No tienes acceso a esta evaluación");
+        }
+      } else if (userRole === 'lso') {
+        const lsoChk6 = await assertLsoAssignedToCompany(req.user!.id, evaluacion.companyId);
+        if (!lsoChk6) return res.status(403).send("No tienes acceso a esta empresa");
       }
       
       const accionPatchSchema = insertAccionMejoraPesvSchema.partial().omit({ evaluacionId: true });
@@ -53552,8 +53626,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Evaluación PESV no encontrada");
       }
       
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
-        return res.status(403).send("No tienes acceso a esta evaluación");
+      if (!isAdmin) {
+        if (req.user!.companyId !== evaluacion.companyId) {
+          return res.status(403).send("No tienes acceso a esta evaluación");
+        }
+      } else if (userRole === 'lso') {
+        const lsoChk6 = await assertLsoAssignedToCompany(req.user!.id, evaluacion.companyId);
+        if (!lsoChk6) return res.status(403).send("No tienes acceso a esta empresa");
       }
       
       const revisiones = await db.select()
@@ -53582,8 +53661,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Evaluación PESV no encontrada");
       }
       
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
-        return res.status(403).send("No tienes acceso a esta evaluación");
+      if (!isAdmin) {
+        if (req.user!.companyId !== evaluacion.companyId) {
+          return res.status(403).send("No tienes acceso a esta evaluación");
+        }
+      } else if (userRole === 'lso') {
+        const lsoChk6 = await assertLsoAssignedToCompany(req.user!.id, evaluacion.companyId);
+        if (!lsoChk6) return res.status(403).send("No tienes acceso a esta empresa");
       }
       
       const validatedData = insertRevisionDireccionPesvSchema.parse({
@@ -53619,8 +53703,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Evaluación PESV no encontrada");
       }
       
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
-        return res.status(403).send("No tienes acceso a esta evaluación");
+      if (!isAdmin) {
+        if (req.user!.companyId !== evaluacion.companyId) {
+          return res.status(403).send("No tienes acceso a esta evaluación");
+        }
+      } else if (userRole === 'lso') {
+        const lsoChk6 = await assertLsoAssignedToCompany(req.user!.id, evaluacion.companyId);
+        if (!lsoChk6) return res.status(403).send("No tienes acceso a esta empresa");
       }
       
       const revisionPatchSchema = insertRevisionDireccionPesvSchema.partial().omit({ evaluacionPesvId: true, companyId: true });
