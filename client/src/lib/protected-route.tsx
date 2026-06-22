@@ -70,6 +70,7 @@ export function ProtectedRoute({
     "/accidentes",
     "/evaluaciones-sst",
     "/pesv/evaluaciones",
+    "/pesv/evaluacion",
   ];
   const isLsoAllowedPath = lsoAllowedPaths.some(allowed => 
     path === allowed || path.startsWith(allowed + "/")

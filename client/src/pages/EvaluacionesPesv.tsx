@@ -89,8 +89,20 @@ export default function EvaluacionesPesv() {
     },
   });
 
+  const evaluacionesPesvQueryUrl = isLso && lsoPreselectedCompanyId
+    ? `/api/evaluaciones-pesv?companyId=${lsoPreselectedCompanyId}`
+    : "/api/evaluaciones-pesv";
+
+  const evaluacionesPesvQueryKey = isLso && lsoPreselectedCompanyId
+    ? ["/api/evaluaciones-pesv", lsoPreselectedCompanyId]
+    : ["/api/evaluaciones-pesv"];
+
   const { data: evaluaciones = [], isLoading } = useQuery<EvaluacionPesv[]>({
-    queryKey: ["/api/evaluaciones-pesv"],
+    queryKey: evaluacionesPesvQueryKey,
+    queryFn: () => fetch(evaluacionesPesvQueryUrl, { credentials: "include" }).then(r => {
+      if (!r.ok) throw new Error("Error cargando evaluaciones PESV");
+      return r.json();
+    }),
   });
 
   const { data: companies = [] } = useQuery<any[]>({
@@ -279,7 +291,7 @@ export default function EvaluacionesPesv() {
   }, [companies]);
 
   const companyVaults = useMemo(() => {
-    if (!isSuperAdmin) return [];
+    if (!isSuperAdmin && !isLso) return [];
     const grouped: Record<string, {
       companyId: string;
       companyName: string;

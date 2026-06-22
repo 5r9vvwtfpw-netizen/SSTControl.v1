@@ -48819,7 +48819,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get('/api/evaluaciones-pesv', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       let companyId: string;
       if (isAdmin) {
@@ -48852,7 +48852,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get('/api/evaluaciones-pesv/:id', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       const [evaluacion] = await db.select()
         .from(evaluacionesPesv)
@@ -48880,7 +48880,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const validatedData = insertEvaluacionPesvSchema.parse(req.body);
       
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       let companyId: string;
       if (isAdmin) {
@@ -48937,7 +48937,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const validatedData = insertEvaluacionPesvSchema.partial().parse(req.body);
       
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       // Verificar que existe y pertenece a la empresa
       const [existing] = await db.select()
@@ -49022,7 +49022,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get('/api/evaluaciones-pesv/:id/respuestas', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       // Verificar acceso a la evaluación
       const [evaluacion] = await db.select()
@@ -49052,7 +49052,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.post('/api/evaluaciones-pesv/:id/respuestas', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       // Verificar acceso a la evaluación
       const [evaluacion] = await db.select()
@@ -49157,7 +49157,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get('/api/evaluaciones-pesv/:id/acciones', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       // Verificar acceso a la evaluación
       const [evaluacion] = await db.select()
@@ -49188,7 +49188,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.post('/api/evaluaciones-pesv/:id/acciones', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       // Verificar acceso a la evaluación
       const [evaluacion] = await db.select()
@@ -49223,7 +49223,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.post('/api/evaluaciones-pesv/:id/recalcular', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       // Verificar acceso a la evaluación
       const [evaluacion] = await db.select()
@@ -49322,7 +49322,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.post('/api/evaluaciones-pesv/:id/generar-plan', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
 
       const [evaluacion] = await db.select().from(evaluacionesPesv).where(eq(evaluacionesPesv.id, req.params.id));
       if (!evaluacion) return res.status(404).json({ error: "Evaluación PESV no encontrada" });
@@ -49399,7 +49399,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.post('/api/evaluaciones-pesv/:id/heredar', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole);
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       // Obtener evaluación padre
       const [evaluacionPadre] = await db.select()
