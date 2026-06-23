@@ -403,6 +403,14 @@ export default function DetalleEvaluacionSst() {
     }
   }, [evaluacion?.tipoEmpresa]);
 
+  // LSO/lso_externo: auto-configurar contexto de empresa desde la evaluación
+  // Esto garantiza que X-Company-Id se envíe correctamente incluso al acceder por URL directa
+  useEffect(() => {
+    if (evaluacion?.companyId && (user?.role === 'lso' || user?.role === 'lso_externo')) {
+      localStorage.setItem('lso_company_context', evaluacion.companyId);
+    }
+  }, [evaluacion?.companyId, user?.role]);
+
   const handleUpdateTipoEmpresa = () => {
     if (selectedTipoEmpresa) {
       updateTipoEmpresaMutation.mutate(selectedTipoEmpresa);
