@@ -60,22 +60,29 @@ export function ProtectedRoute({
     );
   }
 
-  // LSO (Licenciados): Solo pueden acceder a su portal específico y mensajes internos
-  // Restringir acceso a todas las demás rutas del sistema
-  const lsoAllowedPaths = [
-    "/portal-licenciado",
-    "/mensajes-internos",
-    "/configuracion-notificaciones",
-    "/investigacion-accidentes",
-    "/accidentes",
-    "/evaluaciones-sst",
-    "/pesv/evaluaciones",
-    "/pesv/evaluacion",
+  // LSO (Licenciados): Pueden acceder a su portal y a cualquier módulo SST para el que
+  // tengan permiso (sst_management:view/create/edit, workers:view, etc.).
+  // Rutas administrativas que requieren permisos que LSO no tiene quedan bloqueadas
+  // por el check hasAccess más abajo.
+  // Solo rutas explícitamente excluidas se redirigen al portal.
+  const lsoExcludedPaths = [
+    "/admin",
+    "/crear-empresa",
+    "/portal-empleados",
   ];
-  const isLsoAllowedPath = lsoAllowedPaths.some(allowed => 
-    path === allowed || path.startsWith(allowed + "/")
+  const isLsoExcluded = lsoExcludedPaths.some(excluded =>
+    path === excluded || path.startsWith(excluded + "/")
   );
-  if (user.role === "lso" && !isLsoAllowedPath) {
+  if ((user.role === "lso" || user.role === "lso_externo") && isLsoExcluded) {
+    return (
+      <Route path={path}>
+        <Redirect to="/portal-licenciado" />
+      </Route>
+    );
+  }
+
+  // LSO sin acceso por permisos → redirigir a portal en lugar de "/"
+  if ((user.role === "lso" || user.role === "lso_externo") && !hasAccess) {
     return (
       <Route path={path}>
         <Redirect to="/portal-licenciado" />
