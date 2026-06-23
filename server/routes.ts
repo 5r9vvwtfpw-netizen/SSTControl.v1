@@ -52883,6 +52883,41 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     z.array(gpsWebhookRecordSchema),
   ]);
 
+  // GET /api/webhooks/gps - Información del webhook (para navegadores y verificación)
+  app.get("/api/webhooks/gps", async (_req, res) => {
+    res.json({
+      status: "active",
+      name: "SST Colombia - GPS Webhook",
+      description: "Endpoint para recibir datos de telemetría GPS de vehículos del PESV",
+      method: "POST",
+      endpoint: "/api/webhooks/gps",
+      auth: process.env.GPS_WEBHOOK_API_KEY
+        ? "Requerida — enviar API Key en header: X-Api-Key"
+        : "Sin autenticación configurada (recomendado configurar GPS_WEBHOOK_API_KEY)",
+      contentType: "application/json",
+      fieldMapping: {
+        required: "plate | placa | vehiclePlate | licensePlate (al menos uno)",
+        optional: {
+          coordinates: "latitude/lat/latitud, longitude/lng/lon/longitud",
+          speed: "speed/velocidad, maxSpeed/velocidadMaxima/speedLimit",
+          engine: "engineStatus/motor (valores: on/off/idle/encendido/apagado/ralenti)",
+          alerts: "alertType/tipoAlerta/alarma, geofenceAlert/geocerca",
+          time: "date/fecha/timestamp, time/hora",
+          notes: "observations/observaciones/notes",
+        },
+      },
+      supportsArray: true,
+      example: {
+        plate: "ABC123",
+        latitude: 4.7109886,
+        longitude: -74.0720887,
+        speed: 60,
+        engineStatus: "on",
+        timestamp: new Date().toISOString(),
+      },
+    });
+  });
+
   app.post("/api/webhooks/gps", async (req, res) => {
     try {
       const apiKey = req.headers["x-api-key"] || req.headers["authorization"]?.replace("Bearer ", "");
