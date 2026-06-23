@@ -56,7 +56,7 @@ export default function EvaluacionesPesv() {
   const [yearFilter, setYearFilter] = useState<string>("todos");
 
   const isSuperAdmin = user?.role === "superadmin";
-  const isLso = user?.role === "lso";
+  const isLso = user?.role === "lso" || user?.role === "lso_externo";
 
   // Leer empresa preseleccionada desde URL (cuando LSO entra desde su portal)
   const lsoPreselectedCompanyId = useMemo(() => {

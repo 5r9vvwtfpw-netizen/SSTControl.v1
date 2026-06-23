@@ -26287,8 +26287,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isAdmin) {
         // Admin: get all evaluaciones from all companies
         evaluaciones = await storage.getAllEvaluacionesSst();
-      } else if (userRole === 'lso') {
-        // LSO: can query evaluaciones for a specific company via ?companyId param
+      } else if (userRole === 'lso' || userRole === 'lso_externo') {
+        // LSO/LSO Externo: can query evaluaciones for a specific company via ?companyId param
         const companyId = req.query.companyId as string;
         if (!companyId) {
           return res.json([]);
@@ -26406,7 +26406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertEvaluacionSstSchema.parse(req.body);
       
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
+      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso' || userRole === 'lso_externo';
       
       let companyId: string;
       if (isAdmin) {
@@ -48855,7 +48855,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           return res.json(allEvaluaciones);
         }
         companyId = requestedCompanyId;
-        if (userRole === 'lso') {
+        if (userRole === 'lso' || userRole === 'lso_externo') {
           const lsoChk5 = await assertLsoAssignedToCompany(req.user!.id, companyId);
           if (!lsoChk5) return res.status(403).send("No tienes acceso a esta empresa");
         }

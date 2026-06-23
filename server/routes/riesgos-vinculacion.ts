@@ -11,6 +11,10 @@ import {
 function getEffectiveCompanyId(req: any): string | null {
   const user = req.user;
   if (!user) return null;
+  const lsoRoles = ['lso', 'lso_externo'];
+  if (lsoRoles.includes(user.role) && req.query.companyId) {
+    return req.query.companyId as string;
+  }
   return user.adminCompanyId || user.companyId || null;
 }
 
