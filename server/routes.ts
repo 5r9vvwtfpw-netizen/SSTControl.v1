@@ -29903,7 +29903,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = plan.companyId;
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req) ?? "";
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -38033,7 +38033,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (isAdmin) {
         auditorias = await storage.getAllAuditoriasInternas();
       } else {
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -38056,7 +38056,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (isAdmin) {
         auditoria = await storage.getAuditoriaInternaById(req.params.id);
       } else {
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -38121,7 +38121,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         }
         auditoria = await storage.updateAuditoriaInterna(req.params.id, validatedData, existing.companyId);
       } else {
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -38151,7 +38151,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         }
         await storage.deleteAuditoriaInterna(req.params.id, existing.companyId);
       } else {
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -38184,7 +38184,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/auditorias-internas/:id/auditores - Agregar auditor a auditoría
   app.post('/api/auditorias-internas/:id/auditores', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38205,7 +38205,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/auditores/:id - Actualizar auditor
   app.patch('/api/auditores/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38227,7 +38227,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/auditores/:id - Eliminar auditor
   app.delete('/api/auditores/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38243,7 +38243,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/auditorias-internas/:id/checklists - Obtener checklists de una auditoría
   app.get('/api/auditorias-internas/:id/checklists', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38259,7 +38259,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/auditorias-internas/:id/checklists - Crear checklist
   app.post('/api/auditorias-internas/:id/checklists', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38280,7 +38280,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/checklists/:id - Actualizar checklist
   app.patch('/api/checklists/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38302,7 +38302,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/checklists/:id - Eliminar checklist
   app.delete('/api/checklists/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38318,7 +38318,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/hallazgos-auditoria - Obtener todos los hallazgos
   app.get('/api/hallazgos-auditoria', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38334,7 +38334,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/hallazgos-auditoria - Crear hallazgo
   app.post('/api/hallazgos-auditoria', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38352,7 +38352,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/hallazgos-auditoria/:id - Actualizar hallazgo
   app.patch('/api/hallazgos-auditoria/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38374,7 +38374,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/hallazgos-auditoria/:id - Eliminar hallazgo
   app.delete('/api/hallazgos-auditoria/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38390,7 +38390,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/hallazgos-auditoria/:id/planes-accion - Obtener planes de acción de un hallazgo
   app.get('/api/hallazgos-auditoria/:id/planes-accion', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38406,7 +38406,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/hallazgos-auditoria/:id/planes-accion - Crear plan de acción
   app.post('/api/hallazgos-auditoria/:id/planes-accion', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38427,7 +38427,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/planes-accion-auditoria/:id - Actualizar plan de acción
   app.patch('/api/planes-accion-auditoria/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38449,7 +38449,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/planes-accion-auditoria/:id - Eliminar plan de acción
   app.delete('/api/planes-accion-auditoria/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38473,7 +38473,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (isAdmin) {
         revisiones = await storage.getAllRevisionesDireccion();
       } else {
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -38496,7 +38496,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (isAdmin) {
         revision = await storage.getRevisionDireccionById(req.params.id);
       } else {
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -38531,7 +38531,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           return res.status(404).send("Empresa no encontrada");
         }
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -38561,7 +38561,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         }
         revision = await storage.updateRevisionDireccion(req.params.id, validatedData, existing.companyId);
       } else {
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -38591,7 +38591,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         }
         await storage.deleteRevisionDireccion(req.params.id, existing.companyId);
       } else {
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }

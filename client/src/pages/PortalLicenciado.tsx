@@ -1070,7 +1070,14 @@ function EmpresasTab() {
                             size="sm"
                             variant="outline"
                             data-testid={`button-sst-${empresa.id}`}
-                            onClick={() => setLocation(`/evaluaciones-sst?empresa=${empresa.id}`)}
+                            onClick={() => {
+                              localStorage.setItem("lso_company_context", JSON.stringify({
+                                companyId: empresa.id,
+                                companyName: empresa.name,
+                                companyNit: empresa.nit,
+                              }));
+                              setLocation(`/evaluaciones-sst?empresa=${empresa.id}`);
+                            }}
                           >
                             <FileCheck className="h-4 w-4 mr-1" />
                             Eval. SST
@@ -1080,7 +1087,14 @@ function EmpresasTab() {
                               size="sm"
                               variant="outline"
                               data-testid={`button-pesv-${empresa.id}`}
-                              onClick={() => setLocation(`/pesv/evaluaciones?empresa=${empresa.id}`)}
+                              onClick={() => {
+                                localStorage.setItem("lso_company_context", JSON.stringify({
+                                  companyId: empresa.id,
+                                  companyName: empresa.name,
+                                  companyNit: empresa.nit,
+                                }));
+                                setLocation(`/pesv/evaluaciones?empresa=${empresa.id}`);
+                              }}
                             >
                               <Car className="h-4 w-4 mr-1" />
                               PESV
