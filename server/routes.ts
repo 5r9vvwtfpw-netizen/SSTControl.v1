@@ -38091,7 +38091,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           return res.status(404).send("Empresa no encontrada");
         }
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -38168,7 +38168,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/auditorias-internas/:id/auditores - Obtener auditores de una auditoría
   app.get('/api/auditorias-internas/:id/auditores', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }

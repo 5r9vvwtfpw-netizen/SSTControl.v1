@@ -407,7 +407,7 @@ export default function DetalleEvaluacionSst() {
   // Esto garantiza que X-Company-Id se envíe correctamente incluso al acceder por URL directa
   useEffect(() => {
     if (evaluacion?.companyId && (user?.role === 'lso' || user?.role === 'lso_externo')) {
-      localStorage.setItem('lso_company_context', evaluacion.companyId);
+      localStorage.setItem('lso_company_context', JSON.stringify({ companyId: evaluacion.companyId }));
     }
   }, [evaluacion?.companyId, user?.role]);
 
