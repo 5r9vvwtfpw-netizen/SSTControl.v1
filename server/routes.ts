@@ -1483,13 +1483,18 @@ function getEffectiveCompanyId(req: Request): string | null {
   const user = req.user;
   if (!user) return null;
   
-  // For superadmins and LSO professionals, check for X-Company-Id header first
-  if (user.role === 'superadmin' || user.role === 'lso') {
+  // For superadmins and LSO professionals (both internal and external), check for X-Company-Id header first
+  if (user.role === 'superadmin' || user.role === 'lso' || user.role === 'lso_externo') {
     const headerCompanyId = req.headers['x-company-id'];
     if (headerCompanyId && typeof headerCompanyId === 'string') {
       return headerCompanyId;
     }
-    // Fallback to user's companyId if no header
+    // Also check query param as fallback
+    const queryCompanyId = req.query.companyId;
+    if (queryCompanyId && typeof queryCompanyId === 'string') {
+      return queryCompanyId;
+    }
+    // Fallback to user's companyId if no header or query
     return user.companyId || null;
   }
   
@@ -9976,7 +9981,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // PESV Audits routes
   app.get("/api/pesv-audits", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -9985,7 +9990,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/pesv-audits/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -9998,7 +10003,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/pesv-audits", requirePermission("pesv_audits:create"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -10012,7 +10017,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/pesv-audits/:id", requirePermission("pesv_audits:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -10028,7 +10033,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/pesv-audits/:id", requirePermission("pesv_audits:delete"), async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -10039,7 +10044,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/pesv-audits/:id/pdf - Generate PDF report for PESV audit
   app.get("/api/pesv-audits/:id/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
