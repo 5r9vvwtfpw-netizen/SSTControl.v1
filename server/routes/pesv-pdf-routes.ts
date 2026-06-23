@@ -1447,6 +1447,258 @@ export function registerPesvPdfRoutes(app: Express) {
       handlePdfError(error, res, 'pesv-siniestros');
     }
   });
+
+  // 15. GET /api/pesv/h07/pdf — H07 Gestión de la Velocidad: Reporte consolidado (todos los vehículos)
+  app.get('/api/pesv/h07/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const vehicles = await db.select().from(schema.vehicles).where(eq(schema.vehicles.companyId, companyId));
+      const allGps = await db.select().from(schema.vehicleGpsTracking)
+        .where(eq(schema.vehicleGpsTracking.companyId, companyId))
+        .orderBy(desc(schema.vehicleGpsTracking.createdAt));
+      const allAlerts = await db.select().from(schema.sstSpeedAlerts)
+        .where(eq(schema.sstSpeedAlerts.companyId, companyId))
+        .orderBy(desc(schema.sstSpeedAlerts.createdAt));
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="h07-gestion-velocidad-consolidado.pdf"');
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: 'H07 — REPORTE DE GESTIÓN DE LA VELOCIDAD',
+        documentCode: 'PESV-H07', logoBuffer
+      });
+
+      y = addParagraph(doc,
+        'Resolución 40595/2022, Art. 19 — Controles para la gestión de la velocidad. ' +
+        'Aplica a niveles Estándar (11–50 vehículos) y Avanzado (+50 vehículos).',
+        { y, color: PDF_COLORS.muted }
+      );
+
+      if (vehicles.length === 0) {
+        y = addParagraph(doc, 'No hay vehículos registrados en el parque automotor.', { y });
+      } else {
+        for (const vehicle of vehicles) {
+          y = checkPageBreak(doc, y, 80);
+          y = addSectionBar(doc, `Vehículo: ${vehicle.plate} — ${vehicle.brand} ${vehicle.model} (${vehicle.year})`, { y });
+
+          y = addLabeledField(doc, 'Tipo', vehicle.type, { y, inline: true });
+          y = addLabeledField(doc, 'Estado', vehicle.status, { y, inline: true });
+          if (vehicle.defaultMaxSpeed) {
+            y = addLabeledField(doc, 'Vel. máx. permitida', `${vehicle.defaultMaxSpeed} km/h`, { y, inline: true });
+          }
+          y += 6;
+
+          const gpsRows = allGps.filter(g => g.vehicleId === vehicle.id);
+          if (gpsRows.length > 0) {
+            y = checkPageBreak(doc, y, 40);
+            doc.fontSize(9).fillColor(PDF_COLORS.secondary).text('Registros GPS / Velocidad', PDF_CONFIG.margin, y);
+            y += 14;
+            const gpsTableRows = gpsRows.slice(0, 30).map(g => [
+              formatDate(g.trackingDate),
+              g.trackingTime || '—',
+              g.speed != null ? `${g.speed} km/h` : '—',
+              g.maxSpeedAllowed != null ? `${g.maxSpeedAllowed} km/h` : '—',
+              g.speedExceeded ? 'Sí' : 'No',
+              g.engineStatus || '—',
+              g.alertType || '—',
+            ]);
+            y = addSimpleTable(doc,
+              ['Fecha', 'Hora', 'Velocidad', 'Límite', 'Exceso', 'Motor', 'Alerta'],
+              gpsTableRows, { y }
+            );
+          } else {
+            doc.fontSize(9).fillColor(PDF_COLORS.muted).text('Sin registros GPS para este vehículo.', PDF_CONFIG.margin, y);
+            y += 14;
+          }
+
+          const alertRows = allAlerts.filter(a => a.vehicleId === vehicle.id);
+          if (alertRows.length > 0) {
+            y = checkPageBreak(doc, y, 40);
+            doc.fontSize(9).fillColor(PDF_COLORS.secondary).text('Alertas de Velocidad', PDF_CONFIG.margin, y);
+            y += 14;
+            const alertTableRows = alertRows.slice(0, 20).map(a => [
+              formatDate(a.alertDate),
+              a.alertTime || '—',
+              `${a.registeredSpeed} km/h`,
+              `${a.maxAllowedSpeed} km/h`,
+              `+${a.speedDifference} km/h`,
+              a.severity === 'critica' ? 'Crítica' : a.severity === 'grave' ? 'Grave' : a.severity === 'moderada' ? 'Moderada' : 'Leve',
+              a.status === 'accion_correctiva' ? 'Acción Correctiva' : a.status === 'en_revision' ? 'En Revisión' : a.status === 'cerrada' ? 'Cerrada' : 'Abierta',
+              a.responsiblePerson || '—',
+            ]);
+            y = addSimpleTable(doc,
+              ['Fecha', 'Hora', 'Velocidad', 'Límite', 'Diferencia', 'Severidad', 'Estado', 'Responsable'],
+              alertTableRows, { y }
+            );
+          } else {
+            doc.fontSize(9).fillColor(PDF_COLORS.muted).text('Sin alertas de velocidad para este vehículo.', PDF_CONFIG.margin, y);
+            y += 14;
+          }
+          y += 8;
+        }
+      }
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-h07-consolidado');
+    }
+  });
+
+  // 16. GET /api/pesv/h07/vehiculo/:vehiculoId/pdf — H07: Reporte individual por vehículo
+  app.get('/api/pesv/h07/vehiculo/:vehiculoId/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+      const { vehiculoId } = req.params;
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const [vehicle] = await db.select().from(schema.vehicles)
+        .where(and(eq(schema.vehicles.id, vehiculoId), eq(schema.vehicles.companyId, companyId)))
+        .limit(1);
+      if (!vehicle) return res.status(404).send('Vehículo no encontrado o no pertenece a esta empresa');
+
+      const gpsRows = await db.select().from(schema.vehicleGpsTracking)
+        .where(and(
+          eq(schema.vehicleGpsTracking.vehicleId, vehiculoId),
+          eq(schema.vehicleGpsTracking.companyId, companyId)
+        ))
+        .orderBy(desc(schema.vehicleGpsTracking.createdAt));
+
+      const alertRows = await db.select().from(schema.sstSpeedAlerts)
+        .where(and(
+          eq(schema.sstSpeedAlerts.vehicleId, vehiculoId),
+          eq(schema.sstSpeedAlerts.companyId, companyId)
+        ))
+        .orderBy(desc(schema.sstSpeedAlerts.createdAt));
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      const filename = `h07-velocidad-${vehicle.plate.replace(/\s/g, '-')}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company,
+        documentTitle: `H07 — GESTIÓN DE LA VELOCIDAD: ${vehicle.plate}`,
+        documentCode: 'PESV-H07-V', logoBuffer
+      });
+
+      y = addSectionBar(doc, 'Datos del Vehículo', { y });
+      y = addLabeledField(doc, 'Placa', vehicle.plate, { y, inline: true });
+      y = addLabeledField(doc, 'Marca', vehicle.brand, { y, inline: true });
+      y = addLabeledField(doc, 'Modelo', vehicle.model, { y, inline: true });
+      y = addLabeledField(doc, 'Año', String(vehicle.year), { y, inline: true });
+      y = addLabeledField(doc, 'Tipo', vehicle.type, { y, inline: true });
+      y = addLabeledField(doc, 'Estado', vehicle.status, { y, inline: true });
+      if (vehicle.defaultMaxSpeed) {
+        y = addLabeledField(doc, 'Vel. máx. permitida', `${vehicle.defaultMaxSpeed} km/h`, { y, inline: true });
+      }
+      if (vehicle.soatExpiry) {
+        y = addLabeledField(doc, 'Venc. SOAT', formatDate(vehicle.soatExpiry), { y, inline: true });
+      }
+      if (vehicle.technicalReviewExpiry) {
+        y = addLabeledField(doc, 'Venc. Revisión Técnica', formatDate(vehicle.technicalReviewExpiry), { y, inline: true });
+      }
+      y += 10;
+
+      y = addSectionBar(doc, `Registros GPS / Velocidad (${gpsRows.length} registros)`, { y });
+      if (gpsRows.length === 0) {
+        doc.fontSize(9).fillColor(PDF_COLORS.muted).text('Sin registros GPS para este vehículo.', PDF_CONFIG.margin, y);
+        y += 16;
+      } else {
+        const gpsTableRows = gpsRows.map(g => [
+          formatDate(g.trackingDate),
+          g.trackingTime || '—',
+          g.speed != null ? `${g.speed} km/h` : '—',
+          g.maxSpeedAllowed != null ? `${g.maxSpeedAllowed} km/h` : '—',
+          g.speedExceeded ? 'SÍ' : 'No',
+          g.engineStatus || '—',
+          g.alertType || '—',
+          (g.observations || '').slice(0, 30) || '—',
+        ]);
+        y = addSimpleTable(doc,
+          ['Fecha', 'Hora', 'Velocidad', 'Límite', 'Exceso', 'Motor', 'Alerta', 'Observaciones'],
+          gpsTableRows, { y }
+        );
+      }
+
+      y = checkPageBreak(doc, y, 60);
+      y = addSectionBar(doc, `Alertas de Velocidad (${alertRows.length} alertas)`, { y });
+      if (alertRows.length === 0) {
+        doc.fontSize(9).fillColor(PDF_COLORS.muted).text('Sin alertas de velocidad para este vehículo.', PDF_CONFIG.margin, y);
+        y += 16;
+      } else {
+        const alertTableRows = alertRows.map(a => [
+          formatDate(a.alertDate),
+          a.alertTime || '—',
+          `${a.registeredSpeed} km/h`,
+          `${a.maxAllowedSpeed} km/h`,
+          `+${a.speedDifference} km/h`,
+          a.severity === 'critica' ? 'Crítica' : a.severity === 'grave' ? 'Grave' : a.severity === 'moderada' ? 'Moderada' : 'Leve',
+          a.status === 'accion_correctiva' ? 'Acción Correctiva' : a.status === 'en_revision' ? 'En Revisión' : a.status === 'cerrada' ? 'Cerrada' : 'Abierta',
+          a.responsiblePerson || '—',
+          (a.correctiveAction || '').slice(0, 40) || '—',
+        ]);
+        y = addSimpleTable(doc,
+          ['Fecha', 'Hora', 'Vel. Reg.', 'Límite', 'Diferencia', 'Severidad', 'Estado', 'Responsable', 'Acción Correctiva'],
+          alertTableRows, { y }
+        );
+
+        const open = alertRows.filter(a => a.status === 'abierta').length;
+        const closed = alertRows.filter(a => a.status === 'cerrada').length;
+        const inReview = alertRows.filter(a => a.status === 'en_revision').length;
+        const corrective = alertRows.filter(a => a.status === 'accion_correctiva').length;
+        const critical = alertRows.filter(a => a.severity === 'critica').length;
+        const grave = alertRows.filter(a => a.severity === 'grave').length;
+
+        y = checkPageBreak(doc, y, 50);
+        y += 6;
+        doc.fontSize(9).fillColor(PDF_COLORS.secondary).text('Resumen de alertas:', PDF_CONFIG.margin, y);
+        y += 14;
+        y = addSimpleTable(doc,
+          ['Total', 'Abiertas', 'En Revisión', 'Acción Correctiva', 'Cerradas', 'Críticas', 'Graves'],
+          [[
+            String(alertRows.length), String(open), String(inReview),
+            String(corrective), String(closed), String(critical), String(grave)
+          ]],
+          { y }
+        );
+      }
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-h07-vehiculo');
+    }
+  });
 }
 
 export default registerPesvPdfRoutes;

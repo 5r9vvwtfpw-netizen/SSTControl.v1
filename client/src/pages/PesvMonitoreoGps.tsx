@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Trash2, ArrowLeft, MapPin, Gauge, AlertTriangle, Info, Navigation, Radio, Lock, CalendarDays, TrendingUp, CheckCircle2, XCircle, Wifi, Cable, Copy, Check } from "lucide-react";
+import { Plus, Search, Trash2, ArrowLeft, MapPin, Gauge, AlertTriangle, Info, Navigation, Radio, Lock, CalendarDays, TrendingUp, CheckCircle2, XCircle, Wifi, Cable, Copy, Check, FileDown } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { getTodayDateString } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -43,6 +43,17 @@ export default function PesvMonitoreoGps() {
 
   const effectiveCompanyId = currentCompany?.id ?? user?.companyId ?? evaluacion?.companyId ?? null;
   const { toast } = useToast();
+
+  const handleDownloadPdf = (path: string, filename: string) => {
+    const companyParam = effectiveCompanyId ? `?companyId=${effectiveCompanyId}` : '';
+    const link = document.createElement('a');
+    link.href = `${path}${companyParam}`;
+    link.target = '_blank';
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
   const isAdmin = user?.role ? canWrite(user.role, 'vehicles') : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -668,7 +679,18 @@ export default function PesvMonitoreoGps() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Monitoreo GPS / Velocidad</h1>
           <p className="text-muted-foreground">Seguimiento en tiempo real de ubicación y velocidad de vehículos (Resolución 40595/2022)</p>
         </div>
-        <HelpVideoButton customRoute="/pesv/monitoreo-gps" testId="button-help-video-pesv-gps" />
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDownloadPdf('/api/pesv/h07/pdf', 'h07-gestion-velocidad-consolidado.pdf')}
+            data-testid="button-download-h07-pdf"
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            PDF Consolidado
+          </Button>
+          <HelpVideoButton customRoute="/pesv/monitoreo-gps" testId="button-help-video-pesv-gps" />
+        </div>
       </div>
 
       <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
@@ -1226,6 +1248,7 @@ export default function PesvMonitoreoGps() {
                     <TableHead className="text-center">Excesos</TableHead>
                     <TableHead className="text-center">Motor</TableHead>
                     <TableHead className="text-center">Estado</TableHead>
+                    <TableHead className="text-center">PDF</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1293,6 +1316,20 @@ export default function PesvMonitoreoGps() {
                               <CheckCircle2 className="h-4 w-4 text-green-500" />
                             </div>
                           )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleDownloadPdf(
+                              `/api/pesv/h07/vehiculo/${row.vehicleId}/pdf`,
+                              `h07-${row.plate.replace(/\s/g, '-')}.pdf`
+                            )}
+                            data-testid={`button-pdf-vehiculo-${row.vehicleId}`}
+                            title={`Descargar PDF de ${row.plate}`}
+                          >
+                            <FileDown className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );
