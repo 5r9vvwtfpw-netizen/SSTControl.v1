@@ -1,0 +1,23 @@
+Estimados,
+
+Espero que se encuentren muy bien.
+
+Estamos avanzando con la configuración de la integración del monitoreo GPS según las especificaciones recibidas para el módulo de SST Colombia.
+
+Tras revisar la documentación técnica del endpoint ([https://sst-colombia.com/api/webhooks/gps](https://sst-colombia.com/api/webhooks/gps)) y lo visualizado en la plataforma (como se muestra en image_de55d2.jpg y image_de55da.png), nos han surgido algunas dudas técnicas críticas para asegurar una integración exitosa y cumplir con la normativa PESV:
+
+Seguridad y Autenticación: La documentación menciona que el endpoint no tiene autenticación configurada y sugiere el uso de un GPS_WEBHOOK_API_KEY. ¿Cómo debemos implementar este header o parámetro de autenticación para garantizar la seguridad de los datos que enviaremos?
+
+Frecuencia y Volumen de Envío:  ¿cuál es la frecuencia de reporte recomendada o máxima permitida por el endpoint? ¿Existe alguna restricción sobre la cantidad de eventos por vehículo que debemos enviar en un determinado intervalo de tiempo?
+
+Formato de Datos: Aunque la documentación indica que el sistema acepta formato JSON y mapea campos en inglés o español, ¿es necesario enviar todos los campos opcionales en cada petición o el sistema procesa correctamente actualizaciones parciales (por ejemplo, solo latitud/longitud)?
+
+Validación de Vehículos: ¿El sistema utiliza el campo plate (placa) como la llave primaria única para realizar este cruce automáticamente, o es necesario registrar previamente el vehículo en la plataforma SST antes de enviar los datos?
+
+Manejo de Errores y Confirmación: ¿Qué respuesta HTTP debemos esperar para confirmar que el dato fue recibido e integrado correctamente por el sistema? ¿Existe algún log de errores al que tengamos acceso en caso de que una petición sea rechazada?
+
+Agradezco de antemano su guía para alinear nuestra infraestructura con los requerimientos de su plataforma. Quedo atento a sus comentarios.
+
+Cordialmente,
+
+DPTO Tecnico Teleint- Procodata
