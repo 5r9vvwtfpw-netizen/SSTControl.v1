@@ -53054,7 +53054,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           }
 
           const speedNum = speed !== undefined && speed !== null ? Number(speed) : undefined;
-          const maxSpeedNum = maxSpeed !== undefined && maxSpeed !== null ? Number(maxSpeed) : undefined;
+          // Si el proveedor no envía maxSpeed, usar el límite configurado en el vehículo de la plataforma
+          const maxSpeedFromProvider = maxSpeed !== undefined && maxSpeed !== null ? Number(maxSpeed) : undefined;
+          const maxSpeedNum = maxSpeedFromProvider ?? (vehicle.defaultMaxSpeed ?? undefined);
           const speedExceeded = (speedNum && maxSpeedNum && speedNum > maxSpeedNum) ? 1 : 0;
 
           let trackingDate: string;
