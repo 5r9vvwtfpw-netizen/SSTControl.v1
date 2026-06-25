@@ -44,6 +44,43 @@ export default function PesvMonitoreoGps() {
   const effectiveCompanyId = currentCompany?.id ?? user?.companyId ?? evaluacion?.companyId ?? null;
   const { toast } = useToast();
 
+  // GPS Webhook Key management
+  const { data: gpsKeyStatus, refetch: refetchGpsKey } = useQuery<{ hasKey: boolean; keyPreview: string | null }>({
+    queryKey: ['/api/companies', effectiveCompanyId, 'gps-webhook-key'],
+    queryFn: async () => {
+      if (!effectiveCompanyId) return { hasKey: false, keyPreview: null };
+      const res = await apiRequest('GET', `/api/companies/${effectiveCompanyId}/gps-webhook-key`);
+      return res.json();
+    },
+    enabled: !!effectiveCompanyId,
+  });
+
+  const generateKeyMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', `/api/companies/${effectiveCompanyId}/gps-webhook-key`);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setNewKeyVisible(data.key);
+      refetchGpsKey();
+      toast({ title: 'Clave GPS generada', description: 'Copie la clave y compártala con su proveedor GPS. Solo se muestra una vez.' });
+    },
+    onError: () => toast({ title: 'Error', description: 'No se pudo generar la clave GPS', variant: 'destructive' }),
+  });
+
+  const revokeKeyMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('DELETE', `/api/companies/${effectiveCompanyId}/gps-webhook-key`);
+      return res.json();
+    },
+    onSuccess: () => {
+      setNewKeyVisible(null);
+      refetchGpsKey();
+      toast({ title: 'Clave revocada', description: 'El proveedor GPS ya no podrá enviar datos con la clave anterior.' });
+    },
+    onError: () => toast({ title: 'Error', description: 'No se pudo revocar la clave GPS', variant: 'destructive' }),
+  });
+
   const handleDownloadPdf = (path: string, filename: string) => {
     const companyParam = effectiveCompanyId ? `?companyId=${effectiveCompanyId}` : '';
     const link = document.createElement('a');
@@ -60,6 +97,8 @@ export default function PesvMonitoreoGps() {
   const [selectedMapVehicleId, setSelectedMapVehicleId] = useState<string>("");
   const [summaryDate, setSummaryDate] = useState(getTodayDateString());
   const [webhookCopied, setWebhookCopied] = useState(false);
+  const [keyCopied, setKeyCopied] = useState(false);
+  const [newKeyVisible, setNewKeyVisible] = useState<string | null>(null);
   const [showGpsGuide, setShowGpsGuide] = useState(true);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -759,37 +798,75 @@ export default function PesvMonitoreoGps() {
               </div>
             </div>
 
-            <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-white dark:bg-background p-3">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-white dark:bg-background p-3 space-y-3">
+              <div className="flex items-center gap-2">
                 <Wifi className="h-4 w-4 text-amber-700 dark:text-amber-400" />
-                <span className="text-sm font-medium">URL del Webhook GPS</span>
+                <span className="text-sm font-medium">Configuración del Webhook GPS</span>
                 <Badge variant="secondary" className="text-xs">Para su proveedor</Badge>
               </div>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 bg-muted rounded-md px-3 py-2 text-sm font-mono break-all" data-testid="text-webhook-url">
-                  {window.location.origin}/api/webhooks/gps
-                </code>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
+
+              <div>
+                <p className="text-xs text-muted-foreground mb-1 font-medium">URL del Endpoint</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 bg-muted rounded-md px-3 py-2 text-sm font-mono break-all" data-testid="text-webhook-url">
+                    {window.location.origin}/api/webhooks/gps
+                  </code>
+                  <Button variant="outline" size="icon" onClick={() => {
                     navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/gps`);
                     setWebhookCopied(true);
                     setTimeout(() => setWebhookCopied(false), 2000);
-                    toast({
-                      title: "URL copiada",
-                      description: "La URL del webhook GPS se ha copiado al portapapeles. Compártala con su proveedor GPS.",
-                      className: "bg-yellow-50 border-yellow-200",
-                    });
-                  }}
-                  data-testid="button-copy-webhook"
-                >
-                  {webhookCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
+                    toast({ title: "URL copiada", description: "Comparta esta URL con su proveedor GPS." });
+                  }} data-testid="button-copy-webhook">
+                    {webhookCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Su proveedor GPS debe configurar esta URL como destino para el envío de datos. El sistema acepta formato JSON con campos en español o inglés (placa/plate, velocidad/speed, latitud/lat, etc.).
-              </p>
+
+              <div>
+                <p className="text-xs text-muted-foreground mb-1 font-medium">API Key de Autenticación <span className="text-amber-600">(exclusiva para esta empresa)</span></p>
+                {newKeyVisible ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md px-3 py-2 text-sm font-mono break-all text-green-800 dark:text-green-200" data-testid="text-gps-key-new">
+                        {newKeyVisible}
+                      </code>
+                      <Button variant="outline" size="icon" onClick={() => {
+                        navigator.clipboard.writeText(newKeyVisible);
+                        setKeyCopied(true);
+                        setTimeout(() => setKeyCopied(false), 2000);
+                        toast({ title: "Clave copiada", description: "Guárdela en un lugar seguro. No se mostrará de nuevo." });
+                      }} data-testid="button-copy-gps-key">
+                        {keyCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">⚠ Copie esta clave ahora. No se mostrará nuevamente por seguridad.</p>
+                  </div>
+                ) : gpsKeyStatus?.hasKey ? (
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 bg-muted rounded-md px-3 py-2 text-sm font-mono text-muted-foreground" data-testid="text-gps-key-preview">
+                      {gpsKeyStatus.keyPreview} (clave configurada)
+                    </code>
+                    <Button variant="outline" size="sm" onClick={() => generateKeyMutation.mutate()} disabled={generateKeyMutation.isPending} data-testid="button-rotate-gps-key">
+                      Rotar clave
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => revokeKeyMutation.mutate()} disabled={revokeKeyMutation.isPending} data-testid="button-revoke-gps-key">
+                      Revocar
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">Sin clave configurada — el proveedor GPS no puede conectarse</span>
+                    <Button size="sm" onClick={() => generateKeyMutation.mutate()} disabled={generateKeyMutation.isPending} data-testid="button-generate-gps-key">
+                      {generateKeyMutation.isPending ? "Generando..." : "Generar clave"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <div className="text-xs text-muted-foreground space-y-1 border-t pt-2">
+                <p>El proveedor debe enviar <code className="bg-muted px-1 rounded">POST</code> a la URL con el header <code className="bg-muted px-1 rounded">X-Api-Key: [clave]</code>.</p>
+                <p>Acepta JSON con campos en español o inglés (placa/plate, velocidad/speed, latitud/lat, etc.).</p>
+              </div>
             </div>
           </CardContent>
         </Card>

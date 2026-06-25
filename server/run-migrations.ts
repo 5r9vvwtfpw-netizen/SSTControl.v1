@@ -46,6 +46,7 @@ import { createDriverComparendosTable } from './migrations/create-driver-compare
 import { addPlacaToComparendos } from './migrations/add-placa-to-comparendos';
 import { syncWorkerCountBackfill } from './migrations/sync-worker-count-backfill';
 import { syncUserRoleEnum } from './migrations/sync-user-role-enum';
+import { addGpsWebhookKey } from './migrations/add-gps-webhook-key';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -103,6 +104,7 @@ export async function runMigrations() {
     await addPlacaToComparendos();
     await syncWorkerCountBackfill();
     await syncUserRoleEnum();
+    await addGpsWebhookKey();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

@@ -424,6 +424,9 @@ export interface IStorage {
   getCompanies(): Promise<Company[]>;
   getCompany(id: string): Promise<Company | undefined>;
   getCompanyByNit(nit: string): Promise<Company | undefined>;
+  getCompanyByGpsWebhookKey(key: string): Promise<{ id: string; name: string } | undefined>;
+  setCompanyGpsWebhookKey(companyId: string, key: string | null): Promise<void>;
+  getCompanyGpsWebhookKey(companyId: string): Promise<string | null>;
   createCompany(company: InsertCompany): Promise<Company>;
   updateCompany(id: string, company: Partial<InsertCompany>): Promise<Company | undefined>;
   deleteCompany(id: string): Promise<void>;
@@ -2133,6 +2136,32 @@ export class DbStorage implements IStorage {
   async getCompanyByNit(nit: string): Promise<Company | undefined> {
     const [company] = await db.select().from(schema.companies).where(eq(schema.companies.nit, nit));
     return company;
+  }
+
+  async getCompanyByGpsWebhookKey(key: string): Promise<{ id: string; name: string } | undefined> {
+    try {
+      const result = await db.execute(sql`SELECT id, name FROM companies WHERE gps_webhook_key = ${key} LIMIT 1`);
+      const rows = result.rows as any[];
+      if (rows.length === 0) return undefined;
+      return { id: rows[0].id, name: rows[0].name };
+    } catch {
+      return undefined;
+    }
+  }
+
+  async setCompanyGpsWebhookKey(companyId: string, key: string | null): Promise<void> {
+    await db.execute(sql`UPDATE companies SET gps_webhook_key = ${key} WHERE id = ${companyId}`);
+  }
+
+  async getCompanyGpsWebhookKey(companyId: string): Promise<string | null> {
+    try {
+      const result = await db.execute(sql`SELECT gps_webhook_key FROM companies WHERE id = ${companyId} LIMIT 1`);
+      const rows = result.rows as any[];
+      if (rows.length === 0) return null;
+      return rows[0].gps_webhook_key || null;
+    } catch {
+      return null;
+    }
   }
 
   async createCompany(company: InsertCompany): Promise<Company> {

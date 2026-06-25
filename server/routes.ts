@@ -52883,6 +52883,48 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     z.array(gpsWebhookRecordSchema),
   ]);
 
+
+  // ========== GPS WEBHOOK KEY POR EMPRESA ==========
+
+  // GET /api/companies/:id/gps-webhook-key - Ver estado de la clave GPS de la empresa
+  app.get('/api/companies/:id/gps-webhook-key', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const companyId = req.params.id;
+      const key = await storage.getCompanyGpsWebhookKey(companyId);
+      if (!key) {
+        return res.json({ hasKey: false, keyPreview: null });
+      }
+      const preview = key.substring(0, 8) + '...' + key.substring(key.length - 4);
+      res.json({ hasKey: true, keyPreview: preview });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/companies/:id/gps-webhook-key - Generar nueva clave GPS para la empresa
+  app.post('/api/companies/:id/gps-webhook-key', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+    try {
+      const companyId = req.params.id;
+      const crypto = await import('crypto');
+      const newKey = crypto.randomBytes(32).toString('hex');
+      await storage.setCompanyGpsWebhookKey(companyId, newKey);
+      res.json({ key: newKey, message: 'Clave GPS generada exitosamente. Comparta esta clave con su proveedor GPS.' });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // DELETE /api/companies/:id/gps-webhook-key - Revocar clave GPS de la empresa
+  app.delete('/api/companies/:id/gps-webhook-key', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+    try {
+      const companyId = req.params.id;
+      await storage.setCompanyGpsWebhookKey(companyId, null);
+      res.json({ message: 'Clave GPS revocada. El proveedor GPS ya no podrá enviar datos hasta que genere una nueva clave.' });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // GET /api/webhooks/gps - Información del webhook (para navegadores y verificación)
   app.get("/api/webhooks/gps", async (_req, res) => {
     res.json({
@@ -52921,16 +52963,34 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.post("/api/webhooks/gps", async (req, res) => {
     try {
       const apiKey = req.headers["x-api-key"] || req.headers["authorization"]?.replace("Bearer ", "");
-      const expectedKey = process.env.GPS_WEBHOOK_API_KEY;
       
-      if (!expectedKey) {
-        if (process.env.NODE_ENV === "production") {
-          console.error("[GPS Webhook] GPS_WEBHOOK_API_KEY no configurada en producción. Webhook deshabilitado.");
-          return res.status(503).json({ error: "Webhook no configurado. Contacte al administrador." });
+      // Autenticación por empresa: cada empresa tiene su propia clave GPS
+      let webhookCompanyId: string | null = null;
+      if (apiKey) {
+        const companyFromKey = await storage.getCompanyByGpsWebhookKey(String(apiKey));
+        if (companyFromKey) {
+          webhookCompanyId = companyFromKey.id;
+          console.log(`[GPS Webhook] Autenticado para empresa: ${companyFromKey.name} (${companyFromKey.id})`);
         }
-      } else if (apiKey !== expectedKey) {
-        console.warn("[GPS Webhook] Intento de acceso no autorizado desde IP:", req.ip);
-        return res.status(401).json({ error: "API key inválida" });
+      }
+      
+      // Fallback: clave global (compatibilidad hacia atrás)
+      if (!webhookCompanyId) {
+        const globalKey = process.env.GPS_WEBHOOK_API_KEY;
+        if (globalKey) {
+          if (apiKey !== globalKey) {
+            console.warn("[GPS Webhook] Intento de acceso no autorizado desde IP:", req.ip);
+            return res.status(401).json({ error: "API key inválida" });
+          }
+          // Clave global válida — compañía se determina por placa
+        } else if (process.env.NODE_ENV === "production") {
+          // Sin clave global ni empresa configurada en producción
+          if (!apiKey) {
+            return res.status(401).json({ error: "Se requiere API key. Configure la clave GPS en la plataforma SST." });
+          }
+          return res.status(401).json({ error: "API key inválida" });
+        }
+        // En desarrollo sin clave configurada: aceptar sin auth (modo pruebas)
       }
       
       const parsed = gpsWebhookPayloadSchema.safeParse(req.body);
@@ -52962,6 +53022,12 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               record, 
               error: `Vehículo no encontrado${plate ? ` con placa: ${plate}` : ""}${deviceId ? ` con dispositivo: ${deviceId}` : ""}` 
             });
+            continue;
+          }
+
+          // Seguridad: si la auth fue por clave de empresa, verificar que el vehículo pertenece a esa empresa
+          if (webhookCompanyId && vehicle.companyId !== webhookCompanyId) {
+            errors.push({ record, error: `El vehículo con placa ${plate} no pertenece a la empresa autorizada por esta API key` });
             continue;
           }
 
