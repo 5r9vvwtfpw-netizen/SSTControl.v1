@@ -44676,7 +44676,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.post("/api/internal-messages", requireAuth, async (req, res) => {
     try {
       const user = req.user!;
-      const isSpecialRole = user.role === 'superadmin' || user.role === 'soporte' || user.role === 'lso';
+      const isSpecialRole = user.role === 'superadmin' || user.role === 'soporte' || user.role === 'lso' || user.role === 'lso_externo';
       if (!user.companyId && !isSpecialRole) {
         return res.status(400).send("Usuario no tiene empresa asignada");
       }
@@ -44699,9 +44699,29 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // SST-2025-0046: Allow cross-company messaging when:
       // - Sender is support/superadmin (already handled by isSupportUser)
       // - Receiver is support/superadmin (they can receive from any company)
+      // - Receiver is an LSO actively assigned to sender's company (fix: SST-2026-0007)
       const receiverIsSupportUser = receiver.role === 'soporte' || receiver.role === 'superadmin';
+      const receiverIsLso = receiver.role === 'lso' || receiver.role === 'lso_externo';
       if (!isSupportUser && !receiverIsSupportUser && receiver.companyId !== user.companyId) {
-        return res.status(403).send("El destinatario no pertenece a su empresa");
+        // Allow if receiver is an LSO assigned to sender's company
+        if (receiverIsLso && user.companyId) {
+          const lsoAssignment = await db
+            .select({ id: schema.licensedProfessionalAssignments.id })
+            .from(schema.licensedProfessionalAssignments)
+            .where(
+              and(
+                eq(schema.licensedProfessionalAssignments.userId, receiverId),
+                eq(schema.licensedProfessionalAssignments.companyId, user.companyId),
+                eq(schema.licensedProfessionalAssignments.isActive, true)
+              )
+            )
+            .limit(1);
+          if (lsoAssignment.length === 0) {
+            return res.status(403).send("El destinatario no pertenece a su empresa");
+          }
+        } else {
+          return res.status(403).send("El destinatario no pertenece a su empresa");
+        }
       }
       
       // Security: Soporte role must have active access session to receiver's company
