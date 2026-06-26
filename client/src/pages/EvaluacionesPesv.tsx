@@ -325,7 +325,7 @@ export default function EvaluacionesPesv() {
       grouped[key].years.sort((a, b) => b - a);
     }
     return Object.values(grouped);
-  }, [evaluaciones, companyMap, isSuperAdmin]);
+  }, [evaluaciones, companyMap, isSuperAdmin, isLso]);
 
   const filteredVaults = useMemo(() => {
     if (!searchTerm) return companyVaults;
