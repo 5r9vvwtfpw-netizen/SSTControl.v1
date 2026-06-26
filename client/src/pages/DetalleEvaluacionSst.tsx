@@ -403,10 +403,16 @@ export default function DetalleEvaluacionSst() {
     }
   }, [evaluacion?.tipoEmpresa]);
 
-  // LSO/lso_externo: auto-configurar contexto de empresa desde la evaluación
-  // Esto garantiza que X-Company-Id se envíe correctamente incluso al acceder por URL directa
+  // Auto-configurar contexto de empresa desde la evaluación para garantizar que X-Company-Id
+  // se envíe correctamente cuando superadmin o LSO navegan a sub-módulos desde esta evaluación.
   useEffect(() => {
-    if (evaluacion?.companyId && (user?.role === 'lso' || user?.role === 'lso_externo')) {
+    if (!evaluacion?.companyId) return;
+    if (user?.role === 'superadmin') {
+      // Guardado liviano: permite que los sub-módulos con ?from=evaluation usen el companyId correcto
+      // sin necesidad de iniciar una sesión de acceso formal. Solo se aplica en URLs con from=evaluation.
+      localStorage.setItem('superadmin_vault_company', evaluacion.companyId);
+    }
+    if (user?.role === 'lso' || user?.role === 'lso_externo') {
       localStorage.setItem('lso_company_context', JSON.stringify({ companyId: evaluacion.companyId }));
     }
   }, [evaluacion?.companyId, user?.role]);

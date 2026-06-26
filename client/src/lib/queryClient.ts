@@ -84,6 +84,18 @@ function getSelectedCompanyId(): string | null {
   } catch {
     // Ignore parse errors
   }
+  // Vault navigation context: set by DetalleEvaluacionSst/Pesv when superadmin views a company's
+  // evaluation. Only applied when navigating via sub-modules (from=evaluation in URL) to avoid
+  // leaking company context into unrelated pages.
+  try {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    if (params.get('from') === 'evaluation') {
+      const vaultCompany = localStorage.getItem("superadmin_vault_company");
+      if (vaultCompany) return vaultCompany;
+    }
+  } catch {
+    // Ignore errors
+  }
   try {
     const lsoContext = localStorage.getItem("lso_company_context");
     if (lsoContext) {
