@@ -573,6 +573,112 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
   doc.fontSize(7.5).font('Helvetica').fillColor(C.GOLD)
      .text(`${nombreProveedor} · NIT ${nitProveedor} · ${ciudad}`, 0, P.h - 17, { width: P.w, align: 'center' });
 
+  // ── PÁGINA 5: TARIFA PROFESIONAL SST ────────────────────────────────────────
+  doc.addPage({ size: 'LETTER', margin: 0 });
+
+  // Franja superior verde oscuro
+  const tarifaHeroH = 130;
+  doc.rect(0, 0, P.w, tarifaHeroH).fill(C.GREEN_DARK);
+  doc.rect(0, tarifaHeroH - 4, P.w, 4).fill(C.GOLD);
+
+  doc.fontSize(10).font('Helvetica').fillColor('#b8d4c0')
+     .text('ESTRUCTURA DE PRECIOS · SG-SST AUTOMATIZADO', 0, 22, { width: P.w, align: 'center' });
+
+  doc.fontSize(34).font('Helvetica-Bold').fillColor(C.WHITE)
+     .text('Tarifa Profesional SST', 0, 44, { width: P.w, align: 'center' });
+
+  doc.fontSize(10).font('Helvetica').fillColor('#b8d4c0')
+     .text('Basada en el Nivel de Riesgo ARL · Clasificacion segun actividad economica CIIU', P.m, 92, {
+       width: P.w - P.m * 2, align: 'center',
+     });
+
+  // Tabla de tarifas por nivel ARL
+  const tarifaRows = [
+    { nivel: 'Nivel I — Bajo',       sectores: 'Oficinas, comercio, servicios financieros',            tarifa: '$150.000', color: '#28a745' },
+    { nivel: 'Nivel II — Medio',     sectores: 'Manufactura ligera, salud, educacion',                 tarifa: '$250.000', color: '#5dade2' },
+    { nivel: 'Nivel III — Medio-Alto', sectores: 'Industria, transporte, construccion menor',          tarifa: '$350.000', color: C.GOLD },
+    { nivel: 'Nivel IV — Alto',      sectores: 'Construccion, mineria superficial, quimicos',          tarifa: '$450.000', color: '#e67e22' },
+    { nivel: 'Nivel V — Muy Alto',   sectores: 'Mineria subterranea, explosivos, alturas',             tarifa: '$550.000', color: '#e74c3c' },
+  ];
+
+  const tStartY = tarifaHeroH + 28;
+  const tColX0 = P.m;        // Nivel de Riesgo
+  const tColX1 = P.m + 178;  // Sectores
+  const tColX2 = P.w - P.m - 108; // Tarifa Mensual
+  const tColW0 = 174;
+  const tColW1 = tColX2 - tColX1 - 8;
+  const tColW2 = 108;
+  const tRowH = 44;
+
+  // Cabecera de la tabla
+  doc.rect(tColX0, tStartY, P.w - P.m * 2, 26).fill(C.GREEN_DARK);
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(C.WHITE)
+     .text('Nivel de Riesgo ARL', tColX0 + 8, tStartY + 8, { width: tColW0 });
+  doc.text('Sectores Representativos', tColX1 + 8, tStartY + 8, { width: tColW1 });
+  doc.text('Tarifa Mensual', tColX2, tStartY + 8, { width: tColW2, align: 'right' });
+
+  let ty2 = tStartY + 26;
+  for (let i = 0; i < tarifaRows.length; i++) {
+    const r = tarifaRows[i];
+    const bg = i % 2 === 0 ? '#f8fdf9' : C.WHITE;
+    doc.rect(tColX0, ty2, P.w - P.m * 2, tRowH).fill(bg);
+    // Franja de color izquierda según nivel
+    doc.rect(tColX0, ty2, 5, tRowH).fill(r.color);
+    // Texto nivel
+    doc.fontSize(9.5).font('Helvetica-Bold').fillColor(C.BLACK)
+       .text(r.nivel, tColX0 + 14, ty2 + 14, { width: tColW0 - 16 });
+    // Sectores
+    doc.fontSize(8.5).font('Helvetica').fillColor(C.GRAY_TEXT)
+       .text(r.sectores, tColX1 + 8, ty2 + 14, { width: tColW1 });
+    // Tarifa
+    doc.fontSize(14).font('Helvetica-Bold').fillColor(r.color)
+       .text(`${r.tarifa} COP`, tColX2, ty2 + 12, { width: tColW2, align: 'right' });
+    // Separador
+    doc.moveTo(tColX0, ty2 + tRowH).lineTo(P.w - P.m, ty2 + tRowH)
+       .strokeColor('#e0e0e0').lineWidth(0.5).stroke();
+    ty2 += tRowH;
+  }
+
+  // Nota informativa
+  const notaY = ty2 + 20;
+  doc.rect(P.m, notaY, P.w - P.m * 2, 52).fill('#f0f7f2');
+  doc.rect(P.m, notaY, P.w - P.m * 2, 3).fill(C.GREEN_ACCENT);
+  doc.fontSize(8.5).font('Helvetica-Bold').fillColor(C.GREEN_DARK)
+     .text('Tarifa mensual fija por empresa · Sin cobro por trabajador adicional', P.m + 16, notaY + 10, { width: P.w - P.m * 2 - 32 });
+  doc.fontSize(8).font('Helvetica').fillColor(C.GRAY_TEXT)
+     .text('El nivel de riesgo ARL se determina automaticamente por el sistema segun el codigo CIIU registrado. La tarifa aplica para acceso completo a todos los modulos: SST, PESV, Portal del Empleado, Monitoreo GPS y Licenciado SST.',
+       P.m + 16, notaY + 24, { width: P.w - P.m * 2 - 32 });
+
+  // Dos columnas de cierre: Prueba + Contacto
+  const closeCardY = notaY + 72;
+  const closeCardW = (P.w - P.m * 2 - 16) / 2;
+  const closeCardH = 96;
+
+  doc.rect(P.m, closeCardY, closeCardW, closeCardH).fill('#f0f7f2');
+  doc.rect(P.m, closeCardY, closeCardW, 3).fill(C.GREEN_ACCENT);
+  doc.fontSize(9.5).font('Helvetica-Bold').fillColor(C.GREEN_DARK)
+     .text('PRUEBA GRATUITA 7 DIAS', P.m, closeCardY + 12, { width: closeCardW, align: 'center' });
+  doc.fontSize(8).font('Helvetica').fillColor(C.GRAY_TEXT)
+     .text('Sin tarjeta de credito\nSin compromiso de permanencia\nAcceso completo a todos los modulos', P.m, closeCardY + 30, { width: closeCardW, align: 'center' });
+  doc.fontSize(8.5).font('Helvetica-Bold').fillColor(C.GREEN_MID)
+     .text(web, P.m, closeCardY + 74, { width: closeCardW, align: 'center' });
+
+  const closeCardX2 = P.m + closeCardW + 16;
+  doc.rect(closeCardX2, closeCardY, closeCardW, closeCardH).fill('#f0f7f2');
+  doc.rect(closeCardX2, closeCardY, closeCardW, 3).fill(C.GOLD);
+  doc.fontSize(9.5).font('Helvetica-Bold').fillColor(C.GREEN_DARK)
+     .text('CONTACTENOS HOY', closeCardX2, closeCardY + 12, { width: closeCardW, align: 'center' });
+  doc.fontSize(10).font('Helvetica-Bold').fillColor(C.BLACK)
+     .text(contactName, closeCardX2, closeCardY + 30, { width: closeCardW, align: 'center' });
+  doc.fontSize(8.5).font('Helvetica').fillColor(C.GRAY_TEXT)
+     .text(`WhatsApp: ${whatsapp}`, closeCardX2, closeCardY + 48, { width: closeCardW, align: 'center' });
+  doc.text(email, closeCardX2, closeCardY + 62, { width: closeCardW, align: 'center' });
+
+  // Footer
+  doc.rect(0, P.h - 28, P.w, 28).fill(C.GREEN_DARK);
+  doc.fontSize(7.5).font('Helvetica').fillColor(C.GOLD)
+     .text(`${nombreProveedor} · NIT ${nitProveedor} · ${ciudad}`, 0, P.h - 17, { width: P.w, align: 'center' });
+
   doc.flushPages();
   doc.end();
 
