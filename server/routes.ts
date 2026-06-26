@@ -44535,7 +44535,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       const excludeRelatedEntity = user.role === 'lso' ? 'support_ticket' : undefined;
-      const messages = await storage.getInternalMessages(user.id, user.companyId || null, excludeRelatedEntity);
+      // LSO receives messages from multiple companies (stored with sender's companyId),
+      // so passing their own companyId would incorrectly filter those messages out.
+      const isLsoRole = user.role === 'lso' || user.role === 'lso_externo';
+      const companyIdForQuery = isLsoRole ? null : (user.companyId || null);
+      const messages = await storage.getInternalMessages(user.id, companyIdForQuery, excludeRelatedEntity);
       res.json(messages);
     } catch (error: any) {
       console.error('Error fetching internal messages:', error);
@@ -44549,7 +44553,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const user = req.user!;
       
       const excludeRelatedEntity = user.role === 'lso' ? 'support_ticket' : undefined;
-      const count = await storage.getUnreadMessageCount(user.id, user.companyId || null, excludeRelatedEntity);
+      const isLsoRole = user.role === 'lso' || user.role === 'lso_externo';
+      const companyIdForQuery = isLsoRole ? null : (user.companyId || null);
+      const count = await storage.getUnreadMessageCount(user.id, companyIdForQuery, excludeRelatedEntity);
       res.json({ count });
     } catch (error: any) {
       console.error('Error fetching unread count:', error);
