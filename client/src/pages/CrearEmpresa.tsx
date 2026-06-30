@@ -59,7 +59,12 @@ const createCompanySchema = z.object({
   city: z.string().min(1, "La ciudad es obligatoria"),
   ciiuCode: z.string().min(1, "El código CIIU es obligatorio"),
   address: z.string().min(5, "La dirección debe tener al menos 5 caracteres"),
-  contactPhone: z.string().min(7, "El teléfono debe tener al menos 7 dígitos"),
+  contactPhone: z.string()
+    .transform(v => v.replace(/[\s\-.()+]/g, ''))
+    .pipe(z.string().regex(
+      /^(3\d{9}|[1245678]\d{7})$/,
+      "Número inválido. Celular: 10 dígitos comenzando con 3 (ej: 3101234567). Fijo: 8 dígitos con indicativo de ciudad (ej: 6017654321)"
+    )),
   contactEmail: z.string().email("Debe ser un correo electrónico válido"),
   numberOfWorkers: z.coerce.number().min(1, "Debe tener al menos 1 trabajador"),
   riskLevel: z.enum(["I", "II", "III", "IV", "V"]).default("I"),
@@ -382,11 +387,13 @@ export default function CrearEmpresa() {
                         </FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="Ej: 3001234567" 
+                            placeholder="Celular: 3101234567 · Fijo: 6017654321"
+                            inputMode="numeric"
                             {...field} 
                             data-testid="input-contact-phone"
                           />
                         </FormControl>
+                        <p className="text-xs text-muted-foreground">Celular: 10 dígitos desde 3 · Fijo: 8 dígitos con indicativo (1-Bogotá, 2-Cali, 4-Medellín, 5-Costa, 6-Eje Cafetero, 7-Bucaramanga, 8-Llanos)</p>
                         <FormMessage />
                       </FormItem>
                     )}
