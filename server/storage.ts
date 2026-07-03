@@ -1534,6 +1534,7 @@ export interface IStorage {
   getInvoicesByCompany(companyId: string): Promise<Invoice[]>;
   getInvoice(id: string): Promise<Invoice | undefined>;
   getInvoiceByNumber(invoiceNumber: string): Promise<Invoice | undefined>;
+  getInvoiceForSubscriptionPeriod(subscriptionId: string, periodEnd: Date): Promise<Invoice | undefined>;
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   updateInvoice(id: string, invoice: Partial<InsertInvoice>): Promise<Invoice | undefined>;
   markInvoicePaid(id: string, paidDate: Date): Promise<Invoice | undefined>;
@@ -12758,6 +12759,28 @@ export class DbStorage implements IStorage {
 
   async getInvoice(id: string): Promise<Invoice | undefined> {
     const [invoice] = await db.select().from(schema.invoices).where(eq(schema.invoices.id, id));
+    return invoice;
+  }
+
+  async getInvoiceForSubscriptionPeriod(subscriptionId: string, periodEnd: Date): Promise<Invoice | undefined> {
+    const dayStart = new Date(periodEnd);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(periodEnd);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    const [invoice] = await db
+      .select()
+      .from(schema.invoices)
+      .where(
+        and(
+          eq(schema.invoices.subscriptionId, subscriptionId),
+          gte(schema.invoices.periodEnd, dayStart),
+          lte(schema.invoices.periodEnd, dayEnd),
+          sql`${schema.invoices.status} != 'canceled'`
+        )
+      )
+      .orderBy(desc(schema.invoices.createdAt))
+      .limit(1);
     return invoice;
   }
 

@@ -52,6 +52,21 @@ export async function processMonthlyBilling() {
         const billingPeriodStart = subscription.currentPeriodStart;
         const billingPeriodEnd = subscription.currentPeriodEnd;
 
+        // Evitar facturas duplicadas: si ya se generó una factura para este
+        // mismo período (p.ej. por un reinicio previo del servidor), no
+        // generar otra ni reenviar el correo.
+        const existingInvoice = await storage.getInvoiceForSubscriptionPeriod(
+          subscription.id,
+          billingPeriodEnd
+        );
+        if (existingInvoice) {
+          logger.info(
+            { ...subscriptionContext, invoiceId: existingInvoice.id, invoiceStatus: existingInvoice.status },
+            'Ya existe una factura para este período - se omite generación duplicada. La suscripción permanece activa hasta que el pago sea confirmado (Wompi) o hasta que venza el período de gracia.'
+          );
+          continue;
+        }
+
         // Generate invoice record (returns invoice number as string)
         logger.info(subscriptionContext, 'Generating invoice record...');
         
@@ -186,25 +201,24 @@ export async function processMonthlyBilling() {
           }
         }
 
-        // Update subscription billing period (+30 days)
-        const newPeriodStart = new Date(subscription.currentPeriodEnd);
-        const newPeriodEnd = new Date(newPeriodStart);
-        newPeriodEnd.setDate(newPeriodEnd.getDate() + 30);
-        const nextPaymentDate = new Date(newPeriodEnd);
-        nextPaymentDate.setDate(nextPaymentDate.getDate() + 1); // Payment due day after period ends
-        
-        await storage.updateSubscription(subscription.id, {
-          currentPeriodStart: newPeriodStart,
-          currentPeriodEnd: newPeriodEnd,
-          nextPaymentDate
-        });
-
-        logger.info({ 
-          ...subscriptionContext, 
-          newPeriodStart: newPeriodStart.toISOString(),
-          newPeriodEnd: newPeriodEnd.toISOString(),
-          nextPaymentDate: nextPaymentDate.toISOString()
-        }, 'Subscription billing period updated');
+        // IMPORTANTE: NO se extiende currentPeriodEnd/nextPaymentDate aquí.
+        // Antes este job avanzaba el período de facturación +30 días con solo
+        // generar la factura, sin verificar pago real. Esto hacía que la
+        // suscripción se "renovara" sola cada vez que el servidor reiniciaba
+        // (incluyendo cada despliegue), ocultando indefinidamente el
+        // vencimiento y el bloqueo por falta de pago.
+        // El período solo debe avanzar cuando el pago se confirma realmente:
+        // - Pago con Wompi/PSE -> ver activateSubscriptionAfterPse en
+        //   server/routes/wompi.ts
+        // - Transferencia bancaria confirmada manualmente por un admin.
+        // Mientras tanto, la factura queda pendiente y
+        // getSubscriptionStatus (server/middleware/subscription-check.ts)
+        // se encarga de bloquear el acceso una vez vencido el período de
+        // gracia (SUBSCRIPTION_GRACE_PERIOD_DAYS).
+        logger.info(
+          { ...subscriptionContext, invoiceId: invoice.id },
+          'Factura generada y enviada. El período de facturación no se extiende automáticamente; se actualizará solo cuando se confirme el pago.'
+        );
 
       } catch (error: any) {
         logger.error({ ...subscriptionContext, error: error.message }, 'Error processing subscription billing');
