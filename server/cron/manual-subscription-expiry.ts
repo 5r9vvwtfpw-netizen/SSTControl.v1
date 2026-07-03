@@ -16,7 +16,7 @@ import { sql } from "drizzle-orm";
 import logger from "../lib/logger";
 
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
-const GRACE_PERIOD_DAYS = 3;
+const GRACE_PERIOD_DAYS = 1;
 
 async function runManualSubscriptionExpiry() {
   try {

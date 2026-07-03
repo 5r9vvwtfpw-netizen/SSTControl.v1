@@ -4,3 +4,5 @@
 - [RBAC isAdmin pattern](rbac-isadmin-pattern.md) — all page-level write guards use canWrite(role, resource) not hasCompanyAdminAccess; responsable_sst added to hasCompanyAdminAccess for legacy paths.
 - [RBAC backend routes missing permissions](rbac-backend-missing-perms.md) — 10 mutating routes in routes.ts used requireAuth-only; fixed to use requirePermission. Pattern to watch: any new POST/PATCH/DELETE must not rely on requireAuth alone.
 - [Chatbot knowledge base must mirror real form fields](chatbot-knowledge-base-accuracy.md) — describing standards generically makes the AI assistant vague; copy exact form field names/dropdown options into APP_KNOWLEDGE_BASE.
+- [Production DB tool vs AWS RDS](production-db-tool-vs-aws-rds.md) — the production database skill's executeSql hits the wrong DB for this app; query real AWS RDS prod via a bash-run pg script instead.
+- [Subscription grace period](subscription-grace-period.md) — expired subscriptions don't auto-block; a daily cron with a configurable grace period flips status to past_due after current_period_end.
