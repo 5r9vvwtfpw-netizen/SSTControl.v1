@@ -5,6 +5,13 @@ import { pricingPluginSubscriptions } from "../../pricing_plugin/schema";
 import { users, subscriptions } from "@shared/schema";
 import logger from "../lib/logger";
 
+// Días de gracia después de current_period_end antes de considerar una
+// suscripción "active" como vencida. Debe coincidir con el valor usado en
+// server/cron/manual-subscription-expiry.ts (ese cron es un respaldo por
+// lote; esta verificación en vivo es la que realmente aplica el bloqueo,
+// ya que en despliegues Autoscale el cron no está garantizado a ejecutarse).
+export const SUBSCRIPTION_GRACE_PERIOD_DAYS = 1;
+
 export interface SubscriptionStatus {
   isActive: boolean;
   isBlocked: boolean;
@@ -207,6 +214,38 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
   }
 
   if (status === "active") {
+    // pricing_plugin_subscriptions has no period-end date of its own; the real
+    // billing period lives in the `subscriptions` table. Check it live here
+    // instead of relying solely on the background cron (unreliable on
+    // Autoscale deployments, which can scale to zero between requests).
+    try {
+      const [mainSub] = await db
+        .select({
+          currentPeriodEnd: subscriptions.currentPeriodEnd,
+        })
+        .from(subscriptions)
+        .where(eq(subscriptions.companyId, companyId))
+        .limit(1);
+
+      if (mainSub?.currentPeriodEnd) {
+        const periodEnd = new Date(mainSub.currentPeriodEnd);
+        const graceMs = SUBSCRIPTION_GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000;
+        if (periodEnd.getTime() + graceMs < now.getTime()) {
+          return {
+            isActive: false,
+            isBlocked: true,
+            isTrial: false,
+            trialEndsAt,
+            subscriptionStatus: "past_due",
+            blockedReason: "Su período de suscripción ha vencido. Por favor renueve su suscripción.",
+            daysRemaining: null,
+          };
+        }
+      }
+    } catch (periodCheckError: any) {
+      logger.error({ error: periodCheckError.message, companyId }, "Error checking current_period_end for active subscription - allowing access");
+    }
+
     return {
       isActive: true,
       isBlocked: false,
