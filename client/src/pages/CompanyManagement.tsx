@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search, Unlock, Mail, Send, CalendarCheck, Banknote } from "lucide-react";
+import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search, Unlock, Lock, Mail, Send, CalendarCheck, Banknote } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -46,6 +46,7 @@ type CompanyStats = {
     inspectionsCount: number;
   };
   subscription?: {
+    id: string;
     status: string;
     planId: string;
     couponCode: string | null;
@@ -401,6 +402,33 @@ export default function CompanyManagement() {
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/company/current"] });
       toast({ title: "Empresa liberada", description: "El cliente ahora tiene acceso completo al sistema." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const toggleSubscriptionBlockMutation = useMutation({
+    mutationFn: async ({ subscriptionId, status }: { subscriptionId: string; status: "suspended" | "active" }) => {
+      const res = await apiRequest("PATCH", `/api/billing/admin/subscriptions/${subscriptionId}/status`, {
+        status,
+        reason: status === "suspended" ? "Bloqueo manual desde Gestión de Empresas" : "Reactivación manual desde Gestión de Empresas",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Error al actualizar el estado de la suscripción");
+      }
+      return res.json();
+    },
+    onSuccess: (_, { status }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/companies/stats/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      toast({
+        title: status === "suspended" ? "Empresa bloqueada" : "Empresa desbloqueada",
+        description: status === "suspended"
+          ? "El cliente ha perdido acceso al sistema hasta que se reactive la suscripción."
+          : "El cliente recuperó el acceso al sistema.",
+      });
     },
     onError: (err: Error) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -1381,6 +1409,38 @@ export default function CompanyManagement() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        {user?.role === 'superadmin' && (() => {
+                          const sub = getCompanySubscription(company.id);
+                          if (!sub) return null;
+                          const isBlocked = sub.status === 'suspended' || sub.status === 'blocked';
+                          return (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => toggleSubscriptionBlockMutation.mutate({
+                                    subscriptionId: sub.id,
+                                    status: isBlocked ? "active" : "suspended",
+                                  })}
+                                  disabled={toggleSubscriptionBlockMutation.isPending}
+                                  data-testid={`button-toggle-block-${company.id}`}
+                                >
+                                  {toggleSubscriptionBlockMutation.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : isBlocked ? (
+                                    <Unlock className="h-4 w-4 text-green-600" />
+                                  ) : (
+                                    <Lock className="h-4 w-4 text-red-600" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{isBlocked ? "Desbloquear empresa — restaurar acceso" : "Bloquear empresa — suspender acceso"}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        })()}
                         {user?.role === 'superadmin' && !company.onboardingCompleted && (
                           <Tooltip>
                             <TooltipTrigger asChild>

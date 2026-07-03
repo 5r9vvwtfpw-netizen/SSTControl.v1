@@ -2695,6 +2695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             inspectionsCount: companyInspections.length,
           },
           subscription: subscription ? {
+            id: subscription.id,
             status: subscription.status,
             planId: subscription.planId,
             couponCode: couponCode,
