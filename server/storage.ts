@@ -1538,6 +1538,7 @@ export interface IStorage {
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   updateInvoice(id: string, invoice: Partial<InsertInvoice>): Promise<Invoice | undefined>;
   markInvoicePaid(id: string, paidDate: Date): Promise<Invoice | undefined>;
+  getInvoicesPendingAccountingSync(): Promise<Invoice[]>;
   
   // Analytics & Metrics - Admin Dashboard (Bloque 4 - Tarea 7)
   getBillingMetrics(): Promise<{
@@ -12792,6 +12793,26 @@ export class DbStorage implements IStorage {
   async createInvoice(invoice: InsertInvoice): Promise<Invoice> {
     const [newInvoice] = await db.insert(schema.invoices).values(invoice).returning();
     return newInvoice;
+  }
+
+  async getInvoicesPendingAccountingSync(): Promise<Invoice[]> {
+    const now = new Date();
+    return await db
+      .select()
+      .from(schema.invoices)
+      .where(
+        and(
+          eq(schema.invoices.status, 'paid'),
+          isNull(schema.invoices.dianCufe),
+          ne(schema.invoices.accountingSyncStatus, 'synced'),
+          lt(schema.invoices.accountingSyncAttempts, 20),
+          or(
+            isNull(schema.invoices.nextAccountingRetryAt),
+            lte(schema.invoices.nextAccountingRetryAt, now)
+          )
+        )
+      )
+      .orderBy(asc(schema.invoices.createdAt));
   }
 
   async updateInvoice(id: string, invoice: Partial<InsertInvoice>): Promise<Invoice | undefined> {

@@ -32,6 +32,7 @@ import { startMedicalExamRemindersCron } from "./jobs/medical-exam-reminders";
 import { startIndicadoresSchedulerCron } from "./jobs/indicadores-scheduler";
 import { startNotificationsCron } from "./jobs/notifications";
 import { startComplianceAlertsCron } from "./jobs/compliance-alerts";
+import { startAccountingRetryJob } from "./jobs/accounting-retry";
 import { scheduleWeeklyBackup } from "./jobs/weekly-backup";
 import { startSubscriptionIntegrityCheck } from "./cron/subscription-integrity";
 import { startManualSubscriptionExpiryJob } from "./cron/manual-subscription-expiry";
@@ -364,16 +365,36 @@ app.post(
                             snapshotNumberOfVehicles: company.numberOfVehicles ?? null,
                             stripePaymentId: session.id,
                           });
-                          if (accountingResult.success && accountingResult.dianCufe) {
+                          if (accountingResult.success) {
                             await storage.updateInvoice(invoice.id, {
-                              dianCufe: accountingResult.dianCufe,
+                              dianCufe: accountingResult.dianCufe || null,
                               dianXmlUrl: accountingResult.dianXmlUrl || null,
                               dianPdfUrl: accountingResult.dianPdfUrl || null,
+                              accountingSyncStatus: 'synced',
+                              accountingLastError: null,
+                              nextAccountingRetryAt: null,
                             });
                             logger.info({ invoiceId: invoice.id, dianCufe: accountingResult.dianCufe }, '[Accounting] DIAN data saved on invoice');
+                          } else {
+                            // No lo damos por perdido: queda marcado como pendiente para
+                            // que el job de reintentos automáticos (accounting-retry) lo
+                            // vuelva a enviar sin intervención manual.
+                            await storage.updateInvoice(invoice.id, {
+                              accountingSyncStatus: 'failed',
+                              accountingSyncAttempts: 1,
+                              accountingLastError: (accountingResult.message || 'unknown error').substring(0, 500),
+                              nextAccountingRetryAt: new Date(Date.now() + 5 * 60 * 1000),
+                            });
+                            logger.warn({ invoiceId: invoice.id, message: accountingResult.message }, '[Accounting] Sync failed - scheduled for automatic retry');
                           }
-                        } catch (accountingErr) {
-                          logger.error({ err: accountingErr, invoiceId: invoice.id }, '[Accounting] Error sending to accounting - non-critical');
+                        } catch (accountingErr: any) {
+                          await storage.updateInvoice(invoice.id, {
+                            accountingSyncStatus: 'failed',
+                            accountingSyncAttempts: 1,
+                            accountingLastError: (accountingErr?.message || 'unknown error').substring(0, 500),
+                            nextAccountingRetryAt: new Date(Date.now() + 5 * 60 * 1000),
+                          }).catch(() => {});
+                          logger.error({ err: accountingErr, invoiceId: invoice.id }, '[Accounting] Error sending to accounting - scheduled for automatic retry');
                         }
                       }
                     }
@@ -978,6 +999,12 @@ app.use(requestLoggerMiddleware);
       startComplianceAlertsCron();
     } catch (error) {
       logger.error({ err: error }, "⚠️ Compliance alerts cron job initialization failed");
+    }
+
+    try {
+      startAccountingRetryJob();
+    } catch (error) {
+      logger.error({ err: error }, "⚠️ Accounting retry job initialization failed");
     }
 
     try {

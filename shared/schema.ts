@@ -5939,6 +5939,12 @@ export const invoices = pgTable("invoices", {
   dianCufe: text("dian_cufe"), // Código Único de Factura Electrónica
   dianXmlUrl: text("dian_xml_url"), // URL del XML enviado a DIAN
   dianPdfUrl: text("dian_pdf_url"), // URL del PDF de la factura
+
+  // Sincronización con sistema contable (Cloud Books) — permite reintentos automáticos
+  accountingSyncStatus: text("accounting_sync_status").notNull().default("pending"), // pending | synced | failed
+  accountingSyncAttempts: integer("accounting_sync_attempts").notNull().default(0),
+  accountingLastError: text("accounting_last_error"),
+  nextAccountingRetryAt: timestamp("next_accounting_retry_at"),
   
   // File attachments
   pdfUrl: text("pdf_url"), // URL del PDF generado localmente
