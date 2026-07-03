@@ -32,7 +32,7 @@ import { startMedicalExamRemindersCron } from "./jobs/medical-exam-reminders";
 import { startIndicadoresSchedulerCron } from "./jobs/indicadores-scheduler";
 import { startNotificationsCron } from "./jobs/notifications";
 import { startComplianceAlertsCron } from "./jobs/compliance-alerts";
-import { startAccountingRetryJob } from "./jobs/accounting-retry";
+import { startAccountingRetryJob, processAccountingRetries } from "./jobs/accounting-retry";
 import { scheduleWeeklyBackup } from "./jobs/weekly-backup";
 import { startSubscriptionIntegrityCheck } from "./cron/subscription-integrity";
 import { startManualSubscriptionExpiryJob } from "./cron/manual-subscription-expiry";
@@ -860,6 +860,26 @@ app.use((req, res, next) => {
 
 // Request logging middleware with Pino (Bloque 2: Infrastructure)
 app.use(requestLoggerMiddleware);
+
+// Opportunistic accounting retry trigger (Autoscale-safe)
+// En Autoscale los cron jobs NO corren (las instancias se apagan cuando no hay tráfico),
+// así que en vez de depender de un proceso en segundo plano, revisamos facturas
+// pendientes de sincronizar cada vez que llega tráfico real a la app, con un
+// límite de una vez cada 5 minutos para que sea prácticamente gratis.
+let lastAccountingRetryCheck = 0;
+const ACCOUNTING_RETRY_THROTTLE_MS = 5 * 60 * 1000;
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    const now = Date.now();
+    if (now - lastAccountingRetryCheck > ACCOUNTING_RETRY_THROTTLE_MS) {
+      lastAccountingRetryCheck = now;
+      processAccountingRetries().catch((err) => {
+        logger.error({ err }, '[Accounting Retry] Error en verificación oportunista');
+      });
+    }
+  }
+  next();
+});
 
 (async () => {
   const isProduction = process.env.NODE_ENV === 'production';
