@@ -7,16 +7,23 @@
  * Aplica principalmente a clientes de transferencia bancaria, ya que los
  * clientes de Stripe quedan bloqueados vía webhook antes de llegar aquí.
  *
- * Período de gracia: 3 días después de currentPeriodEnd.
+ * Período de gracia: ver SUBSCRIPTION_GRACE_PERIOD_DAYS en
+ * server/middleware/subscription-check.ts (fuente única de este valor).
  * Se ejecuta: diariamente (cada 24 horas).
  */
 
 import { db } from "../db";
 import { sql } from "drizzle-orm";
 import logger from "../lib/logger";
+import { SUBSCRIPTION_GRACE_PERIOD_DAYS } from "../middleware/subscription-check";
 
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
-const GRACE_PERIOD_DAYS = 1;
+// Nota: el bloqueo real ocurre en vivo dentro de getSubscriptionStatus
+// (server/middleware/subscription-check.ts), que ahora es la fuente de
+// verdad porque este cron no está garantizado a ejecutarse en despliegues
+// Autoscale (la instancia puede escalar a cero entre solicitudes). Este job
+// solo sincroniza el estado persistido en las tablas para reportes/consultas.
+const GRACE_PERIOD_DAYS = SUBSCRIPTION_GRACE_PERIOD_DAYS;
 
 async function runManualSubscriptionExpiry() {
   try {
