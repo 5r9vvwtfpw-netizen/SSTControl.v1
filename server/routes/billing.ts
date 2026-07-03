@@ -486,7 +486,15 @@ export function registerBillingRoutes(app: Express) {
       }
       console.log('[Billing] Found subscription:', subscription.id, 'planId:', subscription.planId, 'status:', subscription.status);
 
-      if (subscription.status === 'active') {
+      // IMPORTANTE: no confiar solo en subscription.status (columna persistida).
+      // Esa columna solo se actualiza a 'past_due' por el cron de vencimiento,
+      // que puede no haber corrido todavía (Autoscale). El estado real y
+      // actualizado es el que calcula getSubscriptionStatus en vivo (mismo
+      // cálculo que usa el frontend para mostrar el botón "Pagar ahora").
+      // Si está realmente vencida, dejamos pasar para generar el checkout
+      // aunque la columna todavía diga 'active'.
+      const liveStatus = await getSubscriptionStatus(subscription.companyId);
+      if (subscription.status === 'active' && liveStatus.isActive) {
         console.log('[Billing] Subscription already active, skipping activation:', subscription.id);
         return res.status(200).json({
           success: true,
