@@ -185,3 +185,9 @@ id = "dhbJ6ZPyQmX24lfbg0JRc"
 uri = "file://propuesta-comercial.pdf"
 type = "pdf"
 title = "Propuesta Comercial SST — con Tarifa Profesional"
+
+[[outputs]]
+id = "8uM_XbF6eis6x9HhSwLT_"
+uri = "file://docs/cloud-books-issue-nit-9020363374.md"
+type = "text"
+title = "Reporte para Cloud Books - NIT 9020363374"
