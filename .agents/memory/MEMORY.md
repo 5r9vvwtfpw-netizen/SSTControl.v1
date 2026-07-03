@@ -3,3 +3,4 @@
 - [ISO 9001 e ISO 14001 roadmap](iso-9001-14001-roadmap.md) — pendiente de implementar; documentado en docs/ROADMAP_ISO_9001_14001.md con módulos, estimaciones y orden sugerido.
 - [RBAC isAdmin pattern](rbac-isadmin-pattern.md) — all page-level write guards use canWrite(role, resource) not hasCompanyAdminAccess; responsable_sst added to hasCompanyAdminAccess for legacy paths.
 - [RBAC backend routes missing permissions](rbac-backend-missing-perms.md) — 10 mutating routes in routes.ts used requireAuth-only; fixed to use requirePermission. Pattern to watch: any new POST/PATCH/DELETE must not rely on requireAuth alone.
+- [Chatbot knowledge base must mirror real form fields](chatbot-knowledge-base-accuracy.md) — describing standards generically makes the AI assistant vague; copy exact form field names/dropdown options into APP_KNOWLEDGE_BASE.

@@ -527,11 +527,22 @@ Cuando un usuario pregunte por un estándar específico, usa esta referencia. NU
 
 - **2.8.1** Mecanismos de comunicación (1 punto): Para diligenciar, buscar el **Estándar 2.8.1** en la Evaluación Inicial → en el modo de verificación, adjuntar el procedimiento de comunicación SST que defina: canales internos (carteleras, correos, reuniones), mecanismos para que trabajadores reporten condiciones peligrosas, y comunicación externa con ARL, EPS y autoridades → marcar como Cumple → Guardar.
 
-- **2.9.1** Adquisición de bienes y servicios (1 punto): Para diligenciar, buscar el **Estándar 2.9.1** en la Evaluación Inicial → clic en el módulo → en /adquisiciones-sst registrar la compra: proveedor, tipo de bien/servicio adquirido, criterios SST verificados (fichas de datos de seguridad FDS de químicos, certificados de calidad de equipos, cumplimiento normativo del proveedor) → Guardar. **FLUJO COMPLETO DE TRAZABILIDAD (compra → asignación)**: registrar la compra en 2.9.1 es solo el primer paso; según qué se haya comprado, el proceso se completa en un segundo estándar:
-  - Si la compra fue de **Elementos de Protección Personal (EPP)** (cascos, guantes, gafas, botas, arnés, tapa-oídos, etc.) → el siguiente paso es registrar la ENTREGA a cada trabajador en el **Estándar 4.2.6** (módulo /entrega-epp), dejando el soporte firmado de recibido.
-  - Si la compra fue de **elementos para atención de emergencias** (botiquines, extintores, camillas, señalización de emergencia) → el siguiente paso es actualizar el inventario de recursos disponibles en el **Estándar 5.1.1** (módulo /plan-emergencias), dentro de la sección de recursos para atención de emergencias.
+- **2.9.1** Adquisición de bienes y servicios (1 punto): Para diligenciar, buscar el **Estándar 2.9.1** en la Evaluación Inicial → clic en el módulo → en /adquisiciones-sst clic en el botón para registrar una nueva adquisición y diligenciar exactamente estos campos del formulario:
+  - **Tipo de Adquisición** (obligatorio): lista desplegable con opciones EPP, Maquinaria, Herramientas, Sustancias Químicas, Servicios, Equipos de Emergencia, Mobiliario, Software, Otros.
+  - **Nivel de Riesgo**: desplegable Bajo, Medio, Alto, Crítico.
+  - **Descripción** (obligatorio): campo de texto libre describiendo qué se adquiere.
+  - **Área Destino**: campo de texto con el área de la empresa que recibirá lo adquirido.
+  - **Solicitante**: desplegable para elegir el trabajador que solicita la adquisición.
+  - **Justificación**: campo de texto explicando por qué se requiere.
+  - **Presupuesto Estimado**: campo numérico de valor en pesos.
+  - **Proveedor** (opcional): nombre del proveedor.
+  - **Recurso Financiero**: desplegable para asociar la compra a un recurso/presupuesto ya definido.
+  El sistema incluye un **Asistente Inteligente** que puede autocompletar varios de estos campos según catálogos predefinidos de EPP y equipos. Después de diligenciar, clic en Guardar.
+  **FLUJO COMPLETO DE TRAZABILIDAD (compra → asignación)**: registrar la compra en 2.9.1 es solo el primer paso; según el **Tipo de Adquisición** elegido, el proceso se completa en un segundo estándar:
+  - Si el Tipo de Adquisición fue **EPP** (cascos, guantes, gafas, botas, arnés, tapa-oídos, etc.) → el siguiente paso es registrar la ENTREGA a cada trabajador en el **Estándar 4.2.6** (módulo /entrega-epp).
+  - Si el Tipo de Adquisición fue **Equipos de Emergencia** (botiquines, extintores, camillas, señalización de emergencia) → el siguiente paso es actualizar el inventario de recursos disponibles en el **Estándar 5.1.1** (módulo /plan-emergencias, pestaña de Recursos).
   - Si la compra no corresponde a ninguno de estos dos casos (ej. maquinaria, insumos generales), con el registro en 2.9.1 el ciclo queda completo.
-  SIEMPRE que un usuario pregunte por el ingreso de una compra (EPP, botiquín, extintor, etc.), responde explicando este flujo completo de dos pasos, indicando ambos estándares por nombre y número.
+  SIEMPRE que un usuario pregunte por el ingreso de una compra (EPP, botiquín, extintor, etc.), responde explicando este flujo completo de dos pasos, indicando ambos estándares por nombre y número, y menciona los campos exactos del formulario correspondiente (no des explicaciones genéricas).
 
 - **2.10.1** Evaluación de proveedores y contratistas (1 punto): Para diligenciar, buscar el **Estándar 2.10.1** en la Evaluación Inicial → clic en el módulo → en /evaluacion-proveedores clic "Nuevo Proveedor/Contratista" → registrar: razón social, actividad que realiza, riesgos que genera, verificación de afiliación a seguridad social, capacitaciones SST exigidas, EPP requeridos y concepto de aptitud médica de sus trabajadores → Guardar. El empleador es solidariamente responsable. Requiere suscripción activa.
 
@@ -597,11 +608,28 @@ Cuando un usuario pregunte por un estándar específico, usa esta referencia. NU
 
 - **4.2.5** Mantenimiento de instalaciones, equipos y herramientas (2.5 puntos): Para diligenciar, buscar el **Estándar 4.2.5** en la Evaluación Inicial → en el modo de verificación, adjuntar: (1) programa de mantenimiento preventivo con cronograma mensual, (2) registros de mantenimientos realizados (hojas de vida de equipos, certificados de calibración) → marcar como Cumple → Guardar. El mantenimiento preventivo reduce el riesgo de accidentes por fallas mecánicas.
 
-- **4.2.6** Entrega de EPP con capacitación (2.5 puntos): Para diligenciar, buscar el **Estándar 4.2.6** en la Evaluación Inicial → clic en el módulo → en /entrega-epp clic "Nueva Entrega" → seleccionar trabajador → EPP entregados (tipo: casco, gafas, guantes, tapa-oídos, botas, arnés, etc.; referencia, talla, cantidad) → fecha de entrega → firma de recibido del trabajador → Guardar. El sistema genera el soporte firmado y lleva el historial por trabajador. La entrega debe acompañarse de capacitación en uso correcto del EPP.
+- **4.2.6** Entrega de EPP con capacitación (2.5 puntos): Para diligenciar, buscar el **Estándar 4.2.6** en la Evaluación Inicial → clic en el módulo → en /entrega-epp clic "Nueva Entrega" y diligenciar exactamente estos campos del formulario:
+  - **Trabajador** (obligatorio): desplegable de búsqueda para seleccionar al trabajador que recibe el EPP.
+  - **EPP / Catálogo** (obligatorio): desplegable de búsqueda tomado del catálogo de EPP, o ingreso manual del nombre.
+  - **Categoría** (obligatorio): desplegable Cabeza, Visual, Facial, Auditiva, Respiratoria, Manos, Pies, Corporal, Caídas, Otro.
+  - **Fecha de Entrega** (obligatorio): selector de fecha, por defecto la fecha de hoy.
+  - **Cantidad** (obligatorio): campo numérico, mínimo 1.
+  - **Talla**: desplegable (si el catálogo la tiene) o ingreso manual.
+  - **Motivo de Entrega** (obligatorio): desplegable Dotación Inicial, Dotación Periódica, Reposición por Desgaste, Reposición por Daño, Vencimiento, Pérdida, Cambio de Talla, Cambio de Puesto, Actualización Normativa.
+  - **Capacitación de uso proporcionada**: casilla de verificación que indica si se dio capacitación sobre el uso correcto.
+  - **Observaciones**: campo de texto libre.
+  Después de diligenciar, clic en Guardar. El sistema genera el soporte firmado y lleva el historial por trabajador.
 
 ### Componente: Gestión de Amenazas
 
-- **5.1.1** Plan de emergencias y contingencias (5 puntos): Para diligenciar, buscar el **Estándar 5.1.1** en la Evaluación Inicial → clic en el módulo → en /plan-emergencias completar: análisis de amenazas y vulnerabilidades (inundación, sismo, incendio, explosión, derrame), recursos disponibles (extintores, botiquines, camillas), procedimientos de respuesta ante cada amenaza, rutas de evacuación, punto de encuentro y organigrama de emergencias → Guardar. El plan debe estar actualizado, publicado y comunicado a todos los trabajadores.
+- **5.1.1** Plan de emergencias y contingencias (5 puntos): Para diligenciar, buscar el **Estándar 5.1.1** en la Evaluación Inicial → clic en el módulo → en /plan-emergencias?tab=recursos (pestaña **Recursos**) clic en el botón para agregar un nuevo recurso y diligenciar exactamente estos campos del formulario:
+  - **Tipo de Recurso** (obligatorio): desplegable Extintor, Botiquín, Camilla, Linterna, Radio, Kit de Derrames, Hacha, Megáfono, Hidrante, Gabinete, Alarma, Otros.
+  - **Código** (obligatorio): texto, se autogenera pero se puede editar.
+  - **Nombre** (obligatorio): texto, ej. "Extintor PQS 10 lbs" o "Botiquín tipo A".
+  - **Ubicación** (obligatorio): desplegable con ubicaciones sugeridas (Piso 1, Recepción, etc.) o ingreso manual.
+  - **Estado**: desplegable Operativo, Requiere Mantenimiento, Vencido, Fuera de Servicio.
+  Al seleccionar el Tipo de Recurso, el sistema muestra información técnica específica, certificaciones normativas aplicables y frecuencia de inspección sugerida. Después de diligenciar, clic en Guardar.
+  Además del inventario de recursos, el estándar completo también requiere (en otras pestañas del mismo módulo /plan-emergencias): análisis de amenazas y vulnerabilidades (inundación, sismo, incendio, explosión, derrame), procedimientos de respuesta ante cada amenaza, rutas de evacuación, punto de encuentro y organigrama de emergencias. El plan debe estar actualizado, publicado y comunicado a todos los trabajadores.
 
 - **5.1.2** Brigada de emergencias y simulacros (5 puntos): Para diligenciar, buscar el **Estándar 5.1.2** en la Evaluación Inicial → en el módulo de Plan de Emergencias (/plan-emergencias), registrar la brigada: nombre de los brigadistas, rol asignado (primeros auxilios / evacuación / contraincendios / búsqueda y rescate), capacitaciones recibidas y vigencia → adjuntar soportes de capacitación de la brigada → también registrar los simulacros realizados: fecha, tipo de emergencia, participantes, tiempo de evacuación y acciones de mejora → Guardar. Se exige mínimo un simulacro al año.
 
