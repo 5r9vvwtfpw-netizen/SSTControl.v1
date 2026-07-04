@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Clock, XCircle, CreditCard, Loader2, CheckCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useSubscriptionCheck } from "@/hooks/useSubscriptionCheck";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { getTrialDaysRemaining, getTrialStatusMessage } from "@shared/utils";
@@ -36,12 +37,21 @@ export function TrialAlert() {
     staleTime: 1000 * 60 * 5,
   });
 
+  const { subscriptionStatus: liveSubscriptionStatus } = useSubscriptionCheck();
+  const isPendingTraining = !!liveSubscriptionStatus?.blockedReason?.includes("admin@sst-colombia.com");
+
   if (!subscription) return null;
 
   const { id: subscriptionId, status } = subscription;
   const trialEnd = subscription.trialEnd || subscription.trial_end;
 
   if (status === 'active') return null;
+
+  // La empresa está pendiente de capacitación de inducción: ese caso ya se
+  // comunica en el modal a pantalla completa (SubscriptionBlockedModal). No
+  // mostrar aquí un mensaje genérico de "falta de pago" para evitar
+  // incoherencia con el motivo real del bloqueo.
+  if (isPendingTraining) return null;
 
   if (isPaymentProcessing) {
     return (

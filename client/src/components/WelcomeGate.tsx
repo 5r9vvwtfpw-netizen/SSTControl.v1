@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useSubscriptionCheck } from "@/hooks/useSubscriptionCheck";
 import { X, PlayCircle, Mail, Bot, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -20,6 +21,7 @@ interface WelcomeGateProps {
 
 export function WelcomeGate({ children }: WelcomeGateProps) {
   const { user } = useAuth();
+  const { shouldBlock } = useSubscriptionCheck();
   const [visible, setVisible] = useState(false);
 
   const shouldCheck =
@@ -35,11 +37,15 @@ export function WelcomeGate({ children }: WelcomeGateProps) {
 
   useEffect(() => {
     if (!company || company.onboardingCompleted === 1) return;
+    if (shouldBlock) {
+      setVisible(false);
+      return;
+    }
     const key = `sst_welcome_dismissed_${company.id}`;
     if (!localStorage.getItem(key)) {
       setVisible(true);
     }
-  }, [company]);
+  }, [company, shouldBlock]);
 
   const dismiss = () => {
     if (company) {

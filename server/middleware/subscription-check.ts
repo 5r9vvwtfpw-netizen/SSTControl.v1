@@ -62,6 +62,7 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
           trialEnd: subscriptions.trialEnd,
           currentPeriodEnd: subscriptions.currentPeriodEnd,
           lastPaymentDate: subscriptions.lastPaymentDate,
+          metadata: subscriptions.metadata,
         })
         .from(subscriptions)
         .where(eq(subscriptions.companyId, companyId))
@@ -152,6 +153,24 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
             trialEndsAt: trialEnd,
             subscriptionStatus: "past_due",
             blockedReason: "Su pago está pendiente. Por favor actualice su método de pago.",
+            daysRemaining: null,
+          };
+        }
+
+        if (mainSub.status === "suspended" || mainSub.status === "expired") {
+          const metadata = (mainSub.metadata as any) || null;
+          const customBlockedReason = metadata?.blockedReason || null;
+          return {
+            isActive: false,
+            isBlocked: true,
+            isTrial: false,
+            trialEndsAt: trialEnd,
+            subscriptionStatus: mainSub.status === "expired" ? "expired" : "suspended",
+            blockedReason:
+              customBlockedReason ||
+              (mainSub.status === "expired"
+                ? "Su suscripción ha expirado."
+                : "Su cuenta ha sido suspendida por falta de pago. Reactive su suscripción para continuar."),
             daysRemaining: null,
           };
         }
