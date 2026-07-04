@@ -37,7 +37,7 @@ async function runIntegrityCheck() {
     const hasVehiculos = colCheck.rows && colCheck.rows.length > 0;
 
     const allSubs = await db.execute(sql`
-      SELECT id, company_id, status, trial_end
+      SELECT id, company_id, status, trial_end, metadata
       FROM subscriptions
     `);
 
@@ -58,7 +58,15 @@ async function runIntegrityCheck() {
       const trialEnd = sub.trial_end ? new Date(sub.trial_end) : null;
       const mappedStatus = STATUS_MAP[subStatus] || 'blocked';
       const isBlocked = mappedStatus === 'blocked';
-      const blockedReason = isBlocked ? (BLOCKED_REASON_MAP[subStatus] || 'Suscripcion inactiva') : null;
+      // A custom reason (e.g. pending training approval welcome message) is
+      // persisted in subscriptions.metadata.blockedReason and must take
+      // priority over the generic billing-related reason map, so the two
+      // concepts ("suspended for non-payment" vs. "pending induction") never
+      // get mixed up by this background resync job.
+      const customReason = sub.metadata?.blockedReason as string | null | undefined;
+      const blockedReason = isBlocked
+        ? (customReason || BLOCKED_REASON_MAP[subStatus] || 'Suscripcion inactiva')
+        : null;
 
       checked++;
 

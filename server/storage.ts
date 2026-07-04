@@ -12616,6 +12616,29 @@ export class DbStorage implements IStorage {
       updateData.canceledAt = metadata.canceledAt;
     }
 
+    // Persist (or clear) a custom blocked reason in metadata so it survives
+    // background jobs (e.g. subscription-integrity cron) that resync status
+    // later and would otherwise overwrite it with a generic billing message.
+    // This keeps distinct reasons coherent: "suspended" for non-payment vs.
+    // a custom reason like the pending-training-approval welcome message.
+    const [existingSub] = await db
+      .select({ metadata: schema.subscriptions.metadata })
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.id, id));
+    const existingMetadata = (existingSub?.metadata as Record<string, any>) || {};
+
+    if (newStatus === 'active') {
+      // Clear any leftover custom reason when reactivating so a future
+      // suspension (e.g. non-payment) doesn't inherit a stale message.
+      const { blockedReason: _omit, ...restMetadata } = existingMetadata;
+      updateData.metadata = restMetadata;
+    } else if (metadata?.blockedReason !== undefined) {
+      updateData.metadata = {
+        ...existingMetadata,
+        blockedReason: metadata.blockedReason,
+      };
+    }
+
     const [updated] = await db
       .update(schema.subscriptions)
       .set(updateData)
