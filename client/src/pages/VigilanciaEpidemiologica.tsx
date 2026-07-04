@@ -568,11 +568,21 @@ export default function VigilanciaEpidemiologica() {
         <BackToCronogramaButton />
       </div>
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-foreground">Sistema de Vigilancia Epidemiológica Ocupacional (SVE)</h1>
-        <p className="text-muted-foreground">
-          Gestión de programas de vigilancia epidemiológica según Resolución 0312 de 2019
-        </p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-foreground">Sistema de Vigilancia Epidemiológica Ocupacional (SVE)</h1>
+          <p className="text-muted-foreground">
+            Gestión de programas de vigilancia epidemiológica según Resolución 0312 de 2019
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => window.open('/api/sve-programs/pdf', '_blank')}
+          data-testid="button-download-general-pdf"
+        >
+          <FileText className="h-4 w-4 mr-2" />
+          Descargar PDF
+        </Button>
       </div>
 
       <AutomationAssistant

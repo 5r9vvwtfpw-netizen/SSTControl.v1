@@ -19,7 +19,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
-  Plus, Edit, Trash2, Calendar, FileText, Download, Search, Filter, 
+  Plus, Edit, Trash2, Calendar, FileText, Download, Search, Filter, Printer, 
   ChevronDown, ChevronUp, AlertTriangle, Clock, UserMinus, Activity,
   TrendingDown, Briefcase, Heart, Baby, Home
 } from "lucide-react";
@@ -324,6 +324,16 @@ export default function AusentismoLaboral() {
     setDialogOpen(true);
   };
 
+  const handleDownloadPdf = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const downloadPdf = async () => {
     try {
       const response = await fetch(`/api/absences/statistics/pdf?year=${selectedYear}`, {
@@ -614,6 +624,14 @@ export default function AusentismoLaboral() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDownloadPdf(`/api/absences/${absence.id}/pdf`, `ausencia-${worker?.identificationNumber || absence.id}.pdf`)}
+                              data-testid={`button-pdf-${absence.id}`}
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="icon"

@@ -599,6 +599,14 @@ export default function PerfilesCargo() {
           <p className="text-muted-foreground">Gestión de perfiles de cargo con clasificación de riesgo ARL</p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => window.open('/api/job-profiles/pdf', '_blank')}
+            data-testid="button-download-general-pdf"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Descargar PDF
+          </Button>
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);
             if (!open) {

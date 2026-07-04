@@ -822,6 +822,10 @@ export default function CopasstGestion() {
     window.open(`/api/copasst-actas/${actaId}/pdf`, '_blank');
   };
 
+  const handleDownloadGeneralPdf = () => {
+    window.open('/api/copasst-actas-general/pdf', '_blank');
+  };
+
   // Filtered actas
   const filteredActas = actas.filter(
     (acta) =>
@@ -859,6 +863,10 @@ export default function CopasstGestion() {
             Comité Paritario de Seguridad y Salud en el Trabajo
           </p>
         </div>
+        <Button variant="outline" onClick={handleDownloadGeneralPdf} data-testid="button-download-general-pdf">
+          <Download className="h-4 w-4 mr-2" />
+          Descargar PDF
+        </Button>
       </div>
 
       {(() => {

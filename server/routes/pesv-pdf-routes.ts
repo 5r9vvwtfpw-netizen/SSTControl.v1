@@ -837,6 +837,70 @@ export function registerPesvPdfRoutes(app: Express) {
     }
   });
 
+  // 11b. GET /api/pesv/vehiculos/:id/pdf - Ficha individual del vehículo
+  app.get('/api/pesv/vehiculos/:id/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const [vehicle] = await db.select().from(schema.vehicles)
+        .where(and(eq(schema.vehicles.id, req.params.id), eq(schema.vehicles.companyId, companyId)))
+        .limit(1);
+      if (!vehicle) return res.status(404).send('Vehículo no encontrado');
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="vehiculo-${vehicle.plate}.pdf"`);
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: `FICHA DE VEHÍCULO - ${vehicle.plate}`,
+        documentCode: 'PESV-VEH-IND', logoBuffer
+      });
+
+      y = addSectionBar(doc, 'Datos del Vehículo', y);
+      y = addLabeledField(doc, 'Placa', vehicle.plate, { y });
+      y = addLabeledField(doc, 'Marca', vehicle.brand, { y });
+      y = addLabeledField(doc, 'Modelo', vehicle.model, { y });
+      y = addLabeledField(doc, 'Año', String(vehicle.year), { y });
+      y = addLabeledField(doc, 'Tipo', vehicle.type, { y });
+      y = addLabeledField(doc, 'Propiedad', vehicle.ownership, { y });
+      y = addLabeledField(doc, 'Estado', vehicle.status, { y });
+      y = addLabeledField(doc, 'Capacidad', vehicle.capacity ? String(vehicle.capacity) : '—', { y });
+      y = addLabeledField(doc, 'Kilometraje', vehicle.mileage ? String(vehicle.mileage) : '—', { y });
+      y = addLabeledField(doc, 'Color', vehicle.color || '—', { y });
+      y = addLabeledField(doc, 'VIN', vehicle.vin || '—', { y });
+
+      y = addSectionBar(doc, 'Documentación y Vigencias', y);
+      y = addLabeledField(doc, 'Póliza de Seguro', vehicle.insurancePolicy || '—', { y });
+      y = addLabeledField(doc, 'Vencimiento Seguro', formatDate(vehicle.insuranceExpiry), { y });
+      y = addLabeledField(doc, 'Vencimiento SOAT', formatDate(vehicle.soatExpiry), { y });
+      y = addLabeledField(doc, 'Vencimiento Revisión Técnico-Mecánica', formatDate(vehicle.technicalReviewExpiry), { y });
+
+      if (vehicle.observations) {
+        y = addSectionBar(doc, 'Observaciones', y);
+        y = addParagraph(doc, vehicle.observations, { y });
+      }
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-vehiculo-individual');
+    }
+  });
+
   // 12. GET /api/pesv/mantenimientos/pdf
   app.get('/api/pesv/mantenimientos/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
     try {
@@ -877,6 +941,66 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-mantenimientos');
+    }
+  });
+
+  // 12b. GET /api/pesv/mantenimientos/:id/pdf - Ficha individual del mantenimiento
+  app.get('/api/pesv/mantenimientos/:id/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const [maintenance] = await db.select().from(schema.vehicleMaintenances)
+        .where(and(eq(schema.vehicleMaintenances.id, req.params.id), eq(schema.vehicleMaintenances.companyId, companyId)))
+        .limit(1);
+      if (!maintenance) return res.status(404).send('Registro de mantenimiento no encontrado');
+
+      const [vehicle] = await db.select().from(schema.vehicles).where(eq(schema.vehicles.id, maintenance.vehicleId)).limit(1);
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="mantenimiento-pesv.pdf"');
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: 'FICHA DE MANTENIMIENTO VEHICULAR - PESV',
+        documentCode: 'PESV-MNT-IND', logoBuffer
+      });
+
+      y = addSectionBar(doc, 'Datos del Mantenimiento', y);
+      y = addLabeledField(doc, 'Vehículo', vehicle ? `${vehicle.plate} - ${vehicle.brand} ${vehicle.model}` : maintenance.vehicleId, { y });
+      y = addLabeledField(doc, 'Tipo de Mantenimiento', maintenance.maintenanceType, { y });
+      y = addLabeledField(doc, 'Fecha de Mantenimiento', formatDate(maintenance.maintenanceDate), { y });
+      y = addLabeledField(doc, 'Descripción', maintenance.description, { y });
+      y = addLabeledField(doc, 'Kilometraje al Mantenimiento', maintenance.mileageAtMaintenance ? String(maintenance.mileageAtMaintenance) : '—', { y });
+      y = addLabeledField(doc, 'Próximo Mantenimiento (Fecha)', formatDate(maintenance.nextMaintenanceDate), { y });
+      y = addLabeledField(doc, 'Próximo Mantenimiento (Km)', maintenance.nextMaintenanceMileage ? String(maintenance.nextMaintenanceMileage) : '—', { y });
+      y = addLabeledField(doc, 'Costo', maintenance.cost ? `$${maintenance.cost.toLocaleString('es-CO')}` : '—', { y });
+      y = addLabeledField(doc, 'Proveedor', maintenance.provider || '—', { y });
+      y = addLabeledField(doc, 'Número de Factura', maintenance.invoiceNumber || '—', { y });
+      y = addLabeledField(doc, 'Repuestos Reemplazados', maintenance.partsReplaced || '—', { y });
+
+      if (maintenance.observations) {
+        y = addSectionBar(doc, 'Observaciones', y);
+        y = addParagraph(doc, maintenance.observations, { y });
+      }
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-mantenimiento-individual');
     }
   });
 
@@ -1697,6 +1821,211 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-h07-vehiculo');
+    }
+  });
+
+  // GET /api/pesv/alcohol-registros/pdf - Informe general de control de alcohol y SAP
+  app.get('/api/pesv/alcohol-registros/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const registros = await db.select().from(schema.pesvAlcoholRegistros).where(eq(schema.pesvAlcoholRegistros.companyId, companyId));
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="informe-alcohol-sap.pdf"');
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: 'INFORME GENERAL - CONTROL DE ALCOHOL Y SUSTANCIAS PSICOACTIVAS',
+        documentCode: 'PESV-SAP-GEN', logoBuffer
+      });
+
+      y = addSectionBar(doc, `Registros de Control SAP (${registros.length})`, y);
+      if (registros.length === 0) {
+        y = addParagraph(doc, 'No hay registros de control de alcohol y sustancias psicoactivas.', { y });
+      } else {
+        const rows = registros.map(r => [
+          r.conductorNombre, formatDate(r.fechaRegistro), r.tipoPrueba, r.sustanciaControlada, r.resultado, r.responsable || '—'
+        ]);
+        y = addSimpleTable(doc, ['Conductor', 'Fecha', 'Tipo de Prueba', 'Sustancia', 'Resultado', 'Responsable'], rows, { y });
+      }
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-alcohol-registros-general');
+    }
+  });
+
+  // GET /api/pesv/alcohol-registros/:id/pdf - Ficha individual del registro de control SAP
+  app.get('/api/pesv/alcohol-registros/:id/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const [registro] = await db.select().from(schema.pesvAlcoholRegistros)
+        .where(and(eq(schema.pesvAlcoholRegistros.id, req.params.id), eq(schema.pesvAlcoholRegistros.companyId, companyId)))
+        .limit(1);
+      if (!registro) return res.status(404).send('Registro no encontrado');
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="registro-alcohol-sap.pdf"');
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: 'FICHA DE CONTROL DE ALCOHOL Y SUSTANCIAS PSICOACTIVAS',
+        documentCode: 'PESV-SAP-IND', logoBuffer
+      });
+
+      y = addSectionBar(doc, 'Datos del Registro', y);
+      y = addLabeledField(doc, 'Conductor', registro.conductorNombre, { y });
+      y = addLabeledField(doc, 'Fecha de Registro', formatDate(registro.fechaRegistro), { y });
+      y = addLabeledField(doc, 'Tipo de Prueba', registro.tipoPrueba, { y });
+      y = addLabeledField(doc, 'Sustancia Controlada', registro.sustanciaControlada, { y });
+      y = addLabeledField(doc, 'Resultado', registro.resultado, { y });
+      y = addLabeledField(doc, 'Responsable', registro.responsable || '—', { y });
+      y = addLabeledField(doc, 'Medidas Tomadas', registro.medidasTomadas || '—', { y });
+
+      if (registro.observaciones) {
+        y = addSectionBar(doc, 'Observaciones', y);
+        y = addParagraph(doc, registro.observaciones, { y });
+      }
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-alcohol-registro-individual');
+    }
+  });
+
+  // GET /api/pesv/fatiga-registros/pdf - Informe general de control de fatiga y somnolencia
+  app.get('/api/pesv/fatiga-registros/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const registros = await db.select().from(schema.pesvFatigaRegistros).where(eq(schema.pesvFatigaRegistros.companyId, companyId));
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="informe-fatiga-somnolencia.pdf"');
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: 'INFORME GENERAL - CONTROL DE FATIGA Y SOMNOLENCIA',
+        documentCode: 'PESV-FATIGA-GEN', logoBuffer
+      });
+
+      y = addSectionBar(doc, `Registros de Control de Fatiga (${registros.length})`, y);
+      if (registros.length === 0) {
+        y = addParagraph(doc, 'No hay registros de control de fatiga y somnolencia.', { y });
+      } else {
+        const rows = registros.map(r => [
+          r.conductorNombre, formatDate(r.fechaRegistro), r.tipoControl, r.resultado,
+          r.horasConduccion != null ? `${r.horasConduccion}h` : '—',
+          r.descansoCumplido === 1 ? 'Sí' : 'No', r.responsable || '—'
+        ]);
+        y = addSimpleTable(doc, ['Conductor', 'Fecha', 'Tipo Control', 'Resultado', 'Horas Cond.', 'Descanso', 'Responsable'], rows, { y });
+      }
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-fatiga-registros-general');
+    }
+  });
+
+  // GET /api/pesv/fatiga-registros/:id/pdf - Ficha individual del registro de control de fatiga
+  app.get('/api/pesv/fatiga-registros/:id/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const [registro] = await db.select().from(schema.pesvFatigaRegistros)
+        .where(and(eq(schema.pesvFatigaRegistros.id, req.params.id), eq(schema.pesvFatigaRegistros.companyId, companyId)))
+        .limit(1);
+      if (!registro) return res.status(404).send('Registro no encontrado');
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="registro-fatiga-somnolencia.pdf"');
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: 'FICHA DE CONTROL DE FATIGA Y SOMNOLENCIA',
+        documentCode: 'PESV-FATIGA-IND', logoBuffer
+      });
+
+      y = addSectionBar(doc, 'Datos del Registro', y);
+      y = addLabeledField(doc, 'Conductor', registro.conductorNombre, { y });
+      y = addLabeledField(doc, 'Fecha de Registro', formatDate(registro.fechaRegistro), { y });
+      y = addLabeledField(doc, 'Tipo de Control', registro.tipoControl, { y });
+      y = addLabeledField(doc, 'Resultado', registro.resultado, { y });
+      y = addLabeledField(doc, 'Horas de Conducción', registro.horasConduccion != null ? `${registro.horasConduccion}h` : '—', { y });
+      y = addLabeledField(doc, 'Descanso Cumplido', registro.descansoCumplido === 1 ? 'Sí' : 'No', { y });
+      y = addLabeledField(doc, 'Responsable', registro.responsable || '—', { y });
+      y = addLabeledField(doc, 'Medidas Tomadas', registro.medidasTomadas || '—', { y });
+
+      if (registro.observaciones) {
+        y = addSectionBar(doc, 'Observaciones', y);
+        y = addParagraph(doc, registro.observaciones, { y });
+      }
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-fatiga-registro-individual');
     }
   });
 }

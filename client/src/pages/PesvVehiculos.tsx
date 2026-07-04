@@ -576,6 +576,14 @@ export default function PesvVehiculos() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => handleDownloadPdf(`/api/pesv/vehiculos/${vehicle.id}/pdf`, `vehiculo-${vehicle.plate}.pdf`)}
+                          data-testid={`button-pdf-${vehicle.id}`}
+                        >
+                          <FileDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleEdit(vehicle)}
                           data-testid={`button-edit-${vehicle.id}`}
                         >

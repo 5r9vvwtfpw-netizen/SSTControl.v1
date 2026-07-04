@@ -262,6 +262,8 @@ import {
   requiresLSOSignature,
   handlePdfError,
   addProviderContactFooter,
+  addLabeledField,
+  addParagraph,
 } from "./services/pdf-standardizer";
 import { withPdfSemaphore } from "./services/pdf-semaphore";
 import { validatePdfContext } from "./lib/pdf-context-validator";
@@ -5546,6 +5548,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/investigations/pdf - Export all investigations to PDF
+  app.get("/api/investigations/pdf", requirePermission("accidents:view"), async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Empresa no especificada" });
+      }
+
+      const company = await storage.getCompany(effectiveCompanyId);
+      if (!company) {
+        return res.status(404).json({ error: "Empresa no encontrada" });
+      }
+
+      // Get all investigations for the company
+      const investigations = await db.select()
+        .from(schema.accidentInvestigations)
+        .where(eq(schema.accidentInvestigations.companyId, effectiveCompanyId))
+        .orderBy(desc(schema.accidentInvestigations.createdAt));
+
+      const doc = new PDFDocument({ size: 'LETTER', margin: 35, bufferPages: true });
+
+      // Add trial watermark if subscription is in trial period
+      const invPdfSubscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
+      const invPdfTrialStatus = getTrialStatus(invPdfSubscription?.status || 'trial', invPdfSubscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, invPdfTrialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=investigaciones_accidentes.pdf');
+      doc.pipe(res);
+
+      // Preload company logo
+      const logo = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(effectiveCompanyId, true);
+
+      // Standard Header
+      await addStandardHeader({
+        doc,
+        company: {
+          id: company.id,
+          name: company.name,
+          nit: company.nit,
+          address: company.address,
+          logoUrl: company.logoUrl,
+        },
+        documentTitle: 'INFORME DE INVESTIGACIONES DE ACCIDENTES',
+        documentCode: `SST-IA-${new Date().getFullYear()}`,
+        version: '1.0',
+        date: new Date(),
+        logoBuffer: logo,
+      });
+
+      const margin = 35;
+      const pageWidth = doc.page.width;
+
+      doc.moveDown(1);
+
+      // Summary Section
+      doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e7e34');
+      doc.text('RESUMEN DE INVESTIGACIONES', margin);
+      doc.moveDown(0.5);
+
+      const completadas = investigations.filter(i => i.status === 'completada').length;
+      const enProceso = investigations.filter(i => i.status === 'en_proceso').length;
+      const pendientes = investigations.filter(i => i.status === 'pendiente').length;
+
+      doc.fontSize(9).font('Helvetica').fillColor('#000000');
+      doc.text(`Total de Investigaciones: ${investigations.length}`, margin);
+      doc.text(`Completadas: ${completadas}`, margin);
+      doc.text(`En Proceso: ${enProceso}`, margin);
+      doc.text(`Pendientes: ${pendientes}`, margin);
+      doc.moveDown(1);
+
+      // Separator
+      doc.strokeColor('#1e7e34').lineWidth(1)
+        .moveTo(margin, doc.y)
+        .lineTo(pageWidth - margin, doc.y)
+        .stroke();
+      doc.moveDown(1);
+
+      // Investigations List
+      doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e7e34');
+      doc.text('DETALLE DE INVESTIGACIONES', margin);
+      doc.moveDown(0.5);
+
+      if (investigations.length === 0) {
+        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#666666');
+        doc.text('No hay investigaciones registradas', margin);
+      } else {
+        for (const [index, inv] of investigations.entries()) {
+          // Check for page break
+          if (doc.y > doc.page.height - 150) {
+            doc.addPage();
+            doc.font('Helvetica').fontSize(9).fillColor('#000000');
+          }
+
+          // Investigation Header
+          doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34');
+          doc.text(`${index + 1}. ${inv.accidentType === 'trabajo' ? 'Accidente de Trabajo' : 'Casi Accidente'}`, margin);
+
+          doc.fontSize(8).font('Helvetica').fillColor('#000000');
+          doc.text(`Afectado: ${inv.affectedPerson}`, margin + 10);
+          doc.text(`Fecha del evento: ${inv.accidentDate ? new Date(inv.accidentDate).toLocaleDateString('es-CO') : 'No especificada'}`, margin + 10);
+          doc.text(`Fecha de investigación: ${inv.investigationDate ? new Date(inv.investigationDate).toLocaleDateString('es-CO') : 'No especificada'}`, margin + 10);
+
+          // Status badge
+          const statusLabels: Record<string, string> = {
+            pendiente: 'Pendiente',
+            en_proceso: 'En Proceso',
+            completada: 'Completada'
+          };
+          doc.text(`Estado: ${statusLabels[inv.status] || inv.status}`, margin + 10);
+
+          if (inv.description) {
+            doc.moveDown(0.3);
+            doc.fontSize(8).font('Helvetica-Bold');
+            doc.text('Descripción:', margin + 10);
+            doc.font('Helvetica');
+            doc.text(inv.description.substring(0, 300) + (inv.description.length > 300 ? '...' : ''), margin + 20, doc.y, {
+              width: pageWidth - margin * 2 - 20
+            });
+          }
+
+          if (inv.immediateCauses) {
+            doc.moveDown(0.3);
+            doc.fontSize(8).font('Helvetica-Bold');
+            doc.text('Causas Inmediatas:', margin + 10);
+            doc.font('Helvetica');
+            doc.text(inv.immediateCauses.substring(0, 200) + (inv.immediateCauses.length > 200 ? '...' : ''), margin + 20, doc.y, {
+              width: pageWidth - margin * 2 - 20
+            });
+          }
+
+          if (inv.rootCause) {
+            doc.moveDown(0.3);
+            doc.fontSize(8).font('Helvetica-Bold');
+            doc.text('Causa Raíz:', margin + 10);
+            doc.font('Helvetica');
+            doc.text(inv.rootCause.substring(0, 200) + (inv.rootCause.length > 200 ? '...' : ''), margin + 20, doc.y, {
+              width: pageWidth - margin * 2 - 20
+            });
+          }
+
+          doc.moveDown(1);
+
+          // Separator between investigations
+          if (index < investigations.length - 1) {
+            doc.strokeColor('#cccccc').lineWidth(0.5)
+              .moveTo(margin, doc.y)
+              .lineTo(pageWidth - margin, doc.y)
+              .stroke();
+            doc.moveDown(0.5);
+          }
+        }
+      }
+
+      // Footer with signatures
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+
+    } catch (error: any) {
+      console.error('Error generating investigations PDF:', error);
+      handlePdfError(error, res, 'investigations-pdf');
+    }
+  });
+
   // GET /api/investigations/:id - Get single investigation with participants and findings
   app.get("/api/investigations/:id", requirePermission("accidents:view"), async (req, res) => {
     try {
@@ -5721,170 +5888,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // GET /api/investigations/pdf - Export all investigations to PDF
-  app.get("/api/investigations/pdf", requirePermission("accidents:view"), async (req, res) => {
-    try {
-      const effectiveCompanyId = getEffectiveCompanyId(req);
-      if (!effectiveCompanyId) {
-        return res.status(403).json({ error: "Empresa no especificada" });
-      }
-
-      const company = await storage.getCompany(effectiveCompanyId);
-      if (!company) {
-        return res.status(404).json({ error: "Empresa no encontrada" });
-      }
-
-      // Get all investigations for the company
-      const investigations = await db.select()
-        .from(schema.accidentInvestigations)
-        .where(eq(schema.accidentInvestigations.companyId, effectiveCompanyId))
-        .orderBy(desc(schema.accidentInvestigations.createdAt));
-
-      const doc = new PDFDocument({ size: 'LETTER', margin: 35, bufferPages: true });
-
-      // Add trial watermark if subscription is in trial period
-      const invPdfSubscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
-      const invPdfTrialStatus = getTrialStatus(invPdfSubscription?.status || 'trial', invPdfSubscription?.trialEnd || null, true, true);
-      setupTrialWatermarkOnAllPages(doc, invPdfTrialStatus.requiresWatermark);
-
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'attachment; filename=investigaciones_accidentes.pdf');
-      doc.pipe(res);
-
-      // Preload company logo
-      const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(effectiveCompanyId, true);
-
-      // Standard Header
-      await addStandardHeader({
-        doc,
-        company: {
-          id: company.id,
-          name: company.name,
-          nit: company.nit,
-          address: company.address,
-          logoUrl: company.logoUrl,
-        },
-        documentTitle: 'INFORME DE INVESTIGACIONES DE ACCIDENTES',
-        documentCode: `SST-IA-${new Date().getFullYear()}`,
-        version: '1.0',
-        date: new Date(),
-        logoBuffer: logo,
-      });
-
-      const margin = 35;
-      const pageWidth = doc.page.width;
-
-      doc.moveDown(1);
-
-      // Summary Section
-      doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e7e34');
-      doc.text('RESUMEN DE INVESTIGACIONES', margin);
-      doc.moveDown(0.5);
-
-      const completadas = investigations.filter(i => i.status === 'completada').length;
-      const enProceso = investigations.filter(i => i.status === 'en_proceso').length;
-      const pendientes = investigations.filter(i => i.status === 'pendiente').length;
-
-      doc.fontSize(9).font('Helvetica').fillColor('#000000');
-      doc.text(`Total de Investigaciones: ${investigations.length}`, margin);
-      doc.text(`Completadas: ${completadas}`, margin);
-      doc.text(`En Proceso: ${enProceso}`, margin);
-      doc.text(`Pendientes: ${pendientes}`, margin);
-      doc.moveDown(1);
-
-      // Separator
-      doc.strokeColor('#1e7e34').lineWidth(1)
-        .moveTo(margin, doc.y)
-        .lineTo(pageWidth - margin, doc.y)
-        .stroke();
-      doc.moveDown(1);
-
-      // Investigations List
-      doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e7e34');
-      doc.text('DETALLE DE INVESTIGACIONES', margin);
-      doc.moveDown(0.5);
-
-      if (investigations.length === 0) {
-        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#666666');
-        doc.text('No hay investigaciones registradas', margin);
-      } else {
-        for (const [index, inv] of investigations.entries()) {
-          // Check for page break
-          if (doc.y > doc.page.height - 150) {
-            doc.addPage();
-            doc.font('Helvetica').fontSize(9).fillColor('#000000');
-          }
-
-          // Investigation Header
-          doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34');
-          doc.text(`${index + 1}. ${inv.accidentType === 'trabajo' ? 'Accidente de Trabajo' : 'Casi Accidente'}`, margin);
-
-          doc.fontSize(8).font('Helvetica').fillColor('#000000');
-          doc.text(`Afectado: ${inv.affectedPerson}`, margin + 10);
-          doc.text(`Fecha del evento: ${inv.accidentDate ? new Date(inv.accidentDate).toLocaleDateString('es-CO') : 'No especificada'}`, margin + 10);
-          doc.text(`Fecha de investigación: ${inv.investigationDate ? new Date(inv.investigationDate).toLocaleDateString('es-CO') : 'No especificada'}`, margin + 10);
-
-          // Status badge
-          const statusLabels: Record<string, string> = {
-            pendiente: 'Pendiente',
-            en_proceso: 'En Proceso',
-            completada: 'Completada'
-          };
-          doc.text(`Estado: ${statusLabels[inv.status] || inv.status}`, margin + 10);
-
-          if (inv.description) {
-            doc.moveDown(0.3);
-            doc.fontSize(8).font('Helvetica-Bold');
-            doc.text('Descripción:', margin + 10);
-            doc.font('Helvetica');
-            doc.text(inv.description.substring(0, 300) + (inv.description.length > 300 ? '...' : ''), margin + 20, doc.y, {
-              width: pageWidth - margin * 2 - 20
-            });
-          }
-
-          if (inv.immediateCauses) {
-            doc.moveDown(0.3);
-            doc.fontSize(8).font('Helvetica-Bold');
-            doc.text('Causas Inmediatas:', margin + 10);
-            doc.font('Helvetica');
-            doc.text(inv.immediateCauses.substring(0, 200) + (inv.immediateCauses.length > 200 ? '...' : ''), margin + 20, doc.y, {
-              width: pageWidth - margin * 2 - 20
-            });
-          }
-
-          if (inv.rootCause) {
-            doc.moveDown(0.3);
-            doc.fontSize(8).font('Helvetica-Bold');
-            doc.text('Causa Raíz:', margin + 10);
-            doc.font('Helvetica');
-            doc.text(inv.rootCause.substring(0, 200) + (inv.rootCause.length > 200 ? '...' : ''), margin + 20, doc.y, {
-              width: pageWidth - margin * 2 - 20
-            });
-          }
-
-          doc.moveDown(1);
-
-          // Separator between investigations
-          if (index < investigations.length - 1) {
-            doc.strokeColor('#cccccc').lineWidth(0.5)
-              .moveTo(margin, doc.y)
-              .lineTo(pageWidth - margin, doc.y)
-              .stroke();
-            doc.moveDown(0.5);
-          }
-        }
-      }
-
-      // Footer with signatures
-      await addSignatureFooter(doc, signers, true);
-      doc.end();
-
-    } catch (error: any) {
-      console.error('Error generating investigations PDF:', error);
-      handlePdfError(error, res, 'investigations-pdf');
-    }
-  });
 
     // PATCH /api/investigations/:id - Update investigation
   app.patch("/api/investigations/:id", requirePermission("accidents:edit"), async (req, res) => {
@@ -6863,6 +6866,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error deleting absence:", error);
       res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/absences/:id/pdf - PDF individual de una ausencia laboral
+  app.get("/api/absences/:id/pdf", requireAnyPermission(["accidents:view", "accidents:view_self"]), async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const { id } = req.params;
+
+      const [absence] = await db.select().from(schema.workerAbsences).where(eq(schema.workerAbsences.id, id)).limit(1);
+      if (!absence) return res.status(404).send("Ausencia no encontrada");
+      if (!isAdmin && absence.companyId !== effectiveCompanyId) {
+        return res.status(403).send("No autorizado para ver esta ausencia");
+      }
+
+      const company = await storage.getCompany(absence.companyId);
+      if (!company) return res.status(404).send("Empresa no encontrada");
+
+      const [worker] = await db.select().from(schema.workers).where(eq(schema.workers.id, absence.workerId)).limit(1);
+
+      const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+      const subscription = await storage.getSubscriptionByCompany(absence.companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="ausencia-${worker?.identificationNumber || id}.pdf"`);
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(absence.companyId, false);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: "REGISTRO DE AUSENTISMO LABORAL",
+        documentCode: getDocumentCode('absenteeism_statistics'), logoBuffer,
+      });
+
+      y = addLabeledField(doc, "Trabajador", worker?.name || "—", { y });
+      y = addLabeledField(doc, "Cédula", worker?.identificationNumber || "—", { y });
+      y = addLabeledField(doc, "Cargo", worker?.position || "—", { y });
+      y = addLabeledField(doc, "Tipo de Ausencia", absence.absenceType, { y });
+      y = addLabeledField(doc, "Fecha Inicio", formatDate(absence.startDate), { y });
+      y = addLabeledField(doc, "Fecha Fin", absence.endDate ? formatDate(absence.endDate) : "—", { y });
+      y = addLabeledField(doc, "Días Perdidos", String(absence.daysLost || 0), { y });
+      y = addLabeledField(doc, "Estado", absence.status, { y });
+      if (absence.diagnosis) y = addLabeledField(doc, "Diagnóstico", absence.diagnosis, { y });
+      if (absence.cie10Code) y = addLabeledField(doc, "Código CIE-10", absence.cie10Code, { y });
+      if (absence.prognosis) y = addLabeledField(doc, "Pronóstico", absence.prognosis, { y });
+      if (absence.restrictions) y = addLabeledField(doc, "Restricciones Médicas", absence.restrictions, { y });
+      if (absence.incapacityNumber) y = addLabeledField(doc, "No. Incapacidad", absence.incapacityNumber, { y });
+      if (absence.issuerEntity) y = addLabeledField(doc, "Entidad Emisora", absence.issuerEntity, { y });
+      if (absence.issueDate) y = addLabeledField(doc, "Fecha de Emisión", formatDate(absence.issueDate), { y });
+      y = addLabeledField(doc, "Seguimiento EPS", absence.epsFollowup ? "Sí" : "No", { y });
+      y = addLabeledField(doc, "Seguimiento ARL", absence.arlFollowup ? "Sí" : "No", { y });
+      if (absence.hasExtension) {
+        y = addLabeledField(doc, "Prórroga", `${absence.extensionCount || 0} prórroga(s), ${absence.extensionDays || 0} días adicionales`, { y });
+      }
+      if (absence.reintegrationDate) y = addLabeledField(doc, "Fecha de Reintegro", formatDate(absence.reintegrationDate), { y });
+      if (absence.reintegrationRestrictions) y = addLabeledField(doc, "Restricciones de Reintegro", absence.reintegrationRestrictions, { y });
+      if (absence.observations) y = addLabeledField(doc, "Observaciones", absence.observations, { y });
+
+      await addSignatureFooter(doc, signers, false);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, "absence-individual");
     }
   });
 
@@ -10003,6 +10072,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(audits);
   });
 
+  // GET /api/pesv-audits/pdf - Informe general de auditorías PESV (listado)
+  // NOTE: must be registered BEFORE /api/pesv-audits/:id to avoid ":id" matching "pdf"
+  app.get("/api/pesv-audits/pdf", requireAuth, async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
+      const audits = await storage.getPesvAudits(companyId);
+      const [company] = await db.select().from(companies).where(eq(companies.id, companyId));
+      const logoBuffer = await loadCompanyLogo(companyId);
+      const signers = await getSignersForCompany(companyId, true);
+
+      const doc = new PDFDocument({ size: 'LETTER', margin: 40 });
+      const pdf_sub = await storage.getSubscriptionByCompany(companyId);
+      const pdf_trial = getTrialStatus(pdf_sub?.status || 'trial', pdf_sub?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, pdf_trial.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="informe-auditorias-pesv.pdf"');
+      doc.pipe(res);
+
+      const margin = 40;
+      const pageWidth = doc.page.width;
+      const contentWidth = pageWidth - margin * 2;
+
+      let y = await addStandardHeader({
+        doc,
+        company: { id: companyId, name: company?.name || 'N/A', nit: company?.nit || 'N/A' },
+        documentTitle: 'INFORME GENERAL - AUDITORÍAS PESV',
+        documentCode: 'AUD-PESV-GEN',
+        version: '1.0',
+        logoBuffer,
+      });
+
+      doc.y = y + 8;
+      doc.moveTo(margin, doc.y).lineTo(pageWidth - margin, doc.y).stroke('#cccccc');
+      doc.y += 12;
+
+      const formatDate = (d: string | null) => d ? new Date(d).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A';
+      const resultLabel: Record<string, string> = { 'cumple': 'Cumple', 'cumple-parcialmente': 'Cumple Parcialmente', 'no-cumple': 'No Cumple' };
+      const statusLabel: Record<string, string> = { 'programada': 'Programada', 'en-curso': 'En Curso', 'completada': 'Completada' };
+
+      y = addSectionBar(doc, `Auditorías Registradas (${audits.length})`, doc.y);
+      doc.y = y + 6;
+
+      if (audits.length === 0) {
+        doc.font('Helvetica').fontSize(9).fillColor('#333333').text('No hay auditorías PESV registradas.', margin, doc.y);
+        doc.y += 16;
+      } else {
+        addSimpleTable(doc, ['Fecha', 'Auditor', 'Alcance', 'Estado', 'Resultado', 'Cumplimiento'],
+          audits.map(a => [
+            formatDate(a.auditDate), a.auditor, a.scope,
+            statusLabel[a.status] || a.status, resultLabel[a.result] || a.result, `${a.compliancePercentage}%`
+          ]),
+          { y: doc.y + 2, columnWidths: [contentWidth * 0.13, contentWidth * 0.20, contentWidth * 0.27, contentWidth * 0.15, contentWidth * 0.13, contentWidth * 0.12] }
+        );
+        doc.y += 16;
+      }
+
+      addSignatureFooter(doc, signers);
+      addProviderContactFooter(doc);
+
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-audits-general');
+    }
+  });
+
   app.get("/api/pesv-audits/:id", requireAuth, async (req, res) => {
     const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
@@ -10359,6 +10498,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Admin: get all job profiles across all companies
     const allProfiles = await storage.getAllJobProfiles();
     res.json(allProfiles);
+  });
+
+  // GET /api/job-profiles/pdf - Informe general de perfiles de cargo (profesiograma)
+  app.get("/api/job-profiles/pdf", requireAnyPermission(["job_profiles:view", "job_profiles:view_self"]), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+      const companyId = req.user!.companyId;
+      if (!isAdmin && !companyId) {
+        return res.status(403).send("Usuario no asociado a una empresa");
+      }
+      if (!companyId) {
+        return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      }
+      const company = await storage.getCompany(companyId);
+      if (!company) return res.status(404).send("Empresa no encontrada");
+
+      const profiles = await storage.getJobProfiles(companyId);
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="informe-profesiograma.pdf"');
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, false);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: "PROFESIOGRAMA - PERFILES DE CARGO",
+        documentCode: "SST-PROF-GEN", logoBuffer,
+      });
+
+      y = addSectionBar(doc, `Perfiles de Cargo Registrados (${profiles.length})`, y);
+      if (profiles.length === 0) {
+        y = addParagraph(doc, "No hay perfiles de cargo registrados.", { y });
+      } else {
+        const rows = profiles.map((p: any) => [
+          p.name || "—",
+          p.riskClass || "—",
+          (p.requiredExams || []).join(", ") || "—",
+          p.isActive ? "Activo" : "Inactivo",
+        ]);
+        y = addSimpleTable(doc, ["Cargo", "Clase de Riesgo", "Exámenes Requeridos", "Estado"], rows, {
+          y, columnWidths: [140, 90, 200, 70],
+        });
+      }
+
+      await addSignatureFooter(doc, signers, false);
+      doc.end();
+    } catch (error: any) {
+      handlePdfError(error, res, "job-profiles-general-pdf");
+    }
   });
 
   app.get("/api/job-profiles/:id", requireAnyPermission(["job_profiles:view", "job_profiles:view_self"]), async (req, res) => {
@@ -13704,6 +13901,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error: any) {
       handlePdfError(error, res, 'copasst-acta-pdf');
+    }
+  });
+
+  // GET /api/copasst-actas-general/pdf - Informe general de gestión COPASST (período, miembros, actas)
+  app.get("/api/copasst-actas-general/pdf", requirePermission("companies:view"), async (req, res) => {
+    try {
+      const companyId = req.user!.companyId!;
+      const company = await storage.getCompany(companyId);
+      if (!company) return res.status(404).send("Empresa no encontrada");
+
+      const periodoActivo = await storage.getCopasstPeriodoActivo(companyId);
+      const miembros = periodoActivo ? await storage.getCopasstMiembros(periodoActivo.id) : [];
+      const miembrosConWorker = await Promise.all(miembros.map(async (m: any) => {
+        const worker = await storage.getWorker(m.workerId);
+        return { ...m, workerName: worker ? `${worker.firstName} ${worker.lastName}` : "—" };
+      }));
+      const actas = await storage.getCopasstActas(companyId);
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="informe-copasst.pdf"');
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, false);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: "INFORME DE GESTIÓN COPASST",
+        documentCode: "SST-COPASST-GEN", logoBuffer,
+      });
+
+      y = addSectionBar(doc, "Período Vigente", y);
+      if (periodoActivo) {
+        y = addLabeledField(doc, "Fecha de Inicio", formatDate(periodoActivo.fechaInicio), { y });
+        y = addLabeledField(doc, "Fecha de Fin", formatDate(periodoActivo.fechaFin), { y });
+        y = addLabeledField(doc, "Estado", periodoActivo.estado, { y });
+      } else {
+        y = addParagraph(doc, "No hay un período COPASST activo registrado.", { y });
+      }
+      y += 6;
+
+      y = addSectionBar(doc, `Miembros del Comité (${miembrosConWorker.length})`, y);
+      if (miembrosConWorker.length === 0) {
+        y = addParagraph(doc, "No hay miembros registrados para el período vigente.", { y });
+      } else {
+        const miembrosRows = miembrosConWorker.map((m: any) => [
+          m.workerName || "—",
+          m.cargo || "—",
+          m.tipoRepresentante === 'empleador' ? 'Empleador' : 'Trabajadores',
+          m.activo ? 'Activo' : 'Inactivo',
+        ]);
+        y = addSimpleTable(doc, ["Nombre", "Cargo", "Representación", "Estado"], miembrosRows, {
+          y, columnWidths: [180, 100, 120, 90],
+        });
+      }
+      y += 6;
+
+      y = addSectionBar(doc, `Actas Registradas (${actas.length})`, y);
+      if (actas.length === 0) {
+        y = addParagraph(doc, "No se han registrado actas de reunión.", { y });
+      } else {
+        const actasRows = actas.map((a: any) => [
+          a.numeroActa || "—",
+          formatDate(a.fecha),
+          a.presidente || "—",
+          a.secretaria || "—",
+        ]);
+        y = addSimpleTable(doc, ["N° Acta", "Fecha", "Presidente", "Secretario(a)"], actasRows, {
+          y, columnWidths: [80, 90, 180, 140],
+        });
+      }
+
+      await addSignatureFooter(doc, signers, false);
+      doc.end();
+    } catch (error: any) {
+      handlePdfError(error, res, "copasst-general-pdf");
     }
   });
 
@@ -23934,6 +24213,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/sve-programs/pdf - Informe general de todos los programas SVE
+  app.get("/api/sve-programs/pdf", requirePermission("trainings:view"), async (req, res) => {
+    try {
+      if (!req.user!.companyId) {
+        return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      }
+      const companyId = req.user!.companyId;
+      const company = await storage.getCompany(companyId);
+      if (!company) return res.status(404).send("Empresa no encontrada");
+
+      const programs = await storage.getSvePrograms(companyId);
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="informe-sve-programas.pdf"');
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, false);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: "INFORME GENERAL - PROGRAMAS DE VIGILANCIA EPIDEMIOLÓGICA",
+        documentCode: "SST-SVE-GEN", logoBuffer,
+      });
+
+      y = addSectionBar(doc, `Programas SVE Registrados (${programs.length})`, y);
+      if (programs.length === 0) {
+        y = addParagraph(doc, "No hay programas de vigilancia epidemiológica registrados.", { y });
+      } else {
+        const rows = programs.map((p: any) => [
+          p.name || "—",
+          p.riskType || "—",
+          p.responsibleName || "—",
+          p.status || "—",
+          formatDate(p.startDate),
+        ]);
+        y = addSimpleTable(doc, ["Programa", "Tipo de Riesgo", "Responsable", "Estado", "Fecha Inicio"], rows, {
+          y, columnWidths: [150, 100, 110, 70, 90],
+        });
+      }
+
+      await addSignatureFooter(doc, signers, false);
+      doc.end();
+    } catch (error: any) {
+      handlePdfError(error, res, "sve-programs-general-pdf");
+    }
+  });
+
   app.get("/api/sve-programs/:id", requirePermission("trainings:view"), async (req, res) => {
     try {
       if (!req.user!.companyId) {
@@ -30800,6 +31133,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error fetching matriz legal item:', error);
       res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/matriz-legal/:id/pdf - PDF individual de una norma legal
+  app.get('/api/matriz-legal/:id/pdf', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      if (!req.user!.companyId) {
+        return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      }
+      const companyId = req.user!.companyId;
+      const item = await storage.getMatrizLegalItem(req.params.id, companyId);
+      if (!item) {
+        return res.status(404).send('Norma no encontrada');
+      }
+
+      const company = await storage.getCompany(companyId);
+      if (!company) return res.status(404).send("Empresa no encontrada");
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Matriz-Legal-${item.id}.pdf"`);
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, false);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: "MATRIZ LEGAL SST - FICHA DE NORMA",
+        documentCode: `SST-MTL-${item.id.slice(0, 8).toUpperCase()}`, logoBuffer,
+      });
+
+      y = addSectionBar(doc, "Identificación de la Norma", y);
+      y = addLabeledField(doc, "Norma", item.norma, { y });
+      y = addLabeledField(doc, "Título", item.titulo, { y });
+      y = addLabeledField(doc, "Categoría", item.categoria, { y });
+      y = addLabeledField(doc, "Entidad Emisora", item.entidadEmisora || "N/A", { y });
+      y = addLabeledField(doc, "Fecha de Emisión", formatDate(item.fechaEmision), { y });
+      if (item.articulosAplicables) {
+        y = addLabeledField(doc, "Artículos Aplicables", item.articulosAplicables, { y });
+      }
+      y += 4;
+
+      y = addSectionBar(doc, "Contenido y Alcance", y);
+      y = addParagraph(doc, item.descripcion || "Sin descripción registrada.", { y });
+      y += 4;
+      y = addLabeledField(doc, "Obligaciones", "", { y });
+      y = addParagraph(doc, item.obligaciones, { y });
+      if (item.alcance) {
+        y += 4;
+        y = addLabeledField(doc, "Alcance", "", { y });
+        y = addParagraph(doc, item.alcance, { y });
+      }
+      y += 4;
+
+      y = addSectionBar(doc, "Cumplimiento y Seguimiento", y);
+      y = addLabeledField(doc, "Estado de Cumplimiento", item.estadoCumplimiento, { y });
+      y = addLabeledField(doc, "Responsable", item.responsableCumplimiento || "N/A", { y });
+      y = addLabeledField(doc, "Periodicidad", item.periodicidad || "N/A", { y });
+      y = addLabeledField(doc, "Última Verificación", formatDate(item.fechaUltimaVerificacion), { y });
+      y = addLabeledField(doc, "Próxima Verificación", formatDate(item.fechaProximaVerificacion), { y });
+      if (item.evidencias) {
+        y += 4;
+        y = addLabeledField(doc, "Evidencias", "", { y });
+        y = addParagraph(doc, item.evidencias, { y });
+      }
+      if (item.observaciones) {
+        y += 4;
+        y = addLabeledField(doc, "Observaciones", "", { y });
+        y = addParagraph(doc, item.observaciones, { y });
+      }
+      if (item.planesAccion) {
+        y += 4;
+        y = addLabeledField(doc, "Planes de Acción", "", { y });
+        y = addParagraph(doc, item.planesAccion, { y });
+      }
+
+      await addSignatureFooter(doc, signers, false);
+      doc.end();
+    } catch (error: any) {
+      handlePdfError(error, res, 'matriz-legal-item-pdf');
     }
   });
 
@@ -39570,6 +39989,64 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // GET /api/planes-emergencia/pdf - Informe general de todos los planes de emergencia
+  app.get("/api/planes-emergencia/pdf", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
+    try {
+      const userCompanyId = req.user!.companyId;
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      if (!isAdmin && !userCompanyId) {
+        return res.status(403).send("Usuario no asociado a una empresa");
+      }
+      if (!userCompanyId) {
+        return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      }
+      const company = await storage.getCompany(userCompanyId);
+      if (!company) return res.status(404).send("Empresa no encontrada");
+
+      const planes = await storage.getPlanesEmergencia(userCompanyId);
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(userCompanyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="informe-planes-emergencia.pdf"');
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(userCompanyId, false);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: "INFORME GENERAL - PLANES DE EMERGENCIA",
+        documentCode: "SST-PE-GEN", logoBuffer,
+      });
+
+      y = addSectionBar(doc, `Planes de Emergencia Registrados (${planes.length})`, y);
+      if (planes.length === 0) {
+        y = addParagraph(doc, "No hay planes de emergencia registrados.", { y });
+      } else {
+        const rows = planes.map((p: any) => [
+          p.codigo || "—",
+          p.nombre || "—",
+          p.version || "—",
+          p.estado || "—",
+          formatDate(p.fechaElaboracion),
+        ]);
+        y = addSimpleTable(doc, ["Código", "Nombre", "Versión", "Estado", "Fecha Elaboración"], rows, {
+          y, columnWidths: [80, 170, 60, 80, 110],
+        });
+      }
+
+      await addSignatureFooter(doc, signers, false);
+      doc.end();
+    } catch (error: any) {
+      handlePdfError(error, res, "planes-emergencia-general-pdf");
+    }
+  });
+
   // GET /api/planes-emergencia/:id - Get by ID (with tenant isolation)
   app.get("/api/planes-emergencia/:id", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
@@ -48015,6 +48492,132 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // GET /api/epp/deliveries/pdf - PDF general de todas las entregas de EPP
+  app.get("/api/epp/deliveries/pdf", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) return res.status(403).send("Empresa no identificada");
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, effectiveCompanyId)).limit(1);
+      if (!company) return res.status(404).send("Empresa no encontrada");
+
+      const rows = await db.select({
+        delivery: eppDeliveries,
+        worker: { name: schema.workers.name, identificationNumber: schema.workers.identificationNumber, position: schema.workers.position },
+      })
+        .from(eppDeliveries)
+        .leftJoin(schema.workers, eq(eppDeliveries.workerId, schema.workers.id))
+        .where(eq(eppDeliveries.companyId, effectiveCompanyId))
+        .orderBy(desc(eppDeliveries.deliveryDate));
+
+      const { default: PDFDocument } = await import("pdfkit");
+      const doc = new PDFDocument({ margin: 35, size: "LETTER" });
+
+      const subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", 'inline; filename="entregas-epp.pdf"');
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(effectiveCompanyId, false);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: "REGISTRO DE ENTREGA DE ELEMENTOS DE PROTECCIÓN PERSONAL",
+        documentCode: "SST-EPP", logoBuffer,
+      });
+
+      y = addParagraph(doc, "Control y trazabilidad de dotación de EPP a los trabajadores (Art. 230 CST).", { y, fontSize: 8 });
+      y += 6;
+
+      if (rows.length === 0) {
+        y = addParagraph(doc, "No se han registrado entregas de EPP.", { y });
+      } else {
+        y = addSectionBar(doc, `Registro de Entregas (${rows.length})`, y);
+        const tableRows = rows.map(r => [
+          r.worker?.name || "—",
+          r.delivery.eppName,
+          r.delivery.eppCategory,
+          formatDate(r.delivery.deliveryDate),
+          String(r.delivery.quantity || 1),
+          r.delivery.size || "—",
+          r.delivery.workerSignature ? "Sí" : "No",
+        ]);
+        y = addSimpleTable(doc, ["Trabajador", "EPP", "Categoría", "Fecha", "Cant.", "Talla", "Firmó"], tableRows, {
+          y, columnWidths: [110, 110, 90, 60, 40, 60, 45],
+        });
+      }
+
+      await addSignatureFooter(doc, signers, false);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, "epp-deliveries-general");
+    }
+  });
+
+  // GET /api/epp/deliveries/:id/pdf - PDF individual de una entrega de EPP
+  app.get("/api/epp/deliveries/:id/pdf", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) return res.status(403).send("Empresa no identificada");
+      const { id } = req.params;
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, effectiveCompanyId)).limit(1);
+      if (!company) return res.status(404).send("Empresa no encontrada");
+
+      const [row] = await db.select({
+        delivery: eppDeliveries,
+        worker: { name: schema.workers.name, identificationNumber: schema.workers.identificationNumber, position: schema.workers.position },
+      })
+        .from(eppDeliveries)
+        .leftJoin(schema.workers, eq(eppDeliveries.workerId, schema.workers.id))
+        .where(and(eq(eppDeliveries.id, id), eq(eppDeliveries.companyId, effectiveCompanyId)))
+        .limit(1);
+      if (!row) return res.status(404).send("Entrega de EPP no encontrada");
+
+      const { default: PDFDocument } = await import("pdfkit");
+      const doc = new PDFDocument({ margin: 35, size: "LETTER" });
+
+      const subscription = await storage.getSubscriptionByCompany(effectiveCompanyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="entrega-epp-${row.worker?.identificationNumber || id}.pdf"`);
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(effectiveCompanyId, false);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: "ENTREGA DE ELEMENTO DE PROTECCIÓN PERSONAL",
+        documentCode: "SST-EPP", logoBuffer,
+      });
+
+      y = addLabeledField(doc, "Trabajador", row.worker?.name || "—", { y });
+      y = addLabeledField(doc, "Cédula", row.worker?.identificationNumber || "—", { y });
+      y = addLabeledField(doc, "Cargo", row.worker?.position || "—", { y });
+      y = addLabeledField(doc, "EPP Entregado", row.delivery.eppName, { y });
+      y = addLabeledField(doc, "Categoría", row.delivery.eppCategory, { y });
+      y = addLabeledField(doc, "Fecha de Entrega", formatDate(row.delivery.deliveryDate), { y });
+      y = addLabeledField(doc, "Cantidad", String(row.delivery.quantity || 1), { y });
+      if (row.delivery.size) y = addLabeledField(doc, "Talla", row.delivery.size, { y });
+      if (row.delivery.serialNumber) y = addLabeledField(doc, "No. Serie", row.delivery.serialNumber, { y });
+      if (row.delivery.lotNumber) y = addLabeledField(doc, "No. Lote", row.delivery.lotNumber, { y });
+      if (row.delivery.deliveryReason) y = addLabeledField(doc, "Motivo de Entrega", row.delivery.deliveryReason, { y });
+      if (row.delivery.expirationDate) y = addLabeledField(doc, "Fecha de Vencimiento", formatDate(row.delivery.expirationDate), { y });
+      y = addLabeledField(doc, "Firma del Trabajador", row.delivery.workerSignature ? "Firmado" : "Pendiente", { y });
+      if (row.delivery.deliveredBy) y = addLabeledField(doc, "Entregado Por", row.delivery.deliveredBy, { y });
+      if (row.delivery.observations) y = addLabeledField(doc, "Observaciones", row.delivery.observations, { y });
+
+      await addSignatureFooter(doc, signers, false);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, "epp-delivery-individual");
+    }
+  });
 
   // ==========================================
   // PARTES INTERESADAS - ISO 45001:2018 Cláusula 4.2
@@ -53698,6 +54301,107 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/pesv/victimas-registros/pdf", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const isAdmin = hasGlobalAccess(user.role);
+      const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : user.companyId;
+      if (!companyId) return res.status(400).json({ error: "companyId requerido" });
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const rows = await db.execute(sql`SELECT * FROM pesv_victimas_registros WHERE company_id = ${companyId} ORDER BY fecha_siniestro DESC`);
+      const registros = rows.rows.map(rowToCamel) as any[];
+
+      const PDFDocument = (await import('pdfkit')).default;
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="informe-atencion-victimas.pdf"');
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: 'INFORME GENERAL - ATENCIÓN A VÍCTIMAS DE SINIESTROS VIALES',
+        documentCode: 'PESV-VICTIMAS-GEN', logoBuffer
+      });
+
+      y = addSectionBar(doc, `Registros de Atención a Víctimas (${registros.length})`, y);
+      if (registros.length === 0) {
+        y = addParagraph(doc, 'No hay registros de atención a víctimas de siniestros viales.', { y });
+      } else {
+        const tableRows = registros.map(r => [
+          formatDate(r.fechaSiniestro), r.tipoVictima, r.nombreVictima || '—',
+          r.remisionIps === 1 ? 'Sí' : 'No', r.estadoSeguimiento, r.responsable || '—'
+        ]);
+        y = addSimpleTable(doc, ['Fecha', 'Tipo Víctima', 'Nombre', 'Remisión IPS', 'Estado', 'Responsable'], tableRows, { y });
+      }
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-victimas-registros-general');
+    }
+  });
+
+  app.get("/api/pesv/victimas-registros/:id/pdf", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const isAdmin = hasGlobalAccess(user.role);
+      const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : user.companyId;
+      if (!companyId) return res.status(400).json({ error: "companyId requerido" });
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const rows = await db.execute(sql`SELECT * FROM pesv_victimas_registros WHERE id = ${req.params.id} AND company_id = ${companyId}`);
+      if (!rows.rows.length) return res.status(404).send('Registro no encontrado');
+      const registro = rowToCamel(rows.rows[0]) as any;
+
+      const PDFDocument = (await import('pdfkit')).default;
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="registro-atencion-victima.pdf"');
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company, documentTitle: 'FICHA DE ATENCIÓN A VÍCTIMA DE SINIESTRO VIAL',
+        documentCode: 'PESV-VICTIMAS-IND', logoBuffer
+      });
+
+      y = addSectionBar(doc, 'Datos del Registro', y);
+      y = addLabeledField(doc, 'Fecha del Siniestro', formatDate(registro.fechaSiniestro), { y });
+      y = addLabeledField(doc, 'Tipo de Víctima', registro.tipoVictima, { y });
+      y = addLabeledField(doc, 'Nombre de la Víctima', registro.nombreVictima || '—', { y });
+      y = addLabeledField(doc, 'Atención Inmediata', registro.atencionInmediata || '—', { y });
+      y = addLabeledField(doc, 'Remisión a IPS', registro.remisionIps === 1 ? 'Sí' : 'No', { y });
+      y = addLabeledField(doc, 'Nombre IPS', registro.nombreIps || '—', { y });
+      y = addLabeledField(doc, 'Estado de Seguimiento', registro.estadoSeguimiento, { y });
+      y = addLabeledField(doc, 'Programa de Acompañamiento', registro.programaAcompanamiento === 1 ? 'Sí' : 'No', { y });
+      y = addLabeledField(doc, 'Responsable', registro.responsable || '—', { y });
+
+      y = addSectionBar(doc, 'Descripción del Siniestro', y);
+      y = addParagraph(doc, registro.descripcionSiniestro, { y });
+
+      if (registro.observaciones) {
+        y = addSectionBar(doc, 'Observaciones', y);
+        y = addParagraph(doc, registro.observaciones, { y });
+      }
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-victimas-registro-individual');
     }
   });
 

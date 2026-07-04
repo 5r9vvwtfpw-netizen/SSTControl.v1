@@ -780,6 +780,15 @@ export default function MatrizLegal() {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => window.open(`/api/matriz-legal/${item.id}/pdf`, '_blank')}
+                        data-testid={`button-pdf-${item.id}`}
+                      >
+                        <Download className="w-4 h-4 mr-1" />
+                        PDF
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleEdit(item)}
                         data-testid={`button-edit-${item.id}`}
                       >

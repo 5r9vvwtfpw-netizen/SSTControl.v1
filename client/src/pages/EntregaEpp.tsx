@@ -21,7 +21,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
   Plus, Edit, Trash2, HardHat, Glasses, Search, Filter,
   Wind, Footprints, Shirt, ShieldCheck, ArrowLeft, Sparkles, Bot,
-  UserPlus, CalendarDays, RefreshCw, AlertTriangle, Clock, ArrowUpDown, Briefcase, FileText
+  UserPlus, CalendarDays, RefreshCw, AlertTriangle, Clock, ArrowUpDown, Briefcase, FileText, FileDown, Printer
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useLocation, Link } from "wouter";
@@ -267,6 +267,16 @@ export default function EntregaEpp() {
     setDialogOpen(true);
   };
 
+  const handleDownloadPdf = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleNew = () => {
     setEditingId(null);
     setManualEntry(false);
@@ -346,7 +356,15 @@ export default function EntregaEpp() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => handleDownloadPdf('/api/epp/deliveries/pdf', 'entregas-epp.pdf')}
+            data-testid="button-download-epp-pdf"
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Descargar PDF
+          </Button>
           <Button onClick={handleNew} data-testid="button-new-delivery">
             <Plus className="h-4 w-4 mr-2" />
             Nueva Entrega
@@ -443,6 +461,14 @@ export default function EntregaEpp() {
                         <TableCell>{delivery.size || "—"}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDownloadPdf(`/api/epp/deliveries/${delivery.id}/pdf`, `entrega-epp-${delivery.worker?.identificationNumber || delivery.id}.pdf`)}
+                              data-testid={`button-pdf-${delivery.id}`}
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="icon"

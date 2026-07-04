@@ -1174,6 +1174,15 @@ export default function PlanEmergencias() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Plan de Emergencias</h1>
           <p className="text-muted-foreground">Gestión de Amenazas | Resolución 0312/2019 Estándar 1.1.8</p>
         </div>
+        <div className="flex items-center gap-2 flex-wrap">
+        <Button
+          variant="outline"
+          onClick={() => window.open('/api/planes-emergencia/pdf', '_blank')}
+          data-testid="button-download-general-pdf"
+        >
+          <FileText className="h-4 w-4 mr-2" />
+          Descargar PDF
+        </Button>
         <AutomationAssistant
           titulo="Plan de Emergencias"
           estandar="2.5.1"
@@ -1181,6 +1190,7 @@ export default function PlanEmergencias() {
           normativaAplicable={normativaPlanEmergencias}
           compact={true}
         />
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

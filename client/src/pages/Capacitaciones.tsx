@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Filter, Bot, Users, UserPlus, Trash2, CalendarDays, Target } from "lucide-react";
+import { Plus, Search, Filter, Bot, Users, UserPlus, Trash2, CalendarDays, Target, FileDown } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -413,6 +413,24 @@ export default function Capacitaciones() {
         <div>
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Capacitaciones</h1>
           <p className="text-muted-foreground">Gestión de entrenamientos y formación SST</p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => {
+              const link = document.createElement('a');
+              link.href = '/api/reports/capacitaciones';
+              link.target = '_blank';
+              link.download = 'informe-capacitaciones.pdf';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+            data-testid="button-download-capacitaciones-pdf"
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Descargar PDF
+          </Button>
         </div>
         {isAdmin && (
           <Dialog open={dialogOpen} onOpenChange={(open) => {

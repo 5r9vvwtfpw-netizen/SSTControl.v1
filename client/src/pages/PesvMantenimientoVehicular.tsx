@@ -525,6 +525,14 @@ export default function PesvMantenimientoVehicular() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => handleDownloadPdf(`/api/pesv/mantenimientos/${maintenance.id}/pdf`, `mantenimiento-${maintenance.id}.pdf`)}
+                          data-testid={`button-pdf-${maintenance.id}`}
+                        >
+                          <FileDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleEdit(maintenance)}
                           data-testid={`button-edit-${maintenance.id}`}
                         >

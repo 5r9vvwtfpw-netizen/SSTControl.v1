@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, Plus, CheckCircle2, XCircle, Pencil, Trash2, Shield, Beaker, ArrowLeft } from "lucide-react";
+import { AlertTriangle, Plus, CheckCircle2, XCircle, Pencil, Trash2, Shield, Beaker, ArrowLeft, FileDown } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -221,6 +221,15 @@ export default function PesvAlcoholSustancias() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <HelpVideoButton customRoute="/pesv/alcohol-sustancias" testId="button-help-video-pesv-alcohol" />
+          <Button
+            variant="outline"
+            onClick={() => window.open('/api/pesv/alcohol-registros/pdf', '_blank')}
+            data-testid="button-download-general-pdf"
+            className="gap-2"
+          >
+            <FileDown className="h-4 w-4" />
+            Descargar PDF
+          </Button>
           <Button onClick={openNew} data-testid="button-nuevo-registro-alcohol" className="gap-2">
             <Plus className="h-4 w-4" />
             Nuevo Registro
@@ -323,6 +332,9 @@ export default function PesvAlcoholSustancias() {
                       <TableCell>{r.responsable ?? "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
+                          <Button size="icon" variant="ghost" onClick={() => window.open(`/api/pesv/alcohol-registros/${r.id}/pdf`, '_blank')} data-testid={`button-pdf-alcohol-${r.id}`}>
+                            <FileDown className="h-4 w-4" />
+                          </Button>
                           <Button size="icon" variant="ghost" onClick={() => openEdit(r)} data-testid={`button-editar-alcohol-${r.id}`}>
                             <Pencil className="h-4 w-4" />
                           </Button>

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, HeartHandshake, Shield, ArrowLeft } from "lucide-react";
+import { Plus, Pencil, Trash2, HeartHandshake, Shield, ArrowLeft, FileDown } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -221,6 +221,15 @@ export default function PesvAtencionVictimas() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <HelpVideoButton customRoute="/pesv/atencion-victimas" testId="button-help-video-pesv-victimas" />
+          <Button
+            variant="outline"
+            onClick={() => window.open('/api/pesv/victimas-registros/pdf', '_blank')}
+            data-testid="button-download-general-pdf"
+            className="gap-2"
+          >
+            <FileDown className="h-4 w-4" />
+            Descargar PDF
+          </Button>
           <Button onClick={openNew} data-testid="button-nuevo-registro-victima" className="gap-2">
             <Plus className="h-4 w-4" />
             Nuevo Registro
@@ -335,6 +344,9 @@ export default function PesvAtencionVictimas() {
                       <TableCell>{r.responsable ?? "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
+                          <Button size="icon" variant="ghost" onClick={() => window.open(`/api/pesv/victimas-registros/${r.id}/pdf`, '_blank')} data-testid={`button-pdf-victima-${r.id}`}>
+                            <FileDown className="h-4 w-4" />
+                          </Button>
                           <Button size="icon" variant="ghost" onClick={() => openEdit(r)} data-testid={`button-editar-victima-${r.id}`}>
                             <Pencil className="h-4 w-4" />
                           </Button>

@@ -220,6 +220,15 @@ export default function PesvFatigaSomnolencia() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <HelpVideoButton customRoute="/pesv/fatiga-somnolencia" testId="button-help-video-pesv-fatiga" />
+          <Button
+            variant="outline"
+            onClick={() => window.open('/api/pesv/fatiga-registros/pdf', '_blank')}
+            data-testid="button-download-general-pdf"
+            className="gap-2"
+          >
+            <FileDown className="h-4 w-4" />
+            Descargar PDF
+          </Button>
           <Button onClick={openNew} data-testid="button-nuevo-registro-fatiga" className="gap-2">
             <Plus className="h-4 w-4" />
             Nuevo Registro
@@ -337,6 +346,9 @@ export default function PesvFatigaSomnolencia() {
                       <TableCell>{r.responsable ?? "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
+                          <Button size="icon" variant="ghost" onClick={() => window.open(`/api/pesv/fatiga-registros/${r.id}/pdf`, '_blank')} data-testid={`button-pdf-fatiga-${r.id}`}>
+                            <FileDown className="h-4 w-4" />
+                          </Button>
                           <Button size="icon" variant="ghost" onClick={() => openEdit(r)} data-testid={`button-editar-fatiga-${r.id}`}>
                             <Pencil className="h-4 w-4" />
                           </Button>
