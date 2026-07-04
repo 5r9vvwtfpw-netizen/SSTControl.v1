@@ -12334,7 +12334,7 @@ export class DbStorage implements IStorage {
     return subscription;
   }
 
-  async ensurePricingPluginSync(companyId: string, status: string, trialEnd: Date | null): Promise<void> {
+  async ensurePricingPluginSync(companyId: string, status: string, trialEnd: Date | null, customBlockedReason?: string | null): Promise<void> {
     try {
       const statusMap: Record<string, string> = {
         'active': 'active',
@@ -12352,7 +12352,7 @@ export class DbStorage implements IStorage {
         'canceled': 'Suscripcion cancelada',
         'expired': 'Suscripcion expirada',
       };
-      const blockedReason = isBlocked ? (blockedReasonMap[status] || 'Suscripcion inactiva') : null;
+      const blockedReason = isBlocked ? (customBlockedReason || blockedReasonMap[status] || 'Suscripcion inactiva') : null;
 
       const colCheck = await db.execute(sql`
         SELECT column_name FROM information_schema.columns 
@@ -12597,7 +12597,7 @@ export class DbStorage implements IStorage {
   async transitionSubscriptionStatus(
     id: string,
     newStatus: 'active' | 'past_due' | 'suspended' | 'canceled' | 'expired',
-    metadata?: { suspendedAt?: Date; canceledAt?: Date }
+    metadata?: { suspendedAt?: Date; canceledAt?: Date; blockedReason?: string | null }
   ): Promise<Subscription | undefined> {
     const updateData: any = {
       status: newStatus,
@@ -12623,7 +12623,7 @@ export class DbStorage implements IStorage {
       .returning();
     
     if (updated) {
-      await this.ensurePricingPluginSync(updated.companyId, newStatus, updated.trialEnd || null);
+      await this.ensurePricingPluginSync(updated.companyId, newStatus, updated.trialEnd || null, metadata?.blockedReason);
     }
     return updated;
   }

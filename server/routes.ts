@@ -2471,6 +2471,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create trial subscription (7 days) - CRITICAL: Must succeed
       const TRIAL_DAYS = 7;
+      // Mensaje mostrado al bloquear el acceso de empresas recién registradas,
+      // hasta que soliciten su capacitación de inducción y un superadmin las active.
+      const PENDING_TRAINING_APPROVAL_MESSAGE =
+        "Su empresa fue registrada exitosamente. Para activar su acceso al sistema, " +
+        "debe solicitar la capacitación de inducción escribiendo a admin@sst-colombia.com. " +
+        "Nuestro equipo activará su cuenta una vez recibida su solicitud.";
       
       // Map legacy plan names to current database plan names
       const planMapping: Record<string, string> = {
@@ -2528,8 +2534,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (subscriptionPlan) {
           console.log(`🔍 [TRIAL] Creando suscripción trial con planId=${subscriptionPlan.id}...`);
-          await storage.createTrialSubscription(company.id, subscriptionPlan.id, TRIAL_DAYS);
+          const newTrialSubscription = await storage.createTrialSubscription(company.id, subscriptionPlan.id, TRIAL_DAYS);
           console.log(`✅ [TRIAL] Suscripción trial creada exitosamente para empresa ${company.id} - Plan: ${subscriptionPlan.name} (${TRIAL_DAYS} días)`);
+          // Nueva empresa: se bloquea el acceso hasta que un superadmin la active,
+          // luego de que la empresa solicite su capacitación de inducción por correo.
+          await storage.transitionSubscriptionStatus(newTrialSubscription.id, 'suspended', {
+            suspendedAt: new Date(),
+            blockedReason: PENDING_TRAINING_APPROVAL_MESSAGE,
+          });
+          console.log(`🔒 [PENDING-APPROVAL] Empresa ${company.id} bloqueada pendiente de capacitación de inducción`);
           subscriptionCreated = true;
         } else {
           subscriptionError = "No se encontró ningún plan de suscripción disponible en la base de datos";

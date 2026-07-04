@@ -1,6 +1,8 @@
-import { AlertTriangle, CreditCard, Clock, XCircle } from "lucide-react";
+import { AlertTriangle, CreditCard, Clock, XCircle, GraduationCap, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+
+const TRAINING_APPROVAL_EMAIL = "admin@sst-colombia.com";
 
 interface SubscriptionBlockedModalProps {
   subscriptionStatus: string;
@@ -15,7 +17,12 @@ export function SubscriptionBlockedModal({
   trialEndsAt,
   onActivateSubscription,
 }: SubscriptionBlockedModalProps) {
+  const isPendingTrainingApproval = blockedReason?.includes(TRAINING_APPROVAL_EMAIL);
+
   const getStatusIcon = () => {
+    if (isPendingTrainingApproval) {
+      return <GraduationCap className="h-16 w-16 text-blue-500" />;
+    }
     switch (subscriptionStatus) {
       case "trial_expired":
         return <Clock className="h-16 w-16 text-orange-500" />;
@@ -29,6 +36,9 @@ export function SubscriptionBlockedModal({
   };
 
   const getStatusTitle = () => {
+    if (isPendingTrainingApproval) {
+      return "Capacitación de Inducción Pendiente";
+    }
     switch (subscriptionStatus) {
       case "trial_expired":
         return "Período de Prueba Expirado";
@@ -44,6 +54,9 @@ export function SubscriptionBlockedModal({
   };
 
   const getStatusColor = () => {
+    if (isPendingTrainingApproval) {
+      return "border-blue-500 bg-blue-50 dark:bg-blue-950";
+    }
     switch (subscriptionStatus) {
       case "trial_expired":
         return "border-orange-500 bg-orange-50 dark:bg-orange-950";
@@ -111,23 +124,50 @@ export function SubscriptionBlockedModal({
               </p>
             </div>
           )}
+
+          {isPendingTrainingApproval && (
+            <div className="bg-background rounded-lg p-4 border text-left">
+              <p className="text-sm text-muted-foreground">
+                Antes de comenzar a usar el sistema, su equipo debe recibir una capacitación
+                de inducción a cargo de nuestro equipo de soporte. Escríbanos indicando el
+                nombre de su empresa y los datos de contacto, y activaremos su acceso tan
+                pronto agendemos la capacitación.
+              </p>
+            </div>
+          )}
         </CardContent>
 
         <CardFooter className="flex flex-col gap-3 pt-4">
-          {onActivateSubscription && (
-            <Button 
-              className="w-full" 
+          {isPendingTrainingApproval ? (
+            <Button
+              asChild
+              className="w-full"
               size="lg"
-              onClick={onActivateSubscription}
-              data-testid="button-activate-subscription"
+              data-testid="button-request-training"
             >
-              <CreditCard className="mr-2 h-5 w-5" />
-              Activar Suscripción
+              <a href={`mailto:${TRAINING_APPROVAL_EMAIL}?subject=${encodeURIComponent("Solicitud de capacitación de inducción - SST Colombia")}`}>
+                <Mail className="mr-2 h-5 w-5" />
+                Solicitar capacitación por correo
+              </a>
             </Button>
+          ) : (
+            onActivateSubscription && (
+              <Button 
+                className="w-full" 
+                size="lg"
+                onClick={onActivateSubscription}
+                data-testid="button-activate-subscription"
+              >
+                <CreditCard className="mr-2 h-5 w-5" />
+                Activar Suscripción
+              </Button>
+            )
           )}
           
           <p className="text-xs text-muted-foreground text-center mt-2">
-            ¿Necesita ayuda? Escríbanos a soporte@sst-colombia.com
+            {isPendingTrainingApproval
+              ? `¿Ya solicitó la capacitación? Escríbanos a ${TRAINING_APPROVAL_EMAIL}`
+              : "¿Necesita ayuda? Escríbanos a soporte@sst-colombia.com"}
           </p>
         </CardFooter>
       </Card>
