@@ -1338,6 +1338,7 @@ function buildCompanyVaults(docs: AllDocuments): CompanyVault[] {
     if (mat.lsoSignatureName) v.signedDocs++; else v.pendingDocs++;
   }
   for (const des of (docs.designaciones || [])) {
+    if (des.position !== 'Responsable del SG-SST') continue;
     const v = getOrCreate(des.companyId, des.companyName, des.companyNit);
     v.designaciones.push(des);
     v.totalDocs++;
