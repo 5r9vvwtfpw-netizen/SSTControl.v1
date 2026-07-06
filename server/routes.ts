@@ -45199,6 +45199,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // - Receiver is an LSO actively assigned to sender's company (fix: SST-2026-0007)
       const receiverIsSupportUser = receiver.role === 'soporte' || receiver.role === 'superadmin';
       const receiverIsLso = receiver.role === 'lso' || receiver.role === 'lso_externo';
+      const senderIsLso = user.role === 'lso' || user.role === 'lso_externo';
       if (!isSupportUser && !receiverIsSupportUser && receiver.companyId !== user.companyId) {
         // Allow if receiver is an LSO assigned to sender's company
         if (receiverIsLso && user.companyId) {
@@ -45209,6 +45210,23 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               and(
                 eq(schema.licensedProfessionalAssignments.userId, receiverId),
                 eq(schema.licensedProfessionalAssignments.companyId, user.companyId),
+                eq(schema.licensedProfessionalAssignments.isActive, true)
+              )
+            )
+            .limit(1);
+          if (lsoAssignment.length === 0) {
+            return res.status(403).send("El destinatario no pertenece a su empresa");
+          }
+        }
+        // Allow if sender is an LSO actively assigned to the receiver's company
+        else if (senderIsLso && receiver.companyId) {
+          const lsoAssignment = await db
+            .select({ id: schema.licensedProfessionalAssignments.id })
+            .from(schema.licensedProfessionalAssignments)
+            .where(
+              and(
+                eq(schema.licensedProfessionalAssignments.userId, user.id),
+                eq(schema.licensedProfessionalAssignments.companyId, receiver.companyId),
                 eq(schema.licensedProfessionalAssignments.isActive, true)
               )
             )
