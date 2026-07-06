@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import { storage } from '../storage';
 import { emailService } from '../services/email';
 import { invoicePdfService } from '../services/invoice-pdf';
-import { accountingService } from '../services/accounting-integration';
+import { accountingService, isExcludedFromAccounting } from '../services/accounting-integration';
 import logger from '../lib/logger';
 
 /**
@@ -88,7 +88,13 @@ export async function processMonthlyBilling() {
 
         logger.info({ ...subscriptionContext, invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber }, 'Invoice record created');
 
-        if (accountingService.isEnabled()) {
+        if (accountingService.isEnabled() && isExcludedFromAccounting(subscription.companyId)) {
+          await storage.updateInvoice(invoice.id, {
+            accountingSyncStatus: 'excluded',
+            accountingLastError: 'Empresa de prueba - excluida de sincronización contable',
+          });
+          logger.info({ ...subscriptionContext, invoiceId: invoice.id }, '[Accounting] Empresa de prueba excluida, no se envía a contabilidad');
+        } else if (accountingService.isEnabled()) {
           let parsedLineItems: any[] = [];
           try {
             parsedLineItems = typeof invoice.lineItems === 'string'

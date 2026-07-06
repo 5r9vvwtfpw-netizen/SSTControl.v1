@@ -7,3 +7,4 @@
 - [Production DB tool vs AWS RDS](production-db-tool-vs-aws-rds.md) — the production database skill's executeSql hits the wrong DB for this app; query real AWS RDS prod via a bash-run pg script instead.
 - [Subscription grace period](subscription-grace-period.md) — expired subscriptions don't auto-block; a daily cron with a configurable grace period flips status to past_due after current_period_end.
 - [LSO and worker portals are free](free-portals-lso-trabajador.md) — roles lso/lso_externo/trabajador must be exempt from every subscription-block check (frontend + backend); several duplicate exemption lists exist and drift out of sync.
+- [Accounting sync test-company exclusion](accounting-test-company-exclusion.md) — hardcoded companyId allowlist skips Cloud Books sync for demo/test companies; must be checked in all 3 send sites plus the retry query.

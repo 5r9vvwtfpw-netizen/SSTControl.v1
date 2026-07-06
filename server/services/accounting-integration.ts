@@ -80,6 +80,18 @@ function buildObservaciones(periodStart: Date, invoiceNumber: string): string {
   return `Suscripción mensual Software SST Colombia - ${month} ${year} | Ref: ${invoiceNumber}`;
 }
 
+// Empresas de prueba/demo que NUNCA deben sincronizarse con el sistema
+// contable real (Cloud Books), aunque tengan facturas marcadas como "paid"
+// en nuestra base de datos. Confirmado con el cliente el 2026-07-06.
+const EXCLUDED_TEST_COMPANY_IDS = new Set([
+  '80e8ceec-1ed9-45ff-8970-9f0bf095709a', // NECTRA FOOD SA (NIT de prueba CH-1234567)
+  'b0173826-7394-44e6-8ad9-1f70e187e012', // Mi Comida (NIT de prueba 900123456789)
+]);
+
+export function isExcludedFromAccounting(companyId: string): boolean {
+  return EXCLUDED_TEST_COMPANY_IDS.has(companyId);
+}
+
 class AccountingIntegrationService {
   private baseUrl: string;
   private apiKey: string;

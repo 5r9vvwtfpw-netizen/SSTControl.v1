@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { storage } from '../storage';
-import { accountingService } from '../services/accounting-integration';
+import { accountingService, isExcludedFromAccounting } from '../services/accounting-integration';
 import logger from '../lib/logger';
 
 /**
@@ -46,6 +46,16 @@ export async function processAccountingRetries() {
         const company = await storage.getCompany(invoice.companyId);
         if (!company) {
           logger.error(invoiceContext, '[Accounting Retry] Empresa no encontrada, se omite');
+          continue;
+        }
+
+        if (isExcludedFromAccounting(invoice.companyId)) {
+          await storage.updateInvoice(invoice.id, {
+            accountingSyncStatus: 'excluded',
+            accountingLastError: 'Empresa de prueba - excluida de sincronización contable',
+            nextAccountingRetryAt: null,
+          });
+          logger.info(invoiceContext, '[Accounting Retry] Empresa de prueba excluida, factura marcada como excluida');
           continue;
         }
 

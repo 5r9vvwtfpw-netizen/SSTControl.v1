@@ -12828,6 +12828,7 @@ export class DbStorage implements IStorage {
           eq(schema.invoices.status, 'paid'),
           isNull(schema.invoices.dianCufe),
           ne(schema.invoices.accountingSyncStatus, 'synced'),
+          ne(schema.invoices.accountingSyncStatus, 'excluded'),
           lt(schema.invoices.accountingSyncAttempts, 20),
           or(
             isNull(schema.invoices.nextAccountingRetryAt),

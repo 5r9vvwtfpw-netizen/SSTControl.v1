@@ -49,7 +49,7 @@ import { promotionsRouter } from "../plugins/promotions";
 import { handlePromotionsWebhook } from "../plugins/promotions/webhook-handler";
 import { landingPageRouter } from "../plugins/landing-page-integration";
 import { demoEngineRouter, initializeDemoRooms, startDemoHousekeepingCron, isDemoEnabled } from "../plugins/demo-engine";
-import { accountingService } from "./services/accounting-integration";
+import { accountingService, isExcludedFromAccounting } from "./services/accounting-integration";
 import { emailService } from "./services/email";
 
 
@@ -333,7 +333,13 @@ app.post(
                         total: priceInPesos
                       }, 'Invoice created for payment');
 
-                      if (accountingService.isEnabled()) {
+                      if (accountingService.isEnabled() && isExcludedFromAccounting(companyId)) {
+                        await storage.updateInvoice(invoice.id, {
+                          accountingSyncStatus: 'excluded',
+                          accountingLastError: 'Empresa de prueba - excluida de sincronización contable',
+                        });
+                        logger.info({ invoiceId: invoice.id, companyId }, '[Accounting] Empresa de prueba excluida, no se envía a contabilidad');
+                      } else if (accountingService.isEnabled()) {
                         try {
                           let parsedLineItems: any[] = [];
                           try {
