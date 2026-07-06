@@ -45252,8 +45252,12 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         }
       }
       
-      // Use receiver's companyId for support users, sender's companyId otherwise
-      const messageCompanyId = isSupportUser ? receiver.companyId : user.companyId;
+      // Use receiver's companyId for support users, sender's companyId otherwise.
+      // External LSOs often have no fixed companyId, so fall back to the receiver's
+      // companyId when the sender is an LSO without one (fix: SST-2026-0008).
+      const messageCompanyId = isSupportUser
+        ? receiver.companyId
+        : (senderIsLso ? (user.companyId || receiver.companyId) : user.companyId);
       
       // When company staff sends to LSO, use company name as sender
       let effectiveSenderName = user.fullName || user.username;
