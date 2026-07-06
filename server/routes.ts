@@ -10439,6 +10439,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Disparar manualmente el job de reintentos de sincronización contable (superadmin)
+  // Útil porque en despliegues autoscale la instancia puede "dormir" y el cron
+  // interno (node-cron, cada 5 min) no corre hasta que llega una petición HTTP.
+  app.post("/api/admin/trigger-accounting-retry", requireRole(["superadmin"]), async (req, res) => {
+    try {
+      const { processAccountingRetries } = await import("./jobs/accounting-retry");
+      await processAccountingRetries();
+      res.json({ success: true, message: "Reintento de sincronización contable ejecutado" });
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error triggering accounting retry");
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   // Disparar manualmente el cron de vencimiento de suscripciones (superadmin)
   app.post("/api/admin/trigger-subscription-expiry", requireRole(["superadmin"]), async (req, res) => {
     try {
