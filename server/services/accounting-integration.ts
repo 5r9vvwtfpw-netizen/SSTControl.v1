@@ -161,12 +161,15 @@ class AccountingIntegrationService {
       },
       enviarDian: false, // Deshabilitado — facturación electrónica DIAN manejada por Siigo
       // Reference fields so Cloud Books can trace back to SST Colombia
+      // NOTE: Cloud Books' schema requires stripePagoId to be a string when present —
+      // sending `null` breaks their integration route (it falls back to serving the
+      // SPA's index.html instead of a JSON response). Omit the field entirely instead.
       referencia: {
         origen: 'sst-colombia',
         facturaOrigenId: data.invoiceId,
         facturaOrigenNumero: data.invoiceNumber,
         empresaId: data.companyId,
-        stripePagoId: data.stripePaymentId || null,
+        ...(data.stripePaymentId ? { stripePagoId: data.stripePaymentId } : {}),
       },
     };
 
