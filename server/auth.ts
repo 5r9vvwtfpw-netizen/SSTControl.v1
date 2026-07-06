@@ -789,8 +789,9 @@ export function requireActiveSubscription(req: Request, res: Response, next: Nex
 
   const user = req.user as SelectUser;
   
-  // Superadmin y soporte no requieren suscripción (administradores del sistema)
-  if (user.role === 'superadmin' || user.role === 'soporte') {
+  // Superadmin, soporte, LSO y trabajadores no requieren suscripción:
+  // los portales de LSO y empleados son totalmente gratuitos.
+  if (user.role === 'superadmin' || user.role === 'soporte' || user.role === 'lso' || user.role === 'lso_externo' || user.role === 'trabajador') {
     return next();
   }
 

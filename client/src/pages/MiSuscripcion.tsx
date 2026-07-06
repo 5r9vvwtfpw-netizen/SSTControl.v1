@@ -176,6 +176,26 @@ export default function MiSuscripcion() {
     link.click();
   };
 
+  if (user?.role === 'lso' || user?.role === 'lso_externo' || user?.role === 'trabajador') {
+    return (
+      <div className="container mx-auto p-6 max-w-6xl">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <Shield className="h-12 w-12 text-primary" />
+              <div>
+                <h3 className="font-semibold text-lg">Acceso gratuito</h3>
+                <p className="text-sm text-muted-foreground mt-2 max-w-md">
+                  Tu portal no requiere ninguna suscripción de pago. La información de facturación corresponde únicamente a las empresas registradas en el sistema.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!user?.companyId) {
     return (
       <div className="container mx-auto p-6 max-w-6xl">
