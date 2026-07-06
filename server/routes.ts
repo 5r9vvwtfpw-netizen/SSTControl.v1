@@ -45237,9 +45237,22 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // Use receiver's companyId for support users, sender's companyId otherwise
       const messageCompanyId = isSupportUser ? receiver.companyId : user.companyId;
       
-      // When company staff (admin/responsable_sst) sends to LSO, use company name as sender
+      // When company staff sends to LSO, use company name as sender
       let effectiveSenderName = user.fullName || user.username;
-      if (receiver.role === 'lso' && user.companyId && (user.role === 'admin' || user.role === 'responsable_sst')) {
+      const companyStaffRolesForLso = [
+        'admin',
+        'responsable_sst',
+        'superusuario',
+        'coordinador_sst',
+        'coordinador_salud',
+        'coordinador_rrhh',
+        'jefe_personal',
+        'supervisor',
+        'vigia_sst',
+        'auditor_interno',
+        'tecnico_mecanico',
+      ];
+      if (receiver.role === 'lso' && user.companyId && companyStaffRolesForLso.includes(user.role)) {
         const senderCompany = await storage.getCompany(user.companyId);
         if (senderCompany?.name) {
           effectiveSenderName = senderCompany.name;

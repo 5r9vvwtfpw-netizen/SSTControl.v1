@@ -14754,7 +14754,19 @@ export class DbStorage implements IStorage {
       .where(
         and(
           eq(schema.users.companyId, companyId),
-          inArray(schema.users.role, ['responsable_sst', 'admin'])
+          inArray(schema.users.role, [
+            'responsable_sst',
+            'admin',
+            'superusuario',
+            'coordinador_sst',
+            'coordinador_salud',
+            'coordinador_rrhh',
+            'jefe_personal',
+            'supervisor',
+            'vigia_sst',
+            'auditor_interno',
+            'tecnico_mecanico',
+          ])
         )
       );
       return responsables;
