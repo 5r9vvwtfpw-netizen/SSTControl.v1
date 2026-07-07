@@ -162,8 +162,22 @@ export default function Trabajadores() {
   // Photo display state (workers upload via portal)
   const [photoLoadError, setPhotoLoadError] = useState(false);
 
+  // Superadmin en modo "vista general" (sin empresa seleccionada): fetch ALL workers
+  // sin enviar el header X-Company-Id global (que filtraría a la empresa guardada en localStorage).
+  // Cuando sí hay empresa seleccionada, sí se envía el header para filtrar.
   const { data: workers = [], isLoading } = useQuery<Worker[]>({
-    queryKey: ["/api/workers"],
+    queryKey: ["/api/workers", hasGlobalCompanyAccess ? (selectedVaultCompanyId || "all") : "own"],
+    queryFn: async () => {
+      const headers: Record<string, string> = {};
+      if (hasGlobalCompanyAccess && selectedVaultCompanyId) {
+        headers["X-Company-Id"] = selectedVaultCompanyId;
+      } else if (!hasGlobalCompanyAccess) {
+        // Non-global users: use default global header logic (just fetch normally)
+      }
+      const res = await fetch("/api/workers", { credentials: "include", headers });
+      if (!res.ok) throw new Error("Error al obtener trabajadores");
+      return res.json();
+    },
   });
 
   const { data: companies = [] } = useQuery<Company[]>({
