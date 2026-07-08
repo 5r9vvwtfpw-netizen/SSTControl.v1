@@ -48871,7 +48871,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   
   app.get("/api/acciones-mejora-contexto", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.activeCompanyId || req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
       const acciones = await db.select()
         .from(accionesMejoraContexto)
         .where(eq(accionesMejoraContexto.companyId, companyId))
@@ -49178,7 +49179,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.post("/api/acciones-mejora-contexto", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.activeCompanyId || req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
       const data = insertAccionMejoraContextoSchema.parse(req.body);
       const [accion] = await db.insert(accionesMejoraContexto)
         .values({ ...data, companyId })
@@ -49223,7 +49225,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // Genera acciones de mejora automáticamente para los pasos PESV que no cumplen en la evaluación activa.
   app.post("/api/acciones-mejora-contexto/generar-automatico", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.activeCompanyId || req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).json({ error: "Usuario no asociado a empresa" });
 
       // Mapa estático de los 24 pasos PESV (Res. 40595/2022)
@@ -49340,7 +49342,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // Vista consolidada: Plan de mejoramiento (automático + contexto)
   app.get("/api/plan-mejoramiento-consolidado", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.activeCompanyId || req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
       
       // Acciones desde análisis de contexto (FODA)
       const accionesContexto = await db.select()
