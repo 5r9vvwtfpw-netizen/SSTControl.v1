@@ -18,6 +18,19 @@ import { getUncachableStripeClient } from "../stripeClient";
 import { billingHealthCheck } from "../lib/billing-validator";
 import { getSubscriptionStatus } from "../middleware/subscription-check";
 
+// Helper: resolve the effective company being viewed (superadmin/lso/lso_externo
+// can view any company via X-Company-Id header or ?companyId= query param).
+function getEffectiveCompanyId(req: any): string | null {
+  const globalRoles = ['superadmin', 'lso', 'lso_externo'];
+  if (globalRoles.includes(req.user?.role)) {
+    const headerCompanyId = req.headers['x-company-id'] as string | undefined;
+    const queryCompanyId = req.query?.companyId as string | undefined;
+    if (headerCompanyId) return headerCompanyId;
+    if (queryCompanyId) return queryCompanyId;
+  }
+  return req.user?.companyId || null;
+}
+
 /**
  * Billing & Subscriptions Routes (Bloque 4 - Sistema de Facturación Stripe)
  * 
@@ -192,7 +205,7 @@ export function registerBillingRoutes(app: Express) {
       if (isSuperadmin && req.query.companyId) {
         companyId = req.query.companyId as string;
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).json({ error: "Usuario no asociado a una empresa" });
         }
@@ -302,7 +315,7 @@ export function registerBillingRoutes(app: Express) {
 
       const validatedData = trialRequestSchema.parse(req.body || {});
 
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
@@ -573,7 +586,7 @@ export function registerBillingRoutes(app: Express) {
       }
 
       const isAdmin = req.user!.role === 'admin';
-      const isOwner = req.user!.companyId === subscription.companyId;
+      const isOwner = getEffectiveCompanyId(req) === subscription.companyId;
 
       if (!isAdmin && !isOwner) {
         return res.status(403).json({ error: "No tiene permisos para activar esta suscripción" });
@@ -868,7 +881,7 @@ export function registerBillingRoutes(app: Express) {
       if (isAdmin && req.query.companyId) {
         companyId = req.query.companyId as string;
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).json({ error: "Usuario no asociado a una empresa" });
         }
@@ -896,7 +909,7 @@ export function registerBillingRoutes(app: Express) {
       if (isAdmin && req.body.companyId) {
         companyId = req.body.companyId;
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).json({ error: "Usuario no asociado a una empresa" });
         }
@@ -957,7 +970,8 @@ export function registerBillingRoutes(app: Express) {
 
       // Verificar permisos
       const isAdmin = req.user!.role === 'admin';
-      if (!isAdmin && paymentSource.companyId !== req.user!.companyId) {
+      const isSuperadmin = req.user!.role === 'superadmin';
+      if (!isAdmin && !isSuperadmin && paymentSource.companyId !== getEffectiveCompanyId(req)) {
         return res.status(403).json({ error: "No autorizado" });
       }
 
@@ -993,7 +1007,8 @@ export function registerBillingRoutes(app: Express) {
 
       // Verificar permisos
       const isAdmin = req.user!.role === 'admin';
-      if (!isAdmin && paymentSource.companyId !== req.user!.companyId) {
+      const isSuperadmin = req.user!.role === 'superadmin';
+      if (!isAdmin && !isSuperadmin && paymentSource.companyId !== getEffectiveCompanyId(req)) {
         return res.status(403).json({ error: "No autorizado" });
       }
 
@@ -1022,7 +1037,7 @@ export function registerBillingRoutes(app: Express) {
       if (isAdmin && req.query.companyId) {
         companyId = req.query.companyId as string;
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).json({ error: "Usuario no asociado a una empresa" });
         }
@@ -1176,7 +1191,7 @@ export function registerBillingRoutes(app: Express) {
    */
   app.get("/api/billing/my-subscription", billingRateLimiter, requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
@@ -1216,7 +1231,7 @@ export function registerBillingRoutes(app: Express) {
    */
   app.get("/api/billing/my-invoices", billingRateLimiter, requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
@@ -1237,7 +1252,7 @@ export function registerBillingRoutes(app: Express) {
   app.get("/api/billing/invoice/:id/download", billingRateLimiter, requireAuth, async (req, res) => {
     try {
       const invoiceId = req.params.id;
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
@@ -1303,7 +1318,7 @@ export function registerBillingRoutes(app: Express) {
    */
   app.get("/api/billing/my-features", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }

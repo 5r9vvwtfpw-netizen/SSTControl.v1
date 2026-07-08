@@ -9,6 +9,17 @@ function generateToken(): string {
   return randomBytes(32).toString("hex");
 }
 
+function getEffectiveCompanyId(req: any): string | null {
+  const globalRoles = ['superadmin', 'lso', 'lso_externo'];
+  if (globalRoles.includes(req.user?.role)) {
+    const headerCompanyId = req.headers['x-company-id'] as string | undefined;
+    const queryCompanyId = req.query?.companyId as string | undefined;
+    if (headerCompanyId) return headerCompanyId;
+    if (queryCompanyId) return queryCompanyId;
+  }
+  return req.user?.companyId || null;
+}
+
 export function registerInduccionVirtualRoutes(app: Express) {
   const pluginEnabled = process.env.ENABLE_INDUCCION_VIRTUAL_PLUGIN !== "false";
   if (!pluginEnabled) {
@@ -27,13 +38,17 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
   app.get("/api/contenidos-induccion", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.companyId) {
+      if (!req.isAuthenticated()) {
+        return res.status(401).send("No autorizado");
+      }
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
         return res.status(401).send("No autorizado");
       }
       
       const contenidos = await db.select()
         .from(schema.contenidosInduccion)
-        .where(eq(schema.contenidosInduccion.companyId, req.user.companyId))
+        .where(eq(schema.contenidosInduccion.companyId, companyId))
         .orderBy(schema.contenidosInduccion.orden);
       
       res.json(contenidos);
@@ -45,7 +60,11 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
   app.post("/api/contenidos-induccion", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.companyId) {
+      if (!req.isAuthenticated()) {
+        return res.status(401).send("No autorizado");
+      }
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
         return res.status(401).send("No autorizado");
       }
 
@@ -54,7 +73,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
       // Auto-assign orden: query max(orden) for this company and set orden = max + 1
       const [maxResult] = await db.select({ maxOrden: sql<number>`COALESCE(MAX(${schema.contenidosInduccion.orden}), 0)` })
         .from(schema.contenidosInduccion)
-        .where(eq(schema.contenidosInduccion.companyId, req.user.companyId));
+        .where(eq(schema.contenidosInduccion.companyId, companyId));
       
       const nextOrden = (maxResult?.maxOrden || 0) + 1;
       
@@ -62,7 +81,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
         .values({
           ...parsed,
           orden: nextOrden,
-          companyId: req.user.companyId,
+          companyId: companyId,
         })
         .returning();
       
@@ -75,7 +94,11 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
   app.patch("/api/contenidos-induccion/:id", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.companyId) {
+      if (!req.isAuthenticated()) {
+        return res.status(401).send("No autorizado");
+      }
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
         return res.status(401).send("No autorizado");
       }
 
@@ -91,7 +114,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
         .set({ ...updateData, updatedAt: new Date() })
         .where(and(
           eq(schema.contenidosInduccion.id, req.params.id),
-          eq(schema.contenidosInduccion.companyId, req.user.companyId)
+          eq(schema.contenidosInduccion.companyId, companyId)
         ))
         .returning();
       
@@ -108,14 +131,18 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
   app.delete("/api/contenidos-induccion/:id", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.companyId) {
+      if (!req.isAuthenticated()) {
+        return res.status(401).send("No autorizado");
+      }
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
         return res.status(401).send("No autorizado");
       }
 
       await db.delete(schema.contenidosInduccion)
         .where(and(
           eq(schema.contenidosInduccion.id, req.params.id),
-          eq(schema.contenidosInduccion.companyId, req.user.companyId)
+          eq(schema.contenidosInduccion.companyId, companyId)
         ));
       
       res.status(204).send();
@@ -131,13 +158,17 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
   app.get("/api/preguntas-induccion", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.companyId) {
+      if (!req.isAuthenticated()) {
+        return res.status(401).send("No autorizado");
+      }
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
         return res.status(401).send("No autorizado");
       }
       
       const preguntas = await db.select()
         .from(schema.preguntasInduccion)
-        .where(eq(schema.preguntasInduccion.companyId, req.user.companyId))
+        .where(eq(schema.preguntasInduccion.companyId, companyId))
         .orderBy(schema.preguntasInduccion.orden);
       
       res.json(preguntas);
@@ -149,7 +180,11 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
   app.post("/api/preguntas-induccion", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.companyId) {
+      if (!req.isAuthenticated()) {
+        return res.status(401).send("No autorizado");
+      }
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
         return res.status(401).send("No autorizado");
       }
 
@@ -158,7 +193,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
       // Auto-assign orden: query max(orden) for this company and set orden = max + 1
       const [maxResult] = await db.select({ maxOrden: sql<number>`COALESCE(MAX(${schema.preguntasInduccion.orden}), 0)` })
         .from(schema.preguntasInduccion)
-        .where(eq(schema.preguntasInduccion.companyId, req.user.companyId));
+        .where(eq(schema.preguntasInduccion.companyId, companyId));
       
       const nextOrden = (maxResult?.maxOrden || 0) + 1;
       
@@ -166,7 +201,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
         .values({
           ...parsed,
           orden: nextOrden,
-          companyId: req.user.companyId,
+          companyId: companyId,
         })
         .returning();
       
@@ -179,7 +214,11 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
   app.patch("/api/preguntas-induccion/:id", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.companyId) {
+      if (!req.isAuthenticated()) {
+        return res.status(401).send("No autorizado");
+      }
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
         return res.status(401).send("No autorizado");
       }
 
@@ -195,7 +234,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
         .set(updateData)
         .where(and(
           eq(schema.preguntasInduccion.id, req.params.id),
-          eq(schema.preguntasInduccion.companyId, req.user.companyId)
+          eq(schema.preguntasInduccion.companyId, companyId)
         ))
         .returning();
       
@@ -212,14 +251,18 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
   app.delete("/api/preguntas-induccion/:id", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.companyId) {
+      if (!req.isAuthenticated()) {
+        return res.status(401).send("No autorizado");
+      }
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
         return res.status(401).send("No autorizado");
       }
 
       await db.delete(schema.preguntasInduccion)
         .where(and(
           eq(schema.preguntasInduccion.id, req.params.id),
-          eq(schema.preguntasInduccion.companyId, req.user.companyId)
+          eq(schema.preguntasInduccion.companyId, companyId)
         ));
       
       res.status(204).send();
@@ -232,7 +275,11 @@ export function registerInduccionVirtualRoutes(app: Express) {
   // POST /api/preguntas-induccion/reordenar - Reordenar preguntas (arrastrar y soltar)
   app.post("/api/preguntas-induccion/reordenar", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.companyId) {
+      if (!req.isAuthenticated()) {
+        return res.status(401).send("No autorizado");
+      }
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
         return res.status(401).send("No autorizado");
       }
 
@@ -248,7 +295,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
           .set({ orden: i + 1 })
           .where(and(
             eq(schema.preguntasInduccion.id, ordenPreguntaIds[i]),
-            eq(schema.preguntasInduccion.companyId, req.user.companyId)
+            eq(schema.preguntasInduccion.companyId, companyId)
           ));
       }
 
@@ -262,7 +309,11 @@ export function registerInduccionVirtualRoutes(app: Express) {
   // PATCH /api/preguntas-induccion/:id/reorder - Reordenar pregunta (mover arriba/abajo)
   app.patch("/api/preguntas-induccion/:id/reorder", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.companyId) {
+      if (!req.isAuthenticated()) {
+        return res.status(401).send("No autorizado");
+      }
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
         return res.status(401).send("No autorizado");
       }
 
@@ -272,7 +323,6 @@ export function registerInduccionVirtualRoutes(app: Express) {
         return res.status(400).send("Dirección inválida. Debe ser 'up' o 'down'");
       }
 
-      const companyId = req.user.companyId;
       const preguntaId = req.params.id;
 
       // Use transaction to prevent race conditions during reorder
@@ -331,7 +381,11 @@ export function registerInduccionVirtualRoutes(app: Express) {
   // POST /api/contenidos-induccion/reordenar - Reordenar contenidos (arrastrar y soltar)
   app.post("/api/contenidos-induccion/reordenar", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.companyId) {
+      if (!req.isAuthenticated()) {
+        return res.status(401).send("No autorizado");
+      }
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
         return res.status(401).send("No autorizado");
       }
 
@@ -347,7 +401,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
           .set({ orden: i + 1 })
           .where(and(
             eq(schema.contenidosInduccion.id, ordenContenidoIds[i]),
-            eq(schema.contenidosInduccion.companyId, req.user.companyId)
+            eq(schema.contenidosInduccion.companyId, companyId)
           ));
       }
 
@@ -361,7 +415,11 @@ export function registerInduccionVirtualRoutes(app: Express) {
   // PATCH /api/contenidos-induccion/:id/reorder - Reordenar contenido (mover arriba/abajo)
   app.patch("/api/contenidos-induccion/:id/reorder", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.companyId) {
+      if (!req.isAuthenticated()) {
+        return res.status(401).send("No autorizado");
+      }
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
         return res.status(401).send("No autorizado");
       }
 
@@ -371,7 +429,6 @@ export function registerInduccionVirtualRoutes(app: Express) {
         return res.status(400).send("Dirección inválida. Debe ser 'up' o 'down'");
       }
 
-      const companyId = req.user.companyId;
       const contenidoId = req.params.id;
 
       // Use transaction to prevent race conditions during reorder
@@ -433,13 +490,17 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
   app.get("/api/sesiones-induccion-virtual", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.companyId) {
+      if (!req.isAuthenticated()) {
+        return res.status(401).send("No autorizado");
+      }
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
         return res.status(401).send("No autorizado");
       }
       
       const sesiones = await db.select()
         .from(schema.sesionesInduccionVirtual)
-        .where(eq(schema.sesionesInduccionVirtual.companyId, req.user.companyId))
+        .where(eq(schema.sesionesInduccionVirtual.companyId, companyId))
         .orderBy(desc(schema.sesionesInduccionVirtual.fechaEnvio));
       
       res.json(sesiones);
@@ -451,7 +512,11 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
   app.post("/api/sesiones-induccion-virtual/enviar", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.companyId) {
+      if (!req.isAuthenticated()) {
+        return res.status(401).send("No autorizado");
+      }
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
         return res.status(401).send("No autorizado");
       }
 
@@ -465,7 +530,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
         .from(schema.workers)
         .where(and(
           eq(schema.workers.id, workerId),
-          eq(schema.workers.companyId, req.user.companyId)
+          eq(schema.workers.companyId, companyId)
         ));
       
       if (!worker) {
@@ -482,7 +547,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
       const [sesion] = await db.insert(schema.sesionesInduccionVirtual)
         .values({
-          companyId: req.user.companyId,
+          companyId: companyId,
           workerId,
           token,
           tipoInduccion: tipoInduccion || "induccion",
@@ -495,7 +560,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
       const [company] = await db.select()
         .from(schema.companies)
-        .where(eq(schema.companies.id, req.user.companyId));
+        .where(eq(schema.companies.id, companyId));
 
       const baseUrl = process.env.REPLIT_DEPLOYMENT_URL || process.env.APP_URL || 'https://sst-colombia.com';
       const inductionUrl = `${baseUrl}/induccion-virtual/${token}`;

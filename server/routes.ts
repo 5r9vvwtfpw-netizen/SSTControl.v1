@@ -2632,7 +2632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     // Regular users: can only see their own company
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       // User hasn't created/associated a company yet - return empty array
       return res.json([]);
@@ -2742,7 +2742,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // For non-admin users: ensure they don't already have a company
       // (1 subscription = 1 company model)
-      if (!isAdmin && req.user!.companyId) {
+      if (!isAdmin && getEffectiveCompanyId(req)) {
         return res.status(400).json({ 
           error: "Ya tienes una empresa asociada. Para crear más empresas, necesitas adquirir suscripciones adicionales." 
         });
@@ -3344,7 +3344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const companyId = req.params.id;
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
 
       if (userCompanyId && userCompanyId !== companyId) {
         return res.status(403).json({ error: "No tiene permiso para modificar esta empresa" });
@@ -3398,7 +3398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const companyId = req.params.id;
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       
       if (userCompanyId && userCompanyId !== companyId) {
         return res.status(403).send("No tiene permiso para modificar esta empresa");
@@ -3439,7 +3439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get current user's company with PESV-related counts and subscription info
   app.get("/api/company/current", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(404).send("Usuario no asociado a una empresa");
     }
@@ -3477,7 +3477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User management routes (Admin only)
   app.get("/api/users", requirePermission("users:view"), async (req, res) => {
     const userRole = req.user!.role;
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     
     // Superadmin can see all users
     if (hasGlobalAccess(userRole)) {
@@ -3499,7 +3499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get company members (limited info) for assignee selects - any authenticated company member
   // Returns only id, fullName, and role - no sensitive data
   app.get("/api/users/company-members", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -3534,7 +3534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.createUser({
         ...validatedData,
         password: hashedPassword,
-        companyId: req.user!.companyId,
+        companyId: getEffectiveCompanyId(req),
       });
 
       // Don't send password to frontend
@@ -3620,7 +3620,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let workers: any[];
       if (!isAdmin) {
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).json({ error: "Usuario no asociado a una empresa" });
         }
@@ -3683,7 +3683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const isAdmin = hasGlobalAccess(userRole);
     
     if (!isAdmin) {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -3736,7 +3736,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else {
         // Non-admin users can only create workers for their own company
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -3820,7 +3820,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isAdmin) {
         companyId = existingWorker.companyId;
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -3920,7 +3920,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isAdmin) {
         companyId = worker.companyId;
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).json({ error: "Usuario no asociado a una empresa" });
         }
@@ -3968,7 +3968,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = existingWorker.companyId;
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).json({ error: "Usuario no asociado a una empresa" });
         }
@@ -4004,7 +4004,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Admin can delete workers from any company
       companyId = workerToDelete.companyId;
     } else {
-      companyId = req.user!.companyId || "";
+      companyId = getEffectiveCompanyId(req) || "";
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -4057,7 +4057,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const targetCompanyId = req.params.companyId;
     const userRole = req.user!.role;
     const isAdmin = hasGlobalAccess(userRole);
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
 
     // Verify company access
     if (!isAdmin && userCompanyId !== targetCompanyId) {
@@ -4155,7 +4155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const workerId = req.params.id;
     const userRole = req.user!.role;
     const isAdmin = hasGlobalAccess(userRole);
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
 
     try {
       // Get the worker
@@ -4305,7 +4305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const workerId = req.params.id;
     const userRole = req.user!.role;
     const isAdmin = hasGlobalAccess(userRole);
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
 
     try {
       const worker = await storage.getWorkerById(workerId);
@@ -4609,7 +4609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/workers/import", requirePermission("workers:create"), excelUpload.single('file'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -5065,7 +5065,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Health Conditions routes (multi-tenant isolated)
   app.get("/api/health-conditions", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -5087,7 +5087,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/health-conditions", requirePermission("diseases:create"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -5130,7 +5130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Sociodemographic Diagnosis Cycle routes (Standard 3.1.1)
   app.get("/api/sociodemographic-diagnosis", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -5143,7 +5143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/sociodemographic-diagnosis/current", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -5156,7 +5156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/sociodemographic-diagnosis", requirePermission("diseases:create"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -5180,7 +5180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/sociodemographic-diagnosis/:id/close", requirePermission("diseases:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -5237,8 +5237,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/accidents", requirePermission("accidents:create"), async (req, res) => {
     try {
       console.log('[POST /api/accidents] Body:', JSON.stringify(req.body, null, 2));
-      console.log('[POST /api/accidents] User:', req.user!.username, 'role:', req.user!.role, 'companyId:', req.user!.companyId);
-      const userCompanyId = req.user!.companyId;
+      console.log('[POST /api/accidents] User:', req.user!.username, 'role:', req.user!.role, 'companyId:', getEffectiveCompanyId(req));
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const isLso = req.user!.role === 'lso';
       
@@ -5270,7 +5270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/accidents/:id", requirePermission("accidents:delete"), async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -5292,7 +5292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/accidents/:id/furat-pdf - Generate FURAT PDF (Resolution 156/2005)
   app.get("/api/accidents/:id/furat-pdf", requireAnyPermission(["accidents:view", "accidents:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Get accident
@@ -5365,7 +5365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/accidents/:id/furat-excel - Generate FURAT Excel (Resolución 1570/2005)
   app.get("/api/accidents/:id/furat-excel", requireAnyPermission(["accidents:view", "accidents:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
 
       const accident = await storage.getAccidentById(req.params.id);
@@ -5784,7 +5784,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'x-company-id': req.headers['x-company-id'],
         'content-type': req.headers['content-type']
       }));
-      console.log('[DEBUG-INV-CREATE] User:', req.user?.username, '| Role:', req.user?.role, '| User companyId:', req.user?.companyId);
+      console.log('[DEBUG-INV-CREATE] User:', req.user?.username, '| Role:', req.user?.role, '| User companyId:', getEffectiveCompanyId(req));
       console.log('[DEBUG-INV-CREATE] Effective companyId used:', companyId);
       console.log('[DEBUG-INV-CREATE] Body accidentId:', req.body.accidentId);
       console.log('[DEBUG-INV-CREATE] IsAdmin:', isAdmin);
@@ -6738,7 +6738,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId,
         headerCompanyId: req.headers['x-company-id'],
         bodyCompanyId: req.body.companyId,
-        userCompanyId: req.user!.companyId
+        userCompanyId: getEffectiveCompanyId(req)
       });
       
       // VALIDATION: Verify worker exists before insert to prevent FK errors
@@ -6957,7 +6957,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/trainings", requirePermission("trainings:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -6986,7 +6986,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/trainings/:id", requirePermission("trainings:delete"), async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -7007,7 +7007,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/trainings/:id", requirePermission("trainings:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       const existingTraining = await storage.getTrainingById(req.params.id);
@@ -7042,7 +7042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Training Attendees endpoints (for legacy trainings system)
   app.get("/api/trainings/:trainingId/attendees", requirePermission("trainings:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const { trainingId } = req.params;
       
@@ -7079,7 +7079,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/trainings/:id/lista-asistencia/pdf — Lista de asistencia individual SST con espacio de firma
   app.get("/api/trainings/:id/lista-asistencia/pdf", requirePermission("trainings:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const { id } = req.params;
 
@@ -7214,7 +7214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/trainings/:trainingId/attendees", requirePermission("trainings:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const { trainingId } = req.params;
       const { workerId } = req.body;
@@ -7288,7 +7288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/trainings/:trainingId/attendees/:workerId", requirePermission("trainings:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const { trainingId, workerId } = req.params;
       
@@ -7338,7 +7338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/inspections", requirePermission("inspections:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -7367,7 +7367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/inspections/:id", requirePermission("inspections:delete"), async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -7390,7 +7390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/inspections/:id - Update an inspection
   app.patch("/api/inspections/:id", requirePermission("inspections:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const inspectionId = req.params.id;
       
@@ -7436,7 +7436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = inspection.companyId;
       } else {
         // Non-admin: validate inspection belongs to user's company
-        const userCompanyId = req.user!.companyId!;
+        const userCompanyId = getEffectiveCompanyId(req)!;
         const inspection = await storage.getInspection(req.params.id, userCompanyId);
         if (!inspection) {
           return res.status(404).send('Inspección no encontrada');
@@ -7456,7 +7456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/inspecciones-peligros', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
-      const companyId = isAdmin ? undefined : (req.user!.companyId || undefined);
+      const companyId = isAdmin ? undefined : (getEffectiveCompanyId(req) || undefined);
       const vinculos = await storage.getAllInspeccionesPeligrosVinculados(companyId);
       res.json(vinculos);
     } catch (error: any) {
@@ -7479,7 +7479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = inspection.companyId;
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
         const inspection = await storage.getInspection(req.params.id, companyId);
         if (!inspection) {
           return res.status(404).send('Inspección no encontrada');
@@ -7518,7 +7518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = existing.companyId;
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
         // Verify linkage exists in user's company before update
         const existing = await storage.getInspeccionPeligroVinculado(req.params.id, companyId);
         if (!existing) {
@@ -7563,7 +7563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = record.companyId;
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
         // Verify linkage exists in user's company before delete
         const existing = await storage.getInspeccionPeligroVinculado(req.params.id, companyId);
         if (!existing) {
@@ -7581,7 +7581,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Preventive Measures routes (multi-tenant isolated)
   app.get("/api/preventive-measures", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -7590,7 +7590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/preventive-measures/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -7603,7 +7603,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/preventive-measures", requirePermission("measures:create"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -7617,7 +7617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/preventive-measures/:id", requirePermission("measures:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -7633,7 +7633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/preventive-measures/:id", requirePermission("measures:delete"), async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -7644,7 +7644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate PDF for Preventive Measure (Hallazgo)
   app.get("/api/preventive-measures/:id/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -8113,7 +8113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/recomendaciones-arl/:id/seguimientos", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -8127,7 +8127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/recomendaciones-arl/:id/seguimientos", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -8148,7 +8148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Occupational Diseases routes (multi-tenant isolated)
   app.get("/api/occupational-diseases", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -8157,7 +8157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/occupational-diseases/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -8170,7 +8170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/occupational-diseases", requirePermission("diseases:create"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -8184,7 +8184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/occupational-diseases/:id", requirePermission("diseases:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -8200,7 +8200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/occupational-diseases/:id", requirePermission("diseases:delete"), async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -8211,7 +8211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/occupational-diseases/:id/furel-pdf - Generate FUREL PDF (Resolution 156/2005)
   app.get("/api/occupational-diseases/:id/furel-pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -8296,7 +8296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     // If workerId is provided, get the workers companyId
-    let companyId = req.user?.companyId || req.body.companyId || null;
+    let companyId = getEffectiveCompanyId(req) || req.body.companyId || null;
     let workerId = req.body.workerId || null;
     
     if (workerId) {
@@ -8593,7 +8593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // SST Evaluations routes (multi-tenant isolated)
   app.get("/api/sst-evaluations", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -8602,7 +8602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/sst-evaluations/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -8615,7 +8615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/sst-evaluations", requirePermission("sst_evaluations:create"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -8629,7 +8629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/sst-evaluations/:id", requirePermission("sst_evaluations:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -8645,7 +8645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/sst-evaluations/:id", requirePermission("sst_evaluations:delete"), async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -8655,7 +8655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // SST Evaluation Items routes (multi-tenant isolated)
   app.get("/api/sst-evaluations/:id/items", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -8665,7 +8665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/sst-evaluation-items", requirePermission("sst_evaluations:create"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -8680,7 +8680,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/sst-evaluation-items/:id", requirePermission("sst_evaluations:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -8697,7 +8697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/sst-evaluation-items/:id", requirePermission("sst_evaluations:delete"), async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -8707,7 +8707,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // SST Evidence routes (multi-tenant isolated)
   app.get("/api/sst-evaluation-items/:id/evidence", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -8717,7 +8717,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload evidence file
   app.post("/api/sst-evidence/upload", requirePermission("sst_evaluations:create"), upload.single('file'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -8769,7 +8769,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/sst-evidence/:id", requirePermission("sst_evaluations:delete"), async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -8780,7 +8780,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate PDF report for evaluation (multi-tenant isolated)
   app.get("/api/sst-evaluations/:id/report", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -9078,7 +9078,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Vehicles routes
   app.get("/api/vehicles", requireAuth, async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -9094,7 +9094,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/vehicles/:id", requireAuth, async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -9117,7 +9117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/vehicles", requirePermission("vehicles:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -9147,7 +9147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/vehicles/:id", requirePermission("vehicles:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -9175,7 +9175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/vehicles/:id", requirePermission("vehicles:delete"), async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -9196,7 +9196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Drivers routes
   app.get("/api/drivers", requireAuth, async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -9212,7 +9212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/drivers/:id", requireAuth, async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -9235,7 +9235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/drivers", requirePermission("drivers:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -9292,7 +9292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/drivers/:id", requirePermission("drivers:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -9345,7 +9345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/drivers/:id", requirePermission("drivers:delete"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const driverId = req.params.id;
 
@@ -9387,7 +9387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ── Driver Comparendos ──────────────────────────────────────────────────────
   app.get("/api/drivers/:driverId/comparendos", requireAuth, async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const { driverId } = req.params;
       const companyId = isAdmin
@@ -9403,7 +9403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/drivers/:driverId/comparendos", requirePermission("drivers:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const { driverId } = req.params;
       const companyId = isAdmin
@@ -9420,7 +9420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/drivers/:driverId/comparendos/:id", requirePermission("drivers:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const { driverId, id } = req.params;
       const companyId = isAdmin
@@ -9438,7 +9438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/drivers/:driverId/comparendos/:id", requirePermission("drivers:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const { driverId, id } = req.params;
       const companyId = isAdmin
@@ -9454,7 +9454,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Vehicle Inspections routes
   app.get("/api/vehicle-inspections", requireAuth, async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -9470,7 +9470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/vehicle-inspections/:id", requireAuth, async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -9492,7 +9492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/vehicle-inspections/vehicle/:vehicleId", requireAuth, async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -9512,7 +9512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/vehicle-inspections/driver/:driverId", requireAuth, async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -9533,7 +9533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/vehicle-inspections", requirePermission("vehicle_inspections:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -9563,7 +9563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/vehicle-inspections/:id", requirePermission("vehicle_inspections:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -9591,7 +9591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/vehicle-inspections/:id", requirePermission("vehicle_inspections:delete"), async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -9612,7 +9612,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Road Incidents routes
   app.get("/api/road-incidents", requireAuth, async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -9628,7 +9628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/road-incidents/:id", requireAuth, async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -9650,7 +9650,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/road-incidents/vehicle/:vehicleId", requireAuth, async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -9670,7 +9670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/road-incidents/driver/:driverId", requireAuth, async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -9691,7 +9691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/road-incidents", requirePermission("road_incidents:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -9721,7 +9721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/road-incidents/:id", requirePermission("road_incidents:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -9749,7 +9749,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/road-incidents/:id", requirePermission("road_incidents:delete"), async (req, res) => {
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
     if (isAdmin) {
@@ -9770,7 +9770,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Road Safety Trainings routes
   app.get("/api/road-safety-trainings", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -9779,7 +9779,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/road-safety-trainings/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -9792,7 +9792,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/road-safety-trainings", requirePermission("road_safety_trainings:create"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -9806,7 +9806,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/road-safety-trainings/:id", requirePermission("road_safety_trainings:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -9822,7 +9822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/road-safety-trainings/:id", requirePermission("road_safety_trainings:delete"), async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -9984,7 +9984,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Road Safety Attendees routes
   app.get("/api/road-safety-attendees/:trainingId", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -9994,7 +9994,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/road-safety-attendees", requirePermission("road_safety_trainings:create"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -10008,7 +10008,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/road-safety-attendees/:trainingId/:driverId", requirePermission("road_safety_trainings:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -10030,7 +10030,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/road-safety-attendees/bulk", requirePermission("road_safety_trainings:create"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -10501,7 +10501,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const isAdmin = hasGlobalAccess(userRole);
     
     if (!isAdmin) {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -10519,7 +10519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userRole = req.user!.role;
       const isAdmin = hasGlobalAccess(userRole);
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!isAdmin && !companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -10577,7 +10577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const isAdmin = hasGlobalAccess(userRole);
     
     if (!isAdmin) {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -10613,7 +10613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else {
         // Non-admin users can only create job profiles for their own company
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         console.log('[POST /api/job-profiles] Non-admin creating profile - companyId from user:', companyId);
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
@@ -10645,7 +10645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = existingProfile.companyId;
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -10675,7 +10675,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verify company access for non-admin users
       if (!isAdmin) {
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId || profile.companyId !== companyId) {
           return res.status(403).send("No tiene permiso para ver este perfil");
         }
@@ -10709,7 +10709,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = existingProfile.companyId;
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -10791,7 +10791,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verify access
       if (!isAdmin) {
-        const userCompanyId = req.user!.companyId;
+        const userCompanyId = getEffectiveCompanyId(req);
         if (!userCompanyId || userCompanyId !== profile.companyId) {
           return res.status(403).send("No tiene acceso a este perfil de cargo");
         }
@@ -10856,7 +10856,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).send("Debe seleccionar una empresa");
         }
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -10975,7 +10975,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).send("Debe seleccionar una empresa");
         }
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -11039,7 +11039,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const targetCompanyId = req.params.companyId;
     const userRole = req.user!.role;
     const isAdmin = hasGlobalAccess(userRole);
-    const userCompanyId = req.user!.companyId;
+    const userCompanyId = getEffectiveCompanyId(req);
 
     if (!isAdmin && userCompanyId !== targetCompanyId) {
       return res.status(403).json({ error: "No tiene permisos para eliminar perfiles de esta empresa" });
@@ -11125,7 +11125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verify access
       if (!isAdmin) {
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId || profile.companyId !== companyId) {
           return res.status(403).send("No tiene permiso para acceder a este perfil");
         }
@@ -11377,7 +11377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(allContracts);
     }
     
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -11386,7 +11386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/contracts/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -11398,7 +11398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/contracts/worker/:workerId", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -11434,7 +11434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else {
         // Non-admin users can only create contracts for workers in their own company
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -11585,7 +11585,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isAdmin && contractData.companyId) {
         companyId = contractData.companyId;
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -11720,7 +11720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = existingContract.companyId;
       } else {
         // Non-admin: use their own companyId
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -11760,7 +11760,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       companyId = existingContract.companyId;
     } else {
       // Non-admin: use their own companyId
-      companyId = req.user!.companyId || "";
+      companyId = getEffectiveCompanyId(req) || "";
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -11792,7 +11792,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).send("Admin debe especificar companyId como query parameter");
         }
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -11938,7 +11938,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ error: "Admin debe especificar companyId" });
         }
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).json({ error: "Usuario no asociado a una empresa" });
         }
@@ -12161,7 +12161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userRole = req.user!.role;
       const companyId = getEffectiveCompanyId(req);
       
-      console.log(`[DEBUG-MEDICAL-EXAMS] role=${userRole} companyId=${companyId} userCompanyId=${req.user!.companyId} headerCompanyId=${req.headers['x-company-id']}`);
+      console.log(`[DEBUG-MEDICAL-EXAMS] role=${userRole} companyId=${companyId} userCompanyId=${getEffectiveCompanyId(req)} headerCompanyId=${req.headers['x-company-id']}`);
       
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -12388,7 +12388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Responsible Designation routes - PLANEAR/Recursos (Permission-based)
   app.get("/api/responsible-designations", requirePermission("companies:view"), async (req, res) => {
-    let companyId = req.user!.companyId;
+    let companyId = getEffectiveCompanyId(req);
     // LSO externo: puede no tener companyId en users, usa query param con verificación de asignación
     if (!companyId && req.user!.role === 'lso' && req.query.companyId) {
       const qcid = req.query.companyId as string;
@@ -12405,7 +12405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/responsible-designations/:id", requirePermission("companies:view"), async (req, res) => {
-    let companyId = req.user!.companyId;
+    let companyId = getEffectiveCompanyId(req);
     // LSO externo: puede no tener companyId en users, usa query param con verificación de asignación
     if (!companyId && req.user!.role === 'lso' && req.query.companyId) {
       const qcid = req.query.companyId as string;
@@ -12442,12 +12442,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Obtener companyId del usuario
         if (isAdmin) {
-          companyId = req.user!.companyId || "";
+          companyId = getEffectiveCompanyId(req) || "";
           if (!companyId) {
             return res.status(400).send("Admin debe estar asociado a una empresa para crear designaciones de LSO externo");
           }
         } else {
-          companyId = req.user!.companyId || "";
+          companyId = getEffectiveCompanyId(req) || "";
           if (!companyId) {
             return res.status(403).send("Usuario no asociado a una empresa");
           }
@@ -12467,7 +12467,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           companyId = worker.companyId;
         } else {
           // Non-admin: Use user's companyId
-          companyId = req.user!.companyId || "";
+          companyId = getEffectiveCompanyId(req) || "";
           if (!companyId) {
             return res.status(403).send("Usuario no asociado a una empresa");
           }
@@ -12682,7 +12682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else {
         // Non-admin: Use user's companyId
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -12724,7 +12724,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = designation.companyId;
       }
     } else {
-      companyId = req.user!.companyId || "";
+      companyId = getEffectiveCompanyId(req) || "";
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -12792,7 +12792,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isAdmin) {
         // For external LSO, get companyId from designation; for worker, from worker record
         companyId = worker?.companyId || designation.companyId;
-      } else if (req.user!.role === 'lso' && !req.user!.companyId) {
+      } else if (req.user!.role === 'lso' && !getEffectiveCompanyId(req)) {
         // LSO externo sin companyId directo: usar el companyId de la designación
         // y verificar que el LSO tenga asignación activa para esa empresa
         const designationCompanyId = worker?.companyId || designation.companyId;
@@ -12808,7 +12808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = designationCompanyId;
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -13160,7 +13160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Resource Allocation routes - PLANEAR/Recursos (Permission-based)
   app.get("/api/resource-allocations", requirePermission("companies:view"), async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -13171,7 +13171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/resource-allocations/financieros - Get financial resources with available budget
   app.get("/api/resource-allocations/financieros", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
@@ -13187,7 +13187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate PDF Summary Report of all Resource Allocations (Estándar 1.1.3)
   app.get("/api/resource-allocations/resumen-pdf", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -13383,7 +13383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/resource-allocations/:id", requirePermission("companies:view"), async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -13396,7 +13396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/resource-allocations", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -13411,7 +13411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/resource-allocations/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -13427,7 +13427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/resource-allocations/:id", requirePermission("companies:edit"), async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -13438,7 +13438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate ISO-compliant PDF for Resource Allocation
   app.get("/api/resource-allocations/:id/acta", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -13657,7 +13657,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all copasst actas for company
   app.get("/api/copasst-actas", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const actas = await storage.getCopasstActas(companyId);
       res.json(actas);
     } catch (error: any) {
@@ -13668,7 +13668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get single copasst acta
   app.get("/api/copasst-actas/:id", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const acta = await storage.getCopasstActa(req.params.id, companyId);
       if (!acta) {
         return res.status(404).send("Acta COPASST no encontrada");
@@ -13682,7 +13682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create copasst acta
   app.post("/api/copasst-actas", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const validatedData = insertCopasstActaSchema.parse(req.body);
       const acta = await storage.createCopasstActa(validatedData, companyId);
       
@@ -13698,7 +13698,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update copasst acta
   app.patch("/api/copasst-actas/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const validatedData = insertCopasstActaSchema.parse(req.body);
       const acta = await storage.updateCopasstActa(req.params.id, validatedData, companyId);
       if (!acta) {
@@ -13717,7 +13717,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete copasst acta
   app.delete("/api/copasst-actas/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       await storage.deleteCopasstActa(req.params.id, companyId);
       res.sendStatus(204);
     } catch (error: any) {
@@ -13738,7 +13738,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }, async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const actaId = req.params.id;
       
       if (!req.file) {
@@ -13786,7 +13786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete archivo adjunto de Acta COPASST
   app.delete("/api/copasst-actas/:id/upload", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const actaId = req.params.id;
       
       const acta = await storage.getCopasstActa(actaId, companyId);
@@ -13817,7 +13817,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate PDF for COPASST Acta
   app.get("/api/copasst-actas/:id/pdf", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const acta = await storage.getCopasstActa(req.params.id, companyId);
       if (!acta) {
         return res.status(404).send("Acta COPASST no encontrada");
@@ -13921,7 +13921,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/copasst-actas-general/pdf - Informe general de gestión COPASST (período, miembros, actas)
   app.get("/api/copasst-actas-general/pdf", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const company = await storage.getCompany(companyId);
       if (!company) return res.status(404).send("Empresa no encontrada");
 
@@ -14034,7 +14034,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/copasst-periodos/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14070,7 +14070,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/copasst-periodos/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14092,7 +14092,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // COPASST Miembros
   app.get("/api/copasst-miembros/:periodoId", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14109,7 +14109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/copasst-miembros", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14127,7 +14127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/copasst-miembros/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14149,7 +14149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/copasst-miembros/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14184,7 +14184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/copasst-elecciones/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14384,7 +14384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // COPASST Candidatos
   app.get("/api/copasst-candidatos/:eleccionId", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14401,7 +14401,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/copasst-candidatos", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14419,7 +14419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/copasst-candidatos/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14441,7 +14441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/copasst-candidatos/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14455,7 +14455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // COPASST Votación
   app.get("/api/copasst-votacion/:eleccionId/registros", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14472,7 +14472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/copasst-votacion/:eleccionId/ha-votado/:workerId", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14489,7 +14489,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/copasst-votacion/:eleccionId/votar", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14521,7 +14521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 1. Convocatoria a Elecciones COPASST
   app.get("/api/copasst-elecciones/:id/convocatoria-pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14672,7 +14672,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 2. Acta de Escrutinio COPASST
   app.get("/api/copasst-elecciones/:id/acta-escrutinio-pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -14867,7 +14867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 3. Acta de Constitución del COPASST
   app.get("/api/copasst-periodos/:id/acta-constitucion-pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -15114,7 +15114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all courses with user progress
   app.get("/api/copasst-capacitacion/cursos", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       const userRole = req.user!.role;
       if (!companyId) {
@@ -15201,7 +15201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get single course with lessons
   app.get("/api/copasst-capacitacion/cursos/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -15310,7 +15310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mark lesson as complete
   app.post("/api/copasst-capacitacion/lecciones/:id/completar", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -15339,7 +15339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get quiz questions for a course - uses banco de preguntas with COPASST tag
   app.get("/api/copasst-capacitacion/cursos/:cursoId/quiz", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -15388,7 +15388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Submit quiz answers
   app.post("/api/copasst-capacitacion/cursos/:cursoId/quiz/submit", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -15515,7 +15515,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current user's progress in all courses
   app.get("/api/copasst-capacitacion/mi-progreso", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -15531,7 +15531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get COPASST training dashboard stats
   app.get("/api/copasst-capacitacion/dashboard", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -15564,7 +15564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current user's certificates
   app.get("/api/copasst-capacitacion/certificados", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -15608,7 +15608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate certificate PDF
   app.get("/api/copasst-capacitacion/certificados/:id/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -15728,7 +15728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user's unlocked badges with badge details
   app.get("/api/copasst-capacitacion/gamificacion/mis-insignias", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -15769,7 +15769,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user's current streak
   app.get("/api/copasst-capacitacion/gamificacion/racha", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -15785,7 +15785,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get monthly leaderboard
   app.get("/api/copasst-capacitacion/gamificacion/leaderboard", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -15819,7 +15819,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user's monthly stats
   app.get("/api/copasst-capacitacion/gamificacion/mis-estadisticas", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -15854,7 +15854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // List all active scenarios
   app.get("/api/copasst-capacitacion/escenarios", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -15884,7 +15884,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get scenario with nodes
   app.get("/api/copasst-capacitacion/escenarios/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -15916,7 +15916,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Start a scenario
   app.post("/api/copasst-capacitacion/escenarios/:id/iniciar", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -15943,7 +15943,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Submit a decision
   app.post("/api/copasst-capacitacion/escenarios/:id/decision", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -15976,7 +15976,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Complete a scenario
   app.post("/api/copasst-capacitacion/escenarios/:id/completar", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -16440,7 +16440,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all high risk workers for company
   app.get("/api/high-risk-workers", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const workers = await storage.getHighRiskWorkers(companyId);
       res.json(workers);
     } catch (error: any) {
@@ -16452,7 +16452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate Evidencia PDF - Resolución 0312/2019 Estándar 1.1.5 - Trabajadores de Alto Riesgo
   app.get("/api/high-risk-workers/evidencia-pdf", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -16709,7 +16709,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send("Trabajador de alto riesgo no encontrado");
       }
       // Verify company access
-      if (worker.companyId !== req.user!.companyId) {
+      if (worker.companyId !== getEffectiveCompanyId(req)) {
         return res.status(403).send("Acceso no autorizado");
       }
       res.json(worker);
@@ -16721,7 +16721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create high risk worker
   app.post("/api/high-risk-workers", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const validatedData = insertHighRiskWorkerSchema.parse({
         ...req.body,
         companyId
@@ -16736,7 +16736,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update high risk worker
   app.patch("/api/high-risk-workers/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       // Verify the record exists and belongs to the company
       const existing = await storage.getHighRiskWorkerById(req.params.id);
       if (!existing) {
@@ -16756,7 +16756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete high risk worker
   app.delete("/api/high-risk-workers/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       // Verify the record exists and belongs to the company
       const existing = await storage.getHighRiskWorkerById(req.params.id);
       if (!existing) {
@@ -16778,7 +16778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all comité de convivencia actas for company
   app.get("/api/comite-convivencia-actas", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const actas = await storage.getComiteConvivenciaActas(companyId);
       res.json(actas);
     } catch (error: any) {
@@ -16789,7 +16789,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get single comité de convivencia acta
   app.get("/api/comite-convivencia-actas/:id", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const acta = await storage.getComiteConvivenciaActa(req.params.id, companyId);
       if (!acta) {
         return res.status(404).send("Acta del Comité de Convivencia no encontrada");
@@ -16803,7 +16803,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create comité de convivencia acta
   app.post("/api/comite-convivencia-actas", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const validatedData = schema.insertComiteConvivenciaActaSchema.parse(req.body);
       const acta = await storage.createComiteConvivenciaActa(validatedData, companyId);
       
@@ -16819,7 +16819,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update comité de convivencia acta
   app.patch("/api/comite-convivencia-actas/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const validatedData = schema.insertComiteConvivenciaActaSchema.parse(req.body);
       const acta = await storage.updateComiteConvivenciaActa(req.params.id, validatedData, companyId);
       if (!acta) {
@@ -16838,7 +16838,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete comité de convivencia acta
   app.delete("/api/comite-convivencia-actas/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       await storage.deleteComiteConvivenciaActa(req.params.id, companyId);
       res.sendStatus(204);
     } catch (error: any) {
@@ -16849,7 +16849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate PDF for Comité de Convivencia Acta
   app.get("/api/comite-convivencia-actas/:id/pdf", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const acta = await storage.getComiteConvivenciaActa(req.params.id, companyId);
       if (!acta) {
         return res.status(404).send("Acta del Comité de Convivencia no encontrada");
@@ -16989,7 +16989,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all programas de capacitación for company
   app.get("/api/programas-capacitacion", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const programas = await storage.getProgramasCapacitacion(companyId);
       res.json(programas);
     } catch (error: any) {
@@ -17000,7 +17000,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get single programa de capacitación
   app.get("/api/programas-capacitacion/:id", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const programa = await storage.getProgramaCapacitacion(req.params.id, companyId);
       if (!programa) {
         return res.status(404).send("Programa de Capacitación no encontrado");
@@ -17014,7 +17014,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create programa de capacitación with file upload
   app.post("/api/programas-capacitacion", requirePermission("companies:edit"), uploadProgramaCapacitacion.single('archivo'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       
       let archivoUrl = null;
       let archivoNombre = null;
@@ -17057,7 +17057,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update programa de capacitación
   app.patch("/api/programas-capacitacion/:id", requirePermission("companies:edit"), uploadProgramaCapacitacion.single('archivo'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       
       const programaData: any = {
         fecha: req.body.fecha,
@@ -17098,7 +17098,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete programa de capacitación
   app.delete("/api/programas-capacitacion/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       await storage.deleteProgramaCapacitacion(req.params.id, companyId);
       res.sendStatus(204);
     } catch (error: any) {
@@ -17143,7 +17143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isAdmin) {
         eventos = await storage.getAllCapacitacionEventos();
       } else {
-        const companyId = req.user!.companyId || "";
+        const companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -17165,7 +17165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isAdmin) {
         evento = await storage.getCapacitacionEventoById(req.params.id);
       } else {
-        const companyId = req.user!.companyId || "";
+        const companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -17198,7 +17198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isAdmin && req.body.companyId) {
         companyId = req.body.companyId;
       } else if (!isAdmin) {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -17252,7 +17252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = existing.companyId;
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -17286,7 +17286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = existing.companyId;
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -17333,7 +17333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isAdmin) {
         companyId = worker.companyId;
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId || worker.companyId !== companyId) {
           return res.status(403).send("No tiene permiso para agregar este trabajador");
         }
@@ -17415,7 +17415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate PDF from markdown documentation
   app.get("/api/docs/programa-capacitacion-prevencion/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -17534,7 +17534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get curso de 50 horas for company
   app.get("/api/curso-50-horas", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const curso = await storage.getCurso50Horas(companyId);
       res.json(curso || null);
     } catch (error: any) {
@@ -17545,7 +17545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upsert curso de 50 horas (create or update)
   app.post("/api/curso-50-horas", requirePermission("companies:edit"), uploadCurso50Horas.single('archivo'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       
       const cursoData: any = {};
 
@@ -17577,7 +17577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all registros de inducción for company
   app.get("/api/registros-induccion", requirePermission("workers:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const registros = await storage.getRegistrosInduccion(companyId);
       res.json(registros);
     } catch (error: any) {
@@ -17588,7 +17588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get single registro de inducción
   app.get("/api/registros-induccion/:id", requirePermission("workers:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const registro = await storage.getRegistroInduccion(req.params.id, companyId);
       if (!registro) {
         return res.status(404).send("Registro de inducción no encontrado");
@@ -17602,7 +17602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get registros de inducción by worker
   app.get("/api/registros-induccion/worker/:workerId", requirePermission("workers:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const registros = await storage.getRegistrosInduccionByWorker(req.params.workerId, companyId);
       res.json(registros);
     } catch (error: any) {
@@ -17628,7 +17628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = worker.companyId;
       } else {
         // Non-admin: use their own companyId
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -17694,7 +17694,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = existing.companyId;
       } else {
         // Non-admin: use their own companyId
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -17729,7 +17729,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = existing.companyId;
       } else {
         // Non-admin: use their own companyId
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -17745,7 +17745,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate PDF for Registro de Inducción
   app.get("/api/registros-induccion/:id/pdf", requirePermission("workers:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const registro = await storage.getRegistroInduccion(req.params.id, companyId);
       if (!registro) {
         return res.status(404).send("Registro de inducción no encontrado");
@@ -18142,7 +18142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         afiliaciones = await storage.getAllAfiliacionesSsss();
       } else {
         // Non-admin: get only their company's afiliaciones
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -18158,7 +18158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get single afiliacion
   app.get("/api/afiliaciones-ssss/:id", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId!;
+      const companyId = getEffectiveCompanyId(req)!;
       const afiliacion = await storage.getAfiliacionSsss(req.params.id, companyId);
       if (!afiliacion) {
         return res.status(404).send("Afiliación no encontrada");
@@ -18188,7 +18188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = worker.companyId;
       } else {
         // Non-admin: use their own companyId
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -18220,7 +18220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = existing.companyId;
       } else {
         // Non-admin: use their own companyId
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -18251,7 +18251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = existing.companyId;
       } else {
         // Non-admin: use their own companyId
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -18282,7 +18282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = existing.companyId;
       } else {
         // Non-admin: use their own companyId
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -18301,7 +18301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const targetCompanyId = req.params.companyId;
       const userRole = req.user!.role;
       const isAdmin = hasGlobalAccess(userRole);
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
 
       // Verify company access - only allow deletion for users own company unless global access
       if (!isAdmin && userCompanyId !== targetCompanyId) {
@@ -18338,7 +18338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           companyId = existing.companyId;
         } else {
-          companyId = req.user!.companyId || "";
+          companyId = getEffectiveCompanyId(req) || "";
           if (!companyId) {
             return res.status(403).send("Usuario no asociado a una empresa");
           }
@@ -18397,7 +18397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           companyId = existing.companyId;
         } else {
-          companyId = req.user!.companyId || "";
+          companyId = getEffectiveCompanyId(req) || "";
           if (!companyId) {
             return res.status(403).send("Usuario no asociado a una empresa");
           }
@@ -18456,7 +18456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           companyId = existing.companyId;
         } else {
-          companyId = req.user!.companyId || "";
+          companyId = getEffectiveCompanyId(req) || "";
           if (!companyId) {
             return res.status(403).send("Usuario no asociado a una empresa");
           }
@@ -18491,7 +18491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // List all verificaciones de muestreo for a company
   app.get("/api/verificaciones-muestreo-sgss", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -18505,7 +18505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get a single verificacion
   app.get("/api/verificaciones-muestreo-sgss/:id", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -18522,7 +18522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new verificacion with auto-generated worker sample (Resolución 0312/2019)
   app.post("/api/verificaciones-muestreo-sgss", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -18678,7 +18678,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update a verificacion
   app.put("/api/verificaciones-muestreo-sgss/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -18695,7 +18695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Patch a verificacion
   app.patch("/api/verificaciones-muestreo-sgss/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -18712,7 +18712,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete a verificacion
   app.delete("/api/verificaciones-muestreo-sgss/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -18728,7 +18728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all detalles for a verificacion (enriched with worker data)
   app.get("/api/verificaciones-muestreo-sgss/:id/detalles", requirePermission("companies:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -18791,7 +18791,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a detalle for a verificacion
   app.post("/api/verificaciones-muestreo-sgss/:id/detalles", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -18814,7 +18814,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update a detalle
   app.put("/api/detalles-verificacion-sgss/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -18837,7 +18837,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Patch a detalle
   app.patch("/api/detalles-verificacion-sgss/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -18860,7 +18860,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete a detalle
   app.delete("/api/detalles-verificacion-sgss/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -18895,7 +18895,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isAdmin) {
         companyId = verificacion.companyId;
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -19248,7 +19248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         trabajadores = await storage.getAllTrabajadoresAltoRiesgo();
       } else {
         // Non-admin: get only their company's trabajadores de alto riesgo
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -19262,7 +19262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/trabajadores-alto-riesgo/:id", requirePermission("companies:view"), async (req, res) => {
-    const companyId = req.user!.companyId!;
+    const companyId = getEffectiveCompanyId(req)!;
     const trabajador = await storage.getTrabajadorAltoRiesgo(req.params.id, companyId);
     if (!trabajador) {
       return res.status(404).send("Trabajador de alto riesgo no encontrado");
@@ -19288,7 +19288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = worker.companyId;
       } else {
         // Non-admin: use their own companyId
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -19316,7 +19316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = existing.companyId;
       } else {
         // Non-admin: use their own companyId
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -19347,7 +19347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = existing.companyId;
       } else {
         // Non-admin: use their own companyId
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -19509,7 +19509,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           companyId = existing.companyId;
         } else {
-          companyId = req.user!.companyId || "";
+          companyId = getEffectiveCompanyId(req) || "";
           if (!companyId) {
             return res.status(403).send("Usuario no asociado a una empresa");
           }
@@ -19564,12 +19564,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let companyId: string;
       if (isAdmin) {
         // Superadmin puede filtrar por empresa específica
-        companyId = req.query.companyId as string || req.user!.companyId || "";
+        companyId = req.query.companyId as string || getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(400).send("Debe especificar una empresa (companyId) para generar el PDF");
         }
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -19842,7 +19842,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Filtered workers report - must be before generic /api/reports/:reportType
   app.get("/api/reports/trabajadores-filtrados", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -20035,7 +20035,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { workerId } = req.params;
       const userRole = req.user!.role;
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       
       // Get worker - admin can access any worker, others only their company
       let worker;
@@ -20222,7 +20222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { workerId } = req.params;
       const userRole = req.user!.role;
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       
       // Get worker - admin can access any worker, others only their company
       let worker;
@@ -20657,7 +20657,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/reports/:reportType", requireAuth, async (req, res) => {
     try {
       // Determinar companyId efectivo (superadmin puede usar query param)
-      let effectiveCompanyId = req.user!.companyId;
+      let effectiveCompanyId = getEffectiveCompanyId(req);
       const isSuperadmin = req.user?.role === 'superadmin';
 
       if (isSuperadmin && req.query.companyId) {
@@ -22321,7 +22321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Email Notifications routes
   app.post("/api/notifications/check", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -23678,10 +23678,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Training Programs routes
   app.get("/api/training-programs", requirePermission("trainings:view"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const programs = await storage.getTrainingPrograms(companyId);
       res.json(programs);
     } catch (error: any) {
@@ -23691,10 +23691,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/training-programs/:id", requirePermission("trainings:view"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const program = await storage.getTrainingProgram(req.params.id, companyId);
       if (!program) {
         return res.status(404).send("Programa de capacitación no encontrado");
@@ -23707,10 +23707,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/training-programs/year/:year", requirePermission("trainings:view"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const year = parseInt(req.params.year);
       const program = await storage.getTrainingProgramByYear(year, companyId);
       if (!program) {
@@ -23724,10 +23724,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/training-programs", requirePermission("trainings:create"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validation = insertTrainingProgramSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).send(validation.error.message);
@@ -23742,10 +23742,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/training-programs/:id", requirePermission("trainings:edit"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validation = insertTrainingProgramSchema.partial().safeParse(req.body);
       if (!validation.success) {
         return res.status(400).send(validation.error.message);
@@ -23763,10 +23763,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/training-programs/:id", requirePermission("trainings:delete"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       await storage.deleteTrainingProgram(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
@@ -23777,10 +23777,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Program Trainings routes
   app.get("/api/program-trainings/:programId", requirePermission("trainings:view"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const trainings = await storage.getProgramTrainings(req.params.programId, companyId);
       res.json(trainings);
     } catch (error: any) {
@@ -23790,10 +23790,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/program-trainings/detail/:id", requirePermission("trainings:view"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const training = await storage.getProgramTraining(req.params.id, companyId);
       if (!training) {
         return res.status(404).send("Capacitación no encontrada");
@@ -23806,10 +23806,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/program-trainings", requirePermission("trainings:create"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validation = insertProgramTrainingSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).send(validation.error.message);
@@ -23824,10 +23824,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/program-trainings/:id", requirePermission("trainings:edit"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validation = insertProgramTrainingSchema.partial().safeParse(req.body);
       if (!validation.success) {
         return res.status(400).send(validation.error.message);
@@ -23845,10 +23845,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/program-trainings/:id", requirePermission("trainings:delete"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       await storage.deleteProgramTraining(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
@@ -23859,10 +23859,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Program Training Attendance routes
   app.get("/api/program-training-attendance/:trainingId", requirePermission("trainings:view"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const attendance = await storage.getProgramTrainingAttendance(req.params.trainingId, companyId);
       res.json(attendance);
     } catch (error: any) {
@@ -23872,10 +23872,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/program-training-attendance", requirePermission("trainings:create"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validation = insertProgramTrainingAttendanceSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).send(validation.error.message);
@@ -23890,10 +23890,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/program-training-attendance/bulk", requirePermission("trainings:create"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!Array.isArray(req.body)) {
         return res.status(400).send("Se esperaba un array de registros de asistencia");
       }
@@ -23916,10 +23916,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/program-training-attendance/:id", requirePermission("trainings:edit"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validation = insertProgramTrainingAttendanceSchema.partial().safeParse(req.body);
       if (!validation.success) {
         return res.status(400).send(validation.error.message);
@@ -23937,10 +23937,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/program-training-attendance/:id", requirePermission("trainings:delete"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       await storage.deleteProgramTrainingAttendance(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
@@ -23951,10 +23951,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Training Program PDF Generation
   app.get("/api/training-programs/:id/pdf", requirePermission("trainings:view"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const PDFDocument = (await import("pdfkit")).default;
       
       // Get program with all related data
@@ -24216,10 +24216,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // SVE Programs routes
   app.get("/api/sve-programs", requirePermission("trainings:view"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const programs = await storage.getSvePrograms(companyId);
       res.json(programs);
     } catch (error: any) {
@@ -24230,10 +24230,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/sve-programs/pdf - Informe general de todos los programas SVE
   app.get("/api/sve-programs/pdf", requirePermission("trainings:view"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const company = await storage.getCompany(companyId);
       if (!company) return res.status(404).send("Empresa no encontrada");
 
@@ -24283,10 +24283,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/sve-programs/:id", requirePermission("trainings:view"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const program = await storage.getSveProgram(req.params.id, companyId);
       if (!program) {
         return res.status(404).send("Programa SVE no encontrado");
@@ -24299,7 +24299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/sve-programs", requirePermission("trainings:create"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
       
@@ -24320,7 +24320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Opción 2: La empresa tiene un LSO asignado con licencia vigente
       if (!hasValidLicense) {
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         const [activeAssignment] = await db.select()
           .from(schema.licensedProfessionalAssignments)
           .where(and(
@@ -24358,7 +24358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validation = insertSveProgramSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).send(validation.error.message);
@@ -24373,7 +24373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/sve-programs/:id", requirePermission("trainings:edit"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
       
@@ -24391,7 +24391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (!hasValidLicense) {
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         const [activeAssignment] = await db.select()
           .from(schema.licensedProfessionalAssignments)
           .where(and(
@@ -24427,7 +24427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validation = insertSveProgramSchema.partial().safeParse(req.body);
       if (!validation.success) {
         return res.status(400).send(validation.error.message);
@@ -24445,10 +24445,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/sve-programs/:id", requirePermission("trainings:delete"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       await storage.deleteSveProgram(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
@@ -24459,10 +24459,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // SVE Cases routes
   app.get("/api/sve-cases", requirePermission("trainings:view"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const programId = req.query.programId as string | undefined;
       const cases = await storage.getSveCases(companyId, programId);
       res.json(cases);
@@ -24473,10 +24473,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/sve-cases/:id", requirePermission("trainings:view"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const sveCase = await storage.getSveCase(req.params.id, companyId);
       if (!sveCase) {
         return res.status(404).send("Caso SVE no encontrado");
@@ -24489,10 +24489,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/sve-cases", requirePermission("trainings:create"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validation = insertSveCaseSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).send(validation.error.message);
@@ -24507,10 +24507,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/sve-cases/:id", requirePermission("trainings:edit"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validation = insertSveCaseSchema.partial().safeParse(req.body);
       if (!validation.success) {
         return res.status(400).send(validation.error.message);
@@ -24528,10 +24528,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/sve-cases/:id", requirePermission("trainings:delete"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       await storage.deleteSveCase(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
@@ -24542,10 +24542,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate PDF report for SVE program
   app.get("/api/sve-programs/:id/pdf", requirePermission("trainings:view"), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const programId = req.params.id;
 
       const program = await storage.getSveProgram(programId, companyId);
@@ -24724,7 +24724,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
   
   app.get("/api/politicas-sst", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -24733,7 +24733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/politicas-sst/vigente", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -24745,7 +24745,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/politicas-sst/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -24758,7 +24758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/politicas-sst", requirePermission("sst_management:create"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -24776,7 +24776,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/politicas-sst/:id", requirePermission("sst_management:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -24796,7 +24796,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/politicas-sst/:id", requirePermission("sst_management:delete"), async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
       return res.status(403).send("Usuario no asociado a una empresa");
     }
@@ -24807,7 +24807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate PDF for Política SST
   app.get("/api/politicas-sst/:id/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -26213,7 +26213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/estandares-sst/mi-empresa - Obtener estándares SST aplicables a la empresa del usuario
   app.get('/api/estandares-sst/mi-empresa', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).json({ error: 'Usuario no asociado a una empresa' });
       }
@@ -26664,7 +26664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         evaluaciones = await storage.getEvaluacionesSst(companyId);
       } else {
         // Non-admin: get only their company's evaluaciones
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -26690,7 +26690,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         evaluacion = await storage.getEvaluacionSstById(req.params.id);
       } else {
         // Non-admin: get evaluation with company filter
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -26720,7 +26720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
       
       // Validar acceso a la empresa - non-admin users can only see their own company
-      if (!isAdmin && req.user!.companyId !== companyId) {
+      if (!isAdmin && getEffectiveCompanyId(req) !== companyId) {
         return res.status(403).send("No tienes acceso a esta empresa");
       }
       
@@ -26786,7 +26786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (!lsoChkCreate) return res.status(403).send("No tienes acceso a esta empresa");
         }
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -26857,7 +26857,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = existing.companyId;
       } else {
         // Non-admin: use their own companyId
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -26914,7 +26914,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = existing.companyId;
       } else {
         // Non-admin: use their own companyId
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -26942,10 +26942,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = evaluacion.companyId;
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
       
       const respuestas = await storage.getRespuestasEstandares(req.params.id, companyId);
@@ -27038,10 +27038,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = evaluacion.companyId;
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
       
       const validatedData = insertRespuestaEstandarSchema.parse({
@@ -27072,7 +27072,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let companyId: string;
       if (isAdmin) {
-        const requestedCompanyId = req.body.companyId || req.user!.companyId;
+        const requestedCompanyId = req.body.companyId || getEffectiveCompanyId(req);
         if (!requestedCompanyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -27092,10 +27092,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const lsoChkRespuesta = await assertLsoAssignedToCompany(req.user!.id, companyId);
         if (!lsoChkRespuesta) return res.status(403).send("No tienes acceso a esta empresa");
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
       const validatedData = insertRespuestaEstandarSchema.partial().parse(req.body);
       
@@ -27122,10 +27122,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/respuestas-estandares/:id - Eliminar respuesta de estándar
   app.delete('/api/respuestas-estandares/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       await storage.deleteRespuestaEstandar(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
@@ -27148,10 +27148,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = evaluacion.companyId;
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
       
       const acciones = await storage.getAccionesMejora(req.params.id, companyId);
@@ -27176,10 +27176,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = evaluacion.companyId;
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
       
       const validatedData = insertAccionMejoraSchema.parse({
@@ -27209,10 +27209,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = evaluacion.companyId;
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
       
       const acciones = await storage.generarPlanMejoraAutomatico(req.params.id, companyId);
@@ -27237,10 +27237,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = evaluacion.companyId;
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
       
       await storage.calcularPuntajesEvaluacion(req.params.id, companyId);
@@ -27270,10 +27270,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isAdmin) {
         companyId = evaluacionNueva.companyId;
       } else {
-        if (!req.user!.companyId || req.user!.companyId !== evaluacionNueva.companyId) {
+        if (!getEffectiveCompanyId(req) || getEffectiveCompanyId(req) !== evaluacionNueva.companyId) {
           return res.status(403).json({ error: "No tiene permisos para importar en esta evaluación" });
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
       
       // Buscar la evaluación anterior
@@ -27382,10 +27382,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isAdmin) {
         companyId = evaluacion.companyId;
       } else {
-        if (!req.user!.companyId || req.user!.companyId !== evaluacion.companyId) {
+        if (!getEffectiveCompanyId(req) || getEffectiveCompanyId(req) !== evaluacion.companyId) {
           return res.status(403).send("No tiene permisos para corregir esta evaluación");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
       
       // Obtener la empresa y calcular el tipo correcto
@@ -27441,10 +27441,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/acciones-mejora - Listar todas las acciones de mejora
   app.get('/api/acciones-mejora', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const acciones = await storage.getAllAccionesMejora(companyId);
       res.json(acciones);
     } catch (error: any) {
@@ -27456,10 +27456,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/acciones-mejora/:id - Actualizar acción de mejora
   app.patch('/api/acciones-mejora/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validatedData = insertAccionMejoraSchema.partial().parse(req.body);
       
       const accion = await storage.updateAccionMejora(req.params.id, validatedData, companyId);
@@ -27478,10 +27478,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/acciones-mejora/:id - Eliminar acción de mejora
   app.delete('/api/acciones-mejora/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       await storage.deleteAccionMejora(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
@@ -27516,16 +27516,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             eq(schema.licensedProfessionalAssignments.companyId, evaluacion.companyId),
             eq(schema.licensedProfessionalAssignments.isActive, true)
           ));
-        const hasDirectAccessEval = req.user!.companyId === evaluacion.companyId;
+        const hasDirectAccessEval = getEffectiveCompanyId(req) === evaluacion.companyId;
         if (!lsoAssignEval && !hasDirectAccessEval) {
           return res.status(403).send("No tiene asignación activa con esta empresa");
         }
         companyId = evaluacion.companyId;
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
         evaluacion = await storage.getEvaluacionSst(req.params.id, companyId);
       }
       
@@ -27726,16 +27726,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             eq(schema.licensedProfessionalAssignments.companyId, evaluacion.companyId),
             eq(schema.licensedProfessionalAssignments.isActive, true)
           ));
-        const hasDirectAccessMin = req.user!.companyId === evaluacion.companyId;
+        const hasDirectAccessMin = getEffectiveCompanyId(req) === evaluacion.companyId;
         if (!lsoAssignMin && !hasDirectAccessMin) {
           return res.status(403).send("No tiene asignación activa con esta empresa");
         }
         companyId = evaluacion.companyId;
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
         evaluacion = await storage.getEvaluacionSst(req.params.id, companyId);
       }
       
@@ -28335,8 +28335,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!evaluacion) return res.status(404).send("Evaluación no encontrada");
         companyId = evaluacion.companyId;
       } else {
-        if (!req.user!.companyId) return res.status(403).send("Esta operación requiere pertenecer a una empresa");
-        companyId = req.user!.companyId;
+        if (!getEffectiveCompanyId(req)) return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+        companyId = getEffectiveCompanyId(req);
         evaluacion = await storage.getEvaluacionSst(req.params.id, companyId);
       }
       if (!evaluacion) return res.status(404).send('Evaluación no encontrada');
@@ -28631,10 +28631,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = evaluacion.companyId;
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
         evaluacion = await storage.getEvaluacionSst(req.params.id, companyId);
       }
       
@@ -29804,8 +29804,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/planes-trabajo-anual', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       // Admin users (companyId=NULL) can view all plans across companies
-      const planes = req.user!.companyId
-        ? await storage.getPlanesTrabajoAnual(req.user!.companyId)
+      const planes = getEffectiveCompanyId(req)
+        ? await storage.getPlanesTrabajoAnual(getEffectiveCompanyId(req))
         : await storage.getAllPlanesTrabajoAnual();
       res.json(planes);
     } catch (error: any) {
@@ -29825,7 +29825,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         plan = await storage.getPlanTrabajoAnualById(req.params.id);
       } else {
         // Non-admin: get plan with company filter
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -29862,7 +29862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = bodyCompanyId;
       } else {
         // Usuario regular: usar su companyId
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
       }
       
       const validatedData = insertPlanTrabajoAnualSchema.parse(req.body);
@@ -29901,7 +29901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = existingPlan.companyId;
       } else {
-        const userCompanyId = req.user!.companyId;
+        const userCompanyId = getEffectiveCompanyId(req);
         if (!userCompanyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -29963,7 +29963,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = existingPlan.companyId;
       } else {
-        const userCompanyId = req.user!.companyId;
+        const userCompanyId = getEffectiveCompanyId(req);
         if (!userCompanyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -29991,7 +29991,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = plan.companyId;
       } else {
-        const userCompanyId = req.user!.companyId;
+        const userCompanyId = getEffectiveCompanyId(req);
         if (!userCompanyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -30046,7 +30046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = plan.companyId;
       } else {
-        const userCompanyId = req.user!.companyId;
+        const userCompanyId = getEffectiveCompanyId(req);
         if (!userCompanyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -30099,7 +30099,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/matrices-iperc/activa - Obtener matriz IPERC activa para el año
   app.get('/api/matrices-iperc/activa', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -30130,7 +30130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = worker.companyId;
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
       }
 
       const peligros = await storage.getPeligrosByWorker(req.params.workerId, companyId);
@@ -30145,7 +30145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/peligros-asignacion', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
-      const companyId = isAdmin ? undefined : (req.user!.companyId || undefined);
+      const companyId = isAdmin ? undefined : (getEffectiveCompanyId(req) || undefined);
       const asignaciones = await storage.getAllPeligrosAsignacion(companyId);
       res.json(asignaciones);
     } catch (error: any) {
@@ -30167,7 +30167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = peligro.companyId;
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
       }
 
       const validatedData = schema.insertPeligroTrabajadorAsignacionSchema.parse(req.body);
@@ -30197,7 +30197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = existing.companyId;
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
       }
 
       // For partial updates, create schema without refine() to allow updating fields independently
@@ -30240,7 +30240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = existing.companyId;
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
       }
 
       await storage.deletePeligroAsignacion(req.params.id, companyId);
@@ -30291,7 +30291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = plan.companyId;
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -30573,7 +30573,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = plan.companyId;
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -30682,7 +30682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = plan.companyId;
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -30744,7 +30744,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             eq(schema.licensedProfessionalAssignments.companyId, planCheck.companyId),
             eq(schema.licensedProfessionalAssignments.isActive, true)
           ));
-        const hasDirectAccessPlan = req.user!.companyId === planCheck.companyId;
+        const hasDirectAccessPlan = getEffectiveCompanyId(req) === planCheck.companyId;
         if (!lsoAssignPlan && !hasDirectAccessPlan) { return res.status(403).send("No tiene asignación activa con esta empresa"); }
         companyId = planCheck.companyId;
       } else if (hasGlobalAccess(userRole)) {
@@ -30752,10 +30752,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!planCheck) { return res.status(404).send("Plan no encontrado"); }
         companyId = planCheck.companyId;
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
       const plan = await storage.getPlanTrabajoAnual(req.params.id, companyId);
       
@@ -31062,10 +31062,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/actividades-plan-trabajo - Crear nueva actividad
   app.post('/api/actividades-plan-trabajo', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validatedData = insertActividadPlanTrabajoSchema.parse(req.body);
       
       const actividad = await storage.createActividadPlanTrabajo(validatedData, companyId);
@@ -31079,10 +31079,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/actividades-plan-trabajo/:id - Actualizar actividad
   app.patch('/api/actividades-plan-trabajo/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validatedData = insertActividadPlanTrabajoSchema.partial().parse(req.body);
       
       const actividad = await storage.updateActividadPlanTrabajo(req.params.id, validatedData, companyId);
@@ -31101,10 +31101,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/actividades-plan-trabajo/:id - Eliminar actividad
   app.delete('/api/actividades-plan-trabajo/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       await storage.deleteActividadPlanTrabajo(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
@@ -31118,10 +31118,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/matriz-legal - Obtener toda la matriz legal de la empresa
   app.get('/api/matriz-legal', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const matrizLegal = await storage.getMatrizLegal(companyId);
       res.json(matrizLegal);
     } catch (error: any) {
@@ -31133,10 +31133,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/matriz-legal/:id - Obtener una norma específica
   app.get('/api/matriz-legal/:id', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const item = await storage.getMatrizLegalItem(req.params.id, companyId);
       
       if (!item) {
@@ -31153,10 +31153,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/matriz-legal/:id/pdf - PDF individual de una norma legal
   app.get('/api/matriz-legal/:id/pdf', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const item = await storage.getMatrizLegalItem(req.params.id, companyId);
       if (!item) {
         return res.status(404).send('Norma no encontrada');
@@ -31239,10 +31239,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/matriz-legal - Crear nueva norma legal
   app.post('/api/matriz-legal', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validatedData = insertMatrizLegalSchema.parse(req.body);
       
       const item = await storage.createMatrizLegalItem(validatedData, companyId);
@@ -31256,10 +31256,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/matriz-legal/:id - Actualizar norma legal
   app.patch('/api/matriz-legal/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validatedData = insertMatrizLegalSchema.partial().parse(req.body);
       
       const item = await storage.updateMatrizLegalItem(req.params.id, validatedData, companyId);
@@ -31278,10 +31278,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/matriz-legal/:id - Eliminar norma legal
   app.delete('/api/matriz-legal/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       await storage.deleteMatrizLegalItem(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
@@ -31293,10 +31293,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/matriz-legal/initialize - Inicializar matriz con normas base
   app.post('/api/matriz-legal/initialize', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       await storage.initializeMatrizLegal(companyId);
       const matrizLegal = await storage.getMatrizLegal(companyId);
       res.json(matrizLegal);
@@ -31309,10 +31309,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/matriz-legal/validate-compliance - Validar cumplimiento automático
   app.post('/api/matriz-legal/validate-compliance', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       await storage.validateMatrizLegalCompliance(companyId);
       const matrizLegal = await storage.getMatrizLegal(companyId);
       res.json(matrizLegal);
@@ -31333,12 +31333,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (req.user!.role === 'admin') {
         // Admins can optionally filter by company via query parameter, defaults to their assigned company
-        companyId = (req.query.companyId as string) || req.user!.companyId || "";
+        companyId = (req.query.companyId as string) || getEffectiveCompanyId(req) || "";
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
       
       const objetivos = await storage.getObjetivosSst(companyId);
@@ -31356,12 +31356,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (req.user!.role === 'admin') {
         // Admins can optionally filter by company via query parameter, defaults to their assigned company
-        companyId = (req.query.companyId as string) || req.user!.companyId || "";
+        companyId = (req.query.companyId as string) || getEffectiveCompanyId(req) || "";
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
       
       const objetivo = await storage.getObjetivoSst(req.params.id, companyId);
@@ -31386,10 +31386,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).send("Los administradores deben especificar una empresa");
         }
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
       
       const validatedData = insertObjetivoSstSchema.parse(req.body);
@@ -31412,10 +31412,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).send("Los administradores deben especificar una empresa");
         }
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
       
       const validatedData = insertObjetivoSstSchema.partial().parse(req.body);
@@ -31442,10 +31442,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).send("Los administradores deben especificar una empresa");
         }
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
       
       await storage.deleteObjetivoSst(req.params.id, companyId);
@@ -31463,10 +31463,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/indicadores-sst - Listar indicadores SST (opcionalmente filtrados por objetivo)
   app.get('/api/indicadores-sst', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const objetivoId = req.query.objetivoId as string | undefined;
       const indicadores = await storage.getIndicadoresSst(companyId, objetivoId);
       res.json(indicadores);
@@ -31479,10 +31479,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/indicadores-sst/:id - Obtener un indicador SST específico
   app.get('/api/indicadores-sst/:id', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const indicador = await storage.getIndicadorSst(req.params.id, companyId);
       if (!indicador) {
         return res.status(404).send('Indicador SST no encontrado');
@@ -31497,10 +31497,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/indicadores-sst - Crear nuevo indicador SST
   app.post('/api/indicadores-sst', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validatedData = insertIndicadorSstSchema.parse(req.body);
       const indicador = await storage.createIndicadorSst(validatedData, companyId);
       res.status(201).json(indicador);
@@ -31513,10 +31513,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/indicadores-sst/:id - Actualizar indicador SST
   app.patch('/api/indicadores-sst/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validatedData = insertIndicadorSstSchema.partial().parse(req.body);
       const indicador = await storage.updateIndicadorSst(req.params.id, validatedData, companyId);
       if (!indicador) {
@@ -31532,10 +31532,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/indicadores-sst/:id - Eliminar indicador SST
   app.delete('/api/indicadores-sst/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       await storage.deleteIndicadorSst(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
@@ -31551,10 +31551,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/indicadores-sst/:indicadorId/mediciones - Listar mediciones de un indicador
   app.get('/api/indicadores-sst/:indicadorId/mediciones', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const mediciones = await storage.getMedicionesIndicador(req.params.indicadorId, companyId);
       res.json(mediciones);
     } catch (error: any) {
@@ -31566,10 +31566,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/indicadores-sst/:indicadorId/mediciones - Listar mediciones de un indicador
   app.get('/api/indicadores-sst/:indicadorId/mediciones', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const mediciones = await storage.getMedicionesIndicador(req.params.indicadorId, req.user!.companyId);
+      const mediciones = await storage.getMedicionesIndicador(req.params.indicadorId, getEffectiveCompanyId(req));
       res.json(mediciones);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -31579,10 +31579,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/mediciones-indicadores/:id - Obtener una medición específica
   app.get('/api/mediciones-indicadores/:id', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const medicion = await storage.getMedicionIndicador(req.params.id, companyId);
       if (!medicion) {
         return res.status(404).send('Medición no encontrada');
@@ -31597,10 +31597,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/mediciones-indicadores - Crear nueva medición de indicador
   app.post('/api/mediciones-indicadores', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validatedData = insertMedicionIndicadorSchema.parse(req.body);
       const medicion = await storage.createMedicionIndicador(validatedData, companyId);
       res.status(201).json(medicion);
@@ -31613,10 +31613,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/mediciones-indicadores/:id - Actualizar medición
   app.patch('/api/mediciones-indicadores/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validatedData = insertMedicionIndicadorSchema.partial().parse(req.body);
       const medicion = await storage.updateMedicionIndicador(req.params.id, validatedData, companyId);
       if (!medicion) {
@@ -31632,10 +31632,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/mediciones-indicadores/:id - Eliminar medición
   app.delete('/api/mediciones-indicadores/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       await storage.deleteMedicionIndicador(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
@@ -31652,10 +31652,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/indicadores-sst/:id/calcular-automatico - Calcular automáticamente un indicador
   app.post('/api/indicadores-sst/:id/calcular-automatico', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const { id } = req.params;
       const { periodo } = req.body;
       
@@ -31709,10 +31709,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/indicadores-sst/ejecutar-calculo-masivo - Ejecutar cálculo masivo de indicadores automáticos
   app.post('/api/indicadores-sst/ejecutar-calculo-masivo', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const { periodo } = req.body;
       
       if (!periodo) {
@@ -31730,10 +31730,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   app.get('/api/indicadores-sst/:id/tendencias', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const { id } = req.params;
       
       const indicador = await storage.getIndicadorSst(id, companyId);
@@ -31791,10 +31791,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/datos-calculo - Obtener todos los datos de cálculo
   app.get('/api/datos-calculo', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const datos = await storage.getAllDatosCalculo(companyId);
       res.json(datos);
     } catch (error: any) {
@@ -31806,10 +31806,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/datos-calculo/:id - Obtener datos de cálculo específicos
   app.get('/api/datos-calculo/:id', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const datos = await storage.getDatosCalculo(req.params.id, companyId);
       if (!datos) {
         return res.status(404).send('Datos de cálculo no encontrados');
@@ -31824,10 +31824,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/datos-calculo/periodo/:periodo - Obtener datos de cálculo por periodo
   app.get('/api/datos-calculo/periodo/:periodo', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const datos = await storage.getDatosCalculoByPeriodo(req.params.periodo, companyId);
       if (!datos) {
         return res.status(404).send('No hay datos para este periodo');
@@ -31842,10 +31842,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/datos-calculo - Crear nuevos datos de cálculo
   app.post('/api/datos-calculo', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validatedData = insertDatosCalculoSchema.parse(req.body);
       const datos = await storage.createDatosCalculo(validatedData, companyId);
       res.status(201).json(datos);
@@ -31858,10 +31858,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/datos-calculo/:id - Actualizar datos de cálculo
   app.patch('/api/datos-calculo/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const validatedData = insertDatosCalculoSchema.partial().parse(req.body);
       const datos = await storage.updateDatosCalculo(req.params.id, validatedData, companyId);
       if (!datos) {
@@ -31877,10 +31877,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/datos-calculo/:id - Eliminar datos de cálculo
   app.delete('/api/datos-calculo/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       await storage.deleteDatosCalculo(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
@@ -31892,10 +31892,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/indicadores/:id/calcular - Calcular automáticamente un indicador de resultado
   app.post('/api/indicadores/:id/calcular', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      if (!req.user!.companyId) {
+      if (!getEffectiveCompanyId(req)) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const { periodo } = req.body;
       
       if (!periodo) {
@@ -31995,7 +31995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/proveedores - Listar todos los proveedores
   app.get("/api/proveedores", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const proveedores = await storage.getProveedoresContratistas(companyId);
@@ -32009,7 +32009,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/proveedores/:id - Obtener un proveedor
   app.get("/api/proveedores/:id", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const proveedor = await storage.getProveedorContratista(req.params.id, companyId);
@@ -32026,7 +32026,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/proveedores - Crear proveedor
   app.post("/api/proveedores", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertProveedorContratistaSchema.parse(req.body);
@@ -32041,7 +32041,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/proveedores/:id - Actualizar proveedor
   app.patch("/api/proveedores/:id", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertProveedorContratistaSchema.partial().parse(req.body);
@@ -32063,7 +32063,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/proveedores/:id - Eliminar proveedor
   app.delete("/api/proveedores/:id", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteProveedorContratista(req.params.id, companyId);
@@ -32079,7 +32079,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/proveedores/:id/evaluaciones - Listar evaluaciones de un proveedor
   app.get("/api/proveedores/:id/evaluaciones", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const evaluaciones = await storage.getEvaluacionesProveedor(req.params.id, companyId);
@@ -32093,7 +32093,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/evaluaciones-proveedores - Listar todas las evaluaciones
   app.get("/api/evaluaciones-proveedores", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const evaluaciones = await storage.getAllEvaluacionesProveedores(companyId);
@@ -32107,7 +32107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/evaluaciones-proveedores/:id - Obtener evaluación
   app.get("/api/evaluaciones-proveedores/:id", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const evaluacion = await storage.getEvaluacionProveedor(req.params.id, companyId);
@@ -32124,7 +32124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/evaluaciones-proveedores - Crear evaluación
   app.post("/api/evaluaciones-proveedores", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertEvaluacionProveedorSchema.parse(req.body);
@@ -32153,7 +32153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/evaluaciones-proveedores/:id - Actualizar evaluación
   app.patch("/api/evaluaciones-proveedores/:id", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertEvaluacionProveedorSchema.partial().parse(req.body);
@@ -32175,7 +32175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/evaluaciones-proveedores/:id - Eliminar evaluación
   app.delete("/api/evaluaciones-proveedores/:id", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteEvaluacionProveedor(req.params.id, companyId);
@@ -32189,7 +32189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/evaluaciones-proveedores/:id/calcular - Calcular puntaje de evaluación
   app.post("/api/evaluaciones-proveedores/:id/calcular", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.calcularPuntajeEvaluacionProveedor(req.params.id, companyId);
@@ -32220,7 +32220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/criterios-evaluacion - Listar criterios
   app.get("/api/criterios-evaluacion", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const criterios = await storage.getCriteriosEvaluacion(companyId);
@@ -32234,7 +32234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/criterios-evaluacion/:id - Obtener criterio
   app.get("/api/criterios-evaluacion/:id", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const criterio = await storage.getCriterioEvaluacion(req.params.id, companyId);
@@ -32251,7 +32251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/criterios-evaluacion - Crear criterio
   app.post("/api/criterios-evaluacion", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertCriterioEvaluacionSchema.parse(req.body);
@@ -32266,7 +32266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/criterios-evaluacion/:id - Actualizar criterio
   app.patch("/api/criterios-evaluacion/:id", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertCriterioEvaluacionSchema.partial().parse(req.body);
@@ -32288,7 +32288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/criterios-evaluacion/:id - Eliminar criterio
   app.delete("/api/criterios-evaluacion/:id", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteCriterioEvaluacion(req.params.id, companyId);
@@ -32302,7 +32302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/criterios-evaluacion/initialize - Inicializar criterios base
   app.post("/api/criterios-evaluacion/initialize", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.initializeCriteriosEvaluacion(companyId);
@@ -32319,7 +32319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/evaluaciones-proveedores/:id/respuestas - Listar respuestas
   app.get("/api/evaluaciones-proveedores/:id/respuestas", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const respuestas = await storage.getRespuestasCriterios(req.params.id);
@@ -32333,7 +32333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/respuestas-criterios - Crear respuesta
   app.post("/api/respuestas-criterios", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertRespuestaCriterioSchema.parse(req.body);
@@ -32348,7 +32348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/respuestas-criterios/:id - Actualizar respuesta
   app.patch("/api/respuestas-criterios/:id", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertRespuestaCriterioSchema.partial().parse(req.body);
@@ -32369,7 +32369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/respuestas-criterios/:id - Eliminar respuesta
   app.delete("/api/respuestas-criterios/:id", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteRespuestaCriterio(req.params.id);
@@ -32385,7 +32385,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/proveedores/:id/documentos - Listar documentos de un proveedor
   app.get("/api/proveedores/:id/documentos", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const documentos = await storage.getDocumentosProveedor(req.params.id, companyId);
@@ -32399,7 +32399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/documentos-proveedores - Crear documento
   app.post("/api/documentos-proveedores", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertDocumentoProveedorSchema.parse(req.body);
@@ -32414,7 +32414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/documentos-proveedores/:id - Actualizar documento
   app.patch("/api/documentos-proveedores/:id", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertDocumentoProveedorSchema.partial().parse(req.body);
@@ -32436,7 +32436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/documentos-proveedores/:id - Eliminar documento
   app.delete("/api/documentos-proveedores/:id", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteDocumentoProveedor(req.params.id, companyId);
@@ -32452,7 +32452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/proveedores/:id/seguimientos - Listar seguimientos de un proveedor
   app.get("/api/proveedores/:id/seguimientos", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const seguimientos = await storage.getSeguimientosProveedor(req.params.id, companyId);
@@ -32466,7 +32466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/seguimientos-proveedores - Listar todos los seguimientos
   app.get("/api/seguimientos-proveedores", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const seguimientos = await storage.getAllSeguimientosProveedores(companyId);
@@ -32480,7 +32480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/seguimientos-proveedores - Crear seguimiento
   app.post("/api/seguimientos-proveedores", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertSeguimientoProveedorSchema.parse(req.body);
@@ -32495,7 +32495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/seguimientos-proveedores/:id - Actualizar seguimiento
   app.patch("/api/seguimientos-proveedores/:id", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertSeguimientoProveedorSchema.partial().parse(req.body);
@@ -32517,7 +32517,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/seguimientos-proveedores/:id - Eliminar seguimiento
   app.delete("/api/seguimientos-proveedores/:id", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteSeguimientoProveedor(req.params.id, companyId);
@@ -32531,7 +32531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/proveedores/:id/validar-documentacion - Validar cumplimiento documental normativo
   app.get("/api/proveedores/:id/validar-documentacion", async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const proveedorId = req.params.id;
@@ -32599,7 +32599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/cambios-sst - Obtener todos los cambios de la empresa
   app.get("/api/cambios-sst", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const cambios = await storage.getCambiosSst(companyId);
@@ -32613,7 +32613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/cambios-sst/dashboard - Obtener dashboard con KPIs
   app.get("/api/cambios-sst/dashboard", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const dashboard = await storage.getDashboardCambios(companyId);
@@ -32627,7 +32627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/automatizacion-cambio-logs - Obtener logs de automatización
   app.get("/api/automatizacion-cambio-logs", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const logs = await storage.getAutomatizacionLogsForCompany(companyId);
@@ -32641,7 +32641,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/cambios-sst/:id - Obtener un cambio específico
   app.get("/api/cambios-sst/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const cambio = await storage.getCambioSst(req.params.id, companyId);
@@ -32658,7 +32658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/cambios-sst - Crear nuevo cambio
   app.post("/api/cambios-sst", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertCambioSstSchema.parse(req.body);
@@ -32697,7 +32697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/cambios-sst/:id - Actualizar cambio
   app.patch("/api/cambios-sst/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertCambioSstSchema.partial().parse(req.body);
@@ -32715,7 +32715,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/cambios-sst/:id - Eliminar cambio
   app.delete("/api/cambios-sst/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteCambioSst(req.params.id, companyId);
@@ -32731,7 +32731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/evaluaciones-impacto-cambio - Obtener todas las evaluaciones de la empresa
   app.get("/api/evaluaciones-impacto-cambio", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const evaluaciones = await storage.getAllEvaluacionesImpacto(companyId);
@@ -32745,7 +32745,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/cambios-sst/:cambioId/evaluaciones - Obtener evaluaciones de un cambio
   app.get("/api/cambios-sst/:cambioId/evaluaciones", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const evaluaciones = await storage.getEvaluacionesImpactoCambio(req.params.cambioId, companyId);
@@ -32759,7 +32759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/evaluaciones-impacto-cambio - Crear evaluación de impacto
   app.post("/api/evaluaciones-impacto-cambio", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertEvaluacionImpactoCambioSchema.parse(req.body);
@@ -32774,7 +32774,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/evaluaciones-impacto-cambio/:id - Actualizar evaluación
   app.patch("/api/evaluaciones-impacto-cambio/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertEvaluacionImpactoCambioSchema.partial().parse(req.body);
@@ -32792,7 +32792,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/evaluaciones-impacto-cambio/:id - Eliminar evaluación
   app.delete("/api/evaluaciones-impacto-cambio/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteEvaluacionImpactoCambio(req.params.id, companyId);
@@ -32808,7 +32808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/cambios-sst/:cambioId/controles - Obtener controles de un cambio
   app.get("/api/cambios-sst/:cambioId/controles", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const controles = await storage.getControlesCambio(req.params.cambioId, companyId);
@@ -32822,7 +32822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/controles-cambios - Crear control
   app.post("/api/controles-cambios", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertControlCambioSchema.parse(req.body);
@@ -32837,7 +32837,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/controles-cambios/:id - Actualizar control
   app.patch("/api/controles-cambios/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertControlCambioSchema.partial().parse(req.body);
@@ -32855,7 +32855,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/controles-cambios/:id - Eliminar control
   app.delete("/api/controles-cambios/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteControlCambio(req.params.id, companyId);
@@ -32871,7 +32871,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/cambios-sst/:cambioId/capacitaciones - Obtener capacitaciones de un cambio
   app.get("/api/cambios-sst/:cambioId/capacitaciones", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const capacitaciones = await storage.getCapacitacionesCambio(req.params.cambioId, companyId);
@@ -32885,7 +32885,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/capacitaciones-cambios - Crear capacitación
   app.post("/api/capacitaciones-cambios", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertCapacitacionCambioSchema.parse(req.body);
@@ -32900,7 +32900,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/capacitaciones-cambios/:id - Actualizar capacitación
   app.patch("/api/capacitaciones-cambios/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertCapacitacionCambioSchema.partial().parse(req.body);
@@ -32918,7 +32918,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/capacitaciones-cambios/:id - Eliminar capacitación
   app.delete("/api/capacitaciones-cambios/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteCapacitacionCambio(req.params.id, companyId);
@@ -32934,7 +32934,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/cambios-sst/:cambioId/seguimientos - Obtener seguimientos de un cambio
   app.get("/api/cambios-sst/:cambioId/seguimientos", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const seguimientos = await storage.getSeguimientosCambio(req.params.cambioId, companyId);
@@ -32948,7 +32948,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/seguimientos-cambios - Crear seguimiento
   app.post("/api/seguimientos-cambios", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertSeguimientoCambioSchema.parse(req.body);
@@ -32963,7 +32963,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/seguimientos-cambios/:id - Actualizar seguimiento
   app.patch("/api/seguimientos-cambios/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertSeguimientoCambioSchema.partial().parse(req.body);
@@ -32981,7 +32981,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/seguimientos-cambios/:id - Eliminar seguimiento
   app.delete("/api/seguimientos-cambios/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteSeguimientoCambio(req.params.id, companyId);
@@ -32997,7 +32997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/cambios-sst/:cambioId/aprobaciones - Obtener aprobaciones de un cambio
   app.get("/api/cambios-sst/:cambioId/aprobaciones", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const aprobaciones = await storage.getAprobacionesCambio(req.params.cambioId, companyId);
@@ -33011,7 +33011,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/aprobaciones-cambios - Crear aprobación
   app.post("/api/aprobaciones-cambios", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertAprobacionCambioSchema.parse(req.body);
@@ -33097,7 +33097,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/aprobaciones-cambios/:id - Actualizar aprobación
   app.patch("/api/aprobaciones-cambios/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertAprobacionCambioSchema.partial().parse(req.body);
@@ -33184,7 +33184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/aprobaciones-cambios/:id - Eliminar aprobación
   app.delete("/api/aprobaciones-cambios/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteAprobacionCambio(req.params.id, companyId);
@@ -33200,7 +33200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/cambios-sst/:id/pdf - Generar PDF del reporte completo del cambio
   app.get("/api/cambios-sst/:id/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -33444,7 +33444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/evaluaciones-impacto-cambio/:id/report - Generar PDF de evaluación de impacto
   app.get("/api/evaluaciones-impacto-cambio/:id/report", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -33616,7 +33616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/adquisiciones-sst - Obtener todas las solicitudes de adquisición
   app.get("/api/adquisiciones-sst", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const solicitudes = await storage.getSolicitudesAdquisicion(companyId);
@@ -33630,7 +33630,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/adquisiciones-sst/dashboard - Obtener dashboard con KPIs
   app.get("/api/adquisiciones-sst/dashboard", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const dashboard = await storage.getDashboardAdquisiciones(companyId);
@@ -33644,7 +33644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/adquisiciones-sst/panel/pdf - Generate PDF report for Adquisiciones SST Panel
   app.get("/api/adquisiciones-sst/panel/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
 
       const company = await storage.getCompany(companyId);
@@ -33862,7 +33862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/evaluacion-proveedores/panel/pdf - Generate PDF report for Evaluación de Proveedores Panel
   app.get("/api/evaluacion-proveedores/panel/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
 
       const company = await storage.getCompany(companyId);
@@ -34116,7 +34116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/gestion-cambios/panel/pdf - Generate PDF report for Gestión de Cambios SST Panel
   app.get("/api/gestion-cambios/panel/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
 
       const company = await storage.getCompany(companyId);
@@ -34328,7 +34328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/dashboard-hacer - Dashboard de controles operacionales (Fase HACER)
   app.get("/api/dashboard-hacer", requireAuth, requirePermission("sst_management:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
@@ -34343,7 +34343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/dashboard-verificar - Dashboard de indicadores SG-SST (Fase VERIFICAR)
   app.get("/api/dashboard-verificar", requireAuth, requirePermission("sst_management:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
@@ -34358,7 +34358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/dashboard-actuar - Dashboard de eficacia de acciones correctivas/preventivas (Fase ACTUAR)
   app.get("/api/dashboard-actuar", requireAuth, requirePermission("sst_management:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
@@ -34375,7 +34375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/reportes/evaluaciones-sst-consolidado/pdf - Reporte Consolidado Estándares Mínimos
   app.get("/api/reportes/evaluaciones-sst-consolidado/pdf", requireAuth, requirePermission("sst_management:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user?.companyId ?? null;
+      const userCompanyId = getEffectiveCompanyId(req) ?? null;
       const isAdmin = req.user?.role === 'admin';
       const companyId = isAdmin ? null : userCompanyId;
       
@@ -34549,7 +34549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/reportes/auditorias-internas-consolidado/pdf - Reporte Consolidado Auditorías
   app.get("/api/reportes/auditorias-internas-consolidado/pdf", requireAuth, requirePermission("sst_management:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user?.companyId ?? null;
+      const userCompanyId = getEffectiveCompanyId(req) ?? null;
       const isAdmin = req.user?.role === 'admin';
       const companyId = isAdmin ? null : userCompanyId;
       
@@ -34681,7 +34681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/reportes/revisiones-direccion-consolidado/pdf - Reporte Consolidado Revisiones
   app.get("/api/reportes/revisiones-direccion-consolidado/pdf", requireAuth, requirePermission("sst_management:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user?.companyId ?? null;
+      const userCompanyId = getEffectiveCompanyId(req) ?? null;
       const isAdmin = req.user?.role === 'admin';
       const companyId = isAdmin ? null : userCompanyId;
       
@@ -34797,7 +34797,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/reportes/objetivos-indicadores-consolidado/pdf - Reporte Consolidado Objetivos
   app.get("/api/reportes/objetivos-indicadores-consolidado/pdf", requireAuth, requirePermission("sst_management:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user?.companyId ?? null;
+      const userCompanyId = getEffectiveCompanyId(req) ?? null;
       const isAdmin = req.user?.role === 'admin';
       const companyId = isAdmin ? null : userCompanyId;
       
@@ -34927,7 +34927,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/reportes/perfil-sociodemografico/pdf - Reporte PDF Perfil Sociodemográfico
   app.get("/api/reportes/perfil-sociodemografico/pdf", requireAuth, requirePermission("workers:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
 
       // Get company info
@@ -35162,7 +35162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/adquisiciones-sst/:id - Obtener una solicitud específica
   app.get("/api/adquisiciones-sst/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const solicitud = await storage.getSolicitudAdquisicion(req.params.id, companyId);
@@ -35179,7 +35179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/adquisiciones-sst - Crear nueva solicitud de adquisición
   app.post("/api/adquisiciones-sst", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertSolicitudAdquisicionSchema.parse(req.body);
@@ -35195,7 +35195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/adquisiciones-sst/:id - Actualizar solicitud de adquisición
   app.patch("/api/adquisiciones-sst/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       // Get current solicitud to check state change
@@ -35266,7 +35266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/adquisiciones-sst/:id - Eliminar solicitud de adquisición
   app.delete("/api/adquisiciones-sst/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteSolicitudAdquisicion(req.params.id, companyId);
@@ -35282,7 +35282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/evaluaciones-adquisicion - Obtener todas las evaluaciones
   app.get("/api/evaluaciones-adquisicion", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const { solicitudId } = req.query;
@@ -35303,7 +35303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/evaluaciones-adquisicion/:id - Obtener una evaluación específica
   app.get("/api/evaluaciones-adquisicion/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const evaluacion = await storage.getEvaluacionAdquisicion(req.params.id, companyId);
@@ -35320,7 +35320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/evaluaciones-adquisicion - Crear nueva evaluación
   app.post("/api/evaluaciones-adquisicion", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertEvaluacionAdquisicionSchema.parse(req.body);
@@ -35336,7 +35336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/evaluaciones-adquisicion/:id - Actualizar evaluación
   app.patch("/api/evaluaciones-adquisicion/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertEvaluacionAdquisicionSchema.partial().parse(req.body);
@@ -35354,7 +35354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/evaluaciones-adquisicion/:id - Eliminar evaluación
   app.delete("/api/evaluaciones-adquisicion/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteEvaluacionAdquisicion(req.params.id, companyId);
@@ -35370,7 +35370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/especificaciones-tecnicas - Obtener especificaciones técnicas por solicitud
   app.get("/api/especificaciones-tecnicas", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const { solicitudId } = req.query;
@@ -35389,7 +35389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/especificaciones-tecnicas - Crear nueva especificación técnica
   app.post("/api/especificaciones-tecnicas", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertEspecificacionTecnicaSchema.parse(req.body);
@@ -35405,7 +35405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/especificaciones-tecnicas/:id - Actualizar especificación técnica
   app.patch("/api/especificaciones-tecnicas/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertEspecificacionTecnicaSchema.partial().parse(req.body);
@@ -35423,7 +35423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/especificaciones-tecnicas/:id - Eliminar especificación técnica
   app.delete("/api/especificaciones-tecnicas/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteEspecificacionTecnica(req.params.id, companyId);
@@ -35439,7 +35439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/hojas-seguridad - Obtener hojas de seguridad
   app.get("/api/hojas-seguridad", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const { solicitudId } = req.query;
@@ -35460,7 +35460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/hojas-seguridad - Crear nueva hoja de seguridad
   app.post("/api/hojas-seguridad", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertHojaSeguridadSchema.parse(req.body);
@@ -35476,7 +35476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/hojas-seguridad/:id - Actualizar hoja de seguridad
   app.patch("/api/hojas-seguridad/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertHojaSeguridadSchema.partial().parse(req.body);
@@ -35494,7 +35494,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/hojas-seguridad/:id - Eliminar hoja de seguridad
   app.delete("/api/hojas-seguridad/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteHojaSeguridad(req.params.id, companyId);
@@ -35511,7 +35511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/adquisicion-items/resumen-integrado - Resumen integrado con EPP y recursos financieros
   app.get("/api/adquisicion-items/resumen-integrado", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
 
       const items = await storage.getAdquisicionItems(companyId);
@@ -35616,7 +35616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/adquisicion-items/resumen - Resumen por categoría y gastos
   app.get("/api/adquisicion-items/resumen", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const resumen = await storage.getResumenAdquisicionItems(companyId);
@@ -35630,7 +35630,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/adquisicion-items - Obtener items de adquisición
   app.get("/api/adquisicion-items", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const { solicitudId } = req.query;
@@ -35651,7 +35651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/adquisicion-items/:id - Obtener item por ID
   app.get("/api/adquisicion-items/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const item = await storage.getAdquisicionItem(req.params.id, companyId);
@@ -35668,7 +35668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/adquisicion-items - Crear nuevo item
   app.post("/api/adquisicion-items", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertAdquisicionItemSchema.parse(req.body);
@@ -35684,7 +35684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/adquisicion-items/:id - Actualizar item
   app.patch("/api/adquisicion-items/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertAdquisicionItemSchema.partial().parse(req.body);
@@ -35702,7 +35702,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/adquisicion-items/:id - Eliminar item
   app.delete("/api/adquisicion-items/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteAdquisicionItem(req.params.id, companyId);
@@ -35718,7 +35718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/verificaciones-adquisicion - Obtener verificaciones
   app.get("/api/verificaciones-adquisicion", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const { solicitudId } = req.query;
@@ -35739,7 +35739,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/verificaciones-adquisicion - Crear nueva verificación
   app.post("/api/verificaciones-adquisicion", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertVerificacionAdquisicionSchema.parse(req.body);
@@ -35755,7 +35755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/verificaciones-adquisicion/:id - Actualizar verificación
   app.patch("/api/verificaciones-adquisicion/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validatedData = insertVerificacionAdquisicionSchema.partial().parse(req.body);
@@ -35773,7 +35773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/verificaciones-adquisicion/:id - Eliminar verificación
   app.delete("/api/verificaciones-adquisicion/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       await storage.deleteVerificacionAdquisicion(req.params.id, companyId);
@@ -35794,7 +35794,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/plan-comunicacion-sst - Obtener planes de comunicación
   app.get("/api/plan-comunicacion-sst", requireAuth, requirePermission("comunicacion_plan:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const planes = await storage.getPlanComunicacionSst(companyId);
@@ -35808,7 +35808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/plan-comunicacion-sst/vigente - Obtener plan vigente
   app.get("/api/plan-comunicacion-sst/vigente", requireAuth, requirePermission("comunicacion_plan:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const plan = await storage.getPlanComunicacionVigente(companyId);
@@ -35822,7 +35822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/plan-comunicacion-sst - Crear nuevo plan de comunicación
   app.post("/api/plan-comunicacion-sst", requireAuth, requirePermission("comunicacion_plan:create"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -35839,7 +35839,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/plan-comunicacion-sst/:id - Actualizar plan de comunicación
   app.patch("/api/plan-comunicacion-sst/:id", requireAuth, requirePermission("comunicacion_plan:edit"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -35860,7 +35860,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/comunicaciones-sst - Obtener comunicaciones
   app.get("/api/comunicaciones-sst", requireAuth, requirePermission("comunicaciones_sst:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const comunicaciones = await storage.getComunicacionesSst(companyId);
@@ -35874,7 +35874,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/comunicaciones-sst/:id - Obtener comunicación por ID
   app.get("/api/comunicaciones-sst/:id", requireAuth, requirePermission("comunicaciones_sst:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const comunicacion = await storage.getComunicacionSstById(req.params.id, companyId);
@@ -35891,7 +35891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/comunicaciones-sst/mis-comunicaciones - Obtener comunicaciones del usuario autenticado
   app.get("/api/comunicaciones-sst/mis-comunicaciones/list", requireAuth, requirePermission("portal_empleados:access"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -35906,7 +35906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Alias: GET /api/comunicacion-sst/mis-comunicaciones - Portal de empleados
   app.get("/api/comunicacion-sst/mis-comunicaciones", requireAuth, requirePermission("portal_empleados:access"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -35921,7 +35921,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Alias: GET /api/comunicacion-sst/mis-reportes - Portal de empleados reportes
   app.get("/api/comunicacion-sst/mis-reportes", requireAuth, requirePermission("portal_empleados:access"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -35936,7 +35936,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/comunicaciones-sst - Crear y enviar nueva comunicación
   app.post("/api/comunicaciones-sst", requireAuth, requirePermission("comunicaciones_sst:create"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -36000,7 +36000,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/comunicaciones-sst/:id - Actualizar comunicación
   app.patch("/api/comunicaciones-sst/:id", requireAuth, requirePermission("comunicaciones_sst:edit"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -36019,7 +36019,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/comunicaciones-sst/:id - Eliminar comunicación
   app.delete("/api/comunicaciones-sst/:id", requireAuth, requirePermission("comunicaciones_sst:delete"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -36034,7 +36034,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/comunicaciones-sst/:id/pdf - Generar PDF de comunicación SST
   app.get("/api/comunicaciones-sst/:id/pdf", requireAuth, requirePermission("comunicaciones_sst:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
 
       // Get communication
@@ -36279,7 +36279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/lecturas-comunicacion/:comunicacionId - Obtener lecturas de una comunicación
   app.get("/api/lecturas-comunicacion/:comunicacionId", requireAuth, requirePermission("comunicaciones_sst:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const lecturas = await storage.getLecturasComunicacion(req.params.comunicacionId, companyId);
@@ -36293,7 +36293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/lecturas-comunicacion - Registrar lectura de comunicación
   app.post("/api/lecturas-comunicacion", requireAuth, requirePermission("portal_empleados:access"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -36315,7 +36315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/reportes-trabajadores - Obtener reportes de trabajadores
   app.get("/api/reportes-trabajadores", requireAuth, requirePermission("reportes_trabajadores:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const reportes = await storage.getReportesTrabajadores(companyId);
@@ -36335,7 +36335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/reportes-trabajadores/:id - Obtener reporte por ID
   app.get("/api/reportes-trabajadores/:id", requireAuth, requirePermission("reportes_trabajadores:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const reporte = await storage.getReporteTrabajadorById(req.params.id, companyId);
@@ -36356,7 +36356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/reportes-trabajadores/mis-reportes/list - Obtener reportes del usuario autenticado
   app.get("/api/reportes-trabajadores/mis-reportes/list", requireAuth, requirePermission("reportes_trabajadores:create"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -36371,7 +36371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/reportes-trabajadores - Crear nuevo reporte
   app.post("/api/reportes-trabajadores", requireAuth, requirePermission("reportes_trabajadores:create"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
@@ -36418,7 +36418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH /api/reportes-trabajadores/:id - Actualizar reporte
   app.patch("/api/reportes-trabajadores/:id", requireAuth, requirePermission("reportes_trabajadores:manage"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -36437,7 +36437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/reportes-trabajadores/:id/responder - Responder a un reporte
   app.post("/api/reportes-trabajadores/:id/responder", requireAuth, requirePermission("reportes_trabajadores:respond"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -36491,7 +36491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DELETE /api/reportes-trabajadores/:id - Eliminar reporte
   app.delete("/api/reportes-trabajadores/:id", requireAuth, requirePermission("reportes_trabajadores:manage"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -36508,7 +36508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Alias: GET /api/comunicacion-sst/plan - Obtener planes de comunicación
   app.get("/api/comunicacion-sst/plan", requireAuth, requirePermission("comunicacion_plan:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const planes = await storage.getPlanComunicacionSst(companyId);
@@ -36522,7 +36522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Alias: POST /api/comunicacion-sst/plan - Crear nuevo plan de comunicación
   app.post("/api/comunicacion-sst/plan", requireAuth, requirePermission("comunicacion_plan:create"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -36538,7 +36538,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/comunicacion-sst/plan/generar-inteligente - Generar plan inteligente con comunicaciones SST
   app.post("/api/comunicacion-sst/plan/generar-inteligente", requireAuth, requirePermission("comunicacion_plan:create"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -36600,7 +36600,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // Alias: GET /api/comunicacion-sst/comunicaciones - Obtener comunicaciones
   app.get("/api/comunicacion-sst/comunicaciones", requireAuth, requirePermission("comunicaciones_sst:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const comunicaciones = await storage.getComunicacionesSst(companyId);
@@ -36614,7 +36614,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // Alias: POST /api/comunicacion-sst/comunicaciones - Crear y enviar nueva comunicación
   app.post("/api/comunicacion-sst/comunicaciones", requireAuth, requirePermission("comunicaciones_sst:create"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -36639,7 +36639,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/comunicacion-sst/comunicaciones/:id/lectura - Confirmar lectura de comunicación (Portal Empleados)
   app.post("/api/comunicacion-sst/comunicaciones/:id/lectura", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       const workerId = req.user?.workerId;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
@@ -36663,7 +36663,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // Alias: GET /api/comunicacion-sst/reportes - Obtener reportes de trabajadores
   app.get("/api/comunicacion-sst/reportes", requireAuth, requirePermission("reportes_trabajadores:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const reportes = await storage.getReportesTrabajadores(companyId);
@@ -36683,7 +36683,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // Alias: POST /api/comunicacion-sst/reportes - Crear nuevo reporte
   app.post("/api/comunicacion-sst/reportes", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
@@ -36730,7 +36730,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // Alias: GET /api/comunicacion-sst/mis-reportes - Obtener reportes del usuario autenticado
   app.get("/api/comunicacion-sst/mis-reportes", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const userId = req.user?.id;
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
@@ -36747,7 +36747,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/comunicacion-sst/trazabilidad - Obtener todo el historial de auditoría con filtros opcionales
   app.get("/api/comunicacion-sst/trazabilidad", requireAuth, requirePermission("comunicaciones_sst:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       // Extraer query parameters para filtros avanzados
@@ -36778,7 +36778,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/comunicacion-sst/trazabilidad/:entidadId - Obtener historial de una entidad específica
   app.get("/api/comunicacion-sst/trazabilidad/:entidadId", requireAuth, requirePermission("comunicaciones_sst:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const historial = await storage.getHistorialComunicacionSst(req.params.entidadId, companyId);
@@ -36792,7 +36792,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/comunicacion-sst/trazabilidad/tipo/:entidad - Obtener historial filtrado por tipo
   app.get("/api/comunicacion-sst/trazabilidad/tipo/:entidad", requireAuth, requirePermission("comunicaciones_sst:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const historial = await storage.getHistorialComunicacionSstByEntidad(req.params.entidad, companyId);
@@ -38028,7 +38028,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (isAdmin) {
         matrices = await storage.getAllMatricesIperc();
       } else {
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -38051,7 +38051,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (isAdmin) {
         matriz = await storage.getMatrizIpercById(req.params.id);
       } else {
-        const companyId = req.user!.companyId;
+        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -38086,7 +38086,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         }
         companyId = bodyCompanyId;
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
       }
       
       const validatedData = insertMatrizIpercSchema.parse(req.body);
@@ -38113,7 +38113,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         }
         companyId = existingMatriz.companyId;
       } else {
-        const userCompanyId = req.user!.companyId;
+        const userCompanyId = getEffectiveCompanyId(req);
         if (!userCompanyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -38146,7 +38146,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         }
         companyId = existingMatriz.companyId;
       } else {
-        const userCompanyId = req.user!.companyId;
+        const userCompanyId = getEffectiveCompanyId(req);
         if (!userCompanyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -38165,7 +38165,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get('/api/matrices-iperc/:id/pdf', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
-      const isLso = req.user!.role === 'lso' && !req.user!.companyId;
+      const isLso = req.user!.role === 'lso' && !getEffectiveCompanyId(req);
       let companyId: string;
       let matriz: any;
 
@@ -38182,11 +38182,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             eq(schema.licensedProfessionalAssignments.companyId, matriz.companyId),
             eq(schema.licensedProfessionalAssignments.isActive, true)
           ));
-        const hasDirectAccessMat = req.user!.companyId === matriz.companyId;
+        const hasDirectAccessMat = getEffectiveCompanyId(req) === matriz.companyId;
         if (!lsoAssignMat && !hasDirectAccessMat) return res.status(403).send('No tiene asignación activa con esta empresa');
         companyId = matriz.companyId;
       } else {
-        companyId = req.user!.companyId!;
+        companyId = getEffectiveCompanyId(req)!;
         if (!companyId) return res.status(403).send('Esta operación requiere pertenecer a una empresa');
         matriz = await storage.getMatrizIperc(req.params.id, companyId);
         if (!matriz) return res.status(404).send('Matriz IPERC no encontrada');
@@ -38348,7 +38348,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/peligros-iperc - Obtener todos los peligros IPERC de la empresa (para importar en otros módulos)
   app.get('/api/peligros-iperc', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdminUser = hasGlobalAccess(req.user!.role);
       const companyId = isAdminUser
         ? (req.query.companyId as string) || userCompanyId
@@ -38369,7 +38369,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/matrices-iperc/:id/peligros - Obtener peligros de una matriz
   app.get('/api/matrices-iperc/:id/peligros', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      let companyId = req.user!.companyId;
+      let companyId = getEffectiveCompanyId(req);
       
       // Admin access pattern: obtain companyId from parent matriz
       if (!companyId) {
@@ -38391,7 +38391,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/matrices-iperc/:id/peligros - Crear nuevo peligro
   app.post('/api/matrices-iperc/:id/peligros', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      let companyId = req.user!.companyId;
+      let companyId = getEffectiveCompanyId(req);
       
       // Admin access pattern: obtain companyId from parent matriz
       if (!companyId) {
@@ -38418,7 +38418,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/peligros-iperc/:id - Actualizar peligro
   app.patch('/api/peligros-iperc/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38440,7 +38440,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/peligros-iperc/:id - Eliminar peligro
   app.delete('/api/peligros-iperc/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -38456,7 +38456,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/matrices-iperc/:id/estadisticas - Obtener estadísticas de una matriz
   app.get('/api/matrices-iperc/:id/estadisticas', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -39057,7 +39057,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/revisiones-direccion/:revisionId/decisiones - Listar decisiones de una revisión
   app.get('/api/revisiones-direccion/:revisionId/decisiones', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
       
       const decisiones = await storage.getDecisionesRevision(req.params.revisionId, companyId);
@@ -39071,7 +39071,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/revisiones-direccion/:revisionId/decisiones - Crear decisión
   app.post('/api/revisiones-direccion/:revisionId/decisiones', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
       
       const data = { ...req.body, revisionId: req.params.revisionId };
@@ -39086,7 +39086,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PUT /api/decisiones-revision/:id - Actualizar decisión
   app.put('/api/decisiones-revision/:id', requireAuth, requirePermission('sst_management:update'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
       
       const decision = await storage.updateDecisionRevision(req.params.id, req.body, companyId);
@@ -39101,7 +39101,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/decisiones-revision/:id - Eliminar decisión
   app.delete('/api/decisiones-revision/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
       
       await storage.deleteDecisionRevision(req.params.id, companyId);
@@ -39117,7 +39117,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/decisiones-revision/:decisionId/acciones - Listar acciones de una decisión
   app.get('/api/decisiones-revision/:decisionId/acciones', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
       
       const acciones = await storage.getAccionesRevision(req.params.decisionId, companyId);
@@ -39131,7 +39131,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/decisiones-revision/:decisionId/acciones - Crear acción
   app.post('/api/decisiones-revision/:decisionId/acciones', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
       
       const data = { ...req.body, decisionId: req.params.decisionId };
@@ -39146,7 +39146,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PUT /api/acciones-revision/:id - Actualizar acción
   app.put('/api/acciones-revision/:id', requireAuth, requirePermission('sst_management:update'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
       
       const accion = await storage.updateAccionRevision(req.params.id, req.body, companyId);
@@ -39161,7 +39161,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/acciones-revision/:id - Eliminar acción
   app.delete('/api/acciones-revision/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
       
       await storage.deleteAccionRevision(req.params.id, companyId);
@@ -39183,7 +39183,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).send("Los administradores deben especificar una empresa para consultar consentimientos");
       }
       
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -39205,7 +39205,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).send("Los administradores deben especificar una empresa");
       }
       
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -39225,7 +39225,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/workers/:workerId/consents - Obtener consentimientos de un trabajador
   app.get('/api/workers/:workerId/consents', requireAuth, requirePermission('workers:view'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -39241,7 +39241,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/consent-records - Crear nuevo registro de consentimiento
   app.post('/api/consent-records', requireAuth, requirePermission('workers:create'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -39272,7 +39272,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/consent-records/:id - Actualizar registro de consentimiento
   app.patch('/api/consent-records/:id', requireAuth, requirePermission('workers:edit'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -39308,7 +39308,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/consent-records/:id/revoke - Revocar consentimiento (operación especial)
   app.post('/api/consent-records/:id/revoke', requireAuth, requirePermission('workers:edit'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -39343,7 +39343,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/arco-requests - Listar solicitudes ARCO
   app.get('/api/arco-requests', requireAuth, requirePermission('workers:view'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -39364,7 +39364,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/arco-requests/:id - Obtener solicitud ARCO por ID
   app.get('/api/arco-requests/:id', requireAuth, requirePermission('workers:view'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -39384,7 +39384,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/arco-requests - Crear nueva solicitud ARCO
   app.post('/api/arco-requests', requireAuth, requirePermission('workers:create'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -39415,7 +39415,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/arco-requests/:id - Actualizar solicitud ARCO
   app.patch('/api/arco-requests/:id', requireAuth, requirePermission('workers:edit'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -39451,7 +39451,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/arco-requests/:id/assign - Asignar solicitud ARCO a un usuario
   app.post('/api/arco-requests/:id/assign', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -39487,7 +39487,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/arco-requests/:id/escalate - Escalar solicitud ARCO
   app.post('/api/arco-requests/:id/escalate', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -39523,7 +39523,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/arco-requests/:id/complete - Completar/Resolver solicitud ARCO
   app.post('/api/arco-requests/:id/complete', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
@@ -39565,7 +39565,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/sst-documents - List all documents for company (admin sees all)
   app.get("/api/sst-documents", requireAuth, requireAnyPermission(["documents:view", "documents:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -39587,7 +39587,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/sst-documents/expiring - Get documents expiring within N days
   app.get("/api/sst-documents/expiring", requireAuth, requireAnyPermission(["documents:view", "documents:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       if (!userCompanyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -39604,7 +39604,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/sst-documents/:id - Get single document with access logging
   app.get("/api/sst-documents/:id", requireAuth, requireAnyPermission(["documents:view", "documents:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let document;
@@ -39644,7 +39644,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/sst-documents - Create new document with auto-generated code
   app.post("/api/sst-documents", requireAuth, requirePermission("documents:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -39720,7 +39720,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/sst-documents/:id - Update document (creates version when status changes)
   app.patch("/api/sst-documents/:id", requireAuth, requirePermission("documents:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -39777,7 +39777,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/sst-documents/:id - Delete document
   app.delete("/api/sst-documents/:id", requireAuth, requirePermission("documents:delete"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -39803,7 +39803,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/sst-documents/:id/versions - Get version history
   app.get("/api/sst-documents/:id/versions", requireAuth, requireAnyPermission(["documents:view", "documents:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify document exists and user has access
@@ -39832,7 +39832,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/sst-documents/:id/versions - Create new version
   app.post("/api/sst-documents/:id/versions", requireAuth, requirePermission("documents:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify document exists and user has access
@@ -39877,7 +39877,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/sst-documents/:id/access-log - Get access history
   app.get("/api/sst-documents/:id/access-log", requireAuth, requireAnyPermission(["documents:view", "documents:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify document exists and user has access
@@ -39906,7 +39906,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/sst-document-alerts - Get pending alerts for company
   app.get("/api/sst-document-alerts", requireAuth, requireAnyPermission(["documents:view", "documents:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       if (!userCompanyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -39944,7 +39944,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/system-documents - Get all system-generated documents for company
   app.get("/api/system-documents", requireAuth, requireAnyPermission(["documents:view", "documents:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       if (!userCompanyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -39961,7 +39961,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/system-documents/stats - Get statistics of system documents by module
   app.get("/api/system-documents/stats", requireAuth, requireAnyPermission(["documents:view", "documents:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       if (!userCompanyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -39984,7 +39984,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/planes-emergencia - List all (admin: all, user: company-scoped)
   app.get("/api/planes-emergencia", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -40006,7 +40006,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/planes-emergencia/pdf - Informe general de todos los planes de emergencia
   app.get("/api/planes-emergencia/pdf", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       if (!isAdmin && !userCompanyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -40064,7 +40064,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/planes-emergencia/:id - Get by ID (with tenant isolation)
   app.get("/api/planes-emergencia/:id", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let plan;
@@ -40091,7 +40091,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/planes-emergencia/:id/pdf - Download PDF report with full traceability
   app.get("/api/planes-emergencia/:id/pdf", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let plan;
@@ -40125,7 +40125,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/planes-emergencia - Create new plan
   app.post("/api/planes-emergencia", requireAuth, requirePermission("emergency_plans:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -40159,7 +40159,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/planes-emergencia/:id - Update plan
   app.patch("/api/planes-emergencia/:id", requireAuth, requirePermission("emergency_plans:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -40194,7 +40194,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/planes-emergencia/:id - Delete plan
   app.delete("/api/planes-emergencia/:id", requireAuth, requirePermission("emergency_plans:delete"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -40224,7 +40224,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/brigadas-emergencia - List all
   app.get("/api/brigadas-emergencia", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -40251,7 +40251,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/brigadas-emergencia/:id - Get by ID
   app.get("/api/brigadas-emergencia/:id", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let brigada;
@@ -40277,7 +40277,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/brigadas-emergencia - Create brigade
   app.post("/api/brigadas-emergencia", requireAuth, requirePermission("emergency_plans:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -40311,7 +40311,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/brigadas-emergencia/:id - Update brigade
   app.patch("/api/brigadas-emergencia/:id", requireAuth, requirePermission("emergency_plans:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -40346,7 +40346,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/brigadas-emergencia/:id - Delete brigade
   app.delete("/api/brigadas-emergencia/:id", requireAuth, requirePermission("emergency_plans:delete"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -40381,7 +40381,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(400).send("Debe especificar brigadaId");
       }
       
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify the brigade belongs to the user's company (multi-tenant isolation)
@@ -40416,7 +40416,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Miembro de brigada no encontrado");
       }
       
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify the brigade belongs to the user's company (multi-tenant isolation)
@@ -40446,7 +40446,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     try {
       const validatedData = insertMiembroBrigadaSchema.parse(req.body);
       
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify the brigade belongs to the user's company (multi-tenant isolation)
@@ -40480,7 +40480,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Miembro de brigada no encontrado");
       }
       
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify the brigade belongs to the user's company (multi-tenant isolation)
@@ -40515,7 +40515,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Miembro de brigada no encontrado");
       }
       
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify the brigade belongs to the user's company (multi-tenant isolation)
@@ -40548,7 +40548,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/analisis-vulnerabilidad - List all
   app.get("/api/analisis-vulnerabilidad", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -40575,7 +40575,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/analisis-vulnerabilidad/:id - Get by ID
   app.get("/api/analisis-vulnerabilidad/:id", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let analisis;
@@ -40601,7 +40601,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/analisis-vulnerabilidad - Create analysis
   app.post("/api/analisis-vulnerabilidad", requireAuth, requirePermission("emergency_plans:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -40635,7 +40635,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/analisis-vulnerabilidad/:id - Update analysis
   app.patch("/api/analisis-vulnerabilidad/:id", requireAuth, requirePermission("emergency_plans:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -40670,7 +40670,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/analisis-vulnerabilidad/:id - Delete analysis
   app.delete("/api/analisis-vulnerabilidad/:id", requireAuth, requirePermission("emergency_plans:delete"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -40700,7 +40700,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/recursos-emergencia - List all
   app.get("/api/recursos-emergencia", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -40727,7 +40727,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/recursos-emergencia/:id - Get by ID
   app.get("/api/recursos-emergencia/:id", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let recurso;
@@ -40753,7 +40753,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/recursos-emergencia - Create resource
   app.post("/api/recursos-emergencia", requireAuth, requirePermission("emergency_plans:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -40787,7 +40787,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/recursos-emergencia/:id - Update resource
   app.patch("/api/recursos-emergencia/:id", requireAuth, requirePermission("emergency_plans:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -40822,7 +40822,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/recursos-emergencia/:id - Delete resource
   app.delete("/api/recursos-emergencia/:id", requireAuth, requirePermission("emergency_plans:delete"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -40857,7 +40857,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(400).send("Debe especificar recursoId");
       }
       
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify the resource belongs to the user's company (multi-tenant isolation)
@@ -40892,7 +40892,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Inspección de recurso no encontrada");
       }
       
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify the resource belongs to the user's company (multi-tenant isolation)
@@ -40920,7 +40920,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/inspecciones-recursos-emergencia - Create inspection
   app.post("/api/inspecciones-recursos-emergencia", requireAuth, requirePermission("emergency_plans:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Asignar companyId al body antes de validar
@@ -40958,7 +40958,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Inspección de recurso no encontrada");
       }
       
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify the resource belongs to the user's company (multi-tenant isolation)
@@ -40993,7 +40993,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Inspección de recurso no encontrada");
       }
       
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify the resource belongs to the user's company (multi-tenant isolation)
@@ -41026,7 +41026,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/simulacros - List all
   app.get("/api/simulacros", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -41053,7 +41053,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/simulacros/:id - Get by ID
   app.get("/api/simulacros/:id", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let simulacro;
@@ -41079,7 +41079,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/simulacros - Create drill
   app.post("/api/simulacros", requireAuth, requirePermission("emergency_plans:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -41123,7 +41123,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/simulacros/:id - Update drill
   app.patch("/api/simulacros/:id", requireAuth, requirePermission("emergency_plans:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -41158,7 +41158,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/simulacros/:id - Delete drill
   app.delete("/api/simulacros/:id", requireAuth, requirePermission("emergency_plans:delete"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -41193,7 +41193,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(400).send("Debe especificar simulacroId");
       }
       
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify the simulacro belongs to the user's company (multi-tenant isolation)
@@ -41228,7 +41228,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Participante de simulacro no encontrado");
       }
       
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify the simulacro belongs to the user's company (multi-tenant isolation)
@@ -41258,7 +41258,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     try {
       const validatedData = insertParticipanteSimulacroSchema.parse(req.body);
       
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify the simulacro belongs to the user's company (multi-tenant isolation)
@@ -41292,7 +41292,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Participante de simulacro no encontrado");
       }
       
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify the simulacro belongs to the user's company (multi-tenant isolation)
@@ -41327,7 +41327,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Participante de simulacro no encontrado");
       }
       
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       // Verify the simulacro belongs to the user's company (multi-tenant isolation)
@@ -41360,7 +41360,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/zonas-evacuacion - List all
   app.get("/api/zonas-evacuacion", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -41387,7 +41387,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/zonas-evacuacion/:id - Get by ID
   app.get("/api/zonas-evacuacion/:id", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let zona;
@@ -41413,7 +41413,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/zonas-evacuacion - Create zone
   app.post("/api/zonas-evacuacion", requireAuth, requirePermission("emergency_plans:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -41447,7 +41447,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/zonas-evacuacion/:id - Update zone
   app.patch("/api/zonas-evacuacion/:id", requireAuth, requirePermission("emergency_plans:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -41482,7 +41482,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/zonas-evacuacion/:id - Delete zone
   app.delete("/api/zonas-evacuacion/:id", requireAuth, requirePermission("emergency_plans:delete"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -41512,7 +41512,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/rutas-evacuacion - List all
   app.get("/api/rutas-evacuacion", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -41539,7 +41539,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/rutas-evacuacion/:id - Get by ID
   app.get("/api/rutas-evacuacion/:id", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let ruta;
@@ -41565,7 +41565,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/rutas-evacuacion - Create route
   app.post("/api/rutas-evacuacion", requireAuth, requirePermission("emergency_plans:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -41599,7 +41599,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/rutas-evacuacion/:id - Update route
   app.patch("/api/rutas-evacuacion/:id", requireAuth, requirePermission("emergency_plans:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -41634,7 +41634,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/rutas-evacuacion/:id - Delete route
   app.delete("/api/rutas-evacuacion/:id", requireAuth, requirePermission("emergency_plans:delete"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -41664,7 +41664,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/puntos-encuentro - List all
   app.get("/api/puntos-encuentro", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -41691,7 +41691,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/puntos-encuentro/:id - Get by ID
   app.get("/api/puntos-encuentro/:id", requireAuth, requireAnyPermission(["emergency_plans:view", "emergency_plans:view_self"]), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let punto;
@@ -41717,7 +41717,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/puntos-encuentro - Create point
   app.post("/api/puntos-encuentro", requireAuth, requirePermission("emergency_plans:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -41751,7 +41751,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/puntos-encuentro/:id - Update point
   app.patch("/api/puntos-encuentro/:id", requireAuth, requirePermission("emergency_plans:edit"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -41786,7 +41786,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/puntos-encuentro/:id - Delete point
   app.delete("/api/puntos-encuentro/:id", requireAuth, requirePermission("emergency_plans:delete"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       if (isAdmin) {
@@ -41861,7 +41861,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get("/api/provider-access-logs/company/:companyId", requireAuth, async (req, res) => {
     try {
       const { companyId } = req.params;
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const userRole = req.user!.role;
 
       // Superadmin can see any company, others only their own company
@@ -41887,7 +41887,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
 
       // Superadmin can see any log, others only for their company
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const userRole = req.user!.role;
       
       if (!hasGlobalAccess(userRole) && userCompanyId !== log.clientCompanyId) {
@@ -43539,7 +43539,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get("/api/support-tickets", requireAuth, async (req, res) => {
     try {
       const userRole = String(req.user!.role || '');
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const userId = req.user!.id;
       
       const isSupportRole = userRole === 'superadmin' || userRole === 'soporte';
@@ -43603,7 +43603,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
 
       // Check permissions: superadmin/soporte can see all, LSOs see own tickets, others see company tickets
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const userRole = req.user!.role;
       const userId = req.user!.id;
       
@@ -45520,7 +45520,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     const headerCompanyId = req.headers['x-company-id'] as string;
     if (headerCompanyId) return headerCompanyId;
     // Fall back to user's company
-    return req.user?.companyId || null;
+    return getEffectiveCompanyId(req) || null;
   }
 
   // Convivencia Períodos
@@ -45552,7 +45552,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/convivencia-periodos/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -45588,7 +45588,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.patch("/api/convivencia-periodos/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -46800,7 +46800,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/promotion-prevention/activities - List all activities for company
   app.get("/api/promotion-prevention/activities", requireAuth, requirePermission("workers:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       const activities = await storage.getPromotionPreventionActivities(companyId);
       res.json(activities);
@@ -46812,7 +46812,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/promotion-prevention/activities - Create new activity
   app.post("/api/promotion-prevention/activities", requireAuth, requirePermission("workers:create"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validation = insertPromotionPreventionActivitySchema.safeParse({
@@ -46835,7 +46835,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/promotion-prevention/activities/:id - Get specific activity
   app.get("/api/promotion-prevention/activities/:id", requireAuth, requirePermission("workers:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const activity = await storage.getPromotionPreventionActivity(req.params.id, companyId);
@@ -46850,7 +46850,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/promotion-prevention/activities/:id - Update activity
   app.patch("/api/promotion-prevention/activities/:id", requireAuth, requirePermission("workers:create"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const validation = insertPromotionPreventionActivitySchema.partial().safeParse(req.body);
@@ -46870,7 +46870,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/promotion-prevention/activities/:id - Delete activity
   app.delete("/api/promotion-prevention/activities/:id", requireAuth, requirePermission("workers:create"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const deleted = await storage.deletePromotionPreventionActivity(req.params.id, companyId);
@@ -46885,7 +46885,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/promotion-prevention/activities/:id/participants - Get activity participants
   app.get("/api/promotion-prevention/activities/:id/participants", requireAuth, requirePermission("workers:view"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       // Verify activity exists and belongs to company
@@ -46902,7 +46902,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/promotion-prevention/activities/:id/participants - Add participant
   app.post("/api/promotion-prevention/activities/:id/participants", requireAuth, requirePermission("workers:create"), async (req, res) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       // Verify activity exists and belongs to company
@@ -46958,7 +46958,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get("/api/reportes/promocion-prevencion/pdf", requireAuth, requirePermission("workers:view"), async (req, res) => {
     try {
       console.log('[PDF] Starting promocion-prevencion PDF generation');
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
 
       const company = await storage.getCompany(companyId);
@@ -47295,7 +47295,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // EVS Programs
   app.get("/api/evs/programs", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const programs = await storage.getEvsPrograms(companyId);
     res.json(programs);
@@ -47303,7 +47303,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/evs/programs/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
       const company = await storage.getCompany(companyId);
       if (!company) return res.status(404).send("Empresa no encontrada");
@@ -47333,7 +47333,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
   app.get("/api/evs/programs/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const program = await storage.getEvsProgram(req.params.id, companyId);
     if (!program) return res.status(404).json({ message: "Program not found" });
@@ -47341,7 +47341,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.post("/api/evs/programs", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     try {
       const data = insertEvsProgramSchema.parse({ ...req.body, companyId, createdBy: req.user!.id });
@@ -47353,7 +47353,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.patch("/api/evs/programs/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const program = await storage.updateEvsProgram(req.params.id, companyId, { ...req.body, updatedAt: new Date() });
     if (!program) return res.status(404).json({ message: "Program not found" });
@@ -47361,7 +47361,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.delete("/api/evs/programs/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const deleted = await storage.deleteEvsProgram(req.params.id, companyId);
     if (!deleted) return res.status(404).json({ message: "Program not found" });
@@ -47370,14 +47370,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // EVS Activities
   app.get("/api/evs/activities", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const activities = await storage.getEvsActivities(companyId);
     res.json(activities);
   });
 
   app.get("/api/evs/activities/program/:programId", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const activities = await storage.getEvsActivitiesByProgram(req.params.programId, companyId);
     res.json(activities);
@@ -47385,7 +47385,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/evs/activities/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
       const company = await storage.getCompany(companyId);
       if (!company) return res.status(404).send("Empresa no encontrada");
@@ -47415,7 +47415,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
   app.get("/api/evs/activities/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const activity = await storage.getEvsActivity(req.params.id, companyId);
     if (!activity) return res.status(404).json({ message: "Activity not found" });
@@ -47423,7 +47423,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.post("/api/evs/activities", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     try {
       const data = insertEvsActivitySchema.parse({ ...req.body, companyId, createdBy: req.user!.id });
@@ -47435,7 +47435,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.patch("/api/evs/activities/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const activity = await storage.updateEvsActivity(req.params.id, companyId, { ...req.body, updatedAt: new Date() });
     if (!activity) return res.status(404).json({ message: "Activity not found" });
@@ -47443,7 +47443,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.delete("/api/evs/activities/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const deleted = await storage.deleteEvsActivity(req.params.id, companyId);
     if (!deleted) return res.status(404).json({ message: "Activity not found" });
@@ -47452,7 +47452,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // EVS Controls
   app.get("/api/evs/controls", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const controls = await storage.getEvsControls(companyId);
     res.json(controls);
@@ -47460,7 +47460,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/evs/controls/worker/:workerId", requireAuth, async (req, res) => {
 
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const controls = await storage.getEvsControlsByWorker(req.params.workerId, companyId);
     res.json(controls);
@@ -47468,7 +47468,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/evs/controls/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
       const company = await storage.getCompany(companyId);
       if (!company) return res.status(404).send("Empresa no encontrada");
@@ -47500,7 +47500,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
   app.get("/api/evs/controls/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const control = await storage.getEvsControl(req.params.id, companyId);
     if (!control) return res.status(404).json({ message: "Control not found" });
@@ -47508,7 +47508,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.post("/api/evs/controls", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     try {
       const data = insertEvsControlSchema.parse({ ...req.body, companyId, createdBy: req.user!.id });
@@ -47521,7 +47521,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.patch("/api/evs/controls/:id", requireAuth, async (req, res) => {
 
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const control = await storage.updateEvsControl(req.params.id, companyId, { ...req.body, updatedAt: new Date() });
     if (!control) return res.status(404).json({ message: "Control not found" });
@@ -47529,7 +47529,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.delete("/api/evs/controls/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const deleted = await storage.deleteEvsControl(req.params.id, companyId);
     if (!deleted) return res.status(404).json({ message: "Control not found" });
@@ -47538,7 +47538,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // EVS Incidents
   app.get("/api/evs/incidents", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const incidents = await storage.getEvsIncidents(companyId);
     res.json(incidents);
@@ -47546,7 +47546,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/evs/incidents/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
       const company = await storage.getCompany(companyId);
       if (!company) return res.status(404).send("Empresa no encontrada");
@@ -47578,7 +47578,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
   app.get("/api/evs/incidents/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const incident = await storage.getEvsIncident(req.params.id, companyId);
 
@@ -47587,7 +47587,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.post("/api/evs/incidents", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     try {
       const data = insertEvsIncidentSchema.parse({ ...req.body, companyId, createdBy: req.user!.id });
@@ -47599,7 +47599,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.patch("/api/evs/incidents/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const incident = await storage.updateEvsIncident(req.params.id, companyId, { ...req.body, updatedAt: new Date() });
 
@@ -47608,7 +47608,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.delete("/api/evs/incidents/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const deleted = await storage.deleteEvsIncident(req.params.id, companyId);
     if (!deleted) return res.status(404).json({ message: "Incident not found" });
@@ -47617,14 +47617,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // EVS Followups
   app.get("/api/evs/followups", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const followups = await storage.getEvsFollowups(companyId);
     res.json(followups);
   });
 
   app.get("/api/evs/followups/worker/:workerId", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const followups = await storage.getEvsFollowupsByWorker(req.params.workerId, companyId);
     res.json(followups);
@@ -47633,7 +47633,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PDF listado general de seguimientos EVS - Formato Estandarizado
   app.get("/api/evs/followups/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
       const company = await storage.getCompany(companyId);
       if (!company) return res.status(404).send("Empresa no encontrada");
@@ -47788,7 +47788,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PDF individual de un seguimiento EVS - Formato Estandarizado
   app.get("/api/evs/followups/:id/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
       const company = await storage.getCompany(companyId);
       if (!company) return res.status(404).send("Empresa no encontrada");
@@ -47941,7 +47941,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
   app.get("/api/evs/followups/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const followup = await storage.getEvsFollowup(req.params.id, companyId);
     if (!followup) return res.status(404).json({ message: "Followup not found" });
@@ -47949,7 +47949,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.post("/api/evs/followups", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     try {
       const data = insertEvsFollowupSchema.parse({ ...req.body, companyId, createdBy: req.user!.id });
@@ -47961,7 +47961,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.patch("/api/evs/followups/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const followup = await storage.updateEvsFollowup(req.params.id, companyId, { ...req.body, updatedAt: new Date() });
     if (!followup) return res.status(404).json({ message: "Followup not found" });
@@ -47969,7 +47969,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.delete("/api/evs/followups/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const deleted = await storage.deleteEvsFollowup(req.params.id, companyId);
     if (!deleted) return res.status(404).json({ message: "Followup not found" });
@@ -47978,14 +47978,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // EVS Participants (filtered by activityId)
   app.get("/api/evs/participants/activity/:activityId", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const participants = await storage.getEvsParticipants(req.params.activityId);
     res.json(participants);
   });
 
   app.get("/api/evs/participants/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const participant = await storage.getEvsParticipant(req.params.id);
     if (!participant) return res.status(404).json({ message: "Participant not found" });
@@ -47993,7 +47993,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.post("/api/evs/participants", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     try {
       const data = insertEvsParticipantSchema.parse({ ...req.body, createdBy: req.user!.id });
@@ -48044,7 +48044,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.patch("/api/evs/participants/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const participant = await storage.updateEvsParticipant(req.params.id, { ...req.body, updatedAt: new Date() });
     if (!participant) return res.status(404).json({ message: "Participant not found" });
@@ -48052,7 +48052,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   app.delete("/api/evs/participants/:id", requireAuth, async (req, res) => {
-    const companyId = req.user!.companyId;
+    const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     const deleted = await storage.deleteEvsParticipant(req.params.id);
     if (!deleted) return res.status(404).json({ message: "Participant not found" });
@@ -48067,7 +48067,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/legal-docs/protecciones-legales/pdf - Complete legal protections table
   app.get("/api/legal-docs/protecciones-legales/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
       const company = await storage.getCompany(companyId);
       if (!company) return res.status(404).send("Empresa no encontrada");
@@ -48094,7 +48094,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/legal-docs/proteccion-datos/pdf - Data protection summary
   app.get("/api/legal-docs/proteccion-datos/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
       const company = await storage.getCompany(companyId);
       if (!company) return res.status(404).send("Empresa no encontrada");
@@ -48124,7 +48124,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/legal-docs/medidas-seguridad/pdf - Security measures documentation
   app.get("/api/legal-docs/medidas-seguridad/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
       const company = await storage.getCompany(companyId);
       if (!company) return res.status(404).send("Empresa no encontrada");
@@ -48675,7 +48675,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get("/api/partes-interesadas", requireAuth, async (req, res) => {
     try {
       const result = await db.select().from(partesInteresadas)
-        .where(eq(partesInteresadas.companyId, req.user!.companyId!))
+        .where(eq(partesInteresadas.companyId, getEffectiveCompanyId(req)!))
         .orderBy(desc(partesInteresadas.createdAt));
       res.json(result);
     } catch (error: any) {
@@ -48689,7 +48689,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const [result] = await db.insert(partesInteresadas)
         .values({
           ...req.body,
-          companyId: req.user!.companyId!,
+          companyId: getEffectiveCompanyId(req)!,
         })
         .returning();
       res.json(result);
@@ -48706,7 +48706,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         .set({ ...req.body, updatedAt: new Date() })
         .where(and(
           eq(partesInteresadas.id, id),
-          eq(partesInteresadas.companyId, req.user!.companyId!)
+          eq(partesInteresadas.companyId, getEffectiveCompanyId(req)!)
         ))
         .returning();
       if (!result) return res.status(404).send("Parte interesada no encontrada");
@@ -48723,7 +48723,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const [result] = await db.delete(partesInteresadas)
         .where(and(
           eq(partesInteresadas.id, id),
-          eq(partesInteresadas.companyId, req.user!.companyId!)
+          eq(partesInteresadas.companyId, getEffectiveCompanyId(req)!)
         ))
         .returning();
       if (!result) return res.status(404).send("Parte interesada no encontrada");
@@ -48740,7 +48740,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get("/api/analisis-contexto", requireAuth, async (req, res) => {
     try {
       const result = await db.select().from(analisisContexto)
-        .where(eq(analisisContexto.companyId, req.user!.companyId!))
+        .where(eq(analisisContexto.companyId, getEffectiveCompanyId(req)!))
         .orderBy(desc(analisisContexto.createdAt));
       res.json(result);
     } catch (error: any) {
@@ -48755,7 +48755,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const [analisis] = await db.select().from(analisisContexto)
         .where(and(
           eq(analisisContexto.id, id),
-          eq(analisisContexto.companyId, req.user!.companyId!)
+          eq(analisisContexto.companyId, getEffectiveCompanyId(req)!)
         ));
       if (!analisis) return res.status(404).send("Análisis no encontrado");
       
@@ -48775,7 +48775,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const [result] = await db.insert(analisisContexto)
         .values({
           ...req.body,
-          companyId: req.user!.companyId!,
+          companyId: getEffectiveCompanyId(req)!,
         })
         .returning();
       res.json(result);
@@ -48792,7 +48792,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         .set({ ...req.body, updatedAt: new Date() })
         .where(and(
           eq(analisisContexto.id, id),
-          eq(analisisContexto.companyId, req.user!.companyId!)
+          eq(analisisContexto.companyId, getEffectiveCompanyId(req)!)
         ))
         .returning();
       if (!result) return res.status(404).send("Análisis no encontrado");
@@ -48809,7 +48809,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const [result] = await db.delete(analisisContexto)
         .where(and(
           eq(analisisContexto.id, id),
-          eq(analisisContexto.companyId, req.user!.companyId!)
+          eq(analisisContexto.companyId, getEffectiveCompanyId(req)!)
         ))
         .returning();
       if (!result) return res.status(404).send("Análisis no encontrado");
@@ -49560,7 +49560,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           if (!lsoChk5) return res.status(403).send("No tienes acceso a esta empresa");
         }
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -49594,7 +49594,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       // Verificar acceso a la empresa
       if (!isAdmin) {
-        if (req.user!.companyId !== evaluacion.companyId) {
+        if (getEffectiveCompanyId(req) !== evaluacion.companyId) {
           return res.status(403).send("No tienes acceso a esta evaluación");
         }
       } else if (userRole === 'lso') {
@@ -49629,7 +49629,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           if (!lsoChk7) return res.status(403).send("No tienes acceso a esta empresa");
         }
       } else {
-        companyId = req.user!.companyId || "";
+        companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
@@ -49688,7 +49688,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       if (!isAdmin) {
-        if (req.user!.companyId !== existing.companyId) {
+        if (getEffectiveCompanyId(req) !== existing.companyId) {
           return res.status(403).send("No tienes acceso a esta evaluación");
         }
       } else if (userRole === 'lso') {
@@ -49731,7 +49731,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
 
       // Admins solo pueden borrar evaluaciones de su propia empresa
-      if (userRole !== 'superadmin' && req.user!.companyId !== existing.companyId) {
+      if (userRole !== 'superadmin' && getEffectiveCompanyId(req) !== existing.companyId) {
         return res.status(403).send("Solo puedes eliminar evaluaciones de tu propia empresa");
       }
       
@@ -49778,7 +49778,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       if (!isAdmin) {
-        if (req.user!.companyId !== evaluacion.companyId) {
+        if (getEffectiveCompanyId(req) !== evaluacion.companyId) {
           return res.status(403).send("No tienes acceso a esta evaluación");
         }
       } else if (userRole === 'lso') {
@@ -49813,7 +49813,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       if (!isAdmin) {
-        if (req.user!.companyId !== evaluacion.companyId) {
+        if (getEffectiveCompanyId(req) !== evaluacion.companyId) {
           return res.status(403).send("No tienes acceso a esta evaluación");
         }
       } else if (userRole === 'lso') {
@@ -49923,7 +49923,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       if (!isAdmin) {
-        if (req.user!.companyId !== evaluacion.companyId) {
+        if (getEffectiveCompanyId(req) !== evaluacion.companyId) {
           return res.status(403).send("No tienes acceso a esta evaluación");
         }
       } else if (userRole === 'lso') {
@@ -49959,7 +49959,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       if (!isAdmin) {
-        if (req.user!.companyId !== evaluacion.companyId) {
+        if (getEffectiveCompanyId(req) !== evaluacion.companyId) {
           return res.status(403).send("No tienes acceso a esta evaluación");
         }
       } else if (userRole === 'lso') {
@@ -49999,7 +49999,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       if (!isAdmin) {
-        if (req.user!.companyId !== evaluacion.companyId) {
+        if (getEffectiveCompanyId(req) !== evaluacion.companyId) {
           return res.status(403).send("No tienes acceso a esta evaluación");
         }
       } else if (userRole === 'lso') {
@@ -50095,7 +50095,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       const [evaluacion] = await db.select().from(evaluacionesPesv).where(eq(evaluacionesPesv.id, req.params.id));
       if (!evaluacion) return res.status(404).json({ error: "Evaluación PESV no encontrada" });
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) return res.status(403).json({ error: "Sin acceso" });
+      if (!isAdmin && getEffectiveCompanyId(req) !== evaluacion.companyId) return res.status(403).json({ error: "Sin acceso" });
 
       const companyId = evaluacion.companyId;
 
@@ -50179,7 +50179,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).send("Evaluación PESV padre no encontrada");
       }
       
-      if (!isAdmin && req.user!.companyId !== evaluacionPadre.companyId) {
+      if (!isAdmin && getEffectiveCompanyId(req) !== evaluacionPadre.companyId) {
         return res.status(403).send("No tienes acceso a esta evaluación");
       }
       
@@ -50329,10 +50329,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         }
         companyId = evaluacionAdmin.companyId;
       } else {
-        if (!req.user!.companyId) {
+        if (!getEffectiveCompanyId(req)) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
-        companyId = req.user!.companyId;
+        companyId = getEffectiveCompanyId(req);
       }
 
       // Validar contexto
@@ -50673,8 +50673,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         evaluacion = ev;
         companyId = ev.companyId;
       } else {
-        if (!req.user!.companyId) return res.status(403).json({ message: 'Esta operación requiere pertenecer a una empresa' });
-        companyId = req.user!.companyId;
+        if (!getEffectiveCompanyId(req)) return res.status(403).json({ message: 'Esta operación requiere pertenecer a una empresa' });
+        companyId = getEffectiveCompanyId(req);
         const [ev] = await db.select().from(schema.evaluacionesPesv)
           .where(and(eq(schema.evaluacionesPesv.id, req.params.id), eq(schema.evaluacionesPesv.companyId, companyId))).limit(1);
         if (!ev) return res.status(404).json({ message: 'Evaluación PESV no encontrada' });
@@ -50950,7 +50950,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
 
       // Verify user has access to the company
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+      if (!isAdmin && getEffectiveCompanyId(req) !== evaluacion.companyId) {
         return res.status(403).send('No tienes acceso a esta evaluación');
       }
 
@@ -50979,7 +50979,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
 
       // Verify user has access to the company
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+      if (!isAdmin && getEffectiveCompanyId(req) !== evaluacion.companyId) {
         return res.status(403).send('No tienes acceso a esta evaluación');
       }
 
@@ -51008,7 +51008,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
 
       // Verify user has access to the company
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+      if (!isAdmin && getEffectiveCompanyId(req) !== evaluacion.companyId) {
         return res.status(403).send('No tienes acceso a esta evaluación');
       }
 
@@ -51037,7 +51037,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
 
       // Verify user has access to the company
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+      if (!isAdmin && getEffectiveCompanyId(req) !== evaluacion.companyId) {
         return res.status(403).send('No tienes acceso a esta evaluación');
       }
 
@@ -51070,7 +51070,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
 
       // Verify user has access to the company
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+      if (!isAdmin && getEffectiveCompanyId(req) !== evaluacion.companyId) {
         return res.status(403).send('No tienes acceso a esta evaluación');
       }
 
@@ -51103,7 +51103,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
 
       // Verify user has access to the company
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) {
+      if (!isAdmin && getEffectiveCompanyId(req) !== evaluacion.companyId) {
         return res.status(403).send('No tienes acceso a esta evaluación');
       }
 
@@ -51127,7 +51127,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       const [evaluacion] = await db.select().from(evaluacionesPesv).where(eq(evaluacionesPesv.id, evaluacionId)).limit(1);
       if (!evaluacion) return res.status(404).send('Evaluación PESV no encontrada');
-      if (!isAdmin && req.user!.companyId !== evaluacion.companyId) return res.status(403).send('Sin permiso');
+      if (!isAdmin && getEffectiveCompanyId(req) !== evaluacion.companyId) return res.status(403).send('Sin permiso');
 
       const [training] = await db.select().from(roadSafetyTrainings).where(and(eq(roadSafetyTrainings.id, id), eq(roadSafetyTrainings.companyId, evaluacion.companyId))).limit(1);
       if (!training) return res.status(404).send('Capacitación no encontrada');
@@ -52911,7 +52911,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // Calculate and apply progress to the objective
   app.post("/api/objetivos-estandares-vinculacion/aplicar-avance/:objetivoId/:evaluacionId", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(400).json({ error: "Se requiere companyId" });
       }
@@ -52943,7 +52943,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/pesv/comite/integrantes - Get all committee members
   app.get("/api/pesv/comite/integrantes", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(400).json({ error: "Se requiere companyId" });
       }
@@ -52958,7 +52958,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/pesv/comite/integrantes - Create new committee member
   app.post("/api/pesv/comite/integrantes", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(400).json({ error: "Se requiere companyId" });
       }
@@ -52974,7 +52974,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/pesv/comite/integrantes/:id - Update committee member
   app.patch("/api/pesv/comite/integrantes/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(400).json({ error: "Se requiere companyId" });
       }
@@ -52993,7 +52993,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/pesv/comite/integrantes/:id - Delete committee member
   app.delete("/api/pesv/comite/integrantes/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(400).json({ error: "Se requiere companyId" });
       }
@@ -53008,7 +53008,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/pesv/comite/actas - Get all committee meeting minutes
   app.get("/api/pesv/comite/actas", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(400).json({ error: "Se requiere companyId" });
       }
@@ -53023,7 +53023,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/pesv/comite/actas - Create new meeting minutes
   app.post("/api/pesv/comite/actas", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(400).json({ error: "Se requiere companyId" });
       }
@@ -53039,7 +53039,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/pesv/comite/actas/:id - Update meeting minutes
   app.patch("/api/pesv/comite/actas/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(400).json({ error: "Se requiere companyId" });
       }
@@ -53058,7 +53058,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/pesv/comite/actas/:id - Delete meeting minutes
   app.delete("/api/pesv/comite/actas/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(400).json({ error: "Se requiere companyId" });
       }
@@ -53075,7 +53075,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/pesv/comite/actos-administrativos", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
       const result = await db.select().from(actosAdministrativosPesv)
         .where(eq(actosAdministrativosPesv.companyId, companyId))
@@ -53089,7 +53089,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.post("/api/pesv/comite/actos-administrativos", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
       const [result] = await db.insert(actosAdministrativosPesv)
         .values({ ...req.body, companyId })
@@ -53103,7 +53103,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.patch("/api/pesv/comite/actos-administrativos/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
       const [result] = await db.update(actosAdministrativosPesv)
         .set({ ...req.body, updatedAt: new Date() })
@@ -53119,7 +53119,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.delete("/api/pesv/comite/actos-administrativos/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
       await db.delete(actosAdministrativosPesv)
         .where(and(eq(actosAdministrativosPesv.id, req.params.id), eq(actosAdministrativosPesv.companyId, companyId)));
@@ -53134,7 +53134,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/pesv/comite/cronograma", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
       const anio = req.query.anio ? parseInt(req.query.anio as string) : new Date().getFullYear();
       const result = await db.select().from(cronogramaReunionesPesv)
@@ -53149,7 +53149,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.post("/api/pesv/comite/cronograma", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
       const [result] = await db.insert(cronogramaReunionesPesv)
         .values({ ...req.body, companyId })
@@ -53163,7 +53163,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.post("/api/pesv/comite/cronograma/generar", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
       const { anio, frecuencia, temaPrincipal } = req.body;
       if (!anio || !frecuencia) return res.status(400).json({ error: "Se requieren anio y frecuencia" });
@@ -53209,7 +53209,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.patch("/api/pesv/comite/cronograma/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
       const [result] = await db.update(cronogramaReunionesPesv)
         .set({ ...req.body, updatedAt: new Date() })
@@ -53225,7 +53225,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.delete("/api/pesv/comite/cronograma/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
       await db.delete(cronogramaReunionesPesv)
         .where(and(eq(cronogramaReunionesPesv.id, req.params.id), eq(cronogramaReunionesPesv.companyId, companyId)));
@@ -53238,7 +53238,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.delete("/api/pesv/comite/cronograma/anio/:anio", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
       const anio = parseInt(req.params.anio);
       await db.delete(cronogramaReunionesPesv)
@@ -53254,7 +53254,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/pesv/comite/verificacion-p01", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
 
       const integrantes = await db.select().from(comiteIntegrantesPesv)
@@ -53312,7 +53312,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/vehicle-maintenances - List all vehicle maintenances
   app.get("/api/vehicle-maintenances", requirePermission("vehicles:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -53349,7 +53349,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/vehicle-maintenances - Create a new vehicle maintenance
   app.post("/api/vehicle-maintenances", requirePermission("vehicles:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -53401,7 +53401,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/vehicle-gps-tracking - List all GPS tracking records
   app.get("/api/vehicle-gps-tracking", requirePermission("vehicles:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -53472,7 +53472,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/vehicle-gps-tracking - Create a new GPS tracking record
   app.post("/api/vehicle-gps-tracking", requirePermission("vehicles:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -53826,7 +53826,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/sst-speed-alerts", requirePermission("vehicles:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const companyId = isAdmin && req.query.companyId ? String(req.query.companyId) : userCompanyId;
       
@@ -53849,7 +53849,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).json({ error: "Alerta no encontrada" });
       }
       const isAdmin = hasGlobalAccess(req.user!.role);
-      if (!isAdmin && alert.companyId !== req.user!.companyId) {
+      if (!isAdmin && alert.companyId !== getEffectiveCompanyId(req)) {
         return res.status(403).json({ error: "No tiene permiso para ver esta alerta" });
       }
       res.json(alert);
@@ -53865,7 +53865,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(404).json({ error: "Alerta no encontrada" });
       }
       const isAdmin = hasGlobalAccess(req.user!.role);
-      if (!isAdmin && alert.companyId !== req.user!.companyId) {
+      if (!isAdmin && alert.companyId !== getEffectiveCompanyId(req)) {
         return res.status(403).json({ error: "No tiene permiso para modificar esta alerta" });
       }
 
@@ -53923,7 +53923,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/safe-routes - List all safe routes
   app.get("/api/safe-routes", requirePermission("vehicles:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -53960,7 +53960,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/safe-routes - Create a new safe route
   app.post("/api/safe-routes", requirePermission("vehicles:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
       let companyId: string;
@@ -54021,7 +54021,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/pesv/fatiga-registros", requirePermission("vehicles:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : userCompanyId;
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
@@ -54038,7 +54038,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/pesv/evaluacion/:evaluacionId/fatiga-registros", requirePermission("vehicles:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : userCompanyId;
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
@@ -54056,7 +54056,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.post("/api/pesv/fatiga-registros", requirePermission("vehicles:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const companyId = (isAdmin && req.body.companyId) ? req.body.companyId : userCompanyId;
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
@@ -54079,7 +54079,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.post("/api/pesv/evaluacion/:evaluacionId/fatiga-registros", requirePermission("vehicles:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const companyId = (isAdmin && req.body.companyId) ? req.body.companyId : userCompanyId;
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
@@ -54141,7 +54141,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/pesv/alcohol-registros", requirePermission("vehicles:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : userCompanyId;
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
@@ -54158,7 +54158,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/pesv/evaluacion/:evaluacionId/alcohol-registros", requirePermission("vehicles:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : userCompanyId;
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
@@ -54176,7 +54176,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.post("/api/pesv/alcohol-registros", requirePermission("vehicles:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const companyId = (isAdmin && req.body.companyId) ? req.body.companyId : userCompanyId;
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
@@ -54199,7 +54199,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.post("/api/pesv/evaluacion/:evaluacionId/alcohol-registros", requirePermission("vehicles:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const companyId = (isAdmin && req.body.companyId) ? req.body.companyId : userCompanyId;
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
@@ -54477,7 +54477,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       if (!isAdmin) {
-        if (req.user!.companyId !== evaluacion.companyId) {
+        if (getEffectiveCompanyId(req) !== evaluacion.companyId) {
           return res.status(403).send("No tienes acceso a esta evaluación");
         }
       } else if (userRole === 'lso') {
@@ -54531,7 +54531,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       if (!isAdmin) {
-        if (req.user!.companyId !== evaluacion.companyId) {
+        if (getEffectiveCompanyId(req) !== evaluacion.companyId) {
           return res.status(403).send("No tienes acceso a esta evaluación");
         }
       } else if (userRole === 'lso') {
@@ -54566,7 +54566,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       if (!isAdmin) {
-        if (req.user!.companyId !== evaluacion.companyId) {
+        if (getEffectiveCompanyId(req) !== evaluacion.companyId) {
           return res.status(403).send("No tienes acceso a esta evaluación");
         }
       } else if (userRole === 'lso') {
@@ -54608,7 +54608,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       if (!isAdmin) {
-        if (req.user!.companyId !== evaluacion.companyId) {
+        if (getEffectiveCompanyId(req) !== evaluacion.companyId) {
           return res.status(403).send("No tienes acceso a esta evaluación");
         }
       } else if (userRole === 'lso') {
@@ -54795,7 +54795,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // ── PDF Organigrama SG-SST ─────────────────────────────────────────────────
   app.get("/api/organigrama-sst/pdf", requireAuth, requirePermission("sst_management:view"), async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
@@ -54818,7 +54818,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/pesv/encuestas-conductor", requirePermission("vehicles:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : userCompanyId;
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
@@ -54835,7 +54835,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.get("/api/pesv/evaluacion/:evaluacionId/encuestas-conductor", requirePermission("vehicles:view"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : userCompanyId;
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
@@ -54853,7 +54853,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.post("/api/pesv/encuestas-conductor", requirePermission("vehicles:create"), async (req, res) => {
     try {
-      const userCompanyId = req.user!.companyId;
+      const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       const companyId = (isAdmin && req.body.companyId) ? req.body.companyId : userCompanyId;
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });

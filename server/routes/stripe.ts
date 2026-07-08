@@ -15,6 +15,17 @@ import {
  * Notifica a la landing page (sst-colombia.com.co) cuando un cupón es redimido
  * Implementa: SST-COLOMBIA-AGENT-INSTRUCTIONS2 - Sección 3
  */
+function getEffectiveCompanyId(req: any): string | null {
+  const globalRoles = ['superadmin', 'lso', 'lso_externo'];
+  if (globalRoles.includes(req.user?.role)) {
+    const headerCompanyId = req.headers['x-company-id'] as string | undefined;
+    const queryCompanyId = req.query?.companyId as string | undefined;
+    if (headerCompanyId) return headerCompanyId;
+    if (queryCompanyId) return queryCompanyId;
+  }
+  return req.user?.companyId || null;
+}
+
 async function notifyCouponRedeemed(couponCode: string, companyId: string): Promise<void> {
   const webhookUrl = process.env.LANDING_PAGE_WEBHOOK_URL || 'https://sst-colombia.com.co/api/webhooks/coupon-redeemed';
   const webhookSecret = process.env.LANDING_PAGE_API_KEY;
@@ -345,7 +356,7 @@ export function registerStripeRoutes(app: Express) {
 
   app.get("/api/stripe/subscription", billingRateLimiter, requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
 
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
@@ -384,7 +395,7 @@ export function registerStripeRoutes(app: Express) {
 
       const validatedData = cancelSchema.parse(req.body);
 
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
 
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
@@ -437,7 +448,7 @@ export function registerStripeRoutes(app: Express) {
 
   app.get("/api/stripe/invoices", billingRateLimiter, requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
 
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
@@ -560,7 +571,7 @@ export function registerStripeRoutes(app: Express) {
   // Endpoint para obtener asientos extra por empresa
   app.get("/api/company-extra-seats", requireAuth, async (req, res) => {
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }

@@ -29,6 +29,17 @@ import {
 } from "../services/wompi";
 
 // Referencia PSE — formato: sst-pse-{subscriptionId}-{timestamp}
+function getEffectiveCompanyId(req: any): string | null {
+  const globalRoles = ['superadmin', 'lso', 'lso_externo'];
+  if (globalRoles.includes(req.user?.role)) {
+    const headerCompanyId = req.headers['x-company-id'] as string | undefined;
+    const queryCompanyId = req.query?.companyId as string | undefined;
+    if (headerCompanyId) return headerCompanyId;
+    if (queryCompanyId) return queryCompanyId;
+  }
+  return req.user?.companyId || null;
+}
+
 function buildReference(subscriptionId: string): string {
   return `sst-pse-${subscriptionId}-${Date.now()}`;
 }
@@ -167,7 +178,7 @@ export function registerWompiRoutes(app: Express) {
     const { bankCode, userType, idType, idNumber, email, fullName } = parsed.data;
 
     try {
-      const companyId = req.user!.companyId;
+      const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }

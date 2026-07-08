@@ -13,6 +13,19 @@ import type { Request, Response, NextFunction } from "express";
 import { storage } from "../storage";
 import type { Worker } from "@shared/schema";
 
+// Helper: resolve the effective company being viewed (superadmin/lso/lso_externo
+// can view/operate on any company via X-Company-Id header or ?companyId= query param).
+function getEffectiveCompanyId(req: any): string | null {
+  const globalRoles = ['superadmin', 'lso', 'lso_externo'];
+  if (globalRoles.includes(req.user?.role)) {
+    const headerCompanyId = req.headers['x-company-id'] as string | undefined;
+    const queryCompanyId = req.query?.companyId as string | undefined;
+    if (headerCompanyId) return headerCompanyId;
+    if (queryCompanyId) return queryCompanyId;
+  }
+  return req.user?.companyId || null;
+}
+
 export interface SubscriptionLimits {
   maxWorkers: number | null; // null = ilimitado
   maxUsers: number | null;
@@ -226,13 +239,13 @@ export function checkWorkerLimit() {
       // 1. Para admins: usar companyId del payload (req.body.companyId)
       // 2. Para otros usuarios: usar su propio companyId (req.user.companyId)
       const userRole = req.user?.role;
-      const isAdmin = userRole === 'admin';
+      const isAdmin = userRole === 'admin' || userRole === 'superadmin';
       
       let targetCompanyId: string;
       
       if (isAdmin) {
-        // Admin puede crear workers para cualquier empresa
-        const bodyCompanyId = req.body?.companyId;
+        // Admin/Superadmin puede crear workers para cualquier empresa
+        const bodyCompanyId = req.body?.companyId || getEffectiveCompanyId(req);
         if (typeof bodyCompanyId !== 'string' || bodyCompanyId === '') {
           // Si admin no especificó empresa, continuar (será validado por la ruta)
           return next();
@@ -603,7 +616,7 @@ export function checkFeatureAccess(
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const companyId = req.user?.companyId;
+      const companyId = getEffectiveCompanyId(req);
       
       if (!companyId) {
         return res.status(401).json({ 
