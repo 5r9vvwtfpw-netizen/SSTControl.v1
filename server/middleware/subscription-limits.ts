@@ -235,6 +235,16 @@ async function getCompanyLimits(companyId: string): Promise<SubscriptionLimits> 
 export function checkWorkerLimit() {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
+      // Roles de soporte/plataforma nunca deben ser bloqueados por el estado de
+      // suscripción de la empresa que están operando (superadmin/soporte hacen
+      // gestión y soporte técnico en nombre de cualquier empresa, incluso sin
+      // suscripción activa). Ver .agents/memory/free-portals-lso-trabajador.md
+      const actingRole = req.user?.role;
+      const platformExemptRoles = ['superadmin', 'soporte', 'lso', 'lso_externo'];
+      if (platformExemptRoles.includes(actingRole as string)) {
+        return next();
+      }
+
       // Determinar el companyId objetivo:
       // 1. Para admins: usar companyId del payload (req.body.companyId)
       // 2. Para otros usuarios: usar su propio companyId (req.user.companyId)
@@ -616,6 +626,15 @@ export function checkFeatureAccess(
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
+      // Roles de soporte/plataforma nunca deben quedar bloqueados por el plan
+      // de la empresa que están operando (ver checkWorkerLimit arriba y
+      // .agents/memory/free-portals-lso-trabajador.md)
+      const actingRole = req.user?.role;
+      const platformExemptRoles = ['superadmin', 'soporte', 'lso', 'lso_externo'];
+      if (platformExemptRoles.includes(actingRole as string)) {
+        return next();
+      }
+
       const companyId = getEffectiveCompanyId(req);
       
       if (!companyId) {
