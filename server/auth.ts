@@ -472,10 +472,12 @@ export function setupAuth(app: Express) {
     // Check company profile completeness
     let profileComplete = false;
     let subscriptionStatus = null;
+    let companyName: string | null = null;
     
     if (user.companyId) {
       const company = await storage.getCompany(user.companyId);
       profileComplete = !!(company?.name && company?.nit && company?.city && company?.address);
+      companyName = company?.name || null;
       
       // Get subscription status
       try {
@@ -500,6 +502,7 @@ export function setupAuth(app: Express) {
       profileComplete,
       subscriptionStatus,
       isDemoSession,
+      companyName,
     });
   });
 
