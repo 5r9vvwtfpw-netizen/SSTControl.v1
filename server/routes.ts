@@ -1939,7 +1939,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     contactPhone: z.string().optional().default(""),
     contactEmail: z.string().optional().default(""),
     numberOfWorkers: z.coerce.number().min(1, "El número de trabajadores debe ser al menos 1").default(1),
-    riskLevel: z.enum(["I", "II", "III", "IV", "V"]).optional().default("I"),
+    riskLevel: z.enum(["I", "II", "III", "IV", "V"]).optional(),
     // Accept old form fields (ignore them but don't fail validation)
     arl: z.string().optional(),
     actividadEconomica: z.string().optional(),
@@ -2440,10 +2440,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         city: validatedData.city || null,
       };
       
-      console.log(`✅ [ONBOARDING] Datos validados para crear empresa:`, companyData);
+      // Automatización CIIU: Si hay código CIIU y no se dio un riesgo manual,
+      // calcular el nivel de riesgo ARL automáticamente (Decreto 1607/2002).
+      // IMPORTANTE: esto NO afecta el precio (que se cobra por numberOfWorkers),
+      // solo determina el capítulo de estándares SST obligatorios que aplican.
+      const processedCompanyData = prepareCompanyWithCiiuAutomation(companyData);
+      if ((processedCompanyData as any)._ciiuAutomationApplied) {
+        console.log(`[CIIU-AUTO] Empresa auto-registrada con automatización: ${(processedCompanyData as any)._ciiuAutomationMessage}`);
+      }
+      const { _ciiuAutomationApplied, _ciiuAutomationMessage, ...companyDataToCreate } = processedCompanyData as any;
+
+      console.log(`✅ [ONBOARDING] Datos validados para crear empresa:`, companyDataToCreate);
       
       // Create the company
-      const company = await storage.createCompany(companyData);
+      const company = await storage.createCompany(companyDataToCreate);
       console.log(`✅ Empresa creada por superusuario: ${company.name} (${company.id})`);
 
       // Notificar al administrador sobre nueva empresa registrada
