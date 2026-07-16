@@ -106,6 +106,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
       items: [
         { label: "Trabajadores", path: "/trabajadores" },
         { label: "Sedes y Plantas", path: "/sedes" },
+        { label: "Perfiles de Cargo", path: "/perfiles-cargo" },
       ],
     },
     {
