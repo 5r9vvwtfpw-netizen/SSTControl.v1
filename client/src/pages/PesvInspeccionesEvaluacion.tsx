@@ -1,6 +1,7 @@
 import { useParams, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -69,6 +70,7 @@ function computeResult(data: Record<ItemKey, number>): "apto" | "apto-con-observ
 
 export default function PesvInspeccionesEvaluacion() {
   const { evaluacionId } = useParams<{ evaluacionId: string }>();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -108,6 +110,12 @@ export default function PesvInspeccionesEvaluacion() {
     },
     enabled: !!evaluacionId,
   });
+
+  useEffect(() => {
+    if (evaluacion?.companyId && (user?.role === 'superadmin' || user?.role === 'lso' || user?.role === 'lso_externo')) {
+      localStorage.setItem('superadmin_vault_company', evaluacion.companyId);
+    }
+  }, [evaluacion?.companyId, user?.role]);
 
   const { data: inspections = [], isLoading: inspectionsLoading } = useQuery<VehicleInspection[]>({
     queryKey: ["/api/evaluaciones-pesv", evaluacionId, "inspecciones"],
@@ -229,7 +237,7 @@ export default function PesvInspeccionesEvaluacion() {
       />
 
       {evaluacionId && (
-        <Link href={`/pesv/evaluacion/${evaluacionId}/encuesta-conductor`}>
+        <Link href={`/pesv/evaluacion/${evaluacionId}/encuesta-conductor?from=evaluation`}>
           <Card
             className="hover-elevate cursor-pointer mb-4 border-emerald-200 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20"
             data-testid="card-link-encuesta-conductor"

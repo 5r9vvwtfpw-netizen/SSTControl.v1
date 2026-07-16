@@ -697,7 +697,7 @@ export default function EvaluacionesPesv() {
                     <Card
                       key={vault.companyId}
                       className="hover-elevate active-elevate-2 cursor-pointer"
-                      onClick={() => { setSelectedVaultCompanyId(vault.companyId); setSearchTerm(""); setYearFilter("todos"); }}
+                      onClick={() => { setSelectedVaultCompanyId(vault.companyId); setSearchTerm(""); setYearFilter("todos"); localStorage.setItem('superadmin_vault_company', vault.companyId); }}
                       data-testid={`card-vault-${vault.companyId}`}
                     >
                       <CardHeader className="pb-3">

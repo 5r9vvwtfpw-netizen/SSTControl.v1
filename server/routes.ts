@@ -22527,18 +22527,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/environmental-measurements", requirePermission("inspections:view"), async (req, res) => {
     try {
       const user = (req as any).user;
-      const userCompanyId = user.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(user.role);
       
-      if (isAdmin) {
+      if (companyId) {
+        const measurements = await storage.getEnvironmentalMeasurements(companyId);
+        res.json(measurements);
+      } else if (isAdmin) {
         const measurements = await storage.getAllEnvironmentalMeasurements();
         res.json(measurements);
       } else {
-        if (!userCompanyId) {
-          return res.status(403).send("Usuario no asociado a una empresa");
-        }
-        const measurements = await storage.getEnvironmentalMeasurements(userCompanyId);
-        res.json(measurements);
+        return res.status(403).send("Usuario no asociado a una empresa");
       }
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -22578,21 +22577,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userCompanyId = user.companyId;
       const isAdmin = hasGlobalAccess(user.role);
       
-      let companyId: string;
-      if (isAdmin) {
-        companyId = req.body.companyId;
-        if (!companyId) {
-          return res.status(400).send("Admin debe especificar companyId");
-        }
-        const company = await storage.getCompany(companyId);
-        if (!company) {
-          return res.status(404).send("Empresa no encontrada");
-        }
-      } else {
-        if (!userCompanyId) {
-          return res.status(403).send("Usuario no asociado a una empresa");
-        }
-        companyId = userCompanyId;
+      let companyId: string = getEffectiveCompanyId(req) || req.body.companyId || '';
+      if (!companyId) {
+        return res.status(isAdmin ? 400 : 403).send(isAdmin ? "Admin debe especificar companyId" : "Usuario no asociado a una empresa");
       }
       
       const parsed = insertEnvironmentalMeasurementSchema.safeParse(req.body);
@@ -22673,18 +22660,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/audiometry-records", requirePermission("health:view"), async (req, res) => {
     try {
       const user = (req as any).user;
-      const userCompanyId = user.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(user.role);
       
-      if (isAdmin) {
+      if (companyId) {
+        const records = await storage.getAudiometryRecords(companyId);
+        res.json(records);
+      } else if (isAdmin) {
         const records = await storage.getAllAudiometryRecords();
         res.json(records);
       } else {
-        if (!userCompanyId) {
-          return res.status(403).send("Usuario no asociado a una empresa");
-        }
-        const records = await storage.getAudiometryRecords(userCompanyId);
-        res.json(records);
+        return res.status(403).send("Usuario no asociado a una empresa");
       }
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -22735,10 +22721,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).send("Empresa no encontrada");
         }
       } else {
-        if (!userCompanyId) {
+        companyId = getEffectiveCompanyId(req) || '';
+        if (!companyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
-        companyId = userCompanyId;
       }
       
       const parsed = insertAudiometryRecordSchema.safeParse({ ...req.body, companyId });
@@ -22817,18 +22803,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/noise-exposure-profiles", requirePermission("health:view"), async (req, res) => {
     try {
       const user = (req as any).user;
-      const userCompanyId = user.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(user.role);
       
-      if (isAdmin) {
+      if (companyId) {
+        const profiles = await storage.getNoiseExposureProfiles(companyId);
+        res.json(profiles);
+      } else if (isAdmin) {
         const profiles = await storage.getAllNoiseExposureProfiles();
         res.json(profiles);
       } else {
-        if (!userCompanyId) {
-          return res.status(403).send("Usuario no asociado a una empresa");
-        }
-        const profiles = await storage.getNoiseExposureProfiles(userCompanyId);
-        res.json(profiles);
+        return res.status(403).send("Usuario no asociado a una empresa");
       }
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -22965,12 +22950,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/worker-exposure-assignments", requirePermission("health:view"), async (req, res) => {
     try {
       const user = (req as any).user;
-      const userCompanyId = user.companyId;
+      const companyId = getEffectiveCompanyId(req);
       
-      if (!userCompanyId) {
+      if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
-      const assignments = await storage.getWorkerExposureAssignments(userCompanyId);
+      const assignments = await storage.getWorkerExposureAssignments(companyId);
       res.json(assignments);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -22980,24 +22965,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/worker-exposure-assignments", requirePermission("health:create"), async (req, res) => {
     try {
       const user = (req as any).user;
-      const userCompanyId = user.companyId;
       const isAdmin = hasGlobalAccess(user.role);
-      
-      let companyId: string;
-      if (isAdmin) {
-        companyId = req.body.companyId;
-        if (!companyId) {
-          return res.status(400).send("Admin debe especificar companyId");
-        }
-        const company = await storage.getCompany(companyId);
-        if (!company) {
-          return res.status(404).send("Empresa no encontrada");
-        }
-      } else {
-        if (!userCompanyId) {
-          return res.status(403).send("Usuario no asociado a una empresa");
-        }
-        companyId = userCompanyId;
+      let companyId: string = getEffectiveCompanyId(req) || req.body.companyId || '';
+      if (!companyId) {
+        return res.status(isAdmin ? 400 : 403).send(isAdmin ? "Admin debe especificar companyId" : "Usuario no asociado a una empresa");
       }
       
       const parsed = insertWorkerExposureAssignmentSchema.safeParse(req.body);
@@ -23014,12 +22985,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/worker-exposure-assignments/:id", requirePermission("health:delete"), async (req, res) => {
     try {
       const user = (req as any).user;
-      const userCompanyId = user.companyId;
+      const companyId = getEffectiveCompanyId(req);
       
-      if (!userCompanyId) {
+      if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
-      await storage.deleteWorkerExposureAssignment(req.params.id, userCompanyId);
+      await storage.deleteWorkerExposureAssignment(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -23030,18 +23001,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/pca-control-actions", requirePermission("health:view"), async (req, res) => {
     try {
       const user = (req as any).user;
-      const userCompanyId = user.companyId;
+      const companyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(user.role);
       
-      if (isAdmin) {
+      if (companyId) {
+        const actions = await storage.getPcaControlActions(companyId);
+        res.json(actions);
+      } else if (isAdmin) {
         const actions = await storage.getAllPcaControlActions();
         res.json(actions);
       } else {
-        if (!userCompanyId) {
-          return res.status(403).send("Usuario no asociado a una empresa");
-        }
-        const actions = await storage.getPcaControlActions(userCompanyId);
-        res.json(actions);
+        return res.status(403).send("Usuario no asociado a una empresa");
       }
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -23174,12 +23144,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/pca-programs", requirePermission("health:view"), async (req, res) => {
     try {
       const user = (req as any).user;
-      const userCompanyId = user.companyId;
+      const companyId = getEffectiveCompanyId(req);
       
-      if (!userCompanyId) {
+      if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
-      const programs = await storage.getPcaPrograms(userCompanyId);
+      const programs = await storage.getPcaPrograms(companyId);
       res.json(programs);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -23189,12 +23159,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/pca-programs/:id", requirePermission("health:view"), async (req, res) => {
     try {
       const user = (req as any).user;
-      const userCompanyId = user.companyId;
+      const companyId = getEffectiveCompanyId(req);
       
-      if (!userCompanyId) {
+      if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
-      const program = await storage.getPcaProgram(req.params.id, userCompanyId);
+      const program = await storage.getPcaProgram(req.params.id, companyId);
       if (!program) {
         return res.status(404).send("Programa PCA no encontrado");
       }
@@ -23207,24 +23177,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/pca-programs", requirePermission("health:create"), async (req, res) => {
     try {
       const user = (req as any).user;
-      const userCompanyId = user.companyId;
       const isAdmin = hasGlobalAccess(user.role);
-      
-      let companyId: string;
-      if (isAdmin) {
-        companyId = req.body.companyId;
-        if (!companyId) {
-          return res.status(400).send("Admin debe especificar companyId");
-        }
-        const company = await storage.getCompany(companyId);
-        if (!company) {
-          return res.status(404).send("Empresa no encontrada");
-        }
-      } else {
-        if (!userCompanyId) {
-          return res.status(403).send("Usuario no asociado a una empresa");
-        }
-        companyId = userCompanyId;
+      let companyId: string = getEffectiveCompanyId(req) || req.body.companyId || '';
+      if (!companyId) {
+        return res.status(isAdmin ? 400 : 403).send(isAdmin ? "Admin debe especificar companyId" : "Usuario no asociado a una empresa");
       }
       
       const parsed = insertPcaProgramSchema.safeParse(req.body);
@@ -23251,16 +23207,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/pca-programs/:id", requirePermission("health:edit"), async (req, res) => {
     try {
       const user = (req as any).user;
-      const userCompanyId = user.companyId;
+      const companyId = getEffectiveCompanyId(req);
       
-      if (!userCompanyId) {
+      if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
       const parsed = insertPcaProgramSchema.partial().safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).send(parsed.error.message);
       }
-      const program = await storage.updatePcaProgram(req.params.id, parsed.data, userCompanyId);
+      const program = await storage.updatePcaProgram(req.params.id, parsed.data, companyId);
       if (!program) {
         return res.status(404).send("Programa PCA no encontrado");
       }
@@ -23272,8 +23228,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/hazardous-substances", requirePermission("inspections:view"), async (req, res) => {
     try {
-      const user = (req as any).user;
-      const substances = await storage.getHazardousSubstances(user.companyId);
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
+      const substances = await storage.getHazardousSubstances(companyId);
       res.json(substances);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -23282,8 +23239,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/hazardous-substances/:id", requirePermission("inspections:view"), async (req, res) => {
     try {
-      const user = (req as any).user;
-      const substance = await storage.getHazardousSubstance(req.params.id, user.companyId);
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
+      const substance = await storage.getHazardousSubstance(req.params.id, companyId);
       if (!substance) {
         return res.status(404).send("Sustancia química no encontrada");
       }
@@ -23295,12 +23253,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/hazardous-substances", requirePermission("inspections:create"), async (req, res) => {
     try {
-      const user = (req as any).user;
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
       const parsed = insertHazardousSubstanceSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).send(parsed.error.message);
       }
-      const substance = await storage.createHazardousSubstance(parsed.data, user.companyId);
+      const substance = await storage.createHazardousSubstance(parsed.data, companyId);
       res.json(substance);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -23309,12 +23268,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/hazardous-substances/:id", requirePermission("inspections:edit"), async (req, res) => {
     try {
-      const user = (req as any).user;
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
       const parsed = insertHazardousSubstanceSchema.partial().safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).send(parsed.error.message);
       }
-      const substance = await storage.updateHazardousSubstance(req.params.id, parsed.data, user.companyId);
+      const substance = await storage.updateHazardousSubstance(req.params.id, parsed.data, companyId);
       if (!substance) {
         return res.status(404).send("Sustancia química no encontrada");
       }
@@ -23326,8 +23286,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/hazardous-substances/:id", requirePermission("inspections:delete"), async (req, res) => {
     try {
-      const user = (req as any).user;
-      await storage.deleteHazardousSubstance(req.params.id, user.companyId);
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
+      await storage.deleteHazardousSubstance(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -23338,14 +23299,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/hazardous-substances-inventory/pdf", requirePermission("inspections:view"), async (req, res) => {
     try {
       const user = (req as any).user;
-      const substances = await storage.getHazardousSubstances(user.companyId);
-      const company = await storage.getCompany(user.companyId);
+      const companyId = getEffectiveCompanyId(req) || user.companyId;
+      if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
+      const substances = await storage.getHazardousSubstances(companyId);
+      const company = await storage.getCompany(companyId);
 
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf18615_subscription = await storage.getSubscriptionByCompany(user.companyId);
+      const pdf18615_subscription = await storage.getSubscriptionByCompany(companyId);
       const pdf18615_trialStatus = getTrialStatus(pdf18615_subscription?.status || 'trial', pdf18615_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf18615_trialStatus.requiresWatermark);
       const margin = 35;
@@ -23358,12 +23321,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and signers
       const logoBuffer = await loadCompanyLogoBuffer(company?.logoUrl);
-      const signers = await getSignersForCompany(user.companyId, true);
+      const signers = await getSignersForCompany(companyId, true);
 
       // Standard Header with logo, version control, and signatures
       let currentY = await addStandardHeader({
         doc,
-        company: company || { id: user.companyId, name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
+        company: company || { id: companyId, name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
         documentTitle: 'INVENTARIO DE SUSTANCIAS QUÍMICAS PELIGROSAS',
         documentCode: `SST-SQP-${new Date().getFullYear()}-001`,
         version: '1.0',
@@ -23532,13 +23495,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/environmental-measurements/:id/pdf", requireAuth, async (req, res) => {
     try {
       const user = (req as any).user;
-      const measurement = await storage.getEnvironmentalMeasurement(req.params.id, user.companyId);
+      const companyId = getEffectiveCompanyId(req) || user.companyId;
+      if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
+      const measurement = await storage.getEnvironmentalMeasurement(req.params.id, companyId);
       
       if (!measurement) {
         return res.status(404).send("Medición no encontrada");
       }
 
-      const company = await storage.getCompany(user.companyId);
+      const company = await storage.getCompany(companyId);
       if (!company) {
         return res.status(404).send("Empresa no encontrada");
       }
@@ -23547,7 +23512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf18821_subscription = await storage.getSubscriptionByCompany(user.companyId);
+      const pdf18821_subscription = await storage.getSubscriptionByCompany(companyId);
       const pdf18821_trialStatus = getTrialStatus(pdf18821_subscription?.status || 'trial', pdf18821_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf18821_trialStatus.requiresWatermark);
       const margin = 35;
@@ -23583,7 +23548,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and signers
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(user.companyId, true);
+      const signers = await getSignersForCompany(companyId, true);
 
       // Standard Header with logo, version control, and signatures
       let currentY = await addStandardHeader({
