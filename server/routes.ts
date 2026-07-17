@@ -51265,7 +51265,272 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   }
 
   // ===== Contexto Organizacional PESV Routes =====
-  
+
+  // POST /api/contexto-organizacional-pesv/auto-generar
+  // Genera factores de contexto automáticamente a partir de datos reales del sistema
+  app.post("/api/contexto-organizacional-pesv/auto-generar", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
+      // Cargar datos reales del sistema en paralelo
+      const [
+        existingFactores,
+        vehiculosData,
+        conductoresData,
+        siniestrosData,
+        comparendosData,
+        capacitacionesData,
+        trabajadoresData,
+      ] = await Promise.all([
+        db.select({ nombre: contextoOrganizacionalPesv.nombre })
+          .from(contextoOrganizacionalPesv)
+          .where(eq(contextoOrganizacionalPesv.companyId, effectiveCompanyId)),
+        db.select().from(schema.vehicles).where(eq(schema.vehicles.companyId, effectiveCompanyId)),
+        db.select().from(schema.drivers).where(eq(schema.drivers.companyId, effectiveCompanyId)),
+        db.select().from(schema.roadIncidents).where(eq(schema.roadIncidents.companyId, effectiveCompanyId)),
+        db.select().from(schema.driverComparendos).where(eq(schema.driverComparendos.companyId, effectiveCompanyId)),
+        db.select().from(schema.roadSafetyTrainings).where(eq(schema.roadSafetyTrainings.companyId, effectiveCompanyId)),
+        db.select().from(schema.workers).where(eq(schema.workers.companyId, effectiveCompanyId)),
+      ]);
+
+      const existingNombres = new Set(existingFactores.map(f => f.nombre.toLowerCase().trim()));
+      const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+      const reviewDate = new Date();
+      reviewDate.setFullYear(reviewDate.getFullYear() + 1);
+      const fechaRevision = reviewDate.toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+
+      // Calcular métricas
+      const totalVehiculos = vehiculosData.length;
+      const vehiculosActivos = vehiculosData.filter(v => v.status === "activo").length;
+      const totalConductores = conductoresData.filter(c => c.status === "activo").length;
+      const anioActual = new Date().getFullYear().toString();
+      const siniestrosAnio = siniestrosData.filter(s => s.incidentDate?.startsWith(anioActual)).length;
+      const comparendosAnio = comparendosData.filter(c => c.fechaComparendo?.startsWith(anioActual)).length;
+      const capacitacionesPendientes = capacitacionesData.filter(c => c.status !== "completada").length;
+      const conductoresSinLicencia = conductoresData.filter(c => {
+        return c.status === "activo" && (!c.licenseExpiry || c.licenseExpiry < today);
+      }).length;
+      const conductoresSinExamen = conductoresData.filter(c => {
+        return c.status === "activo" && (!c.medicalExamExpiry || c.medicalExamExpiry < today);
+      }).length;
+      const vehiculosSinSoat = vehiculosData.filter(v => v.status === "activo" && (!v.soatExpiry || v.soatExpiry < today)).length;
+
+      type FactorGen = {
+        tipoFactor: "interno" | "externo";
+        nombre: string;
+        descripcion: string;
+        categoria: string;
+        impactoSeguridad: string;
+        nivelImpacto: "alto" | "medio" | "bajo";
+      };
+
+      // Factores candidatos basados en datos reales
+      const candidatos: FactorGen[] = [];
+
+      // ── FACTORES INTERNOS ──────────────────────────────────────────────
+
+      // Flota vehicular
+      if (totalVehiculos > 0) {
+        candidatos.push({
+          tipoFactor: "interno",
+          nombre: `Flota vehicular de ${vehiculosActivos} vehículo${vehiculosActivos !== 1 ? "s" : ""} activo${vehiculosActivos !== 1 ? "s" : ""}`,
+          descripcion: `La organización cuenta con ${totalVehiculos} vehículo${totalVehiculos !== 1 ? "s" : ""} en total (${vehiculosActivos} activo${vehiculosActivos !== 1 ? "s" : ""}), los cuales deben gestionarse bajo los lineamientos del PESV.`,
+          categoria: "recursos",
+          impactoSeguridad: "La cantidad y el estado de los vehículos determina directamente la exposición al riesgo vial de la organización.",
+          nivelImpacto: vehiculosActivos > 10 ? "alto" : vehiculosActivos > 3 ? "medio" : "bajo",
+        });
+      }
+
+      // Conductores vinculados
+      if (totalConductores > 0) {
+        candidatos.push({
+          tipoFactor: "interno",
+          nombre: `${totalConductores} conductor${totalConductores !== 1 ? "es" : ""} vinculado${totalConductores !== 1 ? "s" : ""} a la organización`,
+          descripcion: `La empresa tiene ${totalConductores} conductor${totalConductores !== 1 ? "es" : ""} activo${totalConductores !== 1 ? "s" : ""} registrado${totalConductores !== 1 ? "s" : ""} en el sistema PESV. Su perfil, habilitación y condición de salud son factores clave de seguridad.`,
+          categoria: "recursos",
+          impactoSeguridad: "El comportamiento y las condiciones de los conductores son el principal factor de riesgo en siniestros viales.",
+          nivelImpacto: totalConductores > 20 ? "alto" : totalConductores > 5 ? "medio" : "bajo",
+        });
+      }
+
+      // Siniestros recientes
+      if (siniestrosAnio > 0) {
+        candidatos.push({
+          tipoFactor: "interno",
+          nombre: `Historial de ${siniestrosAnio} siniestro${siniestrosAnio !== 1 ? "s" : ""} vial${siniestrosAnio !== 1 ? "es" : ""} en ${anioActual}`,
+          descripcion: `Se han registrado ${siniestrosAnio} siniestro${siniestrosAnio !== 1 ? "s" : ""} vial${siniestrosAnio !== 1 ? "es" : ""} en el año en curso, lo que indica la necesidad de fortalecer las medidas de prevención y control del riesgo vial.`,
+          categoria: "procesos",
+          impactoSeguridad: "El historial de siniestros refleja deficiencias en los controles existentes y genera obligaciones de investigación y acciones correctivas.",
+          nivelImpacto: siniestrosAnio > 5 ? "alto" : siniestrosAnio > 1 ? "medio" : "alto",
+        });
+      }
+
+      // Infracciones de tránsito
+      if (comparendosAnio > 0) {
+        candidatos.push({
+          tipoFactor: "interno",
+          nombre: `${comparendosAnio} infracción${comparendosAnio !== 1 ? "es" : ""} de tránsito registrada${comparendosAnio !== 1 ? "s" : ""} en ${anioActual}`,
+          descripcion: `Los conductores han acumulado ${comparendosAnio} comparendo${comparendosAnio !== 1 ? "s" : ""} en el período. Las infracciones son un indicador de comportamiento vial de alto riesgo.`,
+          categoria: "cultura",
+          impactoSeguridad: "El número de infracciones refleja la cultura vial de los conductores y puede anticipar futuros siniestros.",
+          nivelImpacto: comparendosAnio > 10 ? "alto" : comparendosAnio > 3 ? "medio" : "medio",
+        });
+      }
+
+      // Capacitaciones pendientes
+      if (capacitacionesPendientes > 0) {
+        candidatos.push({
+          tipoFactor: "interno",
+          nombre: `${capacitacionesPendientes} actividad${capacitacionesPendientes !== 1 ? "es" : ""} de capacitación vial pendiente${capacitacionesPendientes !== 1 ? "s" : ""}`,
+          descripcion: `Existen ${capacitacionesPendientes} actividad${capacitacionesPendientes !== 1 ? "es" : ""} del plan de capacitación vial sin completar. La formación es un pilar fundamental del PESV.`,
+          categoria: "cultura",
+          impactoSeguridad: "La falta de capacitación vial aumenta la probabilidad de comportamientos de riesgo en la vía.",
+          nivelImpacto: capacitacionesPendientes > 5 ? "alto" : "medio",
+        });
+      }
+
+      // Conductores sin licencia vigente
+      if (conductoresSinLicencia > 0) {
+        candidatos.push({
+          tipoFactor: "interno",
+          nombre: `${conductoresSinLicencia} conductor${conductoresSinLicencia !== 1 ? "es" : ""} con licencia de conducción vencida`,
+          descripcion: `Se detectaron ${conductoresSinLicencia} conductor${conductoresSinLicencia !== 1 ? 'es' : ''} activo${conductoresSinLicencia !== 1 ? 's' : ''} con licencia de conducción vencida o sin registrar. Esto representa un riesgo legal y operacional.`,
+          categoria: "procesos",
+          impactoSeguridad: "Conducir con licencia vencida es una infracción grave y aumenta la exposición a sanciones y responsabilidad civil.",
+          nivelImpacto: "alto",
+        });
+      }
+
+      // Conductores sin examen médico
+      if (conductoresSinExamen > 0) {
+        candidatos.push({
+          tipoFactor: "interno",
+          nombre: `${conductoresSinExamen} conductor${conductoresSinExamen !== 1 ? "es" : ""} sin examen médico de aptitud vigente`,
+          descripcion: `${conductoresSinExamen} conductor${conductoresSinExamen !== 1 ? 'es' : ''} activo${conductoresSinExamen !== 1 ? 's' : ''} no cuenta${conductoresSinExamen === 1 ? '' : 'n'} con examen médico de aptitud para conducir vigente.`,
+          categoria: "procesos",
+          impactoSeguridad: "La aptitud psicofísica del conductor es determinante para la seguridad vial; sin ella, el riesgo de siniestros aumenta significativamente.",
+          nivelImpacto: "alto",
+        });
+      }
+
+      // Vehículos sin SOAT
+      if (vehiculosSinSoat > 0) {
+        candidatos.push({
+          tipoFactor: "interno",
+          nombre: `${vehiculosSinSoat} vehículo${vehiculosSinSoat !== 1 ? "s" : ""} sin SOAT vigente`,
+          descripcion: `${vehiculosSinSoat} vehículo${vehiculosSinSoat !== 1 ? 's' : ''} activo${vehiculosSinSoat !== 1 ? 's' : ''} no cuenta${vehiculosSinSoat === 1 ? '' : 'n'} con SOAT vigente registrado en el sistema.`,
+          categoria: "procesos",
+          impactoSeguridad: "Circular sin SOAT es una infracción grave que genera responsabilidad legal y deja desprotegidas a las víctimas de siniestros.",
+          nivelImpacto: "alto",
+        });
+      }
+
+      // Compromiso alta dirección (siempre aplica)
+      candidatos.push({
+        tipoFactor: "interno",
+        nombre: "Compromiso de la alta dirección con el PESV",
+        descripcion: "El liderazgo visible de la dirección es indispensable para implementar y mantener el Plan Estratégico de Seguridad Vial de forma efectiva.",
+        categoria: "cultura",
+        impactoSeguridad: "Sin el compromiso directivo, los recursos, prioridades y cultura de seguridad vial no se consolidan en la organización.",
+        nivelImpacto: "alto",
+      });
+
+      // Trabajadores como usuarios de la vía
+      if (trabajadoresData.length > 0) {
+        candidatos.push({
+          tipoFactor: "interno",
+          nombre: `${trabajadoresData.length} trabajador${trabajadoresData.length !== 1 ? "es" : ""} como usuarios de la vía`,
+          descripcion: `La organización cuenta con ${trabajadoresData.length} trabajador${trabajadoresData.length !== 1 ? "es" : ""}. Todos son potenciales usuarios de la vía (peatones, ciclistas, pasajeros o conductores) y deben estar cubiertos por el PESV.`,
+          categoria: "estructura",
+          impactoSeguridad: "La exposición al riesgo vial no se limita a los conductores; cualquier trabajador puede verse involucrado en un siniestro en su desplazamiento al trabajo.",
+          nivelImpacto: trabajadoresData.length > 50 ? "alto" : "medio",
+        });
+      }
+
+      // ── FACTORES EXTERNOS ──────────────────────────────────────────────
+
+      candidatos.push({
+        tipoFactor: "externo",
+        nombre: "Resolución 40595/2022 - Obligatoriedad del PESV",
+        descripcion: "La Resolución 40595 del Ministerio de Transporte establece los lineamientos del Plan Estratégico de Seguridad Vial para empresas con más de 10 vehículos o 50 trabajadores.",
+        categoria: "legal",
+        impactoSeguridad: "El incumplimiento del PESV genera sanciones administrativas y aumenta la responsabilidad de la empresa ante siniestros.",
+        nivelImpacto: "alto",
+      });
+
+      candidatos.push({
+        tipoFactor: "externo",
+        nombre: "Código Nacional de Tránsito - Ley 769/2002",
+        descripcion: "El Código Nacional de Tránsito regula el comportamiento vial, los requisitos de los vehículos y las obligaciones de los conductores en Colombia.",
+        categoria: "legal",
+        impactoSeguridad: "El cumplimiento del código de tránsito es la base legal para la operación segura de la flota y la protección ante responsabilidades civiles y penales.",
+        nivelImpacto: "alto",
+      });
+
+      candidatos.push({
+        tipoFactor: "externo",
+        nombre: "Accidentalidad vial en Colombia - Contexto nacional",
+        descripcion: "Colombia registra aproximadamente 6.000 muertes anuales por siniestros viales, lo que ubica al país entre los de mayor riesgo en la región. El contexto nacional presiona a las organizaciones a fortalecer sus PESV.",
+        categoria: "social",
+        impactoSeguridad: "La alta accidentalidad vial en el entorno incrementa la probabilidad de que los trabajadores se vean involucrados en siniestros fuera del control de la empresa.",
+        nivelImpacto: "alto",
+      });
+
+      candidatos.push({
+        tipoFactor: "externo",
+        nombre: "Condiciones de infraestructura vial en el área de operación",
+        descripcion: "El estado de las vías, la señalización y la infraestructura en los corredores operados por la flota influyen directamente en la seguridad de los conductores y vehículos.",
+        categoria: "ambiental",
+        impactoSeguridad: "Las vías en mal estado, la falta de señalización o la congestión aumentan el riesgo de siniestros independientemente de las condiciones del vehículo o conductor.",
+        nivelImpacto: "medio",
+      });
+
+      candidatos.push({
+        tipoFactor: "externo",
+        nombre: "ISO 39001:2012 - Sistema de gestión de seguridad vial",
+        descripcion: "La norma ISO 39001 proporciona el marco internacional para implementar un sistema de gestión de seguridad vial, compatible con los requisitos del PESV colombiano.",
+        categoria: "tecnologico",
+        impactoSeguridad: "La adopción de estándares internacionales mejora la eficacia del PESV y facilita la integración con otros sistemas de gestión (ISO 45001, ISO 14001).",
+        nivelImpacto: "medio",
+      });
+
+      // Filtrar candidatos que ya existen (por nombre, sin importar mayúsculas)
+      const nuevosFactores = candidatos.filter(c => !existingNombres.has(c.nombre.toLowerCase().trim()));
+
+      if (nuevosFactores.length === 0) {
+        return res.json({ creados: 0, omitidos: candidatos.length, mensaje: "Todos los factores sugeridos ya existen en el sistema." });
+      }
+
+      // Insertar en la BD
+      const inserted = await db.insert(contextoOrganizacionalPesv)
+        .values(nuevosFactores.map(f => ({
+          companyId: effectiveCompanyId,
+          tipoFactor: f.tipoFactor,
+          nombre: f.nombre,
+          descripcion: f.descripcion,
+          categoria: f.categoria,
+          impactoSeguridad: f.impactoSeguridad,
+          nivelImpacto: f.nivelImpacto,
+          fechaIdentificacion: today,
+          fechaRevision: fechaRevision,
+          activo: 1,
+        })))
+        .returning({ id: contextoOrganizacionalPesv.id });
+
+      res.json({
+        creados: inserted.length,
+        omitidos: candidatos.length - inserted.length,
+        mensaje: `Se generaron ${inserted.length} factor${inserted.length !== 1 ? 'es' : ''} de contexto a partir de los datos del sistema.`,
+      });
+    } catch (error: any) {
+      console.error("Error en auto-generación de factores de contexto PESV:", error);
+      res.status(500).json({ error: "Error al generar los factores automáticamente" });
+    }
+  });
+
   // GET /api/contexto-organizacional-pesv - List all context factors for company
   app.get("/api/contexto-organizacional-pesv", requireAuth, async (req, res) => {
     try {

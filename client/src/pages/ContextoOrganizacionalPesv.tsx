@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Search, Trash2, Edit, Building, Globe, Shield, TrendingUp, Users, Settings, Scale, BarChart, Calendar, AlertTriangle, FileDown, ArrowLeft } from "lucide-react";
+import { Plus, Search, Trash2, Edit, Building, Globe, Shield, TrendingUp, Users, Settings, Scale, BarChart, Calendar, AlertTriangle, FileDown, ArrowLeft, Zap, Loader2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -62,6 +62,7 @@ export default function ContextoOrganizacionalPesv() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [factorToDelete, setFactorToDelete] = useState<ContextoOrgPesvType | null>(null);
   const [editingFactor, setEditingFactor] = useState<ContextoOrgPesvType | null>(null);
+  const [autoGenerarDialogOpen, setAutoGenerarDialogOpen] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -186,6 +187,26 @@ export default function ContextoOrganizacionalPesv() {
         description: error.message,
         variant: "destructive",
       });
+    },
+  });
+
+  const autoGenerarMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/contexto-organizacional-pesv/auto-generar", {});
+      if (!res.ok) throw new Error("Error al generar los factores");
+      return res.json() as Promise<{ creados: number; omitidos: number; mensaje: string }>;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/contexto-organizacional-pesv"] });
+      setAutoGenerarDialogOpen(false);
+      toast({
+        title: data.creados > 0 ? `${data.creados} factor${data.creados !== 1 ? "es" : ""} generado${data.creados !== 1 ? "s" : ""}` : "Sin cambios",
+        description: data.mensaje,
+        className: data.creados > 0 ? "bg-green-50 border-green-200" : undefined,
+      });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "No se pudieron generar los factores automáticamente.", variant: "destructive" });
     },
   });
 
@@ -382,6 +403,14 @@ export default function ContextoOrganizacionalPesv() {
           >
             <FileDown className="h-4 w-4 mr-2" />
             Descargar PDF
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setAutoGenerarDialogOpen(true)}
+            data-testid="button-auto-generar-factores"
+          >
+            <Zap className="h-4 w-4 mr-2" />
+            Generar desde datos del sistema
           </Button>
           <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild>
@@ -805,6 +834,50 @@ export default function ContextoOrganizacionalPesv() {
               data-testid="button-confirm-delete"
             >
               {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={autoGenerarDialogOpen} onOpenChange={setAutoGenerarDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-yellow-500" />
+              Generar factores desde datos del sistema
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  El sistema analizará los datos reales de su empresa y creará automáticamente factores de contexto relevantes basados en:
+                </p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Flota vehicular (cantidad, activos, documentación)</li>
+                  <li>Conductores (licencias, exámenes médicos vencidos)</li>
+                  <li>Historial de siniestros viales registrados</li>
+                  <li>Infracciones de tránsito (comparendos)</li>
+                  <li>Cumplimiento del plan de capacitación vial</li>
+                  <li>Factores legales fijos (Res. 40595/2022, Cód. Tránsito, ISO 39001)</li>
+                </ul>
+                <p className="font-medium text-foreground">
+                  Solo se crearán factores que no existan aún. Los factores existentes no serán modificados.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-auto-generar">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => autoGenerarMutation.mutate()}
+              className="bg-green-600 text-white hover:bg-green-700"
+              disabled={autoGenerarMutation.isPending}
+              data-testid="button-confirm-auto-generar"
+            >
+              {autoGenerarMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generando...</>
+              ) : (
+                <><Zap className="h-4 w-4 mr-2" /> Generar factores</>
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
