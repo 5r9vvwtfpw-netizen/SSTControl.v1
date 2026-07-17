@@ -243,6 +243,8 @@ export default function FactoresDesempenoPesv() {
   const [editingFactor, setEditingFactor] = useState<FactorDesempenoSV | null>(null);
   const [generatingAll, setGeneratingAll] = useState(false);
   const [confirmGenerateDialogOpen, setConfirmGenerateDialogOpen] = useState(false);
+  const [isSpfCalculating, setIsSpfCalculating] = useState(false);
+  const [spfCalcInfo, setSpfCalcInfo] = useState<{ observaciones: string; fuente: string; calculable: boolean } | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -495,8 +497,40 @@ export default function FactoresDesempenoPesv() {
     if (!open) {
       setEditingFactor(null);
       form.reset();
+      setSpfCalcInfo(null);
     }
     setDialogOpen(open);
+  };
+
+  const handleSpfAutoCalc = async () => {
+    const nombre = form.getValues("nombre");
+    if (!nombre) {
+      toast({ title: "Falta el nombre", description: "Ingrese el nombre del factor antes de auto-calcular.", variant: "destructive" });
+      return;
+    }
+    setIsSpfCalculating(true);
+    setSpfCalcInfo(null);
+    try {
+      const params = new URLSearchParams({ nombre });
+      const res = await fetch(`/api/factores-desempeno-sv/auto-calculate?${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error en el servidor");
+      const data = await res.json();
+      if (data.calculable && data.valor !== null) {
+        form.setValue("valorActual", String(data.valor));
+      }
+      setSpfCalcInfo({
+        observaciones: data.calculable ? data.observaciones : (data.observaciones || "No disponible automáticamente."),
+        fuente: data.fuente || "",
+        calculable: data.calculable,
+      });
+      if (!data.calculable) {
+        toast({ title: "Cálculo no disponible", description: "Ingrese el valor manualmente.", variant: "default" });
+      }
+    } catch {
+      toast({ title: "Error", description: "No se pudo calcular el valor automáticamente.", variant: "destructive" });
+    } finally {
+      setIsSpfCalculating(false);
+    }
   };
 
   const handleOpenNewDialog = () => {
@@ -761,7 +795,25 @@ export default function FactoresDesempenoPesv() {
                     name="valorActual"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Valor Actual</FormLabel>
+                        <div className="flex items-center justify-between gap-2">
+                          <FormLabel>Valor Actual</FormLabel>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={handleSpfAutoCalc}
+                            disabled={isSpfCalculating}
+                            className="h-6 text-xs px-2 border-primary/40 text-primary"
+                            data-testid="button-auto-calcular-spf"
+                          >
+                            {isSpfCalculating ? (
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            ) : (
+                              <Wand2 className="h-3 w-3 mr-1" />
+                            )}
+                            Auto-calcular
+                          </Button>
+                        </div>
                         <FormControl>
                           <Input 
                             type="text"
@@ -795,6 +847,21 @@ export default function FactoresDesempenoPesv() {
                     )}
                   />
                 </div>
+
+                {spfCalcInfo && (
+                  <div className={`rounded-md border p-3 text-sm ${spfCalcInfo.calculable ? "border-green-500/30 bg-green-500/5" : "border-amber-500/30 bg-amber-500/5"}`} data-testid="panel-spf-calc-info">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Wand2 className={`h-4 w-4 ${spfCalcInfo.calculable ? "text-green-600" : "text-amber-600"}`} />
+                      <span className={`font-medium text-xs ${spfCalcInfo.calculable ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}`}>
+                        {spfCalcInfo.calculable ? "Valor calculado desde datos del sistema" : "Cálculo automático no disponible"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{spfCalcInfo.observaciones}</p>
+                    {spfCalcInfo.fuente && (
+                      <p className="text-xs text-muted-foreground/70 mt-1">Fuente: {spfCalcInfo.fuente}</p>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField

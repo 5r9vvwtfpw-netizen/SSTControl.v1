@@ -52075,9 +52075,30 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // ========== ISO 39001:2012 - Road Safety Management System Routes ==========
-  
+
   // ===== Factores de Desempeño de Seguridad Vial (SPF) Routes =====
-  
+
+  // GET /api/factores-desempeno-sv/auto-calculate
+  // Calcula el Valor Actual de un factor SPF a partir de datos reales del sistema
+  app.get("/api/factores-desempeno-sv/auto-calculate", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      const { nombre } = req.query;
+      if (!nombre || typeof nombre !== "string") {
+        return res.status(400).json({ error: "Se requiere el parámetro 'nombre' del factor" });
+      }
+      const { calcularSpiIndicador } = await import("./spi-calculators");
+      const resultado = await calcularSpiIndicador(effectiveCompanyId, nombre);
+      res.json(resultado);
+    } catch (error: any) {
+      console.error("Error en auto-cálculo SPF:", error);
+      res.status(500).json({ error: "Error al calcular el valor del factor automáticamente" });
+    }
+  });
+
   // GET /api/factores-desempeno-sv - List all safety performance factors for company
   app.get("/api/factores-desempeno-sv", requireAuth, async (req, res) => {
     try {
