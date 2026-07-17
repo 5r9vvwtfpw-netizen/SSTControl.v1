@@ -23228,10 +23228,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/hazardous-substances", requirePermission("inspections:view"), async (req, res) => {
     try {
+      const user = (req as any).user;
       const companyId = getEffectiveCompanyId(req);
-      if (!companyId) return res.status(403).send("Usuario no asociado a una empresa");
-      const substances = await storage.getHazardousSubstances(companyId);
-      res.json(substances);
+      const isAdmin = hasGlobalAccess(user.role);
+      if (companyId) {
+        const substances = await storage.getHazardousSubstances(companyId);
+        res.json(substances);
+      } else if (isAdmin) {
+        const substances = await storage.getAllHazardousSubstances();
+        res.json(substances);
+      } else {
+        return res.status(403).send("Usuario no asociado a una empresa");
+      }
     } catch (error: any) {
       res.status(500).send(error.message);
     }

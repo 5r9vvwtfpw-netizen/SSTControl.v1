@@ -10,6 +10,11 @@ export async function syncPcaTables() {
       WHERE table_schema = 'public' AND table_name = 'noise_exposure_profiles'
     `);
 
+    const pcaProgramsCheck = await client.query(`
+      SELECT table_name FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = 'pca_programs'
+    `);
+
     if (tableCheck.rows.length === 0) {
       await client.query(`
         DO $$ BEGIN
@@ -115,6 +120,35 @@ export async function syncPcaTables() {
       console.log("[Migration] ✅ Todas las tablas PCA sincronizadas correctamente");
     } else {
       console.log("[Migration] ✅ Tabla noise_exposure_profiles ya existe");
+      // Even if noise_exposure_profiles exists, ensure pca_programs exists (independent check)
+      if (pcaProgramsCheck.rows.length === 0) {
+        console.log("[Migration] Creando tabla pca_programs (faltaba)...");
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS pca_programs (
+            id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+            company_id VARCHAR NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+            year INTEGER NOT NULL,
+            total_exposed_workers INTEGER DEFAULT 0,
+            total_audiometries_scheduled INTEGER DEFAULT 0,
+            total_audiometries_completed INTEGER DEFAULT 0,
+            total_control_actions INTEGER DEFAULT 0,
+            total_controls_implemented INTEGER DEFAULT 0,
+            audiometry_compliance_rate INTEGER,
+            hearing_loss_incidence_rate NUMERIC(10,4),
+            control_effectiveness_rate INTEGER,
+            analysis_notes TEXT,
+            recommendations TEXT,
+            status TEXT NOT NULL DEFAULT 'borrador',
+            approved_by TEXT,
+            approval_date DATE,
+            created_at TIMESTAMP DEFAULT now(),
+            updated_at TIMESTAMP DEFAULT now()
+          )
+        `);
+        console.log("[Migration] ✅ Tabla pca_programs creada");
+      } else {
+        console.log("[Migration] ✅ Tabla pca_programs ya existe");
+      }
     }
   } catch (error) {
     console.error("[Migration] Error sincronizando tablas PCA:", error);

@@ -849,6 +849,7 @@ export interface IStorage {
   
   // Hazardous Substance methods (company-scoped) - Gestión Ambiental Ocupacional
   getHazardousSubstances(companyId: string): Promise<HazardousSubstance[]>;
+  getAllHazardousSubstances(): Promise<HazardousSubstance[]>;
   getHazardousSubstance(id: string, companyId: string): Promise<HazardousSubstance | undefined>;
   createHazardousSubstance(substance: InsertHazardousSubstance, companyId: string): Promise<HazardousSubstance>;
   updateHazardousSubstance(id: string, substance: Partial<InsertHazardousSubstance>, companyId: string): Promise<HazardousSubstance | undefined>;
@@ -6059,6 +6060,11 @@ export class DbStorage implements IStorage {
   async getHazardousSubstances(companyId: string): Promise<HazardousSubstance[]> {
     return await db.select().from(schema.hazardousSubstances)
       .where(eq(schema.hazardousSubstances.companyId, companyId))
+      .orderBy(desc(schema.hazardousSubstances.createdAt));
+  }
+
+  async getAllHazardousSubstances(): Promise<HazardousSubstance[]> {
+    return await db.select().from(schema.hazardousSubstances)
       .orderBy(desc(schema.hazardousSubstances.createdAt));
   }
 
