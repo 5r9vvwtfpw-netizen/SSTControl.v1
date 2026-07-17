@@ -51974,7 +51974,27 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // ===== Indicadores de Seguridad Vial (SPI) Routes =====
-  
+
+  // GET /api/indicadores-sv/auto-calculate - Auto-calculate SPI value from real system data
+  app.get("/api/indicadores-sv/auto-calculate", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      const { nombre } = req.query;
+      if (!nombre || typeof nombre !== "string") {
+        return res.status(400).json({ error: "Se requiere el parámetro 'nombre' del indicador" });
+      }
+      const { calcularSpiIndicador } = await import("./spi-calculators");
+      const resultado = await calcularSpiIndicador(effectiveCompanyId, nombre);
+      res.json(resultado);
+    } catch (error: any) {
+      console.error("Error en auto-cálculo SPI:", error);
+      res.status(500).json({ error: "Error al calcular el indicador automáticamente" });
+    }
+  });
+
   // GET /api/indicadores-sv - List all safety performance indicators for company
   app.get("/api/indicadores-sv", requireAuth, async (req, res) => {
     try {

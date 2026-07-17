@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Search, Trash2, Edit, TrendingUp, Target, BarChart3, Activity, Calendar, ChevronDown, ChevronUp, FileDown, Zap, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Plus, Search, Trash2, Edit, TrendingUp, Target, BarChart3, Activity, Calendar, ChevronDown, ChevronUp, FileDown, Zap, CheckCircle2, ArrowLeft, Calculator, Loader2, Info } from "lucide-react";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { useState, useMemo } from "react";
 import { getTodayDateString } from "@/lib/utils/formatters";
@@ -178,6 +178,8 @@ export default function IndicadoresPesv() {
   const [medicionDialogOpen, setMedicionDialogOpen] = useState(false);
   const [indicadorForMedicion, setIndicadorForMedicion] = useState<IndicadorSV | null>(null);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [isAutoCalculating, setIsAutoCalculating] = useState(false);
+  const [autoCalcInfo, setAutoCalcInfo] = useState<{ observaciones: string; fuente: string; calculable: boolean } | null>(null);
   const [selectedPlantillas, setSelectedPlantillas] = useState<number[]>([]);
   const [selectedPlantillaIdx, setSelectedPlantillaIdx] = useState<string>("none");
 
@@ -428,6 +430,40 @@ export default function IndicadoresPesv() {
   const onSubmitMedicion = (values: MedicionFormValues) => {
     if (indicadorForMedicion) {
       createMedicionMutation.mutate({ indicadorId: indicadorForMedicion.id, data: values });
+    }
+  };
+
+  const handleAutoCalculate = async () => {
+    if (!indicadorForMedicion) return;
+    setIsAutoCalculating(true);
+    setAutoCalcInfo(null);
+    try {
+      const params = new URLSearchParams({ nombre: indicadorForMedicion.nombre });
+      const res = await fetch(`/api/indicadores-sv/auto-calculate?${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error en el servidor");
+      const data = await res.json();
+      if (data.calculable && data.valor !== null) {
+        medicionForm.setValue("valor", String(data.valor));
+        medicionForm.setValue("observaciones", data.observaciones || "");
+      }
+      setAutoCalcInfo({
+        observaciones: data.calculable
+          ? data.observaciones
+          : (data.observaciones || "Este indicador no tiene cálculo automático disponible."),
+        fuente: data.fuente || "",
+        calculable: data.calculable,
+      });
+      if (!data.calculable) {
+        toast({
+          title: "Cálculo no disponible",
+          description: data.observaciones || "Ingrese el valor manualmente.",
+          variant: "default",
+        });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "No se pudo calcular el indicador automáticamente.", variant: "destructive" });
+    } finally {
+      setIsAutoCalculating(false);
     }
   };
 
@@ -1281,8 +1317,8 @@ export default function IndicadoresPesv() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={medicionDialogOpen} onOpenChange={setMedicionDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-[500px] mx-auto">
+      <Dialog open={medicionDialogOpen} onOpenChange={(open) => { setMedicionDialogOpen(open); if (!open) setAutoCalcInfo(null); }}>
+        <DialogContent className="w-[95vw] max-w-[520px] mx-auto">
           <DialogHeader>
             <DialogTitle>Nueva Medición</DialogTitle>
             <DialogDescription>
@@ -1290,6 +1326,44 @@ export default function IndicadoresPesv() {
               <strong>{indicadorForMedicion?.codigo} - {indicadorForMedicion?.nombre}</strong>
             </DialogDescription>
           </DialogHeader>
+
+          <div className="rounded-md border bg-muted/40 px-4 py-3 flex items-start gap-3">
+            <Calculator className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-muted-foreground leading-snug">
+                Calcule el valor automáticamente a partir de los datos reales del sistema (flota, conductores, siniestros, capacitaciones).
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAutoCalculate}
+              disabled={isAutoCalculating}
+              data-testid="button-auto-calcular"
+              className="shrink-0"
+            >
+              {isAutoCalculating ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Calculando...</>
+              ) : (
+                <><Calculator className="h-4 w-4 mr-1" /> Auto-calcular</>
+              )}
+            </Button>
+          </div>
+
+          {autoCalcInfo && (
+            <div className={`rounded-md border px-4 py-3 text-sm space-y-1 ${autoCalcInfo.calculable ? "border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800" : "border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-800"}`}>
+              <div className="flex items-center gap-2 font-medium">
+                <Info className="h-4 w-4 shrink-0" />
+                {autoCalcInfo.calculable ? "Valor calculado automáticamente" : "Cálculo no disponible"}
+              </div>
+              <p className="text-muted-foreground">{autoCalcInfo.observaciones}</p>
+              {autoCalcInfo.fuente && (
+                <p className="text-muted-foreground text-xs">Fuente: {autoCalcInfo.fuente}</p>
+              )}
+            </div>
+          )}
+
           <Form {...medicionForm}>
             <form onSubmit={medicionForm.handleSubmit(onSubmitMedicion)} className="space-y-4">
               <FormField
@@ -1353,7 +1427,7 @@ export default function IndicadoresPesv() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setMedicionDialogOpen(false)}
+                  onClick={() => { setMedicionDialogOpen(false); setAutoCalcInfo(null); }}
                   data-testid="button-cancelar-medicion"
                 >
                   Cancelar
