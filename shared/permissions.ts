@@ -861,6 +861,9 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "licensed_professionals:view",
     "licensed_professionals:edit_self",
     "portal_licenciado:access",
+    "health:view",
+    "comunicaciones_sst:view",
+    "reportes_trabajadores:view",
   ],
 
   // Coordinador SST - Gestión SST completa, PESV, auditorías
