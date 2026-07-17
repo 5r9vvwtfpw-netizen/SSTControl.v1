@@ -517,6 +517,10 @@ export default function FactoresDesempenoPesv() {
       const data = await res.json();
       if (data.calculable && data.valor !== null) {
         form.setValue("valorActual", String(data.valor));
+        const currentBase = form.getValues("valorBase");
+        if (!currentBase || currentBase === "0" || currentBase === "") {
+          form.setValue("valorBase", String(data.valor));
+        }
       }
       setSpfCalcInfo({
         observaciones: data.calculable ? data.observaciones : (data.observaciones || "No disponible automáticamente."),
