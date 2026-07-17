@@ -306,7 +306,7 @@ export default function FactoresDesempenoPesv() {
     return FACTORES_PREDEFINIDOS.filter(fp => !existingNames.has(fp.nombre.toLowerCase()));
   }, [factores]);
 
-  const handleSelectPredefinido = (nombreFactor: string) => {
+  const handleSelectPredefinido = async (nombreFactor: string) => {
     const factor = FACTORES_PREDEFINIDOS.find(fp => fp.nombre === nombreFactor);
     if (!factor) return;
     form.setValue("nombre", factor.nombre);
@@ -315,9 +315,36 @@ export default function FactoresDesempenoPesv() {
     form.setValue("elementoRelacionado", factor.elementoRelacionado);
     form.setValue("unidadMedida", factor.unidadMedida);
     form.setValue("metaAnual", factor.metaAnual);
-    form.setValue("valorBase", factor.valorBase);
+    form.setValue("valorBase", "0");
     form.setValue("valorActual", "0");
     form.setValue("tendencia", "estable");
+
+    // Auto-calcular valores desde datos reales del sistema
+    setIsSpfCalculating(true);
+    setSpfCalcInfo(null);
+    try {
+      const params = new URLSearchParams({ nombre: factor.nombre });
+      const res = await fetch(`/api/factores-desempeno-sv/auto-calculate?${params}`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.metaSugerida !== undefined) form.setValue("metaAnual", String(data.metaSugerida));
+        if (data.calculable && data.valor !== null) {
+          form.setValue("valorActual", String(data.valor));
+          form.setValue("valorBase", String(data.valor));
+        }
+        setSpfCalcInfo({
+          observaciones: data.calculable
+            ? data.observaciones
+            : "Este factor no tiene datos registrados aún. Complete los módulos fuente y use el botón \"Auto-calcular\" más adelante.",
+          fuente: data.fuente || "",
+          calculable: data.calculable,
+        });
+      }
+    } catch {
+      // Silent — usuario puede completar manualmente
+    } finally {
+      setIsSpfCalculating(false);
+    }
   };
 
   const handleGenerateAllFactors = async () => {
@@ -339,6 +366,24 @@ export default function FactoresDesempenoPesv() {
         try {
           const code = generateNextCode(existingCodes);
           existingCodes.push(code);
+
+          // Try to auto-calculate real values before creating
+          let valorActual = "0";
+          let valorBase = "0";
+          let metaAnual = factor.metaAnual;
+          try {
+            const params = new URLSearchParams({ nombre: factor.nombre });
+            const calcRes = await fetch(`/api/factores-desempeno-sv/auto-calculate?${params}`, { credentials: "include" });
+            if (calcRes.ok) {
+              const calcData = await calcRes.json();
+              if (calcData.metaSugerida !== undefined) metaAnual = String(calcData.metaSugerida);
+              if (calcData.calculable && calcData.valor !== null) {
+                valorActual = String(calcData.valor);
+                valorBase = String(calcData.valor);
+              }
+            }
+          } catch { /* use defaults */ }
+
           await apiRequest("POST", "/api/factores-desempeno-sv", {
             codigo: code,
             nombre: factor.nombre,
@@ -346,9 +391,9 @@ export default function FactoresDesempenoPesv() {
             categoria: factor.categoria,
             elementoRelacionado: factor.elementoRelacionado,
             unidadMedida: factor.unidadMedida,
-            metaAnual: factor.metaAnual,
-            valorBase: factor.valorBase,
-            valorActual: "0",
+            metaAnual,
+            valorBase,
+            valorActual,
             tendencia: "estable",
             observaciones: "",
           });
@@ -1161,7 +1206,7 @@ export default function FactoresDesempenoPesv() {
           <AlertDialogHeader>
             <AlertDialogTitle>Generar factores estándar ISO 39001</AlertDialogTitle>
             <AlertDialogDescription>
-              Se crearán automáticamente <strong>{getAvailablePredefinidos().length} factores de desempeño</strong> basados en el estándar ISO 39001:2012 (Cláusula 6.3). Incluye factores de exposición al riesgo, resultados finales, resultados intermedios e intervenciones. Los valores base se inicializarán en 0 y podrá editarlos después.
+              Se crearán automáticamente <strong>{getAvailablePredefinidos().length} factores de desempeño</strong> basados en el estándar ISO 39001:2012 (Cláusula 6.3). Incluye factores de exposición al riesgo, resultados finales, resultados intermedios e intervenciones. El sistema intentará calcular los valores reales desde los datos del sistema (mantenimiento, inspecciones, conductores, siniestros, etc.); si un factor no tiene datos registrados aún, se iniciará en 0 para que lo complete después.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

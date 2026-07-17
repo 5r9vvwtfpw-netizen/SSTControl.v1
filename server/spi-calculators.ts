@@ -297,7 +297,7 @@ const KEYWORD_MAP: Array<{ keywords: string[]; fn: (companyId: string) => Promis
   { keywords: ["capacitación vial", "capacitacion vial", "plan de capacitación"], fn: calcCapacitacionVial },
   { keywords: ["infracciones", "tasa de infracciones", "comparendos"], fn: calcInfracciones },
   { keywords: ["licencia vigente", "licencia de conducción", "licencia de conduccion"], fn: calcLicenciaVigente },
-  { keywords: ["mantenimiento preventivo", "mantenimientos"], fn: calcMantenimiento },
+  { keywords: ["mantenimiento preventivo", "mantenimientos", "mantenimiento vehicular", "plan de mantenimiento", "mantenimiento"], fn: calcMantenimiento },
   { keywords: ["frecuencia de siniestros", "kilómetros", "kilometros", "millón de km"], fn: calcFrecuenciaSiniestros },
   { keywords: ["exámenes médicos", "examenes medicos", "aptitud para conducir"], fn: calcExamenesConductores },
   { keywords: ["documentación vigente", "documentacion vigente", "soat", "revisión técnico"], fn: calcDocumentosVehiculos },
