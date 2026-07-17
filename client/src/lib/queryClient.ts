@@ -85,11 +85,13 @@ function getSelectedCompanyId(): string | null {
     // Ignore parse errors
   }
   // Vault navigation context: set by DetalleEvaluacionSst/Pesv when superadmin views a company's
-  // evaluation. Only applied when navigating via sub-modules (from=evaluation in URL) to avoid
-  // leaking company context into unrelated pages.
+  // evaluation. Applied when: (1) navigating via sub-modules with ?from=evaluation in URL, or
+  // (2) on any /pesv/evaluacion/* route (all 24 PESV steps share the same evaluation context).
   try {
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-    if (params.get('from') === 'evaluation') {
+    const isPesvEvaluacionRoute = typeof window !== 'undefined' &&
+      window.location.pathname.match(/^\/pesv\/evaluacion\//);
+    if (params.get('from') === 'evaluation' || isPesvEvaluacionRoute) {
       const vaultCompany = localStorage.getItem("superadmin_vault_company");
       if (vaultCompany) return vaultCompany;
     }

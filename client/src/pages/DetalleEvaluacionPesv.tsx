@@ -884,6 +884,12 @@ function DetalleEvaluacionPesvInner() {
     enabled: !!id,
   });
 
+  useEffect(() => {
+    if (evaluacion?.companyId && (user?.role === 'superadmin' || user?.role === 'lso' || user?.role === 'lso_externo')) {
+      localStorage.setItem('superadmin_vault_company', evaluacion.companyId);
+    }
+  }, [evaluacion?.companyId, user?.role]);
+
   const { data: respuestas = [] } = useQuery<RespuestaPasoPesv[]>({
     queryKey: ["/api/evaluaciones-pesv", id, "respuestas"],
     enabled: !!id,
