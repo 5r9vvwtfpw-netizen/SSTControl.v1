@@ -9,6 +9,9 @@ export interface SpiCalculationResult {
   observaciones: string;
   fuente: string;
   calculable: boolean;
+  metaSugerida?: number;
+  minimoSugerido?: number;
+  maximoSugerido?: number;
 }
 
 export interface SpiAutoCalculate {
@@ -49,6 +52,9 @@ async function calcSiniestros(companyId: string): Promise<SpiCalculationResult> 
     observaciones: `${siniestrosAnio} siniestros en el año / ${totalVehiculos} vehículos en flota × 100`,
     fuente: "Registro de siniestros viales y flota vehicular",
     calculable: true,
+    metaSugerida: 0,
+    minimoSugerido: 0,
+    maximoSugerido: 5,
   };
 }
 
@@ -66,6 +72,9 @@ async function calcSeveridad(companyId: string): Promise<SpiCalculationResult> {
     observaciones: `${totalHeridos} heridos / ${totalSiniestros} siniestros. Nota: usa heridos como proxy de gravedad.`,
     fuente: "Registro de siniestros y ausentismo laboral",
     calculable: true,
+    metaSugerida: 0,
+    minimoSugerido: 0,
+    maximoSugerido: 2,
   };
 }
 
@@ -86,6 +95,9 @@ async function calcMortalidad(companyId: string): Promise<SpiCalculationResult> 
     observaciones: `${totalFallecidos} víctimas mortales / ${totalTrabajadores} trabajadores × 100,000`,
     fuente: "Registro de siniestros viales y nómina",
     calculable: true,
+    metaSugerida: 0,
+    minimoSugerido: 0,
+    maximoSugerido: 1,
   };
 }
 
@@ -107,6 +119,9 @@ async function calcInspecciones(companyId: string): Promise<SpiCalculationResult
     observaciones: `${realizadas} inspecciones realizadas / ${programadas} programadas (${vehicles.length} veh × ${DIAS_LABORALES_MES} días × ${MESES} meses) × 100`,
     fuente: "Registro de inspecciones vehiculares preoperacionales",
     calculable: true,
+    metaSugerida: 95,
+    minimoSugerido: 0,
+    maximoSugerido: 100,
   };
 }
 
@@ -124,6 +139,9 @@ async function calcCapacitacionVial(companyId: string): Promise<SpiCalculationRe
     observaciones: `${ejecutadas} capacitaciones ejecutadas / ${planeadas} planeadas en el año × 100`,
     fuente: "Plan de capacitación vial y registros de asistencia",
     calculable: true,
+    metaSugerida: 100,
+    minimoSugerido: 0,
+    maximoSugerido: 100,
   };
 }
 
@@ -143,6 +161,9 @@ async function calcInfracciones(companyId: string): Promise<SpiCalculationResult
     observaciones: `${enAnio} infracciones en el año / ${totalConductores} conductores × 100`,
     fuente: "SIMIT y registros internos de conductores",
     calculable: true,
+    metaSugerida: 0,
+    minimoSugerido: 0,
+    maximoSugerido: 5,
   };
 }
 
@@ -160,6 +181,9 @@ async function calcLicenciaVigente(companyId: string): Promise<SpiCalculationRes
     observaciones: `${conLicenciaVigente} conductores con licencia vigente / ${total} conductores activos × 100`,
     fuente: "Base de datos de conductores (módulo PESV - H03)",
     calculable: true,
+    metaSugerida: 100,
+    minimoSugerido: 0,
+    maximoSugerido: 100,
   };
 }
 
@@ -179,6 +203,9 @@ async function calcMantenimiento(companyId: string): Promise<SpiCalculationResul
       : `${preventivos} mantenimientos preventivos / ${total} mantenimientos totales × 100`,
     fuente: "Plan de mantenimiento vehicular (módulo PESV - H05)",
     calculable: total > 0,
+    metaSugerida: 95,
+    minimoSugerido: 0,
+    maximoSugerido: 100,
   };
 }
 
@@ -190,6 +217,9 @@ async function calcFrecuenciaSiniestros(_companyId: string): Promise<SpiCalculat
     observaciones: "Este indicador requiere datos de kilómetros recorridos (GPS/odómetro). Ingrese el valor manualmente.",
     fuente: "Registros GPS y control de kilometraje",
     calculable: false,
+    metaSugerida: 0,
+    minimoSugerido: 0,
+    maximoSugerido: 10,
   };
 }
 
@@ -207,6 +237,9 @@ async function calcExamenesConductores(companyId: string): Promise<SpiCalculatio
     observaciones: `${conExamenVigente} conductores con examen médico vigente / ${total} conductores activos × 100`,
     fuente: "Registros de salud ocupacional (módulo PESV - H04)",
     calculable: true,
+    metaSugerida: 100,
+    minimoSugerido: 0,
+    maximoSugerido: 100,
   };
 }
 
@@ -228,6 +261,9 @@ async function calcDocumentosVehiculos(companyId: string): Promise<SpiCalculatio
     observaciones: `${conDocsVigentes} vehículos con SOAT y RTM vigentes / ${total} vehículos activos × 100`,
     fuente: "Registro de documentación vehicular (módulo PESV - H02)",
     calculable: true,
+    metaSugerida: 100,
+    minimoSugerido: 0,
+    maximoSugerido: 100,
   };
 }
 
@@ -247,6 +283,9 @@ async function calcEficaciaAcciones(companyId: string): Promise<SpiCalculationRe
       : `${conAcciones} siniestros con acciones correctivas documentadas / ${total} siniestros totales × 100`,
     fuente: "Seguimiento de investigaciones de siniestros (módulo PESV)",
     calculable: true,
+    metaSugerida: 100,
+    minimoSugerido: 0,
+    maximoSugerido: 100,
   };
 }
 

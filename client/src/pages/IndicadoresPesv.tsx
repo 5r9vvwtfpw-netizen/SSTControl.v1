@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Search, Trash2, Edit, TrendingUp, Target, BarChart3, Activity, Calendar, ChevronDown, ChevronUp, FileDown, Zap, CheckCircle2, ArrowLeft, Calculator, Loader2, Info } from "lucide-react";
+import { Plus, Search, Trash2, Edit, TrendingUp, Target, BarChart3, Activity, Calendar, ChevronDown, ChevronUp, FileDown, Zap, CheckCircle2, ArrowLeft, Calculator, Loader2, Info, Wand2 } from "lucide-react";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { useState, useMemo } from "react";
 import { getTodayDateString } from "@/lib/utils/formatters";
@@ -180,6 +180,8 @@ export default function IndicadoresPesv() {
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [isAutoCalculating, setIsAutoCalculating] = useState(false);
   const [autoCalcInfo, setAutoCalcInfo] = useState<{ observaciones: string; fuente: string; calculable: boolean } | null>(null);
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
+  const [autoFillInfo, setAutoFillInfo] = useState<{ observaciones: string; fuente: string; calculable: boolean } | null>(null);
   const [selectedPlantillas, setSelectedPlantillas] = useState<number[]>([]);
   const [selectedPlantillaIdx, setSelectedPlantillaIdx] = useState<string>("none");
 
@@ -467,6 +469,37 @@ export default function IndicadoresPesv() {
     }
   };
 
+  const handleAutoFillValues = async () => {
+    const nombre = form.getValues("nombre");
+    if (!nombre) {
+      toast({ title: "Seleccione un indicador", description: "Escoja una plantilla del catálogo primero para poder auto-completar.", variant: "default" });
+      return;
+    }
+    setIsAutoFilling(true);
+    setAutoFillInfo(null);
+    try {
+      const params = new URLSearchParams({ nombre });
+      const res = await fetch(`/api/indicadores-sv/auto-calculate?${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error en el servidor");
+      const data = await res.json();
+      if (data.metaSugerida !== undefined) form.setValue("valorMeta", String(data.metaSugerida));
+      if (data.minimoSugerido !== undefined) form.setValue("valorMinimo", String(data.minimoSugerido));
+      if (data.maximoSugerido !== undefined) form.setValue("valorMaximo", String(data.maximoSugerido));
+      if (data.calculable && data.valor !== null) form.setValue("valorActual", String(data.valor));
+      setAutoFillInfo({
+        observaciones: data.calculable
+          ? `Valor actual: ${data.valor} | Meta: ${data.metaSugerida ?? "—"} | Mín: ${data.minimoSugerido ?? "—"} | Máx: ${data.maximoSugerido ?? "—"}. ${data.observaciones}`
+          : `Valores de referencia aplicados (meta/mín/máx). Valor actual requiere ingreso manual: ${data.observaciones}`,
+        fuente: data.fuente || "",
+        calculable: data.metaSugerida !== undefined,
+      });
+    } catch {
+      toast({ title: "Error", description: "No se pudo auto-completar los valores.", variant: "destructive" });
+    } finally {
+      setIsAutoFilling(false);
+    }
+  };
+
   const handleEditClick = (indicador: IndicadorSV) => {
     setEditingIndicador(indicador);
     form.reset({
@@ -504,6 +537,7 @@ export default function IndicadoresPesv() {
     if (!open) {
       setEditingIndicador(null);
       setSelectedPlantillaIdx("none");
+      setAutoFillInfo(null);
       form.reset();
     }
     setDialogOpen(open);
@@ -1177,6 +1211,43 @@ export default function IndicadoresPesv() {
                   )}
                 />
               </div>
+
+              <div className="rounded-md border bg-muted/40 px-4 py-3 flex items-start gap-3">
+                <Calculator className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-muted-foreground leading-snug">
+                    Auto-complete Meta, Mínimo, Máximo y Valor Actual desde los datos reales del sistema.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAutoFillValues}
+                  disabled={isAutoFilling}
+                  data-testid="button-auto-fill-valores"
+                  className="shrink-0"
+                >
+                  {isAutoFilling ? (
+                    <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Calculando...</>
+                  ) : (
+                    <><Wand2 className="h-4 w-4 mr-1" /> Auto-completar valores</>
+                  )}
+                </Button>
+              </div>
+
+              {autoFillInfo && (
+                <div className={`rounded-md border px-4 py-3 text-sm space-y-1 ${autoFillInfo.calculable ? "border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800" : "border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-800"}`}>
+                  <div className="flex items-center gap-2 font-medium">
+                    <Info className="h-4 w-4 shrink-0" />
+                    {autoFillInfo.calculable ? "Valores completados automáticamente" : "Valores de referencia aplicados"}
+                  </div>
+                  <p className="text-muted-foreground">{autoFillInfo.observaciones}</p>
+                  {autoFillInfo.fuente && (
+                    <p className="text-muted-foreground text-xs">Fuente: {autoFillInfo.fuente}</p>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <FormField
