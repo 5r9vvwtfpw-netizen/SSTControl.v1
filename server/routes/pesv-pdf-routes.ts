@@ -106,6 +106,82 @@ export function registerPesvPdfRoutes(app: Express) {
     }
   });
 
+  // 1b. GET /api/pesv/comite/actos-administrativos/:id/pdf
+  app.get('/api/pesv/comite/actos-administrativos/:id/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+      const { id } = req.params;
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const [acto] = await db.select().from(schema.actosAdministrativosPesv).where(and(eq(schema.actosAdministrativosPesv.id, id), eq(schema.actosAdministrativosPesv.companyId, companyId)));
+      if (!acto) return res.status(404).send('Acto administrativo no encontrado');
+
+      const integrantes = await db.select().from(schema.comiteIntegrantesPesv).where(eq(schema.comiteIntegrantesPesv.companyId, companyId));
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="acto-administrativo-pesv-${acto.numeroDocumento}.pdf"`);
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      let y = await addStandardHeader({
+        doc, company,
+        documentTitle: `ACTO ADMINISTRATIVO DE CONFORMACIÓN DEL EQUIPO PESV`,
+        documentCode: `PESV-AA-${acto.numeroDocumento}`,
+        logoBuffer
+      });
+
+      y = addSectionBar(doc, 'Información del Documento', y);
+      y = addLabeledField(doc, 'Tipo de Documento', acto.tipoDocumento, { y });
+      y = addLabeledField(doc, 'Número', acto.numeroDocumento, { y });
+      y = addLabeledField(doc, 'Fecha de Expedición', formatDate(acto.fechaExpedicion), { y });
+      if (acto.fechaVigencia) y = addLabeledField(doc, 'Fecha de Vigencia', formatDate(acto.fechaVigencia), { y });
+      y = addLabeledField(doc, 'Firmado por', `${acto.firmadoPor} — ${acto.cargoFirmante}`, { y });
+      y = addLabeledField(doc, 'Estado', acto.estado.charAt(0).toUpperCase() + acto.estado.slice(1), { y });
+
+      y = addSectionBar(doc, 'Objeto', y);
+      y = addParagraph(doc, acto.objetoConformacion, { y });
+
+      if (acto.considerandos) {
+        y = addSectionBar(doc, 'Considerandos', y);
+        y = addParagraph(doc, acto.considerandos, { y });
+      }
+
+      if (acto.articulado) {
+        y = addSectionBar(doc, 'Articulado', y);
+        y = addParagraph(doc, acto.articulado, { y });
+      }
+
+      if (acto.observaciones) {
+        y = addSectionBar(doc, 'Observaciones', y);
+        y = addParagraph(doc, acto.observaciones, { y });
+      }
+
+      const integrantesActivos = integrantes.filter(i => i.estado === 'activo');
+      if (integrantesActivos.length > 0) {
+        y = addSectionBar(doc, 'Equipo de Trabajo PESV Conformado', y);
+        const rows = integrantesActivos.map(i => [i.nombre, i.cargo, i.rol]);
+        y = addSimpleTable(doc, ['Nombre', 'Cargo', 'Rol'], rows, { y });
+      }
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-acto-administrativo');
+    }
+  });
+
   // 2. GET /api/pesv/comite/integrantes/pdf
   app.get('/api/pesv/comite/integrantes/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
     try {
