@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash2, ArrowLeft, Users, FileText, FileDown, Stamp, CalendarDays, CheckCircle2, XCircle, AlertCircle, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowLeft, Users, FileText, FileDown, Stamp, CalendarDays, CheckCircle2, XCircle, AlertCircle, Calendar, Printer } from "lucide-react";
 import { useState } from "react";
 import { getTodayDateString } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -552,6 +552,67 @@ function ActoAdministrativoTab({ isAdmin, toast }: { isAdmin: boolean; toast: an
 
   const actoVigente = actos.find(a => a.estado === "vigente");
 
+  const handlePrint = (a: ActoAdministrativoPesv) => {
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>${a.tipoDocumento} No. ${a.numeroDocumento} - Acto Administrativo PESV</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12pt; margin: 40px; color: #000; }
+    h1 { font-size: 14pt; text-align: center; text-transform: uppercase; margin-bottom: 4px; }
+    .subtitle { text-align: center; font-size: 11pt; margin-bottom: 24px; color: #333; }
+    .meta { margin-bottom: 16px; }
+    .meta span { font-weight: bold; }
+    .section-title { font-weight: bold; margin-top: 20px; margin-bottom: 6px; text-transform: uppercase; font-size: 11pt; }
+    pre { font-family: Arial, sans-serif; font-size: 11pt; white-space: pre-wrap; margin: 0; line-height: 1.6; }
+    .firma-block { margin-top: 60px; }
+    .firma-line { border-top: 1px solid #000; width: 260px; margin-top: 50px; }
+    .firma-nombre { font-weight: bold; margin-top: 4px; }
+    .firma-cargo { font-size: 10pt; color: #333; }
+    .footer { margin-top: 40px; border-top: 1px solid #ccc; padding-top: 8px; font-size: 9pt; color: #666; text-align: center; }
+    @media print { body { margin: 20mm; } }
+  </style>
+</head>
+<body>
+  <h1>${a.tipoDocumento} No. ${a.numeroDocumento}</h1>
+  <div class="subtitle">Plan Estratégico de Seguridad Vial (PESV)<br/>Acto Administrativo de Conformación del Equipo de Trabajo</div>
+
+  <div class="meta">
+    <div><span>Expedido:</span> ${new Date(a.fechaExpedicion).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</div>
+    ${a.fechaVigencia ? `<div><span>Vigencia:</span> ${new Date(a.fechaVigencia).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</div>` : ""}
+    <div><span>Estado:</span> ${a.estado.charAt(0).toUpperCase() + a.estado.slice(1)}</div>
+  </div>
+
+  <div class="section-title">Objeto</div>
+  <pre>${a.objetoConformacion}</pre>
+
+  ${a.considerandos ? `<div class="section-title">Considerandos</div><pre>${a.considerandos}</pre>` : ""}
+
+  ${a.articulado ? `<div class="section-title">Articulado</div><pre>${a.articulado}</pre>` : ""}
+
+  ${a.observaciones ? `<div class="section-title">Observaciones</div><pre>${a.observaciones}</pre>` : ""}
+
+  <div class="firma-block">
+    <div class="firma-line"></div>
+    <div class="firma-nombre">${a.firmadoPor}</div>
+    <div class="firma-cargo">${a.cargoFirmante}</div>
+  </div>
+
+  <div class="footer">
+    Documento generado por SG-SST Colombia · Resolución 40595/2022, Art. 5 · ${new Date().toLocaleDateString("es-CO")}
+  </div>
+</body>
+</html>`;
+    const win = window.open("", "_blank", "width=800,height=900");
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => win.print(), 400);
+    }
+  };
+
   return (
     <>
       <Card className="mb-4">
@@ -669,6 +730,7 @@ function ActoAdministrativoTab({ isAdmin, toast }: { isAdmin: boolean; toast: an
                     <Badge variant={a.estado === "vigente" ? "default" : a.estado === "anulado" ? "destructive" : "secondary"}>
                       {a.estado === "vigente" ? "Vigente" : a.estado === "modificado" ? "Modificado" : "Anulado"}
                     </Badge>
+                    <Button size="icon" variant="ghost" onClick={() => handlePrint(a)} data-testid={`button-print-acto-${a.id}`} title="Imprimir acto administrativo"><Printer className="h-4 w-4" /></Button>
                     {isAdmin && (
                       <>
                         <Button size="icon" variant="ghost" onClick={() => handleEdit(a)} data-testid={`button-edit-acto-${a.id}`}><Pencil className="h-4 w-4" /></Button>
