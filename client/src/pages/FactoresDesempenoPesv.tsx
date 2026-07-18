@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Search, Trash2, Edit, TrendingUp, TrendingDown, Minus, Target, Activity, Shield, AlertTriangle, FileDown, Sparkles, Loader2, Wand2, ArrowLeft } from "lucide-react";
+import { Plus, Search, Trash2, Edit, TrendingUp, TrendingDown, Minus, Target, Activity, Shield, AlertTriangle, FileDown, Sparkles, Loader2, Wand2, ArrowLeft, RefreshCw } from "lucide-react";
 import { useState, useCallback } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -245,6 +245,7 @@ export default function FactoresDesempenoPesv() {
   const [confirmGenerateDialogOpen, setConfirmGenerateDialogOpen] = useState(false);
   const [isSpfCalculating, setIsSpfCalculating] = useState(false);
   const [spfCalcInfo, setSpfCalcInfo] = useState<{ observaciones: string; fuente: string; calculable: boolean } | null>(null);
+  const [recalculando, setRecalculando] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -425,6 +426,28 @@ export default function FactoresDesempenoPesv() {
       });
     } finally {
       setGeneratingAll(false);
+    }
+  };
+
+  const handleRecalcularActuales = async () => {
+    if (factores.length === 0) {
+      toast({ title: "Sin factores", description: "No hay factores registrados para recalcular." });
+      return;
+    }
+    setRecalculando(true);
+    try {
+      const res = await apiRequest("POST", "/api/factores-desempeno-sv/recalcular-actuales", {});
+      const data = await res.json();
+      queryClient.invalidateQueries({ queryKey: ["/api/factores-desempeno-sv"] });
+      toast({
+        title: "Valores actualizados",
+        description: `${data.actualizados} de ${data.total} factores actualizados con datos del sistema${data.sinDatos > 0 ? ` (${data.sinDatos} sin datos suficientes)` : ""}.`,
+        className: "bg-green-50 border-green-200",
+      });
+    } catch (error: any) {
+      toast({ title: "Error al recalcular", description: error.message, variant: "destructive" });
+    } finally {
+      setRecalculando(false);
     }
   };
 
@@ -675,6 +698,22 @@ export default function FactoresDesempenoPesv() {
                 : `Generar ${getAvailablePredefinidos().length} Factores ISO`
             }
           </Button>
+          {factores.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={handleRecalcularActuales}
+              disabled={recalculando}
+              data-testid="button-recalcular-valores-actuales"
+              title="Actualiza el campo 'Actual' de todos los factores con los datos reales del sistema en este momento"
+            >
+              {recalculando ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              {recalculando ? "Actualizando..." : "Actualizar valores actuales"}
+            </Button>
+          )}
           <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild>
               <Button className="bg-green-600 hover:bg-green-700" onClick={handleOpenNewDialog} data-testid="button-agregar-factor">

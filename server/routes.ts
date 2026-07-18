@@ -52099,6 +52099,48 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // POST /api/factores-desempeno-sv/recalcular-actuales
+  // Recalcula el valorActual de todos los factores existentes con datos reales del sistema
+  app.post("/api/factores-desempeno-sv/recalcular-actuales", requireAuth, async (req, res) => {
+    try {
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+
+      const factores = await db.select()
+        .from(schema.factoresDesempenoSV)
+        .where(eq(schema.factoresDesempenoSV.companyId, effectiveCompanyId));
+
+      const { calcularSpiIndicador } = await import("./spi-calculators");
+
+      let actualizados = 0;
+      let sinDatos = 0;
+      let errores = 0;
+
+      for (const factor of factores) {
+        try {
+          const resultado = await calcularSpiIndicador(effectiveCompanyId, factor.nombre);
+          if (resultado.calculable && resultado.valor !== null && resultado.valor !== undefined) {
+            await db.update(schema.factoresDesempenoSV)
+              .set({ valorActual: String(resultado.valor), updatedAt: sql`now()` })
+              .where(eq(schema.factoresDesempenoSV.id, factor.id));
+            actualizados++;
+          } else {
+            sinDatos++;
+          }
+        } catch {
+          errores++;
+        }
+      }
+
+      res.json({ total: factores.length, actualizados, sinDatos, errores });
+    } catch (error: any) {
+      console.error("Error recalculando factores SPF:", error);
+      res.status(500).json({ error: "Error al recalcular los factores de desempeño" });
+    }
+  });
+
   // GET /api/factores-desempeno-sv - List all safety performance factors for company
   app.get("/api/factores-desempeno-sv", requireAuth, async (req, res) => {
     try {
