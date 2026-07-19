@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, Search, ClipboardCheck, Calendar, Clock, CheckCircle2, Shield, PlayCircle, Building2, CalendarDays, Sparkles, Wand2, Eye, ChevronDown, ChevronRight, FileText, AlertCircle, Loader2, X } from "lucide-react";
+import { Plus, Search, ClipboardCheck, Calendar, Clock, CheckCircle2, Shield, PlayCircle, Building2, CalendarDays, Sparkles, Wand2, Eye, ChevronDown, ChevronRight, FileText, AlertCircle, Loader2, X, FileDown } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -382,6 +382,16 @@ export default function RevisionesDireccion() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
+
+  const handleDownloadPdf = (revisionId: string, codigo: string) => {
+    const link = document.createElement('a');
+    link.href = `/api/revisiones-direccion/${revisionId}/pdf`;
+    link.target = '_blank';
+    link.download = `revision-direccion-${codigo}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleOpenDetailDialog = (revision: RevisionDireccion) => {
     setSelectedRevision(revision);
@@ -997,7 +1007,16 @@ export default function RevisionesDireccion() {
                   </div>
                 )}
 
-                <div className="pt-2 border-t flex justify-end">
+                <div className="pt-2 border-t flex justify-between items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => { e.stopPropagation(); handleDownloadPdf(revision.id, revision.codigo); }}
+                    data-testid={`button-pdf-revision-${revision.id}`}
+                    title="Descargar PDF"
+                  >
+                    <FileDown className="h-4 w-4" />
+                  </Button>
                   <Button variant="ghost" size="sm" className="text-primary" data-testid={`button-detail-${revision.id}`}>
                     <Eye className="h-4 w-4 mr-1" />
                     Ver Detalle

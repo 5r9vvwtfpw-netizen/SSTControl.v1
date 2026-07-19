@@ -2104,6 +2104,134 @@ export function registerPesvPdfRoutes(app: Express) {
       handlePdfError(error, res, 'pesv-fatiga-registro-individual');
     }
   });
+
+  // SST: GET /api/revisiones-direccion/:id/pdf
+  app.get('/api/revisiones-direccion/:id/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+      const { id } = req.params;
+
+      const [company] = await db.select().from(schema.companies)
+        .where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const [revision] = await db.select().from(schema.revisionesDireccion)
+        .where(and(eq(schema.revisionesDireccion.id, id), eq(schema.revisionesDireccion.companyId, companyId)));
+      if (!revision) return res.status(404).send('Revisión no encontrada');
+
+      const participantes = await db.select().from(schema.participantesRevision)
+        .where(eq(schema.participantesRevision.revisionId, id));
+
+      const temas = await db.select().from(schema.temasRevision)
+        .where(eq(schema.temasRevision.revisionId, id))
+        .orderBy(schema.temasRevision.orden);
+
+      const decisiones = await db.select().from(schema.decisionesRevision)
+        .where(eq(schema.decisionesRevision.revisionId, id));
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="revision-direccion-${revision.codigo}.pdf"`);
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+
+      const periodicidadMap: Record<string, string> = {
+        mensual: 'Mensual', trimestral: 'Trimestral',
+        semestral: 'Semestral', anual: 'Anual',
+      };
+      const estadoMap: Record<string, string> = {
+        programada: 'Programada', en_ejecucion: 'En Ejecución',
+        completada: 'Completada', aprobada: 'Aprobada', seguimiento: 'Seguimiento',
+      };
+      const tipoDecisionMap: Record<string, string> = {
+        mejora_continua: 'Mejora Continua', cambio_politica: 'Cambio de Política',
+        asignacion_recursos: 'Asignación de Recursos', cambio_objetivos: 'Cambio de Objetivos',
+        nueva_accion: 'Nueva Acción', mantener: 'Mantener', otro: 'Otro',
+      };
+
+      let y = await addStandardHeader({
+        doc, company,
+        documentTitle: 'REVISIÓN POR LA DIRECCIÓN - SG-SST',
+        documentCode: `SST-RVD-${revision.codigo}`,
+        logoBuffer,
+      });
+
+      y = addSectionBar(doc, 'Información General', y);
+      y = addLabeledField(doc, 'Código', revision.codigo, { y });
+      y = addLabeledField(doc, 'Título', revision.titulo, { y });
+      y = addLabeledField(doc, 'Fecha de Revisión', formatDate(revision.fechaRevision), { y });
+      y = addLabeledField(doc, 'Periodicidad', periodicidadMap[revision.periodicidad] || revision.periodicidad, { y });
+      y = addLabeledField(doc, 'Estado', estadoMap[revision.estado] || revision.estado, { y });
+      if (revision.lugar) y = addLabeledField(doc, 'Lugar', revision.lugar, { y });
+      if (revision.duracion) y = addLabeledField(doc, 'Duración', `${revision.duracion} minutos`, { y });
+      if (revision.fechaAprobacion) y = addLabeledField(doc, 'Fecha de Aprobación', formatDate(revision.fechaAprobacion), { y });
+      if (revision.proximaRevision) y = addLabeledField(doc, 'Próxima Revisión', formatDate(revision.proximaRevision), { y });
+
+      if (revision.antecedentes) {
+        y = addSectionBar(doc, 'Antecedentes y Contexto', y);
+        y = addParagraph(doc, revision.antecedentes, { y });
+      }
+
+      if (participantes.length > 0) {
+        y = addSectionBar(doc, 'Participantes', y);
+        const participanteRows = participantes.map(p => [
+          p.nombre,
+          p.cargo,
+          p.tipo === 'interno' ? 'Interno' : p.tipo === 'externo' ? 'Externo' : p.tipo,
+          p.asistio === 1 ? 'Asistió' : 'No asistió',
+        ]);
+        y = addSimpleTable(doc, ['Nombre', 'Cargo', 'Tipo', 'Asistencia'], participanteRows, { y });
+      }
+
+      if (temas.length > 0) {
+        y = addSectionBar(doc, 'Temas Tratados', y);
+        for (const tema of temas) {
+          y = checkPageBreak(doc, y, 60);
+          y = addLabeledField(doc, 'Tema', tema.titulo, { y });
+          if (tema.descripcion) y = addParagraph(doc, tema.descripcion, { y, indent: 10 });
+          if (tema.hallazgos) y = addLabeledField(doc, 'Hallazgos', tema.hallazgos, { y });
+          if (tema.oportunidadesMejora) y = addLabeledField(doc, 'Oportunidades de Mejora', tema.oportunidadesMejora, { y });
+          if (tema.conclusiones) y = addLabeledField(doc, 'Conclusiones', tema.conclusiones, { y });
+          y += 4;
+        }
+      }
+
+      if (revision.resumenEjecutivo) {
+        y = addSectionBar(doc, 'Resumen Ejecutivo', y);
+        y = addParagraph(doc, revision.resumenEjecutivo, { y });
+      }
+
+      if (revision.conclusiones) {
+        y = addSectionBar(doc, 'Conclusiones Generales', y);
+        y = addParagraph(doc, revision.conclusiones, { y });
+      }
+
+      if (decisiones.length > 0) {
+        y = addSectionBar(doc, 'Decisiones Estratégicas', y);
+        const decisionRows = decisiones.map((d, idx) => [
+          String(idx + 1),
+          tipoDecisionMap[d.tipo] || d.tipo,
+          d.descripcion,
+          d.requiereAccion === 1 ? 'Sí' : 'No',
+        ]);
+        y = addSimpleTable(doc, ['#', 'Tipo', 'Descripción', 'Requiere Acción'], decisionRows, { y });
+      }
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'sst-revision-direccion-individual');
+    }
+  });
 }
 
 export default registerPesvPdfRoutes;
