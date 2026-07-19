@@ -292,22 +292,20 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       return null;
     }
     
-    // PRIORIDAD: Siempre calcular dinámicamente basándose en número de trabajadores y nivel de riesgo
-    // según Resolución 0312/2019. El capítulo almacenado en BD podría estar desactualizado
-    // si la empresa cambió su número de trabajadores o nivel de riesgo.
-    // SST-2026-0031: Este cálculo garantiza que empresas con >50 trabajadores (61 estándares)
-    // siempre tengan acceso a todos los módulos correspondientes.
+    // Calcular dinámicamente según número de trabajadores y nivel de riesgo (Res. 0312/2019)
     const calculatedChapter = calculateChapterByWorkers(companyData);
     
-    // Log para debug (solo en desarrollo)
-    if (process.env.NODE_ENV === 'development') {
-      const storedChapter = companyData.calculatedChapter;
-      if (storedChapter && parseInt(storedChapter, 10) !== calculatedChapter) {
-        console.warn(`[CompanyContext] Chapter mismatch - stored: ${storedChapter}, calculated: ${calculatedChapter} (workers: ${companyData.numberOfWorkers}, risk: ${companyData.riskLevel})`);
-      }
-    }
+    // El capítulo almacenado en BD puede ser mayor si la empresa fue clasificada por CIIU,
+    // por riesgo ARL, o si fue ajustado manualmente por el administrador.
+    // Usamos el MAYOR entre ambos para no restringir acceso a módulos que el sistema
+    // ya asignó correctamente. Esto evita el bug donde empresas con pocos trabajadores
+    // pero clasificación avanzada (por CIIU o riesgo) ven "Módulo no disponible".
+    const storedChapter = companyData.calculatedChapter ? parseInt(companyData.calculatedChapter, 10) : null;
+    const effectiveChapter = (storedChapter && storedChapter > calculatedChapter)
+      ? storedChapter
+      : calculatedChapter;
     
-    return calculatedChapter;
+    return effectiveChapter as ChapterType;
   }, [canSelectCompany, selectedCompany, userCompany, calculateChapterByWorkers]);
 
   return (
