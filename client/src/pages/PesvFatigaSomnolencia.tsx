@@ -18,7 +18,7 @@ import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { PesvFatigaRegistro, Driver } from "@shared/schema";
+import { PesvFatigaRegistro, Driver, User } from "@shared/schema";
 import { PASOS_PESV } from "@/data/pasos-pesv";
 
 const TIPO_CONTROL_OPTIONS = [
@@ -88,6 +88,7 @@ export default function PesvFatigaSomnolencia() {
   const [editItem, setEditItem] = useState<PesvFatigaRegistro | null>(null);
   const [form, setForm] = useState<FatigaFormData>(EMPTY_FORM);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [responsableModo, setResponsableModo] = useState<"selector" | "manual">("selector");
 
   const apiBase = evaluacionId
     ? `/api/pesv/evaluacion/${evaluacionId}/fatiga-registros`
@@ -109,6 +110,10 @@ export default function PesvFatigaSomnolencia() {
 
   const { data: drivers = [], isLoading: driversLoading } = useQuery<Driver[]>({
     queryKey: ["/api/drivers"],
+  });
+
+  const { data: companyUsers = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
   });
 
   const saveMutation = useMutation({
@@ -144,12 +149,16 @@ export default function PesvFatigaSomnolencia() {
 
   function openNew() {
     setEditItem(null);
-    setForm({ ...EMPTY_FORM, evaluacionId: evaluacionId ?? null });
+    setResponsableModo("selector");
+    setForm({ ...EMPTY_FORM, evaluacionId: evaluacionId ?? null, responsable: user?.fullName ?? "" });
     setDialogOpen(true);
   }
 
   function openEdit(item: PesvFatigaRegistro) {
     setEditItem(item);
+    const existingName = item.responsable ?? "";
+    const matched = companyUsers.find(u => u.fullName === existingName);
+    setResponsableModo(matched || !existingName ? "selector" : "manual");
     setForm({
       evaluacionId: item.evaluacionId ?? null,
       conductorNombre: item.conductorNombre,
@@ -159,7 +168,7 @@ export default function PesvFatigaSomnolencia() {
       horasConduccion: item.horasConduccion?.toString() ?? "",
       descansoCumplido: item.descansoCumplido?.toString() ?? "1",
       medidasTomadas: item.medidasTomadas ?? "",
-      responsable: item.responsable ?? "",
+      responsable: existingName,
       observaciones: item.observaciones ?? "",
     });
     setDialogOpen(true);
@@ -461,14 +470,39 @@ export default function PesvFatigaSomnolencia() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="responsable">Responsable del Control</Label>
-              <Input
-                id="responsable"
-                value={form.responsable}
-                onChange={e => setForm(f => ({ ...f, responsable: e.target.value }))}
-                placeholder="Nombre del responsable"
-                data-testid="input-responsable"
-              />
+              <Label>Responsable del Control</Label>
+              <Select
+                value={responsableModo === "selector" ? (companyUsers.find(u => u.fullName === form.responsable)?.id ?? (form.responsable ? "__manual__" : "")) : "__manual__"}
+                onValueChange={v => {
+                  if (v === "__manual__") {
+                    setResponsableModo("manual");
+                    setForm(f => ({ ...f, responsable: "" }));
+                  } else {
+                    const selected = companyUsers.find(u => u.id === v);
+                    setResponsableModo("selector");
+                    setForm(f => ({ ...f, responsable: selected?.fullName ?? "" }));
+                  }
+                }}
+              >
+                <SelectTrigger data-testid="select-responsable">
+                  <SelectValue placeholder="Seleccione responsable..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {companyUsers.map(u => (
+                    <SelectItem key={u.id} value={u.id}>{u.fullName || u.username}</SelectItem>
+                  ))}
+                  <SelectItem value="__manual__">Otro (escribir manualmente)</SelectItem>
+                </SelectContent>
+              </Select>
+              {responsableModo === "manual" && (
+                <Input
+                  value={form.responsable}
+                  onChange={e => setForm(f => ({ ...f, responsable: e.target.value }))}
+                  placeholder="Nombre del responsable..."
+                  data-testid="input-responsable-manual"
+                  autoFocus
+                />
+              )}
             </div>
 
             <div className="space-y-1.5">
