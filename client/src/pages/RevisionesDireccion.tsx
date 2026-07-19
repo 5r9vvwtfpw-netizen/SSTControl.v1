@@ -25,6 +25,7 @@ import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permis
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 
 const normativaRevisionesDireccion = [
   {
@@ -541,6 +542,7 @@ export default function RevisionesDireccion() {
       <div className="flex items-center gap-2 flex-wrap">
         <BackToEvaluationButton />
         <BackToCronogramaButton />
+        <BackToPesvEvaluationButton showPanelFallback={false} />
       </div>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
