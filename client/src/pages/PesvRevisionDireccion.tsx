@@ -14,13 +14,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Users, Calendar, CheckCircle2, Plus, Eye, ClipboardCheck, ExternalLink, Building2, Shield, FileDown, ChevronDown, ChevronRight, Link2, ArrowRight, AlertTriangle, Loader2, Trash2 } from "lucide-react";
+import { Users, Calendar, CheckCircle2, Plus, Eye, ClipboardCheck, ExternalLink, Building2, Shield, FileDown, ChevronDown, ChevronRight, Link2, ArrowRight, AlertTriangle, Loader2, Trash2, TrendingUp, BookOpen, Activity, GraduationCap, ShieldAlert } from "lucide-react";
 import { Link } from "wouter";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { EvaluacionPesv, RevisionDireccionPesv, RevisionDireccion, DecisionRevisionPesv } from "@shared/schema";
+
+interface ResumenRevision {
+  indicadores: { cumplimientoPct: number | null; pasosCumplen: number; totalRespondidos: number };
+  accionesMejora: { pendiente: number; en_proceso: number; completada: number; total: number };
+  auditorias: { total: number; cerradas: number; promedioCompliancePct: number | null; hallazgosCriticos: number; hallazgosMenores: number };
+  capacitaciones: { realizadas: number; programadas: number; canceladas: number; total: number };
+  riesgosViales: { total: number };
+  anio: number;
+}
 
 const TEMAS_REVISADOS = [
   { key: "revisionIndicadores", label: "Indicadores de desempeño", resumenKey: "resumenIndicadores" },
@@ -285,6 +294,17 @@ export default function PesvRevisionDireccion() {
     queryFn: async () => {
       const res = await fetch(`/api/evaluaciones-pesv/${evaluacionId}`, { credentials: "include" });
       if (!res.ok) throw new Error("Error al cargar evaluación");
+      return res.json();
+    },
+    enabled: !!evaluacionId,
+  });
+
+  // Resumen de datos reales para mostrar contexto en el formulario
+  const { data: resumenDatos } = useQuery<ResumenRevision>({
+    queryKey: ["/api/evaluaciones-pesv", evaluacionId, "resumen-revision"],
+    queryFn: async () => {
+      const res = await fetch(`/api/evaluaciones-pesv/${evaluacionId}/resumen-revision`, { credentials: "include" });
+      if (!res.ok) return null as any;
       return res.json();
     },
     enabled: !!evaluacionId,
@@ -584,9 +604,10 @@ export default function PesvRevisionDireccion() {
                   </Select>
                 </div>
 
-                {/* Temas revisados con resúmenes */}
+                {/* Temas revisados con datos contextuales */}
                 <div className="space-y-3">
                   <Label className="font-medium">Temas Revisados</Label>
+                  <p className="text-xs text-muted-foreground -mt-1">Al marcar un tema, verá los datos actuales del sistema para ayudarle a redactar el resumen.</p>
                   <div className="space-y-3">
                     {TEMAS_REVISADOS.map(tema => (
                       <div key={tema.key} className="space-y-2">
@@ -599,14 +620,92 @@ export default function PesvRevisionDireccion() {
                           />
                           <Label htmlFor={tema.key} className="text-sm cursor-pointer font-normal">{tema.label}</Label>
                         </div>
-                        {formData[tema.key] === 1 && tema.resumenKey && (
-                          <Textarea
-                            value={(formData as any)[tema.resumenKey]}
-                            onChange={e => setFormData(prev => ({ ...prev, [tema.resumenKey!]: e.target.value }))}
-                            placeholder={`Resumen del análisis de ${tema.label.toLowerCase()}...`}
-                            className="ml-6 text-sm min-h-[60px]"
-                            data-testid={`textarea-${tema.resumenKey}`}
-                          />
+                        {formData[tema.key] === 1 && (
+                          <div className="ml-6 space-y-2">
+                            {/* Panel de datos reales del sistema */}
+                            {resumenDatos && tema.key === "revisionIndicadores" && (
+                              <div className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20 px-3 py-2 text-xs space-y-1">
+                                <p className="font-medium text-blue-800 dark:text-blue-300 flex items-center gap-1"><TrendingUp className="h-3.5 w-3.5" />Datos actuales del sistema ({resumenDatos.anio})</p>
+                                {resumenDatos.indicadores.cumplimientoPct !== null ? (
+                                  <div className="flex flex-wrap gap-3">
+                                    <span className="text-muted-foreground">Cumplimiento PESV: <strong className="text-foreground">{resumenDatos.indicadores.cumplimientoPct}%</strong></span>
+                                    <span className="text-muted-foreground">Pasos cumplidos: <strong className="text-foreground">{resumenDatos.indicadores.pasosCumplen} / {resumenDatos.indicadores.totalRespondidos}</strong></span>
+                                  </div>
+                                ) : (
+                                  <p className="text-muted-foreground italic">Sin respuestas registradas aún en esta evaluación.</p>
+                                )}
+                              </div>
+                            )}
+                            {resumenDatos && tema.key === "revisionAuditorias" && (
+                              <div className="rounded-md border border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/20 px-3 py-2 text-xs space-y-1">
+                                <p className="font-medium text-purple-800 dark:text-purple-300 flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" />Auditorías internas {resumenDatos.anio}</p>
+                                {resumenDatos.auditorias.total > 0 ? (
+                                  <div className="flex flex-wrap gap-3">
+                                    <span className="text-muted-foreground">Total: <strong className="text-foreground">{resumenDatos.auditorias.total}</strong></span>
+                                    <span className="text-muted-foreground">Cerradas: <strong className="text-foreground">{resumenDatos.auditorias.cerradas}</strong></span>
+                                    {resumenDatos.auditorias.promedioCompliancePct !== null && (
+                                      <span className="text-muted-foreground">Cumplimiento promedio: <strong className="text-foreground">{resumenDatos.auditorias.promedioCompliancePct}%</strong></span>
+                                    )}
+                                    {resumenDatos.auditorias.hallazgosCriticos > 0 && (
+                                      <span className="text-orange-700 dark:text-orange-400">NC mayores: <strong>{resumenDatos.auditorias.hallazgosCriticos}</strong></span>
+                                    )}
+                                    {resumenDatos.auditorias.hallazgosMenores > 0 && (
+                                      <span className="text-muted-foreground">NC menores: <strong className="text-foreground">{resumenDatos.auditorias.hallazgosMenores}</strong></span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-muted-foreground italic">No hay auditorías registradas en este período.</p>
+                                )}
+                              </div>
+                            )}
+                            {resumenDatos && tema.key === "revisionSiniestros" && (
+                              <div className="rounded-md border border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 px-3 py-2 text-xs space-y-1">
+                                <p className="font-medium text-red-800 dark:text-red-300 flex items-center gap-1"><ShieldAlert className="h-3.5 w-3.5" />Siniestros e investigaciones</p>
+                                <p className="text-muted-foreground italic">Consulte los registros en H09 - Siniestros Viales y H11 - Atención a Víctimas del módulo PESV para redactar este resumen.</p>
+                              </div>
+                            )}
+                            {resumenDatos && tema.key === "revisionAccionesMejora" && (
+                              <div className="rounded-md border border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20 px-3 py-2 text-xs space-y-1">
+                                <p className="font-medium text-green-800 dark:text-green-300 flex items-center gap-1"><Activity className="h-3.5 w-3.5" />Acciones de mejora A01 ({resumenDatos.anio})</p>
+                                {resumenDatos.accionesMejora.total > 0 ? (
+                                  <div className="flex flex-wrap gap-3">
+                                    <span className="text-muted-foreground">Total: <strong className="text-foreground">{resumenDatos.accionesMejora.total}</strong></span>
+                                    <span className="text-yellow-700 dark:text-yellow-400">Pendientes: <strong>{resumenDatos.accionesMejora.pendiente}</strong></span>
+                                    <span className="text-blue-700 dark:text-blue-400">En proceso: <strong>{resumenDatos.accionesMejora.en_proceso}</strong></span>
+                                    <span className="text-green-700 dark:text-green-400">Completadas: <strong>{resumenDatos.accionesMejora.completada}</strong></span>
+                                  </div>
+                                ) : (
+                                  <p className="text-muted-foreground italic">No hay acciones de mejora registradas en esta evaluación.</p>
+                                )}
+                              </div>
+                            )}
+                            {resumenDatos && tema.key === "revisionCapacitaciones" && (
+                              <div className="rounded-md border border-teal-200 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-950/20 px-3 py-2 text-xs space-y-1">
+                                <p className="font-medium text-teal-800 dark:text-teal-300 flex items-center gap-1"><GraduationCap className="h-3.5 w-3.5" />Capacitaciones en seguridad vial ({resumenDatos.anio})</p>
+                                {resumenDatos.capacitaciones.total > 0 ? (
+                                  <div className="flex flex-wrap gap-3">
+                                    <span className="text-muted-foreground">Realizadas: <strong className="text-foreground">{resumenDatos.capacitaciones.realizadas}</strong></span>
+                                    <span className="text-muted-foreground">Programadas: <strong className="text-foreground">{resumenDatos.capacitaciones.programadas}</strong></span>
+                                    {resumenDatos.capacitaciones.canceladas > 0 && (
+                                      <span className="text-red-700 dark:text-red-400">Canceladas: <strong>{resumenDatos.capacitaciones.canceladas}</strong></span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-muted-foreground italic">No hay capacitaciones registradas en este período.</p>
+                                )}
+                              </div>
+                            )}
+                            {/* Textarea para escribir el resumen del tema */}
+                            {tema.resumenKey && (
+                              <Textarea
+                                value={(formData as any)[tema.resumenKey]}
+                                onChange={e => setFormData(prev => ({ ...prev, [tema.resumenKey!]: e.target.value }))}
+                                placeholder={`Con base en los datos anteriores, describa el análisis de ${tema.label.toLowerCase()}...`}
+                                className="text-sm min-h-[60px]"
+                                data-testid={`textarea-${tema.resumenKey}`}
+                              />
+                            )}
+                          </div>
                         )}
                       </div>
                     ))}

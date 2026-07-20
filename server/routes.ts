@@ -238,6 +238,7 @@ import {
   insertSstSpeedAlertSchema,
   insertSafeRouteSchema,
   roadSafetyTrainings,
+  auditoriasInternas,
   workers,
 } from "@shared/schema";
 import * as schema from "@shared/schema";
@@ -54878,6 +54879,115 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     } catch (error: any) {
       console.error('Error updating acción mejora PESV:', error);
       res.status(400).send(error.message);
+    }
+  });
+
+  // GET /api/evaluaciones-pesv/:id/resumen-revision - Datos contextuales para la Revisión por la Dirección
+  // Devuelve estadísticas reales que se muestran inline en el formulario A02
+  app.get('/api/evaluaciones-pesv/:id/resumen-revision', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const isAdmin = hasGlobalAccess(userRole);
+
+      const [evaluacion] = await db.select().from(evaluacionesPesv).where(eq(evaluacionesPesv.id, req.params.id));
+      if (!evaluacion) return res.status(404).send("Evaluación PESV no encontrada");
+
+      if (!isAdmin && getEffectiveCompanyId(req) !== evaluacion.companyId) {
+        return res.status(403).send("Sin acceso");
+      }
+
+      const companyId = evaluacion.companyId;
+      const year = evaluacion.anio || new Date().getFullYear();
+
+      // 1. Indicadores de desempeño: % cumplimiento PESV
+      const respuestas = await db.select({
+        cumple: respuestasPasosPesv.cumple,
+        noAplica: respuestasPasosPesv.noAplica,
+      }).from(respuestasPasosPesv).where(eq(respuestasPasosPesv.evaluacionId, req.params.id));
+
+      const totalRespondidos = respuestas.filter(r => r.noAplica !== 1).length;
+      const pasosCumplen = respuestas.filter(r => r.cumple === 1 && r.noAplica !== 1).length;
+      const cumplimientoPct = totalRespondidos > 0 ? Math.round((pasosCumplen / totalRespondidos) * 100) : null;
+
+      // 2. Acciones de mejora A01: conteos por estado
+      const acciones = await db.select({ estado: accionesMejoraPesv.estado })
+        .from(accionesMejoraPesv)
+        .where(eq(accionesMejoraPesv.evaluacionId, req.params.id));
+
+      const accionesPorEstado = {
+        pendiente: acciones.filter(a => a.estado === 'pendiente').length,
+        en_proceso: acciones.filter(a => a.estado === 'en_proceso').length,
+        completada: acciones.filter(a => a.estado === 'completada').length,
+        total: acciones.length,
+      };
+
+      // 3. Auditorías internas del período
+      const auditorias = await db.select({
+        estado: auditoriasInternas.estado,
+        porcentajeCumplimiento: auditoriasInternas.porcentajeCumplimiento,
+        numeroNoConformidadesMayores: auditoriasInternas.numeroNoConformidadesMayores,
+        numeroNoConformidadesMenores: auditoriasInternas.numeroNoConformidadesMenores,
+        fechaInforme: auditoriasInternas.fechaInforme,
+      }).from(auditoriasInternas).where(
+        and(
+          eq(auditoriasInternas.companyId, companyId),
+          sql`EXTRACT(YEAR FROM ${auditoriasInternas.fechaProgramada}) = ${year}`
+        )
+      ).limit(10);
+
+      const auditoriasCerradas = auditorias.filter(a => a.estado === 'cerrada' || a.estado === 'completada');
+      const promedioAuditoria = auditoriasCerradas.length > 0
+        ? Math.round(auditoriasCerradas.reduce((s, a) => s + (a.porcentajeCumplimiento || 0), 0) / auditoriasCerradas.length)
+        : null;
+      const hallazgosCriticos = auditorias.reduce((s, a) => s + (a.numeroNoConformidadesMayores || 0), 0);
+      const hallazgosMenores = auditorias.reduce((s, a) => s + (a.numeroNoConformidadesMenores || 0), 0);
+
+      // 4. Capacitaciones del período
+      const capacitaciones = await db.select({ status: roadSafetyTrainings.status })
+        .from(roadSafetyTrainings)
+        .where(
+          and(
+            eq(roadSafetyTrainings.companyId, companyId),
+            sql`EXTRACT(YEAR FROM ${roadSafetyTrainings.trainingDate}) = ${year}`
+          )
+        );
+
+      const capacitacionesPorEstado = {
+        realizadas: capacitaciones.filter(c => c.status === 'realizada' || c.status === 'completada').length,
+        programadas: capacitaciones.filter(c => c.status === 'programada').length,
+        canceladas: capacitaciones.filter(c => c.status === 'cancelada').length,
+        total: capacitaciones.length,
+      };
+
+      // 5. Riesgos viales (ISO 31000)
+      const riesgos = await db.select({ id: riesgosViales.id })
+        .from(riesgosViales)
+        .where(eq(riesgosViales.evaluacionId, req.params.id));
+
+      res.json({
+        indicadores: {
+          cumplimientoPct,
+          pasosCumplen,
+          totalRespondidos,
+          pasosNoRespondidos: (await db.select({ id: pasosPesv.id }).from(pasosPesv)).length - totalRespondidos,
+        },
+        accionesMejora: accionesPorEstado,
+        auditorias: {
+          total: auditorias.length,
+          cerradas: auditoriasCerradas.length,
+          promedioCompliancePct: promedioAuditoria,
+          hallazgosCriticos,
+          hallazgosMenores,
+        },
+        capacitaciones: capacitacionesPorEstado,
+        riesgosViales: {
+          total: riesgos.length,
+        },
+        anio: year,
+      });
+    } catch (error: any) {
+      console.error('Error fetching resumen-revision PESV:', error);
+      res.status(500).send(error.message);
     }
   });
 
