@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Users, Calendar, CheckCircle2, Plus, Eye, ClipboardCheck, ExternalLink, Building2, Shield, FileDown, ChevronDown, ChevronRight, Link2, ArrowRight, AlertTriangle, Loader2, Trash2, TrendingUp, BookOpen, Activity, GraduationCap, ShieldAlert } from "lucide-react";
+import { Users, Calendar, CheckCircle2, Plus, Eye, ClipboardCheck, ExternalLink, Building2, Shield, FileDown, ChevronDown, ChevronRight, Link2, ArrowRight, AlertTriangle, Loader2, Trash2, TrendingUp, BookOpen, Activity, GraduationCap, ShieldAlert, Scale, Boxes } from "lucide-react";
 import { Link } from "wouter";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
@@ -28,6 +28,9 @@ interface ResumenRevision {
   auditorias: { total: number; cerradas: number; promedioCompliancePct: number | null; hallazgosCriticos: number; hallazgosMenores: number };
   capacitaciones: { realizadas: number; programadas: number; canceladas: number; total: number };
   riesgosViales: { total: number };
+  cumplimientoLegal: { total: number; cumple: number; cumpleParcialmente: number; noCumple: number };
+  recursosAsignados: { total: number; humano: number; fisico: number; financiero: number };
+  inspeccionesViales: { total: number; aptos: number; aptosConObservaciones: number; noAptos: number };
   anio: number;
 }
 
@@ -697,6 +700,57 @@ export default function PesvRevisionDireccion() {
                                   </div>
                                 ) : (
                                   <p className="text-muted-foreground italic">No hay capacitaciones registradas en este período.</p>
+                                )}
+                              </div>
+                            )}
+                            {resumenDatos && tema.key === "revisionCumplimientoLegal" && (
+                              <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 px-3 py-2 text-xs space-y-1">
+                                <p className="font-medium text-amber-800 dark:text-amber-300 flex items-center gap-1"><Scale className="h-3.5 w-3.5" />Matriz legal ({resumenDatos.anio})</p>
+                                {resumenDatos.cumplimientoLegal.total > 0 ? (
+                                  <div className="flex flex-wrap gap-3">
+                                    <span className="text-muted-foreground">Total normas: <strong className="text-foreground">{resumenDatos.cumplimientoLegal.total}</strong></span>
+                                    <span className="text-green-700 dark:text-green-400">Cumple: <strong>{resumenDatos.cumplimientoLegal.cumple}</strong></span>
+                                    <span className="text-yellow-700 dark:text-yellow-400">Parcial: <strong>{resumenDatos.cumplimientoLegal.cumpleParcialmente}</strong></span>
+                                    {resumenDatos.cumplimientoLegal.noCumple > 0 && (
+                                      <span className="text-red-700 dark:text-red-400">No cumple: <strong>{resumenDatos.cumplimientoLegal.noCumple}</strong></span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-muted-foreground italic">No hay normas registradas en la matriz legal.</p>
+                                )}
+                              </div>
+                            )}
+                            {resumenDatos && tema.key === "revisionRecursos" && (
+                              <div className="rounded-md border border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20 px-3 py-2 text-xs space-y-1">
+                                <p className="font-medium text-orange-800 dark:text-orange-300 flex items-center gap-1"><Boxes className="h-3.5 w-3.5" />Recursos asignados {resumenDatos.anio}</p>
+                                {resumenDatos.recursosAsignados.total > 0 ? (
+                                  <div className="flex flex-wrap gap-3">
+                                    <span className="text-muted-foreground">Total: <strong className="text-foreground">{resumenDatos.recursosAsignados.total}</strong></span>
+                                    <span className="text-muted-foreground">Humano: <strong className="text-foreground">{resumenDatos.recursosAsignados.humano}</strong></span>
+                                    <span className="text-muted-foreground">Físico: <strong className="text-foreground">{resumenDatos.recursosAsignados.fisico}</strong></span>
+                                    <span className="text-muted-foreground">Financiero: <strong className="text-foreground">{resumenDatos.recursosAsignados.financiero}</strong></span>
+                                  </div>
+                                ) : (
+                                  <p className="text-muted-foreground italic">No hay recursos registrados para este período.</p>
+                                )}
+                              </div>
+                            )}
+                            {resumenDatos && tema.key === "revisionInspecciones" && (
+                              <div className="rounded-md border border-cyan-200 dark:border-cyan-800 bg-cyan-50/50 dark:bg-cyan-950/20 px-3 py-2 text-xs space-y-1">
+                                <p className="font-medium text-cyan-800 dark:text-cyan-300 flex items-center gap-1"><ClipboardCheck className="h-3.5 w-3.5" />Inspecciones vehiculares {resumenDatos.anio}</p>
+                                {resumenDatos.inspeccionesViales.total > 0 ? (
+                                  <div className="flex flex-wrap gap-3">
+                                    <span className="text-muted-foreground">Total: <strong className="text-foreground">{resumenDatos.inspeccionesViales.total}</strong></span>
+                                    <span className="text-green-700 dark:text-green-400">Aptos: <strong>{resumenDatos.inspeccionesViales.aptos}</strong></span>
+                                    {resumenDatos.inspeccionesViales.aptosConObservaciones > 0 && (
+                                      <span className="text-yellow-700 dark:text-yellow-400">Aptos c/obs: <strong>{resumenDatos.inspeccionesViales.aptosConObservaciones}</strong></span>
+                                    )}
+                                    {resumenDatos.inspeccionesViales.noAptos > 0 && (
+                                      <span className="text-red-700 dark:text-red-400">No aptos: <strong>{resumenDatos.inspeccionesViales.noAptos}</strong></span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-muted-foreground italic">No hay inspecciones vehiculares registradas en este período.</p>
                                 )}
                               </div>
                             )}

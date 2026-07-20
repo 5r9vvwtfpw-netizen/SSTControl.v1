@@ -54964,6 +54964,49 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         .from(riesgosViales)
         .where(eq(riesgosViales.evaluacionPesvId, req.params.id));
 
+      // 6. Cumplimiento legal — matriz legal de la empresa
+      const normasLegales = await db.select({
+        estadoCumplimiento: schema.matrizLegal.estadoCumplimiento,
+      }).from(schema.matrizLegal).where(eq(schema.matrizLegal.companyId, companyId));
+      const cumplimientoLegal = {
+        total: normasLegales.length,
+        cumple: normasLegales.filter(n => n.estadoCumplimiento === 'cumple').length,
+        cumpleParcialmente: normasLegales.filter(n => n.estadoCumplimiento === 'cumple-parcialmente').length,
+        noCumple: normasLegales.filter(n => n.estadoCumplimiento === 'no-cumple').length,
+      };
+
+      // 7. Recursos asignados del período
+      const recursos = await db.select({
+        resourceType: schema.resourceAllocations.resourceType,
+      }).from(schema.resourceAllocations).where(
+        and(
+          eq(schema.resourceAllocations.companyId, companyId),
+          sql`EXTRACT(YEAR FROM ${schema.resourceAllocations.date}) = ${year}`
+        )
+      );
+      const recursosAsignados = {
+        total: recursos.length,
+        humano: recursos.filter(r => r.resourceType === 'humano').length,
+        fisico: recursos.filter(r => r.resourceType === 'fisico').length,
+        financiero: recursos.filter(r => r.resourceType === 'financiero').length,
+      };
+
+      // 8. Inspecciones de seguridad vial del período
+      const inspecciones = await db.select({
+        result: schema.vehicleInspections.result,
+      }).from(schema.vehicleInspections).where(
+        and(
+          eq(schema.vehicleInspections.companyId, companyId),
+          sql`EXTRACT(YEAR FROM ${schema.vehicleInspections.inspectionDate}) = ${year}`
+        )
+      );
+      const inspeccionesViales = {
+        total: inspecciones.length,
+        aptos: inspecciones.filter(i => i.result === 'apto').length,
+        aptosConObservaciones: inspecciones.filter(i => i.result === 'apto-con-observaciones').length,
+        noAptos: inspecciones.filter(i => i.result === 'no-apto').length,
+      };
+
       res.json({
         indicadores: {
           cumplimientoPct,
@@ -54979,9 +55022,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           hallazgosMenores,
         },
         capacitaciones: capacitacionesPorEstado,
-        riesgosViales: {
-          total: riesgos.length,
-        },
+        riesgosViales: { total: riesgos.length },
+        cumplimientoLegal,
+        recursosAsignados,
+        inspeccionesViales,
         anio: year,
       });
     } catch (error: any) {
