@@ -54969,7 +54969,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           cumplimientoPct,
           pasosCumplen,
           totalRespondidos,
-          pasosNoRespondidos: (await db.select({ id: pasosPesv.id }).from(pasosPesv)).length - totalRespondidos,
         },
         accionesMejora: accionesPorEstado,
         auditorias: {
