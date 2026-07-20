@@ -54962,7 +54962,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // 5. Riesgos viales (ISO 31000)
       const riesgos = await db.select({ id: riesgosViales.id })
         .from(riesgosViales)
-        .where(eq(riesgosViales.evaluacionId, req.params.id));
+        .where(eq(riesgosViales.evaluacionPesvId, req.params.id));
 
       res.json({
         indicadores: {
