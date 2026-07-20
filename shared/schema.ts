@@ -9861,6 +9861,35 @@ export type InsertRevisionDireccionPesv = z.infer<typeof insertRevisionDireccion
 export type RevisionDireccionPesv = typeof revisionesDireccionPesv.$inferSelect;
 
 // ============================================================================
+// PESV A02 - Decisiones estructuradas de la Revisión por la Dirección
+// Trazabilidad bidireccional: A02 → A01 (Acciones de Mejora)
+// ============================================================================
+export const decisionesRevisionPesv = pgTable("decisiones_revision_pesv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  revisionPesvId: varchar("revision_pesv_id").notNull().references(() => revisionesDireccionPesv.id, { onDelete: "cascade" }),
+  evaluacionPesvId: varchar("evaluacion_pesv_id").references(() => evaluacionesPesv.id),
+
+  tipo: varchar("tipo").notNull().default("mejora"), // accion_correctiva | accion_preventiva | mejora | recurso | cambio_politica | otro
+  descripcion: text("descripcion").notNull(),
+  responsable: varchar("responsable"),
+  fechaLimite: date("fecha_limite"),
+  prioridad: varchar("prioridad").notNull().default("media"), // baja | media | alta | critica
+  estado: varchar("estado").notNull().default("pendiente"), // pendiente | en_proceso | completada
+
+  generaAccionA01: integer("genera_accion_a01").notNull().default(0), // 1 = crea acción automática en A01
+  accionMejoraId: varchar("accion_mejora_id"), // ID de la acción en acciones_mejora_pesv (auto-creada)
+
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+export const insertDecisionRevisionPesvSchema = createInsertSchema(decisionesRevisionPesv)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
+export type InsertDecisionRevisionPesv = z.infer<typeof insertDecisionRevisionPesvSchema>;
+export type DecisionRevisionPesv = typeof decisionesRevisionPesv.$inferSelect;
+
+// ============================================================================
 // ISO 31000:2018 - GESTIÓN DE RIESGOS VIALES PARA PESV
 // Integración de metodología de gestión de riesgos según ISO 31000
 // NOTA: Tablas nuevas - requiere npm run db:push para crear en BD

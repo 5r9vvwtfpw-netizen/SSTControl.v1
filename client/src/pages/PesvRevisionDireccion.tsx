@@ -12,26 +12,50 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Users, Calendar, CheckCircle2, FileText, Plus, Eye, ArrowLeft, ClipboardCheck, ExternalLink, Building2, Shield, FileDown } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Users, Calendar, CheckCircle2, Plus, Eye, ClipboardCheck, ExternalLink, Building2, Shield, FileDown, ChevronDown, ChevronRight, Link2, ArrowRight, AlertTriangle, Loader2, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { EvaluacionPesv, RevisionDireccionPesv, insertRevisionDireccionPesvSchema } from "@shared/schema";
+import { EvaluacionPesv, RevisionDireccionPesv, RevisionDireccion, DecisionRevisionPesv } from "@shared/schema";
 
 const TEMAS_REVISADOS = [
-  { key: "revisionIndicadores", label: "Indicadores de desempeño" },
-  { key: "revisionAuditorias", label: "Resultados de auditorías" },
-  { key: "revisionSiniestros", label: "Investigación de siniestros" },
-  { key: "revisionAccionesMejora", label: "Acciones de mejora" },
-  { key: "revisionCumplimientoLegal", label: "Cumplimiento legal" },
-  { key: "revisionRecursos", label: "Recursos asignados" },
-  { key: "revisionCapacitaciones", label: "Capacitaciones realizadas" },
-  { key: "revisionInspecciones", label: "Inspecciones de seguridad vial" },
+  { key: "revisionIndicadores", label: "Indicadores de desempeño", resumenKey: "resumenIndicadores" },
+  { key: "revisionAuditorias", label: "Resultados de auditorías", resumenKey: "resumenAuditorias" },
+  { key: "revisionSiniestros", label: "Investigación de siniestros", resumenKey: "resumenSiniestros" },
+  { key: "revisionAccionesMejora", label: "Acciones de mejora", resumenKey: "resumenAccionesMejora" },
+  { key: "revisionCumplimientoLegal", label: "Cumplimiento legal", resumenKey: null },
+  { key: "revisionRecursos", label: "Recursos asignados", resumenKey: null },
+  { key: "revisionCapacitaciones", label: "Capacitaciones realizadas", resumenKey: null },
+  { key: "revisionInspecciones", label: "Inspecciones de seguridad vial", resumenKey: null },
 ] as const;
 
 type TemaKey = typeof TEMAS_REVISADOS[number]["key"];
+
+const TIPO_DECISION_OPTIONS = [
+  { value: "accion_correctiva", label: "Acción Correctiva" },
+  { value: "accion_preventiva", label: "Acción Preventiva" },
+  { value: "mejora", label: "Mejora" },
+  { value: "recurso", label: "Asignación de Recurso" },
+  { value: "cambio_politica", label: "Cambio de Política" },
+  { value: "otro", label: "Otro" },
+];
+
+const PRIORIDAD_OPTIONS = [
+  { value: "baja", label: "Baja" },
+  { value: "media", label: "Media" },
+  { value: "alta", label: "Alta" },
+  { value: "critica", label: "Crítica" },
+];
+
+const ESTADO_DECISION_OPTIONS = [
+  { value: "pendiente", label: "Pendiente" },
+  { value: "en_proceso", label: "En Proceso" },
+  { value: "completada", label: "Completada" },
+];
 
 interface FormData {
   codigo: string;
@@ -46,11 +70,24 @@ interface FormData {
   revisionRecursos: number;
   revisionCapacitaciones: number;
   revisionInspecciones: number;
+  resumenIndicadores: string;
+  resumenAuditorias: string;
+  resumenSiniestros: string;
+  resumenAccionesMejora: string;
   analisisGeneral: string;
-  decisiones: string;
-  compromisos: string;
   estado: string;
   fechaProximaRevision: string;
+  vinculacionRevisionSstId: string;
+}
+
+interface DecisionFormData {
+  tipo: string;
+  descripcion: string;
+  responsable: string;
+  fechaLimite: string;
+  prioridad: string;
+  estado: string;
+  generaAccionA01: number;
 }
 
 const initialFormData: FormData = {
@@ -66,22 +103,168 @@ const initialFormData: FormData = {
   revisionRecursos: 0,
   revisionCapacitaciones: 0,
   revisionInspecciones: 0,
+  resumenIndicadores: "",
+  resumenAuditorias: "",
+  resumenSiniestros: "",
+  resumenAccionesMejora: "",
   analisisGeneral: "",
-  decisiones: "",
-  compromisos: "",
   estado: "borrador",
   fechaProximaRevision: "",
+  vinculacionRevisionSstId: "",
+};
+
+const initialDecisionForm: DecisionFormData = {
+  tipo: "mejora",
+  descripcion: "",
+  responsable: "",
+  fechaLimite: "",
+  prioridad: "media",
+  estado: "pendiente",
+  generaAccionA01: 0,
 };
 
 function getEstadoBadge(estado: string) {
-  switch (estado) {
-    case "aprobada":
-      return <Badge className="bg-green-500/10 text-green-700 dark:text-green-400" data-testid="badge-estado-aprobada">Aprobada</Badge>;
-    case "cerrada":
-      return <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400" data-testid="badge-estado-cerrada">Cerrada</Badge>;
-    default:
-      return <Badge variant="secondary" data-testid="badge-estado-borrador">Borrador</Badge>;
-  }
+  if (estado === "aprobada") return <Badge className="bg-green-500/10 text-green-700 dark:text-green-400">Aprobada</Badge>;
+  if (estado === "cerrada") return <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Cerrada</Badge>;
+  return <Badge variant="secondary">Borrador</Badge>;
+}
+
+function getTipoBadge(tipo: string) {
+  const map: Record<string, { label: string; cls: string }> = {
+    accion_correctiva: { label: "Correctiva", cls: "bg-red-500/10 text-red-700 dark:text-red-400" },
+    accion_preventiva: { label: "Preventiva", cls: "bg-blue-500/10 text-blue-700 dark:text-blue-400" },
+    mejora: { label: "Mejora", cls: "bg-green-500/10 text-green-700 dark:text-green-400" },
+    recurso: { label: "Recurso", cls: "bg-purple-500/10 text-purple-700 dark:text-purple-400" },
+    cambio_politica: { label: "Cambio Política", cls: "bg-amber-500/10 text-amber-700 dark:text-amber-400" },
+    otro: { label: "Otro", cls: "bg-gray-500/10 text-gray-700 dark:text-gray-400" },
+  };
+  const c = map[tipo] || map.otro;
+  return <Badge className={c.cls}>{c.label}</Badge>;
+}
+
+function getPrioridadBadge(prioridad: string) {
+  const map: Record<string, string> = {
+    baja: "bg-gray-500/10 text-gray-700 dark:text-gray-400",
+    media: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+    alta: "bg-orange-500/10 text-orange-700 dark:text-orange-400",
+    critica: "bg-red-500/10 text-red-700 dark:text-red-400",
+  };
+  return <Badge className={map[prioridad] || ""}>{prioridad}</Badge>;
+}
+
+function getEstadoDecisionBadge(estado: string) {
+  const map: Record<string, string> = {
+    pendiente: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400",
+    en_proceso: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+    completada: "bg-green-500/10 text-green-700 dark:text-green-400",
+  };
+  const labels: Record<string, string> = { pendiente: "Pendiente", en_proceso: "En Proceso", completada: "Completada" };
+  return <Badge className={map[estado] || ""}>{labels[estado] || estado}</Badge>;
+}
+
+function DecisionItem({
+  decision,
+  revisionId,
+  evaluacionId,
+}: {
+  decision: DecisionRevisionPesv;
+  revisionId: string;
+  evaluacionId: string;
+}) {
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const [editEstado, setEditEstado] = useState(decision.estado || "pendiente");
+
+  const updateMutation = useMutation({
+    mutationFn: async (estado: string) => {
+      const res = await apiRequest("PATCH", `/api/pesv/revisiones-direccion/${revisionId}/decisiones/${decision.id}`, { estado });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pesv/revisiones-direccion", revisionId, "decisiones"] });
+      toast({ title: "Estado actualizado" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("DELETE", `/api/pesv/revisiones-direccion/${revisionId}/decisiones/${decision.id}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pesv/revisiones-direccion", revisionId, "decisiones"] });
+      toast({ title: "Decisión eliminada" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-md p-3">
+      <CollapsibleTrigger asChild>
+        <div className="flex items-center justify-between cursor-pointer hover-elevate rounded-md p-1 -m-1">
+          <div className="flex items-center gap-2 flex-1 flex-wrap">
+            {isOpen ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+            {getTipoBadge(decision.tipo || "otro")}
+            <span className="text-sm font-medium line-clamp-1">{decision.descripcion}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {decision.accionMejoraId && (
+              <Badge className="bg-teal-500/10 text-teal-700 dark:text-teal-400 text-xs gap-1">
+                <Link2 className="h-3 w-3" />A01
+              </Badge>
+            )}
+            {getEstadoDecisionBadge(decision.estado || "pendiente")}
+          </div>
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-3 space-y-3">
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div><span className="text-muted-foreground">Responsable:</span> {decision.responsable || "—"}</div>
+          <div><span className="text-muted-foreground">Fecha límite:</span> {decision.fechaLimite || "—"}</div>
+          <div><span className="text-muted-foreground">Prioridad:</span> {getPrioridadBadge(decision.prioridad || "media")}</div>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Genera A01:</span>
+            {decision.accionMejoraId
+              ? <Badge className="bg-teal-500/10 text-teal-700 dark:text-teal-400 text-xs gap-1"><CheckCircle2 className="h-3 w-3" />Acción creada</Badge>
+              : <Badge variant="outline" className="text-xs">No</Badge>
+            }
+          </div>
+        </div>
+        <div className="flex items-end gap-2 pt-1 border-t">
+          <div className="flex-1 space-y-1">
+            <Label className="text-xs">Actualizar estado</Label>
+            <Select value={editEstado} onValueChange={setEditEstado}>
+              <SelectTrigger className="h-8 text-xs" data-testid={`select-estado-decision-${decision.id}`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ESTADO_DECISION_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            size="sm"
+            disabled={updateMutation.isPending || editEstado === decision.estado}
+            onClick={() => updateMutation.mutate(editEstado)}
+            data-testid={`button-save-estado-decision-${decision.id}`}
+          >
+            {updateMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Guardar"}
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="text-destructive"
+            disabled={deleteMutation.isPending}
+            onClick={() => deleteMutation.mutate()}
+            data-testid={`button-delete-decision-${decision.id}`}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
 }
 
 export default function PesvRevisionDireccion() {
@@ -91,6 +274,8 @@ export default function PesvRevisionDireccion() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedRevision, setSelectedRevision] = useState<RevisionDireccionPesv | null>(null);
   const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [decisionForm, setDecisionForm] = useState<DecisionFormData>(initialDecisionForm);
+  const [showDecisionForm, setShowDecisionForm] = useState(false);
   const [destinatarioPesvOpen, setDestinatarioPesvOpen] = useState(false);
   const [selectedDestinatarioPesv, setSelectedDestinatarioPesv] = useState<'ansv' | 'arl' | 'supertransporte' | 'mintransporte' | 'interno' | 'custom'>('ansv');
   const [customDestinatarioPesv, setCustomDestinatarioPesv] = useState('');
@@ -115,6 +300,27 @@ export default function PesvRevisionDireccion() {
     enabled: !!evaluacionId,
   });
 
+  // Revisiones SST para vinculación
+  const { data: revisionesSst = [] } = useQuery<RevisionDireccion[]>({
+    queryKey: ["/api/revisiones-direccion"],
+    queryFn: async () => {
+      const res = await fetch(`/api/revisiones-direccion`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  // Decisiones de la revisión seleccionada
+  const { data: decisiones = [], isLoading: decisionesLoading } = useQuery<DecisionRevisionPesv[]>({
+    queryKey: ["/api/pesv/revisiones-direccion", selectedRevision?.id, "decisiones"],
+    queryFn: async () => {
+      const res = await fetch(`/api/pesv/revisiones-direccion/${selectedRevision!.id}/decisiones`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error al cargar decisiones");
+      return res.json();
+    },
+    enabled: !!selectedRevision?.id && detailDialogOpen,
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: FormData) => {
       const payload = {
@@ -122,6 +328,7 @@ export default function PesvRevisionDireccion() {
         evaluacionPesvId: evaluacionId,
         fechaRevision: data.fechaRevision || undefined,
         fechaProximaRevision: data.fechaProximaRevision || undefined,
+        vinculacionRevisionSstId: data.vinculacionRevisionSstId || null,
       };
       const res = await apiRequest("POST", `/api/evaluaciones-pesv/${evaluacionId}/revisiones-direccion`, payload);
       return res.json();
@@ -130,49 +337,37 @@ export default function PesvRevisionDireccion() {
       queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", evaluacionId, "revisiones-direccion"] });
       setDialogOpen(false);
       setFormData(initialFormData);
-      toast({
-        title: "Revisión registrada",
-        description: "La revisión por la alta dirección se ha registrado exitosamente",
-      });
+      toast({ title: "Revisión registrada", description: "La revisión por la alta dirección se registró exitosamente" });
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
+    onError: (error: Error) => toast({ title: "Error", description: error.message, variant: "destructive" }),
   });
 
-  const updateEstadoMutation = useMutation({
-    mutationFn: async ({ revisionId, estado }: { revisionId: string; estado: string }) => {
-      const res = await apiRequest("PATCH", `/api/evaluaciones-pesv/${evaluacionId}/revisiones-direccion/${revisionId}`, { estado });
+  const createDecisionMutation = useMutation({
+    mutationFn: async (data: DecisionFormData) => {
+      const res = await apiRequest("POST", `/api/pesv/revisiones-direccion/${selectedRevision!.id}/decisiones`, {
+        ...data,
+        fechaLimite: data.fechaLimite || null,
+      });
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", evaluacionId, "revisiones-direccion"] });
-      toast({
-        title: "Estado actualizado",
-        description: "El estado de la revisión se ha actualizado exitosamente",
-      });
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pesv/revisiones-direccion", selectedRevision?.id, "decisiones"] });
+      if (data.accionMejoraId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", evaluacionId, "acciones"] });
+        toast({ title: "Decisión creada", description: "Se generó automáticamente una acción en A01 - Mejora Continua" });
+      } else {
+        toast({ title: "Decisión creada" });
+      }
+      setShowDecisionForm(false);
+      setDecisionForm(initialDecisionForm);
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fechaRevision || !formData.presididaPor) {
-      toast({
-        title: "Campos requeridos",
-        description: "Debe completar la fecha de revisión y quién preside",
-        variant: "destructive",
-      });
+      toast({ title: "Campos requeridos", description: "Debe completar la fecha de revisión y quién preside", variant: "destructive" });
       return;
     }
     createMutation.mutate(formData);
@@ -181,10 +376,7 @@ export default function PesvRevisionDireccion() {
   const handleOpenCreate = () => {
     const year = new Date().getFullYear();
     const nextNum = String(revisiones.length + 1).padStart(3, "0");
-    setFormData({
-      ...initialFormData,
-      codigo: `REV-PESV-${year}-${nextNum}`,
-    });
+    setFormData({ ...initialFormData, codigo: `REV-PESV-${year}-${nextNum}` });
     setDialogOpen(true);
   };
 
@@ -192,11 +384,8 @@ export default function PesvRevisionDireccion() {
     setFormData(prev => ({ ...prev, [key]: checked ? 1 : 0 }));
   };
 
-  const temasRevisadosCount = (rev: RevisionDireccionPesv) => {
-    return TEMAS_REVISADOS.filter(t => (rev as any)[t.key] === 1).length;
-  };
-
-  const isLoading = evaluacionLoading || revisionesLoading;
+  const temasRevisadosCount = (rev: RevisionDireccionPesv) =>
+    TEMAS_REVISADOS.filter(t => (rev as any)[t.key] === 1).length;
 
   const handleDownloadPdf = (url: string, filename: string) => {
     const link = document.createElement('a');
@@ -206,6 +395,13 @@ export default function PesvRevisionDireccion() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const isLoading = evaluacionLoading || revisionesLoading;
+
+  const getSstRevisionLabel = (id: string) => {
+    const r = revisionesSst.find(r => r.id === id);
+    return r ? `${r.codigo} — ${r.titulo}` : id;
   };
 
   return (
@@ -221,11 +417,7 @@ export default function PesvRevisionDireccion() {
         <HelpVideoButton customRoute="/pesv/revision-direccion" testId="button-help-video-pesv-revision" />
         <Button
           variant="outline"
-          onClick={() => {
-            setSelectedDestinatarioPesv('ansv');
-            setCustomDestinatarioPesv('');
-            setDestinatarioPesvOpen(true);
-          }}
+          onClick={() => { setSelectedDestinatarioPesv('ansv'); setCustomDestinatarioPesv(''); setDestinatarioPesvOpen(true); }}
           data-testid="button-download-evaluation-pdf"
         >
           <FileDown className="h-4 w-4 mr-2" />
@@ -235,16 +427,17 @@ export default function PesvRevisionDireccion() {
 
       <TrazabilidadPesvBanner codigoPaso="A02" />
 
+      {/* Trazabilidad SST */}
       <Card className="mt-4 mb-4 border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
         <CardContent className="py-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Building2 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               <div>
-                <p className="text-sm font-medium">Trazabilidad con SST - Revisiones por la Dirección</p>
+                <p className="text-sm font-medium">Trazabilidad con SST — Revisiones por la Dirección</p>
                 <p className="text-xs text-muted-foreground">
-                  Según Decreto 1072/2015 Art. 2.2.4.6.31, la revisión por la alta dirección del PESV debe integrarse con la revisión del SG-SST.
-                  Consulte las revisiones del SST para garantizar trazabilidad bidireccional.
+                  Decreto 1072/2015 Art. 2.2.4.6.31 — La revisión PESV se integra con la revisión del SG-SST.
+                  Las decisiones de A02 pueden generar acciones automáticas en A01.
                 </p>
               </div>
             </div>
@@ -258,6 +451,7 @@ export default function PesvRevisionDireccion() {
         </CardContent>
       </Card>
 
+      {/* Marco normativo */}
       <Card className="mb-4 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
         <CardContent className="py-4">
           <div className="flex items-start gap-3">
@@ -265,15 +459,16 @@ export default function PesvRevisionDireccion() {
             <div>
               <p className="text-sm font-medium mb-1">Marco Normativo Aplicable</p>
               <div className="space-y-1 text-xs text-muted-foreground">
-                <p><Badge variant="secondary" className="text-xs mr-1">Res. 40595/2022</Badge>Paso A02 - Revisión por la Alta Dirección del PESV</p>
-                <p><Badge variant="secondary" className="text-xs mr-1">ISO 39001:2012</Badge>Cláusula 9.3 - Revisión por la dirección del sistema de gestión de seguridad vial</p>
-                <p><Badge variant="secondary" className="text-xs mr-1">Dec. 1072/2015</Badge>Art. 2.2.4.6.31 - Revisión por la alta dirección del SG-SST</p>
+                <p><Badge variant="secondary" className="text-xs mr-1">Res. 40595/2022</Badge>Paso A02 — Revisión por la Alta Dirección del PESV</p>
+                <p><Badge variant="secondary" className="text-xs mr-1">ISO 39001:2012</Badge>Cláusula 9.3 — Revisión por la dirección del sistema de gestión de seguridad vial</p>
+                <p><Badge variant="secondary" className="text-xs mr-1">Dec. 1072/2015</Badge>Art. 2.2.4.6.31 — Revisión por la alta dirección del SG-SST</p>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Tabla principal */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
           <CardTitle className="flex items-center gap-2" data-testid="text-page-title">
@@ -291,7 +486,7 @@ export default function PesvRevisionDireccion() {
               <DialogHeader>
                 <DialogTitle>Registrar Revisión por la Dirección</DialogTitle>
                 <DialogDescription>
-                  Registre una nueva revisión por la alta dirección conforme a ISO 39001:2012 Cláusula 9.3
+                  Conforme a ISO 39001:2012 Cláusula 9.3 y Res. 40595/2022 Paso A02
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -302,7 +497,6 @@ export default function PesvRevisionDireccion() {
                       id="codigo"
                       value={formData.codigo}
                       onChange={e => setFormData(prev => ({ ...prev, codigo: e.target.value }))}
-                      placeholder="REV-PESV-2026-001"
                       data-testid="input-codigo"
                     />
                   </div>
@@ -342,20 +536,58 @@ export default function PesvRevisionDireccion() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Temas Revisados</Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Vinculación con revisión SST */}
+                <div className="space-y-2 rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/10 p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Link2 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    <Label className="font-medium">Vincular con Revisión SST</Label>
+                    <Badge variant="outline" className="text-xs">Trazabilidad</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Selecciona la revisión del SG-SST que corresponde a esta revisión PESV para mantener trazabilidad bidireccional.
+                  </p>
+                  <Select
+                    value={formData.vinculacionRevisionSstId || "__none__"}
+                    onValueChange={val => setFormData(prev => ({ ...prev, vinculacionRevisionSstId: val === "__none__" ? "" : val }))}
+                  >
+                    <SelectTrigger data-testid="select-vinculacion-sst">
+                      <SelectValue placeholder="Sin vinculación (opcional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Sin vinculación (opcional)</SelectItem>
+                      {revisionesSst.map(r => (
+                        <SelectItem key={r.id} value={r.id}>
+                          {r.codigo} — {r.titulo}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Temas revisados con resúmenes */}
+                <div className="space-y-3">
+                  <Label className="font-medium">Temas Revisados</Label>
+                  <div className="space-y-3">
                     {TEMAS_REVISADOS.map(tema => (
-                      <div key={tema.key} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={tema.key}
-                          checked={formData[tema.key] === 1}
-                          onCheckedChange={(checked) => handleCheckboxChange(tema.key, !!checked)}
-                          data-testid={`checkbox-${tema.key}`}
-                        />
-                        <Label htmlFor={tema.key} className="text-sm cursor-pointer">
-                          {tema.label}
-                        </Label>
+                      <div key={tema.key} className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={tema.key}
+                            checked={formData[tema.key] === 1}
+                            onCheckedChange={checked => handleCheckboxChange(tema.key, !!checked)}
+                            data-testid={`checkbox-${tema.key}`}
+                          />
+                          <Label htmlFor={tema.key} className="text-sm cursor-pointer font-normal">{tema.label}</Label>
+                        </div>
+                        {formData[tema.key] === 1 && tema.resumenKey && (
+                          <Textarea
+                            value={(formData as any)[tema.resumenKey]}
+                            onChange={e => setFormData(prev => ({ ...prev, [tema.resumenKey!]: e.target.value }))}
+                            placeholder={`Resumen del análisis de ${tema.label.toLowerCase()}...`}
+                            className="ml-6 text-sm min-h-[60px]"
+                            data-testid={`textarea-${tema.resumenKey}`}
+                          />
+                        )}
                       </div>
                     ))}
                   </div>
@@ -369,28 +601,6 @@ export default function PesvRevisionDireccion() {
                     onChange={e => setFormData(prev => ({ ...prev, analisisGeneral: e.target.value }))}
                     placeholder="Resumen del análisis general de la revisión"
                     data-testid="input-analisis-general"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="decisiones">Decisiones</Label>
-                  <Textarea
-                    id="decisiones"
-                    value={formData.decisiones}
-                    onChange={e => setFormData(prev => ({ ...prev, decisiones: e.target.value }))}
-                    placeholder="Decisiones tomadas durante la revisión"
-                    data-testid="input-decisiones"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="compromisos">Compromisos</Label>
-                  <Textarea
-                    id="compromisos"
-                    value={formData.compromisos}
-                    onChange={e => setFormData(prev => ({ ...prev, compromisos: e.target.value }))}
-                    placeholder="Compromisos adquiridos en la revisión"
-                    data-testid="input-compromisos"
                   />
                 </div>
 
@@ -424,9 +634,7 @@ export default function PesvRevisionDireccion() {
                 </div>
 
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel-create">
-                    Cancelar
-                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel-create">Cancelar</Button>
                   <Button type="submit" disabled={createMutation.isPending} data-testid="button-submit-revision">
                     {createMutation.isPending ? "Guardando..." : "Registrar Revisión"}
                   </Button>
@@ -438,9 +646,7 @@ export default function PesvRevisionDireccion() {
         <CardContent>
           {isLoading ? (
             <div className="space-y-4">
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-24 w-full" />
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full" />)}
             </div>
           ) : revisiones.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
@@ -450,19 +656,22 @@ export default function PesvRevisionDireccion() {
             </div>
           ) : (
             <div className="space-y-4">
-              {revisiones.map((revision) => (
+              {revisiones.map(revision => (
                 <Card key={revision.id} className="border" data-testid={`card-revision-${revision.id}`}>
                   <CardHeader className="pb-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold" data-testid={`text-codigo-${revision.id}`}>
-                          {revision.codigo}
-                        </span>
+                        <span className="font-semibold" data-testid={`text-codigo-${revision.id}`}>{revision.codigo}</span>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4" />
                           <span>{revision.fechaRevision}</span>
                         </div>
                         {getEstadoBadge(revision.estado)}
+                        {revision.vinculacionRevisionSstId && (
+                          <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs gap-1">
+                            <Link2 className="h-3 w-3" />SST vinculada
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex gap-2">
                         <Button
@@ -476,10 +685,7 @@ export default function PesvRevisionDireccion() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            setSelectedRevision(revision);
-                            setDetailDialogOpen(true);
-                          }}
+                          onClick={() => { setSelectedRevision(revision); setDetailDialogOpen(true); setShowDecisionForm(false); }}
                           data-testid={`button-view-revision-${revision.id}`}
                         >
                           <Eye className="h-4 w-4 mr-1" />
@@ -514,6 +720,12 @@ export default function PesvRevisionDireccion() {
                         </div>
                       )}
                     </div>
+                    {revision.vinculacionRevisionSstId && (
+                      <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
+                        <Link2 className="h-3 w-3 text-amber-600" />
+                        Vinculada con SST: {getSstRevisionLabel(revision.vinculacionRevisionSstId)}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -522,193 +734,246 @@ export default function PesvRevisionDireccion() {
         </CardContent>
       </Card>
 
-      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+      {/* Diálogo de detalle con decisiones estructuradas */}
+      <Dialog open={detailDialogOpen} onOpenChange={open => { setDetailDialogOpen(open); if (!open) { setSelectedRevision(null); setShowDecisionForm(false); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardCheck className="h-5 w-5" />
+              {selectedRevision?.codigo}
+            </DialogTitle>
+            <DialogDescription>
+              Detalle y decisiones estructuradas — {selectedRevision?.fechaRevision}
+            </DialogDescription>
+          </DialogHeader>
+
           {selectedRevision && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Revisión {selectedRevision.codigo}
-                </DialogTitle>
-                <DialogDescription>
-                  Detalle de la revisión por la alta dirección
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  {getEstadoBadge(selectedRevision.estado)}
-                  <span className="text-sm text-muted-foreground">
-                    {selectedRevision.fechaRevision}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium mb-1">Presidida por</p>
-                    <p className="text-sm text-muted-foreground">{selectedRevision.presididaPor}</p>
-                  </div>
-                  {selectedRevision.participantes && (
-                    <div>
-                      <p className="text-sm font-medium mb-1">Participantes</p>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedRevision.participantes}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium mb-2">Temas Revisados</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {TEMAS_REVISADOS.map(tema => {
-                      const checked = (selectedRevision as any)[tema.key] === 1;
-                      return (
-                        <div key={tema.key} className="flex items-center gap-2 text-sm">
-                          {checked ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <div className="h-4 w-4 rounded-full border border-muted-foreground/30" />
-                          )}
-                          <span className={checked ? "" : "text-muted-foreground"}>{tema.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {selectedRevision.analisisGeneral && (
-                  <div>
-                    <p className="text-sm font-medium mb-1">Análisis General</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedRevision.analisisGeneral}</p>
-                  </div>
-                )}
-
-                {selectedRevision.decisiones && (
-                  <div>
-                    <p className="text-sm font-medium mb-1">Decisiones</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedRevision.decisiones}</p>
-                  </div>
-                )}
-
-                {selectedRevision.compromisos && (
-                  <div>
-                    <p className="text-sm font-medium mb-1">Compromisos</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedRevision.compromisos}</p>
-                  </div>
-                )}
-
+            <div className="space-y-4">
+              {/* Info básica */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><span className="text-muted-foreground">Presidida por:</span> {selectedRevision.presididaPor}</div>
+                <div className="flex items-center gap-1"><span className="text-muted-foreground">Estado:</span> {getEstadoBadge(selectedRevision.estado)}</div>
                 {selectedRevision.fechaProximaRevision && (
-                  <div>
-                    <p className="text-sm font-medium mb-1">Fecha Próxima Revisión</p>
-                    <p className="text-sm text-muted-foreground">{selectedRevision.fechaProximaRevision}</p>
+                  <div><span className="text-muted-foreground">Próxima revisión:</span> {selectedRevision.fechaProximaRevision}</div>
+                )}
+                {selectedRevision.vinculacionRevisionSstId && (
+                  <div className="col-span-2 flex items-center gap-1 text-amber-700 dark:text-amber-400">
+                    <Link2 className="h-3.5 w-3.5" />
+                    <span className="text-xs">SST vinculada: {getSstRevisionLabel(selectedRevision.vinculacionRevisionSstId)}</span>
                   </div>
                 )}
+              </div>
 
-                <div className="border-t pt-4">
-                  <Label className="text-sm font-medium">Cambiar Estado</Label>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Select
-                      value={selectedRevision.estado}
-                      onValueChange={(val) => {
-                        updateEstadoMutation.mutate({ revisionId: selectedRevision.id, estado: val });
-                        setSelectedRevision({ ...selectedRevision, estado: val });
-                      }}
-                    >
-                      <SelectTrigger className="w-48" data-testid="select-detail-estado">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="borrador">Borrador</SelectItem>
-                        <SelectItem value="aprobada">Aprobada</SelectItem>
-                        <SelectItem value="cerrada">Cerrada</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {updateEstadoMutation.isPending && (
-                      <span className="text-sm text-muted-foreground">Actualizando...</span>
-                    )}
-                  </div>
+              {/* Temas revisados */}
+              <div>
+                <p className="text-sm font-medium mb-2">Temas Revisados ({temasRevisadosCount(selectedRevision)}/{TEMAS_REVISADOS.length})</p>
+                <div className="grid grid-cols-2 gap-1">
+                  {TEMAS_REVISADOS.map(t => {
+                    const checked = (selectedRevision as any)[t.key] === 1;
+                    const resumen = t.resumenKey ? (selectedRevision as any)[t.resumenKey] : null;
+                    return (
+                      <div key={t.key} className={`flex items-start gap-1.5 text-xs p-1.5 rounded ${checked ? "text-foreground" : "text-muted-foreground"}`}>
+                        {checked
+                          ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600 mt-0.5 shrink-0" />
+                          : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/30 mt-0.5 shrink-0" />
+                        }
+                        <div>
+                          <span>{t.label}</span>
+                          {checked && resumen && <p className="text-muted-foreground mt-0.5 line-clamp-2">{resumen}</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDetailDialogOpen(false)} data-testid="button-close-detail">
-                  Cerrar
-                </Button>
-              </DialogFooter>
-            </>
+              {selectedRevision.analisisGeneral && (
+                <div>
+                  <p className="text-sm font-medium mb-1">Análisis General</p>
+                  <p className="text-sm text-muted-foreground">{selectedRevision.analisisGeneral}</p>
+                </div>
+              )}
+
+              {/* Decisiones estructuradas — NUEVO */}
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-semibold flex items-center gap-2">
+                      Decisiones
+                      <Badge variant="outline" className="text-xs">{decisiones.length}</Badge>
+                    </p>
+                    <p className="text-xs text-muted-foreground">Las decisiones marcadas con "Genera A01" crean acciones automáticamente en Mejora Continua</p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => setShowDecisionForm(!showDecisionForm)} data-testid="button-new-decision">
+                    <Plus className="h-3.5 w-3.5 mr-1" />Nueva
+                  </Button>
+                </div>
+
+                {/* Formulario nueva decisión */}
+                {showDecisionForm && (
+                  <div className="rounded-md border p-3 space-y-3 mb-3 bg-muted/30">
+                    <p className="text-sm font-medium">Nueva Decisión</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Tipo *</Label>
+                        <Select value={decisionForm.tipo} onValueChange={v => setDecisionForm(p => ({ ...p, tipo: v }))}>
+                          <SelectTrigger className="h-8 text-xs" data-testid="select-decision-tipo">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TIPO_DECISION_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Prioridad</Label>
+                        <Select value={decisionForm.prioridad} onValueChange={v => setDecisionForm(p => ({ ...p, prioridad: v }))}>
+                          <SelectTrigger className="h-8 text-xs" data-testid="select-decision-prioridad">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PRIORIDAD_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Descripción *</Label>
+                      <Textarea
+                        value={decisionForm.descripcion}
+                        onChange={e => setDecisionForm(p => ({ ...p, descripcion: e.target.value }))}
+                        placeholder="Describa la decisión tomada..."
+                        className="min-h-[60px] text-sm"
+                        data-testid="textarea-decision-descripcion"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Responsable</Label>
+                        <Input
+                          value={decisionForm.responsable}
+                          onChange={e => setDecisionForm(p => ({ ...p, responsable: e.target.value }))}
+                          placeholder="Nombre del responsable"
+                          className="h-8 text-xs"
+                          data-testid="input-decision-responsable"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Fecha Límite</Label>
+                        <Input
+                          type="date"
+                          value={decisionForm.fechaLimite}
+                          onChange={e => setDecisionForm(p => ({ ...p, fechaLimite: e.target.value }))}
+                          className="h-8 text-xs"
+                          data-testid="input-decision-fecha"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between rounded-md border border-teal-200 dark:border-teal-800 bg-teal-50/40 dark:bg-teal-950/20 p-2.5">
+                      <div className="flex items-center gap-2">
+                        <ArrowRight className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                        <div>
+                          <p className="text-xs font-medium">Generar acción en A01 - Mejora Continua</p>
+                          <p className="text-xs text-muted-foreground">Se crea automáticamente una acción de mejora vinculada</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={decisionForm.generaAccionA01 === 1}
+                        onCheckedChange={checked => setDecisionForm(p => ({ ...p, generaAccionA01: checked ? 1 : 0 }))}
+                        data-testid="switch-genera-accion-a01"
+                      />
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button type="button" variant="outline" size="sm" onClick={() => { setShowDecisionForm(false); setDecisionForm(initialDecisionForm); }}>Cancelar</Button>
+                      <Button
+                        size="sm"
+                        disabled={createDecisionMutation.isPending || !decisionForm.descripcion.trim()}
+                        onClick={() => createDecisionMutation.mutate(decisionForm)}
+                        data-testid="button-submit-decision"
+                      >
+                        {createDecisionMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                        {decisionForm.generaAccionA01 === 1 ? "Guardar y Generar A01" : "Guardar Decisión"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Lista de decisiones */}
+                {decisionesLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                ) : decisiones.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground border rounded-md">
+                    <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">No hay decisiones registradas</p>
+                    <p className="text-xs">Agregue decisiones para generar trazabilidad con A01</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {decisiones.map(d => (
+                      <DecisionItem key={d.id} decision={d} revisionId={selectedRevision.id} evaluacionId={evaluacionId!} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Diálogo de selección de destinatario del reporte PESV */}
+      {/* Diálogo destinatario PDF */}
       <Dialog open={destinatarioPesvOpen} onOpenChange={setDestinatarioPesvOpen}>
-        <DialogContent className="max-w-md" data-testid="dialog-destinatario-pesv">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileDown className="h-5 w-5 text-green-700" />
-              ¿A quién va dirigido el reporte PESV?
-            </DialogTitle>
-            <DialogDescription>
-              Seleccione el destinatario para ajustar el título del PDF según la norma.
-            </DialogDescription>
+            <DialogTitle>Descargar PDF Evaluación PESV</DialogTitle>
+            <DialogDescription>Seleccione el destinatario del reporte</DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-3 py-2">
-            {[
-              { value: 'ansv', label: 'ANSV', desc: 'Agencia Nacional de Seguridad Vial — reporte anual de autogestión (ansv.gov.co)' },
-              { value: 'arl', label: 'ARL', desc: 'Para la Administradora de Riesgos Laborales — integración PESV-SG-SST' },
-              { value: 'supertransporte', label: 'Supertransporte', desc: 'Superintendencia de Puertos y Transporte (empresas de transporte público)' },
-              { value: 'mintransporte', label: 'Ministerio de Transporte', desc: 'Entidad rectora — Resolución 40595/2022' },
-              { value: 'interno', label: 'Uso Interno', desc: 'Para archivo interno, auditorías o comité PESV' },
-              { value: 'custom', label: 'Otro destinatario', desc: 'Especifique el nombre' },
-            ].map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setSelectedDestinatarioPesv(opt.value as any)}
-                className={`text-left rounded-md border px-4 py-3 transition-colors ${
-                  selectedDestinatarioPesv === opt.value
-                    ? 'border-green-700 bg-green-50 dark:bg-green-950'
-                    : 'border-border hover-elevate'
-                }`}
-                data-testid={`option-destinatario-pesv-${opt.value}`}
+          <div className="space-y-3">
+            {(['ansv', 'arl', 'supertransporte', 'mintransporte', 'interno'] as const).map(dest => (
+              <div
+                key={dest}
+                className={`flex items-center gap-3 p-2.5 rounded-md border cursor-pointer hover-elevate ${selectedDestinatarioPesv === dest ? 'border-primary bg-primary/5' : ''}`}
+                onClick={() => setSelectedDestinatarioPesv(dest)}
+                data-testid={`option-destinatario-${dest}`}
               >
-                <div className="font-medium text-sm">{opt.label}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{opt.desc}</div>
-              </button>
+                <div className={`h-3.5 w-3.5 rounded-full border-2 ${selectedDestinatarioPesv === dest ? 'border-primary bg-primary' : 'border-muted-foreground'}`} />
+                <span className="text-sm capitalize">{dest === 'ansv' ? 'ANSV' : dest === 'arl' ? 'ARL' : dest === 'supertransporte' ? 'Supertransporte' : dest === 'mintransporte' ? 'Mintransporte' : 'Uso interno'}</span>
+              </div>
             ))}
-            {selectedDestinatarioPesv === 'custom' && (
-              <Input
-                placeholder="Ej: Junta Directiva, Comité PESV..."
-                value={customDestinatarioPesv}
-                onChange={(e) => setCustomDestinatarioPesv(e.target.value)}
-                maxLength={60}
-                className="mt-1"
-                data-testid="input-custom-destinatario-pesv"
-                autoFocus
-              />
-            )}
+            <div className="space-y-2">
+              <div
+                className={`flex items-center gap-3 p-2.5 rounded-md border cursor-pointer hover-elevate ${selectedDestinatarioPesv === 'custom' ? 'border-primary bg-primary/5' : ''}`}
+                onClick={() => setSelectedDestinatarioPesv('custom')}
+                data-testid="option-destinatario-custom"
+              >
+                <div className={`h-3.5 w-3.5 rounded-full border-2 ${selectedDestinatarioPesv === 'custom' ? 'border-primary bg-primary' : 'border-muted-foreground'}`} />
+                <span className="text-sm">Otro destinatario...</span>
+              </div>
+              {selectedDestinatarioPesv === 'custom' && (
+                <Input
+                  placeholder="Nombre del destinatario"
+                  value={customDestinatarioPesv}
+                  onChange={e => setCustomDestinatarioPesv(e.target.value)}
+                  className="text-sm"
+                  data-testid="input-destinatario-custom"
+                />
+              )}
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDestinatarioPesvOpen(false)}>
-              Cancelar
-            </Button>
+            <Button variant="outline" onClick={() => setDestinatarioPesvOpen(false)}>Cancelar</Button>
             <Button
               onClick={() => {
-                const params = new URLSearchParams({ destinatario: selectedDestinatarioPesv });
-                if (selectedDestinatarioPesv === 'custom' && customDestinatarioPesv.trim()) {
-                  params.set('customText', customDestinatarioPesv.trim());
-                }
-                handleDownloadPdf(
-                  `/api/evaluaciones-pesv/${evaluacionId}/pdf?${params.toString()}`,
-                  `evaluacion-pesv-${evaluacionId}.pdf`
-                );
+                const dest = selectedDestinatarioPesv === 'custom' ? customDestinatarioPesv : selectedDestinatarioPesv;
+                handleDownloadPdf(`/api/evaluaciones-pesv/${evaluacionId}/pdf?destinatario=${encodeURIComponent(dest)}`, `evaluacion-pesv-${dest}.pdf`);
                 setDestinatarioPesvOpen(false);
               }}
-              className="bg-green-700 hover:bg-green-800"
-              disabled={selectedDestinatarioPesv === 'custom' && !customDestinatarioPesv.trim()}
-              data-testid="button-confirm-destinatario-pesv"
+              data-testid="button-confirm-download-pdf"
             >
-              Descargar PDF
+              <FileDown className="h-4 w-4 mr-2" />
+              Descargar
             </Button>
           </DialogFooter>
         </DialogContent>

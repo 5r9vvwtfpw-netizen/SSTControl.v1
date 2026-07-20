@@ -219,10 +219,12 @@ import {
   pesvEvidenciasDocumentos,
   accionesMejoraPesv,
   revisionesDireccionPesv,
+  decisionesRevisionPesv,
   insertEvaluacionPesvSchema,
   insertRespuestaPasoPesvSchema,
   insertAccionMejoraPesvSchema,
   insertRevisionDireccionPesvSchema,
+  insertDecisionRevisionPesvSchema,
   contextoOrganizacionalPesv,
   insertContextoOrganizacionalPesvSchema,
   riesgosViales,
@@ -55013,6 +55015,139 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     } catch (error: any) {
       console.error('Error updating revisión dirección PESV:', error);
       res.status(400).send(error.message);
+    }
+  });
+
+  // ========== PESV A02 - DECISIONES ESTRUCTURADAS (Trazabilidad A02→A01) ==========
+
+  // GET /api/pesv/revisiones-direccion/:revisionId/decisiones
+  app.get('/api/pesv/revisiones-direccion/:revisionId/decisiones', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const [revision] = await db.select().from(revisionesDireccionPesv).where(eq(revisionesDireccionPesv.id, req.params.revisionId));
+      if (!revision) return res.status(404).send("Revisión no encontrada");
+      const userRole = req.user!.role;
+      if (!hasGlobalAccess(userRole) && getEffectiveCompanyId(req) !== revision.companyId) {
+        return res.status(403).send("Sin acceso");
+      }
+      const decisiones = await db.select().from(decisionesRevisionPesv)
+        .where(eq(decisionesRevisionPesv.revisionPesvId, req.params.revisionId))
+        .orderBy(decisionesRevisionPesv.createdAt);
+      res.json(decisiones);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/pesv/revisiones-direccion/:revisionId/decisiones
+  // Si generaAccionA01=1, crea automáticamente una acción en acciones_mejora_pesv
+  app.post('/api/pesv/revisiones-direccion/:revisionId/decisiones', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+    try {
+      const [revision] = await db.select().from(revisionesDireccionPesv).where(eq(revisionesDireccionPesv.id, req.params.revisionId));
+      if (!revision) return res.status(404).send("Revisión no encontrada");
+      const userRole = req.user!.role;
+      if (!hasGlobalAccess(userRole) && getEffectiveCompanyId(req) !== revision.companyId) {
+        return res.status(403).send("Sin acceso");
+      }
+
+      const validated = insertDecisionRevisionPesvSchema.parse({
+        ...req.body,
+        revisionPesvId: req.params.revisionId,
+        evaluacionPesvId: revision.evaluacionPesvId,
+      });
+
+      let accionMejoraId: string | null = null;
+
+      // Si la decisión debe generar una acción en A01, créala automáticamente
+      if (validated.generaAccionA01 === 1 && revision.evaluacionPesvId) {
+        const tipoMap: Record<string, string> = {
+          accion_correctiva: 'correctiva',
+          accion_preventiva: 'preventiva',
+          mejora: 'mejora',
+          recurso: 'mejora',
+          cambio_politica: 'preventiva',
+          otro: 'mejora',
+        };
+        const [accion] = await db.insert(accionesMejoraPesv).values({
+          evaluacionId: revision.evaluacionPesvId,
+          companyId: revision.companyId,
+          descripcion: `[A02→A01] ${validated.descripcion}`,
+          tipoAccion: tipoMap[validated.tipo] || 'mejora',
+          prioridad: validated.prioridad || 'media',
+          fuenteHallazgo: 'revision_direccion',
+          responsable: validated.responsable || null,
+          fechaLimite: validated.fechaLimite ? new Date(validated.fechaLimite) : null,
+          estado: 'pendiente',
+        } as any).returning();
+        accionMejoraId = accion.id;
+      }
+
+      const [decision] = await db.insert(decisionesRevisionPesv).values({
+        ...validated,
+        companyId: revision.companyId,
+        ...(accionMejoraId ? { accionMejoraId } : {}),
+      }).returning();
+
+      res.status(201).json(decision);
+    } catch (error: any) {
+      console.error('Error creating decision revision PESV:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // PATCH /api/pesv/revisiones-direccion/:revisionId/decisiones/:decisionId
+  app.patch('/api/pesv/revisiones-direccion/:revisionId/decisiones/:decisionId', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+    try {
+      const [revision] = await db.select().from(revisionesDireccionPesv).where(eq(revisionesDireccionPesv.id, req.params.revisionId));
+      if (!revision) return res.status(404).send("Revisión no encontrada");
+      const userRole = req.user!.role;
+      if (!hasGlobalAccess(userRole) && getEffectiveCompanyId(req) !== revision.companyId) {
+        return res.status(403).send("Sin acceso");
+      }
+
+      const updateData: any = { updatedAt: new Date() };
+      const allowed = ['tipo', 'descripcion', 'responsable', 'fechaLimite', 'prioridad', 'estado'];
+      for (const f of allowed) {
+        if (req.body[f] !== undefined) updateData[f] = req.body[f];
+      }
+
+      const [updated] = await db.update(decisionesRevisionPesv)
+        .set(updateData)
+        .where(and(eq(decisionesRevisionPesv.id, req.params.decisionId), eq(decisionesRevisionPesv.revisionPesvId, req.params.revisionId)))
+        .returning();
+
+      if (!updated) return res.status(404).send("Decisión no encontrada");
+
+      // Si la decisión tiene accion_mejora_id, actualizar el estado de la acción en A01
+      if (updated.accionMejoraId && req.body.estado) {
+        await db.update(accionesMejoraPesv)
+          .set({ estado: req.body.estado === 'completada' ? 'completada' : req.body.estado === 'en_proceso' ? 'en_proceso' : 'pendiente', updatedAt: new Date() } as any)
+          .where(eq(accionesMejoraPesv.id, updated.accionMejoraId));
+      }
+
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
+  // DELETE /api/pesv/revisiones-direccion/:revisionId/decisiones/:decisionId
+  app.delete('/api/pesv/revisiones-direccion/:revisionId/decisiones/:decisionId', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
+    try {
+      const [revision] = await db.select().from(revisionesDireccionPesv).where(eq(revisionesDireccionPesv.id, req.params.revisionId));
+      if (!revision) return res.status(404).send("Revisión no encontrada");
+      const userRole = req.user!.role;
+      if (!hasGlobalAccess(userRole) && getEffectiveCompanyId(req) !== revision.companyId) {
+        return res.status(403).send("Sin acceso");
+      }
+
+      const [deleted] = await db.delete(decisionesRevisionPesv)
+        .where(and(eq(decisionesRevisionPesv.id, req.params.decisionId), eq(decisionesRevisionPesv.revisionPesvId, req.params.revisionId)))
+        .returning();
+
+      if (!deleted) return res.status(404).send("Decisión no encontrada");
+      res.json({ ok: true });
+    } catch (error: any) {
+      res.status(500).send(error.message);
     }
   });
 
