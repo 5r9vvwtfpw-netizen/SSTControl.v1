@@ -277,7 +277,12 @@ function DecisionItem({
 }
 
 export default function PesvRevisionDireccion() {
-  const { evaluacionId } = useParams<{ evaluacionId: string }>();
+  const params = useParams<{ evaluacionId: string }>();
+  // Cuando se navega desde el flujo PESV normal (/pesv/revision-direccion),
+  // no hay :evaluacionId en la URL — se lee del sessionStorage igual que otros módulos PESV.
+  const evaluacionId: string | undefined =
+    params.evaluacionId ||
+    (() => { try { return sessionStorage.getItem("active_pesv_evaluacion_id") || undefined; } catch { return undefined; } })();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
