@@ -290,6 +290,16 @@ export default function PesvRevisionDireccion() {
     enabled: !!evaluacionId,
   });
 
+  const { data: company } = useQuery<{ legalRepName?: string; legalRepPosition?: string }>({
+    queryKey: ["/api/companies", evaluacion?.companyId],
+    queryFn: async () => {
+      const res = await fetch(`/api/companies/${evaluacion!.companyId}`, { credentials: "include" });
+      if (!res.ok) return {};
+      return res.json();
+    },
+    enabled: !!evaluacion?.companyId,
+  });
+
   const { data: revisiones = [], isLoading: revisionesLoading } = useQuery<RevisionDireccionPesv[]>({
     queryKey: ["/api/evaluaciones-pesv", evaluacionId, "revisiones-direccion"],
     queryFn: async () => {
@@ -376,7 +386,11 @@ export default function PesvRevisionDireccion() {
   const handleOpenCreate = () => {
     const year = new Date().getFullYear();
     const nextNum = String(revisiones.length + 1).padStart(3, "0");
-    setFormData({ ...initialFormData, codigo: `REV-PESV-${year}-${nextNum}` });
+    setFormData({
+      ...initialFormData,
+      codigo: `REV-PESV-${year}-${nextNum}`,
+      presididaPor: company?.legalRepName || "",
+    });
     setDialogOpen(true);
   };
 
@@ -523,6 +537,12 @@ export default function PesvRevisionDireccion() {
                     required
                     data-testid="input-presidida-por"
                   />
+                  {company?.legalRepName && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      Auto-completado con el representante legal registrado. Puede editarlo si preside otra persona.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
