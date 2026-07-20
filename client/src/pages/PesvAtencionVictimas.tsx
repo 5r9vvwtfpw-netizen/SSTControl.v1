@@ -12,12 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, HeartHandshake, Shield, ArrowLeft, FileDown } from "lucide-react";
+import { Plus, Pencil, Trash2, HeartHandshake, Shield, FileDown, Link2 } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { PesvVictimasRegistro } from "@shared/schema";
+import { PesvVictimasRegistro, RoadIncident } from "@shared/schema";
 import { PASOS_PESV } from "@/data/pasos-pesv";
 
 const TIPO_VICTIMA_OPTIONS = [
@@ -52,6 +52,7 @@ const PASO_H11 = PASOS_PESV.find(p => p.codigo === "H11");
 
 interface VictimaFormData {
   evaluacionId: string | null;
+  siniestroId: string | null;
   fechaSiniestro: string;
   tipoVictima: string;
   nombreVictima: string;
@@ -67,6 +68,7 @@ interface VictimaFormData {
 
 const EMPTY_FORM: VictimaFormData = {
   evaluacionId: null,
+  siniestroId: null,
   fechaSiniestro: new Date().toISOString().slice(0, 10),
   tipoVictima: "conductor",
   nombreVictima: "",
@@ -95,6 +97,10 @@ export default function PesvAtencionVictimas() {
 
   const { data: registros = [], isLoading } = useQuery<PesvVictimasRegistro[]>({
     queryKey: [apiBase],
+  });
+
+  const { data: siniestros = [] } = useQuery<RoadIncident[]>({
+    queryKey: ["/api/road-incidents"],
   });
 
   const { data: evaluacion, isLoading: evaluacionLoading } = useQuery<any>({
@@ -148,6 +154,7 @@ export default function PesvAtencionVictimas() {
     setEditItem(item);
     setForm({
       evaluacionId: item.evaluacionId ?? null,
+      siniestroId: (item as any).siniestroId ?? null,
       fechaSiniestro: item.fechaSiniestro,
       tipoVictima: item.tipoVictima,
       nombreVictima: item.nombreVictima ?? "",
@@ -163,6 +170,12 @@ export default function PesvAtencionVictimas() {
     setDialogOpen(true);
   }
 
+  function getSiniestroLabel(s: RoadIncident) {
+    const date = s.incidentDate ? new Date(s.incidentDate).toLocaleDateString("es-CO") : "—";
+    const tipo: Record<string, string> = { colision: "Colisión", volcamiento: "Volcamiento", atropello: "Atropello", "salida-via": "Salida de Vía", "choque-objeto": "Choque con Objeto", otro: s.customType ?? "Otro" };
+    return `${date} — ${tipo[s.type] ?? s.type} (${s.location ?? "sin ubicación"})`;
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.fechaSiniestro || !form.tipoVictima || !form.descripcionSiniestro.trim()) {
@@ -171,6 +184,7 @@ export default function PesvAtencionVictimas() {
     }
     saveMutation.mutate({
       evaluacionId: form.evaluacionId || null,
+      siniestroId: form.siniestroId || null,
       fechaSiniestro: form.fechaSiniestro,
       tipoVictima: form.tipoVictima,
       nombreVictima: form.nombreVictima.trim() || null,
@@ -371,6 +385,43 @@ export default function PesvAtencionVictimas() {
             <DialogTitle>{editItem ? "Editar Registro" : "Nuevo Registro de Atención a Víctima"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Vincular con siniestro V02 */}
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5">
+                <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
+                Vincular con Siniestro (V02)
+              </Label>
+              <Select
+                value={form.siniestroId ?? "ninguno"}
+                onValueChange={v => {
+                  if (v === "ninguno") {
+                    setForm(f => ({ ...f, siniestroId: null }));
+                  } else {
+                    const s = siniestros.find(x => x.id === v);
+                    setForm(f => ({
+                      ...f,
+                      siniestroId: v,
+                      fechaSiniestro: s?.incidentDate ?? f.fechaSiniestro,
+                      descripcionSiniestro: f.descripcionSiniestro || s?.description || "",
+                    }));
+                  }
+                }}
+              >
+                <SelectTrigger data-testid="select-siniestro-vinculado">
+                  <SelectValue placeholder="Seleccionar siniestro (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ninguno">— Sin siniestro vinculado —</SelectItem>
+                  {siniestros.map(s => (
+                    <SelectItem key={s.id} value={s.id}>{getSiniestroLabel(s)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.siniestroId && (
+                <p className="text-xs text-muted-foreground">La fecha se ha cargado automáticamente desde el siniestro seleccionado.</p>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="fechaSiniestro">Fecha del Siniestro <span className="text-destructive">*</span></Label>

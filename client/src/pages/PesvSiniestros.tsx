@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Eye, Trash2, AlertTriangle, Users, Skull, DollarSign, ArrowLeft, FileDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Search, Eye, Trash2, AlertTriangle, Users, Skull, DollarSign, FileDown, HeartHandshake } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { RoadIncident, Vehicle, Driver, Company, insertRoadIncidentSchema } from "@shared/schema";
@@ -60,6 +61,10 @@ export default function PesvSiniestros() {
 
   const { data: incidents = [], isLoading: incidentsLoading } = useQuery<RoadIncident[]>({
     queryKey: ["/api/road-incidents"],
+  });
+
+  const { data: victimasCount = {} } = useQuery<Record<string, number>>({
+    queryKey: ["/api/pesv/victimas-count-by-siniestro"],
   });
 
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
@@ -647,19 +652,20 @@ export default function PesvSiniestros() {
               <TableHead data-testid="header-severity">Severidad</TableHead>
               <TableHead data-testid="header-injuries">Lesionados</TableHead>
               <TableHead data-testid="header-fatalities">Fallecidos</TableHead>
+              <TableHead data-testid="header-victims">Víctimas H11</TableHead>
               <TableHead data-testid="header-actions">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {incidentsLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center" data-testid="text-loading">
+                <TableCell colSpan={9} className="text-center" data-testid="text-loading">
                   Cargando siniestros...
                 </TableCell>
               </TableRow>
             ) : filteredIncidents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center" data-testid="text-no-incidents">
+                <TableCell colSpan={9} className="text-center" data-testid="text-no-incidents">
                   No se encontraron siniestros
                 </TableCell>
               </TableRow>
@@ -683,6 +689,16 @@ export default function PesvSiniestros() {
                   </TableCell>
                   <TableCell data-testid={`text-injuries-${incident.id}`}>{incident.injuries}</TableCell>
                   <TableCell data-testid={`text-fatalities-${incident.id}`}>{incident.fatalities}</TableCell>
+                  <TableCell data-testid={`text-victimas-${incident.id}`}>
+                    {victimasCount[incident.id] ? (
+                      <Badge className="bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300 gap-1" data-testid={`badge-victimas-${incident.id}`}>
+                        <HeartHandshake className="h-3 w-3" />
+                        {victimasCount[incident.id]}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button

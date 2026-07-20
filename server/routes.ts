@@ -54621,11 +54621,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const user = req.user!;
       const companyId = user.companyId;
       if (!companyId) return res.status(400).json({ error: "companyId requerido" });
-      const { evaluacionId, fechaSiniestro, tipoVictima, nombreVictima, descripcionSiniestro, atencionInmediata, remisionIps, nombreIps, estadoSeguimiento, programaAcompanamiento, responsable, observaciones } = req.body;
+      const { evaluacionId, siniestroId, fechaSiniestro, tipoVictima, nombreVictima, descripcionSiniestro, atencionInmediata, remisionIps, nombreIps, estadoSeguimiento, programaAcompanamiento, responsable, observaciones } = req.body;
       if (!fechaSiniestro || !tipoVictima || !descripcionSiniestro) return res.status(400).json({ error: "Campos obligatorios faltantes" });
       const result = await db.execute(sql`
-        INSERT INTO pesv_victimas_registros (company_id, evaluacion_id, fecha_siniestro, tipo_victima, nombre_victima, descripcion_siniestro, atencion_inmediata, remision_ips, nombre_ips, estado_seguimiento, programa_acompanamiento, responsable, observaciones)
-        VALUES (${companyId}, ${evaluacionId ?? null}, ${fechaSiniestro}, ${tipoVictima}, ${nombreVictima ?? null}, ${descripcionSiniestro}, ${atencionInmediata ?? null}, ${remisionIps ?? 0}, ${nombreIps ?? null}, ${estadoSeguimiento ?? 'activo'}, ${programaAcompanamiento ?? 0}, ${responsable ?? null}, ${observaciones ?? null})
+        INSERT INTO pesv_victimas_registros (company_id, evaluacion_id, siniestro_id, fecha_siniestro, tipo_victima, nombre_victima, descripcion_siniestro, atencion_inmediata, remision_ips, nombre_ips, estado_seguimiento, programa_acompanamiento, responsable, observaciones)
+        VALUES (${companyId}, ${evaluacionId ?? null}, ${siniestroId ?? null}, ${fechaSiniestro}, ${tipoVictima}, ${nombreVictima ?? null}, ${descripcionSiniestro}, ${atencionInmediata ?? null}, ${remisionIps ?? 0}, ${nombreIps ?? null}, ${estadoSeguimiento ?? 'activo'}, ${programaAcompanamiento ?? 0}, ${responsable ?? null}, ${observaciones ?? null})
         RETURNING *`);
       res.json(rowToCamel(result.rows[0]));
     } catch (error: any) {
@@ -54639,13 +54639,44 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const companyId = user.companyId;
       if (!companyId) return res.status(400).json({ error: "companyId requerido" });
       const { evaluacionId } = req.params;
-      const { fechaSiniestro, tipoVictima, nombreVictima, descripcionSiniestro, atencionInmediata, remisionIps, nombreIps, estadoSeguimiento, programaAcompanamiento, responsable, observaciones } = req.body;
+      const { siniestroId, fechaSiniestro, tipoVictima, nombreVictima, descripcionSiniestro, atencionInmediata, remisionIps, nombreIps, estadoSeguimiento, programaAcompanamiento, responsable, observaciones } = req.body;
       if (!fechaSiniestro || !tipoVictima || !descripcionSiniestro) return res.status(400).json({ error: "Campos obligatorios faltantes" });
       const result = await db.execute(sql`
-        INSERT INTO pesv_victimas_registros (company_id, evaluacion_id, fecha_siniestro, tipo_victima, nombre_victima, descripcion_siniestro, atencion_inmediata, remision_ips, nombre_ips, estado_seguimiento, programa_acompanamiento, responsable, observaciones)
-        VALUES (${companyId}, ${evaluacionId}, ${fechaSiniestro}, ${tipoVictima}, ${nombreVictima ?? null}, ${descripcionSiniestro}, ${atencionInmediata ?? null}, ${remisionIps ?? 0}, ${nombreIps ?? null}, ${estadoSeguimiento ?? 'activo'}, ${programaAcompanamiento ?? 0}, ${responsable ?? null}, ${observaciones ?? null})
+        INSERT INTO pesv_victimas_registros (company_id, evaluacion_id, siniestro_id, fecha_siniestro, tipo_victima, nombre_victima, descripcion_siniestro, atencion_inmediata, remision_ips, nombre_ips, estado_seguimiento, programa_acompanamiento, responsable, observaciones)
+        VALUES (${companyId}, ${evaluacionId}, ${siniestroId ?? null}, ${fechaSiniestro}, ${tipoVictima}, ${nombreVictima ?? null}, ${descripcionSiniestro}, ${atencionInmediata ?? null}, ${remisionIps ?? 0}, ${nombreIps ?? null}, ${estadoSeguimiento ?? 'activo'}, ${programaAcompanamiento ?? 0}, ${responsable ?? null}, ${observaciones ?? null})
         RETURNING *`);
       res.json(rowToCamel(result.rows[0]));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/pesv/siniestro/:siniestroId/victimas-registros", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const isAdmin = hasGlobalAccess(user.role);
+      const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : user.companyId;
+      if (!companyId) return res.status(400).json({ error: "companyId requerido" });
+      const { siniestroId } = req.params;
+      const rows = await db.execute(sql`SELECT * FROM pesv_victimas_registros WHERE company_id = ${companyId} AND siniestro_id = ${siniestroId} ORDER BY fecha_siniestro DESC`);
+      res.json(rows.rows.map(rowToCamel));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/pesv/victimas-count-by-siniestro", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const isAdmin = hasGlobalAccess(user.role);
+      const companyId = (isAdmin && req.query.companyId) ? req.query.companyId as string : user.companyId;
+      if (!companyId) return res.status(400).json({ error: "companyId requerido" });
+      const rows = await db.execute(sql`SELECT siniestro_id, COUNT(*)::int as count FROM pesv_victimas_registros WHERE company_id = ${companyId} AND siniestro_id IS NOT NULL GROUP BY siniestro_id`);
+      const result: Record<string, number> = {};
+      for (const row of rows.rows) {
+        result[row.siniestro_id as string] = row.count as number;
+      }
+      res.json(result);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -54654,7 +54685,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.put("/api/pesv/victimas-registros/:id", requirePermission("vehicles:edit"), async (req, res) => {
     try {
       const { id } = req.params;
-      const { fechaSiniestro, tipoVictima, nombreVictima, descripcionSiniestro, atencionInmediata, remisionIps, nombreIps, estadoSeguimiento, programaAcompanamiento, responsable, observaciones, evaluacionId } = req.body;
+      const { fechaSiniestro, tipoVictima, nombreVictima, descripcionSiniestro, atencionInmediata, remisionIps, nombreIps, estadoSeguimiento, programaAcompanamiento, responsable, observaciones, evaluacionId, siniestroId } = req.body;
       const result = await db.execute(sql`
         UPDATE pesv_victimas_registros SET
           fecha_siniestro = ${fechaSiniestro},
@@ -54668,7 +54699,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           programa_acompanamiento = ${programaAcompanamiento ?? 0},
           responsable = ${responsable ?? null},
           observaciones = ${observaciones ?? null},
-          evaluacion_id = ${evaluacionId ?? null}
+          evaluacion_id = ${evaluacionId ?? null},
+          siniestro_id = ${siniestroId ?? null}
         WHERE id = ${id}
         RETURNING *`);
       if (!result.rows.length) return res.status(404).json({ error: "Registro no encontrado" });

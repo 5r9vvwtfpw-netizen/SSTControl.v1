@@ -10905,6 +10905,7 @@ export const pesvVictimasRegistros = pgTable("pesv_victimas_registros", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
   evaluacionId: varchar("evaluacion_id").references(() => evaluacionesPesv.id, { onDelete: "set null" }),
+  siniestroId: varchar("siniestro_id").references(() => roadIncidents.id, { onDelete: "set null" }),
   fechaSiniestro: date("fecha_siniestro").notNull(),
   tipoVictima: varchar("tipo_victima").notNull(), // conductor, peaton, ciclista, pasajero, otro
   nombreVictima: varchar("nombre_victima"),
