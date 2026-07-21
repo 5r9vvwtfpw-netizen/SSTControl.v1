@@ -372,7 +372,7 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
         </DialogHeader>
 
         {/* PotPa: Panel de espera LSO para pasos P03, P05, P06 */}
-        {['P03', 'P05', 'P06'].includes(paso.codigo) &&
+        {['P03', 'P05', 'P06', 'V03'].includes(paso.codigo) &&
          !respuestas.find(r => r.pasoId === paso.codigo) &&
          user?.role !== 'lso' &&
          user?.role !== 'lso_externo' &&
