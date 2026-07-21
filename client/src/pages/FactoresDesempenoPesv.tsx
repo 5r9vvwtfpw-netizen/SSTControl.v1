@@ -15,7 +15,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FactorDesempenoSV, insertFactorDesempenoSVSchema } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, buildHeaders } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
@@ -325,7 +325,7 @@ export default function FactoresDesempenoPesv() {
     setSpfCalcInfo(null);
     try {
       const params = new URLSearchParams({ nombre: factor.nombre });
-      const res = await fetch(`/api/factores-desempeno-sv/auto-calculate?${params}`, { credentials: "include" });
+      const res = await fetch(`/api/factores-desempeno-sv/auto-calculate?${params}`, { credentials: "include", headers: buildHeaders() });
       if (res.ok) {
         const data = await res.json();
         if (data.metaSugerida !== undefined) form.setValue("metaAnual", String(data.metaSugerida));
@@ -374,7 +374,7 @@ export default function FactoresDesempenoPesv() {
           let metaAnual = factor.metaAnual;
           try {
             const params = new URLSearchParams({ nombre: factor.nombre });
-            const calcRes = await fetch(`/api/factores-desempeno-sv/auto-calculate?${params}`, { credentials: "include" });
+            const calcRes = await fetch(`/api/factores-desempeno-sv/auto-calculate?${params}`, { credentials: "include", headers: buildHeaders() });
             if (calcRes.ok) {
               const calcData = await calcRes.json();
               if (calcData.metaSugerida !== undefined) metaAnual = String(calcData.metaSugerida);
@@ -580,7 +580,7 @@ export default function FactoresDesempenoPesv() {
     setSpfCalcInfo(null);
     try {
       const params = new URLSearchParams({ nombre });
-      const res = await fetch(`/api/factores-desempeno-sv/auto-calculate?${params}`, { credentials: "include" });
+      const res = await fetch(`/api/factores-desempeno-sv/auto-calculate?${params}`, { credentials: "include", headers: buildHeaders() });
       if (!res.ok) throw new Error("Error en el servidor");
       const data = await res.json();
       if (data.calculable && data.valor !== null) {
