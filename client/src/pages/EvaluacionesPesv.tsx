@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, FileText, CheckCircle2, FileCheck, Trash2, Car, Users, Copy, Info, ShieldCheck, Building2, ChevronRight, ArrowLeft, Calendar } from "lucide-react";
+import { Plus, Search, FileText, CheckCircle2, FileCheck, Trash2, Car, Users, Copy, Info, ShieldCheck, Building2, ChevronRight, ArrowLeft, Calendar, ArrowRight } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -833,6 +833,10 @@ export default function EvaluacionesPesv() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
+                      <Button size="sm" onClick={(e) => { e.stopPropagation(); setLocation(`/pesv/evaluacion/${evaluacion.id}`); }} data-testid={`button-abrir-${evaluacion.id}`}>
+                        <ArrowRight className="h-4 w-4 mr-2" />
+                        Abrir evaluación
+                      </Button>
                       <Button variant="outline" size="sm" onClick={(e) => handleHeredarClick(e, evaluacion)} disabled={heredarMutation.isPending} data-testid={`button-heredar-${evaluacion.id}`}>
                         <Copy className="h-4 w-4 mr-2" />
                         Crear {evaluacion.anio + 1}
@@ -910,6 +914,10 @@ export default function EvaluacionesPesv() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
+                  <Button size="sm" onClick={(e) => { e.stopPropagation(); setLocation(`/pesv/evaluacion/${evaluacion.id}`); }} data-testid={`button-abrir-${evaluacion.id}`}>
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    Abrir evaluación
+                  </Button>
                   <Button variant="outline" size="sm" onClick={(e) => handleHeredarClick(e, evaluacion)} disabled={heredarMutation.isPending} data-testid={`button-heredar-${evaluacion.id}`}>
                     <Copy className="h-4 w-4 mr-2" />
                     Crear {evaluacion.anio + 1}

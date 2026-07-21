@@ -7,7 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, FileText, AlertTriangle, CheckCircle2, FileCheck, Download, Lock, Trash2, AlertCircle, Wrench, RefreshCw, Monitor, Shield, UserCheck, Building2, ChevronRight, ArrowLeft, Calendar, TrendingUp } from "lucide-react";
+import { Plus, Search, FileText, AlertTriangle, CheckCircle2, FileCheck, Download, Lock, Trash2, AlertCircle, Wrench, RefreshCw, Monitor, Shield, UserCheck, Building2, ChevronRight, ArrowLeft, Calendar, TrendingUp, ArrowRight } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -959,6 +959,14 @@ export default function EvaluacionesSst() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); setLocation(`/evaluaciones-sst/${evaluacion.id}`); }}
+                        data-testid={`button-abrir-${evaluacion.id}`}
+                      >
+                        <ArrowRight className="h-4 w-4 mr-2" />
+                        Abrir evaluación
+                      </Button>
                       {evaluacion.estado === 'completada' && (
                         <Button
                           variant="outline"
@@ -1056,6 +1064,14 @@ export default function EvaluacionesSst() {
                 </div>
                 
                 <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    onClick={(e) => { e.stopPropagation(); setLocation(`/evaluaciones-sst/${evaluacion.id}`); }}
+                    data-testid={`button-abrir-${evaluacion.id}`}
+                  >
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    Abrir evaluación
+                  </Button>
                   {evaluacion.estado === 'completada' && (
                     <Button
                       variant="outline"
