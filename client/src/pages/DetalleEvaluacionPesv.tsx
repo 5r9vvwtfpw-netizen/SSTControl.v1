@@ -95,6 +95,7 @@ interface RespuestaDialogProps {
 }
 
 function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respuestas, companyChapter, onSaved, toast }: RespuestaDialogProps) {
+  const { user } = useAuth();
   const [formNoAplica, setFormNoAplica] = useState(0);
   const [formCumple, setFormCumple] = useState(0);
   const [autoFilledFields, setAutoFilledFields] = useState<Record<string, boolean>>({});
@@ -369,6 +370,33 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
             {paso.descripcion}
           </DialogDescription>
         </DialogHeader>
+
+        {/* PotPa: Panel de espera LSO para pasos P03, P05, P06 */}
+        {['P03', 'P05', 'P06'].includes(paso.codigo) &&
+         !respuestas.find(r => r.pasoId === paso.codigo) &&
+         user?.role !== 'lso' &&
+         user?.role !== 'lso_externo' &&
+         user?.role !== 'superadmin' && (
+          <div className="flex flex-col items-center gap-5 p-8 rounded-xl bg-blue-50 dark:bg-blue-950/40 border-2 border-blue-200 dark:border-blue-700 text-center" data-testid={`potpa-lso-${paso.codigo.toLowerCase()}`}>
+            <div className="p-4 rounded-full bg-blue-100 dark:bg-blue-900 border border-blue-200 dark:border-blue-700">
+              <Shield className="h-12 w-12 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xl font-bold text-blue-900 dark:text-blue-100">
+                Paso gestionado por su Profesional SST
+              </p>
+              <p className="text-sm text-blue-700 dark:text-blue-300 max-w-sm mx-auto leading-relaxed">
+                El paso <strong>{paso.codigo} — {paso.nombre}</strong> es elaborado y registrado por el Licenciado en Salud Ocupacional (LSO) asignado a su empresa.
+              </p>
+              <p className="text-sm text-blue-600 dark:text-blue-400">
+                Una vez el LSO complete este paso, la información aparecerá aquí automáticamente.
+              </p>
+            </div>
+            <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border border-blue-300 dark:border-blue-600 text-sm px-5 py-1.5">
+              En espera del Licenciado en SST
+            </Badge>
+          </div>
+        )}
 
         {paso.fundamentoNormativo && (
           <Alert className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30" data-testid="alert-fundamento-normativo">
