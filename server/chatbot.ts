@@ -163,6 +163,23 @@ Accesible desde la pestaña **"PESV"** en la barra de navegación superior.
 
 El PESV tiene **24 pasos** organizados en el ciclo PHVA: Planear (P01-P08), Hacer (H01-H11), Verificar (V01-V03), Actuar (A01-A02). Se rige por la **Resolución 40595/2022** del Ministerio de Transporte.
 
+### PASOS GESTIONADOS POR EL PROFESIONAL EN SST (LSO) — MUY IMPORTANTE
+
+Los siguientes pasos del PESV son responsabilidad exclusiva del **Licenciado en Salud Ocupacional (LSO)** asignado a la empresa. La empresa NO los diligencia directamente — debe esperar a que el LSO los complete:
+
+| Paso | Nombre | Responsabilidad del LSO |
+|------|--------|------------------------|
+| **P03** | Diagnóstico de la organización | El LSO realiza y registra el diagnóstico inicial de la organización: caracterización de la empresa, flota vehicular y conductores. |
+| **P04** | Caracterización y evaluación del riesgo vial | El LSO identifica, valora y registra todos los riesgos viales de la empresa en la Matriz de Riesgos. |
+| **P05** | Objetivos y metas del PESV | El LSO define los objetivos medibles y metas de seguridad vial (Indicadores SPI según ISO 39001). |
+| **P06** | Indicadores de gestión (SPF) | El LSO gestiona los Factores de Desempeño de Seguridad (SPF según ISO 39001:2012 Cláusula 6.3). |
+| **V03** | Auditoría interna PESV | El LSO planifica y ejecuta la auditoría interna del PESV conforme a la Resolución 40595/2022. |
+| **A01** | Acciones de mejora continua | **CASO ESPECIAL:** El LSO únicamente analiza y revisa los hallazgos que la gerencia/alta dirección auditó. En este paso el LSO NO registra información propia — solo revisa y da seguimiento a lo que la dirección determinó en su revisión gerencial. |
+
+**Cuando un usuario de empresa pregunta por P03, P04, P05, P06 o V03:** Explicar que esos pasos los gestiona su Licenciado en SST (LSO) asignado, que la empresa verá el panel "En espera del Licenciado en SST" mientras el LSO no los haya completado, y que una vez el LSO los complete la información aparecerá automáticamente.
+
+**Cuando un usuario pregunta por A01:** Explicar que A01 es un paso especial donde el LSO solo revisa y da seguimiento a los hallazgos generados por la revisión de la alta dirección/gerencia — el LSO no tiene que ingresar datos propios en este paso.
+
 ### CÓMO INICIAR EL PESV - Flujo obligatorio
 
 **IMPORTANTE**: Al igual que el SG-SST parte de la Evaluación Inicial, el PESV parte de la **Evaluación PESV**. Todos los 24 pasos se gestionan DENTRO de una evaluación activa. No se navega directamente a los módulos desde el menú lateral.
@@ -697,6 +714,16 @@ Cuando un usuario pregunte por un estándar específico, usa esta referencia. NU
 - **¿Qué roles existen en el equipo PESV (Comité)?** Los roles disponibles al agregar integrantes son: Líder PESV, Representante de los trabajadores, Presidente, Secretario, Jefe de flota, Inspector de vehículos, Coordinador de capacitación, Coordinador de salud, Asesor externo, y Otro.
 
 - **¿Qué funciones se llenan automáticamente al seleccionar el rol?** Al seleccionar cualquier rol en el formulario de integrante PESV, el campo "Funciones y Responsabilidades" se pre-llena automáticamente con las funciones típicas de ese rol (según la Resolución 40595/2022). El usuario puede editarlas si lo necesita.
+
+### PESV - Preguntas frecuentes sobre responsabilidades del LSO en el PESV
+
+- **¿Qué pasos del PESV debe diligenciar el profesional LSO?** El Licenciado en Salud Ocupacional (LSO) asignado a la empresa es responsable de gestionar directamente los pasos: **P03 - Diagnóstico de la organización**, **P04 - Caracterización y evaluación del riesgo vial**, **P05 - Objetivos y metas del PESV**, **P06 - Indicadores de gestión (SPF)** y **V03 - Auditoría interna PESV**. Mientras el LSO no haya completado alguno de estos pasos, la empresa verá el panel azul "Paso gestionado por su Profesional SST — En espera del Licenciado en SST". Una vez el LSO guarda el paso, la información aparece automáticamente para la empresa.
+
+- **¿Qué debe hacer el LSO en el paso A01 - Acciones de mejora continua?** El paso A01 es un **caso especial**: el LSO NO registra información propia en este paso. Su función en A01 es únicamente analizar y dar seguimiento a los hallazgos y acciones de mejora que la **alta dirección / gerencia** determinó durante su revisión gerencial. Es decir, A01 lo gestiona la dirección de la empresa, y el LSO solo revisa y verifica que esas acciones se estén implementando.
+
+- **¿Por qué la empresa no puede diligenciar P03, P04, P05, P06 o V03?** Estos pasos requieren el criterio técnico y la firma profesional del Licenciado en Salud Ocupacional (LSO). Son pasos que por normativa (Resolución 40595/2022) deben ser elaborados por el profesional responsable del PESV. La empresa verá el panel "En espera del Licenciado en SST" en cada uno de estos pasos hasta que el LSO los complete. Una vez completados, la empresa puede ver la información pero no modificarla directamente.
+
+- **¿Cómo sabe el LSO cuáles pasos le corresponden?** Al ingresar a cualquier evaluación PESV, el LSO ve un **banner fijo en la parte superior** que lista sus 6 pasos de responsabilidad (P03, P04, P05, P06, V03, A01) con un indicador de semáforo: verde con check si ya fue completado, o rojo con círculo si está pendiente. Este banner está siempre visible mientras navega la evaluación.
 
 ### PESV - Preguntas frecuentes sobre P03, P05 y P06 (auto-generación y auto-cálculo)
 
