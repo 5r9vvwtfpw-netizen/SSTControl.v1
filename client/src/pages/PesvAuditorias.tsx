@@ -129,13 +129,19 @@ export default function PesvAuditorias() {
 
   // Pre-fill auditor with assigned LSO when opening a new audit dialog
   useEffect(() => {
-    if (dialogOpen && !editingAuditId && lsoAssignment?.data?.name) {
+    if (!dialogOpen || editingAuditId) return;
+    // If the logged-in user IS the LSO, use their own name directly
+    const isLsoUser = user?.role === 'lso' || user?.role === 'lso_externo';
+    const lsoName = isLsoUser
+      ? (user?.fullName || user?.username || "")
+      : (lsoAssignment?.data?.name || "");
+    if (lsoName) {
       setFormData(prev => ({
         ...prev,
-        auditor: prev.auditor || lsoAssignment.data!.name,
+        auditor: prev.auditor || lsoName,
       }));
     }
-  }, [dialogOpen, editingAuditId, lsoAssignment]);
+  }, [dialogOpen, editingAuditId, lsoAssignment, user]);
 
   // Auto-calculate aggregate scores from 24 individual steps
   useEffect(() => {
