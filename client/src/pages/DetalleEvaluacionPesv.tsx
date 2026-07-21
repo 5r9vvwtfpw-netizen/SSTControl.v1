@@ -1221,9 +1221,11 @@ function DetalleEvaluacionPesvInner() {
 
   const LSO_PASOS = [
     { codigo: 'P03', nombre: 'Diagnóstico de la organización' },
+    { codigo: 'P04', nombre: 'Caracterización y evaluación del riesgo vial' },
     { codigo: 'P05', nombre: 'Objetivos y metas del PESV' },
     { codigo: 'P06', nombre: 'Indicadores de gestión' },
     { codigo: 'V03', nombre: 'Auditoría interna PESV' },
+    { codigo: 'A01', nombre: 'Acciones de mejora continua' },
   ];
 
   return (
