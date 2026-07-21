@@ -1219,8 +1219,55 @@ function DetalleEvaluacionPesvInner() {
     );
   }
 
+  const LSO_PASOS = [
+    { codigo: 'P03', nombre: 'Diagnóstico de la organización' },
+    { codigo: 'P05', nombre: 'Objetivos y metas del PESV' },
+    { codigo: 'P06', nombre: 'Indicadores de gestión' },
+    { codigo: 'V03', nombre: 'Auditoría interna PESV' },
+  ];
+
   return (
     <div className="space-y-6">
+      {/* Banner fijo de responsabilidades LSO */}
+      {(user?.role === 'lso' || user?.role === 'lso_externo') && (
+        <div className="sticky top-0 z-50 rounded-xl border-2 border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-950/60 shadow-md px-5 py-4" data-testid="banner-lso-responsabilidades">
+          <div className="flex items-start gap-3">
+            <div className="shrink-0 mt-0.5">
+              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-amber-900 dark:text-amber-100 mb-2">
+                Pasos bajo su responsabilidad como Licenciado en SST — deben ser diligenciados por usted
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {LSO_PASOS.map(({ codigo, nombre }) => {
+                  const completado = respuestas.some(r => r.pasoId === codigo);
+                  return (
+                    <div
+                      key={codigo}
+                      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 border text-xs font-medium ${
+                        completado
+                          ? 'bg-green-100 dark:bg-green-900/40 border-green-300 dark:border-green-700 text-green-800 dark:text-green-200'
+                          : 'bg-red-100 dark:bg-red-900/40 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200'
+                      }`}
+                      data-testid={`lso-paso-status-${codigo.toLowerCase()}`}
+                    >
+                      {completado
+                        ? <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+                        : <Circle className="h-3.5 w-3.5 shrink-0" />
+                      }
+                      <span className="font-mono font-bold">{codigo}</span>
+                      <span className="hidden sm:inline text-[11px] opacity-80">— {nombre}</span>
+                      <span className="ml-1">{completado ? 'Completado' : 'Pendiente'}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
