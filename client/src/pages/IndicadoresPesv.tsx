@@ -18,7 +18,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IndicadorSV, insertIndicadorSVSchema, MedicionIndicadorSV, FactorDesempenoSV, Worker } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, buildHeaders } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
@@ -441,7 +441,7 @@ export default function IndicadoresPesv() {
     setAutoCalcInfo(null);
     try {
       const params = new URLSearchParams({ nombre: indicadorForMedicion.nombre });
-      const res = await fetch(`/api/indicadores-sv/auto-calculate?${params}`, { credentials: "include" });
+      const res = await fetch(`/api/indicadores-sv/auto-calculate?${params}`, { credentials: "include", headers: buildHeaders() });
       if (!res.ok) throw new Error("Error en el servidor");
       const data = await res.json();
       if (data.calculable && data.valor !== null) {
@@ -479,7 +479,7 @@ export default function IndicadoresPesv() {
     setAutoFillInfo(null);
     try {
       const params = new URLSearchParams({ nombre });
-      const res = await fetch(`/api/indicadores-sv/auto-calculate?${params}`, { credentials: "include" });
+      const res = await fetch(`/api/indicadores-sv/auto-calculate?${params}`, { credentials: "include", headers: buildHeaders() });
       if (!res.ok) throw new Error("Error en el servidor");
       const data = await res.json();
       if (data.metaSugerida !== undefined) form.setValue("valorMeta", String(data.metaSugerida));

@@ -111,7 +111,7 @@ function getSelectedCompanyId(): string | null {
 }
 
 // Build headers including X-Company-Id for superadmin context
-function buildHeaders(includeContentType: boolean = false): HeadersInit {
+export function buildHeaders(includeContentType: boolean = false): HeadersInit {
   const headers: Record<string, string> = {};
   
   if (includeContentType) {
