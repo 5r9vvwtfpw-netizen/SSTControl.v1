@@ -371,14 +371,12 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
           </DialogDescription>
         </DialogHeader>
 
-        {/* PotPa: Panel de espera LSO — solo para roles sin permiso de edición directa */}
-        {['V03'].includes(paso.codigo) &&
+        {/* PotPa: Panel de espera LSO para pasos P03, P05, P06 */}
+        {['P03', 'P05', 'P06', 'V03'].includes(paso.codigo) &&
          !respuestas.find(r => r.pasoId === paso.codigo) &&
          user?.role !== 'lso' &&
          user?.role !== 'lso_externo' &&
-         user?.role !== 'superadmin' &&
-         user?.role !== 'admin' &&
-         user?.role !== 'responsable_sst' && (
+         user?.role !== 'superadmin' && (
           <div className="flex flex-col items-center gap-5 p-8 rounded-xl bg-blue-50 dark:bg-blue-950/40 border-2 border-blue-200 dark:border-blue-700 text-center" data-testid={`potpa-lso-${paso.codigo.toLowerCase()}`}>
             <div className="p-4 rounded-full bg-blue-100 dark:bg-blue-900 border border-blue-200 dark:border-blue-700">
               <Shield className="h-12 w-12 text-blue-600 dark:text-blue-400" />
