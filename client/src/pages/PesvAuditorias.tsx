@@ -123,6 +123,20 @@ export default function PesvAuditorias() {
     queryKey: ["/api/pesv-audits"],
   });
 
+  const { data: lsoAssignment } = useQuery<{ ok: boolean; data: { name: string; licenseNumber?: string } | null }>({
+    queryKey: ["/api/lso-directory-jwt/current-assignment"],
+  });
+
+  // Pre-fill auditor with assigned LSO when opening a new audit dialog
+  useEffect(() => {
+    if (dialogOpen && !editingAuditId && lsoAssignment?.data?.name) {
+      setFormData(prev => ({
+        ...prev,
+        auditor: prev.auditor || lsoAssignment.data!.name,
+      }));
+    }
+  }, [dialogOpen, editingAuditId, lsoAssignment]);
+
   // Auto-calculate aggregate scores from 24 individual steps
   useEffect(() => {
     const planear = [
