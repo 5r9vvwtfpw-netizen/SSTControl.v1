@@ -124,6 +124,13 @@ export default function Checkout() {
     if (success === 'true' && sessionId) {
       queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
       queryClient.invalidateQueries({ queryKey: ['/api/stripe/subscription'] });
+      if (typeof (window as any).gtag === 'function') {
+        (window as any).gtag('event', 'conversion', {
+          send_to: 'AW-18342722698/qVDwCKrK7dQcEIr5vqpE',
+          currency: 'COP',
+          transaction_id: sessionId,
+        });
+      }
     }
   }, [success, sessionId]);
 
