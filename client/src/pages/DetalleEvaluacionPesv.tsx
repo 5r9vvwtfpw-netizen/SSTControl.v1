@@ -912,8 +912,14 @@ function DetalleEvaluacionPesvInner() {
   });
 
   useEffect(() => {
-    if (evaluacion?.companyId && (user?.role === 'superadmin' || user?.role === 'lso' || user?.role === 'lso_externo')) {
-      localStorage.setItem('superadmin_vault_company', evaluacion.companyId);
+    if (evaluacion?.companyId) {
+      if (user?.role === 'superadmin') {
+        localStorage.setItem('superadmin_vault_company', evaluacion.companyId);
+      }
+      if (user?.role === 'lso' || user?.role === 'lso_externo') {
+        localStorage.setItem('superadmin_vault_company', evaluacion.companyId);
+        localStorage.setItem('lso_company_context', JSON.stringify({ companyId: evaluacion.companyId }));
+      }
     }
   }, [evaluacion?.companyId, user?.role]);
 
