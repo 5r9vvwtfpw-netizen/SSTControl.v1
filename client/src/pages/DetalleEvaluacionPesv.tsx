@@ -1226,6 +1226,7 @@ function DetalleEvaluacionPesvInner() {
     { codigo: 'P06', nombre: 'Indicadores de gestión' },
     { codigo: 'V03', nombre: 'Auditoría interna PESV' },
     { codigo: 'A01', nombre: 'Acciones de mejora continua' },
+    { codigo: 'A02', nombre: 'Revisión por la alta dirección' },
   ];
 
   return (
