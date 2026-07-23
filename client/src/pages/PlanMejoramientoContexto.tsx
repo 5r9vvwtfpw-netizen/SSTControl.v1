@@ -23,7 +23,7 @@ import { es } from "date-fns/locale";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AccionMejoraContexto, insertAccionMejoraContextoSchema, User, FactorContexto, AnalisisContexto, Accident, AccidentInvestigation } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, buildHeaders } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
@@ -441,6 +441,7 @@ export default function PlanMejoramientoContexto() {
     try {
       const response = await fetch("/api/acciones-mejora-contexto/pdf", {
         credentials: "include",
+        headers: buildHeaders(),
       });
       if (!response.ok) {
         throw new Error("Error al generar el PDF");
