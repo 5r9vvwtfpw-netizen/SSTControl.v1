@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import { getTodayDateString } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { PesvAudit, insertPesvAuditSchema } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, buildHeaders } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -437,14 +437,22 @@ export default function PesvAuditorias() {
     </div>
   );
 
-  const handleDownloadPdf = (url: string, filename: string) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.target = '_blank';
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownloadPdf = async (url: string, filename: string) => {
+    try {
+      const res = await fetch(url, { credentials: 'include', headers: buildHeaders() });
+      if (!res.ok) throw new Error('Error generando PDF');
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(objectUrl);
+    } catch (e) {
+      console.error('Error descargando PDF:', e);
+    }
   };
 
   return (

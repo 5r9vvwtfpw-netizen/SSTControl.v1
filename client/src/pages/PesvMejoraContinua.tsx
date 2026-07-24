@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle2, AlertTriangle, Shield, Plus, Eye, Calendar, ClipboardCheck, ExternalLink, Search, FileDown, Zap, Lightbulb } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, buildHeaders } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
@@ -129,14 +129,22 @@ export default function PesvMejoraContinua() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const handleDownloadPdf = (url: string, filename: string) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.target = '_blank';
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownloadPdf = async (url: string, filename: string) => {
+    try {
+      const res = await fetch(url, { credentials: 'include', headers: buildHeaders() });
+      if (!res.ok) throw new Error('Error generando PDF');
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(objectUrl);
+    } catch (e) {
+      console.error('Error descargando PDF:', e);
+    }
   };
 
   const [dialogOpen, setDialogOpen] = useState(false);

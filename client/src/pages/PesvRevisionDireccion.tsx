@@ -18,7 +18,7 @@ import { Users, Calendar, CheckCircle2, Plus, Eye, ClipboardCheck, ExternalLink,
 import { Link } from "wouter";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, buildHeaders } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { EvaluacionPesv, RevisionDireccionPesv, RevisionDireccion, DecisionRevisionPesv } from "@shared/schema";
 
@@ -429,14 +429,22 @@ export default function PesvRevisionDireccion() {
   const temasRevisadosCount = (rev: RevisionDireccionPesv) =>
     TEMAS_REVISADOS.filter(t => (rev as any)[t.key] === 1).length;
 
-  const handleDownloadPdf = (url: string, filename: string) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.target = '_blank';
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownloadPdf = async (url: string, filename: string) => {
+    try {
+      const res = await fetch(url, { credentials: 'include', headers: buildHeaders() });
+      if (!res.ok) throw new Error('Error generando PDF');
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(objectUrl);
+    } catch (e) {
+      console.error('Error descargando PDF:', e);
+    }
   };
 
   const isLoading = evaluacionLoading || revisionesLoading;
