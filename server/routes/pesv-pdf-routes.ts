@@ -16,9 +16,12 @@ function getEffectiveCompanyId(req: Request): string | null {
   const user = (req as any).user;
   if (!user) return null;
 
-  const globalRoles = ['superadmin', 'support_admin', 'support_viewer', 'lso'];
-  if (globalRoles.includes(user.role) && (req.query.companyId as string)) {
-    return req.query.companyId as string;
+  const globalRoles = ['superadmin', 'support_admin', 'support_viewer', 'lso', 'lso_externo'];
+  if (globalRoles.includes(user.role)) {
+    const headerCompanyId = req.headers['x-company-id'];
+    if (headerCompanyId && typeof headerCompanyId === 'string') return headerCompanyId;
+    const queryCompanyId = req.query.companyId as string;
+    if (queryCompanyId) return queryCompanyId;
   }
   return user.companyId || null;
 }
