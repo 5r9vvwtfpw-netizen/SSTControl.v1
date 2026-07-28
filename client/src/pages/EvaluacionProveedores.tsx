@@ -2069,7 +2069,7 @@ function SeguimientoTab() {
                           <SelectContent>
                             <SelectItem value="pendiente">Pendiente</SelectItem>
                             <SelectItem value="en_proceso">En Proceso</SelectItem>
-                            <SelectItem value="completado">Completado</SelectItem>
+                            <SelectItem value="completada">Completada</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
