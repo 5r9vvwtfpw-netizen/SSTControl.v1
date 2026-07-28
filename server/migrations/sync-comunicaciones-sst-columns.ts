@@ -17,6 +17,8 @@ export async function syncComunicacionesSstColumns() {
       { name: 'es_externa', definition: 'INTEGER NOT NULL DEFAULT 0' },
       { name: 'parte_interesada_destinataria', definition: 'TEXT' },
       { name: 'respuesta_recibida', definition: 'INTEGER NOT NULL DEFAULT 0' },
+      { name: 'fecha_respuesta', definition: 'TIMESTAMP' },
+      { name: 'resumen_respuesta', definition: 'TEXT' },
     ];
 
     for (const col of columns) {
