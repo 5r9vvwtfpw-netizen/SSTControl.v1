@@ -531,12 +531,20 @@ export default function ConfiguracionInduccion() {
             </div>
 
             {(contenidos.length > 0 || preguntas.length > 0) && (
-              <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+              <Card className="bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-700">
                 <CardContent className="pt-4">
-                  <p className="text-sm text-blue-700 dark:text-blue-400">
-                    Ya tiene <strong>{contenidos.length}</strong> contenido(s) y <strong>{preguntas.length}</strong> pregunta(s) existentes.
-                    Los nuevos se agregarán sin eliminar los actuales.
-                  </p>
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-1">
+                        Plantillas ya cargadas
+                      </p>
+                      <p className="text-sm text-red-600 dark:text-red-300">
+                        Ya tiene <strong>{contenidos.length}</strong> contenido(s) y <strong>{preguntas.length}</strong> pregunta(s) configuradas.
+                        Cargar nuevamente crearía duplicados. Si desea reiniciar desde la plantilla, elimine primero los contenidos y preguntas existentes.
+                      </p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -556,13 +564,18 @@ export default function ConfiguracionInduccion() {
             </Button>
             <Button
               onClick={() => cargarPlantillaMutation.mutate()}
-              disabled={cargarPlantillaMutation.isPending}
+              disabled={cargarPlantillaMutation.isPending || contenidos.length > 0 || preguntas.length > 0}
               data-testid="button-confirmar-plantilla"
             >
               {cargarPlantillaMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Cargando...
+                </>
+              ) : (contenidos.length > 0 || preguntas.length > 0) ? (
+                <>
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  Ya hay plantillas cargadas
                 </>
               ) : (
                 <>
