@@ -26957,6 +26957,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const acciones = await storage.getAccionesMejora(evaluacionId, companyId);
       const existingAccion = acciones.find(a => a.respuestaEstandarId === respuestaId);
 
+      // Si no hay acción vinculada por respuestaEstandarId, buscar por descripción del estándar.
+      // Las acciones generadas por generarPlanMejoraAutomatico tienen respuestaEstandarId=null
+      // y descripción "Implementar: {nombre}" — necesitamos encontrarlas al marcar como cumple.
+      let existingAccionByDesc: typeof existingAccion | undefined;
+      if (!existingAccion && isCumple) {
+        const estandarForSearch = await storage.getEstandarSst(estandarId);
+        if (estandarForSearch) {
+          const descImplementar = `Implementar: ${estandarForSearch.nombre}`;
+          const descIncumplimiento = `Incumplimiento del Estándar ${estandarForSearch.numeroEstandar} - ${estandarForSearch.nombre}`;
+          existingAccionByDesc = acciones.find(a =>
+            a.respuestaEstandarId === null &&
+            (a.descripcionAccion === descImplementar || a.descripcionAccion === descIncumplimiento)
+          );
+        }
+      }
+
+      const accionToComplete = existingAccion ?? existingAccionByDesc;
+
       if (isNoCumple && !existingAccion) {
         const estandar = await storage.getEstandarSst(estandarId);
         if (!estandar) return;
@@ -26995,15 +27013,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[AutoAccion] Acción de mejora creada automáticamente para estándar ${estandar.numeroEstandar} (evaluación ${evaluacionId})`);
       }
 
-      if (isCumple && existingAccion && existingAccion.estado !== 'completada' && existingAccion.estado !== 'verificada') {
-        await storage.updateAccionMejora(existingAccion.id, {
+      if (isCumple && accionToComplete && accionToComplete.estado !== 'completada' && accionToComplete.estado !== 'verificada') {
+        await storage.updateAccionMejora(accionToComplete.id, {
           estado: 'completada',
           porcentajeAvance: 100,
           fechaCierre: new Date(),
           resultadoObtenido: 'Estándar cumplido - verificado en evaluación SST',
         }, companyId);
 
-        console.log(`[AutoAccion] Acción ${existingAccion.id} completada automáticamente al cumplir estándar (evaluación ${evaluacionId})`);
+        console.log(`[AutoAccion] Acción ${accionToComplete.id} completada automáticamente al cumplir estándar (evaluación ${evaluacionId})`);
       }
     } catch (err) {
       console.error('[AutoAccion] Error en gestión automática de acción de mejora:', err);
