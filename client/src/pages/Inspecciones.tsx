@@ -364,8 +364,10 @@ export default function Inspecciones() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todas">Todos los estados</SelectItem>
-            <SelectItem value="aprobada">Aprobada</SelectItem>
             <SelectItem value="pendiente">Pendiente</SelectItem>
+            <SelectItem value="completada">Completada</SelectItem>
+            <SelectItem value="requiere_accion">Requiere Acción</SelectItem>
+            <SelectItem value="aprobada">Aprobada</SelectItem>
             <SelectItem value="rechazada">Rechazada</SelectItem>
           </SelectContent>
         </Select>
