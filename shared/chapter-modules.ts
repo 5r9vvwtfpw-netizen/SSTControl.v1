@@ -168,6 +168,8 @@ const CHAPTER_1_MODULES = [
   "/dashboard-hacer",
   // Plan de emergencias (obligatorio para todas las empresas - Decreto 1072/2015 Art. 2.2.4.6.21)
   "/plan-emergencias",
+  // Estándar 2.8.1 - Mecanismos de comunicación en SST (disponible para todos)
+  "/comunicacion-sst",
 ];
 
 // Módulos adicionales para Capítulo 2 (21 estándares)
@@ -180,7 +182,6 @@ const CHAPTER_2_ADDITIONAL_MODULES = [
   "/objetivos-sst",
   "/matriz-legal",
   "/conservacion-documentos",
-  "/comunicacion-sst",
   "/indicadores-sst",
   "/indicadores-accidentalidad",  // Estándar 3.2.2 - Registro estadístico de AT, EL e incidentes
   "/indicador-frecuencia-severidad",  // Estándar 3.3.1 - Índices IF y Severidad
