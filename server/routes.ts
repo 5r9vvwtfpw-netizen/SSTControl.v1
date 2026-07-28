@@ -7890,10 +7890,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const signers = await getSignersForCompany(companyId, true);
 
       const recomendaciones = await storage.getRecomendacionesArl(companyId);
-      const acciones = await db.select()
-        .from(accionesMejoraContexto)
-        .where(eq(accionesMejoraContexto.companyId, companyId))
-        .orderBy(desc(accionesMejoraContexto.createdAt));
+
+      // Plan de mejoramiento SST (de evaluaciones SST — accionesMejora)
+      const evaluacionesSstIds = await db.select({ id: schema.evaluacionesSst.id })
+        .from(schema.evaluacionesSst).where(eq(schema.evaluacionesSst.companyId, companyId));
+      const accionesSst = evaluacionesSstIds.length > 0
+        ? await db.select().from(schema.accionesMejora)
+            .where(inArray(schema.accionesMejora.evaluacionId, evaluacionesSstIds.map(e => e.id)))
+            .orderBy(desc(schema.accionesMejora.createdAt))
+        : [];
+
+      // Plan de mejoramiento PESV (accionesMejoraPesv)
+      const accionesPesv714 = await db.select()
+        .from(accionesMejoraPesv)
+        .where(eq(accionesMejoraPesv.companyId, companyId))
+        .orderBy(desc(accionesMejoraPesv.createdAt));
 
       const subRec = await storage.getSubscriptionByCompany(companyId);
       const trialRec = getTrialStatus(subRec?.status || 'trial', subRec?.trialEnd || null, true, true);
@@ -8036,13 +8047,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // ════════════════════════════════════════════════════════════════
-      // PÁGINA 2 — PLAN DE MEJORAMIENTO
+      // PÁGINA 2 — PLAN DE MEJORAMIENTO SST (Res. 0312/2019)
       // ════════════════════════════════════════════════════════════════
       doc.addPage();
       y = await addStandardHeader({
         doc,
         company: { id: companyId, name: company?.name || 'N/A', nit: company?.nit || 'N/A' },
-        documentTitle: 'PLAN DE MEJORAMIENTO',
+        documentTitle: 'PLAN DE MEJORAMIENTO — SG-SST (RES. 0312/2019)',
         documentCode: `SST-PM-${new Date().getFullYear()}`,
         version: '1.0',
         date: new Date(),
@@ -8051,59 +8062,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.moveTo(margin, y + 4).lineTo(pageWidth - margin, y + 4).stroke('#cccccc');
       doc.y = y + 14;
 
-      // ── 1. Resumen acciones ───────────────────────────────────────
-      const pendAcc  = acciones.filter(a => a.estado === 'pendiente').length;
-      const progrAcc = acciones.filter(a => a.estado === 'en_progreso').length;
-      const compAcc  = acciones.filter(a => a.estado === 'completada').length;
-      const altaAcc  = acciones.filter(a => a.prioridad === 'alta').length;
+      // ── Resumen SST ───────────────────────────────────────────────
+      const pendSst  = accionesSst.filter(a => a.estado === 'pendiente').length;
+      const progrSst = accionesSst.filter(a => ['en-proceso', 'en_progreso'].includes(a.estado || '')).length;
+      const compSst  = accionesSst.filter(a => a.estado === 'completada').length;
 
-      y = addSectionBar(doc, '1. RESUMEN DEL PLAN DE MEJORAMIENTO', doc.y);
+      y = addSectionBar(doc, '2. PLAN DE MEJORAMIENTO — EVALUACIÓN SG-SST', doc.y);
       doc.y = y + 4;
       addSimpleTable(
         doc,
         ['Indicador', 'Cantidad'],
         [
-          ['Total acciones de mejora registradas', acciones.length.toString()],
-          ['Acciones pendientes',                  pendAcc.toString()],
-          ['Acciones en progreso',                 progrAcc.toString()],
-          ['Acciones completadas',                 compAcc.toString()],
-          ['Acciones de prioridad alta',           altaAcc.toString()],
+          ['Total acciones SST registradas', accionesSst.length.toString()],
+          ['Pendientes',                      pendSst.toString()],
+          ['En progreso',                     progrSst.toString()],
+          ['Completadas',                     compSst.toString()],
         ],
         { y: doc.y, columnWidths: [contentWidth * 0.70, contentWidth * 0.30] }
       );
-      doc.y += 14;
+      doc.y += 10;
 
-      // ── 2. Detalle de acciones ────────────────────────────────────
-      y = addSectionBar(doc, '2. DETALLE DE ACCIONES DE MEJORA', doc.y);
-      doc.y = y + 4;
-      if (acciones.length > 0) {
-        const aw = [
-          contentWidth * 0.34, contentWidth * 0.18,
-          contentWidth * 0.12, contentWidth * 0.18, contentWidth * 0.18,
-        ];
+      // ── Detalle SST ───────────────────────────────────────────────
+      if (accionesSst.length > 0) {
+        const sw = [contentWidth * 0.34, contentWidth * 0.14, contentWidth * 0.12, contentWidth * 0.20, contentWidth * 0.20];
         addSimpleTable(
           doc,
-          ['Acción', 'Origen', 'Prioridad', 'Fecha Límite', 'Estado'],
-          acciones.map(a => [
-            (a.accion || '—').substring(0, 90),
-            labelOrigen[a.origenHallazgo || ''] || (a.origenHallazgo || a.tipoFoda || '—'),
+          ['Descripción', 'Tipo Acción', 'Prioridad', 'Fecha Compromiso', 'Estado'],
+          accionesSst.map(a => [
+            (a.descripcionAccion || '—').substring(0, 80),
+            (a.tipoAccion || '—').replace('_', ' '),
             labelPrioridad[a.prioridad || ''] || (a.prioridad || '—'),
-            fmtDate(a.fechaLimite),
+            fmtDate(a.fechaCompromiso),
             labelEstado[a.estado || ''] || (a.estado || '—'),
           ]),
-          { y: doc.y, columnWidths: aw }
+          { y: doc.y, columnWidths: sw }
         );
       } else {
         doc.y += 6;
         doc.fontSize(9).font('Helvetica-Oblique').fillColor('#666666')
-          .text('No se han registrado acciones de mejora para esta empresa.', margin, doc.y, { width: contentWidth, align: 'center' });
+          .text('No se han registrado acciones de mejora en la evaluación SG-SST.', margin, doc.y, { width: contentWidth, align: 'center' });
         doc.y += 18;
       }
       doc.fillColor(PDF_COLORS.BLACK);
       doc.y += 14;
 
-      // ── 3. Referencia normativa ───────────────────────────────────
-      y = addSectionBar(doc, '3. REFERENCIA NORMATIVA Y COMPROMISO', doc.y);
+      // ════════════════════════════════════════════════════════════════
+      // PÁGINA 3 — PLAN DE MEJORAMIENTO PESV (Res. 40595/2022)
+      // ════════════════════════════════════════════════════════════════
+      doc.addPage();
+      y = await addStandardHeader({
+        doc,
+        company: { id: companyId, name: company?.name || 'N/A', nit: company?.nit || 'N/A' },
+        documentTitle: 'PLAN DE MEJORAMIENTO — PESV (RES. 40595/2022)',
+        documentCode: `SST-PMP-${new Date().getFullYear()}`,
+        version: '1.0',
+        date: new Date(),
+        logoBuffer,
+      });
+      doc.moveTo(margin, y + 4).lineTo(pageWidth - margin, y + 4).stroke('#cccccc');
+      doc.y = y + 14;
+
+      // ── Resumen PESV ──────────────────────────────────────────────
+      const pendPesv  = accionesPesv714.filter(a => a.estado === 'pendiente').length;
+      const progrPesv = accionesPesv714.filter(a => a.estado === 'en_progreso').length;
+      const compPesv  = accionesPesv714.filter(a => a.estado === 'completada').length;
+
+      y = addSectionBar(doc, '3. PLAN DE MEJORAMIENTO — PLAN ESTRATÉGICO DE SEGURIDAD VIAL (PESV)', doc.y);
+      doc.y = y + 4;
+      addSimpleTable(
+        doc,
+        ['Indicador', 'Cantidad'],
+        [
+          ['Total acciones PESV registradas', accionesPesv714.length.toString()],
+          ['Pendientes',                       pendPesv.toString()],
+          ['En progreso',                      progrPesv.toString()],
+          ['Completadas',                      compPesv.toString()],
+        ],
+        { y: doc.y, columnWidths: [contentWidth * 0.70, contentWidth * 0.30] }
+      );
+      doc.y += 10;
+
+      // ── Detalle PESV ──────────────────────────────────────────────
+      if (accionesPesv714.length > 0) {
+        const pw = [contentWidth * 0.34, contentWidth * 0.10, contentWidth * 0.12, contentWidth * 0.22, contentWidth * 0.22];
+        addSimpleTable(
+          doc,
+          ['Descripción', 'Paso', 'Prioridad', 'Fecha Límite', 'Estado'],
+          accionesPesv714.map(a => [
+            (a.descripcion || '—').substring(0, 80),
+            (a.pasoId || '—'),
+            labelPrioridad[a.prioridad || ''] || (a.prioridad || '—'),
+            fmtDate(a.fechaLimite),
+            labelEstado[a.estado || ''] || (a.estado || '—'),
+          ]),
+          { y: doc.y, columnWidths: pw }
+        );
+      } else {
+        doc.y += 6;
+        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#666666')
+          .text('No se han registrado acciones de mejora en el Plan PESV.', margin, doc.y, { width: contentWidth, align: 'center' });
+        doc.y += 18;
+      }
+      doc.fillColor(PDF_COLORS.BLACK);
+      doc.y += 14;
+
+      // ── 4. Referencia normativa ───────────────────────────────────
+      y = addSectionBar(doc, '4. REFERENCIA NORMATIVA Y COMPROMISO', doc.y);
       doc.y = y + 8;
       doc.fontSize(8).font('Helvetica').fillColor('#333333')
         .text(
