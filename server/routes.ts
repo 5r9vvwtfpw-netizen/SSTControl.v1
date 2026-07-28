@@ -26812,11 +26812,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const evaluacion = await storage.createEvaluacionSst(evaluacionConTipoCorrecto, companyId);
-      
-      // NOTA: Ya no se auto-inicializan estándares como "No Cumple"
-      // Los estándares se crean individualmente cuando el usuario los evalúa
-      // Esto evita que aparezcan todos con X roja al crear la evaluación
-      
+
+      // AUTO-INICIALIZAR: insertar todas las respuestas como "no cumple" en bulk
+      // Esto permite que el plan de mejora exista desde el inicio y el usuario
+      // pueda marcar "Eficaz" en cada acción al confirmar cumplimiento.
+      try {
+        const estandaresIniciales = await storage.getEstandaresByTipoEmpresa(tipoEmpresaCorrecto);
+        const puntajeCol = `puntaje${tipoEmpresaCorrecto.charAt(0).toUpperCase() + tipoEmpresaCorrecto.slice(1)}` as
+          'puntajeTipo1' | 'puntajeTipo2' | 'puntajeTipo3' | 'puntajeTipo4';
+
+        if (estandaresIniciales.length > 0) {
+          const respuestasIniciales = estandaresIniciales.map(e => ({
+            evaluacionId: evaluacion.id,
+            estandarId: e.id,
+            cumple: 0,
+            noAplica: 0,
+            puntajeObtenido: 0,
+            puntajeMaximo: e[puntajeCol] ?? 0,
+          }));
+
+          // Bulk-insert en una sola query
+          await db.insert(schema.respuestasEstandares).values(respuestasIniciales);
+
+          // Recalcular puntajes una sola vez
+          await storage.calcularPuntajesEvaluacion(evaluacion.id, companyId);
+
+          // Generar plan de mejora automáticamente (todas las acciones desde el inicio)
+          await storage.generarPlanMejoraAutomatico(evaluacion.id, companyId);
+
+          console.log(`[EvaluacionSST] Inicializada con ${estandaresIniciales.length} estándares en "no cumple" y plan de mejora generado.`);
+        }
+      } catch (initErr: any) {
+        // No abortar la creación de la evaluación si falla la inicialización
+        console.error('[EvaluacionSST] Error auto-inicializando respuestas:', initErr.message);
+      }
+
       res.status(201).json(evaluacion);
     } catch (error: any) {
       console.error('Error creating evaluación SST:', error);
