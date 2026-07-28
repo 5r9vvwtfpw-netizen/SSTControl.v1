@@ -49373,36 +49373,42 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         sinEvaluacionSst = !evaluacionSstActiva;
 
         if (evaluacionSstActiva) {
-          // Obtener respuestas que NO cumplen y SÍ aplican
-          const respuestasSst = await db.select({
-            cumple: schema.respuestasEstandares.cumple,
-            noAplica: schema.respuestasEstandares.noAplica,
-            hallazgo: schema.respuestasEstandares.hallazgo,
-            numeroEstandar: schema.estandaresSst.numeroEstandar,
-            nombre: schema.estandaresSst.nombre,
-          })
-            .from(schema.respuestasEstandares)
-            .innerJoin(schema.estandaresSst, eq(schema.respuestasEstandares.estandarId, schema.estandaresSst.id))
-            .where(
-              and(
-                eq(schema.respuestasEstandares.evaluacionId, evaluacionSstActiva.id),
-                eq(schema.respuestasEstandares.cumple, 0),
-                eq(schema.respuestasEstandares.noAplica, 0)
-              )
-            );
+          // Obtener TODOS los estándares aplicables al tipo de empresa
+          const puntajeColSst = `puntaje${evaluacionSstActiva.tipoEmpresa.charAt(0).toUpperCase() + evaluacionSstActiva.tipoEmpresa.slice(1)}` as
+            'puntajeTipo1' | 'puntajeTipo2' | 'puntajeTipo3' | 'puntajeTipo4';
+          const todosEstandaresSst = await db.select().from(schema.estandaresSst)
+            .where(eq(schema.estandaresSst.activo, 1))
+            .orderBy(schema.estandaresSst.orden);
+          const estandaresAplicablesSst = todosEstandaresSst.filter(e => e[puntajeColSst] !== null);
 
-          for (const resp of respuestasSst) {
-            const textoAccion = `Implementar estándar SST ${resp.numeroEstandar}: ${resp.nombre}`;
+          // Obtener respuestas existentes indexadas por estandarId
+          const respuestasExistSst = await db.select()
+            .from(schema.respuestasEstandares)
+            .where(eq(schema.respuestasEstandares.evaluacionId, evaluacionSstActiva.id));
+          const respuestasPorEstandarSst = new Map(respuestasExistSst.map(r => [r.estandarId, r]));
+
+          // Incluir: sin respuesta (nunca evaluado) O cumple=0 (no cumple). Excluir: cumple=1 o noAplica=1
+          const estandaresNoCumpleSst = estandaresAplicablesSst.filter(e => {
+            const r = respuestasPorEstandarSst.get(e.id);
+            if (!r) return true;               // Sin evaluar → incluir
+            if (r.noAplica === 1) return false; // No aplica → excluir
+            if (r.cumple === 1) return false;   // Cumple → excluir
+            return true;                       // cumple=0 → incluir
+          });
+
+          for (const estandar of estandaresNoCumpleSst) {
+            const respRow = respuestasPorEstandarSst.get(estandar.id);
+            const textoAccion = `Implementar estándar SST ${estandar.numeroEstandar}: ${estandar.nombre}`;
             if (accionesExistentesSet.has(textoAccion)) { omitidasSst++; continue; }
 
-            const hallazgoDesc = resp.hallazgo
-              ? resp.hallazgo
-              : `Estándar ${resp.numeroEstandar} — ${resp.nombre} incumplido según Resolución 0312/2019`;
+            const hallazgoDesc = respRow?.hallazgo
+              ? respRow.hallazgo
+              : `Estándar ${estandar.numeroEstandar} — ${estandar.nombre} incumplido según Resolución 0312/2019`;
 
             const [nueva] = await db.insert(accionesMejoraContexto).values({
               companyId,
               accion: textoAccion,
-              descripcion: `Dar cumplimiento al estándar ${resp.numeroEstandar}: ${resp.nombre} de la Resolución 0312 de 2019.`,
+              descripcion: `Dar cumplimiento al estándar ${estandar.numeroEstandar}: ${estandar.nombre} de la Resolución 0312 de 2019.`,
               origenHallazgo: 'evaluacion_sst',
               hallazgoDescripcion: hallazgoDesc,
               tipoFoda: 'debilidad',
