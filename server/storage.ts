@@ -6985,10 +6985,18 @@ export class DbStorage implements IStorage {
 
     // Obtener acciones existentes para evitar duplicados
     const accionesExistentes = await this.getAccionesMejora(evaluacionId, companyId);
-    // Dedup por respuestaEstandarId (estándares ya evaluados con acción)
-    const respuestasConAccion = new Set(
-      accionesExistentes.filter(a => a.respuestaEstandarId).map(a => a.respuestaEstandarId)
-    );
+
+    // Mapa inverso: respuestaId → estandarId (para saber a qué estándar pertenece cada acción)
+    const respuestaPorId = new Map(respuestas.map(r => [r.id, r]));
+
+    // Set de estandarId que ya tienen CUALQUIER acción (independientemente del formato de descripción)
+    const estandaresConAccion = new Set<string>();
+    for (const accion of accionesExistentes) {
+      if (accion.respuestaEstandarId) {
+        const r = respuestaPorId.get(accion.respuestaEstandarId);
+        if (r) estandaresConAccion.add(r.estandarId);
+      }
+    }
     // Dedup por descripción para estándares sin respuesta registrada aún
     const descripcionesConAccion = new Set(
       accionesExistentes.map(a => a.descripcionAccion)
@@ -6999,8 +7007,8 @@ export class DbStorage implements IStorage {
     for (const estandar of estandaresPendientes) {
       const respuesta = respuestasPorEstandar.get(estandar.id);
       
-      // Evitar duplicados: si ya hay acción para esta respuesta o descripción igual
-      if (respuesta && respuestasConAccion.has(respuesta.id)) continue;
+      // Evitar duplicados: si ya hay CUALQUIER acción para este estándar (por estandarId o descripción)
+      if (estandaresConAccion.has(estandar.id)) continue;
       const descripcion = `Implementar: ${estandar.nombre}`;
       if (descripcionesConAccion.has(descripcion)) continue;
       

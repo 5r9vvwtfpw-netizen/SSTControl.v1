@@ -27009,6 +27009,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const estandar = await storage.getEstandarSst(estandarId);
         if (!estandar) return;
 
+        // Buscar si ya existe una acción del plan automático ("Implementar: X") con respuestaEstandarId=null
+        // para este mismo estándar. Si existe, vincularla al respuestaId actual en vez de crear duplicado.
+        const descImplementarPlan = `Implementar: ${estandar.nombre}`;
+        const accionPlanExistente = acciones.find(a =>
+          a.respuestaEstandarId === null &&
+          a.descripcionAccion === descImplementarPlan
+        );
+
+        if (accionPlanExistente) {
+          // Vincular la acción del plan al respuesta actual para que el dedup futuro la encuentre
+          await storage.updateAccionMejora(accionPlanExistente.id, {
+            respuestaEstandarId: respuestaId,
+          }, companyId);
+          console.log(`[AutoAccion] Acción del plan vinculada a respuesta para estándar ${estandar.numeroEstandar} (evaluación ${evaluacionId})`);
+          return;
+        }
+
         const evaluacion = await storage.getEvaluacionSstById(evaluacionId);
         const componente = await db.select().from(schema.componentesSst)
           .where(eq(schema.componentesSst.id, estandar.componenteId))
