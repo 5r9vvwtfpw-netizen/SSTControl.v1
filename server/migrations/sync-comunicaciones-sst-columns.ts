@@ -15,6 +15,7 @@ export async function syncComunicacionesSstColumns() {
 
     const columns: { name: string; definition: string }[] = [
       { name: 'es_externa', definition: 'INTEGER NOT NULL DEFAULT 0' },
+      { name: 'parte_interesada_destinataria', definition: 'TEXT' },
     ];
 
     for (const col of columns) {
