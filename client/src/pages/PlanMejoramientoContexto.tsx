@@ -15,8 +15,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import {
   Plus, Search, FileText, Edit2, Trash2, AlertCircle, Clock,
-  CheckCircle2, Target, TrendingUp, Filter, Download, CalendarIcon, ArrowLeft, Zap, Lightbulb, AlertTriangle, Wand2
+  CheckCircle2, Target, TrendingUp, Filter, Download, CalendarIcon, ArrowLeft, Zap, Lightbulb, AlertTriangle, Wand2, ChevronDown, Shield, Car
 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link, useSearch } from "wouter";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -404,34 +405,35 @@ export default function PlanMejoramientoContexto() {
   const estadisticas = planConsolidado?.estadisticas || { pendientes: 0, enProgreso: 0, completadas: 0 };
   const totalAcciones = acciones.length;
 
-  const handleGenerarAutomatico = async () => {
+  const handleGenerarAutomatico = async (tipo: "sst" | "pesv" | "ambos") => {
     setGenerandoAuto(true);
     try {
-      const res = await apiRequest("POST", "/api/acciones-mejora-contexto/generar-automatico", {});
+      const res = await apiRequest("POST", "/api/acciones-mejora-contexto/generar-automatico", { tipo });
       const result = await res.json();
       queryClient.invalidateQueries({ queryKey: ["/api/acciones-mejora-contexto"] });
       queryClient.invalidateQueries({ queryKey: ["/api/plan-mejoramiento-consolidado"] });
+
+      const labels: Record<string, string> = { sst: "SST (Res. 0312)", pesv: "PESV (Res. 40595)", ambos: "SST + PESV" };
+
       if (result.created === 0) {
-        toast({
-          title: "Sin acciones nuevas",
-          description: result.sinEvaluacion
-            ? "No se encontró evaluación PESV activa. Inicia una evaluación primero, o crea acciones manualmente."
-            : `Todos los pasos PESV pendientes ya tienen acciones registradas (${result.skipped} omitidas por duplicado).`,
-          className: "bg-blue-50 border-blue-200",
-        });
+        let desc = `Todos los estándares/pasos del plan ${labels[tipo]} ya tienen acciones registradas`;
+        if (tipo !== "sst" && result.sinEvaluacionPesv) desc = "No se encontró evaluación PESV activa. Inicia una evaluación primero.";
+        if (tipo !== "pesv" && result.sinEvaluacionSst) desc = "No se encontró evaluación SST activa. Inicia una evaluación primero.";
+        if (result.skipped > 0) desc += ` (${result.skipped} omitidas por duplicado).`;
+        toast({ title: "Sin acciones nuevas", description: desc, className: "bg-blue-50 border-blue-200" });
       } else {
+        const partes: string[] = [];
+        if (result.createdSst > 0) partes.push(`${result.createdSst} SST`);
+        if (result.createdPesv > 0) partes.push(`${result.createdPesv} PESV`);
+        const resumen = partes.length > 0 ? partes.join(" + ") : `${result.created}`;
         toast({
           title: "Plan generado",
-          description: `Se crearon ${result.created} acciones de mejora para los pasos PESV que no cumplen.${result.skipped > 0 ? ` (${result.skipped} omitidas por duplicado)` : ""}`,
+          description: `Se crearon ${resumen} acciones de mejora.${result.skipped > 0 ? ` (${result.skipped} omitidas por duplicado)` : ""}`,
           className: "bg-green-50 border-green-200",
         });
       }
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo generar el plan automático.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message || "No se pudo generar el plan automático.", variant: "destructive" });
     } finally {
       setGenerandoAuto(false);
     }
@@ -507,15 +509,30 @@ export default function PlanMejoramientoContexto() {
             <Download className="h-4 w-4 mr-2" />
             Exportar PDF
           </Button>
-          <Button
-            variant="outline"
-            onClick={handleGenerarAutomatico}
-            disabled={generandoAuto}
-            data-testid="button-generar-automatico-pesv"
-          >
-            <Wand2 className="h-4 w-4 mr-2" />
-            {generandoAuto ? "Generando..." : "Generar Plan Automático"}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={generandoAuto} data-testid="button-generar-automatico-menu">
+                <Wand2 className="h-4 w-4 mr-2" />
+                {generandoAuto ? "Generando..." : "Generar Plan Automático"}
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleGenerarAutomatico("sst")} data-testid="button-generar-sst">
+                <Shield className="h-4 w-4 mr-2 text-blue-600" />
+                Plan SST (Res. 0312/2019)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleGenerarAutomatico("pesv")} data-testid="button-generar-pesv">
+                <Car className="h-4 w-4 mr-2 text-green-600" />
+                Plan PESV (Res. 40595/2022)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleGenerarAutomatico("ambos")} data-testid="button-generar-ambos">
+                <Wand2 className="h-4 w-4 mr-2 text-purple-600" />
+                Ambos planes (SST + PESV)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button onClick={() => handleOpenDialog()} data-testid="button-new-action">
             <Plus className="h-4 w-4 mr-2" />
             Nueva Acción
