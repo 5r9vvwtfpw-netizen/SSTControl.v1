@@ -398,20 +398,42 @@ export default function InduccionVirtualPublica() {
                 <p className="text-sm"><strong>Identificación:</strong> {data.worker.identificacion}</p>
                 <p className="text-sm"><strong>Cargo:</strong> {data.worker.cargo}</p>
               </div>
-              <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-                <p className="text-sm font-medium text-yellow-800 mb-2">Instrucciones:</p>
-                <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
-                  <li>Revise todo el contenido de capacitación ({data.contenidos.length} módulos)</li>
-                  <li>Responda la evaluación ({data.preguntas.length} preguntas)</li>
-                  <li>Firme digitalmente al finalizar</li>
-                  <li>Debe obtener mínimo 80% para aprobar</li>
-                </ul>
-              </div>
+              {data.contenidos.length === 0 && data.preguntas.length === 0 ? (
+                <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-orange-800 mb-1">Inducción no configurada</p>
+                      <p className="text-sm text-orange-700">
+                        El área de SST de su empresa aún no ha cargado el contenido de esta inducción.
+                        Por favor contacte al responsable de SST para que complete la configuración antes de continuar.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                  <p className="text-sm font-medium text-yellow-800 mb-2">Instrucciones:</p>
+                  <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
+                    {data.contenidos.length > 0 && (
+                      <li>Revise todo el contenido de capacitación ({data.contenidos.length} módulos)</li>
+                    )}
+                    {data.preguntas.length > 0 && (
+                      <li>Responda la evaluación ({data.preguntas.length} preguntas)</li>
+                    )}
+                    <li>Firme digitalmente al finalizar</li>
+                    {data.preguntas.length > 0 && (
+                      <li>Debe obtener mínimo 80% para aprobar</li>
+                    )}
+                  </ul>
+                </div>
+              )}
             </CardContent>
             <CardFooter>
               <Button 
                 className="w-full" 
                 size="lg"
+                disabled={data.contenidos.length === 0 && data.preguntas.length === 0}
                 onClick={() => setStep(data.contenidos.length > 0 ? "contenido" : "evaluacion")}
                 data-testid="button-comenzar-induccion"
               >
