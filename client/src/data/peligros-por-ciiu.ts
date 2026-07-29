@@ -198,98 +198,357 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
   // ==================== SALUD ====================
   {
     codigoCIIU: '8610',
-    descripcionCIIU: 'Actividades de hospitales y clínicas',
+    descripcionCIIU: 'Actividades de hospitales y clínicas con internación',
     nivelRiesgo: 'III',
     sector: 'Salud',
-    peligrosPrioritarios: ['BIO-001', 'BIO-002', 'BIO-003', 'QUI-001', 'QUI-003', 'PSI-001', 'BIO-MEC-003', 'FIS-005'],
+    peligrosPrioritarios: ['BIO-001', 'BIO-002', 'BIO-005', 'QUI-008', 'QUI-009', 'QUI-010', 'PSI-001', 'PSI-006', 'BIO-MEC-008', 'FIS-007', 'SEG-017'],
     peligrosEspecificos: [
       {
-        codigo: 'SAL-001',
+        codigo: 'HOSP-BIO-001',
         clasificacion: 'biologico',
-        peligro: 'Exposición a patógenos sanguíneos',
-        descripcion: 'Contacto con sangre y fluidos corporales infectados (VIH, VHB, VHC)',
-        riesgoPotencial: 'Infección por transmisión sanguínea',
-        efectosPosibles: 'Hepatitis B/C, VIH, sepsis',
-        medidasControl: ['Precauciones universales', 'EPP completo', 'Contenedores para cortopunzantes', 'Vacunación VHB', 'Profilaxis post-exposición']
+        peligro: 'Accidente por cortopunzante contaminado (pinchazo de aguja/bisturí)',
+        descripcion: 'Pinchazos con agujas hipodérmicas, bisturís u objetos cortopunzantes contaminados con sangre o fluidos de pacientes',
+        riesgoPotencial: 'Infección por VIH, Hepatitis B y C',
+        efectosPosibles: 'VIH/SIDA, hepatitis B crónica, hepatitis C, bacteriemia',
+        medidasControl: ['Agujas con mecanismo de seguridad retráctil', 'Nunca reencapuchar agujas con dos manos', 'Contenedores rígidos resistentes a perforación en punto de uso', 'Doble guante en procedimientos invasivos', 'Protocolo post-exposición con PEP en <2h', 'Vacunación obligatoria VHB']
       },
       {
-        codigo: 'SAL-002',
+        codigo: 'HOSP-BIO-002',
         clasificacion: 'biologico',
-        peligro: 'Accidente con cortopunzantes',
-        descripcion: 'Pinchazos con agujas, bisturís u objetos contaminados',
-        riesgoPotencial: 'Inoculación de patógenos',
-        efectosPosibles: 'Infección VIH, hepatitis, infecciones bacterianas',
-        medidasControl: ['Agujas de seguridad', 'No reencapuchar', 'Contenedores rígidos', 'Doble guante en procedimientos', 'Reporte inmediato']
+        peligro: 'Exposición a patógenos de transmisión aérea (TBC, COVID, sarampión)',
+        descripcion: 'Atención de pacientes con enfermedades de transmisión respiratoria en salas de hospitalización, urgencias y UCI',
+        riesgoPotencial: 'Infección respiratoria grave de origen ocupacional',
+        efectosPosibles: 'Tuberculosis laboral, COVID-19 severo, otras infecciones respiratorias',
+        medidasControl: ['Mascarilla N95 o superior para precauciones de aerosoles', 'Habitaciones de aislamiento con presión negativa', 'Prueba tuberculínica (PPD) anual', 'Vacunación influenza anual', 'Protocolo de aislamiento respiratorio']
       },
       {
-        codigo: 'SAL-003',
+        codigo: 'HOSP-BIO-003',
+        clasificacion: 'biologico',
+        peligro: 'Manejo de residuos hospitalarios peligrosos (RESPEL)',
+        descripcion: 'Clasificación, transporte interno y almacenamiento de residuos anatomopatológicos, infecciosos, cortopunzantes y químicos peligrosos — regido por Decreto 351/2014',
+        riesgoPotencial: 'Infección, intoxicación química o accidente biológico en personal de aseo',
+        efectosPosibles: 'Infecciones por contacto con residuos, cortaduras con material contaminado, exposición química',
+        medidasControl: ['Código de colores ICONTEC: rojo (infeccioso), negro (ordinario), verde (orgánico)', 'EPP completo para personal de servicios generales hospitalarios', 'Ruta sanitaria documentada y horarios definidos', 'Cuarto de almacenamiento con ventilación y temperatura controlada', 'Gestor ambiental autorizado por ANLA', 'Capacitación semestral en gestión de RESPEL hospitalarios']
+      },
+      {
+        codigo: 'HOSP-BIO-004',
+        clasificacion: 'biologico',
+        peligro: 'Infecciones Asociadas a la Atención en Salud (IAAS) — microorganismos multirresistentes',
+        descripcion: 'Riesgo de adquirir SARM, BLEE, Klebsiella NDM, Clostridium difficile y otros microorganismos multirresistentes durante la prestación de servicios hospitalarios',
+        riesgoPotencial: 'Infección nosocomial por bacteria resistente',
+        efectosPosibles: 'Bacteriemia, neumonía nosocomial, infección de herida quirúrgica, sepsis grave',
+        medidasControl: ['Programa de higiene de manos OMS (5 momentos)', 'Precauciones de contacto con bata y guantes para casos MDR', 'Vigilancia activa de microorganismos multirresistentes', 'Uso racional de antibióticos (comité de infectología)', 'Limpieza y desinfección terminal de habitaciones en casos MDR']
+      },
+      {
+        codigo: 'HOSP-BIO-005',
+        clasificacion: 'biologico',
+        peligro: 'Alergia al látex en personal de salud',
+        descripcion: 'Sensibilización al látex natural en personal hospitalario con exposición crónica a guantes y equipos de látex (hasta 12-17% de enfermeras sensibilizadas)',
+        riesgoPotencial: 'Reacción alérgica sistémica al látex incluyendo anafilaxia',
+        efectosPosibles: 'Dermatitis de contacto, urticaria, rinitis, asma, anafilaxia grave',
+        medidasControl: ['Sustitución de guantes de látex por nitrilo o neopreno en toda la institución', 'Tamizaje de alergia al látex en examen de ingreso', 'Señalización de zonas libres de látex', 'Disponibilidad de adrenalina autoinyectable (EpiPen) en servicio', 'Vigilancia dermatológica anual para personal expuesto']
+      },
+      {
+        codigo: 'HOSP-QUI-001',
         clasificacion: 'quimico',
-        peligro: 'Exposición a gases anestésicos',
-        descripcion: 'Inhalación de óxido nitroso, sevoflurano en quirófanos',
-        riesgoPotencial: 'Efectos neurotóxicos, reproductivos',
-        efectosPosibles: 'Cefalea, náuseas, abortos espontáneos, daño hepático',
-        medidasControl: ['Extracción de gases residuales', 'Sistemas cerrados de anestesia', 'Monitoreo ambiental', 'Rotación de personal']
+        peligro: 'Gases anestésicos residuales en quirófano y sala de recuperación',
+        descripcion: 'Inhalación crónica de trazas de halogenados (sevoflurano, isoflurano, desflurano) y óxido nitroso en quirófanos y áreas de recuperación',
+        riesgoPotencial: 'Hepatotoxicidad, nefrotoxicidad, teratogénesis, aborto espontáneo',
+        efectosPosibles: 'Aborto espontáneo, malformaciones fetales, daño hepático crónico, deterioro cognitivo',
+        medidasControl: ['Sistema de evacuación de gases anestésicos residuales (SEGAR) obligatorio', 'Mantenimiento preventivo de equipos de anestesia sin fugas', 'Monitoreo ambiental de N₂O y halogenados dos veces al año', 'Ventilación con mínimo 20 recambios de aire/hora en quirófano', 'Restricción en mujeres embarazadas en servicios de anestesia', 'Rotación de personal expuesto']
       },
       {
-        codigo: 'SAL-004',
+        codigo: 'HOSP-QUI-002',
+        clasificacion: 'quimico',
+        peligro: 'Preparación y administración de agentes citostáticos (quimioterapia)',
+        descripcion: 'Exposición a medicamentos oncológicos (ciclofosfamida, metotrexato, doxorrubicina, vincristina, cisplatino) en farmacia oncológica, salas de quimioterapia y hospitalización oncológica',
+        riesgoPotencial: 'Carcinogénesis, mutagenicidad, teratogénesis',
+        efectosPosibles: 'Leucemia secundaria, linfoma, aborto espontáneo, malformaciones fetales en hijos de trabajadores expuestos',
+        medidasControl: ['Cabina de flujo laminar vertical Clase II B2 para preparación en farmacia', 'Guantes de quimioterapia dobles certificados ASTM D6978', 'Bata de polipropileno de manga larga no reutilizable', 'Descarte como residuo RESPEL especial (bolsa amarilla)', 'Capacitación certificada en manejo de citostáticos', 'Biomonitoreo urinario periódico al personal de oncología']
+      },
+      {
+        codigo: 'HOSP-QUI-003',
+        clasificacion: 'quimico',
+        peligro: 'Formaldehído en patología y glutaraldehído en endoscopía',
+        descripcion: 'Exposición a formaldehído en servicios de anatomía patológica (fijación de tejidos) y a glutaraldehído en esterilización de endoscopios en gastroenterología y neumología',
+        riesgoPotencial: 'Cáncer nasofaríngeo (formaldehído IARC Grupo 1), sensibilización severa',
+        efectosPosibles: 'Cáncer nasofaríngeo, dermatitis de contacto profesional, asma ocupacional por glutaraldehído, conjuntivitis crónica',
+        medidasControl: ['Cabina con extracción local forzada en anatomía patológica', 'Guantes de nitrilo gruesos o neopreno (cambio cada 2 horas)', 'Gafas o careta facial splash', 'Monitoreo ambiental (TLV-TWA ACGIH: 0.3 ppm para formaldehído)', 'Sustitución por fixativos alternativos cuando sea posible (zinc formalin, NBF neutral)']
+      },
+      {
+        codigo: 'HOSP-QUI-004',
+        clasificacion: 'quimico',
+        peligro: 'Desinfectantes de alto nivel hospitalarios',
+        descripcion: 'Uso intensivo de hipoclorito de sodio, ácido peracético, amonio cuaternario, OPA (ortoftaldehído) y clorhexidina en limpieza y desinfección hospitalaria',
+        riesgoPotencial: 'Asma ocupacional, sensibilización respiratoria y dermatológica',
+        efectosPosibles: 'Asma ocupacional por desinfectantes, dermatitis de contacto, irritación de mucosas nasales y oculares crónica',
+        medidasControl: ['Guantes de nitrilo para manipulación de todos los desinfectantes', 'Diluciones correctas según ficha de seguridad vigente', 'Ventilación forzada durante aplicación', 'No mezclar hipoclorito con amonio cuaternario ni con ácidos (cloraminas tóxicas)', 'Capacitación en uso seguro y almacenamiento de desinfectantes']
+      },
+      {
+        codigo: 'HOSP-FIS-001',
         clasificacion: 'fisico',
-        peligro: 'Radiaciones ionizantes',
-        descripcion: 'Exposición a rayos X, tomografía, medicina nuclear',
-        riesgoPotencial: 'Daño celular, cáncer',
-        efectosPosibles: 'Cataratas, cáncer, alteraciones genéticas, esterilidad',
-        medidasControl: ['Dosímetro personal', 'Blindaje de plomo', 'Distancia y tiempo mínimo', 'Delantales plomados', 'Monitoreo de dosis']
+        peligro: 'Radiaciones ionizantes (Rx, TAC, fluoroscopía, arco en C, medicina nuclear)',
+        descripcion: 'Exposición ocupacional crónica a radiaciones ionizantes en radiología convencional, tomografía, fluoroscopía intraoperatoria (arco en C quirúrgico) y medicina nuclear',
+        riesgoPotencial: 'Cáncer, daño genético, cataratas por radiación',
+        efectosPosibles: 'Leucemia, cáncer de tiroides, cataratas por radiación ionizante, aborto o daño fetal',
+        medidasControl: ['Dosímetro personal TLD u OSL obligatorio con lectura mensual', 'Delantal plomado ≥0.5 mm Pb, protector tiroideo y gafas plomadas en fluoroscopía', 'Principios ALARA: distancia máxima, tiempo mínimo, blindaje óptimo', 'Límite de dosis 50 mSv/año trabajadores (5 mSv para mujeres que puedan estar en gestación)', 'Restricción absoluta mujeres embarazadas en áreas con radiación directa', 'Historial dosimétrico individual actualizado']
+      },
+      {
+        codigo: 'HOSP-FIS-002',
+        clasificacion: 'fisico',
+        peligro: 'Frío y corrientes de aire en quirófano (temperatura 16-20°C)',
+        descripcion: 'Exposición a temperatura baja sostenida y corrientes de aire de sistemas de climatización en quirófanos donde el personal permanece en bipedestación por horas',
+        riesgoPotencial: 'Estrés térmico por frío, trastornos vasculares, disconfort térmico',
+        efectosPosibles: 'Fenómeno de Raynaud, lumbalgias agravadas por frío y postura, varices, mayor fatiga muscular',
+        medidasControl: ['Ropa térmica interior bajo uniforme quirúrgico', 'Calzado con suela aislante', 'Tapetes antifatiga en puestos fijos de quirófano', 'Rotación de personal en cirugías que superen 4 horas', 'Pausas de calentamiento en cirugías muy largas']
+      },
+      {
+        codigo: 'HOSP-BIO-MEC-001',
+        clasificacion: 'biomecanico',
+        peligro: 'Movilización manual de pacientes (patient handling) — principal lesión en enfermería',
+        descripcion: 'Transferencia, giro, levantamiento y posicionamiento de pacientes en cama, camilla, silla de ruedas y ducha — causa número uno de incapacidades laborales en personal de enfermería',
+        riesgoPotencial: 'Lesión grave de columna lumbar y hombros',
+        efectosPosibles: 'Hernia discal lumbar L4-L5, L5-S1; desgarro de manguito rotador; esguince lumbar; incapacidades permanentes y parciales',
+        medidasControl: ['Grúas de transferencia de techo o móviles para pacientes dependientes', 'Tablas y cojines de deslizamiento para transferencias cama-camilla', 'Cinturones de marcha y levantamiento', 'Evaluación de riesgo ergonómico mediante método MAPO institucional', 'Mínimo 2 personas para movilización de pacientes dependientes', 'Capacitación semestral certificada en ergonomía hospitalaria y movilización de pacientes']
+      },
+      {
+        codigo: 'HOSP-BIO-MEC-002',
+        clasificacion: 'biomecanico',
+        peligro: 'Trabajo de pie prolongado en quirófano y urgencias',
+        descripcion: 'Bipedestación continua de 4 a 16 horas en cirugías largas, guardias de urgencias y procedimientos hospitalarios de larga duración',
+        riesgoPotencial: 'Insuficiencia venosa crónica, lumbalgias, fascitis plantar',
+        efectosPosibles: 'Varices de miembros inferiores, edema, lumbalgias, fascitis plantar, fatiga muscular severa, síndrome de piernas inquietas',
+        medidasControl: ['Tapetes antifatiga en puestos de trabajo fijos en quirófano y urgencias', 'Medias de compresión graduada (clase II) para personal de quirófano', 'Calzado de seguridad con soporte plantar y absorción de impacto', 'Rotación de personal entre servicios en guardias largas', 'Pausas cortas de 5-10 minutos cuando el procedimiento lo permita']
+      },
+      {
+        codigo: 'HOSP-PSI-001',
+        clasificacion: 'psicosocial',
+        peligro: 'Burnout, trauma vicario y fatiga por compasión en personal de salud',
+        descripcion: 'Exposición continua a sufrimiento, muerte, situaciones críticas y decisiones de alto impacto clínico — principal causa de burnout profesional en médicos y enfermeras en Colombia',
+        riesgoPotencial: 'Síndrome de burnout, fatiga compasión, TEPT secundario, errores clínicos',
+        efectosPosibles: 'Depresión, ansiedad, insomnio, consumo de sustancias, despersonalización, abandono profesional, aumento de errores clínicos',
+        medidasControl: ['Grupos de apoyo entre pares (peer support programs)', 'Psicólogo organizacional disponible para personal de salud', 'Rotación de servicios de alta carga emocional (oncología, UCI neonatal, urgencias)', 'Capacitación en duelo, autocuidado emocional y técnicas de resiliencia', 'Reconocimiento institucional del impacto emocional del trabajo asistencial', 'Batería de riesgo psicosocial MINTRA anual']
+      },
+      {
+        codigo: 'HOSP-PSI-002',
+        clasificacion: 'psicosocial',
+        peligro: 'Violencia de usuarios y familiares hacia personal de salud',
+        descripcion: 'Agresiones verbales, amenazas y ataques físicos de pacientes en crisis, familiares alterados o personas bajo efectos de sustancias psicoactivas — especialmente en urgencias y psiquiatría',
+        riesgoPotencial: 'Trauma físico y psicológico, TEPT laboral',
+        efectosPosibles: 'Lesiones físicas, síndrome de estrés postraumático laboral, ausentismo, abandono del cargo',
+        medidasControl: ['Protocolo institucional de atención a pacientes y familiares agresivos', 'Capacitación en manejo de crisis y desescalada verbal', 'Sistemas de alarma silenciosa en salas de urgencias y psiquiatría', 'Doble personal en zonas de alto riesgo de violencia', 'Atención psicológica post-incidente garantizada dentro de 48h', 'Reporte y registro estadístico de incidentes de violencia']
+      },
+      {
+        codigo: 'HOSP-PSI-003',
+        clasificacion: 'psicosocial',
+        peligro: 'Trabajo nocturno, guardias de 24h y turnos rotativos',
+        descripcion: 'Guardias de 12 a 24 horas con rotación día/noche que altera irreversiblemente el ritmo circadiano del personal hospitalario',
+        riesgoPotencial: 'Trastornos del sueño, síndrome metabólico, mayor riesgo de accidentes y errores clínicos',
+        efectosPosibles: 'Insomnio crónico, fatiga, diabetes tipo 2, hipertensión, enfermedad coronaria, depresión, mayor riesgo de error clínico nocturno',
+        medidasControl: ['Rotación de turnos preferiblemente en sentido horario (mañana → tarde → noche)', 'Máximo 2-3 noches consecutivas seguidas de días libres compensatorios', 'Descanso mínimo de 12 horas entre turnos', 'Evaluación médica periódica con énfasis cardiovascular, metabólico y del sueño', 'Batería de riesgo psicosocial MINTRA anual con énfasis en jornada']
+      },
+      {
+        codigo: 'HOSP-SEG-001',
+        clasificacion: 'condiciones_seguridad',
+        peligro: 'Electrocirugía y riesgo eléctrico de equipos biomédicos',
+        descripcion: 'Uso de bisturí eléctrico (ESU), desfibriladores, equipos de electrocirugía y numerosos dispositivos médicos eléctricos que generan riesgo de quemadura eléctrica e incendio quirúrgico',
+        riesgoPotencial: 'Quemaduras eléctricas del paciente/personal, incendio en campo quirúrgico',
+        efectosPosibles: 'Quemaduras en sitio de placa de retorno, incendio quirúrgico (O₂ + drapeados + chispa ESU), interferencia con marcapasos y desfibriladores implantados',
+        medidasControl: ['Verificación de placa de retorno activa y correctamente posicionada antes de cada cirugía', 'No activar electrocirugía en presencia de O₂ suplementario o gases anestésicos inflamables', 'Mantenimiento preventivo anual certificado de todas las unidades ESU', 'Programa de gestión de tecnología biomédica (GTB) con inventario activo', 'Capacitación específica en uso seguro de equipos eléctricos médicos y prevención de incendio quirúrgico']
       }
     ],
     normativaEspecifica: [
-      { codigo: 'RES-2003-2014', norma: 'Resolución 2003/2014', descripcion: 'Habilitación de servicios de salud', obligatorio: true },
-      { codigo: 'DEC-351-2014', norma: 'Decreto 351/2014', descripcion: 'Gestión de residuos hospitalarios', obligatorio: true },
-      { codigo: 'RES-2646-2008', norma: 'Resolución 2646/2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true }
+      { codigo: 'RES-2003-2014', norma: 'Resolución 2003/2014', descripcion: 'Habilitación de servicios de salud - condiciones de habilitación', obligatorio: true },
+      { codigo: 'DEC-351-2014', norma: 'Decreto 351/2014', descripcion: 'Gestión integral de residuos hospitalarios y similares (PGIRHS)', obligatorio: true },
+      { codigo: 'RES-2646-2008', norma: 'Resolución 2646/2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true },
+      { codigo: 'RES-2183-2004', norma: 'Resolución 2183/2004', descripcion: 'Manual de Buenas Prácticas en Radiología e Imágenes Diagnósticas', obligatorio: true },
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'Decreto Único Reglamentario del Sector Trabajo - SG-SST', obligatorio: true },
+      { codigo: 'RES-0256-2016', norma: 'Resolución 0256/2016', descripcion: 'Sistema Único de Habilitación - indicadores de calidad en salud', obligatorio: true },
+      { codigo: 'DEC-4741-2005', norma: 'Decreto 4741/2005', descripcion: 'Prevención y manejo de residuos peligrosos', obligatorio: true }
     ],
-    eppRecomendado: ['Guantes de látex/nitrilo', 'Mascarilla N95', 'Bata desechable', 'Gafas de protección', 'Careta facial', 'Gorro quirúrgico', 'Calzado cerrado'],
-    capacitacionesObligatorias: ['Bioseguridad hospitalaria', 'Manejo de residuos hospitalarios', 'Protocolo post-exposición', 'RCP y primeros auxilios', 'Riesgo psicosocial']
+    eppRecomendado: ['Guantes de nitrilo (preferir sobre látex)', 'Mascarilla N95 / FFP2', 'Bata impermeable manga larga desechable', 'Gafas de protección splash', 'Careta facial completa en procedimientos de alto riesgo', 'Gorro quirúrgico', 'Calzado de seguridad cerrado antideslizante con puntera reforzada', 'Delantal plomado 0.5mm Pb (personal en radiología/fluoroscopía)', 'Dosímetro personal TLD (personal en radiología/medicina nuclear)', 'Medias de compresión graduada clase II'],
+    capacitacionesObligatorias: ['Bioseguridad hospitalaria y precauciones estándar OMS', 'Gestión integral de residuos hospitalarios RESPEL (Decreto 351/2014)', 'Protocolo post-exposición a accidente biológico (ABO)', 'Ergonomía hospitalaria y movilización segura de pacientes (MAPO)', 'Manejo seguro de citostáticos', 'Riesgo psicosocial y autocuidado emocional en salud (Res. 2646)', 'RCP avanzado y primeros auxilios', 'Radioprotección y dosimetría (personal con exposición a radiación)', 'Manejo de desinfectantes y productos químicos hospitalarios']
   },
 
   {
     codigoCIIU: '8622',
-    descripcionCIIU: 'Actividades de consultorios odontológicos',
+    descripcionCIIU: 'Actividades de la práctica odontológica',
     nivelRiesgo: 'III',
     sector: 'Salud',
-    peligrosPrioritarios: ['BIO-001', 'BIO-002', 'QUI-004', 'FIS-001', 'FIS-005', 'BIO-MEC-001', 'BIO-MEC-002'],
+    peligrosPrioritarios: ['BIO-001', 'BIO-002', 'BIO-005', 'QUI-003', 'FIS-001', 'FIS-007', 'BIO-MEC-001', 'BIO-MEC-002', 'PSI-001'],
     peligrosEspecificos: [
       {
         codigo: 'ODONT-001',
         clasificacion: 'biologico',
-        peligro: 'Aerosoles biológicos',
-        descripcion: 'Generación de aerosoles con sangre, saliva durante procedimientos',
-        riesgoPotencial: 'Infecciones respiratorias y sistémicas',
-        efectosPosibles: 'COVID-19, tuberculosis, hepatitis, herpes',
-        medidasControl: ['Mascarilla N95', 'Careta facial', 'Succión de alta potencia', 'Ventilación HEPA', 'Enjuague antiséptico previo']
+        peligro: 'Aerosoles biológicos generados por turbina dental y ultrasonido',
+        descripcion: 'Generación de bioaerosoles contaminados con sangre y saliva del paciente durante procedimientos de alta velocidad (turbina, ultrasonido, profilaxis)',
+        riesgoPotencial: 'Infección respiratoria y sistémica de transmisión aérea',
+        efectosPosibles: 'COVID-19, tuberculosis, hepatitis B aerolizada, herpes, SARS — odontología es una de las profesiones de mayor riesgo de aerosoles biológicos',
+        medidasControl: ['Mascarilla N95 o FFP2 como mínimo para todos los procedimientos generadores de aerosoles', 'Careta facial protección total', 'Succión de alta potencia (HVE) durante turbina y ultrasonido', 'Enjuague antiséptico preoperatorio con clorhexidina 0.12% o H₂O₂ 1.5%', 'Ventilación con extracción de aire del consultorio (6-12 cambios/hora)', 'Descanso entre pacientes para sedimentación de aerosoles']
       },
       {
         codigo: 'ODONT-002',
-        clasificacion: 'fisico',
-        peligro: 'Ruido de turbinas dentales',
-        descripcion: 'Exposición continua a ruido de alta frecuencia (>85 dBA)',
-        riesgoPotencial: 'Pérdida auditiva ocupacional',
-        efectosPosibles: 'Hipoacusia, tinnitus, estrés',
-        medidasControl: ['Protección auditiva', 'Turbinas silenciosas', 'Audiometrías periódicas', 'Pausas en silencio']
+        clasificacion: 'biologico',
+        peligro: 'Accidente con cortopunzante odontológico contaminado',
+        descripcion: 'Pinchazos con agujas de carpule, limas endodónticas, instrumentos cortantes o bisturís contaminados con sangre de pacientes',
+        riesgoPotencial: 'Infección por VIH, Hepatitis B y C',
+        efectosPosibles: 'Hepatitis B (riesgo ~30% por pinchazo sin vacuna), Hepatitis C (~3%), VIH (~0.3%)',
+        medidasControl: ['Técnica de reencapuchado con una sola mano o sistema de aguja de seguridad', 'Contenedores de cortopunzantes en punto de uso', 'Doble guante en pacientes con factores de riesgo conocidos', 'Protocolo post-exposición < 2 horas con lavado exhaustivo y reporte', 'Vacunación obligatoria VHB completa antes de práctica clínica']
       },
       {
         codigo: 'ODONT-003',
         clasificacion: 'quimico',
-        peligro: 'Mercurio de amalgamas',
-        descripcion: 'Exposición a vapores de mercurio durante preparación y remoción',
-        riesgoPotencial: 'Intoxicación por mercurio',
-        efectosPosibles: 'Daño neurológico, renal, temblores',
-        medidasControl: ['Ventilación con extracción', 'Separador de amalgama', 'EPP durante remoción', 'Uso de alternativas (resinas)']
+        peligro: 'Mercurio dental (amalgamas) — preparación, colocación y remoción',
+        descripcion: 'Exposición a vapores de mercurio elemental durante mezcla, colocación y especialmente remoción de amalgamas dentales',
+        riesgoPotencial: 'Intoxicación crónica por mercurio con daño neurológico y renal',
+        efectosPosibles: 'Daño neurológico (temblores, insomnio, irritabilidad), nefrotoxicidad, efectos reproductivos en mujeres embarazadas',
+        medidasControl: ['Ventilación local con extracción en punto de uso', 'Separador de amalgama en unidades odontológicas', 'EPP completo durante remoción (mascarilla N95, gafas, guantes gruesos)', 'Uso de alternativas sin mercurio (resinas compuestas, ionómero)', 'Mercurimetría urinaria periódica al personal que realiza remoción de amalgamas', 'Almacenamiento de residuos de amalgama en frascos con agua (no secos)']
+      },
+      {
+        codigo: 'ODONT-004',
+        clasificacion: 'quimico',
+        peligro: 'Materiales dentales irritantes y sensibilizantes (metacrilatos, eugenol)',
+        descripcion: 'Exposición a monómeros de metacrilato (acrílicos, composite), eugenol, blanqueadores (H₂O₂ alta concentración) y adhesivos dentales',
+        riesgoPotencial: 'Dermatitis de contacto alérgica, asma ocupacional por metacrilatos',
+        efectosPosibles: 'Dermatitis profesional de manos, asma ocupacional (metacrilato es sensibilizador reconocido), conjuntivitis',
+        medidasControl: ['Guantes de nitrilo (NO látex) para todos los procedimientos', 'Gafas de protección al manipular ácidos grabadores y blanqueadores', 'Ventilación adecuada al fotopolimerizar y trabajar con acrílicos', 'Fichas de seguridad actualizadas para todos los materiales', 'Seguimiento dermatológico anual del personal clínico']
+      },
+      {
+        codigo: 'ODONT-005',
+        clasificacion: 'fisico',
+        peligro: 'Ruido de alta frecuencia por turbinas y micromotores dentales',
+        descripcion: 'Exposición crónica a ruido de alta frecuencia generado por turbinas de alta velocidad (300.000-500.000 rpm), micromotores, ultrasonido y compresores de aire',
+        riesgoPotencial: 'Pérdida auditiva inducida por ruido (PAIR) ocupacional',
+        efectosPosibles: 'Hipoacusia neurosensorial a 4.000 Hz, tinnitus, hiperacusia, estrés',
+        medidasControl: ['Audiometría de ingreso y anual para todo el personal de odontología', 'Mantenimiento preventivo de turbinas y micromotores para reducir vibración', 'Uso de turbinas con certificación de nivel de ruido reducido', 'Protección auditiva en procedimientos largos o con múltiples pacientes seguidos', 'Pausas entre pacientes que permitan recuperación auditiva']
+      },
+      {
+        codigo: 'ODONT-006',
+        clasificacion: 'fisico',
+        peligro: 'Radiaciones ionizantes en radiología odontológica periapical y panorámica',
+        descripcion: 'Exposición a rayos X en toma de radiografías periapicales, bitewing, panorámicas y CBCT odontológico',
+        riesgoPotencial: 'Daño por radiación ionizante acumulativa',
+        efectosPosibles: 'Cataratas por radiación, cáncer de cabeza y cuello, daño fetal en embarazadas',
+        medidasControl: ['Posicionarse a mínimo 1.5 metros del cabezal o detrás de barrera plomada', 'Delantal plomado y protector tiroideo para el operador', 'Dosímetro personal TLD', 'Técnica de radiografía digital para reducir dosis vs. película convencional', 'Colimadores rectangulares para reducir campo de radiación']
+      },
+      {
+        codigo: 'ODONT-007',
+        clasificacion: 'biomecanico',
+        peligro: 'Posturas forzadas y estáticas en práctica odontológica',
+        descripcion: 'Mantenimiento de posturas asimétricas con flexión y rotación de cuello, tronco y hombros durante procedimientos odontológicos que pueden durar horas',
+        riesgoPotencial: 'Trastornos musculoesqueléticos cervicales y de extremidad superior',
+        efectosPosibles: 'Cervicalgia, síndrome de hombro doloroso, síndrome del túnel carpiano, lumbalgias — 70-80% de odontólogos reportan TME',
+        medidasControl: ['Unidad dental con sillón de altura regulable y reposacabezas ajustable', 'Trabajo en posición sentado con lupa magnificadora para reducir flexión cervical', 'Pausas activas con estiramientos cervicales, de hombros y manos cada 45 minutos', 'Iluminación en eje óptico para reducir postura de cuello', 'Evaluación ergonómica del puesto de trabajo anual', 'Capacitación en higiene postural en odontología']
+      },
+      {
+        codigo: 'ODONT-008',
+        clasificacion: 'psicosocial',
+        peligro: 'Estrés por alta exigencia técnica y pacientes ansiosos o fóbicos',
+        descripcion: 'Alta demanda cognitiva, precisión extrema, trabajo en campo visual reducido con pacientes que presentan ansiedad dental (dentofobia), lo que aumenta el estrés del profesional',
+        riesgoPotencial: 'Burnout profesional, errores clínicos por fatiga mental',
+        efectosPosibles: 'Burnout, errores técnicos, cefaleas tensionales, deterioro de relaciones laborales',
+        medidasControl: ['Manejo del paciente ansioso con técnicas de comunicación y sedación consciente cuando aplique', 'Límite razonable de pacientes por jornada', 'Pausas entre consultas complejas', 'Apoyo psicológico para el odontólogo', 'Gestión del tiempo en agenda']
       }
     ],
     normativaEspecifica: [
-      { codigo: 'RES-2003-2014', norma: 'Resolución 2003/2014', descripcion: 'Habilitación de servicios de salud', obligatorio: true },
-      { codigo: 'RES-2183-2004', norma: 'Resolución 2183/2004', descripcion: 'Manual de bioseguridad odontología', obligatorio: true }
+      { codigo: 'RES-2003-2014', norma: 'Resolución 2003/2014', descripcion: 'Habilitación de servicios de salud incluyendo odontología', obligatorio: true },
+      { codigo: 'RES-2183-2004', norma: 'Resolución 2183/2004', descripcion: 'Manual de bioseguridad en odontología', obligatorio: true },
+      { codigo: 'DEC-351-2014', norma: 'Decreto 351/2014', descripcion: 'Gestión de residuos hospitalarios y amalgamas', obligatorio: true },
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true }
     ],
-    eppRecomendado: ['Guantes de látex/nitrilo', 'Mascarilla N95', 'Careta facial', 'Gafas de protección', 'Bata manga larga', 'Gorro', 'Protección auditiva'],
-    capacitacionesObligatorias: ['Bioseguridad odontológica', 'Esterilización de instrumental', 'Manejo de residuos', 'Ergonomía en odontología']
+    eppRecomendado: ['Guantes de nitrilo (NO látex)', 'Mascarilla N95 / FFP2 para procedimientos con aerosoles', 'Mascarilla quirúrgica para consultas sin aerosoles', 'Careta facial integral', 'Gafas de protección', 'Bata manga larga con puños ajustados', 'Gorro', 'Protección auditiva en sesiones largas', 'Delantal plomado y protector tiroideo (radiología)', 'Dosímetro personal TLD'],
+    capacitacionesObligatorias: ['Bioseguridad odontológica y precauciones de aerosoles', 'Protocolo post-exposición a accidente biológico', 'Manejo seguro de amalgamas y residuos odontológicos', 'Ergonomía y postura en odontología', 'Radiología odontológica y radioprotección', 'Manejo del paciente ansioso']
+  },
+
+  {
+    codigoCIIU: '8623',
+    descripcionCIIU: 'Actividades de otros profesionales de la salud humana (enfermería, nutrición, psicología, optometría, instrumentación quirúrgica)',
+    nivelRiesgo: 'II',
+    sector: 'Salud',
+    peligrosPrioritarios: ['BIO-001', 'BIO-002', 'BIO-005', 'BIO-009', 'PSI-001', 'PSI-006', 'BIO-MEC-006', 'BIO-MEC-008', 'QUI-015'],
+    peligrosEspecificos: [
+      {
+        codigo: 'PROF-BIO-001',
+        clasificacion: 'biologico',
+        peligro: 'Exposición a fluidos corporales y patógenos en atención de enfermería',
+        descripcion: 'Contacto con sangre, orina, heces, vómito, secreciones y heridas en actividades de enfermería hospitalaria o domiciliaria',
+        riesgoPotencial: 'Infección por agentes biológicos de transmisión sanguínea, fecal-oral y respiratoria',
+        efectosPosibles: 'Hepatitis B/C, VIH, norovirus, Clostridium difficile, tuberculosis, infecciones diversas',
+        medidasControl: ['Precauciones estándar para todo paciente siempre', 'Guantes para contacto con fluidos corporales, membranas y piel no intacta', 'Mascarilla quirúrgica o N95 según nivel de transmisión', 'Lavado de manos 5 momentos OMS', 'Vacunación completa (Hepatitis B, influenza, tétanos, varicela)']
+      },
+      {
+        codigo: 'PROF-BIO-002',
+        clasificacion: 'biologico',
+        peligro: 'Accidente con cortopunzante en enfermería (venopunción, sondas, cateterismo)',
+        descripcion: 'Riesgo de pinchazo con agujas durante venopunción, instalación de catéteres, inyecciones, sutura de heridas y manejo de instrumental médico-quirúrgico en sala o domicilio',
+        riesgoPotencial: 'Infección por VIH, Hepatitis B y C',
+        efectosPosibles: 'Hepatitis B (alto riesgo sin vacuna), Hepatitis C, VIH, bacteriemia',
+        medidasControl: ['Agujas de seguridad con mecanismo de protección activo o pasivo', 'Nunca reencapuchar agujas con dos manos', 'Contenedor rígido de cortopunzantes en punto de cuidado', 'Protocolo post-exposición conocido y practicado', 'Vacunación VHB obligatoria y títulos de anticuerpos confirmados']
+      },
+      {
+        codigo: 'PROF-BIO-003',
+        clasificacion: 'biologico',
+        peligro: 'Alergia al látex en profesionales de salud con exposición frecuente',
+        descripcion: 'Sensibilización por exposición crónica al látex en enfermeras, instrumentadoras y otros profesionales que usan guantes de látex decenas de veces al día',
+        riesgoPotencial: 'Reacción alérgica sistémica al látex (anafilaxia)',
+        efectosPosibles: 'Dermatitis de contacto, urticaria, rinitis, asma, anafilaxia grave potencialmente fatal',
+        medidasControl: ['Política institucional de sustitución de guantes de látex por nitrilo', 'Tamizaje de alergia al látex en examen de ingreso (cuestionario + IgE)', 'Señalización de zonas libres de látex', 'Disponibilidad de adrenalina autoinyectable en unidad', 'Seguimiento dermatológico y alergológico anual']
+      },
+      {
+        codigo: 'PROF-BIO-MEC-001',
+        clasificacion: 'biomecanico',
+        peligro: 'Movilización de pacientes como tarea cotidiana de enfermería',
+        descripcion: 'Turnos completos de enfermería con múltiples movilizaciones, giros, levantamientos y transferencias de pacientes hospitalizados con dependencia parcial o total',
+        riesgoPotencial: 'Lesión musculoesquelética de columna y miembros superiores — mayor causa de incapacidad en enfermería en Colombia',
+        efectosPosibles: 'Hernia discal lumbar, desgarro de manguito rotador, esguince lumbar agudo y crónico',
+        medidasControl: ['Grúas de transferencia disponibles en cada unidad hospitalaria', 'Protocolos de movilización segura con mínimo 2 personas para pacientes dependientes', 'Evaluación ergonómica mediante metodología MAPO por unidad', 'Formación continua en ergonomía hospitalaria', 'Supervisión del cumplimiento de las normas de movilización segura']
+      },
+      {
+        codigo: 'PROF-BIO-MEC-002',
+        clasificacion: 'biomecanico',
+        peligro: 'Trabajo de pie prolongado en turnos de enfermería (12-24 horas)',
+        descripcion: 'Bipedestación sostenida durante turnos de 8, 12 o 24 horas en salas de hospitalización, urgencias, UCI y quirófano',
+        riesgoPotencial: 'Insuficiencia venosa, varices, fascitis plantar, lumbalgias',
+        efectosPosibles: 'Varices de miembros inferiores, edema, trombosis venosa superficial, lumbalgias, fascitis plantar',
+        medidasControl: ['Medias de compresión graduada clase II obligatorias en turnos largos', 'Calzado profesional con soporte plantar y amortiguación', 'Tapetes antifatiga en estaciones de enfermería', 'Rotación de actividades con trabajo administrativo sentado', 'Pausa obligatoria con elevación de piernas en guardias largas']
+      },
+      {
+        codigo: 'PROF-PSI-001',
+        clasificacion: 'psicosocial',
+        peligro: 'Burnout, carga emocional y fatiga por compasión en enfermería y trabajo social',
+        descripcion: 'Acompañamiento continuo de sufrimiento, muerte, dolor y situaciones traumáticas en profesionales de salud que tienen contacto intensivo y prolongado con pacientes',
+        riesgoPotencial: 'Síndrome de burnout y fatiga por compasión',
+        efectosPosibles: 'Depresión, ansiedad, insomnio, despersonalización, abandono profesional, consumo de sustancias',
+        medidasControl: ['Grupos de apoyo entre pares (peer support)', 'Psicólogo institucional disponible para el personal', 'Rotación de servicios de alta carga emocional', 'Capacitación en duelo y autocuidado emocional en salud', 'Reconocimiento del impacto emocional del cuidado de pacientes']
+      },
+      {
+        codigo: 'PROF-PSI-002',
+        clasificacion: 'psicosocial',
+        peligro: 'Violencia de pacientes y familiares hacia enfermería',
+        descripcion: 'Agresiones verbales y físicas recibidas por personal de enfermería — estadísticamente el grupo de salud más agredido físicamente en hospitales colombianos',
+        riesgoPotencial: 'Trauma físico y psicológico, TEPT laboral',
+        efectosPosibles: 'Lesiones físicas, síndrome de estrés postraumático, ausentismo, abandono del cargo',
+        medidasControl: ['Protocolo institucional de atención a pacientes y familiares agresivos', 'Capacitación en desescalada verbal y manejo de crisis', 'Doble personal en zonas de alta conflictividad', 'Sistemas de alarma rápida', 'Atención psicológica post-incidente dentro de 48 horas', 'Registro estadístico de incidentes de violencia laboral en salud']
+      },
+      {
+        codigo: 'PROF-PSI-003',
+        clasificacion: 'psicosocial',
+        peligro: 'Trabajo nocturno y turnos rotativos en enfermería',
+        descripcion: 'Rotación obligatoria día-noche en turnos de enfermería que altera permanentemente el ritmo circadiano del personal',
+        riesgoPotencial: 'Trastornos del sueño, síndrome metabólico, aumento de riesgo de errores de medicación',
+        efectosPosibles: 'Insomnio crónico, fatiga, mayor riesgo de error de medicación en noches, diabetes tipo 2, depresión',
+        medidasControl: ['Rotación horaria en sentido favorable (mañana-tarde-noche)', 'No más de 2-3 noches consecutivas', 'Descanso compensatorio real post-turno nocturno', 'Evaluación médica periódica con énfasis cardiovascular y metabólico', 'Batería de riesgo psicosocial MINTRA anual']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
+      { codigo: 'RES-2003-2014', norma: 'Resolución 2003/2014', descripcion: 'Habilitación de servicios de salud', obligatorio: true },
+      { codigo: 'RES-2646-2008', norma: 'Resolución 2646/2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true },
+      { codigo: 'DEC-351-2014', norma: 'Decreto 351/2014', descripcion: 'Gestión de residuos hospitalarios', obligatorio: true },
+      { codigo: 'LEY-266-1996', norma: 'Ley 266/1996', descripcion: 'Reglamentación de la profesión de enfermería en Colombia', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de nitrilo (no látex)', 'Mascarilla quirúrgica o N95 según nivel de precaución', 'Bata impermeable para procedimientos con fluidos', 'Gafas de protección splash', 'Gorro quirúrgico en procedimientos estériles', 'Calzado profesional cerrado antideslizante con soporte plantar', 'Medias de compresión graduada clase II en turnos de pie', 'Dosímetro TLD si trabaja en radiología o procedimientos con fluoroscopía'],
+    capacitacionesObligatorias: ['Bioseguridad hospitalaria y precauciones estándar OMS', 'Protocolo post-exposición a accidente biológico', 'Ergonomía hospitalaria y movilización segura de pacientes (MAPO)', 'Riesgo psicosocial y autocuidado emocional en salud (Res. 2646)', 'RCP avanzado y manejo de emergencias', 'Manejo de residuos hospitalarios RESPEL', 'Prevención de errores de medicación', 'Manejo del paciente agresivo y desescalada verbal']
   },
 
   // ==================== MANUFACTURA ====================
@@ -4887,221 +5146,609 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
 
   // ==================== SECCIÓN Q - SALUD Y SERVICIOS SOCIALES ====================
 
-  {
+    {
     codigoCIIU: '8621',
     descripcionCIIU: 'Actividades de la práctica médica, sin internación',
     nivelRiesgo: 'II',
     sector: 'Salud',
-    peligrosPrioritarios: ['BIO-001', 'BIO-002', 'BIO-003', 'QUI-001', 'FIS-005', 'PSI-001', 'PSI-002'],
+    peligrosPrioritarios: ['BIO-001', 'BIO-002', 'BIO-005', 'QUI-015', 'FIS-007', 'PSI-001', 'PSI-005', 'PSI-006', 'BIO-MEC-002', 'SEG-012'],
     peligrosEspecificos: [
       {
         codigo: 'MED-BIO-001',
         clasificacion: 'biologico',
-        peligro: 'Exposición a agentes biológicos en consulta médica ambulatoria',
-        descripcion: 'Contacto con pacientes con enfermedades infectocontagiosas en consultorio externo',
-        riesgoPotencial: 'Infecciones nosocomiales y comunitarias',
-        efectosPosibles: 'COVID-19, tuberculosis, influenza, hepatitis, infecciones diversas',
-        medidasControl: ['EPP según nivel de precaución (Standard/Aislamiento)', 'Lavado de manos antes y después de cada paciente', 'Vacunación del personal de salud', 'Ventilación adecuada del consultorio']
+        peligro: 'Exposición a agentes infecciosos en consulta médica ambulatoria',
+        descripcion: 'Contacto con pacientes portadores de enfermedades infectocontagiosas (COVID-19, influenza, TBC, varicela) en consultorio médico o en domicilio',
+        riesgoPotencial: 'Infecciones nosocomiales y comunitarias de origen ocupacional',
+        efectosPosibles: 'COVID-19, tuberculosis laboral, influenza grave, hepatitis A, infecciones respiratorias',
+        medidasControl: ['EPP según nivel de precaución (estándar / gotas / aerosoles)', 'Lavado de manos antes y después de cada paciente (5 momentos OMS)', 'Vacunación anual de influenza, Hepatitis B completa', 'Ventilación adecuada del consultorio (renovaciones de aire)', 'Triaje respiratorio para separar pacientes febriles']
+      },
+      {
+        codigo: 'MED-BIO-002',
+        clasificacion: 'biologico',
+        peligro: 'Accidente con cortopunzante en procedimientos ambulatorios',
+        descripcion: 'Pinchazos con agujas de sutura, agujas hipodérmicas o instrumentos cortantes durante procedimientos como suturas, biopsias, inyecciones e infiltraciones',
+        riesgoPotencial: 'Infección por VIH, Hepatitis B y C',
+        efectosPosibles: 'Hepatitis B, hepatitis C, VIH, infecciones bacterianas post-pinchazo',
+        medidasControl: ['Agujas de seguridad con mecanismo de retracción', 'Nunca reencapuchar con dos manos', 'Contenedor de cortopunzantes en el punto de atención', 'Protocolo post-exposición disponible y conocido', 'Vacunación obligatoria VHB antes del inicio de la práctica clínica']
+      },
+      {
+        codigo: 'MED-BIO-003',
+        clasificacion: 'biologico',
+        peligro: 'Manejo de residuos biológicos en consultorio médico ambulatorio',
+        descripcion: 'Disposición de gasas con sangre, guantes contaminados, material de curación y cortopunzantes generados en la consulta médica ambulatoria',
+        riesgoPotencial: 'Infección del personal de aseo o de servicios generales',
+        efectosPosibles: 'Infecciones por contacto con residuos biológicos, pinchazos con agujas en basura',
+        medidasControl: ['Bolsa roja para residuos infecciosos (incluye material de curación)', 'Contenedor rígido de cortopunzantes en sala de procedimientos', 'Capacitación al personal de aseo en manejo de residuos biológicos', 'Gestor ambiental autorizado para recolección']
       },
       {
         codigo: 'MED-FIS-001',
         clasificacion: 'fisico',
-        peligro: 'Exposición a radiaciones ionizantes en consultorios con equipos de imagen',
-        descripcion: 'Uso de equipos de rayos X portátiles o fijos en consultorio médico',
-        riesgoPotencial: 'Daño por radiación ionizante',
-        efectosPosibles: 'Daño celular acumulativo, leucemia, cáncer en exposición crónica',
-        medidasControl: ['Dosímetro personal obligatorio', 'Delantal plomado y protector tiroideo', 'Distancia de seguridad', 'Inspección del equipo por SNC']
+        peligro: 'Radiaciones ionizantes en consultorios con equipo de radiología',
+        descripcion: 'Uso de equipos de rayos X (periapical, portable) en consultorios médicos con capacidad de imágenes diagnósticas',
+        riesgoPotencial: 'Daño por radiación ionizante acumulativa',
+        efectosPosibles: 'Daño celular acumulativo, leucemia, cáncer de tiroides en exposición crónica sin protección',
+        medidasControl: ['Dosímetro personal obligatorio con lectura mensual', 'Delantal plomado y protector tiroideo', 'Posición a mínimo 1.5 m del cabezal o detrás de barrera', 'Inspección del equipo por SNC/INVIMA cada 2 años', 'Restricción en mujeres embarazadas']
+      },
+      {
+        codigo: 'MED-QUI-001',
+        clasificacion: 'quimico',
+        peligro: 'Desinfectantes y antisépticos en consultorio (clorhexidina, H₂O₂, hipoclorito)',
+        descripcion: 'Uso frecuente de soluciones desinfectantes para superficies y antisépticos para procedimientos en consultorio médico',
+        riesgoPotencial: 'Irritación respiratoria y dermatitis de contacto',
+        efectosPosibles: 'Dermatitis de contacto en manos, asma leve por inhalación crónica, irritación de mucosas',
+        medidasControl: ['Guantes de nitrilo para manipulación', 'Diluciones correctas según ficha técnica', 'Ventilación adecuada del consultorio', 'No mezclar hipoclorito con amonio cuaternario', 'Crema barrera y emolientes para higiene frecuente de manos']
+      },
+      {
+        codigo: 'MED-BIO-MEC-001',
+        clasificacion: 'biomecanico',
+        peligro: 'Postura sedente prolongada y trabajo con pantalla (historia clínica electrónica)',
+        descripcion: 'Trabajo sedentario continuo frente a computador durante la consulta médica y diligenciamiento de historias clínicas electrónicas — hasta 8-10 horas diarias',
+        riesgoPotencial: 'Trastornos musculoesqueléticos cervicales y de extremidad superior',
+        efectosPosibles: 'Cervicalgia, dorsalgia, síndrome visual informático, síndrome del túnel carpiano, lumbalgias',
+        medidasControl: ['Silla ergonómica regulable con soporte lumbar', 'Monitor a altura de ojos a 50-70 cm', 'Regla 20-20-20 para la vista', 'Pausas activas cada 45-60 minutos', 'Teclado y ratón ergonómico']
       },
       {
         codigo: 'MED-PSI-001',
         clasificacion: 'psicosocial',
-        peligro: 'Alta carga asistencial y presión por número de consultas',
-        descripcion: 'Sistemas de salud con alta presión de pacientes por hora, escasa autonomía y alta responsabilidad',
-        riesgoPotencial: 'Burnout médico',
-        efectosPosibles: 'Agotamiento emocional, errores clínicos, despersonalización',
-        medidasControl: ['Número de consultas por hora razonable', 'Apoyo psicológico al personal de salud', 'Programa de bienestar laboral', 'Autonomía clínica']
+        peligro: 'Alta carga asistencial, presión por número de consultas y burnout médico',
+        descripcion: 'Sistemas de salud colombianos (IPS, EPS) con alta presión de consultas por hora (5-7 min/paciente), escasa autonomía clínica, trámites de autorización y alta responsabilidad',
+        riesgoPotencial: 'Burnout médico de alta prevalencia en Colombia',
+        efectosPosibles: 'Agotamiento emocional, despersonalización, errores clínicos, abandono de la medicina, depresión, suicidio profesional',
+        medidasControl: ['Número de consultas por hora razonable (máximo 3-4 consultas/hora para medicina general)', 'Apoyo psicológico disponible para el personal médico', 'Programa de bienestar laboral con actividades de autocuidado', 'Autonomía clínica real (no solo protocolos)', 'Batería de riesgo psicosocial MINTRA anual']
+      },
+      {
+        codigo: 'MED-PSI-002',
+        clasificacion: 'psicosocial',
+        peligro: 'Violencia verbal y física de pacientes o familiares',
+        descripcion: 'Agresiones verbales, amenazas e incluso agresiones físicas de pacientes insatisfechos, familiares o personas bajo sustancias psicoactivas en sala de espera y consultorios',
+        riesgoPotencial: 'Trauma psicológico, lesiones físicas',
+        efectosPosibles: 'TEPT, lesiones físicas, ausentismo, abandono del cargo',
+        medidasControl: ['Protocolo de atención al usuario agresivo', 'Capacitación en desescalada verbal y manejo de conflictos', 'Sistema de alarma o botón de pánico', 'Nunca atender solo a pacientes con historial de agresividad', 'Reporte y estadística de incidentes de violencia']
+      },
+      {
+        codigo: 'MED-PSI-003',
+        clasificacion: 'psicosocial',
+        peligro: 'Carga emocional y fatiga por compasión en médico de familia y general',
+        descripcion: 'Acompañamiento de pacientes con enfermedades crónicas, terminales o situaciones familiares complejas que generan desgaste emocional acumulativo en el médico',
+        riesgoPotencial: 'Fatiga por compasión, burnout empático',
+        efectosPosibles: 'Despersonalización, agotamiento emocional, abandono de la empatía clínica, depresión',
+        medidasControl: ['Grupos de reflexión clínica entre pares', 'Acceso a psicólogo ocupacional', 'Capacitación en manejo del duelo y autocuidado emocional', 'Reconocimiento del impacto emocional del trabajo médico', 'Rotación periódica de especialidades o tipo de consulta']
+      },
+      {
+        codigo: 'MED-SEG-001',
+        clasificacion: 'condiciones_seguridad',
+        peligro: 'Trabajo en domicilio o zonas de difícil acceso (médico rural, visita domiciliaria)',
+        descripcion: 'Atención médica en domicilios, zonas rurales o de difícil acceso con riesgo de seguridad pública, accidente de tránsito y trabajo en solitario',
+        riesgoPotencial: 'Accidente de tránsito, agresión, trabajo en solitario sin apoyo',
+        efectosPosibles: 'Politrauma por accidente de tránsito, agresión, accidente sin atención oportuna',
+        medidasControl: ['Evaluación de riesgo de zona antes de visita domiciliaria', 'Comunicación periódica con base o coordinación', 'No visitar zonas de alto riesgo sin acompañante', 'GPS o check-in de ubicación', 'Kit de emergencias médicas portátil']
       }
     ],
     normativaEspecifica: [
-      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
+      { codigo: 'RES-2003-2014', norma: 'Resolución 2003/2014', descripcion: 'Habilitación de servicios de salud', obligatorio: true },
       { codigo: 'RES-2183-2004', norma: 'Resolución 2183/2004', descripcion: 'Adopción del Manual de Buenas Prácticas en Radiología', obligatorio: true },
-      { codigo: 'DEC-4741-2005', norma: 'Decreto 4741/2005', descripcion: 'Gestión de residuos biológico-infecciosos', obligatorio: true }
+      { codigo: 'DEC-4741-2005', norma: 'Decreto 4741/2005', descripcion: 'Gestión de residuos biológico-infecciosos', obligatorio: true },
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
+      { codigo: 'RES-2646-2008', norma: 'Resolución 2646/2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true }
     ],
-    eppRecomendado: ['Bata de laboratorio o uniforme clínico', 'Guantes de nitrilo', 'Mascarilla FFP2 o N95', 'Gafas de protección', 'Delantal plomado en rayos X', 'Dosímetro personal'],
-    capacitacionesObligatorias: ['Bioseguridad en atención médica', 'Precauciones estándar y de aislamiento', 'Manejo de residuos biológicos', 'Prevención riesgo psicosocial en salud', 'Primeros auxilios - RCP']
+    eppRecomendado: ['Bata de laboratorio o uniforme clínico', 'Guantes de nitrilo', 'Mascarilla FFP2 / N95', 'Gafas de protección splash', 'Delantal plomado en consultorios con Rx', 'Dosímetro personal TLD (si hay radiación)', 'Calzado cerrado cómodo'],
+    capacitacionesObligatorias: ['Bioseguridad en atención médica ambulatoria y precauciones estándar', 'Protocolo post-exposición a accidente biológico', 'Manejo de residuos biológicos en consultorio', 'Prevención riesgo psicosocial en salud (Res. 2646)', 'Radioprotección (si hay equipo de Rx)', 'RCP básico y primeros auxilios', 'Manejo del paciente agresivo']
   },
 
-  {
+    {
     codigoCIIU: '8691',
-    descripcionCIIU: 'Actividades de apoyo diagnóstico',
+    descripcionCIIU: 'Actividades de apoyo diagnóstico (laboratorio clínico, imágenes diagnósticas)',
     nivelRiesgo: 'III',
     sector: 'Salud',
-    peligrosPrioritarios: ['BIO-001', 'BIO-002', 'QUI-001', 'QUI-003', 'FIS-005', 'SEG-004'],
+    peligrosPrioritarios: ['BIO-001', 'BIO-002', 'BIO-005', 'QUI-003', 'QUI-009', 'FIS-007', 'PSI-001', 'BIO-MEC-005', 'SEG-004'],
     peligrosEspecificos: [
       {
         codigo: 'DIAG-BIO-001',
         clasificacion: 'biologico',
-        peligro: 'Manejo de muestras biológicas (sangre, orina, tejidos)',
-        descripcion: 'Procesamiento de muestras clínicas en laboratorio con alto riesgo de exposición a agentes infecciosos',
-        riesgoPotencial: 'Infección por accidente biológico',
-        efectosPosibles: 'VIH, hepatitis B y C, tuberculosis, otras infecciones según muestra',
-        medidasControl: ['Nivel BSL-2 o superior', 'Doble guante en muestras de alto riesgo', 'Nunca pipetear con boca', 'Centrifugación en cabina cerrada', 'Protocolo post-exposición']
+        peligro: 'Manejo de muestras biológicas con alto riesgo infeccioso (sangre, LCR, tejidos)',
+        descripcion: 'Procesamiento de muestras clínicas (hemocultivos, BK, muestras de LCR, biopsias) en laboratorio clínico con posibilidad de exposición a patógenos de nivel BSL-2 y BSL-3',
+        riesgoPotencial: 'Infección por accidente biológico en laboratorio',
+        efectosPosibles: 'VIH, Hepatitis B y C, TBC (laboratorio de micobacterias), Brucella, otras infecciones',
+        medidasControl: ['Nivel de bioseguridad BSL-2 como mínimo', 'Cabina de bioseguridad Clase II tipo A2 para muestras de alto riesgo', 'Doble guante en muestras de pacientes con infecciones conocidas de alto riesgo', 'Nunca pipetear con la boca', 'Centrifugación en rotor cerrado o cabina de bioseguridad', 'Protocolo post-exposición con reporte inmediato en < 2 horas']
+      },
+      {
+        codigo: 'DIAG-BIO-002',
+        clasificacion: 'biologico',
+        peligro: 'Exposición a aerosoles biológicos en laboratorio de microbiología',
+        descripcion: 'Generación de aerosoles contaminantes durante siembra de cultivos, agitación de tubos, trabajo con muestras de pacientes con enfermedades respiratorias (TBC, COVID)',
+        riesgoPotencial: 'Infección respiratoria de origen laboral',
+        efectosPosibles: 'Tuberculosis laboral (especialmente en laboratorio de micobacterias), infecciones respiratorias diversas',
+        medidasControl: ['Cabina de bioseguridad Clase II para todo trabajo con cultivos', 'Mascarilla N95 obligatoria en laboratorio de micobacterias', 'Prueba PPD anual al personal de laboratorio de microbiología', 'No abrir tubos fuera de la cabina', 'Descontaminación de superficies con hipoclorito al 0.5% tras trabajo']
       },
       {
         codigo: 'DIAG-QUI-001',
         clasificacion: 'quimico',
-        peligro: 'Reactivos de laboratorio clínico (ácidos, bases, solventes)',
-        descripcion: 'Uso de reactivos para tinción, análisis bioquímico y procesamiento de muestras',
-        riesgoPotencial: 'Quemaduras químicas e irritación',
-        efectosPosibles: 'Quemaduras oculares y cutáneas, intoxicación crónica',
-        medidasControl: ['Cabina de extracción', 'Gafas de seguridad', 'Guantes de nitrilo', 'Ducha lavaojos en laboratorio', 'SDS actualizadas']
+        peligro: 'Reactivos de laboratorio clínico (ácidos, bases, solventes, colorantes)',
+        descripcion: 'Uso de reactivos para tinción de Gram, Ziehl-Neelsen, análisis bioquímico, inmunohistoquímica y procesamiento de muestras con ácido clorhídrico, metanol, acetona, formalina',
+        riesgoPotencial: 'Quemaduras químicas, irritación e intoxicación crónica',
+        efectosPosibles: 'Quemaduras oculares y cutáneas, irritación respiratoria crónica, dermatitis de contacto, hepatotoxicidad por metanol',
+        medidasControl: ['Cabina de extracción química para trabajo con reactivos volátiles', 'Gafas de seguridad obligatorias en el laboratorio', 'Guantes de nitrilo (cambio frecuente)', 'Ducha lavaojos en cada área del laboratorio', 'SDS (fichas de seguridad) actualizadas y accesibles', 'Almacenamiento segregado según compatibilidad química']
+      },
+      {
+        codigo: 'DIAG-QUI-002',
+        clasificacion: 'quimico',
+        peligro: 'Formaldehído en anatomía patológica e histopatología',
+        descripcion: 'Exposición a vapores de formaldehído en la fijación de biopsias, piezas quirúrgicas y muestras anatomopatológicas en el servicio de patología',
+        riesgoPotencial: 'Carcinogenicidad nasofaríngea (IARC Grupo 1), sensibilización',
+        efectosPosibles: 'Cáncer nasofaríngeo, leucemia, dermatitis de contacto, asma ocupacional, conjuntivitis crónica',
+        medidasControl: ['Campana de extracción de vapores en área de macroscopía', 'Guantes de nitrilo gruesos o neopreno con cambio frecuente', 'Gafas de protección y mascarilla con filtro de vapores orgánicos', 'Monitoreo ambiental de formaldehído (máximo 0.3 ppm ACGIH)', 'Usar formalina al 10% neutral tamponada (no formaldehído concentrado)', 'Sustituir por fijadores alternativos cuando sea posible']
       },
       {
         codigo: 'DIAG-FIS-001',
         clasificacion: 'fisico',
-        peligro: 'Radiaciones ionizantes en diagnóstico por imagen (RX, TAC)',
-        descripcion: 'Operación de equipos de rayos X, tomografía y fluoroscopía en servicios de imagen diagnóstica',
-        riesgoPotencial: 'Daño por radiación ionizante crónica',
-        efectosPosibles: 'Leucemia, cáncer, daño óseo y ocular',
-        medidasControl: ['Dosímetro personal obligatorio', 'Delantal plomado', 'Distancia y tiempo mínimos de exposición', 'Inspección periódica de equipos por INVIMA/SNC']
+        peligro: 'Radiaciones ionizantes en imágenes diagnósticas (Rx, TAC, fluoroscopía, gammagrafía)',
+        descripcion: 'Operación de equipos de radiología convencional, tomografía computada, fluoroscopía, densitometría ósea y medicina nuclear (gammagrafía, PET)',
+        riesgoPotencial: 'Cáncer, leucemia, cataratas por radiación ionizante crónica',
+        efectosPosibles: 'Leucemia mieloide, cáncer de tiroides y mama (mujeres), cataratas por radiación ionizante, daño fetal en embarazadas',
+        medidasControl: ['Dosímetro personal TLD u OSL obligatorio con lectura mensual', 'Delantal plomado ≥0.5mm Pb y protector tiroideo', 'Trabajo detrás de mamparas plomadas o a distancia de seguridad', 'Principios ALARA aplicados en cada exposición', 'Restricción en mujeres embarazadas con reasignación inmediata', 'Límite de dosis 50 mSv/año con registro histórico individual']
+      },
+      {
+        codigo: 'DIAG-FIS-002',
+        clasificacion: 'fisico',
+        peligro: 'Campos electromagnéticos intensos en resonancia magnética (RM)',
+        descripcion: 'Exposición a campos magnéticos estáticos de alta intensidad (1.5T - 3T) y campos de radiofrecuencia en salas de resonancia magnética',
+        riesgoPotencial: 'Efecto proyectil de objetos metálicos, quemaduras por calentamiento, interferencia con implantes',
+        efectosPosibles: 'Quemaduras dérmicas por dispositivos conductores, interferencia con marcapasos e implantes cocleares, efecto proyectil de objetos ferromagnéticos',
+        medidasControl: ['Cribado metálico estricto antes de entrar a sala de RM (cuestionario + detector)', 'Restricción absoluta de portadores de marcapasos, desfibriladores y clips de aneurisma en zona 3 y 4', 'Entrenamiento anual de todo el personal en seguridad en RM', 'Señalización de zonas de acceso restringido (zona 1, 2, 3, 4)', 'Nunca entrar con objetos metálicos al campo magnético']
+      },
+      {
+        codigo: 'DIAG-BIO-MEC-001',
+        clasificacion: 'biomecanico',
+        peligro: 'Trabajo sedentario prolongado con pantallas (interpretación de imágenes)',
+        descripcion: 'Lectura e interpretación de imágenes diagnósticas (radiología, ecografía, patología digital) durante horas continuas frente a monitores de alta resolución',
+        riesgoPotencial: 'Síndrome visual informático, trastornos musculoesqueléticos cervicales',
+        efectosPosibles: 'Ojo seco, cefalea visual, miopía progresiva, cervicalgia, síndrome del túnel carpiano en ecografistas',
+        medidasControl: ['Monitores calibrados DICOM a 50-70 cm de distancia', 'Regla 20-20-20 estricta', 'Iluminación ambiental controlada sin reflejos en pantallas', 'Examen visual anual para personal de radiología', 'Pausas de 10 minutos cada hora de interpretación continua']
+      },
+      {
+        codigo: 'DIAG-BIO-MEC-002',
+        clasificacion: 'biomecanico',
+        peligro: 'Posturas forzadas en ecografía y sonografía',
+        descripcion: 'Mantenimiento de posturas estáticas con abducción y elevación del brazo derecho durante procedimientos ecográficos (ecografía abdominal, obstétrica, ecocardiografía)',
+        riesgoPotencial: 'Síndrome de hombro doloroso y tendinitis del manguito rotador',
+        efectosPosibles: 'Tendinitis del supraespinoso, síndrome de hombro doloroso, bursitis subacromial, epicondilitis',
+        medidasControl: ['Mesa de exploración a altura regulable sin forzar la elevación del brazo', 'Transductor con mango ergonómico', 'Fuerza de agarre mínima sobre el transductor', 'Pausas activas cada 45 minutos con ejercicios de hombro', 'Evaluación ergonómica específica para ecografistas anual']
+      },
+      {
+        codigo: 'DIAG-PSI-001',
+        clasificacion: 'psicosocial',
+        peligro: 'Alta exigencia técnica y responsabilidad diagnóstica',
+        descripcion: 'Responsabilidad sobre diagnósticos que condicionan tratamientos críticos, con presión de tiempo y alto volumen de casos en laboratorio y radiología',
+        riesgoPotencial: 'Burnout del especialista diagnóstico, errores diagnósticos por fatiga',
+        efectosPosibles: 'Burnout, errores diagnósticos con consecuencias para pacientes, deterioro cognitivo por fatiga, depresión',
+        medidasControl: ['Número razonable de estudios por día (estándares ACR/RSNA para radiología)', 'Doble lectura en casos complejos', 'Apoyo psicológico institucional', 'Capacitación en prevención del error diagnóstico', 'Batería de riesgo psicosocial MINTRA anual']
+      },
+      {
+        codigo: 'DIAG-SEG-001',
+        clasificacion: 'condiciones_seguridad',
+        peligro: 'Riesgo eléctrico de equipos biomédicos de diagnóstico',
+        descripcion: 'Contacto con equipos biomédicos de alta tecnología (tomógrafos, resonadores, equipos de angiografía) con alto consumo eléctrico y riesgo de falla en ambiente húmedo',
+        riesgoPotencial: 'Electrocución, incendio eléctrico por falla de equipos',
+        efectosPosibles: 'Quemaduras eléctricas, fibrilación ventricular, incendio de sala',
+        medidasControl: ['Programa de mantenimiento preventivo certificado de equipos biomédicos', 'Revisión de conexiones a tierra en equipos de alta potencia', 'No operar equipos con signos de daño eléctrico', 'Extintor de CO₂ en sala de equipos (no agua)', 'Capacitación en seguridad eléctrica básica']
       }
     ],
     normativaEspecifica: [
       { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
-      { codigo: 'RES-2183-2004', norma: 'Resolución 2183/2004', descripcion: 'Buenas Prácticas en Radiología', obligatorio: true },
-      { codigo: 'DEC-4741-2005', norma: 'Decreto 4741/2005', descripcion: 'Residuos biológico-infecciosos', obligatorio: true },
-      { codigo: 'RES-1995-1999', norma: 'Resolución 1995/1999', descripcion: 'Historias clínicas y registros - laboratorio', obligatorio: true }
+      { codigo: 'RES-2183-2004', norma: 'Resolución 2183/2004', descripcion: 'Buenas Prácticas en Radiología e Imágenes Diagnósticas', obligatorio: true },
+      { codigo: 'DEC-4741-2005', norma: 'Decreto 4741/2005', descripcion: 'Residuos biológico-infecciosos y peligrosos', obligatorio: true },
+      { codigo: 'RES-1995-1999', norma: 'Resolución 1995/1999', descripcion: 'Historias clínicas y registros de laboratorio', obligatorio: true },
+      { codigo: 'RES-2003-2014', norma: 'Resolución 2003/2014', descripcion: 'Habilitación de servicios de salud', obligatorio: true }
     ],
-    eppRecomendado: ['Bata de laboratorio', 'Dobles guantes de nitrilo', 'Gafas de seguridad', 'Mascarilla N95', 'Calzado cerrado', 'Dosímetro personal', 'Delantal plomado'],
-    capacitacionesObligatorias: ['Bioseguridad en laboratorio clínico', 'Manejo de accidente biológico', 'Radiaciones ionizantes y protección', 'Gestión de residuos peligrosos', 'Primeros auxilios']
+    eppRecomendado: ['Bata de laboratorio manga larga', 'Guantes de nitrilo dobles para muestras de alto riesgo', 'Gafas de seguridad en laboratorio', 'Mascarilla N95 en microbiología y micobacterias', 'Calzado cerrado y antideslizante', 'Dosímetro personal TLD (personal de radiología)', 'Delantal plomado (radiología)', 'Protector tiroideo (radiología)'],
+    capacitacionesObligatorias: ['Bioseguridad en laboratorio clínico (niveles BSL-1 y BSL-2)', 'Protocolo post-exposición a accidente biológico', 'Radiaciones ionizantes y radioprotección (personal de imágenes)', 'Seguridad en resonancia magnética (personal de RM)', 'Gestión de residuos peligrosos RESPEL', 'Primeros auxilios y RCP básico', 'Prevención riesgo psicosocial (Res. 2646)']
   },
 
-  {
+    {
     codigoCIIU: '8692',
-    descripcionCIIU: 'Actividades de apoyo terapéutico',
+    descripcionCIIU: 'Actividades de apoyo terapéutico (fisioterapia, fonoaudiología, terapia ocupacional, nutrición)',
     nivelRiesgo: 'II',
     sector: 'Salud',
-    peligrosPrioritarios: ['BIO-001', 'BIO-MEC-001', 'BIO-MEC-002', 'PSI-001', 'QUI-001'],
+    peligrosPrioritarios: ['BIO-001', 'BIO-005', 'BIO-MEC-001', 'BIO-MEC-002', 'BIO-MEC-008', 'PSI-001', 'PSI-006', 'FIS-003'],
     peligrosEspecificos: [
+      {
+        codigo: 'TERAP-BIO-001',
+        clasificacion: 'biologico',
+        peligro: 'Exposición a fluidos corporales en procedimientos terapéuticos',
+        descripcion: 'Contacto con heridas, secreciones, sangre y fluidos corporales durante fisioterapia de heridas, drenaje postural, terapia respiratoria y procedimientos invasivos terapéuticos',
+        riesgoPotencial: 'Infección por contacto con fluidos de pacientes',
+        efectosPosibles: 'Hepatitis B y C, infecciones de piel y partes blandas, infecciones respiratorias',
+        medidasControl: ['Guantes para todo contacto con fluidos corporales', 'Mascarilla en terapia respiratoria y drenaje postural', 'Lavado de manos entre pacientes', 'Vacunación Hepatitis B y cuadro de vacunas al día', 'Protocolo post-exposición conocido por todo el personal terapéutico']
+      },
       {
         codigo: 'TERAP-BIO-MEC-001',
         clasificacion: 'biomecanico',
-        peligro: 'Movilización de pacientes en terapia física',
-        descripcion: 'Traslado, posicionamiento y asistencia en ejercicios de pacientes con limitaciones físicas',
-        riesgoPotencial: 'Lesiones musculoesqueléticas en terapeuta',
-        efectosPosibles: 'Lumbalgia, lesiones de hombro, hernias discales',
-        medidasControl: ['Técnicas de transferencia de pacientes', 'Equipos de apoyo (grúas, deslizadores)', 'Capacitación en movilización segura', 'Evaluación ergonómica de camillas']
+        peligro: 'Movilización manual de pacientes con limitaciones funcionales',
+        descripcion: 'Transferencia, posicionamiento y asistencia en ejercicios de pacientes con discapacidad motora, hemiplejia, paraplejia o post-cirugía — tarea central de fisioterapia',
+        riesgoPotencial: 'Lesión musculoesquelética grave del fisioterapeuta o terapeuta ocupacional',
+        efectosPosibles: 'Hernia discal lumbar, desgarro de manguito rotador, esguince lumbar, incapacidades laborales crónicas',
+        medidasControl: ['Equipos de ayuda a la transferencia (grúas, tablas de deslizamiento, cinturones)', 'Técnica MAPO de movilización segura de pacientes', 'Trabajo en equipo para pacientes con gran dependencia', 'Evaluación ergonómica del servicio de fisioterapia', 'Camillas de altura regulable a nivel del centro de gravedad del terapeuta']
+      },
+      {
+        codigo: 'TERAP-BIO-MEC-002',
+        clasificacion: 'biomecanico',
+        peligro: 'Posturas mantenidas en bipedestación durante sesiones terapéuticas',
+        descripcion: 'Trabajo en posición de pie prolongada durante sesiones de fisioterapia, terapia ocupacional y fonoaudiología que pueden extenderse a 6-8 horas diarias',
+        riesgoPotencial: 'Insuficiencia venosa crónica, lumbalgias, fatiga de miembros inferiores',
+        efectosPosibles: 'Varices, lumbalgias, fascitis plantar, edema de extremidades inferiores',
+        medidasControl: ['Tapetes antifatiga en puestos de trabajo', 'Medias de compresión graduada', 'Calzado con soporte plantar adecuado', 'Alternar entre sesiones de pie y trabajo administrativo', 'Pausas activas cada 2 horas']
+      },
+      {
+        codigo: 'TERAP-FIS-001',
+        clasificacion: 'fisico',
+        peligro: 'Radiaciones no ionizantes terapéuticas (ultrasonido, láser, electroterapia, microondas)',
+        descripcion: 'Uso de equipos de fisioterapia que emiten ultrasonido terapéutico, láser de bajo nivel (LLLT), TENS, electroestimulación, microondas terapéuticas y ondas de choque',
+        riesgoPotencial: 'Quemaduras, lesión ocular por láser, efectos de campos electromagnéticos en terapeuta',
+        efectosPosibles: 'Quemaduras cutáneas por mal uso de ultrasonido, lesión ocular por láser clase IIIb/IV, quemaduras por microondas',
+        medidasControl: ['Gafas de protección láser específicas para la longitud de onda del equipo', 'Nunca dirigir el haz de ultrasonido o láser hacia los ojos', 'Verificar calibración de equipos antes de cada uso', 'No usar electroterapia en portadores de marcapasos o en zona del tronco en embarazadas', 'Mantenimiento preventivo certificado de todos los equipos de fisioterapia']
+      },
+      {
+        codigo: 'TERAP-FIS-002',
+        clasificacion: 'fisico',
+        peligro: 'Vibraciones transmitidas por equipos de fisioterapia',
+        descripcion: 'Exposición a vibraciones mano-brazo durante uso de vibradores terapéuticos, percusores, equipos de ondas de choque y técnicas de drenaje percutivo',
+        riesgoPotencial: 'Síndrome de vibración mano-brazo en fisioterapeuta',
+        efectosPosibles: 'Fenómeno de Raynaud profesional, neuropatía periférica, síndrome del túnel carpiano agravado por vibración',
+        medidasControl: ['Guantes antivibración certificados EN ISO 10819', 'Limitar el tiempo de uso continuo de equipos vibratorios', 'Rotación de tareas durante la jornada', 'Evaluación de dosis de vibración mano-brazo (ISO 5349)', 'Vigilancia médica con énfasis vascular y neurológico']
+      },
+      {
+        codigo: 'TERAP-QUI-001',
+        clasificacion: 'quimico',
+        peligro: 'Agentes tópicos y desinfectantes en fisioterapia (alcohol, geles, aceites)',
+        descripcion: 'Uso frecuente de geles de contacto para ultrasonido, aceites de masaje, alcohol etílico para desinfección de equipos y pomadas terapéuticas',
+        riesgoPotencial: 'Dermatitis de contacto, sensibilización por uso repetido',
+        efectosPosibles: 'Dermatitis de contacto alérgica o irritativa en manos del terapeuta',
+        medidasControl: ['Guantes de nitrilo para procedimientos con contacto de fluidos', 'Crema barrera e hidratante para higiene frecuente de manos', 'Rotación de productos cuando hay sensibilización', 'Fichas de seguridad disponibles de todos los productos usados']
       },
       {
         codigo: 'TERAP-PSI-001',
         clasificacion: 'psicosocial',
-        peligro: 'Alta carga emocional en terapia con pacientes complejos',
-        descripcion: 'Trabajo con pacientes con dolor crónico, discapacidad o enfermedades degenerativas que generan carga emocional en el terapeuta',
-        riesgoPotencial: 'Fatiga compasión y burnout terapéutico',
-        efectosPosibles: 'Agotamiento emocional, despersonalización',
-        medidasControl: ['Supervisión clínica', 'Distribución de casos complejos', 'Acceso a apoyo psicológico para el profesional']
-      }
-    ],
-    normativaEspecifica: [
-      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
-      { codigo: 'RES-2646-2008', norma: 'Resolución 2646/2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true }
-    ],
-    eppRecomendado: ['Guantes de nitrilo', 'Calzado antideslizante de trabajo', 'Faja lumbar para movilización de pacientes'],
-    capacitacionesObligatorias: ['Movilización segura de pacientes', 'Prevención de riesgo psicosocial en salud', 'Bioseguridad', 'Primeros auxilios']
-  },
-
-  {
-    codigoCIIU: '8699',
-    descripcionCIIU: 'Otras actividades de atención de la salud humana',
-    nivelRiesgo: 'II',
-    sector: 'Salud',
-    peligrosPrioritarios: ['BIO-001', 'BIO-002', 'PSI-001', 'QUI-001', 'BIO-MEC-001'],
-    peligrosEspecificos: [
-      {
-        codigo: 'SALUDNCP-BIO-001',
-        clasificacion: 'biologico',
-        peligro: 'Exposición a fluidos y agentes biológicos en atención de salud',
-        descripcion: 'Contacto con pacientes y sus fluidos en actividades de atención de salud no hospitalaria',
-        riesgoPotencial: 'Infección por agentes biológicos',
-        efectosPosibles: 'Enfermedades infecciosas diversas',
-        medidasControl: ['Precauciones estándar siempre', 'Guantes y mascarilla en atención', 'Lavado de manos', 'Vacunación del personal']
-      }
-    ],
-    normativaEspecifica: [
-      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
-      { codigo: 'DEC-4741-2005', norma: 'Decreto 4741/2005', descripcion: 'Residuos biológico-infecciosos', obligatorio: true }
-    ],
-    eppRecomendado: ['Guantes de nitrilo', 'Mascarilla', 'Bata de trabajo', 'Calzado cerrado'],
-    capacitacionesObligatorias: ['Bioseguridad en salud', 'Manejo de residuos', 'Primeros auxilios']
-  },
-
-  {
-    codigoCIIU: '8720',
-    descripcionCIIU: 'Actividades de atención residencial para el cuidado de personas con discapacidad intelectual',
-    nivelRiesgo: 'III',
-    sector: 'Salud',
-    peligrosPrioritarios: ['BIO-MEC-003', 'BIO-MEC-004', 'PSI-001', 'PSI-002', 'BIO-001', 'SEG-005'],
-    peligrosEspecificos: [
-      {
-        codigo: 'DISCAP-BIO-MEC-001',
-        clasificacion: 'biomecanico',
-        peligro: 'Movilización de personas con discapacidad',
-        descripcion: 'Transferencia, posicionamiento y traslado de usuarios con dependencia funcional total o parcial',
-        riesgoPotencial: 'Lesiones musculoesqueléticas en cuidador',
-        efectosPosibles: 'Lumbalgia crónica, hernias discales, lesiones de hombro',
-        medidasControl: ['Equipos de transferencia (grúas, cojines deslizantes)', 'Técnicas ergonómicas de movilización', 'Trabajo en equipo para cargas pesadas', 'Evaluación médica periódica']
+        peligro: 'Fatiga por compasión y carga emocional en terapia con pacientes complejos',
+        descripcion: 'Trabajo continuo con pacientes que tienen dolor crónico, discapacidades graves, enfermedades neurodegenerativas o estancias largas de rehabilitación que generan vinculación emocional intensa',
+        riesgoPotencial: 'Fatiga por compasión, burnout terapéutico',
+        efectosPosibles: 'Agotamiento emocional, despersonalización, depresión, abandono de la profesión',
+        medidasControl: ['Supervisión clínica entre pares (supervisión de casos)', 'Distribución equitativa de casos complejos', 'Acceso a psicólogo institucional', 'Espacios de descarga emocional grupal', 'Capacitación en autocuidado emocional en profesiones de ayuda']
       },
       {
-        codigo: 'DISCAP-PSI-001',
+        codigo: 'TERAP-PSI-002',
         clasificacion: 'psicosocial',
-        peligro: 'Agresión por parte de usuarios con conductas desafiantes',
-        descripcion: 'Cuidado de personas con discapacidad intelectual que pueden presentar conductas agresivas (mordiscos, golpes, arañazos)',
-        riesgoPotencial: 'Violencia laboral y trauma psicológico',
-        efectosPosibles: 'Lesiones físicas, trauma, burnout del cuidador',
-        medidasControl: ['Capacitación en manejo de conducta', 'Protocolos de contención segura', 'Rotación de cuidadores', 'Apoyo psicológico al personal', 'Registro de incidentes']
+        peligro: 'Violencia de usuarios o acompañantes en servicios de rehabilitación',
+        descripcion: 'Posibilidad de conductas agresivas de pacientes con alteraciones neurológicas (TCE, ACV, demencias) o de familiares en procesos de rehabilitación difíciles',
+        riesgoPotencial: 'Lesiones físicas y trauma psicológico del terapeuta',
+        efectosPosibles: 'Golpes, mordiscos, arañazos (especialmente en terapia ocupacional con pacientes con alteración cognitiva), TEPT',
+        medidasControl: ['Protocolo de manejo de pacientes con conductas agresivas', 'Capacitación en técnicas de contención segura', 'Nunca trabajar en solitario con pacientes de alto riesgo conductual', 'Rotación de pacientes agresivos entre terapeutas', 'Reporte y registro de incidentes de violencia']
       }
     ],
     normativaEspecifica: [
       { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
       { codigo: 'RES-2646-2008', norma: 'Resolución 2646/2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true },
-      { codigo: 'LEY-1618-2013', norma: 'Ley 1618/2013', descripcion: 'Derechos de personas con discapacidad', obligatorio: true }
+      { codigo: 'RES-2003-2014', norma: 'Resolución 2003/2014', descripcion: 'Habilitación de servicios de salud', obligatorio: true }
     ],
-    eppRecomendado: ['Guantes de nitrilo', 'Calzado antideslizante', 'Mascarilla', 'Protecciones para conductas agresivas según protocolo'],
-    capacitacionesObligatorias: ['Movilización segura de personas', 'Manejo de conductas desafiantes', 'Bioseguridad', 'Prevención riesgo psicosocial', 'Primeros auxilios']
+    eppRecomendado: ['Guantes de nitrilo para procedimientos con fluidos', 'Calzado antideslizante de trabajo con soporte plantar', 'Mascarilla de procedimientos o N95 en terapia respiratoria', 'Gafas de protección láser (si hay equipo láser)', 'Guantes antivibración (uso de equipos vibratorios)', 'Faja lumbar para movilización de pacientes de gran dependencia', 'Medias de compresión graduada'],
+    capacitacionesObligatorias: ['Movilización segura de pacientes y técnica MAPO', 'Bioseguridad en terapias y precauciones estándar', 'Seguridad en uso de equipos de fisioterapia (ultrasonido, láser, electroterapia)', 'Prevención de riesgo psicosocial y autocuidado emocional en salud', 'Ergonomía para terapeutas: posturas y técnicas corporales', 'Primeros auxilios básico y RCP']
   },
 
-  {
-    codigoCIIU: '8730',
-    descripcionCIIU: 'Actividades de atención en instituciones para el cuidado de personas mayores y discapacitadas',
+    {
+    codigoCIIU: '8699',
+    descripcionCIIU: 'Otras actividades de atención de la salud humana n.c.p. (optometría, psicología clínica, nutrición, medicina alternativa)',
     nivelRiesgo: 'II',
     sector: 'Salud',
-    peligrosPrioritarios: ['BIO-MEC-003', 'BIO-001', 'PSI-001', 'BIO-MEC-002', 'FIS-004'],
+    peligrosPrioritarios: ['BIO-001', 'BIO-002', 'PSI-001', 'PSI-005', 'PSI-006', 'BIO-MEC-001', 'BIO-MEC-005', 'QUI-015'],
     peligrosEspecificos: [
       {
-        codigo: 'MAYOR-BIO-MEC-001',
-        clasificacion: 'biomecanico',
-        peligro: 'Movilización de adultos mayores con dependencia',
-        descripcion: 'Traslados, baño, cambio de pañal y posicionamiento de adultos mayores con limitación funcional',
-        riesgoPotencial: 'Lesiones musculoesqueléticas crónicas',
-        efectosPosibles: 'Lumbalgia, hernias discales, lesiones de hombro y rodilla',
-        medidasControl: ['Grúas de transferencia', 'Camas regulables en altura', 'Técnicas correctas de movilización', 'Formación continua al personal de cuidado']
+        codigo: 'SALUDNCP-BIO-001',
+        clasificacion: 'biologico',
+        peligro: 'Exposición a agentes biológicos en atención de salud no hospitalaria',
+        descripcion: 'Contacto con pacientes y sus fluidos en consultorios de optometría, psicología clínica, nutrición, acupuntura, quiropráctica y otras terapias alternativas',
+        riesgoPotencial: 'Infección por agentes biológicos de transmisión respiratoria o por contacto',
+        efectosPosibles: 'Enfermedades respiratorias, COVID-19, influenza, infecciones de piel',
+        medidasControl: ['Precauciones estándar siempre con todo paciente', 'Guantes y mascarilla en procedimientos con contacto de mucosas o piel no intacta', 'Lavado de manos entre pacientes', 'Vacunación del personal de salud al día', 'Ventilación adecuada del consultorio']
       },
       {
-        codigo: 'MAYOR-BIO-001',
+        codigo: 'SALUDNCP-BIO-002',
         clasificacion: 'biologico',
-        peligro: 'Riesgo biológico en cuidado de adultos mayores hospitalizados',
-        descripcion: 'Manejo de heridas, sondas, catéteres y secreciones en adultos mayores con mayor susceptibilidad a infecciones',
-        riesgoPotencial: 'Infecciones nosocomiales',
-        efectosPosibles: 'Infecciones variadas, gastroenteritis, infecciones respiratorias',
-        medidasControl: ['Guantes para todo contacto con fluidos', 'Lavado de manos', 'Precauciones estándar', 'Vacunación del personal']
+        peligro: 'Riesgo biológico en acupuntura y terapias con agujas',
+        descripcion: 'Manejo de agujas de acupuntura, mesoterapia, dry needling y otras técnicas invasivas con agujas en terapias alternativas reconocidas por el MPS',
+        riesgoPotencial: 'Accidente biológico por pinchazo, infección cruzada entre pacientes',
+        efectosPosibles: 'VIH, Hepatitis B y C por pinchazo o reuso inadvertido de agujas',
+        medidasControl: ['Uso exclusivo de agujas desechables de un solo uso', 'Contenedor de cortopunzantes en punto de uso', 'Guantes para el profesional', 'Protocolo post-exposición a accidente biológico', 'Vacunación Hepatitis B obligatoria']
+      },
+      {
+        codigo: 'SALUDNCP-FIS-001',
+        clasificacion: 'fisico',
+        peligro: 'Radiaciones no ionizantes en optometría (lámpara de hendidura, láser)',
+        descripcion: 'Exposición a luz intensa de lámpara de hendidura, fundoscopio, láseres de bajo nivel y equipos de diagnóstico ocular con emisión lumínica intensa',
+        riesgoPotencial: 'Daño ocular acumulativo (retina, cristalino)',
+        efectosPosibles: 'Daño de retina, cataratas precoces, fotoqueratitis por exposición repetida',
+        medidasControl: ['Nunca dirigir el haz de fundoscopio hacia los propios ojos', 'Gafas de filtro específicas para láser ocular usado en el servicio', 'Mantenimiento y calibración de lámparas de hendidura', 'Examen oftalmológico anual para el personal de optometría', 'Pausas visuales durante evaluaciones prolongadas']
+      },
+      {
+        codigo: 'SALUDNCP-PSI-001',
+        clasificacion: 'psicosocial',
+        peligro: 'Carga emocional extrema en psicología clínica y salud mental',
+        descripcion: 'Acompañamiento psicológico de pacientes con trastornos mentales graves, trauma, ideación suicida, conductas autolesivas y casos de violencia intrafamiliar',
+        riesgoPotencial: 'Trauma vicario, burnout del psicólogo, fatiga compasión',
+        efectosPosibles: 'Trauma secundario, depresión, ansiedad, insomnio, abandono de la profesión, agotamiento empático',
+        medidasControl: ['Supervisión clínica individual o grupal semanal o quincenal', 'Límite razonable de pacientes con alto riesgo por jornada', 'Espacios de supervisión y descarga emocional', 'Psicoterapia personal del profesional', 'Capacitación en manejo del trauma vicario y autocuidado del psicoterapeuta']
+      },
+      {
+        codigo: 'SALUDNCP-PSI-002',
+        clasificacion: 'psicosocial',
+        peligro: 'Riesgo de violencia en atención de pacientes con trastornos mentales o conductuales',
+        descripcion: 'Posibilidad de agresión física o verbal de pacientes con psicosis aguda, trastorno de personalidad o bajo efecto de sustancias psicoactivas en consulta individual',
+        riesgoPotencial: 'Agresión física o psicológica al profesional de salud mental',
+        efectosPosibles: 'Lesiones físicas, TEPT del terapeuta, abandono del cargo',
+        medidasControl: ['Nunca atender en solitario pacientes en crisis aguda con historia de violencia', 'Sistema de alarma o botón de pánico en consultorio', 'Disposición de mobiliario que permita salida libre (terapeuta entre paciente y la puerta)', 'Protocolo de manejo de situaciones de crisis', 'Capacitación en desescalada verbal']
+      },
+      {
+        codigo: 'SALUDNCP-BIO-MEC-001',
+        clasificacion: 'biomecanico',
+        peligro: 'Postura sedente prolongada en consulta psicológica, nutricional y de optometría',
+        descripcion: 'Trabajo sedentario durante consultas psicológicas, nutricionales o de optometría que implican largas sesiones frente a pacientes o frente a pantallas',
+        riesgoPotencial: 'Trastornos musculoesqueléticos, síndrome metabólico',
+        efectosPosibles: 'Lumbalgias, dorsalgias, cervicalgias, síndrome metabólico, síndrome visual informático',
+        medidasControl: ['Silla ergonómica regulable', 'Pausas activas cada 45-60 minutos entre consultas', 'Breve caminata entre pacientes', 'Monitor a altura correcta', 'Evaluación ergonómica del puesto de trabajo']
+      },
+      {
+        codigo: 'SALUDNCP-QUI-001',
+        clasificacion: 'quimico',
+        peligro: 'Productos desinfectantes y antisépticos en consultorios de salud',
+        descripcion: 'Uso de hipoclorito, alcohol isopropílico, clorhexidina y desinfectantes de superficies para limpieza entre pacientes en consultorios de diversas disciplinas de salud',
+        riesgoPotencial: 'Dermatitis de contacto, irritación respiratoria',
+        efectosPosibles: 'Dermatitis de manos, eccema por uso repetido de alcohol, irritación de vías respiratorias altas',
+        medidasControl: ['Guantes de nitrilo para manipulación de desinfectantes', 'Crema barrera e hidratante para uso frecuente de alcohol gel', 'Ventilación del consultorio al desinfectar', 'Fichas de seguridad de todos los desinfectantes', 'Capacitación en uso seguro']
+      },
+      {
+        codigo: 'SALUDNCP-SEG-001',
+        clasificacion: 'condiciones_seguridad',
+        peligro: 'Trabajo en domicilio o centros comunitarios (salud en casa, terapia domiciliaria)',
+        descripcion: 'Profesionales de salud que prestan servicios en domicilios, centros comunitarios o zonas de difícil acceso con riesgo de seguridad, accidente de tránsito y trabajo en solitario',
+        riesgoPotencial: 'Accidente de tránsito, agresión, trabajo en solitario',
+        efectosPosibles: 'Politrauma, agresión, accidente sin atención oportuna',
+        medidasControl: ['Evaluación previa de zona de visita', 'Check-in periódico con base', 'No realizar visitas a zonas de riesgo sin acompañamiento', 'GPS en vehículos o aplicación de rastreo', 'Protocolo de reporte ante incidente en campo']
       }
     ],
     normativaEspecifica: [
       { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
-      { codigo: 'RES-2646-2008', norma: 'Resolución 2646/2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true }
+      { codigo: 'DEC-4741-2005', norma: 'Decreto 4741/2005', descripcion: 'Residuos biológico-infecciosos', obligatorio: true },
+      { codigo: 'RES-2646-2008', norma: 'Resolución 2646/2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true },
+      { codigo: 'RES-2003-2014', norma: 'Resolución 2003/2014', descripcion: 'Habilitación de servicios de salud', obligatorio: true }
     ],
-    eppRecomendado: ['Guantes de nitrilo', 'Mascarilla', 'Delantal impermeable', 'Calzado antideslizante', 'Faja lumbar para movilizaciones'],
-    capacitacionesObligatorias: ['Movilización segura de adultos mayores', 'Bioseguridad en geriatría', 'Prevención riesgo psicosocial en cuidado', 'Primeros auxilios']
+    eppRecomendado: ['Guantes de nitrilo', 'Mascarilla de procedimientos', 'Bata de trabajo', 'Calzado cerrado', 'Gafas de protección (si hay láser o luz intensa)', 'Dosímetro (optometría con láser clase III/IV)'],
+    capacitacionesObligatorias: ['Bioseguridad en atención de salud ambulatoria', 'Manejo de residuos biológicos', 'Prevención riesgo psicosocial en salud (Res. 2646)', 'Ergonomía en consulta', 'Primeros auxilios y RCP básico', 'Protocolo post-exposición biológica']
+  },
+
+    {
+    codigoCIIU: '8710',
+    descripcionCIIU: 'Actividades de atención residencial medicalizada (clínicas de reposo, centros de rehabilitación, internados psiquiátricos)',
+    nivelRiesgo: 'III',
+    sector: 'Salud',
+    peligrosPrioritarios: ['BIO-001', 'BIO-002', 'PSI-001', 'PSI-005', 'PSI-006', 'BIO-MEC-003', 'BIO-MEC-008', 'SEG-002'],
+    peligrosEspecificos: [
+      {
+        codigo: 'RESMED-BIO-001',
+        clasificacion: 'biologico',
+        peligro: 'Riesgo biológico en atención residencial de pacientes crónicos o con enfermedades mentales',
+        descripcion: 'Exposición a fluidos corporales, heridas y agentes infecciosos en la atención continua de pacientes con enfermedades crónicas, discapacidades, trastornos mentales o en rehabilitación prolongada',
+        riesgoPotencial: 'Infecciones nosocomiales e infecciones laborales',
+        efectosPosibles: 'Infecciones de transmisión sanguínea, fecal-oral y respiratoria en personal de cuidado',
+        medidasControl: ['Precauciones estándar en toda atención', 'Guantes para todo contacto con fluidos', 'Lavado de manos 5 momentos', 'Vacunación completa del personal', 'Programa de higiene de manos en la institución']
+      },
+      {
+        codigo: 'RESMED-PSI-001',
+        clasificacion: 'psicosocial',
+        peligro: 'Agresión física de pacientes con trastornos mentales graves (psicosis, manía, demencia)',
+        descripcion: 'Conductas agresivas de pacientes internados con esquizofrenia, trastorno bipolar en fase maníaca, demencias con agitación, intoxicación o estados confusionales agudos',
+        riesgoPotencial: 'Lesiones físicas y trauma psicológico del personal de salud mental',
+        efectosPosibles: 'Golpes, mordiscos, arañazos, empujones, TEPT laboral, ausentismo',
+        medidasControl: ['Protocolo de manejo de la agitación psicomotora (PMPA)', 'Técnicas de contención verbal antes de contención física', 'Personal entrenado en contención física segura', 'Nunca hacer contención en solitario', 'Atención psicológica post-incidente garantizada', 'Registro y análisis estadístico de incidentes de violencia']
+      },
+      {
+        codigo: 'RESMED-PSI-002',
+        clasificacion: 'psicosocial',
+        peligro: 'Carga emocional extrema en cuidado de salud mental residencial',
+        descripcion: 'Acompañamiento intensivo de pacientes con enfermedades mentales graves, intentos de suicidio, conductas autolesivas y situaciones de alto impacto emocional en instituciones de salud mental',
+        riesgoPotencial: 'Trauma vicario, burnout severo, TEPT secundario',
+        efectosPosibles: 'TEPT secundario, depresión mayor, abandono profesional, alcoholismo, burnout severo',
+        medidasControl: ['Supervisión psicológica quincenal obligatoria para personal de salud mental', 'Rotación de casos de alta complejidad emocional', 'Grupos de apoyo entre pares con facilitador externo', 'Límite de carga asistencial por profesional', 'Programa institucional de autocuidado y salud mental del personal']
+      },
+      {
+        codigo: 'RESMED-BIO-MEC-001',
+        clasificacion: 'biomecanico',
+        peligro: 'Movilización de pacientes con trastornos motores o dependientes en rehabilitación',
+        descripcion: 'Movilización frecuente de pacientes con secuelas neurológicas (ACV, TCE, parkinson), dependencia funcional alta o con sedación farmacológica en unidades de rehabilitación y reposo',
+        riesgoPotencial: 'Lesiones musculoesqueléticas graves de columna lumbar y hombros',
+        efectosPosibles: 'Hernia discal, lesión de hombro, lumbalgias crónicas, incapacidades permanentes en personal de enfermería',
+        medidasControl: ['Grúas de transferencia y equipos de movilización disponibles en la unidad', 'Evaluación MAPO de riesgo ergonómico', 'Mínimo 2 personas para movilización de pacientes dependientes totales', 'Camas hospitalarias regulables en altura', 'Capacitación semestral en movilización segura de pacientes']
+      },
+      {
+        codigo: 'RESMED-SEG-001',
+        clasificacion: 'condiciones_seguridad',
+        peligro: 'Fuga o evasión de pacientes y situaciones de crisis en institución cerrada',
+        descripcion: 'Situaciones de crisis, fuga, intentos de suicidio y emergencias médicas en instituciones de internación psiquiátrica o centros de rehabilitación con régimen cerrado',
+        riesgoPotencial: 'Lesiones durante manejo de emergencias psiquiátricas',
+        efectosPosibles: 'Lesiones del personal al manejar crisis, trauma al presenciar intentos de suicidio, exposición a situaciones de alta carga emocional',
+        medidasControl: ['Protocolos de crisis y emergencias psiquiátricas documentados', 'Revisión periódica de condiciones físicas de seguridad de la institución', 'Formación específica en primeros auxilios psiquiátricos', 'Comunicación y coordinación con servicios de urgencias externos', 'Revisión de pacientes y entorno para elementos peligrosos']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
+      { codigo: 'RES-2003-2014', norma: 'Resolución 2003/2014', descripcion: 'Habilitación de servicios de salud mental', obligatorio: true },
+      { codigo: 'LEY-1616-2013', norma: 'Ley 1616/2013', descripcion: 'Salud Mental en Colombia', obligatorio: true },
+      { codigo: 'RES-2646-2008', norma: 'Resolución 2646/2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true },
+      { codigo: 'DEC-351-2014', norma: 'Decreto 351/2014', descripcion: 'Gestión de residuos hospitalarios', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de nitrilo', 'Mascarilla de procedimientos', 'Bata manga larga', 'Calzado antideslizante cerrado', 'Faja lumbar para movilización de pacientes'],
+    capacitacionesObligatorias: ['Bioseguridad en salud mental y atención residencial', 'Manejo de la agitación psicomotora y contención segura', 'Ergonomía y movilización segura de pacientes', 'Prevención del riesgo psicosocial en salud mental', 'Primeros auxilios psiquiátricos y básicos', 'Autocuidado emocional del personal de salud mental']
+  },
+
+  {
+    codigoCIIU: '8720',
+    descripcionCIIU: 'Actividades de atención residencial para el cuidado de personas con discapacidad intelectual, física o sensorial',
+    nivelRiesgo: 'III',
+    sector: 'Salud',
+    peligrosPrioritarios: ['BIO-MEC-003', 'BIO-MEC-004', 'BIO-MEC-008', 'PSI-001', 'PSI-005', 'PSI-006', 'BIO-001', 'SEG-002'],
+    peligrosEspecificos: [
+      {
+        codigo: 'DISCAP-BIO-MEC-001',
+        clasificacion: 'biomecanico',
+        peligro: 'Movilización de personas con discapacidad motora severa o dependencia total',
+        descripcion: 'Transferencia, posicionamiento, baño, cambio de pañal y traslado de usuarios con parálisis cerebral, cuadriplejia, hemiplejia o dependencia funcional total',
+        riesgoPotencial: 'Lesiones musculoesqueléticas graves en cuidadores y auxiliares',
+        efectosPosibles: 'Hernias discales lumbares, lesiones de hombro, esguinces lumbares, incapacidades crónicas',
+        medidasControl: ['Equipos de transferencia (grúas de techo o de pie, cojines deslizantes)', 'Camas regulables en altura', 'Técnicas ergonómicas de movilización sin levantamiento manual', 'Trabajo en equipo para usuarios de gran dependencia', 'Evaluación de riesgo ergonómico MAPO por unidad', 'Capacitación semestral en movilización de personas con discapacidad']
+      },
+      {
+        codigo: 'DISCAP-PSI-001',
+        clasificacion: 'psicosocial',
+        peligro: 'Conductas desafiantes y agresión de usuarios con discapacidad intelectual',
+        descripcion: 'Cuidado de personas con discapacidad intelectual (síndrome de Down con alteraciones de conducta, autismo, daño neurológico) que pueden presentar mordiscos, golpes, arañazos y autolesiones',
+        riesgoPotencial: 'Lesiones físicas y trauma psicológico en cuidadores',
+        efectosPosibles: 'Lesiones de partes blandas, TEPT, burnout del cuidador, ausentismo',
+        medidasControl: ['Análisis funcional de conducta para cada usuario', 'Plan de soporte conductual positivo individualizado', 'Capacitación en manejo de conductas desafiantes sin castigo', 'Nunca trabajar en solitario con usuarios de alto riesgo conductual', 'Rotación de cuidadores para prevenir sobrecarga', 'Apoyo psicológico al personal post-incidente']
+      },
+      {
+        codigo: 'DISCAP-PSI-002',
+        clasificacion: 'psicosocial',
+        peligro: 'Fatiga emocional y burnout del cuidador de personas con discapacidad',
+        descripcion: 'Cuidado de largo plazo de personas con necesidades complejas, alta dependencia y discapacidades que generan desgaste emocional crónico en el cuidador profesional',
+        riesgoPotencial: 'Burnout del cuidador, fatiga compasión, TEPT secundario',
+        efectosPosibles: 'Depresión, ansiedad, agotamiento, abandono de la profesión de cuidado',
+        medidasControl: ['Rotación entre usuarios de distintos niveles de complejidad', 'Grupos de apoyo emocional para el equipo de cuidadores', 'Acceso a psicólogo institucional', 'Límite razonable de usuarios por cuidador', 'Reconocimiento del trabajo emocional en los sistemas de evaluación del desempeño']
+      },
+      {
+        codigo: 'DISCAP-BIO-001',
+        clasificacion: 'biologico',
+        peligro: 'Riesgo biológico en atención de usuarios con bajo control de esfínteres',
+        descripcion: 'Manejo de incontinencia, higienización y cambio de pañal de usuarios con discapacidad severa que no controlan esfínteres',
+        riesgoPotencial: 'Infecciones gastrointestinales, hepatitis A, infecciones entéricas',
+        efectosPosibles: 'Gastroenteritis, hepatitis A y E, infecciones por bacterias entéricas',
+        medidasControl: ['Guantes siempre para cambios de pañal e higienización', 'Lavado de manos exhaustivo después del procedimiento', 'Delantal impermeable en higienización', 'Vacunación Hepatitis A para personal de cuidado', 'Gestión adecuada de residuos con materia orgánica']
+      },
+      {
+        codigo: 'DISCAP-SEG-001',
+        clasificacion: 'condiciones_seguridad',
+        peligro: 'Caídas y accidentes durante apoyos de movilidad de usuarios',
+        descripcion: 'Riesgo de caída de usuarios durante traslados, ejercicios de movilidad o deambulación asistida que pueden lesionar también al cuidador',
+        riesgoPotencial: 'Caídas del usuario y del cuidador durante apoyo de deambulación',
+        efectosPosibles: 'Fracturas de usuario, lesión del cuidador al intentar evitar la caída, golpes',
+        medidasControl: ['Calzado antideslizante para usuarios', 'Barandas y agarraderas en zonas de deambulación', 'Cinturones de marcha para apoyo de deambulación', 'Colchonetas de caída en zonas de riesgo', 'Valoración del riesgo de caída de cada usuario y plan de prevención']
+      },
+      {
+        codigo: 'DISCAP-QUI-001',
+        clasificacion: 'quimico',
+        peligro: 'Manejo de medicamentos psicotrópicos y anticonvulsivantes',
+        descripcion: 'Preparación y administración de medicamentos controlados (benzodiacepinas, antipsicóticos, anticonvulsivantes) a usuarios con discapacidad',
+        riesgoPotencial: 'Exposición accidental a medicamentos controlados, error de medicación',
+        efectosPosibles: 'Intoxicación accidental del trabajador, error de medicación en usuario',
+        medidasControl: ['Doble verificación en la preparación y administración de psicotrópicos', 'Almacenamiento bajo llave de medicamentos controlados', 'Registro de administración firmado', 'Capacitación en manejo seguro de medicamentos controlados', 'Lavado de manos después de manipular medicamentos']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
+      { codigo: 'RES-2646-2008', norma: 'Resolución 2646/2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true },
+      { codigo: 'LEY-1618-2013', norma: 'Ley 1618/2013', descripcion: 'Derechos de personas con discapacidad en Colombia', obligatorio: true },
+      { codigo: 'RES-2003-2014', norma: 'Resolución 2003/2014', descripcion: 'Habilitación de servicios de salud para discapacidad', obligatorio: true }
+    ],
+    eppRecomendado: ['Guantes de nitrilo', 'Calzado antideslizante cerrado', 'Mascarilla', 'Delantal impermeable para higienización', 'Faja lumbar para movilizaciones frecuentes', 'Protecciones específicas según conductas del usuario (evaluación individual)'],
+    capacitacionesObligatorias: ['Movilización segura de personas con discapacidad y técnica MAPO', 'Manejo de conductas desafiantes sin castigo (ABA positivo)', 'Bioseguridad en atención a personas con discapacidad', 'Prevención de riesgo psicosocial y autocuidado del cuidador', 'Primeros auxilios básico', 'Manejo seguro de medicamentos controlados']
+  },
+
+    {
+    codigoCIIU: '8730',
+    descripcionCIIU: 'Actividades de atención en instituciones para el cuidado de personas mayores — hogares geriátricos, ancianatos, centros de día',
+    nivelRiesgo: 'II',
+    sector: 'Salud',
+    peligrosPrioritarios: ['BIO-MEC-003', 'BIO-MEC-008', 'BIO-001', 'PSI-001', 'PSI-006', 'FIS-004', 'SEG-002'],
+    peligrosEspecificos: [
+      {
+        codigo: 'GER-BIO-MEC-001',
+        clasificacion: 'biomecanico',
+        peligro: 'Movilización de adultos mayores con dependencia funcional',
+        descripcion: 'Transferencias, baño, cambio de pañal, posicionamiento y traslado de adultos mayores con dependencia parcial o total — múltiples veces al día en hogares geriátricos',
+        riesgoPotencial: 'Lesiones musculoesqueléticas crónicas en auxiliares de geriatría',
+        efectosPosibles: 'Hernias discales lumbares, lesión de hombro, esguinces lumbares, incapacidades permanentes',
+        medidasControl: ['Grúas de transferencia de techo o móviles para usuarios no ambulantes', 'Camas geriátricas regulables en altura con barandas', 'Técnicas de movilización sin levantamiento manual', 'Mínimo 2 personas para usuarios con dependencia total', 'Evaluación MAPO de riesgo ergonómico en cada unidad', 'Formación continua en movilización de adultos mayores']
+      },
+      {
+        codigo: 'GER-BIO-001',
+        clasificacion: 'biologico',
+        peligro: 'Riesgo biológico en higienización y cuidado de adultos mayores con incontinencia',
+        descripcion: 'Manejo de incontinencia urinaria y fecal, cuidado de heridas crónicas (úlceras por presión), manejo de sondas y catéteres en adultos mayores con alta susceptibilidad a infecciones',
+        riesgoPotencial: 'Infecciones entéricas, infecciones de herida, infecciones urinarias cruzadas',
+        efectosPosibles: 'Gastroenteritis, hepatitis A, infecciones del tracto urinario, infecciones de piel y partes blandas',
+        medidasControl: ['Guantes siempre para higienización y manejo de heridas', 'Lavado de manos antes y después de cada procedimiento', 'Delantal impermeable para baños y cambios de pañal', 'Precauciones de contacto para úlceras colonizadas', 'Vacunación hepatitis A y B para personal de geriatría']
+      },
+      {
+        codigo: 'GER-BIO-002',
+        clasificacion: 'biologico',
+        peligro: 'Brotes infecciosos en instituciones geriátricas (influenza, norovirus, COVID)',
+        descripcion: 'Alta susceptibilidad de la población mayor institucionalizada a brotes de influenza, COVID-19, norovirus, tuberculosis y sarna en espacios cerrados con alta densidad de pacientes',
+        riesgoPotencial: 'Infección del personal en brote institucional',
+        efectosPosibles: 'Influenza grave, COVID-19 severo, gastroenteritis por norovirus, tuberculosis, sarna noruega',
+        medidasControl: ['Vacunación anual de influenza para todo el personal y usuarios', 'Protocolo de detección e aislamiento precoz de casos', 'EPP de aerosoles en casos respiratorios sospechosos', 'Cohortización de casos y contactos en brotes', 'Ventilación adecuada de instalaciones']
+      },
+      {
+        codigo: 'GER-PSI-001',
+        clasificacion: 'psicosocial',
+        peligro: 'Burnout y fatiga por compasión en cuidadores de adultos mayores',
+        descripcion: 'Cuidado continuo de adultos mayores en deterioro progresivo, con demencias avanzadas, en proceso de muerte o con alta dependencia emocional al cuidador',
+        riesgoPotencial: 'Burnout del cuidador geriátrico, fatiga por compasión',
+        efectosPosibles: 'Depresión, ansiedad, agotamiento, abandono de la profesión de cuidado',
+        medidasControl: ['Grupos de apoyo emocional entre pares para cuidadores', 'Rotación entre usuarios de distintos niveles de complejidad', 'Acceso a psicólogo institucional', 'Capacitación en duelo y acompañamiento de fin de vida', 'Reconocimiento institucional del esfuerzo emocional del cuidado geriátrico']
+      },
+      {
+        codigo: 'GER-PSI-002',
+        clasificacion: 'psicosocial',
+        peligro: 'Violencia de adultos mayores con demencia o estados confusionales',
+        descripcion: 'Golpes, mordiscos, insultos y resistencia durante el cuidado de adultos mayores con demencia avanzada (Alzheimer, Lewy), delirium, o trastornos de conducta nocturnos',
+        riesgoPotencial: 'Lesiones físicas y trauma psicológico del cuidador',
+        efectosPosibles: 'Lesiones de partes blandas, TEPT, burnout, ausentismo, abandono del cargo',
+        medidasControl: ['Entrenamiento en comunicación con personas con demencia (enfoque centrado en la persona)', 'Estrategias no farmacológicas para el manejo de agitación', 'Nunca cuidar en solitario a usuarios altamente agitados', 'Rotación de cuidadores', 'Reporte y análisis de incidentes de violencia']
+      },
+      {
+        codigo: 'GER-SEG-001',
+        clasificacion: 'condiciones_seguridad',
+        peligro: 'Caídas de adultos mayores durante asistencia de deambulación',
+        descripcion: 'Riesgo de caída del adulto mayor durante deambulación asistida, ejercicios de fisioterapia o transferencias, que puede lesionar también al auxiliar al intentar evitarla',
+        riesgoPotencial: 'Fractura del usuario y lesión musculoesquelética del cuidador',
+        efectosPosibles: 'Fractura de cadera del usuario, lesión lumbar o de hombro del cuidador al intentar frenar la caída',
+        medidasControl: ['Evaluación de riesgo de caída con escala Morse o Downton para cada usuario', 'Calzado antideslizante para usuarios', 'Barandas y agarraderas en pasillos, baños y habitaciones', 'Cinturón de marcha para apoyo de deambulación', 'Iluminación nocturna adecuada en pasillos y baños', 'Protocolo de atención post-caída']
+      }
+    ],
+    normativaEspecifica: [
+      { codigo: 'DEC-1072-2015', norma: 'Decreto 1072/2015', descripcion: 'SG-SST', obligatorio: true },
+      { codigo: 'RES-2646-2008', norma: 'Resolución 2646/2008', descripcion: 'Factores de riesgo psicosocial', obligatorio: true },
+      { codigo: 'RES-2003-2014', norma: 'Resolución 2003/2014', descripcion: 'Habilitación de servicios de salud geriátricos', obligatorio: true },
+      { codigo: 'DEC-1171-2016', norma: 'Decreto 1171/2016', descripcion: 'Política de envejecimiento y vejez en Colombia', obligatorio: false }
+    ],
+    eppRecomendado: ['Guantes de nitrilo', 'Mascarilla de procedimientos', 'Delantal impermeable para baños y cambios', 'Calzado antideslizante cerrado con soporte plantar', 'Faja lumbar para movilizaciones frecuentes', 'Medias de compresión graduada en turnos largos de pie'],
+    capacitacionesObligatorias: ['Movilización segura de adultos mayores y técnica MAPO', 'Bioseguridad en geriatría y manejo de brotes', 'Cuidado centrado en la persona con demencia', 'Prevención de riesgo psicosocial y autocuidado del cuidador geriátrico', 'Primeros auxilios básico y manejo de caídas', 'Prevención y manejo de úlceras por presión']
   },
 
   {
